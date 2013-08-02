@@ -9,7 +9,6 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-embedded</artifactId>
     <version>3.4-SNAPSHOT</version>
     <name>ModeShape BOM for embedded usage</name>
@@ -80,14 +79,11 @@
                 <artifactId>modeshape-sequencer-mp3</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!--
-                See MODE-1934
-                <dependency>
-                    <groupId>org.modeshape</groupId>
-                    <artifactId>modeshape-sequencer-msoffice</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            -->
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-msoffice</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-sramp</artifactId>
@@ -352,7 +348,7 @@
                 <artifactId>jaudiotagger</artifactId>
                 <version>${jaudiotagger.version}</version>
             </dependency>
-            <!--MsOffice sequencer See MODE-1934
+            <!--MsOffice sequencer -->
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
@@ -363,7 +359,20 @@
                 <artifactId>poi-scratchpad</artifactId>
                 <version>${poi.version}</version>
             </dependency>
-            -->
+            <!--
+                The following 2 POI dependencies are not used directly, but defined so that we use the same "beta" version
+                across the board (see https://issues.jboss.org/browse/MODE-1934).Tika-parsers brings these 2 transitively in
+             -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml-schemas</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
             <!--Teiid sequencer-->
             <dependency>
                 <groupId>com.beust</groupId>

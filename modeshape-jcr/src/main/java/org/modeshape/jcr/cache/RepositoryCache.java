@@ -47,6 +47,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
@@ -71,9 +72,12 @@ import org.modeshape.jcr.cache.change.Observable;
 import org.modeshape.jcr.cache.change.RecordingChanges;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
+import org.modeshape.jcr.cache.document.DocumentOptimizer;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.cache.document.LocalDocumentStore.DocumentOperation;
+import org.modeshape.jcr.cache.document.LocalDocumentStore.DocumentOperationResults;
 import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
@@ -896,6 +900,51 @@ public class RepositoryCache implements Observable {
             return new ReadOnlySessionCache(context, workspace(workspaceName), sessionContext);
         }
         return new WritableSessionCache(context, workspace(workspaceName), sessionContext);
+    }
+
+    /**
+     * Optimize the children in the supplied node document
+     * <p>
+     * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
+     * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
+     * a session sees as "persisted" state and the reality.
+     * </p>
+     * 
+     * @param targetCountPerBlock the target number of children per block
+     * @param tolerance the allowed tolerance between the target and actual number of children per block
+     * @return the results of the optimization; never null
+     */
+    public DocumentOperationResults optimizeChildren( final int targetCountPerBlock,
+                                                      final int tolerance ) {
+        Stopwatch sw = new Stopwatch();
+        logger.info(JcrI18n.beginChildrenOptimization, getName());
+        sw.start();
+
+        try {
+            DocumentOperationResults results = documentStore().localStore().performOnEachDocument(new DocumentOperation() {
+                private static final long serialVersionUID = 1L;
+
+                private DocumentOptimizer optimizer;
+
+                @Override
+                public void setEnvironment( Cache<String, SchematicEntry> cache ) {
+                    super.setEnvironment(cache);
+                    this.optimizer = new DocumentOptimizer(cache);
+                }
+
+                @Override
+                public boolean execute( String key,
+                                        EditableDocument document ) {
+                    return this.optimizer.optimizeChildrenBlocks(new NodeKey(key), document, targetCountPerBlock, tolerance);
+                }
+            });
+            sw.stop();
+            logger.info(JcrI18n.completeChildrenOptimization, getName(), sw.getTotalDuration().toSimpleString(), results);
+            return results;
+        } catch (Throwable e) {
+            logger.info(JcrI18n.errorDuringChildrenOptimization, getName(), sw.getTotalDuration().toSimpleString(), e);
+        }
+        return null;
     }
 
     public static interface ContentInitializer {

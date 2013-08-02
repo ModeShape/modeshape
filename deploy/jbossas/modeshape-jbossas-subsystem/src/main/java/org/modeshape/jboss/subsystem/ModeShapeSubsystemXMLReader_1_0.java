@@ -23,22 +23,21 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 
 public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
 
@@ -137,7 +136,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 switch (attribute) {
                     case NAME:
                         repositoryName = attrValue;
-                        repositoryAddress.add(ModelKeys.REPOSITORY, attrValue); //$NON-NLS-1$
+                        repositoryAddress.add(ModelKeys.REPOSITORY, attrValue);
                         repositoryAddress.protect();
                         repository.get(OP).set(ADD);
                         repository.get(OP_ADDR).set(repositoryAddress);
@@ -186,6 +185,25 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         break;
                     case GARBAGE_COLLECTION_INTERVAL:
                         ModelAttributes.GARBAGE_COLLECTION_INTERVAL.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case DOCUMENT_OPTIMIZATION_THREAD_POOL:
+                        ModelAttributes.DOCUMENT_OPTIMIZATION_THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case DOCUMENT_OPTIMIZATION_INITIAL_TIME:
+                        ModelAttributes.DOCUMENT_OPTIMIZATION_INITIAL_TIME.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case DOCUMENT_OPTIMIZATION_INTERVAL:
+                        ModelAttributes.DOCUMENT_OPTIMIZATION_INTERVAL.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET:
+                        ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET.parseAndSetParameter(attrValue,
+                                                                                                      repository,
+                                                                                                      reader);
+                        break;
+                    case DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE:
+                        ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE.parseAndSetParameter(attrValue,
+                                                                                                         repository,
+                                                                                                         reader);
                         break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
@@ -426,8 +444,8 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         break;
                     case REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT:
                         ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue,
-                                                                                                         repository,
-                                                                                                         reader);
+                                                                                                                 repository,
+                                                                                                                 reader);
                         break;
                     case THREAD_POOL:
                         ModelAttributes.THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);
@@ -722,11 +740,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
         if (nested) {
             storageType.get(OP_ADDR)
-                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
-                    .add(ModelKeys.NESTED_STORAGE_TYPE_FILE, storeName);
+                       .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
+                       .add(ModelKeys.NESTED_STORAGE_TYPE_FILE, storeName);
         } else {
-            storageType.get(OP_ADDR)
-                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.FILE_BINARY_STORAGE);
+            storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.FILE_BINARY_STORAGE);
         }
 
         return storageType;
@@ -778,11 +795,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
         if (nested) {
             storageType.get(OP_ADDR)
-                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
-                    .add(ModelKeys.NESTED_STORAGE_TYPE_CACHE, storeName);
+                       .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
+                       .add(ModelKeys.NESTED_STORAGE_TYPE_CACHE, storeName);
         } else {
-            storageType.get(OP_ADDR)
-                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_BINARY_STORAGE);
+            storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_BINARY_STORAGE);
         }
 
         return storageType;
@@ -828,11 +844,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
         if (nested) {
             storageType.get(OP_ADDR)
-                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
-                    .add(ModelKeys.NESTED_STORAGE_TYPE_DB, storeName);
+                       .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
+                       .add(ModelKeys.NESTED_STORAGE_TYPE_DB, storeName);
         } else {
-            storageType.get(OP_ADDR)
-                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
+            storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
         }
 
         return storageType;
@@ -844,9 +859,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         final ModelNode storageType = new ModelNode();
         storageType.get(OP).set(ADD);
         storageType.get(OP_ADDR)
-                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                .add(ModelKeys.REPOSITORY, repositoryName)
-                .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
 
         String storeName = null;
         if (reader.getAttributeCount() > 0) {
@@ -881,11 +896,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
         if (nested) {
             storageType.get(OP_ADDR)
-                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
-                    .add(ModelKeys.NESTED_STORAGE_TYPE_CUSTOM, storeName);
+                       .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
+                       .add(ModelKeys.NESTED_STORAGE_TYPE_CUSTOM, storeName);
         } else {
-            storageType.get(OP_ADDR)
-                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_BINARY_STORAGE);
+            storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_BINARY_STORAGE);
         }
         return storageType;
     }
@@ -898,10 +912,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
         compositeBinaryStorage.get(OP).set(ADD);
         compositeBinaryStorage.get(OP_ADDR)
-                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                .add(ModelKeys.REPOSITORY, repositoryName)
-                .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
-                .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE);
+                              .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                              .add(ModelKeys.REPOSITORY, repositoryName)
+                              .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
+                              .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -945,20 +959,18 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 default:
                     throw ParseUtils.unexpectedElement(reader);
             }
-            //validate store-name uniqueness within a composite store
+            // validate store-name uniqueness within a composite store
             String storeName = nestedBinaryStore.get(ModelKeys.STORE_NAME).asString();
             if (storeNames.contains(storeName)) {
                 throw ParseUtils.duplicateAttribute(reader, ModelKeys.STORE_NAME + "=" + storeName);
-            } else {
-                storeNames.add(storeName);
             }
+            storeNames.add(storeName);
             stores.add(nestedBinaryStore);
             ModelAttributes.NESTED_STORES.parseAndAddParameterElement(storeName, compositeBinaryStorage, reader);
         }
 
         return stores;
     }
-
 
     private List<ModelNode> parseAuthenticators( final XMLExtendedStreamReader reader,
                                                  final String repositoryName ) throws XMLStreamException {

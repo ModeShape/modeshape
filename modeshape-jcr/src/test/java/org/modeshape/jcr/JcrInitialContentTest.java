@@ -27,7 +27,6 @@ package org.modeshape.jcr;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.NodeIterator;
-import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -67,7 +66,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
 
         //default ws
         String defaultWs = "default";
-        assertCars(defaultWs);
+        assertCarsWithoutNamespace(defaultWs);
 
         //create a new ws that has been configured with an empty import
         String ws4 = "ws4";
@@ -92,7 +91,39 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
     public void shouldImportInitialContentWhenTransactionModeNone() throws  Exception {
         startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
                 "config/repo-config-initial-content-transaction-mode-none.json"));
-        assertCars("default");
+        assertCarsWithoutNamespace("default");
+    }
+
+    @Test
+    @FixFor("MODE-1995")
+    public void shouldImportInitialContentWhenContainsNonHTTPNamespaceURIs() throws  Exception {
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
+                "config/repo-config-initial-content-with-non-HTTP-namespaces.json"));
+
+        String defaultWs = "default";
+        assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars", JcrConstants.NT_UNSTRUCTURED, null);
+        assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars/{info:test/ns/}Hybrid", JcrConstants.NT_UNSTRUCTURED, null);
+        assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars/{info:test/ns/}Hybrid/{http://default.namespace.com}Toyota Prius",
+                                 JcrConstants.NT_UNSTRUCTURED, null,
+                                 "{http://default.namespace.com}maker=Toyota",
+                                 "{http://default.namespace.com}model=Prius");
+        assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars/{info:test/ns/}Hybrid/{http://default.namespace.com}Toyota Highlander",
+                                 JcrConstants.NT_UNSTRUCTURED, null,
+                                 "{http://default.namespace.com}maker=Toyota",
+                                 "{http://default.namespace.com}model=Highlander");
+        assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars/{info:test/ns/}Hybrid/{http://default.namespace.com}Nissan Altima",
+                                 JcrConstants.NT_UNSTRUCTURED, null,
+                                 "{http://default.namespace.com}maker=Nissan",
+                                 "{http://default.namespace.com}model=Altima");
+        assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars/{info:test/ns/}Sports", JcrConstants.NT_UNSTRUCTURED, null);
+        assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars/{info:test/ns/}Sports/{http://default.namespace.com}Aston Martin DB9",
+                                 JcrConstants.NT_UNSTRUCTURED, null,
+                                 "{http://default.namespace.com}maker=Aston Martin",
+                                 "{http://default.namespace.com}model=DB9");
+        assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars/{info:test/ns/}Sports/{http://default.namespace.com}Infiniti G37",
+                                 JcrConstants.NT_UNSTRUCTURED, null,
+                                 "{http://default.namespace.com}maker=Infiniti",
+                                 "{http://default.namespace.com}model=G37");
     }
 
     @Override
@@ -100,7 +131,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
         return false;
     }
 
-    private void assertCars( String defaultWs ) throws Exception {
+    private void assertCarsWithoutNamespace( String defaultWs ) throws Exception {
         assertContentInWorkspace(defaultWs, "/Cars", JcrConstants.NT_UNSTRUCTURED, null);
         assertContentInWorkspace(defaultWs, "/Cars/Hybrid", JcrConstants.NT_UNSTRUCTURED, null);
         assertContentInWorkspace(defaultWs, "/Cars/Hybrid/car", JcrConstants.NT_UNSTRUCTURED, null, "name=Toyota Prius",
@@ -154,26 +185,27 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
         if (properties.length > 0) {
             ListMultimap<String, String> nodeProperties = ArrayListMultimap.create();
             for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext(); ) {
-                Property property = propertyIterator.nextProperty();
+                AbstractJcrProperty property = (AbstractJcrProperty)propertyIterator.nextProperty();
+                String propertyName = !StringUtil.isBlank(property.name().getNamespaceUri()) ? property.name().toString() : property.getLocalName();
                 if (property.isMultiple()) {
                     for (Value value : property.getValues()) {
-                        nodeProperties.put(property.getName(), value.getString());
+                        nodeProperties.put(propertyName, value.getString());
                     }
                 } else {
-                    nodeProperties.put(property.getName(), property.getValue().getString());
+                    nodeProperties.put(propertyName, property.getValue().getString());
                 }
             }
 
             for (String propertyValueString : properties) {
                 String[] parts = propertyValueString.split("=");
                 String propertyName = parts[0];
-                Assert.assertTrue("Property not found", nodeProperties.containsKey(propertyName));
+                Assert.assertTrue("Property " + propertyName + " not found", nodeProperties.containsKey(propertyName));
                 String propertyValue = parts[1];
 
                 Set<String> expectedValues = new TreeSet<String>(Arrays.asList(propertyValue.split(",")));
                 Set<String> actualValues = new TreeSet<String>(nodeProperties.get(propertyName));
 
-                assertEquals("Property values do not match", expectedValues, actualValues);
+                assertEquals("Property values do not match for " + propertyName, expectedValues, actualValues);
             }
         }
     }
@@ -190,7 +222,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
     private void assertNodeType( String nodeType,
                                  AbstractJcrNode node ) throws ItemNotFoundException, InvalidItemStateException {
         if (!StringUtil.isBlank(nodeType)) {
-            assertEquals("Invalid node type", nodeType, node.getPrimaryTypeName().getString());
+            assertEquals("Invalid node type " + nodeType, nodeType, node.getPrimaryTypeName().getString());
         }
     }
 

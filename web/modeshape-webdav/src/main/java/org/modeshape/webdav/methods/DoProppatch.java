@@ -1,9 +1,11 @@
 package org.modeshape.webdav.methods;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -69,8 +71,6 @@ public class DoProppatch extends AbstractMethod {
             return; // resource is locked
         }
 
-        // TODO for now, PROPPATCH just sends a valid response, stating that everything is fine, but doesn't do anything.
-
         // Retrieve the resources
         String tempLockOwner = "doProppatch" + System.currentTimeMillis() + req.toString();
 
@@ -105,11 +105,10 @@ public class DoProppatch extends AbstractMethod {
                     return;
                 }
 
-                List<String> toset = null;
-                List<String> toremove = null;
-                List<String> tochange = new Vector<String>();
-                // contains all properties from
-                // toset and toremove
+                Map<String, Object> propertiesToSet = new HashMap<String, Object>();
+                List<String> propertiesToRemove = new ArrayList<String>();
+                List<String> allProperties = new Vector<String>();
+                Map<String, String> response = null;
 
                 path = getCleanPath(getRelativePath(req));
 
@@ -124,7 +123,17 @@ public class DoProppatch extends AbstractMethod {
                         Element rootElement = document.getDocumentElement();
 
                         tosetNode = XMLHelper.findSubElement(XMLHelper.findSubElement(rootElement, "set"), "prop");
+                        if (tosetNode != null) {
+                            propertiesToSet = XMLHelper.getPropertiesWithValuesFromXML(tosetNode);
+                        }
+
                         toremoveNode = XMLHelper.findSubElement(XMLHelper.findSubElement(rootElement, "remove"), "prop");
+                        if (toremoveNode != null) {
+                            propertiesToRemove = XMLHelper.getPropertiesFromXML(toremoveNode);
+                        }
+                        if (!propertiesToSet.isEmpty() || !propertiesToRemove.isEmpty()) {
+                            response = store.setCustomProperties(transaction, path, propertiesToSet, propertiesToRemove);
+                        }
                     } catch (Exception e) {
                         resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                         return;
@@ -135,18 +144,11 @@ public class DoProppatch extends AbstractMethod {
                     return;
                 }
 
+                allProperties.addAll(propertiesToSet.keySet());
+                allProperties.addAll(propertiesToRemove);
+
                 HashMap<String, String> namespaces = new HashMap<String, String>();
                 namespaces.put("DAV:", "D");
-
-                if (tosetNode != null) {
-                    toset = XMLHelper.getPropertiesFromXML(tosetNode);
-                    tochange.addAll(toset);
-                }
-
-                if (toremoveNode != null) {
-                    toremove = XMLHelper.getPropertiesFromXML(toremoveNode);
-                    tochange.addAll(toremove);
-                }
 
                 resp.setStatus(WebdavStatus.SC_MULTI_STATUS);
                 resp.setContentType("text/xml; charset=UTF-8");
@@ -157,7 +159,6 @@ public class DoProppatch extends AbstractMethod {
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.OPENING);
 
                 generatedXML.writeElement("DAV::response", XMLWriter.OPENING);
-                String status = "HTTP/1.1 " + WebdavStatus.SC_OK + " " + WebdavStatus.getStatusText(WebdavStatus.SC_OK);
 
                 // Generating href element
                 generatedXML.writeElement("DAV::href", XMLWriter.OPENING);
@@ -176,7 +177,7 @@ public class DoProppatch extends AbstractMethod {
 
                 generatedXML.writeElement("DAV::href", XMLWriter.CLOSING);
 
-                for (String property : tochange) {
+                for (String property : allProperties) {
                     generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
 
                     generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
@@ -184,14 +185,17 @@ public class DoProppatch extends AbstractMethod {
                     generatedXML.writeElement("DAV::prop", XMLWriter.CLOSING);
 
                     generatedXML.writeElement("DAV::status", XMLWriter.OPENING);
-                    generatedXML.writeText(status);
+                    generatedXML.writeText(statusForProperty(property, response));
                     generatedXML.writeElement("DAV::status", XMLWriter.CLOSING);
 
                     generatedXML.writeElement("DAV::propstat", XMLWriter.CLOSING);
                 }
 
+                if (response != null && !response.isEmpty()) {
+                    String firstErrorMessage = response.entrySet().iterator().next().getValue();
+                    generatedXML.writeProperty("DAV::responsedescription", firstErrorMessage);
+                }
                 generatedXML.writeElement("DAV::response", XMLWriter.CLOSING);
-
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.CLOSING);
 
                 generatedXML.sendData();
@@ -206,6 +210,16 @@ public class DoProppatch extends AbstractMethod {
             }
         } else {
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private String statusForProperty(String propertyName, Map<String, String> response) {
+        if (response == null || response.isEmpty()){
+            return "HTTP/1.1 " + WebdavStatus.SC_OK + " " + WebdavStatus.getStatusText(WebdavStatus.SC_OK);
+        } else if (response.containsKey(propertyName)) {
+            return "HTTP/1.1 " + WebdavStatus.SC_BAD_REQUEST + " " + WebdavStatus.getStatusText(WebdavStatus.SC_BAD_REQUEST);
+        } else {
+            return "HTTP/1.1 " + WebdavStatus.SC_FAILED_DEPENDENCY + " " + WebdavStatus.getStatusText(WebdavStatus.SC_FAILED_DEPENDENCY);
         }
     }
 }

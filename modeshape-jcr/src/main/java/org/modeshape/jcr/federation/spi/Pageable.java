@@ -27,21 +27,22 @@ package org.modeshape.jcr.federation.spi;
 import org.infinispan.schematic.document.Document;
 
 /**
- * Marker interface that should be implemented by {@link org.modeshape.jcr.federation.spi.Connector}(s) that want to expose
- * children of nodes in a "page by page" fashion. For effectively creating blocks of children for each page, connector
- * implementations should use the {@link PageWriter} extension.
+ * Interface that should be implemented by {@link org.modeshape.jcr.federation.spi.Connector}(s) that want to expose children of
+ * nodes in a "page by page" fashion. For effectively creating blocks of children for each page, connector implementations should
+ * use the {@link PageWriter} extension.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface Pageable {
 
     /**
-     * Returns a document which represents a page of children. In order to add a next page,
-     * {@link PageWriter#addPage(String, String, long, long)} should be used to add a new page of children.
+     * Returns a document which represents the document of a parent node to which an optiona page of children has been added.
+     * In order to add a next page, {@link PageWriter#addPage(String, String, long, long)} should be used to add a
+     * new page of children.
      * 
      * @param pageKey a {@code non-null} {@link PageKey} instance, which offers information about the page that should be
      *        retrieved.
-     * @return either a {@code non-null} page document or {@code null} indicating that such a page doesn't exist
+     * @return a {@code non-null} document representing the parent document.
      */
     Document getChildren( PageKey pageKey );
 

@@ -41,11 +41,13 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NamespaceException;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
 /**
@@ -109,7 +111,8 @@ public class CndImporterTest {
         importer.parse(cnd);
     }
 
-    @Test( expected = ParsingException.class )
+    @Test( expected = NamespaceException.class )
+    @FixFor( "MODE-1962" )
     public void shouldReportErrorIfTheNodeTypeNameUsesInvalidNamespace() {
         String cnd = "<ns = 'http://namespace.com/ns'> [xyz:acme] abstract";
         importer.parse(cnd);

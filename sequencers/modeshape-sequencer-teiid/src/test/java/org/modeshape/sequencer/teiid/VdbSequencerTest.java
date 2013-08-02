@@ -1,47 +1,47 @@
-	/*
- * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
- *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
- */
+/*
+* ModeShape (http://www.modeshape.org)
+* See the COPYRIGHT.txt file distributed with this work for information
+* regarding copyright ownership.  Some portions may be licensed
+* to Red Hat, Inc. under one or more contributor license agreements.
+* See the AUTHORS.txt file in the distribution for a full listing of
+* individual contributors.
+*
+* ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+* is licensed to you under the terms of the GNU Lesser General Public License as
+* published by the Free Software Foundation; either version 2.1 of
+* the License, or (at your option) any later version.
+*
+* ModeShape is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this software; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+* 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+*/
 package org.modeshape.sequencer.teiid;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Value;
 import org.junit.Test;
+import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import org.modeshape.junit.SkipLongRunning;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
- * 
+ *
  */
 public class VdbSequencerTest extends AbstractSequencerTest {
 
@@ -76,7 +76,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         { // child node models
             Node modelNode = outputNode.getNode("BooksProcedures.xmi");
             assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Model.MODEL));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("TestRESTWarGen/BooksProcedures.xmi"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is(
+                    "TestRESTWarGen/BooksProcedures.xmi"));
             assertThat(modelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(false));
             assertThat(modelNode.getProperty(VdbLexicon.Model.BUILT_IN).getBoolean(), is(false));
             assertThat(modelNode.getProperty(VdbLexicon.Model.CHECKSUM).getLong(), is(1855484649L));
@@ -164,13 +165,15 @@ public class VdbSequencerTest extends AbstractSequencerTest {
 
                 if (!entry1Found && "path1".equals(entryNode.getProperty(VdbLexicon.Entry.PATH).getString())) {
                     entry1Found = true;
-                    assertThat(entryNode.getProperty(VdbLexicon.Entry.DESCRIPTION).getString(), is("This is entry 1 description"));
+                    assertThat(entryNode.getProperty(VdbLexicon.Entry.DESCRIPTION).getString(), is(
+                            "This is entry 1 description"));
                     assertThat(entryNode.getProperty("drummer").getString(), is("Ringo"));
                     assertThat(entryNode.getProperty("guitar").getString(), is("John"));
                 } else if (!entry2Found && "path2".equals(entryNode.getProperty(VdbLexicon.Entry.PATH).getString())) {
                     entry2Found = true;
                     assertThat(entryNode.getProperty(VdbLexicon.Entry.PATH).getString(), is("path2"));
-                    assertThat(entryNode.getProperty(VdbLexicon.Entry.DESCRIPTION).getString(), is("This is entry 2 description"));
+                    assertThat(entryNode.getProperty(VdbLexicon.Entry.DESCRIPTION).getString(), is(
+                            "This is entry 2 description"));
                     assertThat(entryNode.getProperty("bass").getString(), is("Paul"));
                     assertThat(entryNode.getProperty("leadGuitar").getString(), is("George"));
                 } else {
@@ -340,7 +343,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertNotNull(modelImport);
             assertThat(modelImport.getPrimaryNodeType().getName(), is(CoreLexicon.JcrId.IMPORT));
             assertThat(modelImport.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
-            assertThat(modelImport.getProperty(CoreLexicon.JcrId.PRIMARY_METAMODEL_URI).getString(), is(RelationalLexicon.Namespace.URI));
+            assertThat(modelImport.getProperty(CoreLexicon.JcrId.PRIMARY_METAMODEL_URI).getString(), is(
+                    RelationalLexicon.Namespace.URI));
             assertThat(modelImport.getProperty(CoreLexicon.JcrId.MODEL_LOCATION).getString(), is("Books_Oracle.xmi"));
             assertThat(modelImport.getProperty(CoreLexicon.JcrId.PATH).getString(), is("/BooksProject/Books_Oracle.xmi"));
         }
@@ -364,7 +368,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
                     assertThat("Role name 1".equals(roleNames[0].getString()) || "Role name 1".equals(roleNames[1].getString()),
                                is(true));
                     assertThat("Another role name".equals(roleNames[0].getString())
-                               || "Another role name".equals(roleNames[1].getString()),
+                                       || "Another role name".equals(roleNames[1].getString()),
                                is(true));
                 }
 
@@ -390,7 +394,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
                 Node dataRoleNode = dataRolesGroupNode.getNode("MyDataRole");
                 assertNotNull(dataRoleNode);
                 assertThat(dataRoleNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.DATA_ROLE));
-                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.DESCRIPTION).getString(), is("This is a data role description"));
+                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.DESCRIPTION).getString(), is(
+                        "This is a data role description"));
                 assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.ALLOW_CREATE_TEMP_TABLES).getBoolean(), is(false));
                 assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.ANY_AUTHENTICATED).getBoolean(), is(false));
 
@@ -485,7 +490,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
         assertThat(outputNode.getNodes().getSize(), is(1L));
-        
+
         // verify model and table nodes
         Node modelNode = outputNode.getNode("HSQLDB.xmi");
         assertNotNull(modelNode);
@@ -514,7 +519,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         Node modelNode = outputNode.getNode("US_CustomerAccounts_VBL.xmi");
         assertNotNull(modelNode);
         assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.MODEL));
-        assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("Financials/VirtualBaseLayer/US_CustomerAccounts_VBL.xmi"));
+        assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is(
+                "Financials/VirtualBaseLayer/US_CustomerAccounts_VBL.xmi"));
     }
 
     @Test
@@ -533,7 +539,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("rest"));
             assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("java:/twitterDS"));
             assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_NAME).getString(), is("twitter"));
-            assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
+            assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(
+                    CoreLexicon.ModelType.PHYSICAL));
         }
 
         { // declarative virtual model
@@ -541,19 +548,21 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertNotNull(declarativeModelNode);
             assertThat(declarativeModelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.DECLARATIVE_MODEL));
             assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
-            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.METADATA_TYPE).getString(), is(VdbModel.DEFAULT_METADATA_TYPE));
-            assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.VIRTUAL));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.METADATA_TYPE).getString(), is(
+                    VdbModel.DEFAULT_METADATA_TYPE));
+            assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(
+                    CoreLexicon.ModelType.VIRTUAL));
 
             final String metadata = "CREATE VIRTUAL PROCEDURE getTweets(query varchar) RETURNS (created_on varchar(25),"
-                                    + " from_user varchar(25), to_user varchar(25),"
-                                    + " profile_image_url varchar(25), source varchar(25), text varchar(140)) AS"
-                                    + " select tweet.* from"
-                                    + " (call twitter.invokeHTTP(action => 'GET', endpoint =>querystring('',query as \"q\"))) w,"
-                                    + " XMLTABLE('results' passing JSONTOXML('myxml', w.result) columns"
-                                    + " created_on string PATH 'created_at'," + " from_user string PATH 'from_user',"
-                                    + " to_user string PATH 'to_user'," + " profile_image_url string PATH 'profile_image_url',"
-                                    + " source string PATH 'source'," + " text string PATH 'text') tweet;"
-                                    + " CREATE VIEW Tweet AS select * FROM twitterview.getTweets;";
+                    + " from_user varchar(25), to_user varchar(25),"
+                    + " profile_image_url varchar(25), source varchar(25), text varchar(140)) AS"
+                    + " select tweet.* from"
+                    + " (call twitter.invokeHTTP(action => 'GET', endpoint =>querystring('',query as \"q\"))) w,"
+                    + " XMLTABLE('results' passing JSONTOXML('myxml', w.result) columns"
+                    + " created_on string PATH 'created_at'," + " from_user string PATH 'from_user',"
+                    + " to_user string PATH 'to_user'," + " profile_image_url string PATH 'profile_image_url',"
+                    + " source string PATH 'source'," + " text string PATH 'text') tweet;"
+                    + " CREATE VIEW Tweet AS select * FROM twitterview.getTweets;";
             assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.MODEL_DEFINITION).getString(), is(metadata));
         }
     }

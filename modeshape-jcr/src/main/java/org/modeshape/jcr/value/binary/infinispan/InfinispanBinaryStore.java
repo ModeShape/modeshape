@@ -139,11 +139,11 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     protected final BinaryKey binaryKeyFromCacheKey( String key ) {
         String plainKey;
 
-        if ( isMetadataKey(key) ) {
+        if (isMetadataKey(key)) {
             plainKey = key.replace(META_SUFFIX, "");
-        } else if ( key.contains(DATA_SUFFIX) ) {
+        } else if (key.contains(DATA_SUFFIX)) {
             plainKey = key.replaceFirst(DATA_SUFFIX + "-\\d+$", "");
-        } else if ( key.contains(TEXT_SUFFIX) ) {
+        } else if (key.contains(TEXT_SUFFIX)) {
             plainKey = key.replaceFirst(TEXT_SUFFIX + "-\\d+$", "");
         } else {
             plainKey = key;
@@ -529,6 +529,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         Set<BinaryKey> allBinaryKeys = new HashSet<BinaryKey>();
 
         try {
+            @SuppressWarnings( "unchecked" )
             final List<Cache<String, ? extends Serializable>> caches = Arrays.asList(metadataCache, blobCache);
 
             for (Cache<String, ?> c : caches) {
@@ -553,7 +554,6 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
         return allBinaryKeys;
     }
-
 
     /**
      * Locks are created based upon metadata cache configuration

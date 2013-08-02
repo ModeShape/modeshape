@@ -63,7 +63,7 @@ public class OracleDdlParser extends StandardDdlParser
     /**
      * The Oracle parser identifier.
      */
-    private static final String ID = "ORACLE";
+    public static final String ID = "ORACLE";
 
     static List<String[]> oracleDataTypeStrings = new ArrayList<String[]>();
 

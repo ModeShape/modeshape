@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrLexicon;
@@ -209,7 +210,7 @@ public class NodeImportXmlHandlerTest {
     public void shouldParseXmlDocumentWithoutNamespacesUsingTypeAttributeValue() throws Exception {
         String typeAttribute = JcrConstants.JCR_PRIMARY_TYPE;
         String typeAttributeValue = JcrConstants.NT_UNSTRUCTURED;
-        handler = new NodeImportXmlHandler(parseDestination, null, typeAttribute, typeAttributeValue, null);
+        handler = new NodeImportXmlHandler(parseDestination, null, typeAttribute, typeAttributeValue, null, null);
         parse("xmlImport/docWithoutNamespaces.xml");
         // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
         String unstructPrimaryType = "jcr:primaryType=nt:unstructured";
@@ -229,25 +230,24 @@ public class NodeImportXmlHandlerTest {
         String nameAttribute = JcrConstants.JCR_NAME;
         String typeAttribute = JcrConstants.JCR_PRIMARY_TYPE;
         String typeAttributeValue = JcrConstants.NT_UNSTRUCTURED;
-        handler = new NodeImportXmlHandler(parseDestination, nameAttribute, typeAttribute, typeAttributeValue, null);
+        handler = new NodeImportXmlHandler(parseDestination, nameAttribute, typeAttribute, typeAttributeValue, null, null);
         parse("xmlImport/docWithNamespaces.xml");
-        // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
+        // Check the generated content; note that the attribute name DOES match
         String unstructPrimaryType = "jcr:primaryType=nt:unstructured";
-        String carPrimaryType = "jcr:primaryType={http://default.namespace.com}car";
         assertNode("c:Cars", unstructPrimaryType);
         assertNode("c:Cars/c:Hybrid", unstructPrimaryType);
-        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", carPrimaryType, "c:maker=Toyota", "c:model=Prius");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", carPrimaryType, "c:maker=Toyota", "c:model=Highlander");
-        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", carPrimaryType, "c:maker=Nissan", "c:model=Altima");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", unstructPrimaryType, "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", unstructPrimaryType, "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", unstructPrimaryType, "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Cars/c:Sports", unstructPrimaryType);
-        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", carPrimaryType, "c:maker=Aston Martin", "c:model=DB9");
-        assertNode("c:Cars/c:Sports/c:Infiniti G37", carPrimaryType, "c:maker=Infiniti", "c:model=G37");
+        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", unstructPrimaryType, "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Cars/c:Sports/c:Infiniti G37", unstructPrimaryType, "c:maker=Infiniti", "c:model=G37");
     }
 
     @Test
     public void shouldParseXmlDocumentWithNestedProperties() throws Exception {
         context.getNamespaceRegistry().register("jcr", "http://www.jcp.org/jcr/1.0");
-        handler = new NodeImportXmlHandler(parseDestination, JcrConstants.JCR_NAME, null, null, null);
+        handler = new NodeImportXmlHandler(parseDestination, JcrConstants.JCR_NAME, null, null, null, null);
         parse("xmlImport/docWithNestedProperties.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode("Cars");
@@ -281,8 +281,32 @@ public class NodeImportXmlHandlerTest {
         assertNode("folder/file2/jcr:content");
     }
 
+    @Test
+    @FixFor("MODE-1788")
+    public void shouldParseXmlDocumentWithMixinsCustomSeparator() throws Exception {
+        parse("xmlImport/docWithMixinsCustomSeparator.xml");
+        assertNode("cars", "jcr:mixinTypes=mix:created,mix:lastModified");
+    }
+
+    @Test
+    @FixFor("MODE-1788")
+    public void shouldParseXmlDocumentWithPropertiesCustomSeparator() throws Exception {
+        parse("xmlImport/docWithPropertiesCustomSeparator.xml");
+        assertNodeUsingSeparator("story", ";",
+                                 "title=Story with commas in the text lead and body text",
+                                 "lead=Lead text in attribute, split with a comma.",
+                                 "body=Body text in sub element, split by the comma.",
+                                 "multiBody=Body text in sub element; split by semicolon");
+    }
+
     private void assertNode( String path,
                              String... properties ) {
+      assertNodeUsingSeparator(path, ",", properties);
+    }
+
+    private void assertNodeUsingSeparator( String path,
+                                           String multiValueSeparator,
+                                           String... properties ) {
         Path expectedPath = context.getValueFactories().getPathFactory().create("/" + path);
 
         NodeImportXmlHandler.ImportElement element = parseResults.get(expectedPath);
@@ -301,7 +325,7 @@ public class NodeImportXmlHandlerTest {
                 Collection<String> actualPropertyValue = propertyName.equalsIgnoreCase(JcrConstants.JCR_MIXIN_TYPES) ? element.getMixins() : element.getProperties()
                                                                                                                                                     .get(propertyName);
                 assertNotNull(actualPropertyValue);
-                String[] values = propertyValue.split(",");
+                String[] values = propertyValue.split(multiValueSeparator);
                 for (String value : values) {
                     assertTrue("Expected property not found: " + value, actualPropertyValue.contains(value));
                 }

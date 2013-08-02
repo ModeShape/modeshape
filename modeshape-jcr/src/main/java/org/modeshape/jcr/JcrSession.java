@@ -418,6 +418,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return stringFactory().create(path);
     }
 
+    protected void releaseCachedNode( AbstractJcrNode node ) {
+        jcrNodes.remove(node.key(), node);
+    }
+
     /**
      * Obtain the {@link Node JCR Node} object for the node with the supplied key.
      * 
@@ -967,6 +971,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(destParentNode.getPath()));
         }
 
+        // Check whether external nodes are involved
+        validateMoveForExternalNodes(srcPath, destPath);
+
         // check whether the parent definition allows children which match the source
         final Name newChildName = destPath.getLastSegment().getName();
         destParentNode.validateChildNodeDefinition(newChildName, srcNode.getPrimaryTypeName(), true);
@@ -1004,6 +1011,64 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // Not expected ...
             String msg = JcrI18n.nodeNotFound.text(stringFactory().create(srcPath.getParent()), workspaceName());
             throw new PathNotFoundException(msg);
+        }
+    }
+
+    private void validateMoveForExternalNodes( Path srcPath,
+                                               Path destPath ) throws RepositoryException {
+        AbstractJcrNode srcNode = node(srcPath);
+        String rootSourceKey = getRootNode().key().getSourceKey();
+
+        Set<NodeKey> sourceNodeKeys = cache().getNodeKeysAtAndBelow(srcNode.key());
+        boolean sourceContainsExternalNodes = false;
+        String externalSourceKey = null;
+        for (NodeKey sourceNodeKey : sourceNodeKeys) {
+            if (!sourceNodeKey.getSourceKey().equalsIgnoreCase(rootSourceKey)) {
+                externalSourceKey = sourceNodeKey.getSourceKey();
+                sourceContainsExternalNodes = true;
+                break;
+            }
+        }
+
+        AbstractJcrNode destNode = null;
+        try {
+            destNode = node(destPath);
+        } catch (PathNotFoundException e) {
+            // the destPath does not point to an existing node, so we'll use the parent
+            destNode = node(destPath.getParent());
+        }
+        String externalTargetKey = null;
+        boolean targetIsExternal = false;
+        if (!destNode.key().getSourceKey().equalsIgnoreCase(rootSourceKey)) {
+            targetIsExternal = true;
+            externalTargetKey = destNode.key().getSourceKey();
+        }
+
+        Connectors connectors = repository().runningState().connectors();
+        if (sourceContainsExternalNodes && !targetIsExternal) {
+            String sourceName = connectors.getSourceNameAtKey(externalSourceKey);
+            throw new RepositoryException(JcrI18n.unableToMoveSourceContainExternalNodes.text(srcPath, sourceName));
+        } else if (!sourceContainsExternalNodes && targetIsExternal) {
+            String sourceName = connectors.getSourceNameAtKey(externalTargetKey);
+            throw new RepositoryException(JcrI18n.unableToMoveTargetContainExternalNodes.text(srcPath, sourceName));
+        } else if (targetIsExternal) {
+            // both source and target are external nodes, but belonging to different sources
+            assert externalTargetKey != null;
+            if (!externalTargetKey.equalsIgnoreCase(srcNode.key().getSourceKey())) {
+                String sourceNodeSourceName = connectors.getSourceNameAtKey(srcNode.key().getSourceKey());
+                String targetNodeSourceName = connectors.getSourceNameAtKey(externalTargetKey);
+                throw new RepositoryException(JcrI18n.unableToMoveSourceTargetMismatch.text(sourceNodeSourceName,
+                                                                                            targetNodeSourceName));
+            }
+
+            // both source and target belong to the same source, but one of them is a projection root
+            if (connectors.hasExternalProjection(srcPath.getLastSegment().getString(), srcNode.key().toString())) {
+                throw new RepositoryException(JcrI18n.unableToMoveProjection.text(srcPath));
+            }
+
+            if (connectors.hasExternalProjection(destPath.getLastSegment().getString(), destNode.key().toString())) {
+                throw new RepositoryException(JcrI18n.unableToMoveProjection.text(destPath));
+            }
         }
     }
 
@@ -1637,6 +1702,16 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     @Override
     public String toString() {
         return cache.toString();
+    }
+
+    @Override
+    public String decode( final String localName ) {
+        return Path.JSR283_DECODER.decode(localName);
+    }
+
+    @Override
+    public String encode( final String localName ) {
+        return Path.JSR283_ENCODER.encode(localName);
     }
 
     /**

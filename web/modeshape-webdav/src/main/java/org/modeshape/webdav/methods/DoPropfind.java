@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Vector;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -130,6 +131,7 @@ public class DoPropfind extends AbstractMethod {
 
                 HashMap<String, String> namespaces = new HashMap<String, String>();
                 namespaces.put("DAV:", "D");
+                namespaces.putAll(store.getCustomNamespaces(transaction, path));
 
                 if (propertyFindType == FIND_BY_PROPERTY) {
                     propertyFindType = 0;
@@ -296,9 +298,10 @@ public class DoPropfind extends AbstractMethod {
         switch (type) {
 
             case FIND_ALL_PROP:
-
                 generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
+
                 generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
+                writeCustomProperties(transaction, generatedXML, path, true, propertiesVector);
 
                 generatedXML.writeProperty("DAV::creationdate", creationdate);
                 generatedXML.writeElement("DAV::displayname", XMLWriter.OPENING);
@@ -332,10 +335,10 @@ public class DoPropfind extends AbstractMethod {
                 break;
 
             case FIND_PROPERTY_NAMES:
-
                 generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
                 generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
 
+                writeCustomProperties(transaction, generatedXML, path, false, propertiesVector);
                 generatedXML.writeElement("DAV::creationdate", XMLWriter.NO_CONTENT);
                 generatedXML.writeElement("DAV::displayname", XMLWriter.NO_CONTENT);
                 if (!isFolder) {
@@ -365,6 +368,8 @@ public class DoPropfind extends AbstractMethod {
 
                 generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
                 generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
+
+                writeCustomProperties(transaction, generatedXML, path, true, propertiesVector);
 
                 Enumeration<String> properties = propertiesVector.elements();
 
@@ -594,4 +599,24 @@ public class DoPropfind extends AbstractMethod {
         lo = null;
     }
 
+    private void writeCustomProperties( ITransaction transaction,
+                                        XMLWriter generatedXML,
+                                        String path,
+                                        boolean includeValue,
+                                        Vector<String> propertiesFilter ) {
+        Map<String, Object> customProperties = store.getCustomProperties(transaction, path);
+        if (customProperties.isEmpty()) {
+            return;
+        }
+        for (String propertyName : customProperties.keySet()) {
+            if (propertiesFilter != null && !propertiesFilter.contains(propertyName)) {
+                continue;
+            }
+            if (includeValue) {
+                generatedXML.writeProperty(propertyName, customProperties.get(propertyName).toString());
+            } else {
+                generatedXML.writeElement(propertyName, XMLWriter.NO_CONTENT);
+            }
+        }
+    }
 }

@@ -36,6 +36,7 @@ import org.infinispan.schematic.document.Document;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -153,6 +154,15 @@ public abstract class Connector {
     private ConnectorChangeSetFactory connectorChangedSetFactory;
 
     /**
+     * The {@link Environment} instance in which the repository operates. This should be used by connectors which need
+     * to perform class-path related operations.
+     * <p>
+     * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>     *
+     */
+    private Environment environment;
+
+    /**
      * Ever connector is expected to have a no-argument constructor, although the class should never initialize any of the data at
      * this time. Instead, all initialization should be performed in the {@link #initialize} method.
      */
@@ -265,6 +275,15 @@ public abstract class Connector {
     }
 
     /**
+     * Returns the repository environment that was set during connector initialization
+     *
+     * @return a {@code non-null} {@link Environment} instace.
+     */
+    protected Environment getEnvironment() {
+        return environment;
+    }
+
+    /**
      * Initialize the connector. This is called automatically by ModeShape once for each Connector instance, and should not be
      * called by the connector. By the time this method is called, ModeShape will hav already set the {@link #context},
      * {@link #logger}, {@link #name}, and {@link #repositoryName} plus any fields that match configuration properties for the
@@ -323,12 +342,13 @@ public abstract class Connector {
     public abstract Document getDocumentById( String id );
 
     /**
-     * Returns the id of an external node located at the given path.
+     * Returns the id of an external node located at the given external path within the connector's exposed tree of content.
      * 
-     * @param path a {@code non-null} string representing an exeternal path.
+     * @param externalPath a {@code non-null} string representing an external path, or "/" for the top-level node exposed by the
+     *        connector
      * @return either the id of the document or {@code null}
      */
-    public abstract String getDocumentId( String path );
+    public abstract String getDocumentId( String externalPath );
 
     /**
      * Return the path(s) of the external node with the given identifier. The resulting paths are from the point of view of the

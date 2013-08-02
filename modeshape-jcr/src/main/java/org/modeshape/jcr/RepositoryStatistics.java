@@ -43,11 +43,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.collection.Collections;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.monitor.DurationActivity;
 import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.History;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
+import org.modeshape.jcr.api.monitor.Statistics;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
 import org.modeshape.jcr.api.value.DateTime;
@@ -97,10 +99,6 @@ import org.modeshape.jcr.value.DateTimeFactory;
 @ThreadSafe
 public class RepositoryStatistics implements RepositoryMonitor {
 
-    private static final Set<DurationMetric> ALL_DURATION_METRICS = Collections.unmodifiableSet(EnumSet.allOf(DurationMetric.class));
-    private static final Set<ValueMetric> ALL_VALUE_METRICS = Collections.unmodifiableSet(EnumSet.allOf(ValueMetric.class));
-    private static final Set<Window> ALL_WINDOWS = Collections.unmodifiableSet(EnumSet.allOf(Window.class));
-
     /**
      * The maximum number of longest-running queries to retain.
      */
@@ -135,9 +133,6 @@ public class RepositoryStatistics implements RepositoryMonitor {
     protected static final long DURATION_OF_60_SECONDS_WINDOW_IN_SECONDS = TimeUnit.SECONDS.convert(MetricHistory.MAX_SECONDS
                                                                                                     * CAPTURE_INTERVAL_IN_SECONDS,
                                                                                                     TimeUnit.SECONDS);
-
-    private static final DurationActivity[] NO_DURATION_RECORDS = new DurationActivity[0];
-    private static final Statistics[] NO_STATISTICS = new Statistics[0];
 
     private final ConcurrentMap<DurationMetric, DurationHistory> durations = new ConcurrentHashMap<DurationMetric, DurationHistory>();
     private final ConcurrentMap<ValueMetric, ValueHistory> values = new ConcurrentHashMap<ValueMetric, ValueHistory>();
@@ -178,6 +173,16 @@ public class RepositoryStatistics implements RepositoryMonitor {
             values.put(metric, new ValueHistory(resetUponRollup));
         }
 
+        // Initialize the start times in a threadsafe manner ...
+        DateTime now = timeFactory.create();
+        this.weeksStartTime.compareAndSet(null, now);
+        this.daysStartTime.compareAndSet(null, now);
+        this.hoursStartTime.compareAndSet(null, now);
+        this.minutesStartTime.compareAndSet(null, now);
+        this.secondsStartTime.compareAndSet(null, now);
+        rollup();
+
+        // Then schedule the rollup to be done at a fixed rate ...
         this.rollupFuture.set(service.scheduleAtFixedRate(new Runnable() {
             @SuppressWarnings( "synthetic-access" )
             @Override
@@ -251,17 +256,17 @@ public class RepositoryStatistics implements RepositoryMonitor {
 
     @Override
     public Set<DurationMetric> getAvailableDurationMetrics() {
-        return ALL_DURATION_METRICS;
+        return RepositoryMonitor.ALL_DURATION_METRICS;
     }
 
     @Override
     public Set<ValueMetric> getAvailableValueMetrics() {
-        return ALL_VALUE_METRICS;
+        return RepositoryMonitor.ALL_VALUE_METRICS;
     }
 
     @Override
     public Set<Window> getAvailableWindows() {
-        return ALL_WINDOWS;
+        return RepositoryMonitor.ALL_WINDOWS;
     }
 
     @Override
@@ -270,8 +275,8 @@ public class RepositoryStatistics implements RepositoryMonitor {
         assert metric != null;
         assert windowInTime != null;
         ValueHistory history = values.get(metric);
-        Statistics[] stats = history != null ? history.getHistory(windowInTime) : NO_STATISTICS;
-        return new History(stats, mostRecentTimeFor(windowInTime), windowInTime);
+        Statistics[] stats = history != null ? history.getHistory(windowInTime) : Statistics.NO_STATISTICS;
+        return new HistoryImpl(stats, mostRecentTimeFor(windowInTime), windowInTime);
     }
 
     @Override
@@ -280,15 +285,15 @@ public class RepositoryStatistics implements RepositoryMonitor {
         assert metric != null;
         assert windowInTime != null;
         DurationHistory history = durations.get(metric);
-        Statistics[] stats = history != null ? history.getHistory(windowInTime) : NO_STATISTICS;
-        return new History(stats, mostRecentTimeFor(windowInTime), windowInTime);
+        Statistics[] stats = history != null ? history.getHistory(windowInTime) : Statistics.NO_STATISTICS;
+        return new HistoryImpl(stats, mostRecentTimeFor(windowInTime), windowInTime);
     }
 
     @Override
     public DurationActivity[] getLongestRunning( DurationMetric metric ) {
         assert metric != null;
         DurationHistory history = durations.get(metric);
-        return history != null ? history.getLongestRunning() : NO_DURATION_RECORDS;
+        return history != null ? history.getLongestRunning() : DurationActivity.NO_DURATION_RECORDS;
     }
 
     /**
@@ -390,14 +395,14 @@ public class RepositoryStatistics implements RepositoryMonitor {
     @ThreadSafe
     protected static abstract class MetricHistory {
 
-        private static final int MAX_SECONDS = 60 / (int)CAPTURE_INTERVAL_IN_SECONDS;
-        private static final int MAX_MINUTES = 60;
-        private static final int MAX_HOURS = 24;
-        private static final int MAX_DAYS = 7;
-        private static final int MAX_WEEKS = 52;
+        protected static final int MAX_SECONDS = 60 / (int)CAPTURE_INTERVAL_IN_SECONDS;
+        protected static final int MAX_MINUTES = 60;
+        protected static final int MAX_HOURS = 24;
+        protected static final int MAX_DAYS = 7;
+        protected static final int MAX_WEEKS = 52;
 
         private final Statistics[] seconds = new Statistics[MAX_SECONDS];
-        private final Statistics[] minutes = new Statistics[MAX_HOURS];
+        private final Statistics[] minutes = new Statistics[MAX_MINUTES];
         private final Statistics[] hours = new Statistics[MAX_HOURS];
         private final Statistics[] days = new Statistics[MAX_DAYS];
         private final Statistics[] weeks = new Statistics[MAX_WEEKS];
@@ -510,8 +515,8 @@ public class RepositoryStatistics implements RepositoryMonitor {
                 // Copy the array in two parts ...
                 final int numAfterStartingIndex = size - startingIndex;
                 final int numBeforeStartingIndex = size - numAfterStartingIndex;
-                System.arraycopy(stats, startingIndex, results, 0, numAfterStartingIndex);
-                System.arraycopy(stats, 0, results, numAfterStartingIndex, numBeforeStartingIndex);
+                if (numAfterStartingIndex > 0) System.arraycopy(stats, startingIndex, results, 0, numAfterStartingIndex);
+                if (numBeforeStartingIndex > 0) System.arraycopy(stats, 0, results, numAfterStartingIndex, numBeforeStartingIndex);
             }
             return results;
         }
@@ -548,14 +553,14 @@ public class RepositoryStatistics implements RepositoryMonitor {
      * The {@link MetricHistory} specialization used for recording the statistics for activities with measured durations.
      */
     @Immutable
-    public static final class DurationActivity implements org.modeshape.jcr.api.monitor.DurationActivity {
+    public static final class DurationActivityImpl implements DurationActivity {
         protected final long duration;
         protected final Map<String, String> payload;
         protected final TimeUnit timeUnit;
 
-        protected DurationActivity( long duration,
-                                    TimeUnit timeUnit,
-                                    Map<String, String> payload ) {
+        protected DurationActivityImpl( long duration,
+                                        TimeUnit timeUnit,
+                                        Map<String, String> payload ) {
             this.duration = duration;
             this.payload = payload;
             this.timeUnit = timeUnit;
@@ -572,7 +577,7 @@ public class RepositoryStatistics implements RepositoryMonitor {
         }
 
         @Override
-        public int compareTo( org.modeshape.jcr.api.monitor.DurationActivity that ) {
+        public int compareTo( DurationActivity that ) {
             if (this == that) return 0;
             // Return the opposite of natural ordering, so smallest durations come first ...
             return (int)(this.duration - that.getDuration(timeUnit));
@@ -599,7 +604,7 @@ public class RepositoryStatistics implements RepositoryMonitor {
             this.durations.set(duration1);
             this.timeUnit = timeUnit;
             this.retentionSize = retentionSize;
-            this.largestDurations = new PriorityBlockingQueue<RepositoryStatistics.DurationActivity>(this.retentionSize + 5);
+            this.largestDurations = new PriorityBlockingQueue<DurationActivity>(this.retentionSize + 5);
         }
 
         /**
@@ -613,7 +618,7 @@ public class RepositoryStatistics implements RepositoryMonitor {
                              TimeUnit timeUnit,
                              Map<String, String> payload ) {
             value = this.timeUnit.convert(value, timeUnit);
-            this.durations.get().add(new DurationActivity(value, this.timeUnit, payload));
+            this.durations.get().add(new DurationActivityImpl(value, this.timeUnit, payload));
         }
 
         @Override
@@ -635,7 +640,7 @@ public class RepositoryStatistics implements RepositoryMonitor {
             long[] values = new long[numRecords];
             int i = 0;
             for (DurationActivity record : records) {
-                values[i++] = record != null ? record.duration : 0L;
+                values[i++] = record != null ? record.getDuration(TimeUnit.MILLISECONDS) : 0L;
                 this.largestDurations.add(record);
                 while (this.largestDurations.size() > this.retentionSize) {
                     this.largestDurations.poll(); // remove the smallest duration from the front of the queue
@@ -659,7 +664,7 @@ public class RepositoryStatistics implements RepositoryMonitor {
      * @return the core statistics; never null
      */
     public static Statistics statisticsFor( long value ) {
-        return new Statistics(1, value, value, value, 0.0d);
+        return new StatisticsImpl(1, value, value, value, 0.0d);
     }
 
     /**
@@ -687,7 +692,7 @@ public class RepositoryStatistics implements RepositoryMonitor {
             distance = mean - value;
             varianceSquared = varianceSquared + (distance * distance);
         }
-        return new Statistics(length, min, max, mean, Math.sqrt(varianceSquared));
+        return new StatisticsImpl(length, min, max, mean, Math.sqrt(varianceSquared));
     }
 
     /**
@@ -723,10 +728,10 @@ public class RepositoryStatistics implements RepositoryMonitor {
             meanDelta = stat.getMean() - mean;
             variance = variance + (stat.getCount() * (stat.getVariance() + (meanDelta * meanDelta)));
         }
-        return new Statistics(count, min, max, mean, variance);
+        return new StatisticsImpl(count, min, max, mean, variance);
     }
 
-    private static final Statistics EMPTY_STATISTICS = new Statistics(0, 0L, 0L, 0.0d, 0.0d);
+    private static final Statistics EMPTY_STATISTICS = new StatisticsImpl(0, 0L, 0L, 0.0d, 0.0d);
 
     /**
      * The statistics for a sample of values. The statistics include the {@link #getMinimum() minimum}, {@link #getMaximum()
@@ -739,7 +744,7 @@ public class RepositoryStatistics implements RepositoryMonitor {
      * </p>
      */
     @Immutable
-    public static final class Statistics implements org.modeshape.jcr.api.monitor.Statistics {
+    static final class StatisticsImpl implements Statistics {
 
         private final int count;
         private final long maximum;
@@ -747,9 +752,9 @@ public class RepositoryStatistics implements RepositoryMonitor {
         private final double mean;
         private final double variance; // just the square of the standard deviation
 
-        protected Statistics( int count,
-                              long max,
+        protected StatisticsImpl( int count,
                               long min,
+                              long max,
                               double mean,
                               double variance ) {
             this.count = count;
@@ -810,14 +815,14 @@ public class RepositoryStatistics implements RepositoryMonitor {
      * @see RepositoryStatistics#getHistory(ValueMetric, Window)
      */
     @Immutable
-    public static final class History implements org.modeshape.jcr.api.monitor.History {
+    static final class HistoryImpl implements History {
         private final Statistics[] stats;
         private final DateTime endTime;
         private final Window window;
 
-        protected History( Statistics[] stats,
-                           DateTime endTime,
-                           Window window ) {
+        protected HistoryImpl( Statistics[] stats,
+                               DateTime endTime,
+                               Window window ) {
             this.stats = stats;
             this.endTime = endTime;
             this.window = window;

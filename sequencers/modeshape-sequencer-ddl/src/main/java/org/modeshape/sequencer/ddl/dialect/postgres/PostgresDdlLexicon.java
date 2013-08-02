@@ -112,7 +112,6 @@ public class PostgresDdlLexicon  extends StandardDdlLexicon {
     public static final String TYPE_COPY_STATEMENT 					= Namespace.PREFIX + ":copyStatement";
     public static final String TYPE_DEALLOCATE_STATEMENT				= Namespace.PREFIX + ":deallocateStatement";
     public static final String TYPE_DECLARE_STATEMENT 				= Namespace.PREFIX + ":declareStatement";
-    public static final String TYPE_DISCARD_STATEMENT 				= Namespace.PREFIX + ":discardStatement";
     public static final String TYPE_EXPLAIN_STATEMENT 				= Namespace.PREFIX + ":explainStatement";
     public static final String TYPE_FETCH_STATEMENT 					= Namespace.PREFIX + ":fetchStatement";
     public static final String TYPE_LISTEN_STATEMENT 					= Namespace.PREFIX + ":listenStatement";
@@ -140,7 +139,6 @@ public class PostgresDdlLexicon  extends StandardDdlLexicon {
     public static final String TYPE_GRANT_ON_LANGUAGE_STATEMENT       = Namespace.PREFIX + ":grantOnLanguageStatement";
     public static final String TYPE_GRANT_ON_SCHEMA_STATEMENT         = Namespace.PREFIX + ":grantOnSchemaStatement";
     public static final String TYPE_GRANT_ON_TABLESPACE_STATEMENT     = Namespace.PREFIX + ":grantOnTablespaceStatement";
-    public static final String TYPE_GRANT_ON_PROCEDURE_STATEMENT      = Namespace.PREFIX + ":grantOnProcedureStatement";
     public static final String TYPE_GRANT_ROLES_STATEMENT             = Namespace.PREFIX + ":grantRolesStatement";
     
     public static final String TYPE_RENAME_COLUMN 					= Namespace.PREFIX + ":renamedColumn";

@@ -214,6 +214,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
                 // Copy the content ...
                 IoUtil.write(input, output, bufferSize);
+
+                // Close the file ...
+                originalRaf.close();
             } finally {
                 try {
                     fileLock.unlock();

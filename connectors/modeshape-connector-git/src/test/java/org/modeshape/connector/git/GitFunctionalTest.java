@@ -145,7 +145,6 @@ public class GitFunctionalTest {
 
     @Test
     public void shouldGetFirstDozenCommitsInHistoryForTag() throws Exception {
-        print = true;
         Ref ref = repository.getRef("modeshape-3.0.0.Final");
         ref = repository.peel(ref);
         RevWalk walker = new RevWalk(repository);
@@ -228,19 +227,16 @@ public class GitFunctionalTest {
 
     @Test
     public void shouldGetTopLevelDirectoryContentForCommit() throws Exception {
-        print = true;
         printTreeContent("modeshape-3.0.0.Final", "", true);
     }
 
     @Test
     public void shouldGetDirectoryContentsAtPathForCommit() throws Exception {
-        print = true;
         printTreeContent("modeshape-3.0.0.Final", "modeshape-jcr/src", true);
     }
 
     @Test
     public void shouldGetFileInfoAtPathInContent() throws Exception {
-        print = true;
         printTreeContent("modeshape-3.0.0.Final", "modeshape-jcr/src/main/java/org/modeshape/jcr/XmlNodeTypeReader.java", false);
     }
 
@@ -289,7 +285,10 @@ public class GitFunctionalTest {
                     // Is this the most efficient way to do this, 'cuz it's expensive?
                     RevCommit lastCommit = git.log().addPath(parentPath).call().iterator().next();
                     print("commitMessage", lastCommit.getShortMessage());
-                    print("commiter", lastCommit.getAuthorIdent().getName());
+                    PersonIdent authorIdent = lastCommit.getAuthorIdent();
+                    if (authorIdent != null) {
+                        print("commiter", authorIdent.getName());
+                    }
                 }
             }
         } finally {

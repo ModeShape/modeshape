@@ -25,6 +25,7 @@
 package org.modeshape.jcr;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -43,6 +44,7 @@ import javax.naming.event.NamingEvent;
 import javax.naming.event.NamingExceptionEvent;
 import javax.naming.spi.ObjectFactory;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.StringUtil;
 import org.xml.sax.SAXException;
 
 /**
@@ -64,7 +66,7 @@ import org.xml.sax.SAXException;
  *   &lt;/GlobalNamingResources&gt;
  * </pre>
  * 
- * This will create a repository loaded from the or file &quot;/path/to/configRepository.xml&quot; and return the JCR repository
+ * This will create a repository loaded from the or file &quot;/path/to/configRepository.json&quot; and return the JCR repository
  * named &quot;Test Repository Source&quot;. The name of the repository will be used to more quickly look up the repository if it
  * has been previously loaded.
  * </p>
@@ -76,12 +78,13 @@ import org.xml.sax.SAXException;
  */
 public class JndiRepositoryFactory implements ObjectFactory {
 
+    protected static final Logger LOG = Logger.getLogger(JndiRepositoryFactory.class);
+
     private static final String CONFIG_FILE = "configFile";
     private static final String CONFIG_FILES = "configFiles";
     private static final String REPOSITORY_NAME = "repositoryName";
 
-    private static final ModeShapeEngine engine = new ModeShapeEngine();
-    protected static final Logger log = Logger.getLogger(JndiRepositoryFactory.class);
+    private static final ModeShapeEngine ENGINE = new ModeShapeEngine();
 
     /**
      * Method that shuts down the JDNI repository factory's engine, usually for testing purposes.
@@ -92,7 +95,7 @@ public class JndiRepositoryFactory implements ObjectFactory {
      *         not running), or false if the engine is still running.
      */
     static Future<Boolean> shutdown() {
-        return engine.shutdown();
+        return ENGINE.shutdown();
     }
 
     /**
@@ -118,19 +121,19 @@ public class JndiRepositoryFactory implements ObjectFactory {
                                                              final Name jndiName )
         throws IOException, RepositoryException, NamingException {
 
-        if (repositoryName != null) {
+        if (!StringUtil.isBlank(repositoryName)) {
             // Make sure the engine is running ...
-            engine.start();
+            ENGINE.start();
 
             // See if we can shortcut the process by using the name ...
             try {
-                JcrRepository repository = engine.getRepository(repositoryName);
+                JcrRepository repository = ENGINE.getRepository(repositoryName);
                 switch (repository.getState()) {
                     case STARTING:
                     case RUNNING:
                         return repository;
                     default:
-                        log.error(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown, repositoryName);
+                        LOG.error(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown, repositoryName);
                         return null;
                 }
             } catch (NoSuchRepositoryException e) {
@@ -143,16 +146,17 @@ public class JndiRepositoryFactory implements ObjectFactory {
         }
 
         RepositoryConfiguration config = RepositoryConfiguration.read(configFileName);
-        if (repositoryName == null) repositoryName = config.getName();
-        else if (!repositoryName.equals(config.getName())) {
-            // The repository
-            log.error(JcrI18n.repositoryNameDoesNotMatchConfigurationName, repositoryName, config.getName(), configFileName);
+        if (repositoryName == null) {
+            repositoryName = config.getName();
+        } else if (!repositoryName.equals(config.getName())) {
+            LOG.warn(JcrI18n.repositoryNameDoesNotMatchConfigurationName, repositoryName, config.getName(), configFileName);
         }
 
         // Try to deploy and start the repository ...
-        JcrRepository repository = engine.deploy(config);
+        ENGINE.start();
+        JcrRepository repository = ENGINE.deploy(config);
         try {
-            engine.startRepository(repository.getName()).get();
+            ENGINE.startRepository(repository.getName()).get();
         } catch (InterruptedException e) {
             Thread.interrupted();
             throw new RepositoryException(e);
@@ -162,55 +166,59 @@ public class JndiRepositoryFactory implements ObjectFactory {
 
         // Register the JNDI listener, to shut down the repository when removed from JNDI ...
         if (nameCtx instanceof EventContext) {
-            EventContext evtCtx = (EventContext)nameCtx;
-
-            NamespaceChangeListener listener = new NamespaceChangeListener() {
-
-                @Override
-                public void namingExceptionThrown( NamingExceptionEvent evt ) {
-                    evt.getException().printStackTrace();
-                }
-
-                @Override
-                public void objectAdded( NamingEvent evt ) {
-                    // do nothing ...
-                }
-
-                @SuppressWarnings( "synthetic-access" )
-                @Override
-                public void objectRemoved( NamingEvent evt ) {
-                    Object oldObject = evt.getOldBinding().getObject();
-                    if (!(oldObject instanceof JcrRepository)) return;
-
-                    JcrRepository repository = (JcrRepository)oldObject;
-                    String repoName = repository.getName();
-                    try {
-                        engine.shutdownRepository(repoName).get();
-                    } catch (NoSuchRepositoryException e) {
-                        // Ignore this ...
-                    } catch (InterruptedException ie) {
-                        log.error(ie, JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
-                        // Thread.interrupted();
-                    } catch (ExecutionException e) {
-                        log.error(e.getCause(), JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
-                    } finally {
-                        // Try to shutdown the repository only if there are no more running repositories.
-                        // IOW, shutdown but do not force shutdown of running repositories ...
-                        engine.shutdown(false); // no need to block on the futured returned by 'shutdown(boolean)'
-                    }
-                }
-
-                @Override
-                public void objectRenamed( NamingEvent evt ) {
-                    // do nothing ...
-                }
-
-            };
-
-            evtCtx.addNamingListener(jndiName, EventContext.OBJECT_SCOPE, listener);
+            registerNamingListener((EventContext)nameCtx, jndiName);
         }
 
         return repository;
+    }
+
+    private static void registerNamingListener( EventContext evtCtx,
+                                                final Name jndiName ) throws NamingException {
+
+        NamespaceChangeListener listener = new NamespaceChangeListener() {
+
+            @Override
+            public void namingExceptionThrown( NamingExceptionEvent evt ) {
+                evt.getException().printStackTrace();
+            }
+
+            @Override
+            public void objectAdded( NamingEvent evt ) {
+                // do nothing ...
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void objectRemoved( NamingEvent evt ) {
+                Object oldObject = evt.getOldBinding().getObject();
+                if (!(oldObject instanceof JcrRepository)) return;
+
+                JcrRepository repository = (JcrRepository)oldObject;
+                String repoName = repository.getName();
+                try {
+                    ENGINE.shutdownRepository(repoName).get();
+                } catch (NoSuchRepositoryException e) {
+                    // Ignore this ...
+                } catch (InterruptedException ie) {
+                    LOG.error(ie, JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
+                    // Thread.interrupted();
+                } catch (ExecutionException e) {
+                    LOG.error(e.getCause(), JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
+                } finally {
+                    // Try to shutdown the repository only if there are no more running repositories.
+                    // IOW, shutdown but do not force shutdown of running repositories ...
+                    ENGINE.shutdown(false); // no need to block on the futured returned by 'shutdown(boolean)'
+                }
+            }
+
+            @Override
+            public void objectRenamed( NamingEvent evt ) {
+                // do nothing ...
+            }
+
+        };
+
+        evtCtx.addNamingListener(jndiName, EventContext.OBJECT_SCOPE, listener);
     }
 
     /**
@@ -255,31 +263,31 @@ public class JndiRepositoryFactory implements ObjectFactory {
         RefAddr configFilesRef = ref.get(CONFIG_FILES);
         Set<String> configFiles = configFilesRef != null ? parseStrings(configFilesRef.getContent().toString()) : null;
 
-        engine.start();
-        if (repoName != null && configFile != null) {
+        if (!StringUtil.isBlank(repoName) && !StringUtil.isBlank(configFile)) {
             // Start the named repository ...
             return getRepository(configFile, repoName, nameCtx, name);
         }
-        if (configFiles != null) {
+        else if (configFiles != null) {
             // Start the configured repositories ...
             for (String file : configFiles) {
                 getRepository(file, null, nameCtx, name);
             }
-            return engine;
+            return ENGINE;
         }
         return null;
     }
 
     protected Set<String> parseStrings( String value ) {
-        if (value == null) return null;
+        if (StringUtil.isBlank(value)) {
+            return Collections.emptySet();
+        }
         value = value.trim();
-        if (value == null) return null;
         Set<String> result = new HashSet<String>();
         for (String strValue : value.split(",")) {
-            if (strValue == null) continue;
-            strValue = strValue.trim();
-            if (strValue == null) continue;
-            result.add(strValue);
+            if (StringUtil.isBlank(strValue)) {
+                continue;
+            }
+            result.add(strValue.trim());
         }
         return result;
     }

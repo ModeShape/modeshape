@@ -82,10 +82,7 @@
     </dependencies>
 
     <modules>
-        <!--
-            See MODE-1934
-            <module>modeshape-sequencer-msoffice</module>
-        -->
+        <module>modeshape-sequencer-msoffice</module>
         <module>modeshape-sequencer-images</module>
         <module>modeshape-sequencer-java</module>
         <module>modeshape-sequencer-zip</module>

@@ -52,6 +52,11 @@
 
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-jdbc-metadata</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-images</artifactId>
         </dependency>
 
@@ -65,14 +70,10 @@
             <artifactId>modeshape-sequencer-java</artifactId>
         </dependency>
 
-        <!--
-            See MODE-1934
-
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-msoffice</artifactId>
-            </dependency>
-       -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-msoffice</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
@@ -236,9 +237,6 @@
                     <type>zip</type>
                 </dependency>
 
-                <!--
-                See MODE-1934
-
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-msoffice</artifactId>
@@ -246,7 +244,7 @@
                     <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
-                -->
+
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-teiid</artifactId>

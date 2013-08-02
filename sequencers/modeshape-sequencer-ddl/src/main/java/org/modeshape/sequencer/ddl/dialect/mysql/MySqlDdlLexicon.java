@@ -36,12 +36,10 @@ public class MySqlDdlLexicon  extends StandardDdlLexicon {
 
     // MIXINS
     
-    public static final String TYPE_CREATE_DATABASE_STATEMENT 		= Namespace.PREFIX + ":createDatabaseStatement";
     public static final String TYPE_CREATE_DEFINER_STATEMENT 			= Namespace.PREFIX + ":createDefinerStatement";
     public static final String TYPE_CREATE_EVENT_STATEMENT 			= Namespace.PREFIX + ":createEventStatement";
     public static final String TYPE_CREATE_FUNCTION_STATEMENT 		= Namespace.PREFIX + ":createFunctionStatement";
     public static final String TYPE_CREATE_INDEX_STATEMENT 			= Namespace.PREFIX + ":createIndexStatement";
-    public static final String TYPE_CREATE_LOGFILE_GROUP_STATEMENT 	= Namespace.PREFIX + ":createFunctionStatement";
     public static final String TYPE_CREATE_PROCEDURE_STATEMENT 		= Namespace.PREFIX + ":createProcedureStatement";
     public static final String TYPE_CREATE_SERVER_STATEMENT 			= Namespace.PREFIX + ":createFunctionStatement";
     public static final String TYPE_CREATE_TABLESPACE_STATEMENT 		= Namespace.PREFIX + ":createTablespaceStatement";
@@ -62,13 +60,11 @@ public class MySqlDdlLexicon  extends StandardDdlLexicon {
     public static final String TYPE_ALTER_DEFINER_STATEMENT		= Namespace.PREFIX + ":alterDefinerStatement";
     public static final String TYPE_ALTER_EVENT_STATEMENT			= Namespace.PREFIX + ":alterEventStatement";
     public static final String TYPE_ALTER_FUNCTION_STATEMENT 		= Namespace.PREFIX + ":alterFunctionStatement";
-    public static final String TYPE_ALTER_INDEX_STATEMENT 		= Namespace.PREFIX + ":alterIndexStatement";
     public static final String TYPE_ALTER_LOGFILE_GROUP_STATEMENT	= Namespace.PREFIX + ":alterLogfileGroupStatement";
     public static final String TYPE_ALTER_PROCEDURE_STATEMENT 	= Namespace.PREFIX + ":alterProcedureStatement";
     public static final String TYPE_ALTER_SERVER_STATEMENT		= Namespace.PREFIX + ":alterServerStatement";
     public static final String TYPE_ALTER_SCHEMA_STATEMENT		= Namespace.PREFIX + ":alterSchemaStatement";
     public static final String TYPE_ALTER_TABLESPACE_STATEMENT 	= Namespace.PREFIX + ":alterTablespaceStatement";
-    public static final String TYPE_ALTER_TRIGGER_STATEMENT 		= Namespace.PREFIX + ":alterTriggerStatement";
     public static final String TYPE_ALTER_VIEW_STATEMENT 			= Namespace.PREFIX + ":alterViewStatement";
     
     public static final String TYPE_RENAME_DATABASE_STATEMENT 	= Namespace.PREFIX + ":renameDatabaseStatement";

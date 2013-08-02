@@ -40,10 +40,6 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-text</artifactId>
         </dependency>
-        <!--dependency>
-          <groupId>org.modeshape</groupId>
-          <artifactId>modeshape-sequencer-zip</artifactId>
-        </dependency-->
         <!--
         Logging (require SLF4J API for compiling, but use Logback binding for running)
         -->

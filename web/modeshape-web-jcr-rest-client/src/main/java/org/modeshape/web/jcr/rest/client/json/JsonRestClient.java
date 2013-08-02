@@ -355,6 +355,7 @@ public final class JsonRestClient implements IRestClient {
                 systemWs = wspace;
             }
         }
+        assert systemWs != null;
         if (workspace == null) {
             workspace = systemWs;
         }

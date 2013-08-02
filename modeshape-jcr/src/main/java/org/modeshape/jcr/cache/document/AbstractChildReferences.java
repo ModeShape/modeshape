@@ -184,7 +184,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
         return new PatternIterator<ChildReference>(iterator(), namePatterns) {
             @Override
             protected String matchable( ChildReference value ) {
-                return value.getString(registry);
+                return value.getSegmentAsString(registry);
             }
         };
     }
@@ -196,7 +196,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
         return new PatternIterator<ChildReference>(iterator(context), namePatterns) {
             @Override
             protected String matchable( ChildReference value ) {
-                return value.getString(registry);
+                return value.getSegmentAsString(registry);
             }
         };
     }

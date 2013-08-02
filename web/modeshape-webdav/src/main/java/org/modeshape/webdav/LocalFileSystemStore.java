@@ -15,9 +15,6 @@
  */
 package org.modeshape.webdav;
 
-import org.modeshape.common.i18n.TextI18n;
-import org.modeshape.common.logging.Logger;
-import org.modeshape.webdav.exceptions.WebdavException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -28,14 +25,25 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import org.modeshape.common.i18n.TextI18n;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
  * Reference Implementation of WebdavStore
- *
+ * 
  * @author joa
  * @author re
+ * @author hchiorea@redhat.com
  */
 public class LocalFileSystemStore implements IWebdavStore {
 
@@ -224,4 +232,130 @@ public class LocalFileSystemStore implements IWebdavStore {
         return so;
     }
 
+    @Override
+    public Map<String, String> setCustomProperties( ITransaction transaction,
+                                                    String resourceUri,
+                                                    Map<String, Object> propertiesToSet,
+                                                    List<String> propertiesToRemove ) {
+        LOG.trace("LocalFileSystemStore.setCustomProperties(" + resourceUri + ")");
+        File propertiesFile = propertiesFileForResource(resourceUri);
+        try {
+            if (!propertiesFile.exists() && !propertiesToSet.isEmpty()) {
+                propertiesFile.createNewFile();
+            }
+
+            if (!propertiesFile.exists()) {
+                return null;
+            }
+
+            Map<String, Object> updatedProperties = readExistingProperties(propertiesFile);
+            for (String propertyToRemove : propertiesToRemove) {
+                updatedProperties.remove(propertyToRemove);
+            }
+            updatedProperties.putAll(propertiesToSet);
+
+            if (updatedProperties.isEmpty()) {
+                FileUtil.delete(propertiesFile);
+            } else {
+                writeProperties(propertiesFile, updatedProperties);
+            }
+        } catch (IOException e) {
+            throw new WebdavException(e);
+        }
+        return null;
+    }
+
+    private File propertiesFileForResource( String resourceUri ) {
+        File file = new File(root, resourceUri);
+        if (!file.exists()) {
+            throw new WebdavException(resourceUri + " does not represent an existing file or directory");
+        }
+        File propertiesFileParent = file.isFile() ? file.getParentFile() : file;
+        if (!propertiesFileParent.canWrite()) {
+            throw new WebdavException("Cannot write into the " + propertiesFileParent.getAbsolutePath()
+                                      + " folder. Make sure that the FS permissions are correct");
+        }
+        String propertiesFileName = file.getName() + "_webdav.properties";
+        return new File(propertiesFileParent, propertiesFileName);
+    }
+
+    private Map<String, Object> readExistingProperties( File propertiesFile ) throws IOException {
+        Map<String, Object> properties = new HashMap<String, Object>();
+        String fileContent = IoUtil.read(propertiesFile);
+        if (StringUtil.isBlank(fileContent)) {
+            return properties;
+        }
+        String[] keyValuePairs = fileContent.split(";");
+        for (String keyValuePair : keyValuePairs) {
+            String[] keyValue = keyValuePair.split("=");
+            if (keyValue.length != 2) {
+                continue;
+            }
+            properties.put(keyValue[0], valueFromString(keyValue[1]));
+        }
+        return properties;
+    }
+
+    private Object valueFromString( String value ) {
+        if (value.startsWith("[") && value.endsWith("]")) {
+            value = value.replaceAll("\\[", "").replaceAll("\\]", "");
+            List<Object> array = new ArrayList<Object>();
+            for (String element : value.split(",")) {
+                array.add(valueFromString(element));
+            }
+            return array;
+        }
+        return value;
+    }
+
+    private void writeProperties( File propertiesFile,
+                                  Map<String, Object> properties ) throws IOException {
+        StringBuilder content = new StringBuilder();
+        for (Iterator<Map.Entry<String, Object>> it = properties.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<String, Object> entry = it.next();
+            content.append(entry.getKey()).append("=").append(valueToString(entry.getValue()));
+            if (it.hasNext()) {
+                content.append(";");
+            }
+        }
+
+        IoUtil.write(content.toString(), propertiesFile);
+    }
+
+    private String valueToString( Object value ) {
+        if (value instanceof List) {
+            StringBuilder builder = new StringBuilder("[");
+            for (Iterator<?> it = ((List<?>)value).iterator(); it.hasNext();) {
+                builder.append(valueToString(it.next()));
+                if (it.hasNext()) {
+                    builder.append(",");
+                }
+            }
+            builder.append("]");
+            return builder.toString();
+        }
+        return value.toString();
+    }
+
+    @Override
+    public Map<String, Object> getCustomProperties( ITransaction transaction,
+                                                    String resourceUri ) {
+        LOG.trace("LocalFileSystemStore.getCustomProperties(" + resourceUri + ")");
+        try {
+            File propertiesFile = propertiesFileForResource(resourceUri);
+            if (propertiesFile.exists() && propertiesFile.canRead()) {
+                return readExistingProperties(propertiesFile);
+            }
+            return Collections.emptyMap();
+        } catch (IOException e) {
+            throw new WebdavException(e);
+        }
+    }
+
+    @Override
+    public Map<String, String> getCustomNamespaces( ITransaction transaction,
+                                                    String resourceUri ) {
+        // the default FS based implementation does not use custom namespaces
+        return Collections.emptyMap();
+    }
 }

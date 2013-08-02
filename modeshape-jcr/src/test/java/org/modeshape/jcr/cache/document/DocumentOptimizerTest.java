@@ -33,6 +33,7 @@ import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.ChildReference;
@@ -43,7 +44,16 @@ import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
 
-public class DocumentTranslatorTest extends AbstractSessionCacheTest {
+public class DocumentOptimizerTest extends AbstractSessionCacheTest {
+
+    private DocumentOptimizer optimizer;
+
+    @Before
+    @Override
+    public void beforeEach() {
+        super.beforeEach();
+        this.optimizer = new DocumentOptimizer(workspaceCache.documentStore());
+    }
 
     @Override
     protected SessionCache createSessionCache( ExecutionContext context,
@@ -59,7 +69,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
         EditableDocument doc = entry.editDocumentContent();
         EditableArray children = doc.getArray(DocumentTranslator.CHILDREN);
         String nextBlock = doc.getDocument(DocumentTranslator.CHILDREN_INFO).getString(DocumentTranslator.NEXT_BLOCK);
-        boolean changed = workspaceCache.translator().splitChildren(key, doc, children, 100, 50, true, nextBlock);
+        boolean changed = optimizer.splitChildren(key, doc, children, 100, 50, true, nextBlock);
         assertThat(changed, is(false));
     }
 
@@ -70,7 +80,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
         EditableDocument doc = entry.editDocumentContent();
         EditableArray children = doc.getArray(DocumentTranslator.CHILDREN);
         String nextBlock = doc.getDocument(DocumentTranslator.CHILDREN_INFO).getString(DocumentTranslator.NEXT_BLOCK);
-        workspaceCache.translator().mergeChildren(key, doc, children, true, nextBlock);
+        optimizer.mergeChildren(key, doc, children, true, nextBlock);
 
         // Refetch the document, which should no longer be segmented ...
         entry = workspaceCache.documentStore().get(key.toString());
@@ -98,7 +108,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
         NodeKey key = nodeB.getKey();
         SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
         EditableDocument doc = entry.editDocumentContent();
-        workspaceCache.translator().optimizeChildrenBlocks(key, doc, 9, 5);
+        optimizer.optimizeChildrenBlocks(key, doc, 9, 5);
 
         print(false);
         print(doc, true);
@@ -118,8 +128,8 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
         NodeKey key = nodeB.getKey();
         SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
         EditableDocument doc = entry.editDocumentContent();
-        workspaceCache.translator().optimizeChildrenBlocks(key, doc, 5, 3); // will merge into a single block ...
-        workspaceCache.translator().optimizeChildrenBlocks(key, doc, 5, 3); // will split into two blocks ...
+        optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will merge into a single block ...
+        optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will split into two blocks ...
 
         print(false);
         print(doc, true);
@@ -131,7 +141,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
 
         // Make it optimum to start out ...
         NodeKey key = nodeB.getKey();
-        workspaceCache.translator().optimizeChildrenBlocks(key, null, 5, 2); // will merge into a single block ...
+        optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will merge into a single block ...
         // Save the session, otherwise the database is inconsistent after the optimize operation
         session1.save();
         nodeB = check(session1).mutableNode("/childB");
@@ -152,14 +162,14 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
             print(false);
             print("\nOptimizing...");
             print(document(key), true);
-            workspaceCache.translator().optimizeChildrenBlocks(key, null, 5, 2); // will split into blocks ...
+            optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will split into blocks ...
             print("\nOptimized...");
             print(document(key), true);
             print(false);
         }
 
         // Optimize the storage ...
-        workspaceCache.translator().optimizeChildrenBlocks(key, null, 5, 2); // will split into blocks ...
+        optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will split into blocks ...
 
         print(false);
         print(document(key), true);

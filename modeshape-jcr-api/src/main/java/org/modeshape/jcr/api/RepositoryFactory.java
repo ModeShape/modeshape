@@ -24,10 +24,9 @@
 package org.modeshape.jcr.api;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.Repository;
 
 /**
  * An extension to the standard {@link javax.jcr.RepositoryFactory} interface, with ModeShape-specific constants and additional
@@ -127,7 +126,7 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory, Reposito
      * For example:
      * 
      * <pre>
-     * String configUrl = &quot;file://path/to/configFile.xml&quot;; // URL that points to your configuration file
+     * String configUrl = &quot;file://path/to/configFile.json&quot;; // URL that points to your configuration file
      * String repoName = &quot;myRepository&quot;; // Name of your repository defined within the configuration file
      * 
      * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
@@ -159,12 +158,15 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory, Reposito
      * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
      * the {@link Future#get(long, TimeUnit)} method can be called to block for a maximum amount of time.
      * </p>
-     * 
+     *
      * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
      *         when {@link Future#get() getting} the repository from the future, where the exception is wrapped in a
-     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         {@link java.util.concurrent.ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
      *         not running), or false if the engine is still running.
+     *
+     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
      */
+    @Deprecated
     public Future<Boolean> shutdown();
 
     /**
@@ -184,13 +186,31 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory, Reposito
      * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
      * the {@link Future#get(long, TimeUnit)} method can be called to block for a maximum amount of time.
      * </p>
-     * 
+     *
      * @param timeout the maximum time per engine to allow for shutdown
      * @param unit the time unit of the timeout argument
      * @return <tt>true</tt> if all engines completely shut down and <tt>false</tt> if the timeout elapsed before it was shut down
      *         completely
      * @throws InterruptedException if interrupted while waiting
+     *
+     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
      */
+    @Deprecated
     public boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException;
+
+
+    /**
+     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
+     */
+    @Override
+    @Deprecated
+    Set<String> getRepositoryNames();
+
+    /**
+     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
+     */
+    @Override
+    @Deprecated
+    javax.jcr.Repository getRepository( String repositoryName ) throws javax.jcr.RepositoryException;
 }

@@ -38,7 +38,6 @@ import org.junit.Test;
 public class StopwatchTest {
 
     private Stopwatch stopwatch;
-    private long totalPauseTimeInMillis;
 
     @Before
     public void beforeEach() {
@@ -48,7 +47,6 @@ public class StopwatchTest {
     private void pause( int numberOfMilliseconds ) {
         try {
             Thread.sleep(numberOfMilliseconds);
-            this.totalPauseTimeInMillis += numberOfMilliseconds;
         } catch (InterruptedException e) {
             fail("Error while sleeping for " + numberOfMilliseconds + " milliseconds");
         }

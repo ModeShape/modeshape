@@ -295,5 +295,11 @@ abstract class StatementParser implements DdlConstants {
 
         return id;
     }
+    
+    /**
+     * 
+     * @param rootNode the top level {@link AstNode}; may not be null
+     */
+	abstract void postProcess(AstNode rootNode);
 
 }

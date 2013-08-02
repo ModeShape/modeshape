@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -53,6 +54,83 @@ public class InfinispanUtil {
         // prevent instantiation ...
     }
 
+    public static enum Location {
+        /** In all processes */
+        EVERYWHERE,
+        /** In the local process only, even if the cache is distributed */
+        LOCALLY;
+    }
+
+    /**
+     * Utility to run the supplied callable in all the processes where the cache is being run.
+     * 
+     * @param <K> the type of key used in the cache
+     * @param <V> the type of value used in the cache
+     * @param <T> the type of result
+     * @param cache the cache
+     * @param location the location where the callable should be run; if null, {@link Location#LOCALLY} is used
+     * @param callable the callable
+     * @param combiner the component that can combine multiple results of type <i>T</i> into a single result
+     * @return the result of the operation
+     * @throws InterruptedException if the process is interrupted
+     * @throws ExecutionException if there is an error while getting executing the operation
+     */
+    public static <K, V, T> T execute( Cache<K, V> cache,
+                                       Location location,
+                                       DistributedCallable<K, V, T> callable,
+                                       Combiner<T> combiner ) throws InterruptedException, ExecutionException {
+        if (location == null) location = Location.LOCALLY;
+
+        DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
+        boolean shared = cache.getCacheConfiguration().loaders().shared();
+        T result = null;
+        if (!shared) {
+            // store is not shared so every node must return key list of the store
+            List<Future<T>> futures = null;
+            switch (location) {
+                case EVERYWHERE:
+                    futures = distributedExecutor.submitEverywhere(callable);
+                    break;
+                case LOCALLY:
+                    futures = Collections.singletonList(distributedExecutor.submit(callable));
+                    break;
+            }
+
+            while (futures != null && !futures.isEmpty()) {
+                // Get the next future that is ready ...
+                Iterator<Future<T>> futureIter = futures.iterator();
+                while (futureIter.hasNext()) {
+                    Future<T> future = futureIter.next();
+                    try {
+                        // But done't wait too long for this future ...
+                        T value = future.get(100, TimeUnit.MILLISECONDS);
+                        // We got some keys, so this future is done and should be removed from our list ...
+                        futureIter.remove();
+                        result = combiner.combine(result, value);
+                    } catch (TimeoutException e) {
+                        // continue;
+                    }
+                }
+                if (futures.isEmpty()) break;
+            }
+        } else {
+            // store is shared, so we can short-circuit the logic and just run locally; otherwise, if distributed
+            // each process will see the all of the keys ...
+            result = distributedExecutor.submit(callable).get();
+        }
+        return result;
+    }
+
+    /**
+     * The interface that defines how the results should be merged
+     * 
+     * @param <T>
+     */
+    public static interface Combiner<T> {
+        T combine( T priorResult,
+                   T newResult ) throws InterruptedException, ExecutionException;
+    }
+
     /**
      * Get all of the keys in the cache.
      * 
@@ -64,59 +142,29 @@ public class InfinispanUtil {
      * @throws InterruptedException if the process is interrupted
      * @throws ExecutionException if there is an error while getting all keys
      */
-    @SuppressWarnings("unchecked")
-    public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache ) throws CacheLoaderException, InterruptedException, ExecutionException {
+    public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache )
+        throws CacheLoaderException, InterruptedException, ExecutionException {
         LOGGER.debug("getAllKeys of {0}", cache.getName());
 
-        Set<K> cacheKeys;
-
-        DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
-        final GetAllKeys<K, V> task = new GetAllKeys<K, V>();
-
-        boolean shared = cache.getCacheConfiguration().loaders().shared();
-        if(!shared){
-            // store is not shared so every node must return key list of the store
-            @SuppressWarnings( "synthetic-access" )
-            List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(task);
-            cacheKeys = mergeResults(futures);
-        } else {
-            // store is shared, so we can short-circuit some of the merging logic
-            cacheKeys = distributedExecutor.submit(task).get();
-        }
-
+        GetAllKeys<K, V> task = new GetAllKeys<K, V>();
+        KeyMerger<K> merger = new KeyMerger<K>();
+        Set<K> cacheKeys = execute(cache, Location.EVERYWHERE, task, merger);
         return new IteratorSequence<K>(cacheKeys.iterator());
     }
 
     /**
-     * Since keys can appear more than one time e.g. multiple owners in a distributed cache,
-     * they all must be merged into a Set.
-     * @param futures the list of futures whose results should be merged
+     * Since keys can appear more than one time e.g. multiple owners in a distributed cache, they all must be merged into a Set.
+     * 
      * @param <K> the type of key
-     * @return the set of keys
-     * @throws InterruptedException if the process is interrupted
-     * @throws ExecutionException if there is an error while getting all keys
      */
-    private static <K> Set<K> mergeResults(List<Future<Set<K>>> futures) throws InterruptedException, ExecutionException {
-        // todo use ConcurrentHashSet and merge as the results appear
-        Set<K> allKeys = new HashSet<K>();
-        while (true) {
-            // Get the next future that is ready ...
-            Iterator<Future<Set<K>>> futureIter = futures.iterator();
-            while (futureIter.hasNext()) {
-                Future<Set<K>> future = futureIter.next();
-                try {
-                    // But done't wait too long for this future ...
-                    Set<K> keys = future.get(100, TimeUnit.MILLISECONDS);
-                    // We got some keys, so this future is done and should be removed from our list ...
-                    futureIter.remove();
-                    allKeys.addAll(keys);
-                } catch (TimeoutException e) {
-                    // continue;
-                }
-            }
-            if (futures.isEmpty()) break;
+    protected static class KeyMerger<K> implements Combiner<Set<K>> {
+        @Override
+        public Set<K> combine( Set<K> priorResult,
+                               Set<K> newResult ) {
+            if (priorResult == null) priorResult = new HashSet<K>();
+            if (newResult != null) priorResult.addAll(newResult);
+            return priorResult;
         }
-        return allKeys;
     }
 
     /**
@@ -157,13 +205,13 @@ public class InfinispanUtil {
     }
 
     /**
-     * A {@link DistributedCallable} implementation that returns the set of keys in an Infinispan cache.
-     * The keys inside cache store are ignored.
+     * A {@link DistributedCallable} implementation that returns the set of keys in an Infinispan cache. The keys inside cache
+     * store are ignored.
      * 
      * @param <K> the type of key
      * @param <V> the type of value
      */
-    private static final class GetAllMemoryKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
+    protected static final class GetAllMemoryKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
         private static final long serialVersionUID = 1L;
 
         private Cache<K, V> cache;
@@ -181,12 +229,13 @@ public class InfinispanUtil {
     }
 
     /**
-     * A {@link DistributedCallable} implementation that returns the set of keys in an Infinispan cache which are stored in memory.
-     *
+     * A {@link DistributedCallable} implementation that returns the set of keys in an Infinispan cache which are stored in
+     * memory.
+     * 
      * @param <K> the type of key
      * @param <V> the type of value
      */
-    private static final class GetAllKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
+    protected static final class GetAllKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
         private static final long serialVersionUID = 1L;
 
         private Cache<K, V> cache;
@@ -198,14 +247,16 @@ public class InfinispanUtil {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings( "unchecked" )
         public Set<K> call() throws Exception {
-            CacheLoaderManager cacheLoaderManager = cache.getAdvancedCache().getComponentRegistry().getComponent(CacheLoaderManager.class);
-            if(cacheLoaderManager == null){
+            CacheLoaderManager cacheLoaderManager = cache.getAdvancedCache()
+                                                         .getComponentRegistry()
+                                                         .getComponent(CacheLoaderManager.class);
+            if (cacheLoaderManager == null) {
                 return cache.keySet();
             }
             CacheLoader cacheLoader = cacheLoaderManager.getCacheLoader();
-            if(cacheLoader == null){
+            if (cacheLoader == null) {
                 return cache.keySet();
             }
             // load only these keys, which are not already in memory

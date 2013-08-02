@@ -24,16 +24,6 @@
 
     <!--
          This parameter provides the fully-qualified name of a class that implements
-         the o.m.w.jcr.spi.RepositoryProvider interface.  It is required
-         by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
-     -->
-    <context-param>
-        <param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
-        <param-value>org.modeshape.web.jcr.spi.FactoryRepositoryProvider</param-value>
-    </context-param>
-
-    <!--
-         This parameter provides the fully-qualified name of a class that implements
          the o.m.w.jcr.webdav.ContentMapper interface.  If no value is provided for this
          parameter, o.m.w.jcr.webdav.DefaultContentMapper will be used.
      -->

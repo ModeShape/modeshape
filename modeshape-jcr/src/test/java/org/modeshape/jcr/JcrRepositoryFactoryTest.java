@@ -23,30 +23,48 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
+/**
+ * Unit test for {@link JcrRepositoryFactory}
+ */
+@SuppressWarnings( "deprecation" )
 public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
 
     private String url;
     private Map<String, String> params;
     private Repository repository;
+    private RepositoryFactory repositoryFactory;
+
+    @Before
+    public void beforeEach() throws Exception {
+        Iterator<javax.jcr.RepositoryFactory> repositoryFactoryIterator = ServiceLoader.load(javax.jcr.RepositoryFactory.class).iterator();
+        if (!repositoryFactoryIterator.hasNext()) {
+            fail("No RepositoryFactory implementation located");
+        }
+        repositoryFactory = (RepositoryFactory)repositoryFactoryIterator.next();
+    }
 
     @After
     public void afterEach() throws Exception {
         // Shut down all repositories after each test, since multiple tests may use the same URL ...
-        JcrRepositoryFactory.shutdownAll().get(10, TimeUnit.SECONDS);
+        repositoryFactory.shutdown(10, TimeUnit.SECONDS);
     }
 
     @Test
@@ -56,6 +74,30 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
 
         repository = repositoryFor(params);
         assertThat(repository, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldNotReturnRepositoryFromConfigurationFileIfRepositoryNameMatches() throws RepositoryException {
+        url = "file:src/test/resources/config/simple-repo-config.json";
+        params = new HashMap<String, String>();
+        params.put(RepositoryFactory.URL, url);
+        params.put(RepositoryFactory.REPOSITORY_NAME, "Another Test Repository");
+
+        repository = repositoryFor(params);
+        assertThat(repository, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldNotReturnRepositoryFromConfigurationFileIfRepositoryNameDiffers() throws RepositoryException {
+        url = "file:src/test/resources/config/simple-repo-config.json";
+        params = new HashMap<String, String>();
+        params.put(RepositoryFactory.URL, url);
+        repository = repositoryFor(params);
+        assertThat(repository, is(notNullValue()));
+
+        params.put(RepositoryFactory.REPOSITORY_NAME, "some name");
+        repository = repositoryFor(params);
+        assertThat(repository, is(nullValue()));
     }
 
     @Test
@@ -109,12 +151,6 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
     }
 
     protected Repository repositoryFor( Map<String, String> parameters ) throws RepositoryException {
-        Repository repository;
-        for (javax.jcr.RepositoryFactory factory : ServiceLoader.load(javax.jcr.RepositoryFactory.class)) {
-            repository = factory.getRepository(parameters);
-            if (repository != null) return repository;
-        }
-
-        return null;
+        return repositoryFactory.getRepository(parameters);
     }
 }

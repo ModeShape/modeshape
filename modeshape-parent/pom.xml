@@ -206,34 +206,14 @@
               them to be empty so that Maven applies them via filtering to the
               resources. If a project needs files filtered, however, make sure to
               include a 'testResources' fragment in the 'build' section of the
-              child project POM to say which files need to be filtered. See the
-              "modeshape-integration" or "extensions/modeshape-connector-store-jpa"
-              project POMs for examples.
+              child project POM to say which files need to be filtered.
           -->
-        <jpaSource.dialect/>
-        <jpaSource.driverClassName/>
-        <jpaSource.url/>
-        <jpaSource.username/>
-        <jpaSource.password/>
-        <jpaSource.maximumConnectionsInPool>2</jpaSource.maximumConnectionsInPool>
-        <jpaSource.minimumConnectionsInPool>1</jpaSource.minimumConnectionsInPool>
-        <jpaSource.numberOfConnectionsToAcquireAsNeeded>1</jpaSource.numberOfConnectionsToAcquireAsNeeded>
-        <jpaSource.maximumSizeOfStatementCache>100</jpaSource.maximumSizeOfStatementCache>
-        <jpaSource.maximumConnectionIdleTimeInSeconds>10</jpaSource.maximumConnectionIdleTimeInSeconds>
-        <jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
-        <jpaSource.largeValueSizeInBytes>150</jpaSource.largeValueSizeInBytes>
-        <jpaSource.autoGenerateSchema>create</jpaSource.autoGenerateSchema>
-        <jpaSource.compressData>true</jpaSource.compressData>
-        <jpaSource.cacheTimeToLiveInMilliseconds/>
-        <jpaSource.creatingWorkspacesAllowed/>
-        <jpaSource.defaultWorkspaceName/>
-        <jpaSource.predefinedWorkspaceNames/>
-        <jpaSource.model/>
-        <jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
-        <jpaSource.retryLimit>3</jpaSource.retryLimit>
-        <jpaSource.rootNodeUuid/>
-        <jpaSource.showSql>false</jpaSource.showSql>
-        <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
+        <dataSource.maximumConnectionsInPool>2</dataSource.maximumConnectionsInPool>
+        <dataSource.minimumConnectionsInPool>1</dataSource.minimumConnectionsInPool>
+        <dataSource.numberOfConnectionsToAcquireAsNeeded>1</dataSource.numberOfConnectionsToAcquireAsNeeded>
+        <dataSource.maximumSizeOfStatementCache>100</dataSource.maximumSizeOfStatementCache>
+        <dataSource.maximumConnectionIdleTimeInSeconds>10</dataSource.maximumConnectionIdleTimeInSeconds>
+        <dataSource.retryLimit>0</dataSource.retryLimit>
 
         <!--By default, we use whatever the underlying machine supports. However, certain sub-modules may change this -->
         <preferIpv4>true</preferIpv4>
@@ -274,12 +254,12 @@
         <jboss.logging.version>3.1.2.GA</jboss.logging.version>
 
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
-        <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
         <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
-        <jdbc.hsqldb.version>1.8.0.2</jdbc.hsqldb.version>
-        <jdbc.h2.version>1.2.124</jdbc.h2.version>
-        <jdbc.postgresql.version>8.4-701.jdbc3</jdbc.postgresql.version>
-        <jdbc.mysql5.version>5.1.7</jdbc.mysql5.version>
+        <jdbc.hsqldb.version>2.2.9</jdbc.hsqldb.version>
+        <jdbc.h2.version>1.3.172</jdbc.h2.version>
+        <jdbc.postgresql9.version>9.2-1002.jdbc4</jdbc.postgresql9.version>
+        <jdbc.postgresql8.version>8.2-504.jdbc3</jdbc.postgresql8.version>
+        <jdbc.mysql5.version>5.1.25</jdbc.mysql5.version>
         <jdbc.db2v9.version>3.58.82</jdbc.db2v9.version>
         <jdbc.db2v9.license.version>3.57.86</jdbc.db2v9.license.version>
         <jdbc.oracle10g.version>10.0.2.0</jdbc.oracle10g.version>
@@ -291,12 +271,13 @@
         <javax.jacc.version>1.0.0.Final</javax.jacc.version>
         <resteasy.version>2.3.6.Final</resteasy.version>
         <commons.logging.version>1.1.1</commons.logging.version>
+        <commons.naming.version>20031116.223527</commons.naming.version>
         <jettison.version>1.3.1</jettison.version>
         <httpclient.version>4.1.2</httpclient.version>
         <sardine.version>146</sardine.version>
         <javaassist.version>3.11.0.GA</javaassist.version>
         <jaudiotagger.version>2.0.3</jaudiotagger.version>
-        <poi.version>3.8</poi.version>
+        <poi.version>3.10-beta1</poi.version>
         <jcommander.version>1.5</jcommander.version>
         <wsdl4j.version>1.6.2</wsdl4j.version>
         <bson4jackson.version>1.1.2</bson4jackson.version>
@@ -383,6 +364,8 @@
 
         <!--Skip long running tests by default-->
         <skipLongRunningTests>true</skipLongRunningTests>
+        <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
+        <cassandra-cql-driver>1.0.0</cassandra-cql-driver>
     </properties>
 
     <profiles>
@@ -437,9 +420,7 @@
             ###################################################################
         -->
 
-        <!--
-              The default test environment is H2
-          -->
+        <!-- The default test environment is H2 -->
         <profile>
             <id>default_dbms</id>
             <activation>
@@ -456,11 +437,254 @@
                 </dependency>
             </dependencies>
             <properties>
-                <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
+                <database>h2</database>
                 <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
                 <dataSource.url>jdbc:h2:mem:${project.build.directory}/db/h2/modeshape</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password/>
+            </properties>
+        </profile>
+
+        <!-- The HSQLDB test environment -->
+        <profile>
+            <id>hsqldb</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>hsqldb</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>hsqldb</groupId>
+                    <artifactId>hsqldb</artifactId>
+                    <version>${jdbc.hsqldb.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>hsqldb</database>
+                <dataSource.driverClassName>org.hsqldb.jdbcDriver</dataSource.driverClassName>
+                <dataSource.url>jdbc:hsqldb:mem:modeshape</dataSource.url>
+                <dataSource.username>sa</dataSource.username>
+                <dataSource.password />
+            </properties>
+        </profile>
+
+        <!-- The MySQL5 test environment -->
+        <profile>
+            <id>mysql5</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>mysql5</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <version>${jdbc.mysql5.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>mysql5</database>
+                <dataSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</dataSource.dialect>
+                <dataSource.driverClassName>com.mysql.jdbc.Driver</dataSource.driverClassName>
+                <dataSource.url>jdbc:mysql://vmg02.mw.lab.eng.bos.redhat.com/modeshape</dataSource.url>
+                <dataSource.username>modeshape</dataSource.username>
+                <dataSource.password>modeshape</dataSource.password>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>mysql5_local</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>mysql5</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <version>${jdbc.mysql5.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>mysql5</database>
+                <dataSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</dataSource.dialect>
+                <dataSource.driverClassName>com.mysql.jdbc.Driver</dataSource.driverClassName>
+                <dataSource.url>jdbc:mysql://localhost:3306/modeshape</dataSource.url>
+                <dataSource.username>root</dataSource.username>
+                <dataSource.password></dataSource.password>
+            </properties>
+        </profile>
+
+        <!-- The PostgreSQL test environment -->
+        <profile>
+            <id>postgresql8</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>postgresql8</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${jdbc.postgresql8.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>postgresql8</database>
+                <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
+                <dataSource.url>jdbc:postgresql://localhost:5432/modeshape</dataSource.url>
+                <dataSource.username>postgres</dataSource.username>
+                <dataSource.password>postgres</dataSource.password>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>postgresql9_local</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>postgresql9</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${jdbc.postgresql9.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>postgresql9</database>
+                <dataSource.dialect>org.hibernate.dialect.PostgreSQLDialect</dataSource.dialect>
+                <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
+                <dataSource.url>jdbc:postgresql://localhost:5432/modeshape</dataSource.url>
+                <dataSource.username>postgres</dataSource.username>
+                <dataSource.password>postgres</dataSource.password>
+            </properties>
+        </profile>
+
+        <!-- The Oracle10g test environment -->
+        <profile>
+            <id>oracle10g</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>oracle10g</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>ojdbc14</artifactId>
+                    <version>${jdbc.oracle10g.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>oracle10g</database>
+                <dataSource.dialect>org.hibernate.dialect.Oracle10gDialect</dataSource.dialect>
+                <dataSource.driverClassName>oracle.jdbc.driver.OracleDriver</dataSource.driverClassName>
+                <dataSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:QAORA10</dataSource.url>
+                <dataSource.username>modeshape</dataSource.username>
+                <dataSource.password>modeshape</dataSource.password>
+            </properties>
+        </profile>
+
+        <!-- The Oracle11g test environment -->
+        <profile>
+            <id>oracle11g</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>oracle11g</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>ojdbc6</artifactId>
+                    <version>${jdbc.oracle11g.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>oracle11g</database>
+                <dataSource.driverClassName>oracle.jdbc.driver.OracleDriver</dataSource.driverClassName>
+                <dataSource.url>jdbc:oracle:thin:@dev04.mw.lab.eng.bos.redhat.com:1521:qaora11</dataSource.url>
+                <dataSource.username>modeshape</dataSource.username>
+                <dataSource.password>modeshape</dataSource.password>
+            </properties>
+        </profile>
+
+        <!-- The Sybase 15 test environment -->
+        <profile>
+            <id>sybase15</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>sybase15</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.sybase</groupId>
+                    <artifactId>jconnect</artifactId>
+                    <version>${jdbc.sybase15.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>sybase15</database>
+                <dataSource.dialect>org.hibernate.dialect.SybaseDialect</dataSource.dialect>
+                <dataSource.driverClassName>com.sybase.jdbc3.jdbc.SybDriver</dataSource.driverClassName>
+                <dataSource.url>jdbc:sybase:Tds:vmg07.mw.lab.eng.bos.redhat.com:5000/modeshape</dataSource.url>
+                <dataSource.username>modeshape</dataSource.username>
+                <dataSource.password>modeshape</dataSource.password>
+            </properties>
+        </profile>
+
+        <!-- The SQLServer2008 (MS JDBC) test environment -->
+        <profile>
+            <id>mssql2008</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>mssql2008</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.microsoft.sqlserver</groupId>
+                    <artifactId>msjdbc</artifactId>
+                    <version>${jdbc.mssql2008.version}</version>
+                    <classifier>4</classifier>
+                    <!--
+                        Must use the JDBC-4 driver on JDK6
+                    -->
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>mssql2008</database>
+                <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.SqlServerMetadataCollector</metadata.collectorClassName>
+                <dataSource.dialect>org.hibernate.dialect.SQLServerDialect</dataSource.dialect>
+                <dataSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</dataSource.driverClassName>
+                <dataSource.url>jdbc:sqlserver://vmg04.mw.lab.eng.bos.redhat.com</dataSource.url>
+                <dataSource.username>modeshape</dataSource.username>
+                <dataSource.password>modeshape</dataSource.password>
             </properties>
         </profile>
 
@@ -653,8 +877,9 @@
                             <value>${skipLongRunningTests}</value>
                         </property>
                     </systemProperties>
-                    <argLine>-Xmx1524M ${debug.argline} -XX:MaxPermSize=256M</argLine>
+                    <argLine>-Xmx1524M ${debug.argline} -XX:MaxPermSize=256M -Djava.awt.headless=true</argLine>
                     <runOrder>alphabetical</runOrder>
+                    <useFile>false</useFile>
                 </configuration>
             </plugin>
 
@@ -744,6 +969,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-jdbc-metadata</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-ddl</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -762,15 +992,11 @@
                 <artifactId>modeshape-sequencer-mp3</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!--
-            See MODE-1934
-
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-msoffice</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            -->
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-sramp</artifactId>
@@ -941,7 +1167,6 @@
                 <groupId>c3p0</groupId>
                 <artifactId>c3p0</artifactId>
                 <version>${c3p0.version}</version>
-                <scope>test</scope>
             </dependency>
             
             <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
@@ -1136,19 +1361,6 @@
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>jackrabbit-jcr-tests</artifactId>
                 <version>${jackrabbit.jcr.tck.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!-- Databases and JDBC Drivers -->
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${jdbc.mysql.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>hsqldb</groupId>
-                <artifactId>hsqldb</artifactId>
-                <version>${jdbc.hsqldb.version}</version>
                 <scope>test</scope>
             </dependency>
             <!--
@@ -1370,9 +1582,7 @@
                 <artifactId>jaudiotagger</artifactId>
                 <version>${jaudiotagger.version}</version>
             </dependency>
-            <!--MsOffice sequencer
-            See MODE-1934
-
+            <!--MsOffice sequencer-->
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
@@ -1383,7 +1593,20 @@
                 <artifactId>poi-scratchpad</artifactId>
                 <version>${poi.version}</version>
             </dependency>
-            -->
+            <!--
+                The following 2 POI dependencies are not used directly, but defined so that we use the same "beta" version
+                across the board (see https://issues.jboss.org/browse/MODE-1934).Tika-parsers brings these 2 transitively in
+             -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml-schemas</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
             <!--Teiid sequencer-->
             <dependency>
                 <groupId>com.beust</groupId>
@@ -1438,23 +1661,6 @@
                 <artifactId>tika-parsers</artifactId>
                 <version>${tika.version}</version>
                 <exclusions>
-                    <!--See MODE-1934-->
-                    <exclusion>
-                        <groupId>org.apache.poi</groupId>
-                        <artifactId>poi</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.poi</groupId>
-                        <artifactId>poi-scratchpad</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.poi</groupId>
-                        <artifactId>poi-ooxml</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.poi</groupId>
-                        <artifactId>poi-ooxml-schemas</artifactId>
-                    </exclusion>
                     <!--
                     The NetCDF and HDF files are often used in the scientific community, so we exclude this
                     library (and the Commons HTTP Client library) by default.
@@ -1836,6 +2042,39 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- Cassandra JDBC driver -->
+            <dependency>
+                <groupId>org.apache-extras.cassandra-jdbc</groupId>
+                <artifactId>cassandra-jdbc</artifactId>
+                <version>${cassandra-jdbc-driver}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>${cassandra-cql-driver}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>cassandra-all</artifactId>
+                <version>1.2.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>1.4.0</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--Test dependency which allows custom JNDI bindings-->
+            <dependency>
+                <groupId>commons-naming</groupId>
+                <artifactId>commons-naming-core</artifactId>
+                <version>${commons.naming.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -50,7 +50,7 @@ public final class ClusteringHelper {
         System.setProperty(Global.EXTERNAL_ADDR, localHost.getHostAddress());
     }
 
-    private static InetAddress getLocalHost() throws UnknownHostException {
+    public static InetAddress getLocalHost() throws UnknownHostException {
         boolean preferIpv6 = Boolean.getBoolean(Global.IPv6);
 
         InetAddress localHost = null;

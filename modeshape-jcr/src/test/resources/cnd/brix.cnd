@@ -1,0 +1,20 @@
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<brix='http://www.brix.com/jcr/mix/1.0'>
+
+[brix:unstructured] mixin
+- * (undefined) multiple
+- * (undefined)
++ * (nt:base) sns version
+[brix:node] > brix:unstructured , mix:referenceable orderable mixin
+[brix:folder] > brix:unstructured mixin
+[brix:tile] > brix:unstructured orderable
+[brix:hidden] > brix:unstructured mixin
+[brix:globalContainer] > brix:unstructured mixin
+[brix:tilePage] > brix:unstructured mixin
+[brix:tileTemplate] > brix:unstructured mixin
+[brix:webDavContainer] > brix:unstructured mixin

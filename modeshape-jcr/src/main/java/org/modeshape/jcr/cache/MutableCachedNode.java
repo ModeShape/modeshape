@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 
@@ -221,6 +222,21 @@ public interface MutableCachedNode extends CachedNode {
     boolean hasChangedPrimaryType();
 
     /**
+     * Adds a new federated segment with the given name and key to this node.
+     *
+     * @param segmentName the name of the segment (i.e. the name of the alias under which an external child is linked); may not be null
+     * @param externalNodeKey the key of the external node which should be linked under this name; may not be null
+     */
+    void addFederatedSegment(String externalNodeKey, String segmentName);
+
+    /**
+     * Removes the federated segment towards an external node.
+     *
+     * @param externalNodeKey the key of the external node which should be linked under this name; may not be null
+     */
+    void removeFederatedSegment(String externalNodeKey);
+
+    /**
      * Create a new node as a child of this node with the supplied name and properties.
      * 
      * @param cache the cache to which this node belongs; may not be null
@@ -351,27 +367,35 @@ public interface MutableCachedNode extends CachedNode {
 
     /**
      * Copies into this node all the properties and children (deep copy) from the given source node.
-     * 
+     *
      * @param cache the cache to which this node belongs; may not be null
      * @param sourceNode the node from which to copy the properties and children; may not be null
      * @param sourceCache the cache in which the source node belongs; may not be null
+     * @param systemWorkspaceKey the key of the system workspace; may not be null
+     * @param connectors a {@link Connectors} instance which used for processing external nodes.
      * @return a [source key -> target key] which represents the node correspondence after the copy operation.
      */
     public Map<NodeKey, NodeKey> deepCopy( SessionCache cache,
                                            CachedNode sourceNode,
-                                           SessionCache sourceCache );
+                                           SessionCache sourceCache,
+                                           String systemWorkspaceKey,
+                                           Connectors connectors );
 
     /**
      * Clones into this node all the properties and children (deep clone) from the given source node. Each cloned node will have
      * the same identifier as the source node.
-     * 
+     *
      * @param cache the cache to which this node belongs; may not be null
      * @param sourceNode the node from which to copy the properties and children; may not be null
      * @param sourceCache the cache in which the source node belongs; may not be null
+     * @param systemWorkspaceKey the key of the system workspace; may not be null
+     * @param connectors a {@link Connectors} instance which used for processing external nodes.
      */
     public void deepClone( SessionCache cache,
                            CachedNode sourceNode,
-                           SessionCache sourceCache );
+                           SessionCache sourceCache,
+                           String systemWorkspaceKey,
+                           Connectors connectors );
 
     /**
      * Returns a set with the keys of the children which have been removed for this node.

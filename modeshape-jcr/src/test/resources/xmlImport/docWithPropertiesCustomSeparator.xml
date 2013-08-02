@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" multi-value-separator=";">
+    <story title="Story with commas in the text lead and body text" lead="Lead text in attribute, split with a comma.">
+        <body>Body text in sub element, split by the comma.</body>
+        <multiBody>Body text in sub element; split by semicolon</multiBody>
+    </story>
+</jcr:root>

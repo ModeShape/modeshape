@@ -48,6 +48,7 @@ import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.ddl.node.AstNode;
@@ -250,7 +251,21 @@ public class DdlSequencer extends Sequencer {
         if (parentNode == null) {
             sequenceNode = parent.addNode(relativePath, astNode.getPrimaryType());
         } else {
-            sequenceNode = parentNode.addNode(astNode.getJcrSafeName(), astNode.getPrimaryType());
+            final Session session = (Session)parentNode.getSession();
+            String jcrName = astNode.getName();
+
+            // if first character is a '{' then the name is prefixed by the namespace URL
+            if ((jcrName.charAt(0) == '{') && (jcrName.indexOf('}') != -1)) {
+                final int index = jcrName.indexOf('}');
+                String localName = jcrName.substring(index + 1);
+                localName = session.encode(localName);
+
+                jcrName = jcrName.substring(0, (index + 1)) + localName;
+            } else {
+                jcrName = session.encode(jcrName);
+            }
+
+            sequenceNode = parentNode.addNode(jcrName, astNode.getPrimaryType());
         }
 
         this.nodeMap.put(astNode, sequenceNode);
@@ -289,7 +304,7 @@ public class DdlSequencer extends Sequencer {
         return result;
     }
 
-    private Node getNode(final AstNode node) {
+    private Node getNode( final AstNode node ) {
         return this.nodeMap.get(node);
     }
 

@@ -38,6 +38,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
@@ -52,6 +53,7 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
@@ -922,6 +924,29 @@ public class ImportExportTest extends SingleUseAbstractTest {
         // Now import the file ...
         assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs expected
         assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs expected
+    }
+
+    @Test
+    @FixFor( "MODE-1961" )
+    public void shouldBeAbleToImportTwiceWithoutLoosingMixins() throws Exception {
+        tools.registerNodeTypes(session, "cnd/brix.cnd");
+        session.save();
+
+        InputStream brixWorkspace = resourceStream("io/brixWorkspace.xml");
+        session.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+        session.save();
+
+        JcrNode root = (JcrNode)session.getItem("/brix:root");
+        Set<Name> rootMixins = root.getMixinTypeNames();
+        assertTrue(rootMixins.contains(session.nameFactory().create("brix:node")));
+
+        brixWorkspace = resourceStream("io/brixWorkspace.xml");
+        session.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+        session.save();
+
+        root = (JcrNode)session.getItem("/brix:root");
+        rootMixins = root.getMixinTypeNames();
+        assertTrue(rootMixins.contains(session.nameFactory().create("brix:node")));
     }
 
     private void assertCarsImported() throws RepositoryException {

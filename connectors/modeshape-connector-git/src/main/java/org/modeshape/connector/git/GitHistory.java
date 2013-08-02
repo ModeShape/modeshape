@@ -117,8 +117,8 @@ public class GitHistory extends GitFunction implements PageableGitFunction {
                 ObjectId objId = repository.resolve(commitId);
                 RevCommit commit = walker.parseCommit(objId);
                 writer.addProperty(GitLexicon.OBJECT_ID, objId.name());
-                writer.addProperty(GitLexicon.AUTHOR, commit.getAuthorIdent().getName());
-                writer.addProperty(GitLexicon.COMMITTER, commit.getCommitterIdent().getName());
+                writer.addProperty(GitLexicon.AUTHOR, authorName(commit));
+                writer.addProperty(GitLexicon.COMMITTER, commiterName(commit));
                 writer.addProperty(GitLexicon.COMMITTED, values.dateFrom(commit.getCommitTime()));
                 writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
                 writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, objId.name(), values));

@@ -26,6 +26,7 @@ package org.modeshape.jcr.store;
 
 import java.io.IOException;
 import java.util.Properties;
+import org.modeshape.common.util.StringUtil;
 
 /**
  * Test helper class which loads a property file and provides DB-specific properties, triggered by Maven profiles.
@@ -54,6 +55,10 @@ public class DataSourceConfig {
         }
     }
 
+    public String getDatabase() {
+        return dsProperties.getProperty("database");
+    }
+
     public String getUrl() {
         return dsProperties.getProperty("url");
     }
@@ -68,5 +73,37 @@ public class DataSourceConfig {
 
     public String getDriverClassName() {
         return dsProperties.getProperty("driverClassName");
+    }
+
+    public Integer getMaximumConnectionsInPool() {
+        return asInteger("maximumConnectionsInPool");
+    }
+
+    public Integer getMinimumConnectionsInPool() {
+        return asInteger("minimumConnectionsInPool");
+    }
+
+    public Integer getMaximumSizeOfStatementsCache() {
+        return asInteger("maximumSizeOfStatementCache");
+    }
+
+    public Integer getMaximumConnectionIdleTimeInSeconds() {
+        return asInteger("maximumConnectionIdleTimeInSeconds");
+    }
+
+    public Integer getNumberOfConnectionsToAcquireAsNeeded() {
+        return asInteger("numberOfConnectionsToAcquireAsNeeded");
+    }
+
+    public Integer getRetryLimit() {
+        return asInteger("retryLimit");
+    }
+
+    private Integer asInteger(String propertyName) {
+        String value = dsProperties.getProperty(propertyName);
+        if (!StringUtil.isBlank(value)) {
+            return Integer.valueOf(value);
+        }
+        return null;
     }
 }

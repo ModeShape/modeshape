@@ -1,0 +1,238 @@
+/*
+ * Copyright 2012 JBoss Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<sramp='http://docs.oasis-open.org/s-ramp/ns/s-ramp-v1.0'>
+<audit='http://downloads.jboss.org/overlord/sramp/2013/auditing.xsd'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+// -------------------------------------------------------
+// S-RAMP Ontologies
+// -------------------------------------------------------
+
+[sramp:class]
+- sramp:uri (string) mandatory
+- sramp:id (string) mandatory
+- sramp:label (string)
+- sramp:comment (string)
++ * (sramp:class)
+
+[sramp:ontology] > nt:hierarchyNode, mix:created, mix:lastModified
+- sramp:uuid (string) mandatory
+- sramp:label (string)
+- sramp:comment (string)
+- sramp:base (string)
+- sramp:id (string)
++ * (sramp:class)
+
+
+// -------------------------------------------------------
+// Auditing
+// -------------------------------------------------------
+
+[audit:auditItem]
+- audit:type (string)
+- * (string)
+- * (string) multiple
+
+[audit:auditEntry] > nt:hierarchyNode
+- audit:uuid (string) mandatory
+- audit:sortId (long)
+- audit:type (string)
+- audit:who (string)
+- audit:when (date)
++ * (audit:auditItem)
+
+
+// -------------------------------------------------------
+// S-RAMP Core Model Artifacts
+// -------------------------------------------------------
+
+[sramp:nonDocumentArtifactType] > nt:hierarchyNode
+
+[sramp:derivedArtifactPrimaryType] > nt:hierarchyNode
+
+[sramp:relationship]
+- sramp:relationshipType (string)
+- sramp:generic (boolean)
+- sramp:maxCardinality (long)
+- sramp:targetType (string)
+- sramp:relationshipTarget (reference) multiple < 'sramp:baseArtifactType'
+
+[sramp:baseArtifactType] > mix:created, mix:lastModified, mix:referenceable, mix:versionable abstract mixin
+- sramp:uuid (string) mandatory
+- sramp:name (string)
+- sramp:artifactModel (string)
+- sramp:artifactType (string)
+- sramp:classifiedBy (string) multiple
+- sramp:normalizedClassifiedBy (string) multiple
+- sramp:description (string)
+- sramp:derived (boolean)
+- * (string)
+- * (string) multiple
++ * (sramp:relationship)
++ * (audit:auditEntry)
+
+[sramp:documentArtifactType] > sramp:baseArtifactType abstract mixin
+- sramp:contentType (string)
+- sramp:contentSize (long)
+- sramp:contentHash (string)
++ * (sramp:derivedArtifactPrimaryType)
+
+[sramp:document] > sramp:documentArtifactType mixin
+
+[sramp:xmlDocument] > sramp:documentArtifactType mixin
+- sramp:contentEncoding (string)
+
+[sramp:derivedArtifactType] > sramp:baseArtifactType abstract mixin
+
+// Special case of a extended type that is derived.
+[sramp:extendedDerivedArtifactType] > sramp:baseArtifactType mixin
+- sramp:extendedType (string)
+
+[sramp:extendedArtifactType] > sramp:baseArtifactType mixin
+- sramp:extendedType (string) mandatory
+
+[sramp:extendedDocument] > sramp:documentArtifactType mixin
+- sramp:extendedType (string) mandatory
++ * (sramp:extendedDerivedArtifactType)
+
+[sramp:storedQuery] > nt:query
+- sramp:propertyList (string) multiple
+
+
+// -------------------------------------------------------
+// S-RAMP XSD Model Artifacts
+// -------------------------------------------------------
+[sramp:xsdDerivedArtifactType] > sramp:derivedArtifactType abstract mixin
+- sramp:ncName (string)
+- sramp:namespace (string)
+
+[sramp:elementDeclaration] > sramp:xsdDerivedArtifactType mixin
+
+[sramp:attributeDeclaration] > sramp:xsdDerivedArtifactType mixin
+
+[sramp:simpleTypeDeclaration] > sramp:xsdDerivedArtifactType mixin
+
+[sramp:complexTypeDeclaration] > sramp:xsdDerivedArtifactType mixin
+
+[sramp:xsdDocument] > sramp:xmlDocument mixin
++ * (sramp:elementDeclaration)
++ * (sramp:attributeDeclaration)
++ * (sramp:simpleTypeDeclaration)
++ * (sramp:complexTypeDeclaration)
+
+
+// -------------------------------------------------------
+// S-RAMP WSDL Model Artifacts
+// -------------------------------------------------------
+[sramp:wsdlDerivedArtifactType] > sramp:derivedArtifactType abstract mixin
+- sramp:namespace (string)
+
+[sramp:namedWsdlDerivedArtifactType] > sramp:wsdlDerivedArtifactType abstract mixin
+- sramp:ncName (string)
+
+[sramp:wsdlService] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:port] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:part] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:message] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:fault] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:portType] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:operation] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:operationInput] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:operationOutput] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:binding] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:bindingOperation] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:bindingOperationInput] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:bindingOperationOutput] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:bindingOperationFault] > sramp:namedWsdlDerivedArtifactType mixin
+
+[sramp:wsdlExtension] > sramp:derivedArtifactType abstract mixin
+- sramp:namespace (string)
+- sramp:ncName (string)
+
+[sramp:wsdlDocument] > sramp:xmlDocument mixin
+- sramp:targetNamespace (string)
++ * (sramp:elementDeclaration)
++ * (sramp:attributeDeclaration)
++ * (sramp:simpleTypeDeclaration)
++ * (sramp:complexTypeDeclaration)
++ * (sramp:wsdlService)
++ * (sramp:port)
++ * (sramp:part)
++ * (sramp:message)
++ * (sramp:fault)
++ * (sramp:portType)
++ * (sramp:operation)
++ * (sramp:operationInput)
++ * (sramp:operationOutput)
++ * (sramp:binding)
++ * (sramp:bindingOperation)
++ * (sramp:bindingOperationInput)
++ * (sramp:bindingOperationOutput)
++ * (sramp:bindingOperationFault)
++ * (sramp:wsdlExtension)
+
+
+// -------------------------------------------------------
+// S-RAMP SOAP WSDL Model Artifacts
+// -------------------------------------------------------
+[sramp:soapBinding] > sramp:wsdlExtension mixin
+- sramp:style (string)
+- sramp:transport (string)
+
+[sramp:soapAddress] > sramp:wsdlExtension mixin
+- sramp:soapLocation (string)
+
+// -------------------------------------------------------
+// S-RAMP Policy Model Artifacts
+// -------------------------------------------------------
+[sramp:policyDocument] > sramp:xmlDocument mixin
+
+
+// -------------------------------------------------------
+// Type used for deleted artifacts
+// -------------------------------------------------------
+[sramp:deletedArtifact] > mix:created, mix:lastModified, mix:referenceable, mix:versionable mixin
+- sramp:uuid (string)
+- * (string)
+- * (boolean)
+- * (long)
+- * (string) multiple
++ * (sramp:relationship)
++ * (audit:auditEntry)
++ * (sramp:derivedArtifactPrimaryType)

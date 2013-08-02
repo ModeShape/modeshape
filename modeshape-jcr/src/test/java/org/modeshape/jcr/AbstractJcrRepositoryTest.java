@@ -29,8 +29,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
@@ -46,18 +48,18 @@ import javax.jcr.query.QueryResult;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
+import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
-import org.modeshape.junit.SkipLongRunningRule;
 
 public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTest {
 
     @Rule
-    public TestRule skipLongRunningRule = new SkipLongRunningRule();
+    public TestRule skipTestRule = new SkipTestRule();
 
     protected boolean print;
 
@@ -101,14 +103,12 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         if (print && !session().getRootNode().hasNode(path)) {
             // We won't find the node, so print out the information ...
             Node parent = session().getRootNode();
-            int depth = 0;
             for (Segment segment : path(path)) {
                 if (!parent.hasNode(asString(segment))) {
                     System.out.println("Unable to find '" + path + "'; lowest node is '" + parent.getPath() + "'");
                     break;
                 }
                 parent = parent.getNode(asString(segment));
-                ++depth;
             }
         }
 
@@ -510,6 +510,17 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
     protected void assertChildrenInclude( Node parentNode,
                                           String... minimalChildNamesWithSns ) throws RepositoryException {
         assertChildrenInclude(null, parentNode, minimalChildNamesWithSns);
+    }
+
+    protected void assertHasMixins(Node node, String...mixinNodeTypes) throws RepositoryException {
+        List<String> mixins = new ArrayList<String>();
+        for (NodeType nodeType : node.getMixinNodeTypes()) {
+            mixins.add(nodeType.getName());
+        }
+
+        for (String expectedMixin : mixinNodeTypes) {
+            assertThat(expectedMixin + "mixin not found", mixins.contains(expectedMixin), is(true));
+        }
     }
 
     protected void assertChildrenInclude( String errorMessage,

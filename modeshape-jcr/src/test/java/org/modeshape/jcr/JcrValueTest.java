@@ -316,6 +316,14 @@ public class JcrValueTest {
         assertThat(new JcrValue(factories, PropertyType.BINARY, customBinary).getString(), is(stringValue));
     }
 
+    @FixFor( "MODE-1998")
+    @Test
+    public void shouldProvideEqualityForUriValues() throws Exception {
+        final String uriValue = "http://example.com";
+        final JcrValue expectedValue = new JcrValue(factories, PropertyType.URI, uriValue);
+        assertThat(new JcrValue(factories, PropertyType.URI, uriValue), is(expectedValue));
+    }
+
     private Binary createCustomBinary( final String stringValue ) {
         return new InMemoryTestBinary(stringValue.getBytes());
     }

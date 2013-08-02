@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -97,6 +98,19 @@ import org.modeshape.jcr.value.Property;
  */
 @ThreadSafe
 public class WritableSessionCache extends AbstractSessionCache {
+
+    /** An atomic counter used in each thread when issuing TRACE log messages to the #SAVE_LOGGER */
+    private static final AtomicInteger SAVE_NUMBER = new AtomicInteger(1);
+    /**
+     * The (approximate) largest save number used. This needs to be large enough for concurrent writes, but since this is only
+     * used in TRACE messages (not used in production), it is doubtful that it needs to be very large.
+     */
+    private static final int MAX_SAVE_NUMBER = 100;
+    /**
+     * The TRACE-level logger used to record the changes that are saved. Note that this log context is the same as the
+     * transaction-related classes, so that simply enabling this log context will provide very useful TRACE logging.
+     */
+    private static final Logger SAVE_LOGGER = Logger.getLogger("org.modeshape.jcr.txn");
 
     private static final Logger LOGGER = Logger.getLogger(WritableSessionCache.class);
     private static final NodeKey REMOVED_KEY = new NodeKey("REMOVED_NODE_SHOULD_NEVER_BE_PERSISTED");
@@ -335,6 +349,56 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
     }
 
+    protected final void logChangesBeingSaved( Iterable<NodeKey> firstNodesInOrder,
+                                               Map<NodeKey, SessionNode> firstNodes,
+                                               Iterable<NodeKey> secondNodesInOrder,
+                                               Map<NodeKey, SessionNode> secondNodes ) {
+        if (SAVE_LOGGER.isTraceEnabled()) {
+            String txn = txns.currentTransactionId();
+
+            // // Determine if there are any changes to be made. Note that this number is generally between 1 and 100,
+            // // though for high concurrency some numbers may go above 100. However, the 100th save will always reset
+            // // the counter back down to 1. (Any thread that got a save number above 100 will simply use it.)
+            final int s = SAVE_NUMBER.getAndIncrement();
+            if (s == MAX_SAVE_NUMBER) SAVE_NUMBER.set(1); // only the 100th
+            int changes = 0;
+
+            // There are at least some changes ...
+            ExecutionContext context = getContext();
+            String id = context.getId();
+            String username = context.getSecurityContext().getUserName();
+            NamespaceRegistry registry = context.getNamespaceRegistry();
+            if (username == null) username = "<anonymous>";
+            SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) is persisting the following changes:",
+                              s,
+                              txn,
+                              username,
+                              id);
+            for (NodeKey key : firstNodesInOrder) {
+                SessionNode node = changedNodes.get(key);
+                if (node != null && node.hasChanges()) {
+                    SAVE_LOGGER.trace(" #{0} {1}", s, node.getString(registry));
+                    ++changes;
+                }
+            }
+            if (secondNodesInOrder != null) {
+                for (NodeKey key : secondNodesInOrder) {
+                    SessionNode node = changedNodes.get(key);
+                    if (node != null && node.hasChanges()) {
+                        SAVE_LOGGER.trace(" #{0} {1}", s, node.getString(registry));
+                        ++changes;
+                    }
+                }
+            }
+            SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) completed persisting changes to {4} nodes",
+                              s,
+                              txn,
+                              username,
+                              id,
+                              changes);
+        }
+    }
+
     /**
      * Persist the changes within a transaction.
      * 
@@ -380,6 +444,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     runPreSaveAfterLocking(preSaveOperation);
 
                     // Now persist the changes ...
+                    logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, null, null);
                     events = persistChanges(this.changedNodesInOrder, monitor);
 
                     // Register a handler that will execute upon successful commit of the transaction (whenever that happens) ...
@@ -412,7 +477,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     continue;
                 } catch (NotSupportedException err) {
                     // No nested transactions are supported ...
-                    return;
+                    throw new SystemFailureException(err);
                 } catch (SecurityException err) {
                     // No privilege to commit ...
                     throw new SystemFailureException(err);
@@ -541,6 +606,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                         runPreSaveAfterLocking(preSaveOperation);
 
                         // Now persist the changes ...
+                        logChangesBeingSaved(this.changedNodesInOrder,
+                                             this.changedNodes,
+                                             that.changedNodesInOrder,
+                                             that.changedNodes);
                         events1 = persistChanges(this.changedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
@@ -707,6 +776,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         }
 
                         // Now persist the changes ...
+                        logChangesBeingSaved(savedNodesInOrder, this.changedNodes, that.changedNodesInOrder, that.changedNodes);
                         events1 = persistChanges(savedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
 
@@ -823,9 +893,11 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         Set<NodeKey> removedNodes = null;
         Set<BinaryKey> unusedBinaryKeys = new HashSet<BinaryKey>();
+        Set<NodeKey> renamedExternalNodes = new HashSet<NodeKey>();
         for (NodeKey key : changedNodesInOrder) {
             SessionNode node = changedNodes.get(key);
             String keyStr = key.toString();
+            boolean isExternal = !node.getKey().getSourceKey().equalsIgnoreCase(workspaceCache().getRootKey().getSourceKey());
             if (node == REMOVED) {
                 // We need to read some information from the node before we remove it ...
                 CachedNode persisted = workspaceCache.getNode(key);
@@ -864,6 +936,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                 } else {
                     SchematicEntry nodeEntry = documentStore.get(keyStr);
                     if (nodeEntry == null) {
+                        if (isExternal && renamedExternalNodes.contains(key)) {
+                            // this is a renamed external node which has been processed in the parent, so we can skip it
+                            continue;
+                        }
                         // Could not find the entry in the documentStore, which means it was deleted by someone else
                         // just moments before we got our transaction to save ...
                         throw new DocumentNotFoundException(keyStr);
@@ -1012,10 +1088,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 // The node was created in this session, so we can ignore this ...
                                 continue;
                             }
-                            CachedNode renamedNode = getNode(renamedKey);
                             Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
-                            Path renamedToPath = sessionPaths.getPath(renamedNode);
+                            Path renamedToPath = pathFactory().create(renamedFromPath.getParent(), renameEntry.getValue());
                             changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment());
+                            if (isExternal) {
+                                renamedExternalNodes.add(renamedKey);
+                            }
                         }
                     }
 
@@ -1056,6 +1134,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     changes.nodeChanged(key, newPath);
                 }
 
+                // write the federated segments
+                for (Map.Entry<String, String> federatedSegment : node.getAddedFederatedSegments().entrySet()) {
+                    translator.addFederatedSegment(doc, federatedSegment.getKey(), federatedSegment.getValue());
+                }
+                translator.removeFederatedSegments(doc, node.getRemovedFederatedSegments());
+
                 // write additional node "metadata", meaning various flags which have internal meaning
                 boolean queryable = node.isQueryable(this);
                 if (!queryable) {
@@ -1085,13 +1169,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
                         Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values().iterator());
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties()
+                                                                                                    .values()
+                                                                                                    .iterator());
                     }
                 } else {
-                    boolean isExternal = !workspaceCache().getRootKey()
-                                                          .getSourceKey()
-                                                          .equalsIgnoreCase(node.getKey().getSourceKey());
-                    boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges());
+                    boolean externalNodeChanged = isExternal
+                                                  && (hasPropertyChanges || node.hasNonPropertyChanges() || node.changedChildren()
+                                                                                                                .renameCount() > 0);
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called
                         documentStore.updateDocument(keyStr, doc, node);
@@ -1119,14 +1204,20 @@ public class WritableSessionCache extends AbstractSessionCache {
                         monitor.recordUpdate(workspaceName, key, newNodePath, primaryType, mixinTypes, node.getProperties(this));
 
                         if (pathChanged) {
-                            //we're dealing with a path change, so in case there is a persisted node at "new path" we need to remove
-                            //it from the indexes, because the current node will take its place
+                            // we're dealing with a path change, so in case there is a PERSISTED node at "new path" we need to
+                            // remove it from the indexes, because the current node will take its place
                             CachedNode persistedParent = workspaceCache.getNode(node.getParentKey(this));
-                            ChildReference persistedNodeAtNewPath = persistedParent.getChildReferences(workspaceCache).getChild(
-                                    newNodePath.getLastSegment().getName(), newNodePath.getLastSegment().getIndex());
-                            if (persistedNodeAtNewPath != null) {
-                                monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
-                            }
+                            if (persistedParent != null) {
+                                // The parent is found in the workspace cache ...
+                                ChildReference persistedNodeAtNewPath = persistedParent.getChildReferences(workspaceCache)
+                                                                                       .getChild(newNodePath.getLastSegment()
+                                                                                                            .getName(),
+                                                                                                 newNodePath.getLastSegment()
+                                                                                                            .getIndex());
+                                if (persistedNodeAtNewPath != null) {
+                                    monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
+                                }
+                            } // otherwise the parent was not PERSISTED and there's nothing to do
                         }
                     }
                 }
@@ -1384,62 +1475,5 @@ public class WritableSessionCache extends AbstractSessionCache {
             sb.append(changes.getString(reg));
         }
         return sb.toString();
-    }
-
-    /**
-     * Creates a projection for the given source and node, by specifying the external path and an optional alias.
-     * 
-     * @param nodeKey a {@code non-null} {@link NodeKey} instance which represents the key of the node on which the projection
-     *        should be created.
-     * @param sourceName a {@code non-null} String the name of external source.
-     * @param externalPath a {@code non-null} String the path from the external source to an external node.
-     * @param alias an optional String representing the name under which the projection will be linked to the node.
-     */
-    public void createProjection( NodeKey nodeKey,
-                                  String sourceName,
-                                  String externalPath,
-                                  String alias ) {
-        MutableCachedNode node = mutable(nodeKey);
-        try {
-            Transaction txn = txns.begin();
-            // register the node in the changes, so it can be saved later
-            DocumentStore documentStore = workspaceCache().documentStore();
-            EditableDocument document = documentStore.get(nodeKey.toString()).editDocumentContent();
-            DocumentTranslator translator = workspaceCache().translator();
-            translator.addFederatedSegment(document, nodeKey.toString(), sourceName, externalPath, alias);
-            txn.commit();
-        } catch (Exception err) {
-            throw new SystemFailureException(JcrI18n.errorStoringProjection.text(workspaceName(),
-                                                                                 node.getPath(this),
-                                                                                 sourceName,
-                                                                                 externalPath,
-                                                                                 alias,
-                                                                                 err.getMessage()), err);
-        }
-    }
-
-    /**
-     * Removes from the given federated node a projection pointing towards an external node.
-     * 
-     * @param federatedNodeKey a {@code non-null} {@link NodeKey}, the key of the federated node
-     * @param externalNodeKey a {@code non-null} {@link NodeKey}, the key of the external node
-     */
-    public void removeProjection( NodeKey federatedNodeKey,
-                                  NodeKey externalNodeKey ) {
-        MutableCachedNode node = mutable(federatedNodeKey);
-        try {
-            Transaction txn = txns.begin();
-            // register the node in the changes, so it can be saved later
-            DocumentStore documentStore = workspaceCache().documentStore();
-            EditableDocument federatedDocument = documentStore.get(federatedNodeKey.toString()).editDocumentContent();
-            DocumentTranslator translator = workspaceCache().translator();
-            translator.removeFederatedSegments(federatedDocument, externalNodeKey.toString());
-            txn.commit();
-        } catch (Exception err) {
-            throw new SystemFailureException(JcrI18n.errorRemovingProjection.text(workspaceName(),
-                                                                                  node.getPath(this),
-                                                                                  externalNodeKey,
-                                                                                  err.getMessage()), err);
-        }
     }
 }

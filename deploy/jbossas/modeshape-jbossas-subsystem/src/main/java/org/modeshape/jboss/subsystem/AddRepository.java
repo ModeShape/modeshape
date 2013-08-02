@@ -50,6 +50,8 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jboss.metric.ModelMetrics;
+import org.modeshape.jboss.metric.MonitorService;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.BinaryStorageService;
 import org.modeshape.jboss.service.IndexStorage;
@@ -60,6 +62,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 
 public class AddRepository extends AbstractAddStepHandler {
 
@@ -67,14 +70,21 @@ public class AddRepository extends AbstractAddStepHandler {
 
     private static final org.jboss.logging.Logger LOG = org.jboss.logging.Logger.getLogger(AddRepository.class.getPackage()
                                                                                                               .getName());
+
     private AddRepository() {
     }
 
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
+        // attributes
         for (AttributeDefinition attribute : ModelAttributes.REPOSITORY_ATTRIBUTES) {
             attribute.validateAndSet(operation, model);
+        }
+
+        // metrics
+        for (final AttributeDefinition metric : ModelMetrics.ALL_METRICS) {
+            metric.validateAndSet(operation, model);
         }
     }
 
@@ -91,6 +101,15 @@ public class AddRepository extends AbstractAddStepHandler {
                               String defaultValue ) throws OperationFailedException {
         ModelNode value = defn.resolveModelAttribute(context, model);
         return value.isDefined() ? value.asString() : defaultValue;
+    }
+
+    private Integer intAttribute( OperationContext context,
+                                  ModelNode model,
+                                  AttributeDefinition defn,
+                                  Integer defaultValue ) throws OperationFailedException {
+        ModelNode value = defn.resolveModelAttribute(context, model);
+        if (value == null || !value.isDefined()) return defaultValue;
+        return value.asInt();
     }
 
     @Override
@@ -112,6 +131,14 @@ public class AddRepository extends AbstractAddStepHandler {
         final String gcThreadPool = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL, null);
         final String gcInitialTime = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME, null);
         final int gcIntervalInHours = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_INTERVAL).asInt();
+        final String optThreadPool = attribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_THREAD_POOL, null);
+        final String optInitialTime = attribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_INITIAL_TIME, null);
+        final int optIntervalInHours = attribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_INTERVAL).asInt();
+        final Integer optTarget = intAttribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET, null);
+        final Integer optTolerance = intAttribute(context,
+                                                  model,
+                                                  ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE,
+                                                  null);
 
         // Figure out which cache container to use (by default we'll use Infinispan subsystem's default cache container) ...
         String namedContainer = attribute(context, model, ModelAttributes.CACHE_CONTAINER, "modeshape");
@@ -176,6 +203,23 @@ public class AddRepository extends AbstractAddStepHandler {
         }
         configDoc.getOrCreateDocument(FieldName.GARBAGE_COLLECTION).setNumber(FieldName.INTERVAL_IN_HOURS, gcIntervalInHours);
 
+        // Add document optimization information ...
+        if (optTarget != null) {
+            EditableDocument docOpt = configDoc.getOrCreateDocument(FieldName.STORAGE)
+                                               .getOrCreateDocument(FieldName.DOCUMENT_OPTIMIZATION);
+            if (optThreadPool != null) {
+                docOpt.setString(FieldName.THREAD_POOL, optThreadPool);
+            }
+            if (optInitialTime != null) {
+                docOpt.setString(FieldName.INITIAL_TIME, optInitialTime);
+            }
+            docOpt.setNumber(FieldName.INTERVAL_IN_HOURS, optIntervalInHours);
+            docOpt.setNumber(FieldName.OPTIMIZATION_CHILD_COUNT_TARGET, optTarget.intValue());
+            if (optTolerance != null) {
+                docOpt.setNumber(FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE, optTolerance.intValue());
+            }
+        }
+
         // Add dependency to the JGroups channel (used for events) ...
         if (clusterStackName != null) {
             builder.addDependency(ServiceName.JBOSS.append("jgroups", "stack", clusterStackName),
@@ -216,8 +260,7 @@ public class AddRepository extends AbstractAddStepHandler {
         // Set up the JNDI binder service ...
         final ReferenceFactoryService<JcrRepository> referenceFactoryService = new ReferenceFactoryService<JcrRepository>();
         ServiceName referenceFactoryServiceName = ModeShapeServiceNames.referenceFactoryServiceName(repositoryName);
-        final ServiceBuilder<?> referenceBuilder = target.addService(referenceFactoryServiceName,
-                                                                     referenceFactoryService);
+        final ServiceBuilder<?> referenceBuilder = target.addService(referenceFactoryServiceName, referenceFactoryService);
         referenceBuilder.addDependency(repositoryServiceName, JcrRepository.class, referenceFactoryService.getInjector());
         referenceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
@@ -266,6 +309,15 @@ public class AddRepository extends AbstractAddStepHandler {
         binaryStorageBuilder.addDependency(dataDirServiceName, String.class, defaultBinaryService.getDataDirectoryPathInjector());
         binaryStorageBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
+        // Add monitor service
+        final MonitorService monitorService = new MonitorService();
+        final ServiceBuilder<RepositoryMonitor> monitorBuilder = target.addService(ModeShapeServiceNames.monitorServiceName(repositoryName),
+                                                                                   monitorService);
+        monitorBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
+                                     JcrRepository.class,
+                                     monitorService.getJcrRepositoryInjector());
+        monitorBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+
         // Now add the controller for the RepositoryService ...
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
@@ -273,6 +325,7 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(binderBuilder.install());
         newControllers.add(indexBuilder.install());
         newControllers.add(binaryStorageBuilder.install());
+        newControllers.add(monitorBuilder.install());
     }
 
     private void parseClustering( String clusterChannelName,
@@ -377,8 +430,8 @@ public class AddRepository extends AbstractAddStepHandler {
 
         if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT)) {
             boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context,
-                                                                                                                                    model)
-                                                                                                             .asBoolean();
+                                                                                                                                            model)
+                                                                                                                     .asBoolean();
             rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, rebuildIncludeSystemContent);
         }
 

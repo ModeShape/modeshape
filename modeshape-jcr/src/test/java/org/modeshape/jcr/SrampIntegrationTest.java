@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -32,6 +33,8 @@ import javax.jcr.Value;
 import javax.jcr.query.QueryResult;
 import junit.framework.Assert;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.jcr.api.JcrTools;
 
 public class SrampIntegrationTest extends SingleUseAbstractTest {
 
@@ -62,7 +65,10 @@ public class SrampIntegrationTest extends SingleUseAbstractTest {
     @Override
     public void beforeEach() throws Exception {
         super.beforeEach();
+    }
 
+    @Test
+    public void shouldAddArtifactsAndRelationshipsUsingNotionalNodeTypes() throws Exception {
         // Register some namespaces ...
         NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
         namespaceRegistry.registerNamespace(JCRConstants.SRAMP, JCRConstants.SRAMP_NS);
@@ -71,10 +77,6 @@ public class SrampIntegrationTest extends SingleUseAbstractTest {
 
         // and node types ...
         registerNodeTypes("cnd/sramp-notional.cnd");
-    }
-
-    @Test
-    public void test() throws Exception {
 
         // Add some artifact nodes.
         session = repository.login();
@@ -129,11 +131,12 @@ public class SrampIntegrationTest extends SingleUseAbstractTest {
 
         session.save();
 
-        print = true;
-
-        tools.printSubgraph(artifactA);
-        tools.printSubgraph(artifactB);
-        tools.printSubgraph(artifactC);
+        // print = true;
+        if (print) {
+            tools.printSubgraph(artifactA);
+            tools.printSubgraph(artifactB);
+            tools.printSubgraph(artifactC);
+        }
         session.logout();
 
         String query = null;
@@ -205,6 +208,76 @@ public class SrampIntegrationTest extends SingleUseAbstractTest {
         jcrQueryResult = assertJcrSql2Query(query, 2);
         jcrNodes = jcrQueryResult.getNodes();
         Assert.assertEquals("Expected two (2) nodes (Artifact B and Artifact C) to come back!", 2, jcrNodes.getSize());
+    }
+
+    @Test
+    @FixFor( "MODE-1978" )
+    public void shouldAllowRemovingArtifact() throws Exception {
+        // Register the node types ...
+        registerNodeTypes("cnd/sramp.cnd");
+
+        UUID uuid = UUID.randomUUID();
+        Node sramp = session.getRootNode().addNode("sramp");
+        Node artifacts = sramp.addNode("artifacts");
+        Node trash = sramp.addNode("trash");
+        session.save();
+
+        Node artifact = artifacts.addNode(uuid.toString());
+        artifact.addMixin("sramp:xsdDocument");
+        artifact.setProperty("sramp:uuid", uuid.toString());
+        Node artifactChild = artifact.addNode("child");
+        artifactChild.addMixin("sramp:elementDeclaration");
+        artifactChild.setProperty("sramp:uuid", UUID.randomUUID().toString());
+        session.save();
+
+        // Now "remove" it by removing the doc type mixins, adding the "deleted" mixin, and moving it to a different area ...
+        artifact.removeMixin("sramp:xsdDocument");
+        artifact.addMixin("sramp:deletedArtifact");
+        artifactChild.removeMixin("sramp:elementDeclaration");
+        artifactChild.addMixin("sramp:deletedArtifact");
+        session.move(artifact.getPath(), trash.getPath());
+        session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-1978" )
+    public void shouldAllowRemovingArtifactWithNoExistingTrash() throws Exception {
+        JcrTools tools = new JcrTools();
+        // print = true;
+
+        // Register the node types ...
+        registerNodeTypes("cnd/sramp.cnd");
+
+        UUID uuid = UUID.randomUUID();
+        Node artifacts = tools.findOrCreateNode(session, "/sramp/artifacts", "nt:folder");
+        session.save();
+
+        Node artifact = artifacts.addNode(uuid.toString(), "sramp:nonDocumentArtifactType");
+        printMessage("Added artifact node: " + artifact);
+        artifact.addMixin("sramp:xsdDocument");
+        artifact.setProperty("sramp:uuid", uuid.toString());
+        Node artifactChild = artifact.addNode("child", "sramp:derivedArtifactPrimaryType");
+        printMessage("Added child node: " + artifactChild);
+        artifactChild.addMixin("sramp:elementDeclaration");
+        artifactChild.setProperty("sramp:uuid", UUID.randomUUID().toString());
+        session.save();
+
+        // Now "remove" it by removing the doc type mixins, adding the "deleted" mixin, and moving it to a different area ...
+        artifact.addMixin("sramp:deletedArtifact");
+        artifact.removeMixin("sramp:xsdDocument");
+        artifactChild.addMixin("sramp:deletedArtifact");
+        artifactChild.removeMixin("sramp:elementDeclaration");
+
+        String srcPath = artifact.getPath();
+        String trashPath = srcPath.replace("sramp", "sramp-trash");
+        String parentSrcPath = artifacts.getPath();
+        String parentTrashPath = parentSrcPath.replace("sramp", "sramp-trash");
+
+        Node artifactTrash = tools.findOrCreateNode(session, parentTrashPath, "nt:folder");
+        print(artifactTrash);
+
+        session.move(srcPath, trashPath);
+        session.save();
     }
 
 }

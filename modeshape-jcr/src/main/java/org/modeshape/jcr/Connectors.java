@@ -138,7 +138,7 @@ public final class Connectors {
 
                     AbstractJcrNode node = session.getNode(repositoryPath);
                     // only create the projectionCfg if one doesn't exist with the same alias
-                    if (!current.hasProjection(alias, node.key().toString()) && !projectedPathExists(session, projectionCfg)) {
+                    if (!current.hasInternalProjection(alias, node.key().toString()) && !projectedPathExists(session, projectionCfg)) {
                         federationManager.createProjection(repositoryPath,
                                                            projectionCfg.getSourceName(),
                                                            projectionCfg.getExternalPath(),
@@ -457,6 +457,9 @@ public final class Connectors {
         // Set the ConnectorChangedSet factory
         ReflectionUtil.setValue(connector, "connectorChangedSetFactory", createConnectorChangedSetFactory(connector));
 
+        // Set the Environment
+        ReflectionUtil.setValue(connector, "environment", repository.environment());
+
         // Set the ExtraPropertiesStore instance, which is unique to this connector ...
         LocalDocumentStore store = repository.documentStore().localStore();
         String name = connector.getSourceName();
@@ -512,6 +515,28 @@ public final class Connectors {
      */
     public Connector getConnectorForSourceKey( String sourceKey ) {
         return this.snapshot.get().getConnectorWithSourceKey(sourceKey);
+    }
+
+    /**
+     * Returns the name of the external source mapped at the given key.
+     *
+     * @param sourceKey the key of the source; may not be null
+     * @return the name of the external source to which the key is mapped; may be null
+     */
+    public String getSourceNameAtKey( String sourceKey ) {
+        return this.snapshot.get().getSourceNameAtKey(sourceKey);
+    }
+
+    /**
+     * Determine there is a projection with the given alias and projected (internal) node key
+     *
+     * @param alias the alias
+     * @param externalNodeKey the node key of the projected (internal) node
+     * @return true if there is such a projection, or false otherwise
+     */
+    public boolean hasExternalProjection( String alias,
+                                          String externalNodeKey ) {
+        return this.snapshot.get().hasExternalProjection(alias, externalNodeKey);
     }
 
     /**
@@ -643,6 +668,17 @@ public final class Connectors {
         }
 
         /**
+         * Returns the name of the external source mapped at the given key.
+         *
+         * @param sourceKey the key of the source; may not be null
+         * @return the name of the external source to which the key is mapped; may be null
+         */
+        public String getSourceNameAtKey( String sourceKey ) {
+            Connector connector = sourceKeyToConnectorMap.get(sourceKey);
+            return connector != null ? connector.getSourceName() : null;
+        }
+
+        /**
          * Get the {@link Connector} instances.
          * 
          * @return the (immutable) collection of Connector instances
@@ -698,10 +734,27 @@ public final class Connectors {
          * @param projectedNodeKey the node key of the projected (internal) node
          * @return true if there is such a projection, or false otherwise
          */
-        public boolean hasProjection( String alias,
-                                      String projectedNodeKey ) {
+        public boolean hasInternalProjection( String alias,
+                                              String projectedNodeKey ) {
             for (Projection projection : projections.values()) {
                 if (projection.hasAlias(alias) && projection.hasProjectedNodeKey(projectedNodeKey)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Determine if this snapshot contains a projection with the given alias and external node key
+         *
+         * @param alias the alias
+         * @param externalNodeKey the node key of the external node
+         * @return true if there is such a projection, or false otherwise
+         */
+        public boolean hasExternalProjection( String alias,
+                                              String externalNodeKey ) {
+            for (Projection projection : projections.values()) {
+                if (projection.hasAlias(alias) && projection.hasExternalNodeKey(externalNodeKey)) {
                     return true;
                 }
             }
@@ -1136,6 +1189,10 @@ public final class Connectors {
 
         protected boolean hasProjectedNodeKey( String projectedNodeKey ) {
             return this.projectedNodeKey.equals(projectedNodeKey);
+        }
+
+        protected boolean hasExternalNodeKey( String externalNodeKey ) {
+            return this.externalNodeKey.equals(externalNodeKey);
         }
 
         protected String getProjectedNodeKey() {

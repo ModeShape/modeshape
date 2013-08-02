@@ -33,11 +33,13 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.api.Namespaced;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.basic.BasicName;
@@ -192,6 +194,23 @@ public class ItemDefinitionTest extends SingleUseAbstractTest {
 
     }
 
+    @Test
+    public void shouldBeNamespaced() throws RepositoryException {
+
+        JcrPropertyDefinition propDef;
+
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                        NODE_TYPE_A,
+                                                        Collections.<Name>emptyList(),
+                                                        SINGLE_PROP1,
+                                                        null,
+                                                        true,
+                                                        true,
+                                                        true);
+
+        assertLocalNameAndNamespace(propDef, SINGLE_PROP1.getLocalName(), TestLexicon.Namespace.PREFIX);
+    }
+
     /*
     * Build a hierarchy of node types with the following relationships:
     *  
@@ -258,4 +277,13 @@ public class ItemDefinitionTest extends SingleUseAbstractTest {
 
         return new NodeTypeDefinition[] {nodeA, nodeB, nodeC};
     }
+
+
+    private void assertLocalNameAndNamespace( Namespaced nsed,
+                                              String expectedLocalName,
+                                              String namespacePrefix ) throws RepositoryException {
+        assertThat(nsed.getLocalName(), is(expectedLocalName));
+        assertThat(nsed.getNamespaceURI(), is(session.getNamespaceURI(namespacePrefix)));
+    }
+
 }

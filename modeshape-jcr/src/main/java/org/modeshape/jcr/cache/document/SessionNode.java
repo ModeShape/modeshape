@@ -47,6 +47,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.infinispan.util.concurrent.ConcurrentHashSet;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.text.Inflector;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.cache.CachedNode;
@@ -92,6 +94,7 @@ public class SessionNode implements MutableCachedNode {
     private final NodeKey key;
     private final ConcurrentMap<Name, Property> changedProperties = new ConcurrentHashMap<Name, Property>();
     private final ConcurrentMap<Name, Name> removedProperties = new ConcurrentHashMap<Name, Name>();
+    private final AtomicReference<FederatedSegmentChanges> federatedSegments = new AtomicReference<FederatedSegmentChanges>();
     private volatile NodeKey newParent;
     private final AtomicReference<ChangedAdditionalParents> additionalParents = new AtomicReference<ChangedAdditionalParents>();
     private final ChangedChildren changedChildren = new ChangedChildren();
@@ -225,10 +228,24 @@ public class SessionNode implements MutableCachedNode {
 
     private boolean removeAdditionalParent( NodeCache cache,
                                             NodeKey oldParent ) {
-        if (newParent != null && newParent.equals(getParentKey(cache))) {
-            // This child is already the primary child of the new parent ...
-            return false;
+        if (getAdditionalParentKeys(cache).contains(oldParent)) {
+            ChangedAdditionalParents additionalParents = this.additionalParents.get();
+            if (additionalParents == null) {
+                additionalParents = new ChangedAdditionalParents();
+                if (!this.additionalParents.compareAndSet(null, additionalParents)) {
+                    additionalParents = this.additionalParents.get();
+                }
+            }
+            return additionalParents.remove(oldParent);
         }
+        return false;
+    }
+
+    protected void replaceParentWithAdditionalParent( NodeCache cache,
+                                                      NodeKey oldParent,
+                                                      NodeKey existingAdditionalParent ) {
+        assert getAdditionalParentKeys(cache).contains(existingAdditionalParent);
+        newParent = existingAdditionalParent;
         ChangedAdditionalParents additionalParents = this.additionalParents.get();
         if (additionalParents == null) {
             additionalParents = new ChangedAdditionalParents();
@@ -236,7 +253,8 @@ public class SessionNode implements MutableCachedNode {
                 additionalParents = this.additionalParents.get();
             }
         }
-        return additionalParents.remove(oldParent);
+        additionalParents.remove(existingAdditionalParent);
+        additionalParents.remove(oldParent); // also record that we're removing primary parent
     }
 
     protected MutableChildReferences appended( boolean createIfMissing ) {
@@ -747,7 +765,7 @@ public class SessionNode implements MutableCachedNode {
     public void setReference( SessionCache cache,
                               Property property,
                               SessionCache systemCache ) {
-        assert property.isReference();
+        assert property.isEmpty() || property.isReference();
 
         writableSession(cache).assertInSession(this);
         Name name = property.getName();
@@ -1059,45 +1077,50 @@ public class SessionNode implements MutableCachedNode {
         node.newParent = newParent.getKey();
     }
 
+    /**
+     * Remove the child from this parent node. This method works whether or not the child is a shared node (e.g., a shareable node
+     * that has 2+ nodes in the shared set).
+     * 
+     * @param session the session
+     * @param childKey the child key; may not be null
+     * @return the child node; never null
+     */
     protected SessionNode removeChildFromNode( AbstractSessionCache session,
-                                               NodeKey key ) {
-        // See if the node has this node as a parent or additional parent ...
-        SessionNode child = session.mutable(key);
-        boolean additional = false;
-        if (!child.getParentKey(session).equals(this.key)) {
-            // Try to remove it from the additional parents ...
-            if (child.removeAdditionalParent(session, this.key)) {
-                additional = true;
+                                               NodeKey childKey ) {
+        // First, manipulate the child node. But we have to see whether this node is a primary parent or an additional parent ...
+        SessionNode child = session.mutable(childKey);
+        if (child.getParentKey(session).equals(this.key)) {
+            // The child's parent is this node. If there are additional parents, then we should pick the first additional parent
+            // and use it as the new primary parent ...
+            Set<NodeKey> additionalParentKeys = child.getAdditionalParentKeys(session);
+            if (additionalParentKeys.isEmpty()) {
+                child.newParent = null;
             } else {
+                // There are additional parents, and we're removing the primary parent
+                NodeKey newParentKey = additionalParentKeys.iterator().next();
+                child.replaceParentWithAdditionalParent(session, this.key, newParentKey);
+            }
+        } else {
+            // The child's parent is NOT this node, so this node must be an additional parent...
+            boolean removed = child.removeAdditionalParent(session, this.key);
+            if (!removed) {
                 // Not a primary or additional parent ...
-                if (!getChildReferences(session).hasChild(key)) {
-                    throw new NodeNotFoundException(key);
+                if (!getChildReferences(session).hasChild(childKey)) {
+                    throw new NodeNotFoundException(childKey);
                 }
             }
         }
 
-        SessionNode node = session.mutable(key);
-        assert node != null;
-        if (!additional) {
-            // If there are additional parents, then we should pick the first one and use it as the new parent ...
-            Set<NodeKey> additionalParentKeys = child.getAdditionalParentKeys(session);
-            if (additionalParentKeys.isEmpty()) {
-                node.newParent = null;
-            } else {
-                NodeKey newParentKey = additionalParentKeys.iterator().next();
-                node.newParent = newParentKey;
-                removeAdditionalParent(session, newParentKey);
-            }
-        }
+        // Now, update this node (the parent) ...
         MutableChildReferences appended = this.appended.get();
         ChildReference removed = null;
         if (appended != null) {
-            removed = appended.remove(key); // The node was appended to this node but not yet persisted ...
+            removed = appended.remove(childKey); // The node may have been appended to this node but not yet persisted ...
         }
         if (removed == null) {
-            changedChildren.remove(key);
+            changedChildren.remove(childKey);
         }
-        return node;
+        return child;
     }
 
     @Override
@@ -1211,10 +1234,12 @@ public class SessionNode implements MutableCachedNode {
     @Override
     public Map<NodeKey, NodeKey> deepCopy( SessionCache cache,
                                            CachedNode sourceNode,
-                                           SessionCache sourceCache ) {
+                                           SessionCache sourceCache,
+                                           String systemWorkspaceKey,
+                                           Connectors connectors ) {
         final WritableSessionCache writableSessionCache = writableSession(cache);
         writableSessionCache.assertInSession(this);
-        DeepCopy copier = new DeepCopy(this, writableSessionCache, sourceNode, sourceCache);
+        DeepCopy copier = new DeepCopy(this, writableSessionCache, sourceNode, sourceCache, systemWorkspaceKey, connectors);
         copier.execute();
         return copier.getSourceToTargetKeys();
     }
@@ -1222,10 +1247,12 @@ public class SessionNode implements MutableCachedNode {
     @Override
     public void deepClone( SessionCache cache,
                            CachedNode sourceNode,
-                           SessionCache sourceCache ) {
+                           SessionCache sourceCache,
+                           String systemWorkspaceKey,
+                           Connectors connectors ) {
         final WritableSessionCache writableSessionCache = writableSession(cache);
         writableSessionCache.assertInSession(this);
-        DeepClone cloner = new DeepClone(this, writableSessionCache, sourceNode, sourceCache);
+        DeepClone cloner = new DeepClone(this, writableSessionCache, sourceNode, sourceCache, systemWorkspaceKey, connectors);
         cloner.execute();
     }
 
@@ -1242,6 +1269,31 @@ public class SessionNode implements MutableCachedNode {
         result.addAll(referrerChanges.getAddedReferrers(ReferenceType.BOTH));
         result.addAll(referrerChanges.getRemovedReferrers(ReferenceType.BOTH));
         return result;
+    }
+
+    @Override
+    public void addFederatedSegment( String externalNodeKey,
+                                     String segmentName ) {
+        if (federatedSegments.get() == null) {
+            federatedSegments.compareAndSet(null, new FederatedSegmentChanges());
+        }
+        this.federatedSegments.get().addSegment(externalNodeKey, segmentName);
+    }
+
+    protected Map<String, String> getAddedFederatedSegments() {
+        return this.federatedSegments.get() != null ? this.federatedSegments.get().getAdditions() : Collections.<String, String>emptyMap();
+    }
+
+    @Override
+    public void removeFederatedSegment( String externalNodeKey ) {
+        if (federatedSegments.get() == null) {
+            federatedSegments.compareAndSet(null, new FederatedSegmentChanges());
+        }
+        this.federatedSegments.get().removeSegment(externalNodeKey);
+    }
+
+    protected Set<String> getRemovedFederatedSegments() {
+        return this.federatedSegments.get() != null ? this.federatedSegments.get().getRemovals() : Collections.<String>emptySet();
     }
 
     @SuppressWarnings( "synthetic-access" )
@@ -1288,13 +1340,18 @@ public class SessionNode implements MutableCachedNode {
 
     public String getString( NamespaceRegistry registry ) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Node ").append(key).append(": ");
-        if (isNew) {
-            sb.append(" created; ");
-        }
+        sb.append("Node '").append(key).append("' ->");
         NodeKey newParent = this.newParent;
-        if (newParent != null) {
-            sb.append(" moved to ").append(newParent).append("; ");
+        if (isNew) {
+            if (newParent != null) {
+                sb.append(" created under '").append(newParent).append('\'');
+            } else {
+                sb.append(" created; ");
+            }
+        } else {
+            if (newParent != null) {
+                sb.append(" moved to '").append(newParent).append('\'');
+            }
         }
         ChangedAdditionalParents additionalParents = this.additionalParents();
         if (additionalParents != null) {
@@ -1307,30 +1364,32 @@ public class SessionNode implements MutableCachedNode {
             }
             sb.append(']');
         }
-        if (!changedProperties.isEmpty()) {
+        boolean changedProps = !changedProperties.isEmpty();
+        boolean removedProps = !removedProperties.isEmpty();
+        if (changedProps || removedProps) {
             sb.append(" props: {");
-            boolean first = true;
-            for (Map.Entry<Name, Property> entry : changedProperties.entrySet()) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(',');
+            if (changedProps) {
+                boolean first = true;
+                for (Map.Entry<Name, Property> entry : changedProperties.entrySet()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(',');
+                    }
+                    Property property = entry.getValue();
+                    sb.append(" +").append(property.getString(registry));
                 }
-                Property property = entry.getValue();
-                sb.append(" +").append(property.getString(registry));
             }
-            sb.append('}');
-        }
-        if (!removedProperties.isEmpty()) {
-            sb.append(" props: {");
-            boolean first = true;
-            for (Name name : removedProperties.keySet()) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(',');
+            if (removedProps) {
+                boolean first = true;
+                for (Name name : removedProperties.keySet()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(',');
+                    }
+                    sb.append(" -").append(name.getString(registry));
                 }
-                sb.append(" -").append(name.getString(registry));
             }
             sb.append('}');
         }
@@ -1338,16 +1397,17 @@ public class SessionNode implements MutableCachedNode {
         if (!changedChildren.isEmpty() || (appended != null && !appended.isEmpty())) {
             sb.append(" children: ");
             if (!changedChildren.isEmpty()) {
-                sb.append(changedChildren);
+                changedChildren.getString(sb);
+                sb.append(' ');
             }
             if (appended != null && !appended.isEmpty()) {
-                sb.append(" appended: [");
+                sb.append("appended [");
                 Iterator<ChildReference> iter = appended.iterator();
                 if (iter.hasNext()) {
-                    sb.append(iter.next().getString(registry));
+                    sb.append(iter.next().toString(registry));
                     while (iter.hasNext()) {
                         sb.append(',');
-                        sb.append(iter.next().getString(registry));
+                        sb.append(iter.next().toString(registry));
                     }
                 }
                 sb.append(']');
@@ -1355,7 +1415,8 @@ public class SessionNode implements MutableCachedNode {
         }
         ReferrerChanges referrerChg = getReferrerChanges();
         if (referrerChg != null && !referrerChg.isEmpty()) {
-            sb.append(" ").append(referrerChg.toString());
+            sb.append(' ');
+            referrerChg.getString(sb);
         }
         return sb.toString();
     }
@@ -1378,9 +1439,7 @@ public class SessionNode implements MutableCachedNode {
 
         @Override
         public Set<Name> removedPropertyNames() {
-            Set<Name> result = new HashSet<Name>();
-            result.addAll(changedProperties().keySet());
-            return result;
+            return new HashSet<Name>(removedProperties());
         }
 
         @Override
@@ -1750,6 +1809,29 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @ThreadSafe
+    protected static class FederatedSegmentChanges {
+        private final ConcurrentHashMap<String, String> additions = new ConcurrentHashMap<String, String>();
+        private final Set<String> removals = Collections.synchronizedSet(new HashSet<String>());
+
+        protected void addSegment( String externalNodeKey,
+                                   String name ) {
+            additions.putIfAbsent(externalNodeKey, name);
+        }
+
+        protected void removeSegment( String externalNodeKey ) {
+            removals.add(externalNodeKey);
+        }
+
+        protected Map<String, String> getAdditions() {
+            return Collections.unmodifiableMap(additions);
+        }
+
+        protected Set<String> getRemovals() {
+            return Collections.unmodifiableSet(removals);
+        }
+    }
+
+    @ThreadSafe
     protected static class InsertedChildReferences implements Iterable<Insertions> {
         private final ReadWriteLock lock = new ReentrantReadWriteLock();
         private final Set<NodeKey> inserted = new HashSet<NodeKey>();
@@ -2098,7 +2180,10 @@ public class SessionNode implements MutableCachedNode {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder();
+            return getString(new StringBuilder());
+        }
+
+        public String getString( StringBuilder sb ) {
             sb.append("ReferrerChanges: ");
             if (!addedStrong.isEmpty()) {
                 sb.append(" addedStrong=").append(addedStrong);
@@ -2126,11 +2211,16 @@ public class SessionNode implements MutableCachedNode {
         protected final String targetWorkspaceKey;
         protected final Map<NodeKey, NodeKey> linkedPlaceholdersToOriginal = new HashMap<NodeKey, NodeKey>();
         protected final Map<NodeKey, NodeKey> sourceToTargetKeys = new HashMap<NodeKey, NodeKey>();
+        protected final DocumentStore documentStore;
+        protected final String systemWorkspaceKey;
+        protected final Connectors connectors;
 
         protected DeepCopy( SessionNode targetNode,
                             WritableSessionCache cache,
                             CachedNode sourceNode,
-                            SessionCache sourceCache ) {
+                            SessionCache sourceCache,
+                            String systemWorkspaceKey,
+                            Connectors connectors ) {
             this.targetCache = cache;
             this.targetNode = targetNode;
             this.sourceCache = sourceCache;
@@ -2138,6 +2228,9 @@ public class SessionNode implements MutableCachedNode {
             this.startingPathInSource = sourceNode.getPath(sourceCache);
             this.propertyFactory = this.targetCache.getContext().getPropertyFactory();
             this.targetWorkspaceKey = targetNode.getKey().getWorkspaceKey();
+            this.documentStore = ((WorkspaceCache)sourceCache.getWorkspace()).documentStore();
+            this.systemWorkspaceKey = systemWorkspaceKey;
+            this.connectors = connectors;
         }
 
         public Map<NodeKey, NodeKey> getSourceToTargetKeys() {
@@ -2169,17 +2262,37 @@ public class SessionNode implements MutableCachedNode {
             final NodeKey sourceKey = sourceNode.getKey();
             final NodeKey targetKey = targetNode.getKey();
             sourceToTargetKeys.put(sourceKey, targetKey);
-            copyProperties(targetNode, sourceNode);
+
+            if (shouldProcessSourceKey(sourceKey)) {
+                copyProperties(targetNode, sourceNode);
+            }
 
             for (ChildReference childReference : sourceNode.getChildReferences(sourceCache)) {
                 NodeKey childKey = childReference.getKey();
+                if (!shouldProcessSourceKey(childKey)) {
+                    continue;
+                }
                 // We'll need the parent key in the source ...
-                CachedNode sourceChild = sourceCache.getNode(childReference.getKey());
+                CachedNode sourceChild = sourceCache.getNode(childKey);
                 NodeKey parentSourceKey = sourceChild.getParentKeyInAnyWorkspace(sourceCache);
                 if (sourceKey.equals(parentSourceKey)) {
-                    // The child is a normal child of this node ...
-                    NodeKey newKey = createTargetKeyFor(childKey, targetKey);
-                    MutableCachedNode childCopy = targetNode.createChild(targetCache, newKey, childReference.getName(), null);
+                    boolean isExternal = !childKey.getSourceKey().equalsIgnoreCase(sourceCache.getRootKey().getSourceKey());
+                    MutableCachedNode childCopy = null;
+                    String projectionAlias = childReference.getName().getString();
+                    if (isExternal && connectors.hasExternalProjection(projectionAlias, childKey.toString())) {
+                        // the child is a projection, so we need to create the projection in the parent
+                        targetNode.addFederatedSegment(childKey.toString(), projectionAlias);
+                        // since the child is a projection, use the external node key to retrieve the node/document from the
+                        // connectors
+                        childCopy = targetCache.mutable(childKey);
+                    } else {
+                        // The child is a normal child of this node ...
+                        String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(),
+                                                                                    childReference.getName(),
+                                                                                    sourceChild.getPrimaryType(sourceCache));
+                        NodeKey newKey = createTargetKeyFor(childKey, targetKey, childCopyPreferredKey);
+                        childCopy = targetNode.createChild(targetCache, newKey, childReference.getName(), null);
+                    }
                     doPhase1(childCopy, sourceChild);
                 } else {
                     // This child is linked and is not owned. See if the original (the shareable node) is in the source tree ...
@@ -2198,8 +2311,11 @@ public class SessionNode implements MutableCachedNode {
                                 // The node that we're supposed to link to doesn't yet exist (b/c it will be created
                                 // later on in phase 1), so we can't simply create a link but instead need
                                 // to create a placeholder (with a new key) ...
-                                NodeKey placeholderKey = createTargetKeyFor(childKey, targetKey);
-                                newKey = createTargetKeyFor(childKey, targetKey);
+                                NodeKey placeholderKey = createTargetKeyFor(childKey, targetKey, null);
+                                String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(),
+                                                                                            childReference.getName(),
+                                                                                            sourceChild.getPrimaryType(sourceCache));
+                                newKey = createTargetKeyFor(childKey, targetKey, childCopyPreferredKey);
                                 sourceToTargetKeys.put(childKey, newKey);
                                 targetNode.createChild(targetCache, placeholderKey, childReference.getName(), null);
                                 linkedPlaceholdersToOriginal.put(placeholderKey, newKey);
@@ -2217,9 +2333,16 @@ public class SessionNode implements MutableCachedNode {
         }
 
         protected NodeKey createTargetKeyFor( NodeKey sourceKey,
-                                              NodeKey parentKeyInTarget ) {
+                                              NodeKey parentKeyInTarget,
+                                              String preferredKey ) {
             NodeKey newKey = sourceToTargetKeys.get(sourceKey);
-            return newKey != null ? newKey : parentKeyInTarget.withRandomId();
+            if (newKey != null) {
+                return newKey;
+            } else if (!StringUtil.isBlank(preferredKey)) {
+                return new NodeKey(preferredKey);
+            } else {
+                return parentKeyInTarget.withRandomId();
+            }
         }
 
         /**
@@ -2277,6 +2400,11 @@ public class SessionNode implements MutableCachedNode {
         protected String getOperationName() {
             return "Copy";
         }
+
+        protected boolean shouldProcessSourceKey( NodeKey sourceKey ) {
+            return !sourceKey.equals(sourceCache.getRootKey())
+                   && !sourceKey.getWorkspaceKey().equalsIgnoreCase(systemWorkspaceKey);
+        }
     }
 
     protected class DeepClone extends DeepCopy {
@@ -2284,8 +2412,10 @@ public class SessionNode implements MutableCachedNode {
         protected DeepClone( SessionNode targetNode,
                              WritableSessionCache cache,
                              CachedNode sourceNode,
-                             SessionCache sourceCache ) {
-            super(targetNode, cache, sourceNode, sourceCache);
+                             SessionCache sourceCache,
+                             String systemWorkspaceKey,
+                             Connectors connectors ) {
+            super(targetNode, cache, sourceNode, sourceCache, systemWorkspaceKey, connectors);
         }
 
         @Override
@@ -2300,9 +2430,10 @@ public class SessionNode implements MutableCachedNode {
 
         @Override
         protected NodeKey createTargetKeyFor( NodeKey sourceKey,
-                                              NodeKey parentKeyInTarget ) {
+                                              NodeKey parentKeyInTarget,
+                                              String preferredKey ) {
             // Reuse the same source and identifier, but a different workspace ...
-            return parentKeyInTarget.withId(sourceKey.getIdentifier());
+            return !StringUtil.isBlank(preferredKey) ? new NodeKey(preferredKey) : parentKeyInTarget.withId(sourceKey.getIdentifier());
         }
 
         @Override

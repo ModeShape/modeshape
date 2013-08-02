@@ -26,7 +26,9 @@ package org.modeshape.connector.git;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
@@ -34,6 +36,7 @@ import org.eclipse.jgit.api.ListTagCommand;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -90,8 +93,16 @@ public abstract class GitFunction {
                                       DocumentWriter writer,
                                       Values values ) throws GitAPIException, IOException;
 
-    private String remoteBranchPrefix() {
-        String remoteName = connector.remoteName();
+    private Set<String> remoteBranchPrefixes() {
+        Set<String> prefixes = new HashSet<String>();
+        for (String remoteName : connector.remoteNames()) {
+            String prefix = remoteBranchPrefix(remoteName);
+            prefixes.add(prefix);
+        }
+        return prefixes;
+    }
+
+    private String remoteBranchPrefix( String remoteName ) {
         return REMOTE_BRANCH_PREFIX + remoteName + "/";
     }
 
@@ -102,7 +113,19 @@ public abstract class GitFunction {
      * @return the branch ref name
      */
     protected String branchRefForName( String branchName ) {
-        return remoteBranchPrefix() + branchName;
+        return remoteBranchPrefix(connector.remoteName()) + branchName;
+    }
+
+    /**
+     * Obtain the name of the branch reference
+     * 
+     * @param branchName
+     * @param remoteName the name of the remote
+     * @return the branch ref name
+     */
+    protected String branchRefForName( String branchName,
+                                       String remoteName ) {
+        return remoteBranchPrefix(remoteName) + branchName;
     }
 
     /**
@@ -118,8 +141,11 @@ public abstract class GitFunction {
                                                      String branchOrTagOrCommitId ) throws IOException {
         ObjectId objId = repository.resolve(branchOrTagOrCommitId);
         if (objId == null) {
-            String branchRef = branchRefForName(branchOrTagOrCommitId);
-            objId = repository.resolve(branchRef);
+            for (String remoteName : connector.remoteNames()) {
+                String branchRef = branchRefForName(branchOrTagOrCommitId, remoteName);
+                objId = repository.resolve(branchRef);
+                if (objId != null) break;
+            }
         }
         return objId;
     }
@@ -135,24 +161,43 @@ public abstract class GitFunction {
     protected void addBranchesAsChildren( Git git,
                                           CallSpecification spec,
                                           DocumentWriter writer ) throws GitAPIException {
-        // Generate the child references to the branches, which will be sorted by name (by the command).
+        Set<String> remoteBranchPrefixes = remoteBranchPrefixes();
+        if (remoteBranchPrefixes.isEmpty()) {
+            // Generate the child references to the LOCAL branches, which will be sorted by name ...
+            ListBranchCommand command = git.branchList();
+            List<Ref> branches = command.call();
+            // Reverse the sort of the branch names, since they might be version numbers ...
+            Collections.sort(branches, REVERSE_REF_COMPARATOR);
+            for (Ref ref : branches) {
+                String name = ref.getName();
+                writer.addChild(spec.childId(name), name);
+            }
+            return;
+        }
+        // There is at least one REMOTE branch, so generate the child references to the REMOTE branches,
+        // which will be sorted by name (by the command)...
         ListBranchCommand command = git.branchList();
         command.setListMode(ListMode.REMOTE);
-        String remoteBranchPrefix = remoteBranchPrefix();
         List<Ref> branches = command.call();
         // Reverse the sort of the branch names, since they might be version numbers ...
         Collections.sort(branches, REVERSE_REF_COMPARATOR);
+        Set<String> uniqueNames = new HashSet<String>();
         for (Ref ref : branches) {
             String name = ref.getName();
-            // We only want the branch if it matches the remote ...
-            if (name.startsWith(remoteBranchPrefix)) {
-                // Remove the prefix ...
-                name = name.replaceFirst(remoteBranchPrefix, "");
-            } else {
+            if (uniqueNames.contains(name)) continue;
+            // We only want the branch if it matches one of the listed remotes ...
+            boolean skip = false;
+            for (String remoteBranchPrefix : remoteBranchPrefixes) {
+                if (name.startsWith(remoteBranchPrefix)) {
+                    // Remove the prefix ...
+                    name = name.replaceFirst(remoteBranchPrefix, "");
+                    break;
+                }
                 // Otherwise, it's a remote branch from a different remote that we don't want ...
-                continue;
+                skip = true;
             }
-            writer.addChild(spec.childId(name), name);
+            if (skip) continue;
+            if (uniqueNames.add(name)) writer.addChild(spec.childId(name), name);
         }
     }
 
@@ -259,8 +304,18 @@ public abstract class GitFunction {
     }
 
     protected boolean isQueryable( CallSpecification callSpec ) {
-        //by default, a git function does not return queryable content
+        // by default, a git function does not return queryable content
         return false;
+    }
+
+    protected String authorName( RevCommit commit ) {
+        PersonIdent authorIdent = commit.getAuthorIdent();
+        return authorIdent != null ? authorIdent.getName() : "<unknown>";
+    }
+
+    protected String commiterName( RevCommit commit ) {
+        PersonIdent committerIdent = commit.getCommitterIdent();
+        return committerIdent != null ? committerIdent.getName() : "<unknown>";
     }
 
     @Override

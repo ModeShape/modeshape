@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.api.monitor;
 
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
@@ -33,6 +35,93 @@ import javax.jcr.RepositoryException;
  * @since 3.0
  */
 public interface RepositoryMonitor {
+
+    Set<DurationMetric> ALL_DURATION_METRICS = Collections.unmodifiableSet(EnumSet.allOf(DurationMetric.class));
+    Set<ValueMetric> ALL_VALUE_METRICS = Collections.unmodifiableSet(EnumSet.allOf(ValueMetric.class));
+    Set<Window> ALL_WINDOWS = Collections.unmodifiableSet(EnumSet.allOf(Window.class));
+
+    /**
+     * A monitor without history.
+     */
+    RepositoryMonitor EMPTY_MONITOR = new RepositoryMonitor() {
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns {@link RepositoryMonitor#ALL_DURATION_METRICS}.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.RepositoryMonitor#getAvailableDurationMetrics()
+         */
+        @Override
+        public Set<DurationMetric> getAvailableDurationMetrics() {
+            return ALL_DURATION_METRICS;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns {@link RepositoryMonitor#ALL_VALUE_METRICS}.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.RepositoryMonitor#getAvailableValueMetrics()
+         */
+        @Override
+        public Set<ValueMetric> getAvailableValueMetrics() {
+            return ALL_VALUE_METRICS;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns {@link RepositoryMonitor#ALL_WINDOWS}.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.RepositoryMonitor#getAvailableWindows()
+         */
+        @Override
+        public Set<Window> getAvailableWindows() {
+            return ALL_WINDOWS;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns {@link History#NO_HISTORY}.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.RepositoryMonitor#getHistory(org.modeshape.jcr.api.monitor.ValueMetric,
+         *      org.modeshape.jcr.api.monitor.Window)
+         */
+        @Override
+        public History getHistory( ValueMetric metric,
+                                   Window windowInTime ) {
+            return History.NO_HISTORY;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns {@link History#NO_HISTORY}.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.RepositoryMonitor#getHistory(org.modeshape.jcr.api.monitor.DurationMetric,
+         *      org.modeshape.jcr.api.monitor.Window)
+         */
+        @Override
+        public History getHistory( DurationMetric metric,
+                                   Window windowInTime ) {
+            return History.NO_HISTORY;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns an empty duration activity array.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.RepositoryMonitor#getLongestRunning(org.modeshape.jcr.api.monitor.DurationMetric)
+         */
+        @Override
+        public DurationActivity[] getLongestRunning( DurationMetric metric ) {
+            return DurationActivity.NO_DURATION_RECORDS;
+        }
+
+    };
 
     /**
      * Get the ValueMetric enumerations that are available for use by the caller with {@link #getHistory(ValueMetric, Window)}.

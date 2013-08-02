@@ -858,7 +858,7 @@ public class CmisConnector extends Connector {
         // convert CMIS type's attributes to node type template we have just created
         type.setName(cmisType.getId());
         type.setAbstract(false);
-        type.setMixin(true);
+        type.setMixin(false);
         type.setOrderableChildNodes(true);
         type.setQueryable(true);
         type.setDeclaredSuperTypeNames(superTypes(cmisType));
@@ -914,7 +914,7 @@ public class CmisConnector extends Connector {
         // convert CMIS type's attributes to node type template we have just created
         type.setName("cmis:repository");
         type.setAbstract(false);
-        type.setMixin(true);
+        type.setMixin(false);
         type.setOrderableChildNodes(true);
         type.setQueryable(true);
         type.setDeclaredSuperTypeNames(new String[] {JcrConstants.NT_FOLDER});

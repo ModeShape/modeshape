@@ -31,12 +31,12 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.junit.After;
 import org.junit.Test;
+import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
 import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.SchemaElementType;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.TeiidDataType;
-import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Teiid dialects are parsed.
@@ -637,18 +637,32 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
     }
 
     @Test
+    @SkipLongRunning
+    public void shouldSequenceGreenPlumDdl() throws Exception {
+        // this DDL has column with type of OBJECT with a length
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/GreenPlum.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(410L));
+
+        // make sure column with type of object has a length
+        final Node tableNode = this.statementsNode.getNode("gp_toolkit.gp_log_command_timings");
+        final Node columnNode = tableNode.getNode("logduration");
+        verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.OBJECT.toDdl());
+        verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_LENGTH, 49L);
+    }
+
+    @Test
     public void shouldSequenceProductsDdl() throws Exception {
         // this DDL has names that contains a ':'
         this.statementsNode = sequenceDdl("ddl/dialect/teiid/products.ddl");
         assertThat(this.statementsNode.getNodes().getSize(), is(6L));
 
         // table
-        final Node tableNode = statementsNode.getNode(AstNode.replaceJcrIllegalCharacters("Products.product:info"));
+        final Node tableNode = statementsNode.getNode(this.session.encode("Products.product:info"));
         verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         { // column
-            final NodeIterator itr = tableNode.getNodes(AstNode.replaceJcrIllegalCharacters("PRODUCT:ID"));
+            final NodeIterator itr = tableNode.getNodes(this.session.encode("PRODUCT:ID"));
             assertThat(itr.getSize(), is(1L));
             final Node columnNode = itr.nextNode();
             verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.BIGDECIMAL.toDdl());

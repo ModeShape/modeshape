@@ -274,10 +274,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
             // Remove the node types from persistent storage ...
             SessionCache system = repository.createSystemSession(context, false);
-            for (JcrNodeType nodeType : removedNodeTypes) {
-                system.destroy(nodeType.key());
-            }
-            system.save();
+            SystemContent systemContent = new SystemContent(system);
+            systemContent.unregisterNodeTypes(removedNodeTypes.toArray(new JcrNodeType[removedNodeTypes.size()]));
+            systemContent.save();
 
             // Now change the cache ...
             this.nodeTypesCache = newNodeTypes;
@@ -543,6 +542,15 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                     JcrNodeType requiredPrimaryType = nodeTypes.findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
                     if (requiredPrimaryType == null) {
                         String msg = JcrI18n.invalidPrimaryTypeName.text(primaryTypeName, nodeType.getName());
+                        throw new RepositoryException(msg);
+                    }
+                }
+            }
+
+            if (nodeType.isMixin()) {
+                for (NodeType superType : nodeType.getSupertypes()) {
+                    if (!superType.isMixin()) {
+                        String msg = JcrI18n.invalidMixinSupertype.text(nodeType.getName(), superType.getName());
                         throw new RepositoryException(msg);
                     }
                 }

@@ -26,7 +26,6 @@ package org.modeshape.jcr.cache.document;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -89,43 +88,7 @@ import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 /**
  * A utility class that encapsulates all the logic for reading from and writing to {@link Document} instances.
  */
-public class DocumentTranslator {
-
-    public static final String SHA1 = "sha1";
-    public static final String EXTERNAL_BINARY_ID_FIELD = "$externalBinaryId";
-    public static final String SOURCE_NAME_FIELD = "$sourceName";
-    public static final String SHA1_FIELD = "$sha1";
-    public static final String LENGTH = "len";
-    public static final String LENGTH_FIELD = "$len";
-    public static final String PARENT = "parent";
-    public static final String LARGE_VALUE = "value";
-    public static final String PROPERTIES = "properties";
-    public static final String CHILDREN = "children";
-    public static final String CHILDREN_INFO = "childrenInfo";
-    public static final String FEDERATED_SEGMENTS = "federatedSegments";
-    public static final String COUNT = "count";
-    public static final String BLOCK_SIZE = "blockSize";
-    public static final String NEXT_BLOCK = "nextBlock";
-    public static final String LAST_BLOCK = "lastBlock";
-    public static final String NAME = "name";
-    public static final String KEY = "key";
-    public static final String REFERRERS = "referrers";
-    public static final String WEAK = "weak";
-    public static final String STRONG = "strong";
-    public static final String REFERENCE_COUNT = "refCount";
-    public static final String QUERYABLE_FIELD = "$queryable";
-
-    /**
-     * A constant that is used as the name for a nested document in which additional, embedded documents can be placed. Each of
-     * these documents represents a separate node and will be automatically extracted from the containing document prior to usage.
-     */
-    public static final String EMBEDDED_DOCUMENTS = "embeddedDocuments";
-
-    /**
-     * A constant that can be used by a connector implementation as a supplementary document field, that indicates the maximum
-     * number of seconds that particular document should be stored in the workspace cache.
-     */
-    public static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
+public class DocumentTranslator implements DocumentConstants {
 
     private final DocumentStore documentStore;
     private final AtomicLong largeStringSize = new AtomicLong();
@@ -671,12 +634,16 @@ public class DocumentTranslator {
             if (parent != null && !parent.equals(oldParent)) {
                 parents.addStringIfAbsent(parent.toString());
                 if (oldParent != null) {
-                    parents.remove(oldParent.toString());
+                    parents.remove((Object)oldParent.toString());
                 }
             }
             if (additionalParents != null) {
-                for (NodeKey removed : additionalParents.getRemovals()) {
-                    parents.remove((Object)removed.toString()); // remove by value (not by name)
+                for (NodeKey removedParent : additionalParents.getRemovals()) {
+                    // When the primary parent is removed and changed to one of the additional parents, then the additional
+                    // parent is removed. Therefore, we only want to remove it if it does not equal the new parent ...
+                    if (!removedParent.equals(parent)) {
+                        parents.remove((Object)removedParent.toString()); // remove by value (not by name)
+                    }
                 }
                 for (NodeKey added : additionalParents.getAdditions()) {
                     parents.addStringIfAbsent(added.toString());
@@ -707,7 +674,7 @@ public class DocumentTranslator {
                     parents.add(existingParent);
                 }
                 for (NodeKey removed : additionalParents.getRemovals()) {
-                    parents.remove(removed.toString());
+                    parents.remove((Object)removed.toString());
                 }
                 for (NodeKey added : additionalParents.getAdditions()) {
                     parents.add(added.toString());
@@ -1411,287 +1378,6 @@ public class DocumentTranslator {
     }
 
     /**
-     * <p>
-     * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
-     * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
-     * a session sees as "persisted" state and the reality.
-     * </p>
-     * 
-     * @param key
-     * @param document
-     * @param targetCountPerBlock
-     * @param tolerance
-     */
-    protected void optimizeChildrenBlocks( NodeKey key,
-                                           EditableDocument document,
-                                           int targetCountPerBlock,
-                                           int tolerance ) {
-        if (document == null) {
-            SchematicEntry entry = documentStore.get(key.toString());
-            if (entry == null) {
-                return;
-            }
-            document = entry.editDocumentContent();
-            if (document == null) {
-                return;
-            }
-        }
-        EditableArray children = document.getArray(CHILDREN);
-        if (children == null) {
-            // There are no children to optimize
-            return;
-        }
-
-        // Get the children info
-        EditableDocument info = document.getDocument(CHILDREN_INFO);
-        boolean selfContained = true;
-        if (info != null) {
-            selfContained = !info.containsField(NEXT_BLOCK);
-        }
-
-        if (selfContained) {
-            // This is a self-contained block; we only need to do something if the child count is larger than target +/- tolerance
-            int total = children.size();
-            if (total < targetCountPerBlock + tolerance) {
-                // The number of children is small enough ...
-                return;
-            }
-            // Otherwise, there are more children than our target + tolerance, so we need to split the children ...
-            splitChildren(key, document, children, targetCountPerBlock, tolerance, true, null);
-        } else {
-            assert info != null;
-            // This is not self-contained; there are already at least two blocks.
-            // Go through each block, and either split it, merge it with the previous block, or leave it.
-            EditableDocument doc = document;
-            NodeKey docKey = key;
-            while (doc != null) {
-                EditableDocument docInfo = doc.getDocument(CHILDREN_INFO);
-                String nextKey = docInfo != null ? docInfo.getString(NEXT_BLOCK) : null;
-                children = doc.getArray(CHILDREN);
-                int count = children.size();
-                boolean isFirst = doc == document;
-                if (count > (targetCountPerBlock + tolerance)) {
-                    // This block is too big, so we should split it into multiple blocks...
-                    splitChildren(docKey, doc, children, targetCountPerBlock, tolerance, isFirst, nextKey);
-                } else if (count < (targetCountPerBlock - tolerance) && nextKey != null) {
-                    // This block is too small, so always combine it with the next block, if there is one
-                    // (even if that makes the next block too big, since it will be split in a later pass).
-                    // Note that since we're only splitting if there is a next block, a last block that
-                    // is too small will be left untouched. At this time, we think this is okay.
-                    nextKey = mergeChildren(docKey, doc, children, isFirst, nextKey);
-
-                    if (nextKey == null) {
-                        // We merged the last block into this document, so we need to change the pointer in 'document'
-                        // to be this doc ...
-                        info.setString(LAST_BLOCK, docKey.toString());
-                    }
-                }
-                // Otherwise, this block is just right
-
-                // Find the next block ...
-                if (nextKey != null) {
-                    SchematicEntry nextEntry = documentStore.get(nextKey);
-                    doc = nextEntry.editDocumentContent();
-                    docKey = new NodeKey(nextKey);
-                } else {
-                    doc = null;
-                }
-            }
-        }
-    }
-
-    /**
-     * Split the children in the given document (with the given key) into two or more blocks, based upon the specified number of
-     * desired children per block and a tolerance. This method will create additional blocks and will modify the supplied document
-     * (with the smaller number of children and the pointer to the next block).
-     * <p>
-     * Note this method returns very quickly if the method determines that there is no work to do.
-     * </p>
-     * <p>
-     * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
-     * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
-     * a session sees as "persisted" state and the reality.
-     * </p>
-     * 
-     * @param key the key for the document whose children are to be split; may not be null
-     * @param document the document whose children are to be split; may not be null
-     * @param children the children that are to be split; may not be null
-     * @param targetCountPerBlock the goal for the number of children in each block; must be positive
-     * @param tolerance a tolerance that when added to and subtraced from the <code>targetCountPerBlock</code> gives an acceptable
-     *        range for the number of children; must be positive but smaller than <code>targetCountPerBlock</code>
-     * @param isFirst true if the supplied document is the first node document, or false if it is a block document
-     * @param nextBlock the key for the next block of children; may be null if the supplied document is the last document and
-     *        there is no next block
-     * @return true if the children were split, or false if no changes were made
-     */
-    protected boolean splitChildren( NodeKey key,
-                                     EditableDocument document,
-                                     EditableArray children,
-                                     int targetCountPerBlock,
-                                     int tolerance,
-                                     boolean isFirst,
-                                     String nextBlock ) {
-        assert 0 < targetCountPerBlock;
-        assert 0 < tolerance;
-        assert tolerance < targetCountPerBlock;
-        // Calculate the number of blocks that we'll create and the size of the last block ...
-        int total = children.size();
-        int numFullBlocks = total / targetCountPerBlock;
-
-        if (numFullBlocks == 0) {
-            // This block doesn't need to be split ...
-            return false;
-        }
-
-        int sizeOfLastBlock = total % targetCountPerBlock;
-        if (sizeOfLastBlock < (targetCountPerBlock - tolerance)) {
-            // The last block would be too small to be on its own ...
-            if (numFullBlocks == 1) {
-                // We would split into one full block and a second too-small block, so there's no point of splitting ...
-                return false;
-            }
-            // We'll split it into multiple blocks, so we'll just include the children in the last too-small block
-            // in the previous block ...
-            sizeOfLastBlock = 0;
-        }
-
-        // The order we do things is important here. The best thing is to create and persist blocks 2...n immediately,
-        // and then we can change the first document to have the smaller number of children and to point to the newly-created
-        // block 2 (which points to block 3, etc.). This order means that anybody reading the input document never reads an
-        // inconsistent set of children.
-        int startIndex = targetCountPerBlock;
-        int endIndex = 0;
-        final String firstNewBlockKey = key.withRandomId().toString();
-        String blockKey = firstNewBlockKey;
-        for (int n = 1; n != numFullBlocks; ++n) {
-            // Create the sublist of children that should be written to a new block ...
-            boolean isLast = n == (numFullBlocks - 1);
-            endIndex = isLast ? total : (startIndex + targetCountPerBlock);
-            EditableArray blockChildren = Schematic.newArray(children.subList(startIndex, endIndex));
-
-            // Create the new block, with a key that contains a UUID for the identifier ...
-            String nextBlockKey = (isLast) ? nextBlockKey = nextBlock : key.withRandomId().toString();
-            EditableDocument blockDoc = Schematic.newDocument();
-            EditableDocument childInfo = blockDoc.setDocument(CHILDREN_INFO);
-            childInfo.setNumber(BLOCK_SIZE, blockChildren.size());
-            if (nextBlockKey != null) {
-                childInfo.setString(NEXT_BLOCK, nextBlockKey);
-            }
-
-            // Write the children ...
-            blockDoc.setArray(CHILDREN, blockChildren);
-
-            // Now persist the new document ...
-            documentStore.localStore().put(blockKey, blockDoc);
-
-            // And get ready for the next block ...
-            if (!isLast) {
-                blockKey = nextBlockKey;
-                startIndex = endIndex;
-            }
-        }
-
-        // Now we can update the input document's children and nextBlock reference ...
-        EditableArray newChildren = Schematic.newArray(children.subList(0, targetCountPerBlock));
-        document.setArray(CHILDREN, newChildren);
-        EditableDocument childInfo = document.getDocument(CHILDREN_INFO);
-        if (childInfo == null) {
-            childInfo = document.setDocument(CHILDREN_INFO);
-        }
-        childInfo.setNumber(BLOCK_SIZE, newChildren.size());
-        childInfo.setString(NEXT_BLOCK, firstNewBlockKey);
-
-        if (isFirst && nextBlock == null) {
-            // We generated a new last block and we have to update the reference ...
-            childInfo.setString(LAST_BLOCK, blockKey);
-        }
-
-        // Note we never changed the number of children, so we don't need to update 'count'.
-        return true;
-    }
-
-    /**
-     * Modify the supplied document (with the given key) to merge in all of the children from the next block. If the next block is
-     * empty or contains no children, it will be deleted its next block merged. Note that this merging is performed, even if the
-     * resulting number of children is considered 'too-large' (as such 'too-large' blocks will be optimized at a subsequent
-     * optimization pass).
-     * <p>
-     * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
-     * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
-     * a session sees as "persisted" state and the reality.
-     * </p>
-     * 
-     * @param key the key for the document whose children are to be merged with the next block; may not be null
-     * @param document the document to be modified with the next block's children; may not be null
-     * @param children the children into which are to be merged the next block's children; may not be null
-     * @param isFirst true if the supplied document is the first node document, or false if it is a block document
-     * @param nextBlock the key for the next block of children; may be null if the supplied document is the last document and
-     *        there is no next block
-     * @return the key for the block of children that is after blocks that are removed; may be null if the supplied document is
-     *         the last block
-     */
-    protected String mergeChildren( NodeKey key,
-                                    EditableDocument document,
-                                    EditableArray children,
-                                    boolean isFirst,
-                                    String nextBlock ) {
-        // The children in the next block should be added to the children in this block, even if the size would be too large
-        // as any too-large blocks will eventually be optimized later ...
-        EditableDocument info = document.getDocument(CHILDREN_INFO);
-        if (info == null) {
-            info = document.setDocument(CHILDREN_INFO);
-        }
-
-        // First, find the next block that we can use ...
-        Set<String> toBeDeleted = new HashSet<String>();
-        SchematicEntry nextEntry = null;
-        String nextBlocksNext = null;
-        while (nextBlock != null) {
-            nextEntry = documentStore.get(nextBlock);
-            Document nextDoc = nextEntry.getContentAsDocument();
-            List<?> nextChildren = nextDoc.getArray(CHILDREN);
-            Document nextInfo = nextDoc.getDocument(CHILDREN_INFO);
-
-            if (nextChildren == null || nextChildren.isEmpty()) {
-                // Delete this empty block ...
-                toBeDeleted.add(nextBlock);
-                nextEntry = null;
-
-                // And figure out the next block ...
-                nextBlock = nextInfo != null ? nextInfo.getString(NEXT_BLOCK) : null;
-            } else {
-                // We can use this block, so copy the children into it ...
-                children.addAll(nextChildren);
-
-                // Figure out the key for the next block ...
-                nextBlocksNext = nextInfo != null ? nextInfo.getString(NEXT_BLOCK) : null;
-
-                if (isFirst && nextBlocksNext == null) {
-                    // This is the first block and there is no more, so set the count and remove the block-related fields ...
-                    info.setNumber(COUNT, children.size());
-                    info.remove(NEXT_BLOCK);
-                    info.remove(LAST_BLOCK);
-                } else {
-                    // Just update the block size and the next block ...
-                    info.setNumber(BLOCK_SIZE, children.size());
-                    info.setString(NEXT_BLOCK, nextBlocksNext);
-                }
-
-                // And then mark it for deletion ...
-                toBeDeleted.add(nextBlock);
-                nextBlock = null;
-            }
-        }
-
-        // Now that we've updated the input document, delete any entries that are no longer needed ...
-        for (String deleteKey : toBeDeleted) {
-            documentStore.remove(deleteKey);
-        }
-
-        return nextBlocksNext;
-    }
-
-    /**
      * Checks if the given document is already locked
      * 
      * @param doc the document
@@ -1707,8 +1393,10 @@ public class DocumentTranslator {
 
     protected void removeFederatedSegments( EditableDocument federatedDocument,
                                             Set<String> externalNodeKeys ) {
+        if (!federatedDocument.containsField(FEDERATED_SEGMENTS)) {
+            return;
+        }
         EditableArray federatedSegments = federatedDocument.getArray(FEDERATED_SEGMENTS);
-        assert federatedSegments != null;
         for (int i = 0; i < federatedSegments.size(); i++) {
             Object federatedSegment = federatedSegments.get(i);
             assert federatedSegment instanceof Document;
@@ -1720,11 +1408,6 @@ public class DocumentTranslator {
         if (federatedSegments.isEmpty()) {
             federatedDocument.remove(FEDERATED_SEGMENTS);
         }
-    }
-
-    protected void removeFederatedSegments( EditableDocument federatedDocument,
-                                            String... externalNodeKeys ) {
-        removeFederatedSegments(federatedDocument, new HashSet<String>(Arrays.asList(externalNodeKeys)));
     }
 
     protected boolean isQueryable( Document document ) {
@@ -1743,48 +1426,17 @@ public class DocumentTranslator {
         document.set(QUERYABLE_FIELD, queryable);
     }
 
-    /**
-     * Given an existing document adds a new federated segment with the given alias pointing to the external document located at
-     * {@code externalPath}
-     * 
-     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which the
-     *        federated segment should be appended.
-     * @param documentKey a {@code non-null} {@link String} representing the key of the document. This is passed from the outside
-     *        as the document may not have a {@link DocumentTranslator#KEY} property (e.g. root node)
-     * @param sourceName a {@code non-null} string, the name of the source where {@code externalPath} will be resolved
-     * @param externalPath a {@code non-null} string the location in the external source which points to an external node
-     * @param alias an optional string representing the name under which the federated segment will be linked. In effect, this
-     *        represents the name of a child reference. If not present, the {@code externalPath} will be used. Note that the name
-     *        of the federated segment (either coming from {@code externalPath} or {@code alias}) should not contain the "/"
-     *        character. If it does, this will be removed.
-     */
     protected void addFederatedSegment( EditableDocument document,
-                                        String documentKey,
-                                        String sourceName,
-                                        String externalPath,
-                                        String alias ) {
+                                        String externalNodeKey,
+                                        String name ) {
         EditableArray federatedSegmentsArray = document.getArray(FEDERATED_SEGMENTS);
         if (federatedSegmentsArray == null) {
             federatedSegmentsArray = Schematic.newArray();
             document.set(FEDERATED_SEGMENTS, federatedSegmentsArray);
         }
 
-        String projectionAlias = !StringUtil.isBlank(alias) ? alias : externalPath;
-        if (projectionAlias.endsWith("/")) {
-            projectionAlias = projectionAlias.substring(0, projectionAlias.length() - 1);
-        }
-        if (projectionAlias.contains("/")) {
-            projectionAlias = projectionAlias.substring(projectionAlias.lastIndexOf("/") + 1);
-        }
-
-        if (StringUtil.isBlank(projectionAlias)) {
-            // we cannot create an external projection without a valid alias
-            return;
-        }
-
-        String externalNodeKey = documentStore.createExternalProjection(documentKey, sourceName, externalPath, projectionAlias);
         if (!StringUtil.isBlank(externalNodeKey)) {
-            EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, projectionAlias);
+            EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, name);
             federatedSegmentsArray.add(federatedSegment);
         }
     }

@@ -765,7 +765,7 @@ public class SystemContent {
         return prefixFor(newNsNode.getSegment(system));
     }
 
-    public boolean unregisterNamespace( String namespaceUri ) {
+    protected boolean unregisterNamespace( String namespaceUri ) {
         MutableCachedNode namespaces = mutableNamespacesNode();
         NodeKey key = keyForNamespaceUri(namespaceUri);
         CachedNode nsNode = system.getNode(key);
@@ -775,6 +775,15 @@ public class SystemContent {
             return true;
         }
         return false;
+    }
+
+    protected void unregisterNodeTypes( JcrNodeType...nodeTypes) {
+        MutableCachedNode nodeTypesNode = mutableNodeTypesNode();
+        for (JcrNodeType nodeType : nodeTypes) {
+            NodeKey nodeTypeKey = nodeType.key();
+            nodeTypesNode.removeChild(system, nodeTypeKey);
+            system.destroy(nodeTypeKey);
+        }
     }
 
     protected final NodeKey keyForNamespaceUri( String namespaceUri ) {

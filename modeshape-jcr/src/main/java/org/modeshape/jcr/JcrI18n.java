@@ -67,6 +67,8 @@ public final class JcrI18n {
     public static I18n pathNotFound;
     public static I18n pathNotFoundRelativeTo;
     public static I18n pathCannotHaveSameNameSiblingIndex;
+    public static I18n cannotCopySubgraphIntoRoot;
+    public static I18n cannotCloneSubgraphIntoRoot;
     public static I18n permissionDenied;
     public static I18n repositoryMustBeConfigured;
     public static I18n sourceInUse;
@@ -171,6 +173,7 @@ public final class JcrI18n {
     public static I18n cannotRemoveNodeFromCloneDueToChangesInSession;
     public static I18n constraintViolatedOnReference;
     public static I18n unableToBindToJndi;
+    public static I18n jndiReadOnly;
     public static I18n invalidOptionProvided;
     public static I18n noOptionValueProvided;
     public static I18n valueMayNotContainNull;
@@ -192,6 +195,14 @@ public final class JcrI18n {
     public static I18n unableToShareNodeWithinSameParent;
     public static I18n shareAlreadyExistsWithinParent;
     public static I18n unableToMoveNodeDueToCycle;
+    public static I18n unableToMoveSourceContainExternalNodes;
+    public static I18n unableToMoveTargetContainExternalNodes;
+    public static I18n unableToMoveSourceTargetMismatch;
+    public static I18n unableToMoveProjection;
+    public static I18n unableToCopySourceTargetMismatch;
+    public static I18n unableToCopySourceNotExternal;
+    public static I18n unableToCloneSameWsContainsExternalNode;
+    public static I18n unableToCloneExternalNodesRequireRoot;
 
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;
@@ -258,6 +269,7 @@ public final class JcrI18n {
     public static I18n noSuchNodeType;
     public static I18n nodeTypeAlreadyExists;
     public static I18n invalidPrimaryTypeName;
+    public static I18n invalidMixinSupertype;
     public static I18n invalidSupertypeName;
     public static I18n supertypesConflict;
     public static I18n ambiguousPrimaryItemName;
@@ -487,6 +499,11 @@ public final class JcrI18n {
     public static I18n cannotReadJMSMessage;
     public static I18n errorWhileShuttingDownListener;
     public static I18n errorWhileStartingUpListener;
+
+    public static I18n enablingDocumentOptimization;
+    public static I18n beginChildrenOptimization;
+    public static I18n completeChildrenOptimization;
+    public static I18n errorDuringChildrenOptimization;
 
     static {
         try {

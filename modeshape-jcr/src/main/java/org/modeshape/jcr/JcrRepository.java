@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import static org.modeshape.jcr.RepositoryConfiguration.QueryRebuild.FAIL_IF_MISSING;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -64,6 +65,7 @@ import javax.jcr.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
+import javax.naming.OperationNotSupportedException;
 import javax.security.auth.login.LoginContext;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
@@ -90,6 +92,7 @@ import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
+import org.modeshape.jcr.RepositoryConfiguration.DocumentOptimization;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.GarbageCollection;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
@@ -141,11 +144,9 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
-import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryUsageChangeSetListener;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
-import static org.modeshape.jcr.RepositoryConfiguration.QueryRebuild.FAIL_IF_MISSING;
 
 /**
  * 
@@ -917,7 +918,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final NodeTypesImporter nodeTypesImporter;
         private final Connectors connectors;
         private final RepositoryConfiguration.IndexRebuildOptions indexRebuildOptions;
-        private final List<ScheduledFuture<?>> gcProcesses = new ArrayList<ScheduledFuture<?>>();
+        private final List<ScheduledFuture<?>> backgroundProcesses = new ArrayList<ScheduledFuture<?>>();
 
         private Transaction existingUserTransaction;
         private RepositoryCache cache;
@@ -1302,24 +1303,45 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                 }
 
-                // Register the background processes. Do this last since we want the repository running before these are started
-                // ...
+                // Register the background processes.
+                // Do this last since we want the repository running before these are started ...
                 GarbageCollection gcConfig = config.getGarbageCollection();
                 String threadPoolName = gcConfig.getThreadPoolName();
-                long binaryGcInitialTime = determineInitialDelay(gcConfig.getInitialTimeExpression());
-                long binaryGcInterval = gcConfig.getIntervalInHours();
+                long binaryGcInitialTimeInMillis = determineInitialDelay(gcConfig.getInitialTimeExpression());
+                long binaryGcIntervalInHours = gcConfig.getIntervalInHours();
                 int lockSweepIntervalInMinutes = gcConfig.getLockSweepIntervalInMinutes();
-                assert binaryGcInitialTime >= 0;
+                assert binaryGcInitialTimeInMillis >= 0;
+                long binaryGcIntervalInMillis = TimeUnit.MILLISECONDS.convert(binaryGcIntervalInHours, TimeUnit.HOURS);
                 ScheduledExecutorService garbageCollectionService = this.context.getScheduledThreadPool(threadPoolName);
-                gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new LockGarbageCollectionTask(JcrRepository.this),
-                                                                             lockSweepIntervalInMinutes,
-                                                                             lockSweepIntervalInMinutes,
-                                                                             TimeUnit.MINUTES));
-                gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(
-                                                                                                                  JcrRepository.this),
-                                                                             binaryGcInitialTime,
-                                                                             binaryGcInterval,
-                                                                             TimeUnit.HOURS));
+                backgroundProcesses.add(garbageCollectionService.scheduleAtFixedRate(new LockGarbageCollectionTask(
+                                                                                                                   JcrRepository.this),
+                                                                                     lockSweepIntervalInMinutes,
+                                                                                     lockSweepIntervalInMinutes,
+                                                                                     TimeUnit.MINUTES));
+                backgroundProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(
+                                                                                                                          JcrRepository.this),
+                                                                                     binaryGcInitialTimeInMillis,
+                                                                                     binaryGcIntervalInMillis,
+                                                                                     TimeUnit.MILLISECONDS));
+
+                DocumentOptimization optConfig = config.getDocumentOptimization();
+                if (optConfig.isEnabled()) {
+                    logger.warn(JcrI18n.enablingDocumentOptimization, name());
+                    threadPoolName = optConfig.getThreadPoolName();
+                    long optInitialTimeInMillis = determineInitialDelay(optConfig.getInitialTimeExpression());
+                    long optIntervalInHours = optConfig.getIntervalInHours();
+                    int targetCount = optConfig.getChildCountTarget();
+                    int tolerance = optConfig.getChildCountTolerance();
+                    assert optInitialTimeInMillis >= 0;
+                    long optIntervalInMillis = TimeUnit.MILLISECONDS.convert(optIntervalInHours, TimeUnit.HOURS);
+                    ScheduledExecutorService optService = this.context.getScheduledThreadPool(threadPoolName);
+                    OptimizationTask optTask = new OptimizationTask(JcrRepository.this, targetCount, tolerance);
+                    backgroundProcesses.add(optService.scheduleAtFixedRate(optTask,
+                                                                           optInitialTimeInMillis,
+                                                                           optIntervalInMillis,
+                                                                           TimeUnit.MILLISECONDS));
+                }
+
             } finally {
                 resumeExistingUserTransaction();
             }
@@ -1531,7 +1553,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             this.connectors.shutdown();
 
             // Remove the scheduled operations ...
-            for (ScheduledFuture<?> future : gcProcesses) {
+            for (ScheduledFuture<?> future : backgroundProcesses) {
                 future.cancel(true);
             }
 
@@ -1602,6 +1624,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 } catch (NoInitialContextException e) {
                     // No JNDI here ...
                     logger.debug("No JNDI found, so not registering '{0}' repository", getName());
+                } catch (OperationNotSupportedException e) {
+                    logger.warn(JcrI18n.jndiReadOnly, config.getName(), jndiName);
                 } catch (NamingException e) {
                     logger.error(e, JcrI18n.unableToBindToJndi, config.getName(), jndiName, e.getMessage());
                 }
@@ -1993,10 +2017,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * reference to hold onto the JcrRepository instance and we'll also check that the repository is running before we actually do
      * any work.
      */
-    protected static abstract class GarbageCollectionTask implements Runnable {
+    protected static abstract class BackgroundRepositoryTask implements Runnable {
         private WeakReference<JcrRepository> repositoryRef;
 
-        protected GarbageCollectionTask( JcrRepository repository ) {
+        protected BackgroundRepositoryTask( JcrRepository repository ) {
             assert repository != null;
             this.repositoryRef = new WeakReference<JcrRepository>(repository);
         }
@@ -2017,7 +2041,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected abstract void doRun( JcrRepository repository );
     }
 
-    protected static class BinaryValueGarbageCollectionTask extends GarbageCollectionTask {
+    protected static class BinaryValueGarbageCollectionTask extends BackgroundRepositoryTask {
         protected BinaryValueGarbageCollectionTask( JcrRepository repository ) {
             super(repository);
         }
@@ -2028,7 +2052,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
-    protected static class LockGarbageCollectionTask extends GarbageCollectionTask {
+    protected static class LockGarbageCollectionTask extends BackgroundRepositoryTask {
         protected LockGarbageCollectionTask( JcrRepository repository ) {
             super(repository);
         }
@@ -2036,6 +2060,24 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         @Override
         protected void doRun( JcrRepository repository ) {
             repository.runningState().cleanUpLocks();
+        }
+    }
+
+    protected static class OptimizationTask extends BackgroundRepositoryTask {
+        private final int targetCount;
+        private final int tolerance;
+
+        protected OptimizationTask( JcrRepository repository,
+                                    int targetCount,
+                                    int tolerance ) {
+            super(repository);
+            this.targetCount = targetCount;
+            this.tolerance = tolerance;
+        }
+
+        @Override
+        protected void doRun( JcrRepository repository ) {
+            repository.runningState().repositoryCache().optimizeChildren(targetCount, tolerance);
         }
     }
 }

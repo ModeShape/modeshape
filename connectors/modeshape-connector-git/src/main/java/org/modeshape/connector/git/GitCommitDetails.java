@@ -25,6 +25,7 @@ package org.modeshape.connector.git;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -107,8 +108,8 @@ public class GitCommitDetails extends GitFunction implements PageableGitFunction
                 ObjectId objId = resolveBranchOrTagOrCommitId(repository, branchOrTagOrCommitId);
                 RevCommit commit = walker.parseCommit(objId);
                 writer.addProperty(GitLexicon.OBJECT_ID, objId.name());
-                writer.addProperty(GitLexicon.AUTHOR, commit.getAuthorIdent().getName());
-                writer.addProperty(GitLexicon.COMMITTER, commit.getCommitterIdent().getName());
+                writer.addProperty(GitLexicon.AUTHOR, authorName(commit));
+                writer.addProperty(GitLexicon.COMMITTER, commiterName(commit));
                 writer.addProperty(GitLexicon.COMMITTED, values.dateFrom(commit.getCommitTime()));
                 writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
                 writer.addProperty(GitLexicon.MESSAGE, commit.getFullMessage().trim());// removes trailing whitespace
@@ -166,6 +167,11 @@ public class GitCommitDetails extends GitFunction implements PageableGitFunction
                 connector.getLogger().warn(GitI18n.commitWithMultipleParents, commit.getName(), parentCommit.getName());
                 break;
             }
+        }
+
+        if (tw.getTreeCount() == 1) {
+            connector.getLogger().warn(GitI18n.commitWithSingleParent, commit.getName(), tw.getObjectId(0).name());
+            return Collections.emptyList();
         }
 
         // Now process the diff of each file ...

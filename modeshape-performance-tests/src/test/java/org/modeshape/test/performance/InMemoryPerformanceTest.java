@@ -23,18 +23,20 @@
  */
 package org.modeshape.test.performance;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
@@ -43,8 +45,6 @@ import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.TestingEnvironment;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 
 public class InMemoryPerformanceTest implements CustomLoaderTest {
 
@@ -119,6 +119,7 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
         // do nothing by default
     }
 
+    @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
     }
 
@@ -268,14 +269,14 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
     /**
      * Create a structured subgraph by generating nodes with the supplied number of properties and children, to the supplied
      * maximum subgraph depth.
-     *
+     * 
      * @param session the session that should be used; may not be null
      * @param parentNode the parent node under which the subgraph is to be created
      * @param depthRemaining the depth of the subgraph; must be a positive number
      * @param numberOfChildrenPerNode the number of child nodes to create under each node
      * @param numberOfPropertiesPerNode the number of properties to create on each node; must be 0 or more
      * @param useSns true if the child nodes under a parent should be same-name-siblings, or false if they should each have their
-     * own unique name
+     *        own unique name
      * @param depthToSave
      * @return the number of nodes created in the subgraph
      * @throws RepositoryException if there is a problem
@@ -296,8 +297,13 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
             }
             numberCreated += numberOfChildrenPerNode;
             if (depthRemaining > 1) {
-                numberCreated += createSubgraph(session, child, depthRemaining - 1, numberOfChildrenPerNode,
-                                                numberOfPropertiesPerNode, useSns, depthToSave);
+                numberCreated += createSubgraph(session,
+                                                child,
+                                                depthRemaining - 1,
+                                                numberOfChildrenPerNode,
+                                                numberOfPropertiesPerNode,
+                                                useSns,
+                                                depthToSave);
             }
         }
         if (depthRemaining == depthToSave) {
