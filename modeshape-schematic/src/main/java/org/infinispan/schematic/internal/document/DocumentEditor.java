@@ -146,6 +146,28 @@ public class DocumentEditor implements EditableDocument {
     }
 
     @Override
+    public void merge( Document other ) {
+        if (other == this) return;
+        for (Field field : other.fields()) {
+            Document otherDoc = field.getValueAsDocument();
+            if (!Null.matches(otherDoc)) {
+                // Get the corresponding value in this document ...
+                EditableDocument thisField = getDocument(field.getName());
+                if (!Null.matches(thisField)) {
+                    // There are docs in both sides, so merge them ...
+                    thisField.merge(otherDoc);
+                } else {
+                    // There is not a document on this side (perhaps another value), so replace with that other doc ...
+                    doSetValue(field.getName(), otherDoc);
+                }
+            } else {
+                // The field is something other than a document, so just set it on this document ...
+                doSetValue(field.getName(), field.getValue());
+            }
+        }
+    }
+
+    @Override
     public Object remove( String name ) {
         return document.remove(name);
     }

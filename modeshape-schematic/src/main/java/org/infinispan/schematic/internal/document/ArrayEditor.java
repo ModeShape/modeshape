@@ -136,6 +136,11 @@ public class ArrayEditor implements EditableArray {
     }
 
     @Override
+    public void merge( Document other ) {
+        array.putAll(other);
+    }
+
+    @Override
     public Object remove( String name ) {
         return array.remove(name);
     }
