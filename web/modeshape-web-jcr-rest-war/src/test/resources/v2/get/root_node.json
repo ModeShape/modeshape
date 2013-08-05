@@ -5,7 +5,7 @@
     "jcr:uuid":"32a6fcb7505d64/",
     "children":{
         "jcr:system":{
-            "self":"http://localhost:8090/resources/repo/default/items/jcr:system",
+            "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem",
             "up":"http://localhost:8090/resources/repo/default/items/"
         }
     }

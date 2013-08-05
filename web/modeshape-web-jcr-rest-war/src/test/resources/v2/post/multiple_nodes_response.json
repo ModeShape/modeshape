@@ -20,7 +20,7 @@
         "testProperty":"testValue"
     },
     {
-        "self":"http://localhost:8090/resources/repo/default/items/testNode/child[2]",
+        "self":"http://localhost:8090/resources/repo/default/items/testNode/child%5b2%5d",
         "up":"http://localhost:8090/resources/repo/default/items/testNode",
         "jcr:primaryType":"nt:unstructured",
         "multiValuedProperty":[
@@ -30,8 +30,8 @@
         "testProperty":"testValue"
     },
     {
-        "self":"http://localhost:8090/resources/repo/default/items/testNode/child[2]/subChild",
-        "up":"http://localhost:8090/resources/repo/default/items/testNode/child[2]",
+        "self":"http://localhost:8090/resources/repo/default/items/testNode/child%5b2%5d/subChild",
+        "up":"http://localhost:8090/resources/repo/default/items/testNode/child%5b2%5d",
         "jcr:primaryType":"nt:unstructured",
         "multiValuedProperty":[
             "value1a",
@@ -40,8 +40,8 @@
         "testProperty":"testValue"
     },
     {
-        "self":"http://localhost:8090/resources/repo/default/items/testNode/child[2]/subChild[2]",
-        "up":"http://localhost:8090/resources/repo/default/items/testNode/child[2]",
+        "self":"http://localhost:8090/resources/repo/default/items/testNode/child%5b2%5d/subChild%5b2%5d",
+        "up":"http://localhost:8090/resources/repo/default/items/testNode/child%5b2%5d",
         "jcr:primaryType":"nt:unstructured",
         "multiValuedProperty":[
             "value3",
