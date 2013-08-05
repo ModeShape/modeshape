@@ -108,5 +108,6 @@ public class ServletProvider implements AuthenticationProvider {
         public void logout() {
             request = null;
         }
+
     }
 }

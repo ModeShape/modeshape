@@ -920,7 +920,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
         checkSession();
-        return addNode(relPath, null, null);
+        return addNode(relPath, null, null, false);
     }
 
     @Override
@@ -929,9 +929,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ItemExistsException, PathNotFoundException, NoSuchNodeTypeException, LockException, VersionException,
         ConstraintViolationException, RepositoryException {
         checkSession();
-        return addNode(relPath, primaryNodeTypeName, null);
+        return addNode(relPath, primaryNodeTypeName, null, false);
     }
 
+    protected AbstractJcrNode addAclNode( String relPath,
+                                    String primaryNodeTypeName )
+        throws ItemExistsException, PathNotFoundException, NoSuchNodeTypeException, LockException, VersionException,
+        ConstraintViolationException, RepositoryException {
+        checkSession();
+        return addNode(relPath, primaryNodeTypeName, null, true);
+    }
+    
     /**
      * Adds the a new node with the given primary type (if specified) at the given relative path with the given UUID (if
      * specified).
@@ -940,6 +948,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param primaryNodeTypeName the desired primary type for the new node; null value indicates that the default primary type
      *        from the appropriate definition for this node should be used
      * @param desiredKey the key for the new node; may be null if the key is to be generated
+     * @param aclScope true if this method is called in access manager scope and false otherwise
      * @return the newly created node
      * @throws ItemExistsException if an item at the specified path already exists and same-name siblings are not allowed.
      * @throws PathNotFoundException if the specified path implies intermediary nodes that do not exist.
@@ -951,7 +960,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     final AbstractJcrNode addNode( String relPath,
                                    String primaryNodeTypeName,
-                                   NodeKey desiredKey )
+                                   NodeKey desiredKey,
+                                   boolean aclScope)
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
 
@@ -982,8 +992,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 if (parent instanceof AbstractJcrNode) {
                     // delegate to the parent node ...
                     Name childName = path.getLastSegment().getName();
-                    session.checkPermission(absolutePathFor(parent.path(), path.getLastSegment()), ModeShapePermissions.ADD_NODE);
-                    return ((AbstractJcrNode)parent).addChildNode(childName, childPrimaryTypeName, desiredKey, false);
+                        //MODE-1920: check add_child_node permission on parent node
+                    if (!aclScope) {
+                        session.checkPermission(absolutePathFor(parent.path(), path.getLastSegment()), ModeShapePermissions.ADD_NODE);
+                    }
+                    return ((AbstractJcrNode)parent).addChildNode(childName, childPrimaryTypeName, desiredKey, false, aclScope);
                 } else if (parent instanceof AbstractJcrProperty) {
                     // Per the TCK, if relPath references a property, then we have to throw a ConstraintViolationException.
                     throw new ConstraintViolationException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
@@ -997,9 +1010,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // Otherwise, the path has size == 1 and it specifies the child ...
-        session.checkPermission(absolutePathFor(path(), path.getLastSegment()), ModeShapePermissions.ADD_NODE);
+        if (!aclScope) {
+            session.checkPermission(path(), ModeShapePermissions.ADD_NODE);
+        }
         Name childName = path.getLastSegment().getName();
-        return addChildNode(childName, childPrimaryTypeName, desiredKey, false);
+        return addChildNode(childName, childPrimaryTypeName, desiredKey, false, aclScope);
     }
 
     protected final Path absolutePathFor( Path parentPath,
@@ -1016,6 +1031,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      *        type from the appropriate definition for this node should be used
      * @param desiredKey the key for the new node; may be null if the key is to be generated
      * @param skipVersioningValidation true if the operation can be performed on a checked-in node.
+     * @param aclScope  true if this operation performed in the scope of access manager
      * @return the newly created node
      * @throws ItemExistsException if an item at the specified path already exists and same-name siblings are not allowed.
      * @throws PathNotFoundException if the specified path implies intermediary nodes that do not exist.
@@ -1028,12 +1044,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     final AbstractJcrNode addChildNode( Name childName,
                                         Name childPrimaryNodeTypeName,
                                         NodeKey desiredKey,
-                                        boolean skipVersioningValidation )
+                                        boolean skipVersioningValidation,
+                                        boolean aclScope)
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
         checkNodeTypeCanBeModified();
 
-        session.checkPermission(getPath(), ModeShapePermissions.ADD_NODE);
+        if (!aclScope) {
+            session.checkPermission(getPath(), ModeShapePermissions.ADD_NODE);
+        }
 
         if (isLocked() && !getLock().isLockOwningSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
@@ -1048,7 +1067,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         NodeTypes nodeTypes = session.nodeTypes();
 
         // validate there is an appropriate child node definition
-        JcrNodeDefinition childDefn = validateChildNodeDefinition(childName, childPrimaryNodeTypeName, true);
+        JcrNodeDefinition childDefn = validateChildNodeDefinition(childName, childPrimaryNodeTypeName, !aclScope);
         if (childPrimaryNodeTypeName == null) {
             childPrimaryNodeTypeName = childDefn.getDefaultPrimaryType().getInternalName();
         }
@@ -1303,7 +1322,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 if (!childNames.contains(childName)) {
                     // We've not already created a child with this name ...
                     JcrNodeType childPrimaryType = defn.getDefaultPrimaryType();
-                    addChildNode(childName, childPrimaryType.getInternalName(), null, false);
+                    addChildNode(childName, childPrimaryType.getInternalName(), null, false, false);
                 }
             }
         }
@@ -1371,7 +1390,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (jcrValue.value() == null) {
             throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
         }
-        return setProperty(nameFrom(name), jcrValue, false, false, false); // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), jcrValue, false, false, false, false); // don't skip constraint checks or protected checks
 
     }
 
@@ -1388,7 +1407,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
         }
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), jcrValue.asType(type), false, false, false);
+        return setProperty(nameFrom(name), jcrValue.asType(type), false, false, false, false);
     }
 
     @Override
@@ -1441,14 +1460,23 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public AbstractJcrProperty setProperty( String name,
-                                            String[] values )
+                                            String[] values)
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, false);
+        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, false, false, false);
     }
 
+    protected AbstractJcrProperty setPropertyInAccessControlScope( String name,
+                                            String[] values)
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
+        checkSession();
+        if (values == null) return removeExistingProperty(nameFrom(name));
+        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, true, true, true);
+    }
+    
     @Override
     public AbstractJcrProperty setProperty( String name,
                                             String[] values,
@@ -1467,10 +1495,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
-        // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value), false, false, false, false);
     }
 
+    protected AbstractJcrProperty setPropertyInAccessControlScope( String name,
+                                            String value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
+        checkSession();
+        if (value == null) return removeExistingProperty(nameFrom(name));
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value), false, true, false, true);
+    }
+    
     @Override
     public AbstractJcrProperty setProperty( String name,
                                             String value,
@@ -1480,7 +1517,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(type, value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(type, value), false, false, false, false);
     }
 
     @Override
@@ -1491,7 +1528,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(value), false, false, false, false);
     }
 
     @Override
@@ -1501,7 +1538,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(PropertyType.BINARY, value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(PropertyType.BINARY, value), false, false, false, false);
     }
 
     @Override
@@ -1511,7 +1548,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value), false, false, false, false);
     }
 
     @Override
@@ -1521,7 +1558,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value), false, false, false, false);
     }
 
     @Override
@@ -1531,7 +1568,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(PropertyType.DECIMAL, value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(PropertyType.DECIMAL, value), false, false, false, false);
     }
 
     @Override
@@ -1541,7 +1578,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value), false, false, false, false);
     }
 
     @Override
@@ -1552,7 +1589,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(value), false, false, false, false);
     }
 
     @Override
@@ -1563,7 +1600,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
         // don't skip constraint checks or protected checks
-        return setProperty(nameFrom(name), valueFrom(value), false, false, false);
+        return setProperty(nameFrom(name), valueFrom(value), false, false, false, false);
     }
 
     /**
@@ -1594,6 +1631,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param skipProtectedValidation true if protected properties can be set by the caller of this method, or false if the method
      *        should validate that protected methods are not being called
      * @param skipVersioningValidation true if the property can be set even if a node is checked in
+     * @param skipPermissionCheck true if this method should be executed without permission validation
      * @return the new JCR property object
      * @throws VersionException if the node is checked out
      * @throws LockException if the node is locked
@@ -1604,14 +1642,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                            JcrValue value,
                                            boolean skipReferenceValidation,
                                            boolean skipProtectedValidation,
-                                           boolean skipVersioningValidation )
+                                           boolean skipVersioningValidation,
+                                           boolean skipPermissionCheck)
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert value != null;
         assert value.value() != null;
         checkForLock();
         // checked-out status is checked later, when we have the property definition ...
         checkNodeTypeCanBeModified();
-        session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
+        
+        if (!skipPermissionCheck) {
+            session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
+        }
 
         // Check for an existing JCR property object; note that this will load the internal property if necessary ...
         AbstractJcrProperty existing = getProperty(name);
@@ -1749,7 +1791,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                            int jcrPropertyType,
                                            boolean skipReferenceValidation )
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
-        return setProperty(name, values, jcrPropertyType, false, skipReferenceValidation);
+        return setProperty(name, values, jcrPropertyType, false, skipReferenceValidation, false);
     }
 
     /**
@@ -1760,6 +1802,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param skipProtectedValidation true if protected properties can be set by the caller of this method, or false if the method
      *        should validate that protected methods are not being called
      * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
+     * @param skipPermissionCheck true if this method should be executed without permission check.
      * @return the new JCR property object
      * @throws VersionException if the node is checked out
      * @throws LockException if the node is locked
@@ -1770,13 +1813,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                            Value[] values,
                                            int jcrPropertyType,
                                            boolean skipProtectedValidation,
-                                           boolean skipReferenceValidation )
+                                           boolean skipReferenceValidation,
+                                           boolean skipPermissionsCheck)
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert values != null;
         checkForLock();
         checkForCheckedOut();
         checkNodeTypeCanBeModified();
-        session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
+        
+        if (!skipPermissionsCheck) {
+            session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
+        }
 
         values = compactValues(values);
         checkAllValuesHaveTheSameType(values, name);
@@ -2300,7 +2347,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                         } else {
                             assert propDefn.getDefaultValues().length == 1;
                             // don't skip constraint checks or protected checks
-                            setProperty(propDefn.getInternalName(), defaultValues[0], false, false, false);
+                            setProperty(propDefn.getInternalName(), defaultValues[0], false, false, false, false);
                         }
                     }
                     // otherwise, we don't care
@@ -2316,7 +2363,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                     JcrNodeType defaultPrimaryType = nodeDefn.getDefaultPrimaryType();
                     assert defaultPrimaryType != null;
                     Name primaryType = defaultPrimaryType.getInternalName();
-                    addChildNode(nodeName, primaryType, null, false);
+                    addChildNode(nodeName, primaryType, null, false, false);
                 }
             }
         }
@@ -2415,13 +2462,21 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     @Override
     public void addMixin( String mixinName )
         throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+        addMixin(mixinName, true);
+    }
+
+    protected void addMixin( String mixinName, boolean checkPermissions )
+        throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
         CheckArg.isNotZeroLength(mixinName, "mixinName");
 
         checkSession();
         checkForLock();
         checkForCheckedOut();
         Path path = path();
-        session.checkPermission(path, ModeShapePermissions.SET_PROPERTY);
+        
+        if (checkPermissions) {
+            session.checkPermission(path, ModeShapePermissions.SET_PROPERTY);
+        }
 
         if (!canAddMixin(mixinName)) {
             throw new ConstraintViolationException(JcrI18n.cannotAddMixin.text(mixinName));
@@ -2454,7 +2509,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // per JCR 2.0 10.10.3.1, the change should be reflected immediately in the property
         updateMixinsProperty();
     }
-
+    
     private void updateMixinsProperty() throws RepositoryException {
         MutableCachedNode mutable = mutable();
 
@@ -3058,6 +3113,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             parent.checkForLock();
             path = path();
             session.checkPermission(path, ModeShapePermissions.REMOVE);
+            //MODE-1920: check permission to remove child nodes
+            session.checkPermission(parent.getPath(), ModeShapePermissions.REMOVE_CHILD_NODES);
         } catch (NodeNotFoundInParentException e) {
             // expected by the TCK
             throw new InvalidItemStateException(e);
@@ -3473,7 +3530,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
         }
     }
-
+    
     protected static final class ChildNodeResolver implements JcrChildNodeIterator.NodeResolver {
         private final JcrSession session;
         private final NodeKey parentKey;

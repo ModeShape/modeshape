@@ -104,3 +104,11 @@
 [mode:derived] mixin
 - mode:derivedFrom (path) // the location of the original information from which this was derived
 - mode:derivedAt (date)  // the timestamp of the last change to the original information from which this was derived
+
+[mode:accessControllable] mixin 
+    + mode:acl (mode:Acl) protected 
+[mode:Acl] noquery
+    + * (mode:Permission) protected
+[mode:Permission] noquery
+    - name (string) nofulltext
+    - privileges (string) multiple nofulltext protected

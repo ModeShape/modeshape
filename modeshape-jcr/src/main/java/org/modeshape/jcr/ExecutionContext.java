@@ -658,7 +658,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * Default security context that confers no roles.
      */
     private static class NullSecurityContext implements SecurityContext {
-
+        
         @Override
         public boolean isAnonymous() {
             return true;

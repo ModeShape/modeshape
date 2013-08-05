@@ -1,0 +1,24 @@
+<?xml version='1.0'?>
+
+<policy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="urn:jboss:security-config:5.0" xmlns="urn:jboss:security-config:5.0"
+	xmlns:jbxb="urn:jboss:security-config:5.0">
+	<application-policy name="modeshape-jcr">
+		<authentication>
+			<login-module code="org.jboss.security.auth.spi.UsersRolesLoginModule" flag="required">
+                <module-option name="usersProperties">security/tck_users.properties</module-option>
+                <module-option name="rolesProperties">security/tck_roles.properties</module-option>
+				<module-option name="name">1.1</module-option>
+				<module-option name="succeed">true</module-option>
+				<module-option name="throwEx">false</module-option>
+			</login-module>
+		</authentication>
+<!-- 		
+		<authorization>
+			<policy-module code="org.jboss.security.idtrust.impl.plugins.authorization.IDTrustAuthorizationModule">
+				<module-option name="roles">validuser</module-option>
+			</policy-module>
+		</authorization>
+-->		
+	</application-policy>
+</policy>

@@ -139,6 +139,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private final long nanosCreated;
 
     private ExecutionContext context;
+    
+    private final AccessControlManagerImpl acm;
+    
     private final AdvancedAuthorizationProvider.Context authorizerContext = new AdvancedAuthorizationProvider.Context() {
         @Override
         public ExecutionContext getExecutionContext() {
@@ -161,13 +164,14 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         }
     };
 
+    
     protected JcrSession( JcrRepository repository,
                           String workspaceName,
                           ExecutionContext context,
                           Map<String, Object> sessionAttributes,
                           boolean readOnly ) {
         this.repository = repository;
-
+        
         // Get the node key of the workspace we're going to use ...
         final RepositoryCache repositoryCache = repository.repositoryCache();
         WorkspaceCache workspace = repositoryCache.getWorkspaceCache(workspaceName);
@@ -199,7 +203,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
-        repository.statistics().increment(ValueMetric.SESSION_COUNT);
+        repository.statistics().increment(ValueMetric.SESSION_COUNT);  
+        
+        acm = new AccessControlManagerImpl(this);
     }
 
     protected JcrSession( JcrSession original,
@@ -219,7 +225,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
-        repository.statistics().increment(ValueMetric.SESSION_COUNT);
+        repository.statistics().increment(ValueMetric.SESSION_COUNT);        
+        acm = new AccessControlManagerImpl(this);
     }
 
     final JcrWorkspace workspace() {
@@ -275,6 +282,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return context.getId();
     }
 
+    public final boolean isReadOnly() {
+        return cache().isReadOnly();
+    }
     /**
      * Method that verifies that this session is still {@link #isLive() live}.
      * 
@@ -767,6 +777,26 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     @Override
     public AbstractJcrNode getNode( String absPath ) throws PathNotFoundException, RepositoryException {
+        return getNode(absPath, false);
+    }
+
+    protected AbstractJcrNode getNode( String absPath, boolean accessControlScope ) throws PathNotFoundException, RepositoryException {
+        checkLive();
+        CheckArg.isNotEmpty(absPath, "absolutePath");
+        Path path = absolutePathFor(absPath);
+
+        if (!accessControlScope) {
+            checkPermission(path, ModeShapePermissions.READ);
+        }
+        // Return root node if path is "/" ...
+        if (path.isRoot()) {
+            return getRootNode();
+        }
+
+        return node(path);
+    }
+    
+/*    protected Node getAclNode( String absPath ) throws PathNotFoundException, RepositoryException {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absolutePath");
         Path path = absolutePathFor(absPath);
@@ -778,7 +808,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         return node(path);
     }
-
+*/    
     @Override
     public AbstractJcrItem getItem( String absPath ) throws PathNotFoundException, RepositoryException {
         checkLive();
@@ -1206,9 +1236,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     /**
-     * Determine if the current user does not have permission for all of the named actions in the named workspace, otherwise
+     * Determine if the current user does not have permission for all of the 
+     * named actions in the named workspace in the given context, otherwise
      * returns silently.
      * 
+     * @param sec security context
      * @param workspaceName the name of the workspace in which the path exists
      * @param path the path on which the actions are occurring
      * @param actions the list of {@link ModeShapePermissions actions} to check
@@ -1219,20 +1251,36 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                          Path path,
                                          String... actions ) {
         assert path == null ? true : path.isAbsolute() : "The path (if provided) must be absolute";
-        final String repositoryName = this.repository.repositoryName();
         SecurityContext sec = context.getSecurityContext();
+        
+        boolean hasPermission = true;
+        
+        final String repositoryName = this.repository.repositoryName();
         if (sec instanceof AuthorizationProvider) {
             // Delegate to the security context ...
             AuthorizationProvider authorizer = (AuthorizationProvider)sec;
-            return authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
+            hasPermission = authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
+            
+            if (hasPermission) {
+                hasPermission = acm.hasPermission(path, actions);
+            }
+            
+            return hasPermission;
         }
+
         if (sec instanceof AdvancedAuthorizationProvider) {
             // Delegate to the security context ...
             AdvancedAuthorizationProvider authorizer = (AdvancedAuthorizationProvider)sec;
-            return authorizer.hasPermission(authorizerContext, path, actions);
+            hasPermission = authorizer.hasPermission(authorizerContext, path, actions);
+            
+            if (hasPermission) {
+                hasPermission = acm.hasPermission(path, actions);
+            }
+            
+            return hasPermission; 
         }
+        
         // It is a role-based security context, so apply role-based authorization ...
-        boolean hasPermission = true;
         for (String action : actions) {
             if (ModeShapePermissions.READ.equals(action)) {
                 hasPermission &= hasRole(sec, ModeShapeRoles.READONLY, repositoryName, workspaceName)
@@ -1250,6 +1298,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                  || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName);
             }
         }
+        
+        if (hasPermission) {
+            hasPermission = acm.hasPermission(path, actions);
+        }
+        
         return hasPermission;
     }
 
@@ -1318,6 +1371,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                           Path path,
                           String... actions ) throws AccessDeniedException {
         CheckArg.isNotEmpty(actions, "actions");
+        
         if (hasPermission(workspaceName, path, actions)) return;
 
         String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
@@ -1562,7 +1616,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     @Override
     public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+        return acm;
     }
 
     @Override
@@ -1945,7 +1999,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                 jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
                             } else {
                                 // don't skip constraint checks or protected checks
-                                jcrNode.setProperty(propName, defaultValues[0], false, false, false);
+                                jcrNode.setProperty(propName, defaultValues[0], false, false, false, false);
                             }
                         } else {
                             // There is no default for this mandatory property, so this is a constraint violation ...
