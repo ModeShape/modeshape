@@ -1958,12 +1958,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     private final class InternalSecurityContext implements SecurityContext {
         private final String username;
-        private final ArrayList<Principal> principals = new ArrayList();
         
         protected InternalSecurityContext( String username ) {
             this.username = username;
-            //given user is only known principal for this context
-            principals.add(SimplePrincipal.newInstance(username));
         }
 
         @Override

@@ -932,7 +932,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return addNode(relPath, primaryNodeTypeName, null, false);
     }
 
-    public AbstractJcrNode addAclNode( String relPath,
+    protected AbstractJcrNode addAclNode( String relPath,
                                     String primaryNodeTypeName )
         throws ItemExistsException, PathNotFoundException, NoSuchNodeTypeException, LockException, VersionException,
         ConstraintViolationException, RepositoryException {
@@ -948,6 +948,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param primaryNodeTypeName the desired primary type for the new node; null value indicates that the default primary type
      *        from the appropriate definition for this node should be used
      * @param desiredKey the key for the new node; may be null if the key is to be generated
+     * @param aclScope true if this method is called in access manager scope and false otherwise
      * @return the newly created node
      * @throws ItemExistsException if an item at the specified path already exists and same-name siblings are not allowed.
      * @throws PathNotFoundException if the specified path implies intermediary nodes that do not exist.
@@ -1030,6 +1031,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      *        type from the appropriate definition for this node should be used
      * @param desiredKey the key for the new node; may be null if the key is to be generated
      * @param skipVersioningValidation true if the operation can be performed on a checked-in node.
+     * @param aclScope  true if this operation performed in the scope of access manager
      * @return the newly created node
      * @throws ItemExistsException if an item at the specified path already exists and same-name siblings are not allowed.
      * @throws PathNotFoundException if the specified path implies intermediary nodes that do not exist.
@@ -1629,6 +1631,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param skipProtectedValidation true if protected properties can be set by the caller of this method, or false if the method
      *        should validate that protected methods are not being called
      * @param skipVersioningValidation true if the property can be set even if a node is checked in
+     * @param skipPermissionCheck true if this method should be executed without permission validation
      * @return the new JCR property object
      * @throws VersionException if the node is checked out
      * @throws LockException if the node is locked
@@ -1799,6 +1802,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param skipProtectedValidation true if protected properties can be set by the caller of this method, or false if the method
      *        should validate that protected methods are not being called
      * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
+     * @param skipPermissionCheck true if this method should be executed without permission check.
      * @return the new JCR property object
      * @throws VersionException if the node is checked out
      * @throws LockException if the node is locked
@@ -2461,17 +2465,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         addMixin(mixinName, true);
     }
 
-    /**
-     * Adds mixin to this node.
-     * 
-     * @param mixinName the name of the mixin type.
-     * @param checkPermissions security flag. if true permissions will be checked.
-     * @throws NoSuchNodeTypeException
-     * @throws VersionException
-     * @throws ConstraintViolationException
-     * @throws LockException
-     * @throws RepositoryException 
-     */
     protected void addMixin( String mixinName, boolean checkPermissions )
         throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
         CheckArg.isNotZeroLength(mixinName, "mixinName");

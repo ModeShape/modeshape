@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.security.Principal;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -98,10 +99,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     //default access list granted all permissions to everyone.
     private final JcrAccessControlList defaultACL;
 
-    /**
-     * Default constructor for Access control manager.
-     */
-    public AccessControlManagerImpl(JcrSession session) {
+    protected AccessControlManagerImpl(JcrSession session) {
         this.session = session;
         this.privileges = new Privileges(session);
         this.defaultACL = JcrAccessControlList.defaultAcl(this);
@@ -118,7 +116,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     }
 
     @Override
-    public Privilege[] getSupportedPrivileges(String path) throws PathNotFoundException, RepositoryException {
+    public Privilege[] getSupportedPrivileges(String path) {
         return privileges.listOfSupported();
     }
 
@@ -160,7 +158,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     @Override
     public AccessControlPolicy[] getPolicies(String path) throws PathNotFoundException, AccessDeniedException, RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException("Session is read only");
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read AC content"));
         }
 
         if (!hasPrivileges(path, new Privilege[]{privileges.forName(Privilege.JCR_READ_ACCESS_CONTROL)})) {
@@ -194,9 +192,6 @@ public class AccessControlManagerImpl implements AccessControlManager {
 
     @Override
     public AccessControlPolicy[] getEffectivePolicies(String path) throws PathNotFoundException, AccessDeniedException, RepositoryException {
-        if (session.isReadOnly()) {
-            throw new AccessDeniedException("Session is read only");
-        }
         AccessControlPolicy[] policies = getPolicies(path);
         if (policies.length == 0) {
             return new AccessControlPolicy[]{(AccessControlPolicy) this.getApplicablePolicies(path).next()};
@@ -207,7 +202,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     @Override
     public AccessControlPolicyIterator getApplicablePolicies(String path) throws PathNotFoundException, AccessDeniedException, RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException("Session is read only");
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read AC content"));
         }
         //Current implementation supports only one policy - access list
         //So we need to check the node specified by path for the policy bound to it
@@ -225,7 +220,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     @Override
     public void setPolicy(String path, AccessControlPolicy policy) throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException, VersionException, RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException("Session is ready only");
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read AC content"));
         }
 
         if (!hasPrivileges(path, new Privilege[]{privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
@@ -239,7 +234,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         JcrAccessControlList acl = (JcrAccessControlList) policy;
 
         //binding given policy to the specified path as special child node
-        AbstractJcrNode node = (AbstractJcrNode) session.getNode(path, true);
+        AbstractJcrNode node = session.getNode(path, true);
         //make node access controllable and add specsial child node 
         //which belongs to the access list
         node.addMixin(NT_ACCESS_CONTROLLABLE, false);
@@ -275,7 +270,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     @Override
     public void removePolicy(String path, AccessControlPolicy policy) throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException, VersionException, RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException("");
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read AC content"));
         }
         try {
             if (!hasPrivileges(path, new Privilege[]{privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
@@ -300,20 +295,19 @@ public class AccessControlManagerImpl implements AccessControlManager {
      * @throws RepositoryException
      */
     public JcrAccessControlList findAccessList(String absPath) throws PathNotFoundException, RepositoryException {
-        Path path = pathFactory().create(absPath);
-        while (!path.isRoot()) {
-            Node node = session.getNode(path.toString(), true);
-            if (node.hasNode(ACCESS_LIST_NODE)) {
-                return acl(node.getNode(ACCESS_LIST_NODE));
+        Node node = session.getNode(absPath, true);
+        while (!node.hasNode(ACCESS_LIST_NODE)) {
+            try {
+                node = node.getParent();
+            } catch (ItemNotFoundException e) {
+                break;
             }
-            path = path.getAncestor(1);
         }
-
-        Node node = session.getRootNode();
+        
         if (node.hasNode(ACCESS_LIST_NODE)) {
             return acl(node.getNode(ACCESS_LIST_NODE));
         }
-
+        
         return null;
     }
 

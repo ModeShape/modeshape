@@ -1,13 +1,10 @@
 package org.modeshape.jcr.security;
 
-import org.modeshape.jcr.AccessControlManagerImpl;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.acl.Group;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -97,7 +94,7 @@ public class JaasSecurityContext implements SecurityContext {
      *         <code>callbackHandler</code> is null
      */
 
-    public JaasSecurityContext(JcrSession session,  String realmName,
+    public JaasSecurityContext(String realmName,
                                 CallbackHandler callbackHandler ) throws LoginException {
         this(new LoginContext(realmName, callbackHandler));
     }

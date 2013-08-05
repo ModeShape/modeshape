@@ -43,7 +43,7 @@ public class AccessControlPolicyIteratorImpl implements AccessControlPolicyItera
     /**
      * Creates new instance of this iterator.
      * 
-     * @param list series of the ACLs
+     * @param policy series of the ACLs
      */
     public AccessControlPolicyIteratorImpl(AccessControlPolicy... policy) {
         for (int i = 0; i < policy.length; i++) {

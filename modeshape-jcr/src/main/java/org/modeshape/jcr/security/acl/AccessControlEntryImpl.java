@@ -48,6 +48,7 @@ public class AccessControlEntryImpl implements AccessControlEntry {
      * 
      * @param principal principal associated with this entry.
      * @param privileges one or more privilege in association with given principal.
+     * @throws AccessControlException if one or more privileges are invalid.
      */
     public AccessControlEntryImpl(Principal principal, Privilege[] privileges) throws AccessControlException {
         for (Privilege p : privileges) {
@@ -114,8 +115,9 @@ public class AccessControlEntryImpl implements AccessControlEntry {
     }
 
     /**
-     * Adds specified privileges to this entry.
+     * Adds specified privileges to the given list.
      * 
+     * @param list the result list of combined privileges.
      * @param privileges privileges to add.
      * @return true if at least one of privileges was added.
      */

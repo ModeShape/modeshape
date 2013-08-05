@@ -30,15 +30,15 @@ import java.security.Principal;
  * 
  * @author kulikov
  */
-public class SimplePrincipal implements Principal {
+public final class SimplePrincipal implements Principal {
 
-    private static final String everyone = "everyone";
+    private static final String EVERYONE_PRINCIPAL_NAME = "everyone";
     
     //The name of the user
     private final String name;
     
     //Principal that equals to any other principal
-    public static final SimplePrincipal EVERYONE = SimplePrincipal.newInstance(everyone);
+    public static final SimplePrincipal EVERYONE = SimplePrincipal.newInstance(EVERYONE_PRINCIPAL_NAME);
     
     /**
      * Creates new instance of the principal.
@@ -67,19 +67,17 @@ public class SimplePrincipal implements Principal {
     
     @Override
     public boolean equals(Object other) {
-        if (other == null) {
-            return false;
+        if (other instanceof Principal) {
+            if (other == this) {
+                return true;
+            }
+            if (this.getName().equals(EVERYONE_PRINCIPAL_NAME)) {
+                return true;
+            }
+            Principal that = (Principal) other;
+            return this.getName().equals(that.getName());
         }
-        
-        if (!(other instanceof Principal)) {
-            return false;
-        }
-        
-        if (this.name.equals(everyone) || ((Principal) other).getName().equals(everyone)) {
-            return true;
-        }
-        
-        return ((Principal) other).getName().equals(name);
+        return false;
     }
 
     @Override

@@ -53,6 +53,7 @@ public class PrivilegeImpl implements Privilege {
     /**
      * Creates new instance of the privilege object.
      * 
+     * @param session session under access control
      * @param name the name of privilege.
      * @param declaredPrivileges list of privileges aggregated by this object.
      */
@@ -65,9 +66,10 @@ public class PrivilegeImpl implements Privilege {
     /**
      * Creates new instance of the privilege object.
      * 
+     * @param session the session under control
      * @param name the name of privilege.
      * @param declaredPrivileges list of privileges aggregated by this object.
-     * @boolean isAbstract true if this is abstract privilege.
+     * @param isAbstract true if this is abstract privilege.
      */
     public PrivilegeImpl(Session session, String name, Privilege[] declaredPrivileges, boolean isAbstract) {
         this.session = session;
@@ -79,7 +81,7 @@ public class PrivilegeImpl implements Privilege {
     /**
      * The name without prefix.
      * 
-     * @return 
+     * @return name of privilege without prefix
      */
     public String localName() {
         return name;
