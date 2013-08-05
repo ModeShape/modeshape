@@ -575,6 +575,54 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         assertEquals(originalBaseVersion.getPath(), baseVersion.getPath());
     }
 
+    @Test
+    @FixFor( "MODE-2002" )
+    public void shouldMergeEventualSuccessorVersions() throws Exception {
+        // Create a "/record", make it versionable and check it in
+        session.getRootNode().addNode("record").addMixin("mix:versionable");
+        session.save();
+        VersionManager versionManager = session.getWorkspace().getVersionManager();
+        versionManager.checkin("/record");
+
+        //Clone QA version of data
+        session.getWorkspace().createWorkspace("QA", session.getWorkspace().getName());
+        Session sessionQa = repository.login("QA");
+        VersionManager versionManagerQa = sessionQa.getWorkspace().getVersionManager();
+
+        //Change QA node first time
+        versionManagerQa.checkout("/record");
+        sessionQa.getNode("/record").setProperty("111", "111");
+        sessionQa.save();
+        versionManagerQa.checkin("/record");
+
+        //Change QA node second time
+        versionManagerQa.checkout("/record");
+        sessionQa.getNode("/record").setProperty("222", "222");
+        sessionQa.save();
+        versionManagerQa.checkin("/record");
+
+        // Checks before merge
+        //Check basic node - should not have any properties
+        assertFalse(session.getNode("/record").hasProperty("111"));
+        assertFalse(session.getNode("/record").hasProperty("222"));
+        //Check QA node - should have properties 111=111 and 222=222
+        assertTrue(sessionQa.getNode("/record").hasProperty("111"));
+        assertTrue(sessionQa.getNode("/record").hasProperty("222"));
+        assertEquals("111", sessionQa.getNode("/record").getProperty("111").getString());
+        assertEquals("222", sessionQa.getNode("/record").getProperty("222").getString());
+
+        // Merge
+        versionManager.merge("/record", sessionQa.getWorkspace().getName(), true);
+
+        // Checks after merge - basic node should have properties 111=111 and 222=222
+        assertTrue(session.getNode("/record").hasProperty("111"));
+        assertTrue(session.getNode("/record").hasProperty("222"));
+        assertEquals("111", session.getNode("/record").getProperty("111").getString());
+        assertEquals("222", session.getNode("/record").getProperty("222").getString());
+
+        sessionQa.logout();
+    }
+
     private void assertPropertyIsAbsent( Node node,
                                          String propertyName ) throws Exception {
         try {
