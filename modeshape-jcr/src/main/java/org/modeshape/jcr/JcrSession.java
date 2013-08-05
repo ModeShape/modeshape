@@ -139,7 +139,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private final long nanosCreated;
 
     private ExecutionContext context;
-    private boolean isReadOnly;
     
     private final AccessControlManagerImpl acm;
     
@@ -172,7 +171,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                           Map<String, Object> sessionAttributes,
                           boolean readOnly ) {
         this.repository = repository;
-        this.isReadOnly = readOnly;
         
         // Get the node key of the workspace we're going to use ...
         final RepositoryCache repositoryCache = repository.repositoryCache();
@@ -214,7 +212,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                           boolean readOnly ) {
         // Most of the components can be reused from the original session ...
         this.repository = original.repository;
-        this.isReadOnly = readOnly;
         this.context = original.context;
         this.sessionRegistry = original.sessionRegistry;
         this.valueFactory = original.valueFactory;
@@ -286,7 +283,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     public final boolean isReadOnly() {
-        return this.isReadOnly;
+        return cache().isReadOnly();
     }
     /**
      * Method that verifies that this session is still {@link #isLive() live}.
@@ -331,7 +328,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return context.getValueFactories().getDateFactory();
     }
 
-    public final ExecutionContext context() {
+    final ExecutionContext context() {
         return context;
     }
 
@@ -404,7 +401,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return readOnly ? cache : new SystemSessionCache(cache);
     }
 
-    public final void addContextData( String key,
+    final void addContextData( String key,
                                String value ) {
         this.context = context.with(key, value);
         this.cache.addContextData(key, value);

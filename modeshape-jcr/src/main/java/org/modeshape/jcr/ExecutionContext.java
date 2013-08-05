@@ -26,12 +26,9 @@ package org.modeshape.jcr;
 import java.math.BigDecimal;
 import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -661,7 +658,6 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * Default security context that confers no roles.
      */
     private static class NullSecurityContext implements SecurityContext {
-        private JcrSession session;
         
         @Override
         public boolean isAnonymous() {

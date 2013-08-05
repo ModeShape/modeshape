@@ -24,7 +24,6 @@
 package org.modeshape.jcr.security.acl;
 
 import java.util.HashMap;
-import javax.jcr.RepositoryException;
 import javax.jcr.security.Privilege;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.ModeShapePermissions;
@@ -180,7 +179,7 @@ public class Privileges {
      * @param name the name of privilege to find.
      * @return the privilege object or null if not found.
      */
-    public PrivilegeImpl forName(String name) throws RepositoryException {
+    public PrivilegeImpl forName(String name) {
         if (name.contains("}")) {
             String localName = name.substring(name.indexOf('}') + 1);
             PrivilegeImpl p = privileges.get(localName);

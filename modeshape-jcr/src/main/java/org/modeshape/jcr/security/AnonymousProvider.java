@@ -23,10 +23,8 @@
  */
 package org.modeshape.jcr.security;
 
-import org.modeshape.jcr.AccessControlManagerImpl;
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.Credentials;
@@ -41,9 +39,7 @@ import org.modeshape.jcr.api.AnonymousCredentials;
  */
 public class AnonymousProvider implements AuthenticationProvider {
 
-    //user name and roles for anonymous user
-    private final String anonymousUsername;
-    private final Set<String> userRoles;
+    private final SecurityContext anonymousContext;
     
     /**
      * Creates a new anonymous provider.
@@ -55,8 +51,7 @@ public class AnonymousProvider implements AuthenticationProvider {
                               final Set<String> userRoles ) {
         CheckArg.isNotEmpty(anonymousUsername, "anonymousUsername");
         CheckArg.isNotNull(userRoles, "userRoles");
-        this.anonymousUsername = anonymousUsername;
-        this.userRoles = userRoles;
+        this.anonymousContext = new AnonymousSecurityContext(userRoles, anonymousUsername);
     }
 
     @Override
@@ -65,9 +60,6 @@ public class AnonymousProvider implements AuthenticationProvider {
                                           String workspaceName,
                                           ExecutionContext repositoryContext,
                                           Map<String, Object> sessionAttributes ) {
-        //Create security context instance for each session (ie for each loggin)
-        SecurityContext anonymousContext = 
-                new AnonymousSecurityContext(userRoles, anonymousUsername);
         
         if (credentials == null) {
             return repositoryContext.with(anonymousContext);
@@ -86,13 +78,11 @@ public class AnonymousProvider implements AuthenticationProvider {
     protected final class AnonymousSecurityContext implements SecurityContext {
         private final Set<String> userRoles;
         private final String anonymousUsername;
-        private final ArrayList<Principal> principals = new ArrayList();
         
         protected AnonymousSecurityContext( Set<String> userRoles,
                                             String anonymousUsername ) {
             this.userRoles = userRoles;
             this.anonymousUsername = anonymousUsername;            
-            this.principals.add(SimplePrincipal.newInstance(anonymousUsername));
         }
 
         @Override
