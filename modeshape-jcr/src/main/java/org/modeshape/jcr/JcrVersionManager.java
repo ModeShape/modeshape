@@ -1698,7 +1698,7 @@ final class JcrVersionManager implements VersionManager {
             JcrVersionNode sourceVersion = sourceNode.getBaseVersion();
             JcrVersionNode targetVersion = targetNode.getBaseVersion();
 
-            if (sourceVersion.isSuccessorOf(targetVersion) && !targetNode.isCheckedOut()) {
+            if (sourceVersion.isEventualSuccessorOf(targetVersion) && !targetNode.isCheckedOut()) {
                 doUpdate(targetNode, sourceNode);
                 return;
             }
@@ -1708,7 +1708,7 @@ final class JcrVersionManager implements VersionManager {
                 return;
             }
 
-            if (targetVersion.isSuccessorOf(sourceVersion)) {
+            if (targetVersion.isEventualSuccessorOf(sourceVersion)) {
                 doLeave(targetNode);
                 return;
             }

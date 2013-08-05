@@ -130,7 +130,7 @@ class JcrVersionNode extends JcrSystemNode implements Version {
         return (JcrVersionNode)node;
     }
 
-    boolean isSuccessorOf( JcrVersionNode other ) throws RepositoryException {
+    boolean isLinearSuccessorOf( JcrVersionNode other ) throws RepositoryException {
         if (!other.hasProperty(JcrLexicon.SUCCESSORS)) return false;
 
         Value[] successors = other.getProperty(JcrLexicon.SUCCESSORS).getValues();
@@ -138,6 +138,20 @@ class JcrVersionNode extends JcrSystemNode implements Version {
         String id = getIdentifier();
         for (int i = 0; i < successors.length; i++) {
             if (id.equals(successors[i].getString())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    boolean isEventualSuccessorOf( JcrVersionNode other ) throws RepositoryException {
+        if (isLinearSuccessorOf(other)) {
+            return true;
+        }
+
+        for (Version successor : other.getSuccessors()) {
+            if (isEventualSuccessorOf((JcrVersionNode) successor)) {
                 return true;
             }
         }

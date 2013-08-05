@@ -1872,7 +1872,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         JcrVersionNode baseVersion = null;
                         for (VersionIterator versionIterator = versionHistoryNode.getAllVersions(); versionIterator.hasNext();) {
                             JcrVersionNode version = (JcrVersionNode)versionIterator.nextVersion();
-                            if (baseVersion == null || version.isSuccessorOf(baseVersion)) {
+                            if (baseVersion == null || version.isLinearSuccessorOf(baseVersion)) {
                                 baseVersion = version;
                             }
                         }
