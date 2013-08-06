@@ -245,6 +245,7 @@ public final class JcrI18n {
     public static I18n errorObtainingWorkspaceNames;
     public static I18n errorObtainingDefaultWorkspaceName;
     public static I18n errorUpdatingWorkspaceNames;
+    public static I18n errorUpdatingRepositoryMetadata;
     public static I18n workspaceNameIsInvalid;
     public static I18n errorVerifyingWorkspaceName;
 

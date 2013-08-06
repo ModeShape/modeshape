@@ -1251,6 +1251,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                          String... actions ) {
         assert path == null ? true : path.isAbsolute() : "The path (if provided) must be absolute";
         SecurityContext sec = context.getSecurityContext();
+        final boolean checkAcl = repository.repositoryCache().isAccessControlEnabled();
 
         boolean hasPermission = true;
 
@@ -1260,7 +1261,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             AuthorizationProvider authorizer = (AuthorizationProvider)sec;
             hasPermission = authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
 
-            if (hasPermission) {
+            if (checkAcl && hasPermission) {
                 hasPermission = acm.hasPermission(path, actions);
             }
 
@@ -1272,7 +1273,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             AdvancedAuthorizationProvider authorizer = (AdvancedAuthorizationProvider)sec;
             hasPermission = authorizer.hasPermission(authorizerContext, path, actions);
 
-            if (hasPermission) {
+            if (checkAcl && hasPermission) {
                 hasPermission = acm.hasPermission(path, actions);
             }
 
@@ -1298,7 +1299,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             }
         }
 
-        if (hasPermission) {
+        if (checkAcl && hasPermission) {
             hasPermission = acm.hasPermission(path, actions);
         }
 

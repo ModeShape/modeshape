@@ -83,6 +83,11 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
+    public void repositoryMetadataChanged() {
+        events.add(new RepositoryMetadataChanged());
+    }
+
+    @Override
     public void nodeCreated( NodeKey key,
                              NodeKey parentKey,
                              Path path,
