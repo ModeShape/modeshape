@@ -25,7 +25,7 @@
             "nt:unstructured.jcr:score":"1.0902551412582397",
             "nt:unstructured.mode:localName":"child",
             "nt:unstructured.mode:depth":"2",
-            "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode/child[2]"
+            "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode/child%5b2%5d"
         },
         {
             "nt:unstructured.jcr:primaryType":"nt:unstructured",
@@ -34,7 +34,7 @@
             "nt:unstructured.jcr:score":"1.0902551412582397",
             "nt:unstructured.mode:localName":"child",
             "nt:unstructured.mode:depth":"2",
-            "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode/child[3]"
+            "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode/child%5b3%5d"
         },
         {
             "nt:unstructured.jcr:primaryType":"nt:unstructured",
@@ -43,7 +43,7 @@
             "nt:unstructured.jcr:score":"1.0902551412582397",
             "nt:unstructured.mode:localName":"child",
             "nt:unstructured.mode:depth":"2",
-            "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode/child[4]"
+            "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode/child%5b4%5d"
         }
     ]
 }

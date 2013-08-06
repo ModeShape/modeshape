@@ -1,6 +1,6 @@
 {
-    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base",
-    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes",
+    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3abase",
+    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes",
     "jcr:primaryType":"nt:nodeType",
     "jcr:nodeTypeName":"nt:base",
     "jcr:isAbstract":"true",
@@ -9,12 +9,12 @@
     "jcr:isMixin":"false",
     "children":{
         "jcr:primaryType":{
-            "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base/jcr:primaryType",
-            "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base"
+            "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3abase/jcr%3aprimaryType",
+            "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3abase"
         },
         "jcr:mixinTypes":{
-            "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base/jcr:mixinTypes",
-            "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base"
+            "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3abase/jcr%3amixinTypes",
+            "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3abase"
         }
     }
 }

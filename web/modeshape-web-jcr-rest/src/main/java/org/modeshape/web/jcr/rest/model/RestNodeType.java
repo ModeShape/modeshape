@@ -68,14 +68,14 @@ public final class RestNodeType implements JSONAble {
 
         this.superTypesLinks = new TreeSet<String>();
         for (NodeType superType : nodeType.getDeclaredSupertypes()) {
-            String superTypeLink = RestHelper.urlFrom(baseUrl, RestHelper.NODE_TYPES_METHOD_NAME, superType.getName());
+            String superTypeLink = RestHelper.urlFrom(baseUrl, RestHelper.NODE_TYPES_METHOD_NAME, RestHelper.URL_ENCODER.encode(superType.getName()));
             this.superTypesLinks.add(superTypeLink);
         }
 
         this.subTypesLinks = new TreeSet<String>();
         for (NodeTypeIterator subTypeIterator = nodeType.getDeclaredSubtypes(); subTypeIterator.hasNext(); ) {
             String subTypeLink = RestHelper.urlFrom(baseUrl, RestHelper.NODE_TYPES_METHOD_NAME,
-                                                    subTypeIterator.nextNodeType().getName());
+                                                    RestHelper.URL_ENCODER.encode(subTypeIterator.nextNodeType().getName()));
             this.subTypesLinks.add(subTypeLink);
         }
 
