@@ -100,6 +100,13 @@ public class JcrDriver extends LocalJcrDriver {
     }
 
     /**
+     * No-arg constructor, required by the {@link DriverManager}.
+     */
+    public JcrDriver() {
+        this(null);
+    }
+
+    /**
      * Create an instance of this driver using the supplied JNDI naming context factory. This is useful for testing, but is
      * otherwise not generally recommended.
      *
