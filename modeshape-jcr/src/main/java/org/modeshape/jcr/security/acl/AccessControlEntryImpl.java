@@ -103,7 +103,7 @@ public class AccessControlEntryImpl implements AccessControlEntry {
      * @return true if at least one of privileges was added.
      */
     protected boolean addIfNotPresent(Privilege[] privileges) {
-        ArrayList<Privilege> list = new ArrayList();
+        ArrayList<Privilege> list = new ArrayList<Privilege>();
         for (Privilege privilege : privileges) {
             list.add(privilege);
         }

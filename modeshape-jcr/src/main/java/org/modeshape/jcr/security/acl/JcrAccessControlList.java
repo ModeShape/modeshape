@@ -97,7 +97,7 @@ public class JcrAccessControlList implements AccessControlList {
     }
     
     @Override
-    public AccessControlEntry[] getAccessControlEntries() throws RepositoryException {
+    public AccessControlEntry[] getAccessControlEntries() {
         AccessControlEntry[] list = new AccessControlEntry[principals.values().size()];
         principals.values().toArray(list);
         return list;
@@ -164,7 +164,7 @@ public class JcrAccessControlList implements AccessControlList {
      * @return list of privilege objects.
      */
     public Privilege[] getPrivileges(String username) {
-        ArrayList<Privilege> privs = new ArrayList();
+        ArrayList<Privilege> privs = new ArrayList<Privilege>();
         for (AccessControlEntryImpl ace : principals.values()) {
             //add privileges granted for everyone
             if (ace.getPrincipal().equals(SimplePrincipal.EVERYONE)) {
@@ -183,7 +183,7 @@ public class JcrAccessControlList implements AccessControlList {
         return res;
     }
     
-    public boolean hasEntry(String name) throws RepositoryException {
+    public boolean hasEntry(String name) {
         AccessControlEntry[] entries = this.getAccessControlEntries();
         for (int i = 0; i < entries.length; i++) {
             if (entries[i].getPrincipal().getName().equals(name)) {

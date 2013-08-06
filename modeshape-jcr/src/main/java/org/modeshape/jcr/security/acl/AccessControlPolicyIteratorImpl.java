@@ -35,7 +35,7 @@ import javax.jcr.security.AccessControlPolicyIterator;
  */
 public class AccessControlPolicyIteratorImpl implements AccessControlPolicyIterator {
 
-    private ArrayList<AccessControlPolicy> list = new ArrayList();
+    private ArrayList<AccessControlPolicy> list = new ArrayList<AccessControlPolicy>();
     private int index;
     
     public final static AccessControlPolicyIteratorImpl EMPTY = new AccessControlPolicyIteratorImpl();

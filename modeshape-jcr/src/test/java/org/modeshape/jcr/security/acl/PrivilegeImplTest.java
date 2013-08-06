@@ -23,66 +23,62 @@
  */
 package org.modeshape.jcr.security.acl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import javax.jcr.ImportUUIDBehavior;
-import javax.jcr.RepositoryException;
-import javax.jcr.security.AccessControlException;
 import javax.jcr.security.Privilege;
 import org.junit.AfterClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.modeshape.jcr.MultiUseAbstractTest;
-import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
- *
  * @author kulikov
  */
-public class PrivilegeImplTest extends MultiUseAbstractTest{
-    //non aggregate privileges
+public class PrivilegeImplTest extends MultiUseAbstractTest {
+    // non aggregate privileges
     private PrivilegeImpl p1;
     private PrivilegeImpl p2;
 
-    //aggegate privileges
+    // aggegate privileges
     private PrivilegeImpl p3;
     private PrivilegeImpl p4;
-    
-    //abstract
+
+    // abstract
     private PrivilegeImpl p5;
-    
+
     public PrivilegeImplTest() {
     }
-    
+
     @BeforeClass
     public static final void beforeAll() throws Exception {
         MultiUseAbstractTest.beforeAll();
 
         // Import the node types and the data ...
         registerNodeTypes("cars.cnd");
-        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);        
-        
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
     }
 
     @AfterClass
     public static final void afterAll() throws Exception {
         MultiUseAbstractTest.afterAll();
     }
-    
 
     @Before
-    public void setUp() throws AccessControlException, RepositoryException {
-        p1 = new PrivilegeImpl(session, "{}p1", new Privilege[]{});
-        p2 = new PrivilegeImpl(session, "{}p2", new Privilege[]{});
+    public void setUp() throws Exception {
+        p1 = new PrivilegeImpl(session, "{}p1", new Privilege[] {});
+        p2 = new PrivilegeImpl(session, "{}p2", new Privilege[] {});
 
-        //aggegate privileges
-        p3 = new PrivilegeImpl(session,"{}p3", new Privilege[]{p1, p2});
-        p4 = new PrivilegeImpl(session,"{}p4", new Privilege[]{p3});
+        // aggegate privileges
+        p3 = new PrivilegeImpl(session, "{}p3", new Privilege[] {p1, p2});
+        p4 = new PrivilegeImpl(session, "{}p4", new Privilege[] {p3});
 
-        //abstract
-        p5 = new PrivilegeImpl(session, "{}p5", new Privilege[]{}, true);
+        // abstract
+        p5 = new PrivilegeImpl(session, "{}p5", new Privilege[] {}, true);
     }
-    
+
     /**
      * Test of getName method, of class PrivilegeImpl.
      */
@@ -116,10 +112,10 @@ public class PrivilegeImplTest extends MultiUseAbstractTest{
     public void testGetDeclaredAggregatePrivileges() {
         Privilege[] pp = p3.getDeclaredAggregatePrivileges();
         assertEquals(2, pp.length);
-        
+
         assertEquals(p1, pp[0]);
         assertEquals(p2, pp[1]);
-                
+
     }
 
     /**
@@ -133,8 +129,9 @@ public class PrivilegeImplTest extends MultiUseAbstractTest{
         assertTrue(contains(p2, pp));
         assertTrue(contains(p3, pp));
     }
-    
-    private boolean contains(Privilege p, Privilege[] pp) {
+
+    private boolean contains( Privilege p,
+                              Privilege[] pp ) {
         for (int i = 0; i < pp.length; i++) {
             if (pp[i].getName().equals(p.getName())) {
                 return true;
@@ -152,6 +149,5 @@ public class PrivilegeImplTest extends MultiUseAbstractTest{
         assertTrue(p4.contains(p2));
         assertTrue(p4.contains(p4));
     }
-
 
 }

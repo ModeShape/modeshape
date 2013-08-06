@@ -23,8 +23,13 @@
  */
 package org.modeshape.jcr.security;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.security.AccessControlException;
-import java.security.Principal;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
@@ -33,38 +38,36 @@ import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
-import javax.jcr.security.AccessControlPolicy;
 import javax.jcr.security.AccessControlPolicyIterator;
 import javax.jcr.security.Privilege;
 import org.hamcrest.Matcher;
+import org.hamcrest.core.IsNull;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.jcr.MultiUseAbstractTest;
-import org.hamcrest.core.IsNull;
-import static org.junit.Assert.*;
 import org.modeshape.jcr.security.acl.Privileges;
 
 public class AccessControlManagerTest extends MultiUseAbstractTest {
 
     private AccessControlManager acm;
     private Privileges privileges;
-    
+
     @BeforeClass
     public static final void beforeAll() throws Exception {
         MultiUseAbstractTest.beforeAll();
 
         // Import the node types and the data ...
         registerNodeTypes("cars.cnd");
-        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);        
-        
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
         setPolicy("/Cars/Luxury/Cadillac DTS", Privilege.JCR_READ, Privilege.JCR_WRITE, Privilege.JCR_MODIFY_ACCESS_CONTROL);
         setPolicy("/Cars/Luxury/", Privilege.JCR_READ, Privilege.JCR_MODIFY_ACCESS_CONTROL);
         setPolicy("/Cars/Sports/", Privilege.JCR_READ, Privilege.JCR_WRITE, Privilege.JCR_MODIFY_ACCESS_CONTROL);
         setPolicy("/Cars/Utility/Ford F-150/", Privilege.JCR_MODIFY_ACCESS_CONTROL, Privilege.JCR_READ_ACCESS_CONTROL);
         setPolicy("/Cars/Utility/", Privilege.JCR_READ_ACCESS_CONTROL);
-        
+
     }
 
     @AfterClass
@@ -83,53 +86,54 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     @Test
     public void testSecondSession() throws Exception {
         Session session2 = session.getRepository().login();
+        session2.logout();
     }
-    
+
     @Test
     public void shouldObtainAccessControlManager() throws Exception {
         assertTrue(acm != null);
         Matcher<AccessControlManager> m = IsNull.notNullValue();
         m.matches(session.getAccessControlManager());
     }
-    
+
     @Test
     public void testGetSupportedPrivileges() throws Exception {
         Privilege[] permissions = acm.getSupportedPrivileges("/");
         assertEquals(privileges.listOfSupported().length, permissions.length);
     }
-    
+
     @Test
-    public void testPrivilegeForName() throws Exception  {
+    public void testPrivilegeForName() throws Exception {
         Privilege p = acm.privilegeFromName(Privilege.JCR_ALL);
         assertEquals("jcr:all", p.getName());
     }
-    
-    //--------------- Testing access list -------------------------------------/
+
+    // --------------- Testing access list -------------------------------------/
     @Test
     public void shouldHaveReadPrivilege() throws Exception {
         Privilege[] privileges = acm.getPrivileges("/Cars/Luxury");
         assertEquals("jcr:read", privileges[0].getName());
     }
-    
+
     @Test
     public void shoudlHaveReadWritePrivilege() throws Exception {
         Privilege[] privileges = acm.getPrivileges("/Cars/Luxury/Cadillac DTS");
         assertTrue(contains("jcr:read", privileges));
         assertTrue(contains("jcr:write", privileges));
     }
-    
+
     @Test
     public void shoudlDeriveAccessList() throws Exception {
         Privilege[] privileges = acm.getPrivileges("/Cars/Luxury/Lexus IS350");
         assertEquals("jcr:read", privileges[0].getName());
     }
-    
+
     @Test
     public void shoudlGrantAllPermissions() throws Exception {
         Privilege[] privileges = acm.getPrivileges("/Cars/Hybrid");
         assertTrue(contains("jcr:all", privileges));
     }
-   
+
     @Test
     public void shouldGrantAdd() throws Exception {
         Node sports = session.getNode("/Cars/Sports");
@@ -141,7 +145,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    public void shouldDenyAdd() throws RepositoryException  {
+    public void shouldDenyAdd() throws RepositoryException {
         Node luxury = session.getNode("/Cars/Luxury");
         try {
             luxury.addNode("Cadillac Flitwood", "car:Car");
@@ -152,7 +156,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             System.out.println("Hide exception");
         }
     }
-    
+
     @Test
     public void shouldGrantModify() throws RepositoryException {
         Node infinity = session.getNode("/Cars/Sports/Infiniti G37");
@@ -172,7 +176,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } catch (AccessDeniedException e) {
         }
     }
-    
+
     @Test
     public void shouldGrantRemove() throws RepositoryException {
         Node car = session.getNode("/Cars/Sports/Infiniti G37");
@@ -182,7 +186,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             fail("Should grant remove operation");
         }
     }
-    
+
     @Test
     public void shouldDenyRemove() throws RepositoryException {
         Node car = session.getNode("/Cars/Luxury/Lexus IS350");
@@ -193,7 +197,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } catch (AccessControlException e) {
         }
     }
-    
+
     @Test
     public void shoudlDenyRemove2() throws RepositoryException {
         Node car = session.getNode("/Cars/Luxury/Cadillac DTS");
@@ -206,12 +210,12 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             e.printStackTrace();
         }
     }
-    
+
     @Test
     public void shouldAllowSetPolicy() throws RepositoryException {
         setPolicy("/Cars/Utility/Ford F-150", Privilege.JCR_ALL);
     }
-    
+
     @Test
     public void shouldDenySetPolicy() throws RepositoryException {
         try {
@@ -220,19 +224,19 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } catch (AccessDeniedException e) {
         }
     }
-    
-//    @Test
+
+    // @Test
     public void shouldRemovePolicy() throws RepositoryException {
         acm.removePolicy("/Cars/Utility/Ford F-150", null);
         Privilege[] privileges = acm.getPrivileges("/Cars/Utility/Ford F-150");
         assertEquals(Privilege.JCR_ALL, privileges[0].getName());
     }
 
-    //-------------------- Testing access control api ---
+    // -------------------- Testing access control api ---
     @Test
     public void onlyAccessControlAPIAllowsRemoveACL() throws Exception {
         Node node = session.getNode("/Cars/Luxury/mode:acl");
-        assertTrue(node != null);
+        assertThat(node, is(notNullValue()));
         try {
             node.remove();
             fail("Only Access Control API allows modification");
@@ -243,44 +247,44 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     @Test
     public void onlyAccessControlAPIAllowsAddACL() throws Exception {
         Node node = session.getNode("/Cars/Hybrid");
-        assertTrue(node != null);
+        assertThat(node, is(notNullValue()));
         try {
             node.addMixin("mix:accessControllable");
             Node acl = node.addNode("mode:acl", "mode:Acl");
-            Node entry = acl.addNode("test", "mode:Permission");
+            acl.addNode("test", "mode:Permission");
             fail("Only Access Control API allows modification");
         } catch (RepositoryException e) {
         }
     }
-    
+
     @Test
     public void shouldNotDependFromContentPermissions() throws Exception {
         setPolicy("/Cars/Luxury/Bentley Continental", Privilege.JCR_WRITE);
     }
-    
-    
-    //-------------------------------
+
+    // -------------------------------
 
     @Test
     public void testGetApplicablePolicies() throws Exception {
-        AccessControlList acl = (AccessControlList) acm.getApplicablePolicies("/Cars").nextAccessControlPolicy();
+        AccessControlList acl = (AccessControlList)acm.getApplicablePolicies("/Cars").nextAccessControlPolicy();
         assertTrue(acl != null);
     }
-    
-    private static void setPolicy(String path, String... privileges) throws UnsupportedRepositoryOperationException, RepositoryException {
+
+    private static void setPolicy( String path,
+                                   String... privileges ) throws UnsupportedRepositoryOperationException, RepositoryException {
         AccessControlManager acm = session.getAccessControlManager();
-        
+
         Privilege[] permissions = new Privilege[privileges.length];
         for (int i = 0; i < privileges.length; i++) {
             permissions[i] = acm.privilegeFromName(privileges[i]);
         }
-        
+
         AccessControlList acl = null;
         AccessControlPolicyIterator it = acm.getApplicablePolicies(path);
         if (it.hasNext()) {
-            acl = (AccessControlList) it.nextAccessControlPolicy();
+            acl = (AccessControlList)it.nextAccessControlPolicy();
         } else {
-            acl = (AccessControlList) acm.getPolicies(path)[0];
+            acl = (AccessControlList)acm.getPolicies(path)[0];
         }
         acl.addAccessControlEntry(SimplePrincipal.newInstance(session.getUserID()), permissions);
 
@@ -288,13 +292,14 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         session.save();
     }
 
-    private boolean contains(String name, Privilege[] privileges) {
+    private boolean contains( String name,
+                              Privilege[] privileges ) {
         for (int i = 0; i < privileges.length; i++) {
             if (name.equals(privileges[i].getName())) {
                 return true;
             }
-        }        
+        }
         return false;
     }
-    
+
 }

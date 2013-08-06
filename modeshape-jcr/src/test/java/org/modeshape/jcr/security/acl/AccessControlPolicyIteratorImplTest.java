@@ -23,7 +23,9 @@
  */
 package org.modeshape.jcr.security.acl;
 
-import java.util.ArrayList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import javax.jcr.RepositoryException;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlException;
@@ -32,7 +34,6 @@ import javax.jcr.security.Privilege;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
@@ -43,47 +44,38 @@ import org.modeshape.jcr.security.SimplePrincipal;
 public class AccessControlPolicyIteratorImplTest {
 
     private AccessControlPolicyIteratorImpl it;
-    
+
     public AccessControlPolicyIteratorImplTest() {
     }
-    
+
     @Before
     public void setUp() throws AccessControlException, RepositoryException {
-        ArrayList<JcrAccessControlList> list = new ArrayList();
-        
-        //acl-1
+
+        // acl-1
         JcrAccessControlList alice = new JcrAccessControlList(null, "alice");
-        alice.addAccessControlEntry(SimplePrincipal.newInstance("alice"), new Privilege[]{new PrivilegeImpl()});
-        
-        
+        alice.addAccessControlEntry(SimplePrincipal.newInstance("alice"), new Privilege[] {new PrivilegeImpl()});
+
         JcrAccessControlList bob = new JcrAccessControlList(null, "bob");
-        bob.addAccessControlEntry(SimplePrincipal.newInstance("bob"), new Privilege[]{new PrivilegeImpl()});
-     
-        
+        bob.addAccessControlEntry(SimplePrincipal.newInstance("bob"), new Privilege[] {new PrivilegeImpl()});
+
         it = new AccessControlPolicyIteratorImpl(alice, bob);
     }
-    
+
     @After
     public void tearDown() {
     }
 
-    /**
-     * Test of nextAccessControlPolicy method, of class AccessControlPolicyIteratorImpl.
-     */
     @Test
     public void testNextAccessControlPolicy() throws RepositoryException {
-        AccessControlList acl = (AccessControlList) it.nextAccessControlPolicy();
+        AccessControlList acl = (AccessControlList)it.nextAccessControlPolicy();
         AccessControlEntry[] entries = acl.getAccessControlEntries();
         assertEquals(1, entries.length);
     }
 
-    /**
-     * Test of skip method, of class AccessControlPolicyIteratorImpl.
-     */
     @Test
     public void testSkip() {
         assertTrue(it.hasNext());
-        
+
         it.skip(1);
         assertTrue(it.hasNext());
 
@@ -91,9 +83,6 @@ public class AccessControlPolicyIteratorImplTest {
         assertFalse(it.hasNext());
     }
 
-    /**
-     * Test of getSize method, of class AccessControlPolicyIteratorImpl.
-     */
     @Test
     public void testGetSize() {
         assertEquals(2, it.getSize());
@@ -101,24 +90,18 @@ public class AccessControlPolicyIteratorImplTest {
         assertEquals(1, it.getSize());
     }
 
-    /**
-     * Test of getPosition method, of class AccessControlPolicyIteratorImpl.
-     */
     @Test
     public void testGetPosition() {
         assertEquals(0, it.getPosition());
         it.skip(1);
-        
+
         assertEquals(1, it.getPosition());
     }
 
-    /**
-     * Test of hasNext method, of class AccessControlPolicyIteratorImpl.
-     */
     @Test
     public void testHasNext() {
         assertTrue(it.hasNext());
-        
+
         it.skip(1);
         assertTrue(it.hasNext());
 
@@ -126,31 +109,25 @@ public class AccessControlPolicyIteratorImplTest {
         assertFalse(it.hasNext());
     }
 
-    /**
-     * Test of next method, of class AccessControlPolicyIteratorImpl.
-     */
     @Test
     public void testNext() throws RepositoryException {
-        AccessControlList acl = (AccessControlList) it.next();
+        AccessControlList acl = (AccessControlList)it.next();
         AccessControlEntry[] entries = acl.getAccessControlEntries();
         assertEquals("alice", entries[0].getPrincipal().getName());
 
-        acl = (AccessControlList) it.next();
+        acl = (AccessControlList)it.next();
         entries = acl.getAccessControlEntries();
         assertEquals("bob", entries[0].getPrincipal().getName());
     }
 
-    /**
-     * Test of remove method, of class AccessControlPolicyIteratorImpl.
-     */
     @Test
     public void testRemove() {
         assertEquals(2, it.getSize());
         it.remove();
         assertEquals(1, it.getSize());
     }
-    
-    private class PrivilegeImpl implements Privilege {
+
+    protected class PrivilegeImpl implements Privilege {
 
         @Override
         public String getName() {
@@ -169,13 +146,15 @@ public class AccessControlPolicyIteratorImplTest {
 
         @Override
         public Privilege[] getDeclaredAggregatePrivileges() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            throw new UnsupportedOperationException("Not supported yet."); // To change body of generated methods, choose Tools |
+                                                                           // Templates.
         }
 
         @Override
         public Privilege[] getAggregatePrivileges() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            throw new UnsupportedOperationException("Not supported yet."); // To change body of generated methods, choose Tools |
+                                                                           // Templates.
         }
-    
+
     }
 }

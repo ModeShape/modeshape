@@ -1192,9 +1192,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
         /**
          * Get the auto-created property definitions for the named node type. This method is used when
-         * {@link AbstractJcrNode#addChildNode(org.modeshape.jcr.value.Name, org.modeshape.jcr.value.Name, org.modeshape.jcr.cache.NodeKey, boolean)
-         * creating nodes}, which only needs the auto-created properties for the primary type. It's also used when
-         * {@link AbstractJcrNode#addMixin(String) adding a mixin}.
+         * {@link AbstractJcrNode#addChildNode(Name, Name, NodeKey, boolean, boolean) creating nodes}, which only needs the
+         * auto-created properties for the primary type. It's also used when {@link AbstractJcrNode#addMixin(String) adding a
+         * mixin}.
          * 
          * @param nodeType the node type name; may not be null
          * @return the collection of auto-created property definitions; never null but possibly empty
@@ -1205,9 +1205,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
         /**
          * Get the auto-created child node definitions for the named node type. This method is used when
-         * {@link AbstractJcrNode#addChildNode(org.modeshape.jcr.value.Name, org.modeshape.jcr.value.Name, org.modeshape.jcr.cache.NodeKey, boolean)
-         * creating nodes}, which only needs the auto-created properties for the primary type. It's also used when
-         * {@link AbstractJcrNode#addMixin(String) adding a mixin}.
+         * {@link AbstractJcrNode#addChildNode(Name, Name, NodeKey, boolean, boolean) creating nodes}, which only needs the
+         * auto-created properties for the primary type. It's also used when {@link AbstractJcrNode#addMixin(String) adding a
+         * mixin}.
          * 
          * @param nodeType the node type name; may not be null
          * @return the collection of auto-created child node definitions; never null but possibly empty

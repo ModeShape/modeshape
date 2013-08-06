@@ -23,8 +23,6 @@
  */
 package org.modeshape.jcr.security;
 
-import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.Credentials;
@@ -40,10 +38,10 @@ import org.modeshape.jcr.api.AnonymousCredentials;
 public class AnonymousProvider implements AuthenticationProvider {
 
     private final SecurityContext anonymousContext;
-    
+
     /**
      * Creates a new anonymous provider.
-     *
+     * 
      * @param anonymousUsername the anonymous user name
      * @param userRoles the set of roles for the anonymous user
      */
@@ -60,7 +58,7 @@ public class AnonymousProvider implements AuthenticationProvider {
                                           String workspaceName,
                                           ExecutionContext repositoryContext,
                                           Map<String, Object> sessionAttributes ) {
-        
+
         if (credentials == null) {
             return repositoryContext.with(anonymousContext);
         }
@@ -78,11 +76,11 @@ public class AnonymousProvider implements AuthenticationProvider {
     protected final class AnonymousSecurityContext implements SecurityContext {
         private final Set<String> userRoles;
         private final String anonymousUsername;
-        
+
         protected AnonymousSecurityContext( Set<String> userRoles,
                                             String anonymousUsername ) {
             this.userRoles = userRoles;
-            this.anonymousUsername = anonymousUsername;            
+            this.anonymousUsername = anonymousUsername;
         }
 
         @Override

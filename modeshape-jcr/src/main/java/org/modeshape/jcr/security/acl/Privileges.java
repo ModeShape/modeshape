@@ -61,7 +61,7 @@ public class Privileges {
      * Following to the specification, each Privilege is identified by JCR name.
      * This map allows to find privilege object using its name.
      */
-    private final HashMap<String, PrivilegeImpl> privileges = new HashMap();
+    private final HashMap<String, PrivilegeImpl> privileges = new HashMap<String,PrivilegeImpl>();
 
     /**
      * List of applicable privileges.
@@ -72,7 +72,7 @@ public class Privileges {
      * Map between actions names used by Modeshape internally and 
      * privilege object.     * 
      */
-    private final HashMap<String, PrivilegeImpl> actions = new HashMap();
+    private final HashMap<String, PrivilegeImpl> actions = new HashMap<String,PrivilegeImpl>();
     
     /**
      * Creates privileges related to the given session.
@@ -182,7 +182,6 @@ public class Privileges {
     public PrivilegeImpl forName(String name) {
         if (name.contains("}")) {
             String localName = name.substring(name.indexOf('}') + 1);
-            PrivilegeImpl p = privileges.get(localName);
             return privileges.get(localName);
         }
         

@@ -114,7 +114,7 @@ public class PrivilegeImpl implements Privilege {
 
     @Override
     public Privilege[] getAggregatePrivileges() {
-        ArrayList<Privilege> list = new ArrayList();
+        ArrayList<Privilege> list = new ArrayList<Privilege>();
         for (Privilege ap : getDeclaredAggregatePrivileges()) {
             aggregate(list, ap);
         }

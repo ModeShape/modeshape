@@ -17,10 +17,9 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Reflection;
-import org.modeshape.jcr.JcrSession;
 
 /**
  * JAAS-based {@link SecurityContext security context} that provides authentication and authorization through the JAAS
@@ -35,7 +34,7 @@ public class JaasSecurityContext implements SecurityContext {
     private final String userName;
     private final Set<String> entitlements;
     private boolean loggedIn;
-    
+
     /**
      * Create a {@link JaasSecurityContext} with the supplied {@link Configuration#getAppConfigurationEntry(String) application
      * configuration name}.
@@ -47,7 +46,7 @@ public class JaasSecurityContext implements SecurityContext {
      *         default callback handler JAAS property was not set or could not be loaded
      */
     public JaasSecurityContext( String realmName ) throws LoginException {
-        this( new LoginContext(realmName));
+        this(new LoginContext(realmName));
     }
 
     /**
@@ -94,7 +93,7 @@ public class JaasSecurityContext implements SecurityContext {
      *         <code>callbackHandler</code> is null
      */
 
-    public JaasSecurityContext(String realmName,
+    public JaasSecurityContext( String realmName,
                                 CallbackHandler callbackHandler ) throws LoginException {
         this(new LoginContext(realmName, callbackHandler));
     }
@@ -108,7 +107,7 @@ public class JaasSecurityContext implements SecurityContext {
      *         error occurs attempting to invoke the login method.
      * @see LoginContext
      */
-    public JaasSecurityContext(LoginContext loginContext ) throws LoginException {
+    public JaasSecurityContext( LoginContext loginContext ) throws LoginException {
         CheckArg.isNotNull(loginContext, "loginContext");
         this.entitlements = new HashSet<String>();
         this.loginContext = loginContext;
@@ -124,7 +123,7 @@ public class JaasSecurityContext implements SecurityContext {
      * 
      * @param subject the subject to use as the provider of the user name and roles for this security context; may not be null
      */
-    public JaasSecurityContext(Subject subject ) {
+    public JaasSecurityContext( Subject subject ) {
         CheckArg.isNotNull(subject, "subject");
         this.loginContext = null;
         this.entitlements = new HashSet<String>();

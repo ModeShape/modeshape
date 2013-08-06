@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ItemDefinition;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.api.Namespaced;
@@ -70,12 +69,12 @@ abstract class JcrItemDefinition implements ItemDefinition, Namespaced {
     }
 
     @Override
-    public String getLocalName() throws RepositoryException {
+    public String getLocalName() {
         return name.getLocalName();
     }
 
     @Override
-    public String getNamespaceURI() throws RepositoryException {
+    public String getNamespaceURI() {
         return name.getNamespaceUri();
     }
 

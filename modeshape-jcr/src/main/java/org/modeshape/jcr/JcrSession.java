@@ -139,9 +139,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private final long nanosCreated;
 
     private ExecutionContext context;
-    
+
     private final AccessControlManagerImpl acm;
-    
+
     private final AdvancedAuthorizationProvider.Context authorizerContext = new AdvancedAuthorizationProvider.Context() {
         @Override
         public ExecutionContext getExecutionContext() {
@@ -164,14 +164,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         }
     };
 
-    
     protected JcrSession( JcrRepository repository,
                           String workspaceName,
                           ExecutionContext context,
                           Map<String, Object> sessionAttributes,
                           boolean readOnly ) {
         this.repository = repository;
-        
+
         // Get the node key of the workspace we're going to use ...
         final RepositoryCache repositoryCache = repository.repositoryCache();
         WorkspaceCache workspace = repositoryCache.getWorkspaceCache(workspaceName);
@@ -203,8 +202,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
-        repository.statistics().increment(ValueMetric.SESSION_COUNT);  
-        
+        repository.statistics().increment(ValueMetric.SESSION_COUNT);
+
         acm = new AccessControlManagerImpl(this);
     }
 
@@ -225,7 +224,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
-        repository.statistics().increment(ValueMetric.SESSION_COUNT);        
+        repository.statistics().increment(ValueMetric.SESSION_COUNT);
         acm = new AccessControlManagerImpl(this);
     }
 
@@ -285,6 +284,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     public final boolean isReadOnly() {
         return cache().isReadOnly();
     }
+
     /**
      * Method that verifies that this session is still {@link #isLive() live}.
      * 
@@ -780,7 +780,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return getNode(absPath, false);
     }
 
-    protected AbstractJcrNode getNode( String absPath, boolean accessControlScope ) throws PathNotFoundException, RepositoryException {
+    protected AbstractJcrNode getNode( String absPath,
+                                       boolean accessControlScope ) throws PathNotFoundException, RepositoryException {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absolutePath");
         Path path = absolutePathFor(absPath);
@@ -795,20 +796,20 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         return node(path);
     }
-    
-/*    protected Node getAclNode( String absPath ) throws PathNotFoundException, RepositoryException {
-        checkLive();
-        CheckArg.isNotEmpty(absPath, "absolutePath");
-        Path path = absolutePathFor(absPath);
 
-        // Return root node if path is "/" ...
-        if (path.isRoot()) {
-            return getRootNode();
+    /*    protected Node getAclNode( String absPath ) throws PathNotFoundException, RepositoryException {
+            checkLive();
+            CheckArg.isNotEmpty(absPath, "absolutePath");
+            Path path = absolutePathFor(absPath);
+
+            // Return root node if path is "/" ...
+            if (path.isRoot()) {
+                return getRootNode();
+            }
+
+            return node(path);
         }
-
-        return node(path);
-    }
-*/    
+    */
     @Override
     public AbstractJcrItem getItem( String absPath ) throws PathNotFoundException, RepositoryException {
         checkLive();
@@ -1236,11 +1237,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     /**
-     * Determine if the current user does not have permission for all of the 
-     * named actions in the named workspace in the given context, otherwise
-     * returns silently.
+     * Determine if the current user does not have permission for all of the named actions in the named workspace in the given
+     * context, otherwise returns silently.
      * 
-     * @param sec security context
      * @param workspaceName the name of the workspace in which the path exists
      * @param path the path on which the actions are occurring
      * @param actions the list of {@link ModeShapePermissions actions} to check
@@ -1252,19 +1251,19 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                          String... actions ) {
         assert path == null ? true : path.isAbsolute() : "The path (if provided) must be absolute";
         SecurityContext sec = context.getSecurityContext();
-        
+
         boolean hasPermission = true;
-        
+
         final String repositoryName = this.repository.repositoryName();
         if (sec instanceof AuthorizationProvider) {
             // Delegate to the security context ...
             AuthorizationProvider authorizer = (AuthorizationProvider)sec;
             hasPermission = authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
-            
+
             if (hasPermission) {
                 hasPermission = acm.hasPermission(path, actions);
             }
-            
+
             return hasPermission;
         }
 
@@ -1272,14 +1271,14 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // Delegate to the security context ...
             AdvancedAuthorizationProvider authorizer = (AdvancedAuthorizationProvider)sec;
             hasPermission = authorizer.hasPermission(authorizerContext, path, actions);
-            
+
             if (hasPermission) {
                 hasPermission = acm.hasPermission(path, actions);
             }
-            
-            return hasPermission; 
+
+            return hasPermission;
         }
-        
+
         // It is a role-based security context, so apply role-based authorization ...
         for (String action : actions) {
             if (ModeShapePermissions.READ.equals(action)) {
@@ -1298,11 +1297,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                  || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName);
             }
         }
-        
+
         if (hasPermission) {
             hasPermission = acm.hasPermission(path, actions);
         }
-        
+
         return hasPermission;
     }
 
@@ -1371,7 +1370,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                           Path path,
                           String... actions ) throws AccessDeniedException {
         CheckArg.isNotEmpty(actions, "actions");
-        
+
         if (hasPermission(workspaceName, path, actions)) return;
 
         String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
@@ -1615,7 +1614,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     @Override
-    public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public AccessControlManager getAccessControlManager() {
         return acm;
     }
 

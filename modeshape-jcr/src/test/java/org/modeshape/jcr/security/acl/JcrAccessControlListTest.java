@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.security.acl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.RepositoryException;
 import javax.jcr.security.AccessControlEntry;
@@ -33,52 +35,47 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
- *
  * @author kulikov
  */
 public class JcrAccessControlListTest extends MultiUseAbstractTest {
-    
-    private JcrAccessControlList acl = new JcrAccessControlList(null,  "root");
-    private Privilege[] rw;        
+
+    private JcrAccessControlList acl = new JcrAccessControlList(null, "root");
+    private Privilege[] rw;
     private Privileges privileges;
-    
+
     public JcrAccessControlListTest() {
     }
-    
+
     @BeforeClass
     public static final void beforeAll() throws Exception {
         MultiUseAbstractTest.beforeAll();
 
         // Import the node types and the data ...
         registerNodeTypes("cars.cnd");
-        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);        
-        
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
     }
 
     @AfterClass
     public static final void afterAll() throws Exception {
         MultiUseAbstractTest.afterAll();
     }
-    
+
     @Before
     public void setUp() throws AccessControlException, RepositoryException {
         privileges = new Privileges(session);
-        rw = new Privilege[]{privileges.forName(Privilege.JCR_READ), privileges.forName(Privilege.JCR_WRITE)};        
+        rw = new Privilege[] {privileges.forName(Privilege.JCR_READ), privileges.forName(Privilege.JCR_WRITE)};
         acl.addAccessControlEntry(SimplePrincipal.newInstance("kulikov"), rw);
     }
-    
+
     @After
     public void tearDown() {
     }
 
-    /**
-     * Test of getAccessControlEntries method, of class JcrAccessControlList.
-     */
     @Test
     public void testAccessControlEntries() throws Exception {
         AccessControlEntry[] entries = acl.getAccessControlEntries();
@@ -86,14 +83,11 @@ public class JcrAccessControlListTest extends MultiUseAbstractTest {
         assertEquals("kulikov", entries[0].getPrincipal().getName());
     }
 
-    /**
-     * Test of addAccessControlEntry method, of class JcrAccessControlList.
-     */
     @Test
     public void testHasPermission() throws Exception {
-        AccessControlEntryImpl entry = (AccessControlEntryImpl) acl.getAccessControlEntries()[0];
+        AccessControlEntryImpl entry = (AccessControlEntryImpl)acl.getAccessControlEntries()[0];
         assertTrue(entry.hasPrivileges(rw));
-        assertTrue(entry.hasPrivileges(new Privilege[]{privileges.forName(Privilege.JCR_ADD_CHILD_NODES)}));
+        assertTrue(entry.hasPrivileges(new Privilege[] {privileges.forName(Privilege.JCR_ADD_CHILD_NODES)}));
     }
 
 }
