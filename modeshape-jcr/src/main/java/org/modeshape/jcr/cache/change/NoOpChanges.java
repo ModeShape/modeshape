@@ -52,6 +52,10 @@ public final class NoOpChanges implements Changes {
     }
 
     @Override
+    public void repositoryMetadataChanged() {
+    }
+
+    @Override
     public void nodeCreated( NodeKey key,
                              NodeKey parentKey,
                              Path path,
