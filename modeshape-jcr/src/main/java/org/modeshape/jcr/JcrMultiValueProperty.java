@@ -139,14 +139,20 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     @Override
     public final void setValue( Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-
         if (values == null) {
             this.remove();
             return;
         }
+        setValue(values, false);
+    }
+
+    protected void setValue(Value[] values, boolean skipVersioningValidation)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
         checkForLock();
-        checkForCheckedOut();
+        if (!skipVersioningValidation) {
+            checkForCheckedOut();
+        }
 
         Object[] literals = new Object[values.length];
         ValueFactories factories = null;

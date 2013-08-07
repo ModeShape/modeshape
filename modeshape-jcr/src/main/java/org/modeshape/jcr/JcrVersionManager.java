@@ -1002,37 +1002,28 @@ final class JcrVersionManager implements VersionManager {
         AbstractJcrProperty prop = targetNode.getProperty(JcrLexicon.MERGE_FAILED);
         Value[] values = prop.getValues();
 
+        if (values.length == 1) {
+            //remove the property without looking at the node's "checked out" status
+            targetNode.removeProperty(prop);
+            return;
+        }
+
+        List<Value> newValues = new ArrayList<Value>();
         String uuidString = version.getUUID();
         int matchIndex = -1;
         for (int i = 0; i < values.length; i++) {
             if (uuidString.equals(values[i].getString())) {
                 matchIndex = i;
-                break;
+            } else {
+                newValues.add(values[i]);
             }
         }
 
         if (matchIndex == -1) {
             throw new VersionException(JcrI18n.versionNotInMergeFailed.text(version.getName(), targetNode.getPath()));
         }
-
-        if (values.length == 1) {
-            //remove the property without looking at the node's "checked out" status
-            targetNode.removeProperty(prop);
-        } else {
-            Value[] newValues = new JcrValue[values.length - 2];
-
-            if (matchIndex == 0) {
-                System.arraycopy(values, 1, newValues, 0, values.length - 1);
-            } else if (matchIndex == values.length - 1) {
-                System.arraycopy(values, 0, newValues, 0, values.length - 2);
-            } else {
-                System.arraycopy(values, 0, newValues, 0, matchIndex);
-                System.arraycopy(values, matchIndex + 1, newValues, matchIndex, values.length - matchIndex - 1);
-            }
-
-            prop.setValue(newValues);
-        }
-
+        //it has multiple values, so we know it's a multi-value property
+        ((JcrMultiValueProperty)prop).setValue(newValues.toArray(new Value[0]), true);
     }
 
     @Override
@@ -1621,8 +1612,9 @@ final class JcrVersionManager implements VersionManager {
             Collections.sort(versionDates);
 
             for (int i = versionDates.size() - 1; i >= 0; i--) {
-                if (versionDates.get(i).isBefore(checkinTime)) {
-                    Version version = versions.get(versionDates.get(i));
+                DateTime versionDate = versionDates.get(i);
+                if (versionDate.isBefore(checkinTime) || versionDate.isSameAs(checkinTime)) {
+                    Version version = versions.get(versionDate);
                     return ((JcrVersionNode)version).getFrozenNode();
                 }
             }

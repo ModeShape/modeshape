@@ -638,17 +638,11 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         try {
             VersionManager versionManagerQa = sessionQa.getWorkspace().getVersionManager();
 
-            //Change QA node first time
+            //Change QA node first time, store version
             versionManagerQa.checkout("/record");
             sessionQa.getNode("/record").setProperty("111", "111");
             sessionQa.save();
-            versionManagerQa.checkin("/record");
-
-            //Change QA node second time, store version
-            versionManagerQa.checkout("/record");
-            sessionQa.getNode("/record").setProperty("222", "222");
-            sessionQa.save();
-            Version offendingVersion = versionManagerQa.checkin("/record");
+            Version offendingVersion1 = versionManagerQa.checkin("/record");
 
             //Change original node one time to make versions in this workspace and other workspace be on
             //divergent branches, causing merge() to fail
@@ -657,16 +651,30 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
             session.save();
             versionManager.checkin("/record");
 
-            // Try to merge
+            // Try to merge with offendingVersion1
+            // This should create a new jcr:mergeFailed property
+            versionManager.merge("/record", sessionQa.getWorkspace().getName(), true);
+
+            //Change QA node second time, store version
+            versionManagerQa.checkout("/record");
+            sessionQa.getNode("/record").setProperty("222", "222");
+            sessionQa.save();
+            Version offendingVersion2 = versionManagerQa.checkin("/record");
+
+            // Try to merge with offendingVersion2
+            // This should add to existing jcr:mergeFailed property
             NodeIterator nodeIterator = versionManager.merge("/record", sessionQa.getWorkspace().getName(), true);
             assertTrue(nodeIterator.hasNext());
-
             while (nodeIterator.hasNext()) {
                 Node record = nodeIterator.nextNode();
-                Version mergeFailedVersion = (Version)session.getNodeByIdentifier(
+                Version mergeFailedVersion1 = (Version)session.getNodeByIdentifier(
                         record.getProperty("jcr:mergeFailed").getValues()[0].getString());
-                assertEquals(offendingVersion.getIdentifier(), mergeFailedVersion.getIdentifier());
-                versionManager.cancelMerge("/record", mergeFailedVersion);
+                assertEquals(offendingVersion1.getIdentifier(), mergeFailedVersion1.getIdentifier());
+                Version mergeFailedVersion2 = (Version)session.getNodeByIdentifier(
+                        record.getProperty("jcr:mergeFailed").getValues()[1].getString());
+                assertEquals(offendingVersion2.getIdentifier(), mergeFailedVersion2.getIdentifier());
+                versionManager.cancelMerge("/record", mergeFailedVersion1);
+                versionManager.cancelMerge("/record", mergeFailedVersion2);
                 assertFalse(record.hasProperty("jcr:mergeFailed"));
             }
         } finally {
