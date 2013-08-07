@@ -64,6 +64,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.RepositoryStatistics.MetricHistory;
 import org.modeshape.jcr.api.monitor.DurationActivity;
 import org.modeshape.jcr.api.monitor.DurationMetric;
@@ -81,6 +82,8 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
 
     @Before
     public void beforeEach() throws Exception {
+        FileUtil.delete("target/persistent_repository");
+
         environment = new TestingEnvironment();
         config = new RepositoryConfiguration("repoName", environment);
         repository = new JcrRepository(config);
@@ -180,12 +183,12 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertThat(session2.getRootNode(), is(notNullValue()));
     }
 
-    @FixFor( "MODE-1834" )
+    @FixFor( {"MODE-1834", "MODE-2004"} )
     @Test
     public void shouldAllowCreatingNewWorkspacesByDefaultWhenUsingTransactionManagerWithOptimisticLocking() throws Exception {
         shutdownDefaultRepository();
 
-        RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-inmemory-jbosstxn-optimistic.json");
+        RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-filesystem-jbosstxn-optimistic.json");
         repository = new JcrRepository(config);
         repository.start();
 
@@ -202,14 +205,24 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         // Now create a session to that workspace ...
         JcrSession session2 = repository.login("new-workspace");
         assertThat(session2.getRootNode(), is(notNullValue()));
+
+        // Shut down the repository ...
+        assertThat(repository.shutdown().get(), is(true));
+
+        // Start up the repository again, this time by reading the persisted data ...
+        repository = new JcrRepository(config);
+        repository.start();
+
+        // And verify that the workspace existance was persisted properly ...
+        repository.login("new-workspace");
     }
 
-    @FixFor( "MODE-1834" )
+    @FixFor( {"MODE-1834", "MODE-2004"} )
     @Test
     public void shouldAllowCreatingNewWorkspacesByDefaultWhenUsingTransactionManagerWithPessimisticLocking() throws Exception {
         shutdownDefaultRepository();
 
-        RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-inmemory-jbosstxn.json");
+        RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-filesystem-jbosstxn-pessimistic.json");
         repository = new JcrRepository(config);
         repository.start();
 
@@ -226,6 +239,16 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         // Now create a session to that workspace ...
         JcrSession session2 = repository.login("new-workspace");
         assertThat(session2.getRootNode(), is(notNullValue()));
+
+        // Shut down the repository ...
+        assertThat(repository.shutdown().get(), is(true));
+
+        // Start up the repository again, this time by reading the persisted data ...
+        repository = new JcrRepository(config);
+        repository.start();
+
+        // And verify that the workspace existance was persisted properly ...
+        repository.login("new-workspace");
     }
 
     @Test

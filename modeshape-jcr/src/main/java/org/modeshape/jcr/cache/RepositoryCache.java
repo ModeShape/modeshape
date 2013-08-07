@@ -433,114 +433,78 @@ public class RepositoryCache implements Observable {
     }
 
     protected void refreshRepositoryMetadata( boolean update ) {
+        // Read the node document ...
+        DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumStringLengthForBinaryStorage.get());
+        final String systemMetadataKeyStr = this.systemMetadataKey.toString();
+        boolean accessControlEnabled = this.accessControlEnabled.get();
+        SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
+
+        if (!update && entry != null) {
+            // We just need to read the metadata from the document, and we don't need a transaction for it ...
+            Document doc = entry.getContentAsDocument();
+            Property accessProp = translator.getProperty(doc, name("accessControl"));
+            boolean enabled = context.getValueFactories().getBooleanFactory().create(accessProp.getFirstValue());
+            this.accessControlEnabled.set(enabled);
+
+            Property prop = translator.getProperty(doc, name("workspaces"));
+            final Set<String> workspaceNames = new HashSet<String>();
+            ValueFactory<String> strings = context.getValueFactories().getStringFactory();
+            for (Object value : prop) {
+                String workspaceName = strings.create(value);
+                workspaceNames.add(workspaceName);
+            }
+            this.workspaceNames.addAll(workspaceNames);
+            this.workspaceNames.retainAll(workspaceNames);
+            return;
+        }
+
+        // Otherwise, we need to update/create the document, so always do it within a transaction ...
+        Transaction txn = null;
         try {
-            // Read the node document ...
-            DocumentTranslator translator = new DocumentTranslator(context, documentStore,
-                                                                   minimumStringLengthForBinaryStorage.get());
-            Set<String> workspaceNames = new HashSet<String>(this.workspaceNames);
-            String systemMetadataKeyStr = this.systemMetadataKey.toString();
-            boolean accessControlEnabled = this.accessControlEnabled.get();
-            SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
+            txn = sessionContext.getTransactions().begin();
+            // Re-read the entry within the transaction ...
+            entry = documentStore.get(systemMetadataKeyStr);
             if (entry == null) {
-                // it doesn't exist, so set it up ...
-                PropertyFactory propFactory = context.getPropertyFactory();
-                EditableDocument doc = Schematic.newDocument();
-                translator.setKey(doc, systemMetadataKey);
-                translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
-                translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null);
-                entry = documentStore.localStore().putIfAbsent(systemMetadataKeyStr, doc);
-                // we'll need to read the entry if one was inserted between 'containsKey' and 'putIfAbsent' ...
-            }
-            if (entry != null) {
-                // There was an existing document ...
-                Document doc = entry.getContentAsDocument();
-
-                // Deal with the workspaces ...
-                Property prop = translator.getProperty(doc, name("workspaces"));
-                if (prop != null && !prop.isEmpty() && !update) {
-                    // Read the value ...
-                    workspaceNames.clear();
-                    ValueFactory<String> strings = context.getValueFactories().getStringFactory();
-                    for (Object value : prop) {
-                        String workspaceName = strings.create(value);
-                        workspaceNames.add(workspaceName);
-                    }
-                    this.workspaceNames.addAll(workspaceNames);
-                    this.workspaceNames.retainAll(workspaceNames);
-                } else {
-                    // Set the property ...
-                    Transaction txn = null;
-                    try {
-                        txn = sessionContext.getTransactions().begin();
-                        EditableDocument editable = entry.editDocumentContent();
-                        PropertyFactory propFactory = context.getPropertyFactory();
-                        translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
-                        // we need to update local the cache immediately, so the changes are persisted
-                        documentStore.localStore().replace(systemMetadataKeyStr, editable);
-                        txn.commit();
-                    } catch (NotSupportedException err) {
-                        // No nested transactions are supported ...
-                        return;
-                    } catch (SecurityException err) {
-                        // No privilege to commit ...
-                        throw new SystemFailureException(JcrI18n.errorUpdatingWorkspaceNames.text(name, err.getMessage()));
-                    } catch (IllegalStateException err) {
-                        // Not associated with a txn??
-                        throw new SystemFailureException(JcrI18n.errorUpdatingWorkspaceNames.text(name, err.getMessage()));
-                    } catch (RollbackException err) {
-                        // Couldn't be committed, but the txn is already rolled back ...
-                        throw new SystemFailureException(JcrI18n.errorUpdatingWorkspaceNames.text(name, err.getMessage()));
-                    } catch (SystemException err) {
-                        // Transaction service failed, so probably can't rollback either ...
-                        throw new SystemFailureException(JcrI18n.errorUpdatingWorkspaceNames.text(name, err.getMessage()));
-                    } catch (Exception err) {
-                        if (txn != null) txn.rollback();
-                        throw new SystemFailureException(JcrI18n.errorUpdatingWorkspaceNames.text(name, err.getMessage()));
-                    }
-                }
-
-                // Deal with the metadata properties ...
-                Property accessProp = translator.getProperty(doc, name("accessControl"));
-                if (accessProp != null && !accessProp.isEmpty() && !update) {
-                    boolean enabled = context.getValueFactories().getBooleanFactory().create(accessProp.getFirstValue());
-                    this.accessControlEnabled.set(enabled);
-                } else {
-                    // Set the property ...
-                    Transaction txn = null;
-                    try {
-                        txn = sessionContext.getTransactions().begin();
-                        EditableDocument editable = entry.editDocumentContent();
-                        PropertyFactory propFactory = context.getPropertyFactory();
-                        translator.setProperty(editable, propFactory.create(name("accessControl"), accessControlEnabled), null);
-                        // we need to update local the cache immediately, so the changes are persisted
-                        documentStore.localStore().replace(systemMetadataKeyStr, editable);
-                        txn.commit();
-                    } catch (NotSupportedException err) {
-                        // No nested transactions are supported ...
-                        return;
-                    } catch (SecurityException err) {
-                        // No privilege to commit ...
-                        throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-                    } catch (IllegalStateException err) {
-                        // Not associated with a txn??
-                        throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-                    } catch (RollbackException err) {
-                        // Couldn't be committed, but the txn is already rolled back ...
-                        throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-                    } catch (SystemException err) {
-                        // Transaction service failed, so probably can't rollback either ...
-                        throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-                    } catch (Exception err) {
-                        if (txn != null) txn.rollback();
-                        throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-                    }
+                // We need to create a new entry ...
+                EditableDocument newDoc = Schematic.newDocument();
+                translator.setKey(newDoc, systemMetadataKey);
+                entry = documentStore.localStore().putIfAbsent(systemMetadataKeyStr, newDoc);
+                if (entry == null) {
+                    // Read-read the entry that we just put, so we can populate it with the same code that edits it ...
+                    entry = documentStore.localStore().get(systemMetadataKeyStr);
                 }
             }
-
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new WrappedException(t);
+            EditableDocument doc = entry.editDocumentContent();
+            PropertyFactory propFactory = context.getPropertyFactory();
+            translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
+            translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null);
+            txn.commit();
+        } catch (NotSupportedException err) {
+            // No nested transactions are supported ...
+            return;
+        } catch (SecurityException err) {
+            // No privilege to commit ...
+            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
+        } catch (IllegalStateException err) {
+            // Not associated with a txn??
+            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
+        } catch (RollbackException err) {
+            // Couldn't be committed, but the txn is already rolled back ...
+            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
+        } catch (SystemException err) {
+            // Transaction service failed, so probably can't rollback either ...
+            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
+        } catch (Exception err) {
+            if (txn != null) {
+                try {
+                    txn.rollback();
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Throwable t) {
+                    throw new WrappedException(t);
+                }
+            }
+            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
         }
     }
 
