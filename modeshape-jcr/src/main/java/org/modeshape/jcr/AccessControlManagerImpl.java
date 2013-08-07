@@ -64,10 +64,10 @@ import org.modeshape.jcr.value.Path;
  */
 public class AccessControlManagerImpl implements AccessControlManager {
 
-    private static final String NT_ACCESS_CONTROLLABLE = "mode:accessControllable";
+    private static final String MODE_ACCESS_CONTROLLABLE = "mode:accessControllable";
     private static final String ACCESS_LIST_NODE = "mode:acl";
-    private static final String NT_ACCESS_LIST_NODE = "mode:Acl";
-    private static final String NT_ACCESS_LIST_ENTRY_NODE = "mode:Permission";
+    private static final String MODE_ACCESS_LIST_NODE = "mode:Acl";
+    private static final String MODE_ACCESS_LIST_ENTRY_NODE = "mode:Permission";
     private static final String PRINCIPAL_NAME = "name";
     private static final String PRIVILEGES = "privileges";
 
@@ -138,7 +138,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     public AccessControlPolicy[] getPolicies( String path )
         throws PathNotFoundException, AccessDeniedException, RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read AC content"));
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read access control content"));
         }
 
         if (!hasPrivileges(path, new Privilege[] {privileges.forName(Privilege.JCR_READ_ACCESS_CONTROL)})) {
@@ -184,7 +184,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     public AccessControlPolicyIterator getApplicablePolicies( String path )
         throws PathNotFoundException, AccessDeniedException, RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read AC content"));
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read access control content"));
         }
         // Current implementation supports only one policy - access list
         // So we need to check the node specified by path for the policy bound to it
@@ -205,7 +205,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException, VersionException,
         RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read AC content"));
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read access control content"));
         }
 
         if (!hasPrivileges(path, new Privilege[] {privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
@@ -222,18 +222,17 @@ public class AccessControlManagerImpl implements AccessControlManager {
         AbstractJcrNode node = session.getNode(path, true);
         // make node access controllable and add specsial child node
         // which belongs to the access list
-        node.addMixin(NT_ACCESS_CONTROLLABLE, false);
+        node.addMixin(MODE_ACCESS_CONTROLLABLE, false);
 
-        AbstractJcrNode aclNode = node.hasNode(ACCESS_LIST_NODE)  
-                                ? node.getNode(ACCESS_LIST_NODE)  
-                                : node.addAclNode(ACCESS_LIST_NODE,NT_ACCESS_LIST_NODE);
+        AbstractJcrNode aclNode = node.hasNode(ACCESS_LIST_NODE) ? node.getNode(ACCESS_LIST_NODE) : node.addAclNode(ACCESS_LIST_NODE,
+                                                                                                                    MODE_ACCESS_LIST_NODE);
         // store entries as child nodes of acl
         for (AccessControlEntry ace : acl.getAccessControlEntries()) {
             assert (ace.getPrincipal() != null);
             String name = ace.getPrincipal().getName();
 
             AbstractJcrNode entryNode = aclNode.hasNode(name) ? aclNode.getNode(name) : aclNode.addAclNode(name,
-                                                                                                           NT_ACCESS_LIST_ENTRY_NODE);
+                                                                                                           MODE_ACCESS_LIST_ENTRY_NODE);
 
             entryNode.setPropertyInAccessControlScope(PRINCIPAL_NAME, ace.getPrincipal().getName());
             entryNode.setPropertyInAccessControlScope(PRIVILEGES, privileges(ace.getPrivileges()));
@@ -248,6 +247,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
                 entryNode.remove();
             }
         }
+        session.repository.repositoryCache().setAccessControlEnabled(true);
     }
 
     @Override
@@ -256,7 +256,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException, VersionException,
         RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read AC content"));
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read access control content"));
         }
         try {
             if (!hasPrivileges(path, new Privilege[] {privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
@@ -266,7 +266,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
             if (node.hasNode(ACCESS_LIST_NODE)) {
                 Node aclNode = node.getNode(ACCESS_LIST_NODE);
                 aclNode.remove();
-                node.removeMixin(NT_ACCESS_CONTROLLABLE);
+                node.removeMixin(MODE_ACCESS_CONTROLLABLE);
             }
         } catch (PathNotFoundException e) {
         }

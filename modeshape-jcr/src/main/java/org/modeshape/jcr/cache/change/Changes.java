@@ -50,6 +50,11 @@ public interface Changes {
     void workspaceRemoved( String workspaceName );
 
     /**
+     * Signal that the repository metadata has changed.
+     */
+    void repositoryMetadataChanged();
+
+    /**
      * Signal that a new node was created.
      * 
      * @param key the key for the new node; may not be null
