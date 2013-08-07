@@ -12,14 +12,11 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release addesses 47 issues, most of which are bug fixes in lots of areas. Overall, clustering
-and indexing has been improved, and a new chained binary store is available to allow client
-applications to dictate in which of several stores a particular binary value should be stored.
+This release addesses 59 issues, most of which are bug fixes in lots of areas. One feature
+added to this release is support for JCR access controls, which has almost no effect on a
+repository until the first ACL is added (at which point there is some small overhead).
 
-This release also upgrades to EAP 6.1.0.GA. As with 3.2, the artifact name for BOM for use in 
-applications has been renamed from 'modeshape-bom-jbossas' (used in 3.0 and 3.1) to 
-'modeshape-bom-jbosseap' (in 3.2 and 3.3). This is to remain consistent and to help 
-reinforce that ModeShape 3.2 works on EAP 6.1 now and not on JBoss AS7.1.1.
+As with 3.3.0.Final, this release includes a kit that can be installed into EAP 6.1.0.GA.
 
 
 ## Features
@@ -133,6 +130,7 @@ All of the JCR 2.0 features previously supported in 2.x are currently supported:
 - Locking
 - Versioning
 - Shareable nodes
+- Access controls
 
 ### Content Storage Options
 - In-memory (local, replicated, and distributed)
