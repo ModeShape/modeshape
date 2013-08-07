@@ -814,6 +814,7 @@ class JcrContentHandler extends DefaultHandler {
                                                  PropertyType.UNDEFINED,
                                                  true,
                                                  true,
+                                                 false,
                                                  false);
                     }
 

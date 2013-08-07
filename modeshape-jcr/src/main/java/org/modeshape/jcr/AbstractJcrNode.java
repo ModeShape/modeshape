@@ -1467,7 +1467,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, false, false, false);
+        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, false, false, false, false);
     }
 
     protected AbstractJcrProperty setPropertyInAccessControlScope( String name,
@@ -1476,7 +1476,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, true, true, true);
+        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, true, true, true, false);
     }
 
     @Override
@@ -1793,18 +1793,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                            int jcrPropertyType,
                                            boolean skipReferenceValidation )
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
-        return setProperty(name, values, jcrPropertyType, false, skipReferenceValidation, false);
+        return setProperty(name, values, jcrPropertyType, false, skipReferenceValidation, false, false);
     }
 
     /**
+     *
      * @param name the name of the property; may not be null
      * @param values the values of the property; may not be null
-     * @param jcrPropertyType the expected property type; may be {@link PropertyType#UNDEFINED} if the values should not be
+     * @param jcrPropertyType the expected property type; may be {@link javax.jcr.PropertyType#UNDEFINED} if the values should not be
      *        converted
      * @param skipProtectedValidation true if protected properties can be set by the caller of this method, or false if the method
      *        should validate that protected methods are not being called
      * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
      * @param skipPermissionsCheck true if this method should be executed without permission check.
+     * @param skipVersioningValidation true if the property can be set even if a node is checked in
      * @return the new JCR property object
      * @throws VersionException if the node is checked out
      * @throws LockException if the node is locked
@@ -1816,11 +1818,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                            int jcrPropertyType,
                                            boolean skipProtectedValidation,
                                            boolean skipReferenceValidation,
-                                           boolean skipPermissionsCheck )
+                                           boolean skipPermissionsCheck,
+                                           boolean skipVersioningValidation )
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert values != null;
         checkForLock();
-        checkForCheckedOut();
+        if (!skipVersioningValidation) {
+            checkForCheckedOut();
+        }
         checkNodeTypeCanBeModified();
 
         if (!skipPermissionsCheck) {

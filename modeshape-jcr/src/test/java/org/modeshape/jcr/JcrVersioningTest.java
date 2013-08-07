@@ -623,6 +623,57 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         sessionQa.logout();
     }
 
+    @Test
+    @FixFor( "MODE-2005" )
+    public void shouldSetMergeFailedPropertyIfNodeIsCheckedIn() throws Exception {
+        // Create a record, make it versionable and check it in
+        session.getRootNode().addNode("record").addMixin("mix:versionable");
+        session.save();
+        VersionManager versionManager = session.getWorkspace().getVersionManager();
+        versionManager.checkin("/record");
+
+        //Clone QA version of data
+        session.getWorkspace().createWorkspace("QA", session.getWorkspace().getName());
+        Session sessionQa = repository.login("QA");
+        try {
+            VersionManager versionManagerQa = sessionQa.getWorkspace().getVersionManager();
+
+            //Change QA node first time
+            versionManagerQa.checkout("/record");
+            sessionQa.getNode("/record").setProperty("111", "111");
+            sessionQa.save();
+            versionManagerQa.checkin("/record");
+
+            //Change QA node second time, store version
+            versionManagerQa.checkout("/record");
+            sessionQa.getNode("/record").setProperty("222", "222");
+            sessionQa.save();
+            Version offendingVersion = versionManagerQa.checkin("/record");
+
+            //Change original node one time to make versions in this workspace and other workspace be on
+            //divergent branches, causing merge() to fail
+            versionManager.checkout("/record");
+            session.getNode("/record").setProperty("333", "333");
+            session.save();
+            versionManager.checkin("/record");
+
+            // Try to merge
+            NodeIterator nodeIterator = versionManager.merge("/record", sessionQa.getWorkspace().getName(), true);
+            assertTrue(nodeIterator.hasNext());
+
+            while (nodeIterator.hasNext()) {
+                Node record = nodeIterator.nextNode();
+                Version mergeFailedVersion = (Version)session.getNodeByIdentifier(
+                        record.getProperty("jcr:mergeFailed").getValues()[0].getString());
+                assertEquals(offendingVersion.getIdentifier(), mergeFailedVersion.getIdentifier());
+                versionManager.cancelMerge("/record", mergeFailedVersion);
+                assertFalse(record.hasProperty("jcr:mergeFailed"));
+            }
+        } finally {
+            sessionQa.logout();
+        }
+    }
+
     private void assertPropertyIsAbsent( Node node,
                                          String propertyName ) throws Exception {
         try {

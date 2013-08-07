@@ -1016,7 +1016,8 @@ final class JcrVersionManager implements VersionManager {
         }
 
         if (values.length == 1) {
-            prop.remove();
+            //remove the property without looking at the node's "checked out" status
+            targetNode.removeProperty(prop);
         } else {
             Value[] newValues = new JcrValue[values.length - 2];
 
@@ -1816,12 +1817,12 @@ final class JcrVersionManager implements VersionManager {
                     JcrValue[] newValues = new JcrValue[existingValues.length + 1];
                     System.arraycopy(existingValues, 0, newValues, 0, existingValues.length);
                     newValues[newValues.length - 1] = targetNode.valueFrom(sourceVersion);
-                    targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false, false);
+                    targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false, false, true);
                 }
 
             } else {
                 JcrValue[] newValues = new JcrValue[] {targetNode.valueFrom(sourceVersion)};
-                targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false, false);
+                targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false, false, true);
             }
             failures.add(targetNode);
 
