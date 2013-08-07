@@ -147,6 +147,12 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        internalSetValue(values);
+    }
+
+    protected final void internalSetValue( Value[] values )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        assert values != null;
 
         Object[] literals = new Object[values.length];
         ValueFactories factories = null;
@@ -187,6 +193,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
             this.remove();
             return;
         }
+
         checkSession();
         checkForLock();
         checkForCheckedOut();

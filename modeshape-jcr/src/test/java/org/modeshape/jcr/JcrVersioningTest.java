@@ -584,28 +584,28 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         VersionManager versionManager = session.getWorkspace().getVersionManager();
         versionManager.checkin("/record");
 
-        //Clone QA version of data
+        // Clone QA version of data
         session.getWorkspace().createWorkspace("QA", session.getWorkspace().getName());
         Session sessionQa = repository.login("QA");
         VersionManager versionManagerQa = sessionQa.getWorkspace().getVersionManager();
 
-        //Change QA node first time
+        // Change QA node first time
         versionManagerQa.checkout("/record");
         sessionQa.getNode("/record").setProperty("111", "111");
         sessionQa.save();
         versionManagerQa.checkin("/record");
 
-        //Change QA node second time
+        // Change QA node second time
         versionManagerQa.checkout("/record");
         sessionQa.getNode("/record").setProperty("222", "222");
         sessionQa.save();
         versionManagerQa.checkin("/record");
 
         // Checks before merge
-        //Check basic node - should not have any properties
+        // Check basic node - should not have any properties
         assertFalse(session.getNode("/record").hasProperty("111"));
         assertFalse(session.getNode("/record").hasProperty("222"));
-        //Check QA node - should have properties 111=111 and 222=222
+        // Check QA node - should have properties 111=111 and 222=222
         assertTrue(sessionQa.getNode("/record").hasProperty("111"));
         assertTrue(sessionQa.getNode("/record").hasProperty("222"));
         assertEquals("111", sessionQa.getNode("/record").getProperty("111").getString());
@@ -632,26 +632,26 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         VersionManager versionManager = session.getWorkspace().getVersionManager();
         versionManager.checkin("/record");
 
-        //Clone QA version of data
+        // Clone QA version of data
         session.getWorkspace().createWorkspace("QA", session.getWorkspace().getName());
         Session sessionQa = repository.login("QA");
         try {
             VersionManager versionManagerQa = sessionQa.getWorkspace().getVersionManager();
 
-            //Change QA node first time
+            // Change QA node first time
             versionManagerQa.checkout("/record");
             sessionQa.getNode("/record").setProperty("111", "111");
             sessionQa.save();
             versionManagerQa.checkin("/record");
 
-            //Change QA node second time, store version
+            // Change QA node second time, store version
             versionManagerQa.checkout("/record");
             sessionQa.getNode("/record").setProperty("222", "222");
             sessionQa.save();
             Version offendingVersion = versionManagerQa.checkin("/record");
 
-            //Change original node one time to make versions in this workspace and other workspace be on
-            //divergent branches, causing merge() to fail
+            // Change original node one time to make versions in this workspace and other workspace be on
+            // divergent branches, causing merge() to fail
             versionManager.checkout("/record");
             session.getNode("/record").setProperty("333", "333");
             session.save();
@@ -663,10 +663,70 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
 
             while (nodeIterator.hasNext()) {
                 Node record = nodeIterator.nextNode();
-                Version mergeFailedVersion = (Version)session.getNodeByIdentifier(
-                        record.getProperty("jcr:mergeFailed").getValues()[0].getString());
+                Version mergeFailedVersion = (Version)session.getNodeByIdentifier(record.getProperty("jcr:mergeFailed")
+                                                                                        .getValues()[0].getString());
                 assertEquals(offendingVersion.getIdentifier(), mergeFailedVersion.getIdentifier());
                 versionManager.cancelMerge("/record", mergeFailedVersion);
+                assertFalse(record.hasProperty("jcr:mergeFailed"));
+            }
+        } finally {
+            sessionQa.logout();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2005" )
+    public void shouldSetMergeFailedPropertyIfNodeIsCheckedIn2() throws Exception {
+        // Create a record, make it versionable and check it in
+        session.getRootNode().addNode("record").addMixin("mix:versionable");
+        session.save();
+        VersionManager versionManager = session.getWorkspace().getVersionManager();
+        versionManager.checkin("/record");
+
+        // Clone QA version of data
+        session.getWorkspace().createWorkspace("QA", session.getWorkspace().getName());
+        Session sessionQa = repository.login("QA");
+        try {
+            VersionManager versionManagerQa = sessionQa.getWorkspace().getVersionManager();
+
+            // Change QA node first time, store version
+            versionManagerQa.checkout("/record");
+            sessionQa.getNode("/record").setProperty("111", "111");
+            sessionQa.save();
+            Version offendingVersion1 = versionManagerQa.checkin("/record");
+
+            // Change original node one time to make versions in this workspace and other workspace be on
+            // divergent branches, causing merge() to fail
+            versionManager.checkout("/record");
+            session.getNode("/record").setProperty("333", "333");
+            session.save();
+            versionManager.checkin("/record");
+
+            // Try to merge with offendingVersion1
+            // This should create a new jcr:mergeFailed property
+            versionManager.merge("/record", sessionQa.getWorkspace().getName(), true);
+
+            // Change QA node second time, store version
+            versionManagerQa.checkout("/record");
+            sessionQa.getNode("/record").setProperty("222", "222");
+            sessionQa.save();
+            Version offendingVersion2 = versionManagerQa.checkin("/record");
+
+            // Try to merge with offendingVersion2
+            // This should add to existing jcr:mergeFailed property
+            NodeIterator nodeIterator = versionManager.merge("/record", sessionQa.getWorkspace().getName(), true);
+
+            assertTrue(nodeIterator.hasNext());
+            while (nodeIterator.hasNext()) {
+                Node record = nodeIterator.nextNode();
+                Version mergeFailedVersion1 = (Version)session.getNodeByIdentifier(record.getProperty("jcr:mergeFailed")
+                                                                                         .getValues()[0].getString());
+                assertEquals(offendingVersion1.getIdentifier(), mergeFailedVersion1.getIdentifier());
+                Version mergeFailedVersion2 = (Version)session.getNodeByIdentifier(record.getProperty("jcr:mergeFailed")
+                                                                                         .getValues()[1].getString());
+                assertEquals(offendingVersion2.getIdentifier(), mergeFailedVersion2.getIdentifier());
+                versionManager.cancelMerge("/record", mergeFailedVersion1);
+                versionManager.cancelMerge("/record", mergeFailedVersion2);
                 assertFalse(record.hasProperty("jcr:mergeFailed"));
             }
         } finally {
