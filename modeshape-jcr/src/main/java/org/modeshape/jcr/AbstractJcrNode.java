@@ -1467,7 +1467,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, false, false, false, false);
+        return setProperty(nameFrom(name),
+                           valuesFrom(PropertyType.STRING, values),
+                           PropertyType.UNDEFINED,
+                           false,
+                           false,
+                           false,
+                           false);
     }
 
     protected AbstractJcrProperty setPropertyInAccessControlScope( String name,
@@ -1476,7 +1482,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, true, true, true, false);
+        return setProperty(nameFrom(name),
+                           valuesFrom(PropertyType.STRING, values),
+                           PropertyType.UNDEFINED,
+                           true,
+                           true,
+                           true,
+                           false);
     }
 
     @Override
@@ -1693,7 +1705,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 } catch (VersionException e) {
                     if (skipVersioningValidation) {
                         // the node is checked in, but we should ignore that, so set the property via the protected method
-                        ((JcrSingleValueProperty)existing).setValue(value);
+                        ((JcrSingleValueProperty)existing).internalSetValue(value);
                     } else {
                         throw e;
                     }
@@ -1797,11 +1809,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
-     *
      * @param name the name of the property; may not be null
      * @param values the values of the property; may not be null
-     * @param jcrPropertyType the expected property type; may be {@link javax.jcr.PropertyType#UNDEFINED} if the values should not be
-     *        converted
+     * @param jcrPropertyType the expected property type; may be {@link javax.jcr.PropertyType#UNDEFINED} if the values should not
+     *        be converted
      * @param skipProtectedValidation true if protected properties can be set by the caller of this method, or false if the method
      *        should validate that protected methods are not being called
      * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
@@ -1868,8 +1879,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 throw new javax.jcr.ValueFormatException(msg.text(readable(name), location(), workspaceName()));
             }
             if (existing.getDefinition().getRequiredType() == jcrPropertyType) {
-                // The new value's type and the existing type are the same, so just delegate to the existing JCR property ...
-                existing.setValue(values);
+                try {
+                    // set the property via the public method, so that additional checks are performed
+                    existing.setValue(values);
+                } catch (VersionException e) {
+                    if (skipVersioningValidation) {
+                        // the node is checked in, but we should ignore that, so set the property via the protected method
+                        ((JcrMultiValueProperty)existing).internalSetValue(values);
+                    } else {
+                        throw e;
+                    }
+                }
                 return existing;
             }
         }

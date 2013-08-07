@@ -1016,10 +1016,10 @@ final class JcrVersionManager implements VersionManager {
         }
 
         if (values.length == 1) {
-            //remove the property without looking at the node's "checked out" status
+            // remove the property without looking at the node's "checked out" status
             targetNode.removeProperty(prop);
         } else {
-            Value[] newValues = new JcrValue[values.length - 2];
+            Value[] newValues = new JcrValue[values.length - 1];
 
             if (matchIndex == 0) {
                 System.arraycopy(values, 1, newValues, 0, values.length - 1);
@@ -1030,7 +1030,7 @@ final class JcrVersionManager implements VersionManager {
                 System.arraycopy(values, matchIndex + 1, newValues, matchIndex, values.length - matchIndex - 1);
             }
 
-            prop.setValue(newValues);
+            ((JcrMultiValueProperty)prop).internalSetValue(newValues);
         }
 
     }
