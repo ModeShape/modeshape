@@ -1869,7 +1869,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
             if (existing.getDefinition().getRequiredType() == jcrPropertyType) {
                 // The new value's type and the existing type are the same, so just delegate to the existing JCR property ...
-                existing.setValue(values);
+                ((JcrMultiValueProperty) existing).setValue(values, skipVersioningValidation);
                 return existing;
             }
         }
