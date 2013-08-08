@@ -3121,6 +3121,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public void removeShare() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+        internalRemove(false);
+    }
+
+    void internalRemove(boolean skipVersioningValidation) throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
 
         // A node that is locked by one session can be removed by another session as long as there is no lock
@@ -3148,7 +3152,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new InvalidItemStateException(e);
         }
 
-        if (!parent.isCheckedOut()) {
+        if (!skipVersioningValidation && !parent.isCheckedOut()) {
             // The parent node is checked in, so we can only remove this node if this node has an OPV of 'ignore'.
             // This is probably rarely the case, so the extra work is acceptable
             // See Section 15.2.2 of JSR-283 spec for details ...

@@ -300,6 +300,16 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                        boolean removeExisting )
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
         PathNotFoundException, ItemExistsException, LockException, RepositoryException {
+        internalClone(srcWorkspace, srcAbsPath, destAbsPath, removeExisting, false);
+    }
+
+    void internalClone( String srcWorkspace,
+                        String srcAbsPath,
+                        String destAbsPath,
+                        boolean removeExisting,
+                        boolean skipVersioningValidation)
+        throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
+        PathNotFoundException, ItemExistsException, LockException, RepositoryException {
         CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
         CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
 
@@ -461,7 +471,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 if (!destPath.isRoot()) {
                     // Use the JCR add child here to perform the parent validations
                     cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
-                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, false, false);
+                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, skipVersioningValidation, false);
                 } else {
                     cloneKey = parentNode.key();
                 }
