@@ -99,6 +99,18 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         otherWorkspace.clone(workspaceName, "/a/b", "/", false);
     }
 
+    @Test
+    @FixFor( "MODE-2007" )
+    public void shouldCloneChildrenOfRoot() throws Exception {
+        otherWorkspace.clone(workspaceName, "/a", "/a", false);
+        otherWorkspace.clone(workspaceName, "/b", "/b", false);
+
+        assertEquals(session.getNode("/a").getIdentifier(), otherSession.getNode("/a").getIdentifier());
+        assertEquals(session.getNode("/a/b").getIdentifier(), otherSession.getNode("/a/b").getIdentifier());
+        assertEquals(session.getNode("/a/b/c").getIdentifier(), otherSession.getNode("/a/b/c").getIdentifier());
+        assertEquals(session.getNode("/b").getIdentifier(), otherSession.getNode("/b").getIdentifier());
+    }
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCopyFromNullPathToNullPath() throws Exception {
         workspace.copy(null, null);

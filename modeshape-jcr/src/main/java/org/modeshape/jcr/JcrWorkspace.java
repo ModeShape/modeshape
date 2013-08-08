@@ -458,7 +458,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 }
 
                 NodeKey cloneKey = null;
-                if (!parentNode.isRoot()) {
+                if (!destPath.isRoot()) {
                     // Use the JCR add child here to perform the parent validations
                     cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
                     parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, false, false);
