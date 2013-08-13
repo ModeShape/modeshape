@@ -147,6 +147,7 @@ import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryUsageChangeSetListener;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
+import org.modeshape.jmx.RepositoryStatisticsBean;
 
 /**
  * 
@@ -899,6 +900,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
         private final WeakHashMap<JcrSession, Object> internalSessions = new WeakHashMap<JcrSession, Object>();
         private final RepositoryStatistics statistics;
+        private final RepositoryStatisticsBean mbean;
         private final BinaryStore binaryStore;
         private final ScheduledExecutorService statsRollupService;
         private final Sequencers sequencers;
@@ -942,14 +944,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (other != null && !change.monitoringChanged) {
                 this.statistics = other.statistics;
                 this.statsRollupService = other.statsRollupService;
+                this.mbean = other.mbean;
             } else {
                 this.statistics = other != null ? other.statistics : new RepositoryStatistics(tempContext);
                 if (this.config.getMonitoring().enabled()) {
                     // Start the Cron service, with a minimum of a single thread ...
                     this.statsRollupService = tempContext.getScheduledThreadPool("modeshape-stats");
                     this.statistics.start(this.statsRollupService);
+                    this.mbean = new RepositoryStatisticsBean(statistics, getName());
+                    this.mbean.start();
                 } else {
                     this.statsRollupService = null;
+                    this.mbean = null;
                 }
             }
 
@@ -1607,6 +1613,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             if (statistics != null) {
                 statistics.stop();
+                mbean.stop();
             }
 
             this.context().terminateAllPools(30, TimeUnit.SECONDS);

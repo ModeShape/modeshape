@@ -505,6 +505,10 @@ public final class JcrI18n {
     public static I18n completeChildrenOptimization;
     public static I18n errorDuringChildrenOptimization;
 
+    public static I18n mBeanAlreadyRegistered;
+    public static I18n cannotRegisterMBean;
+    public static I18n cannotUnRegisterMBean;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);
