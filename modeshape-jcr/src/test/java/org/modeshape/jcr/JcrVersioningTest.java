@@ -734,6 +734,99 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2006" )
+    public void shouldMergeNodesWithSameNamesById() throws Exception {
+        // Create a parent and two children, make them versionable and check them in
+        Node parent = session.getRootNode().addNode("parent");
+        parent.addMixin("mix:versionable");
+        Node child1 = parent.addNode("child");
+        child1.addMixin("mix:versionable");
+        child1.setProperty("myproperty", "CHANGEME");
+        Node child2 = parent.addNode("child");
+        child2.addMixin("mix:versionable");
+        child2.setProperty("myproperty", "222");
+        session.save();
+        VersionManager versionManager = session.getWorkspace().getVersionManager();
+        versionManager.checkin(parent.getPath());
+        versionManager.checkin(child1.getPath());
+        versionManager.checkin(child2.getPath());
+
+        // Clone QA version of data
+        session.getWorkspace().createWorkspace("QA", session.getWorkspace().getName());
+        Session sessionQa = repository.login("QA");
+        VersionManager versionManagerQa = sessionQa.getWorkspace().getVersionManager();
+
+        try {
+            // QA: change child1's property
+            Node qaParent = sessionQa.getNode("/parent");
+            versionManagerQa.checkout(qaParent.getPath());
+            Node qaChild1 = sessionQa.getNodeByIdentifier(child1.getIdentifier());
+            versionManagerQa.checkout(qaChild1.getPath());
+            qaChild1.setProperty("myproperty", "111");
+
+            // QA: Add three new children with same name/path to parent
+            Node qaChild3 = qaParent.addNode("child");
+            qaChild3.addMixin("mix:versionable");
+            qaChild3.setProperty("myproperty", "333");
+
+            Node qaChild4 = qaParent.addNode("child");
+            qaChild4.addMixin("mix:versionable");
+            qaChild4.setProperty("myproperty", "444");
+
+            Node qaChild5 = qaParent.addNode("child");
+            qaChild5.addMixin("mix:versionable");
+            qaChild5.setProperty("myproperty", "555");
+
+            // QA: drop child2
+            Node qaChild2 = sessionQa.getNodeByIdentifier(child2.getIdentifier());
+            qaChild2.remove();
+
+            sessionQa.save();
+            Version qaChild1Version = versionManagerQa.checkin(qaChild1.getPath());
+            Version qaChild3Version = versionManagerQa.checkin(qaChild3.getPath());
+            Version qaChild4Version = versionManagerQa.checkin(qaChild4.getPath());
+            Version qaChild5Version = versionManagerQa.checkin(qaChild5.getPath());
+            Version qaParentVersion = versionManagerQa.checkin(qaParent.getPath());
+
+            // Merge
+            NodeIterator nodeIterator = versionManager.merge("/parent", sessionQa.getWorkspace().getName(), true);
+
+            parent = session.getNodeByIdentifier(parent.getIdentifier());
+            child1 = session.getNodeByIdentifier(qaChild1.getIdentifier());
+            child2 = session.getNodeByIdentifier(child2.getIdentifier()); // this one got removed
+            Node child3 = session.getNodeByIdentifier(qaChild3.getIdentifier());
+            Node child4 = session.getNodeByIdentifier(qaChild4.getIdentifier());
+            Node child5 = session.getNodeByIdentifier(qaChild5.getIdentifier());
+
+            // Run some checks using default workspace's versionManager and session
+            assertFalse(nodeIterator.hasNext());
+
+            assertEquals(qaParentVersion.getIdentifier(), versionManager.getBaseVersion(qaParent.getPath()).getIdentifier());
+            assertEquals(qaChild1Version.getIdentifier(), versionManager.getBaseVersion(child1.getPath()).getIdentifier());
+            assertEquals(qaChild3Version.getIdentifier(), versionManager.getBaseVersion(child3.getPath()).getIdentifier());
+            assertEquals(qaChild4Version.getIdentifier(), versionManager.getBaseVersion(child4.getPath()).getIdentifier());
+            assertEquals(qaChild5Version.getIdentifier(), versionManager.getBaseVersion(child5.getPath()).getIdentifier());
+
+            // Check that parent no longer has child2
+            for (NodeIterator childIterator = parent.getNodes(); childIterator.hasNext();) {
+                Node child = childIterator.nextNode();
+                assertFalse(child.getIdentifier().equals(child2.getIdentifier()));
+            }
+            assertEquals(1, child1.getIndex());
+            assertEquals(2, child3.getIndex());
+            assertEquals(3, child4.getIndex());
+            assertEquals(4, child5.getIndex());
+
+            assertEquals("111", child1.getProperty("myproperty").getString());
+            assertEquals("333", child3.getProperty("myproperty").getString());
+            assertEquals("444", child4.getProperty("myproperty").getString());
+            assertEquals("555", child5.getProperty("myproperty").getString());
+        } finally {
+            sessionQa.logout();
+        }
+    }
+
     private void assertPropertyIsAbsent( Node node,
                                          String propertyName ) throws Exception {
         try {
