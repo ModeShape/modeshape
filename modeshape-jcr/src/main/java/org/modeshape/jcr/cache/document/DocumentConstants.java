@@ -51,6 +51,9 @@ public interface DocumentConstants {
     public static final String STRONG = "strong";
     public static final String REFERENCE_COUNT = "refCount";
     public static final String QUERYABLE_FIELD = "$queryable";
+    public static final String REFERENCE_FIELD = "$ref";
+    public static final String WEAK_REFERENCE_FIELD = "$wref";
+    public static final String SIMPLE_REFERENCE_FIELD = "$sref";
 
     /**
      * A constant that is used as the name for a nested document in which additional, embedded documents can be placed. Each of

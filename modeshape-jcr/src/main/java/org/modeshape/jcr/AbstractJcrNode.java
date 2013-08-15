@@ -2033,7 +2033,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 // Make sure the type of each value is the same, as per Javadoc in section 10.4.2.6 of the JCR 2.0 spec
                 String msg = JcrI18n.allPropertyValuesMustHaveSameType.text(readable(name),
                                                                             values,
-                                                                            PropertyType.nameFromValue(valueType),
+                                                                            org.modeshape.jcr.api.PropertyType.nameFromValue(valueType),
                                                                             location(),
                                                                             workspaceName());
                 throw new javax.jcr.ValueFormatException(msg);

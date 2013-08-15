@@ -123,11 +123,18 @@ public interface ValueFactories extends Iterable<ValueFactory<?>>, NameFactory.H
     ReferenceFactory getReferenceFactory();
 
     /**
-     * Get the value factory for {@link PropertyType#REFERENCE reference} properties.
+     * Get the value factory for {@link PropertyType#WEAKREFERENCE reference} properties.
      * 
      * @return the factory; never null
      */
     ReferenceFactory getWeakReferenceFactory();
+
+    /**
+     * Get the value factory for {@link PropertyType#SIMPLEREFERENCE reference} properties.
+     *
+     * @return the factory; never null
+     */
+    ReferenceFactory getSimpleReferenceFactory();
 
     /**
      * Get the value factory for {@link PropertyType#PATH path} properties.

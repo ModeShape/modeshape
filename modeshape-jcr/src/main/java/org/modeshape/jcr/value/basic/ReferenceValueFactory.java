@@ -52,32 +52,60 @@ import org.modeshape.jcr.value.ValueFormatException;
 public class ReferenceValueFactory extends AbstractValueFactory<Reference> implements ReferenceFactory {
 
     protected final boolean weak;
+    protected final boolean simple;
 
     /**
      * Create a new instance.
-     * 
+     *
      * @param decoder the text decoder; may be null if the default decoder should be used
      * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
      *        factory}; may not be null
      * @param weak true if this factory should create weak references, or false if it should create strong references
+     * @param simple true if this factory should create simple references, false otherwise
      */
-    public ReferenceValueFactory( TextDecoder decoder,
-                                  ValueFactories factories,
-                                  boolean weak ) {
-        super(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder, factories);
+    public static ReferenceValueFactory newInstance( TextDecoder decoder,
+                                                     ValueFactories factories,
+                                                     boolean weak,
+                                                     boolean simple ) {
+        if (simple) {
+            return new ReferenceValueFactory(PropertyType.SIMPLEREFERENCE, decoder, factories, weak, simple);
+        } else {
+            return new ReferenceValueFactory(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder, factories,
+                                             weak,
+                                             simple);
+        }
+    }
+
+    protected ReferenceValueFactory( PropertyType type,
+                                     TextDecoder decoder,
+                                     ValueFactories valueFactories,
+                                     boolean weak,
+                                     boolean simple ) {
+        super(type, decoder, valueFactories);
         this.weak = weak;
+        this.simple = simple;
     }
 
     @Override
     public ReferenceFactory with( ValueFactories valueFactories ) {
-        return super.valueFactories == valueFactories ? this : new ReferenceValueFactory(super.getDecoder(), valueFactories, weak);
+        return super.valueFactories == valueFactories ? this : new ReferenceValueFactory(super.getPropertyType(),
+                                                                                         super.getDecoder(), valueFactories,
+                                                                                         weak, simple);
     }
 
     @Override
     public Reference create( String value ) {
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
         if (NodeKey.isValidFormat(value)) {
-            return new NodeKeyReference(new NodeKey(value), weak, false);
+            return new NodeKeyReference(new NodeKey(value), weak, false, simple);
+        } else if (simple) {
+            //simple references should only be created from node keys
+            throw new ValueFormatException(value, getPropertyType(),
+                                           GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                              String.class.getSimpleName(),
+                                                                              value));
         }
         try {
             UUID uuid = UUID.fromString(value);
@@ -191,25 +219,36 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
 
     @Override
     public Reference create( UUID value ) {
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
+        if (simple) {
+            //simple references should only be allowed via NodeKeys, so in this case we need to reject the UUID
+            throw new ValueFormatException(value, getPropertyType(),
+                                           GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                              UUID.class.getSimpleName(),
+                                                                              value));
+        }
         return new UuidReference(value, weak);
     }
 
     @Override
     public Reference create( NodeKey value ) throws ValueFormatException {
-        return new NodeKeyReference(value, weak, false);
+        return new NodeKeyReference(value, weak, false, simple);
     }
 
     @Override
     public Reference create( NodeKey value,
                              boolean foreign ) throws ValueFormatException {
-        return new NodeKeyReference(value, weak, foreign);
+        return new NodeKeyReference(value, weak, foreign, simple);
     }
 
     @Override
     public Reference[] create( NodeKey[] values,
                                boolean foreign ) throws ValueFormatException {
-        if (values == null) return null;
+        if (values == null) {
+            return null;
+        }
         final int length = values.length;
         Reference[] result = createEmptyArray(length);
         for (int i = 0; i != length; ++i) {

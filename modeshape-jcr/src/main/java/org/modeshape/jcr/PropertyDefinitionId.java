@@ -86,7 +86,7 @@ final class PropertyDefinitionId {
         this.propertyType = propertyType;
         this.allowsMultiple = allowsMultiple;
         this.stringRepresentation = this.nodeTypeName.getString() + '/' + this.propertyDefinitionName.getString() + '/'
-                                    + PropertyType.nameFromValue(propertyType) + '/' + (allowsMultiple ? '*' : '1');
+                                    + org.modeshape.jcr.api.PropertyType.nameFromValue(propertyType) + '/' + (allowsMultiple ? '*' : '1');
     }
 
     /**
@@ -159,7 +159,7 @@ final class PropertyDefinitionId {
         String propertyDefinitionNameString = parts[1];
         Name nodeTypeName = factory.create(nodeTypeNameString);
         Name propertyDefinitionName = factory.create(propertyDefinitionNameString);
-        int propertyType = PropertyType.valueFromName(parts[2]);
+        int propertyType = org.modeshape.jcr.api.PropertyType.valueFromName(parts[2]);
         boolean allowsMultiple = parts[3].charAt(0) == '*';
         return new PropertyDefinitionId(nodeTypeName, propertyDefinitionName, propertyType, allowsMultiple);
     }

@@ -58,4 +58,18 @@ public interface Reference extends Comparable<Reference>, Serializable {
      */
     public boolean isWeak();
 
+    /**
+     * Determine whether this reference is a reference to a node which belongs to another source as the owning node.
+     *
+     * @return true if the reference is foreign, false otherwise
+     */
+    public boolean isForeign();
+
+    /**
+     * Determine whether this reference is a uni-directional reference
+     *
+     * @return true if this is a uni-directional, or false otherwise
+     */
+    public boolean isSimple();
+
 }

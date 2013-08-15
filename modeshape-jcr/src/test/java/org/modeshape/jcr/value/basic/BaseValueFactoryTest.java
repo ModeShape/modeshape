@@ -101,6 +101,11 @@ public abstract class BaseValueFactoryTest {
         }
 
         @Override
+        public ReferenceFactory getSimpleReferenceFactory() {
+            return null;
+        }
+
+        @Override
         public PathFactory getPathFactory() {
             return null;
         }

@@ -58,6 +58,7 @@ public class LiteralValue extends Literal implements javax.jcr.query.qom.Literal
             case PropertyType.STRING:
             case PropertyType.URI:
             case PropertyType.WEAKREFERENCE:
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
             default:
                 return value.getString();
         }

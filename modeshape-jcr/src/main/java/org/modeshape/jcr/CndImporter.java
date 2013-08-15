@@ -69,8 +69,8 @@ import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 public class CndImporter {
 
     protected final List<String> VALID_PROPERTY_TYPES = Collections.unmodifiableList(Arrays.asList(new String[] {"STRING",
-        "BINARY", "LONG", "DOUBLE", "BOOLEAN", "DATE", "NAME", "PATH", "REFERENCE", "WEAKREFERENCE", "DECIMAL", "URI",
-        "UNDEFINED", "*", "?"}));
+        "BINARY", "LONG", "DOUBLE", "BOOLEAN", "DATE", "NAME", "PATH", "REFERENCE", "WEAKREFERENCE", "SIMPLEREFERENCE",
+        "DECIMAL", "URI", "UNDEFINED", "*", "?"}));
 
     protected final List<String> VALID_ON_PARENT_VERSION = Collections.unmodifiableList(Arrays.asList(new String[] {"COPY",
         "VERSION", "INITIALIZE", "COMPUTE", "IGNORE", "ABORT"}));

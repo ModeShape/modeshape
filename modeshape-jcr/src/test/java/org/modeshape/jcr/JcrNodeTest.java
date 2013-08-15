@@ -23,13 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
@@ -38,11 +31,22 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.cache.CachedNode;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class JcrNodeTest extends MultiUseAbstractTest {
 
@@ -241,5 +245,75 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         session.save();
         nodeIterator = rootNode.getNodes("myMap");
         assertFalse(nodeIterator.hasNext());
+    }
+
+    @Test
+    @FixFor("MODE-1969")
+    public void shouldAllowSimpleReferences() throws Exception {
+        registerNodeTypes("cnd/simple-references.cnd");
+
+        JcrRootNode rootNode = session.getRootNode();
+        AbstractJcrNode a = rootNode.addNode("A");
+        a.addMixin("mix:referenceable");
+        AbstractJcrNode b = rootNode.addNode("B");
+        b.addMixin("mix:referenceable");
+        AbstractJcrNode c = rootNode.addNode("C");
+        c.addMixin("mix:referenceable");
+
+        org.modeshape.jcr.api.ValueFactory valueFactory = session.getValueFactory();
+        Node testNode = rootNode.addNode("test", "test:node");
+        testNode.setProperty("test:singleRef", valueFactory.createSimpleReference(a));
+        testNode.setProperty("test:multiRef", new Value[]{valueFactory.createSimpleReference(b),
+                valueFactory.createSimpleReference(c)});
+        session.save();
+
+        Property singleRef = testNode.getProperty("test:singleRef");
+        assertEquals(a.getIdentifier(), singleRef.getNode().getIdentifier());
+        assertNoBackReferences(a);
+
+        Property multiRef = testNode.getProperty("test:multiRef");
+        assertTrue(multiRef.isMultiple());
+        Value[] actualValues = multiRef.getValues();
+        assertEquals(2, actualValues.length);
+        assertArrayEquals(new String[] { b.getIdentifier(), c.getIdentifier() },
+                          new String[] { actualValues[0].getString(), actualValues[1].getString() });
+        assertNoBackReferences(b);
+        assertNoBackReferences(c);
+
+        a.remove();
+        b.remove();
+        c.remove();
+
+        session.save();
+
+        try {
+            testNode.getProperty("test:singleRef").getNode();
+            fail("Target node for simple reference property should not be found");
+        } catch (javax.jcr.ItemNotFoundException e) {
+            //expected
+        }
+    }
+
+    private void assertNoBackReferences( AbstractJcrNode node ) throws RepositoryException {
+        assertEquals(0, node.getReferences().getSize());
+        assertEquals(0, node.getWeakReferences().getSize());
+        assertFalse(node.referringNodes(CachedNode.ReferenceType.BOTH).hasNext());
+    }
+
+    @Test
+    @FixFor("MODE-1969")
+    public void shouldNotAllowSimpleReferencesWithoutMixReferenceableMixin() throws Exception {
+        registerNodeTypes("cnd/simple-references.cnd");
+
+        JcrRootNode rootNode = session.getRootNode();
+        AbstractJcrNode a = rootNode.addNode("A");
+        org.modeshape.jcr.api.ValueFactory valueFactory = session.getValueFactory();
+        Node testNode = rootNode.addNode("test", "test:node");
+        try {
+            testNode.setProperty("test:singleRef", valueFactory.createSimpleReference(a));
+            fail("Simple references should not be allowed if the target node doesn't have the mix:referenceable mixin");
+        } catch (RepositoryException e) {
+            //expected
+        }
     }
 }

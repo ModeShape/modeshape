@@ -322,7 +322,7 @@ class XmlNodeTypeReader extends DefaultHandler {
     }
 
     protected int type( String value ) {
-        return PropertyType.valueFromName(value);
+        return org.modeshape.jcr.api.PropertyType.valueFromName(value);
     }
 
     protected int opv( String value ) {

@@ -179,9 +179,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // Now create a specific reference factories that know about the root node key ...
         TextDecoder decoder = context.getDecoder();
         ValueFactories factories = context.getValueFactories();
-        ReferenceFactory rootKeyAwareStrongRefFactory = new NodeIdentifierReferenceFactory(rootKey, decoder, factories, false);
-        ReferenceFactory rootKeyAwareWeakRefFactory = new NodeIdentifierReferenceFactory(rootKey, decoder, factories, true);
-        context = context.with(rootKeyAwareStrongRefFactory).with(rootKeyAwareWeakRefFactory);
+        ReferenceFactory rootKeyAwareStrongRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, false, false);
+        ReferenceFactory rootKeyAwareWeakRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, true, false);
+        ReferenceFactory rootKeyAwareSimpleRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, true, true);
+        context = context.with(rootKeyAwareStrongRefFactory).with(rootKeyAwareWeakRefFactory).with(rootKeyAwareSimpleRefFactory);
 
         // Create an execution context for this session that uses a local namespace registry ...
         final NamespaceRegistry globalNamespaceRegistry = context.getNamespaceRegistry(); // thread-safe!

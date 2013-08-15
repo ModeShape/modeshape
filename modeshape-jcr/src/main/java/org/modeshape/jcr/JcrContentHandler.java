@@ -626,7 +626,8 @@ class JcrContentHandler extends DefaultHandler {
                             // Strings and binaries can be empty -- other data types cannot
                             values.add(valueFor(value, propertyType));
                         } else if (value != null
-                                   && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE)) {
+                                   && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE
+                        || propertyType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE)) {
                             try {
                                 boolean isSystemReference = name.getNamespaceUri().equals(JcrLexicon.Namespace.URI)
                                                             || name.getNamespaceUri()
@@ -972,7 +973,7 @@ class JcrContentHandler extends DefaultHandler {
                 current = nodeHandlerFactory.createFor(nameFor(nodeName), current, uuidBehavior);
             } else if ("property".equals(localName)) {
                 currentPropertyName = atts.getValue(SYSTEM_VIEW_NAME_DECODER.decode(svNameName));
-                currentPropertyType = PropertyType.valueFromName(atts.getValue(svTypeName));
+                currentPropertyType = org.modeshape.jcr.api.PropertyType.valueFromName(atts.getValue(svTypeName));
 
                 String svMultiple = atts.getValue(svMultipleName);
                 currentPropertyIsMultiValued = Boolean.TRUE.equals(Boolean.valueOf(svMultiple));

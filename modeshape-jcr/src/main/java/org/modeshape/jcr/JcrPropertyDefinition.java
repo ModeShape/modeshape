@@ -241,7 +241,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         sb.append('/');
         sb.append(strings.create(id.getPropertyDefinitionName()));
         sb.append('/');
-        sb.append(PropertyType.nameFromValue(id.getPropertyType()));
+        sb.append(org.modeshape.jcr.api.PropertyType.nameFromValue(id.getPropertyType()));
         sb.append(id.allowsMultiple() ? '*' : '1');
         return sb.toString();
     }
@@ -475,6 +475,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             case PropertyType.REFERENCE:
             case PropertyType.WEAKREFERENCE:
                 return new ReferenceConstraintChecker(valueConstraints, context);
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                return new SimpleReferenceConstraintChecker(valueConstraints, context);
             case PropertyType.STRING:
                 return new StringConstraintChecker(valueConstraints, context);
             case PropertyType.DECIMAL:
@@ -990,6 +992,18 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 if (!thatNames.contains(name)) return false;
             }
             return true;
+        }
+    }
+
+    private static class SimpleReferenceConstraintChecker extends ReferenceConstraintChecker {
+        protected SimpleReferenceConstraintChecker( String[] valueConstraints,
+                                                    ExecutionContext context ) {
+            super(valueConstraints, context);
+        }
+
+        @Override
+        public int getType() {
+            return org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE;
         }
     }
 
