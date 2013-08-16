@@ -1431,7 +1431,7 @@ public class QueryBuilder {
 
         @Override
         public ComparisonBuilder strongReferenceValue( String table ) {
-            return comparisonBuilder(new ReferenceValue(selector(table), null, false));
+            return comparisonBuilder(new ReferenceValue(selector(table), null, false, false));
         }
 
         @Override
