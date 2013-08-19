@@ -292,6 +292,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
                 setValue(value.getString());
                 break;
             case PropertyType.REFERENCE:
+            case PropertyType.WEAKREFERENCE:
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
                 setValue(value.getString());
                 break;
             default:

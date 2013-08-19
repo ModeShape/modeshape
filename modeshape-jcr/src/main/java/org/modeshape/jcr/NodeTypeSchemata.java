@@ -118,6 +118,7 @@ public class NodeTypeSchemata implements Schemata {
         types.put(PropertyType.PATH, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.REFERENCE, typeSystem.getReferenceFactory().getTypeName());
         types.put(PropertyType.WEAKREFERENCE, typeSystem.getReferenceFactory().getTypeName());
+        types.put(org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE, typeSystem.getReferenceFactory().getTypeName());
         types.put(PropertyType.STRING, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.NAME, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.URI, typeSystem.getStringFactory().getTypeName());
@@ -205,6 +206,7 @@ public class NodeTypeSchemata implements Schemata {
                     isStrongReference = true;
                     break;
                 case PropertyType.WEAKREFERENCE:
+                case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
                 case PropertyType.UNDEFINED:
                     canBeReference = true;
                     requiredType = org.modeshape.jcr.value.PropertyType.STRING;

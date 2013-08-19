@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -379,7 +378,7 @@ public class SystemContent {
         properties.add(propertyFactory.create(JcrLexicon.PROTECTED, propertyDef.isProtected()));
         properties.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
                                               OnParentVersionAction.nameFromValue(propertyDef.getOnParentVersion())));
-        properties.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE, PropertyType.nameFromValue(propertyDef.getRequiredType())
+        properties.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE, org.modeshape.jcr.api.PropertyType.nameFromValue(propertyDef.getRequiredType())
                                                                                     .toUpperCase()));
 
         List<String> symbols = new ArrayList<String>();

@@ -247,12 +247,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         List<SessionNode> changedNodesChildrenFirst = new ArrayList<SessionNode>();
         for (NodeKey key : changedNodes.keySet()) {
             SessionNode changedNode = changedNodes.get(key);
-            //Randall,Horia, is this modification correct? 
-            //The reason for this modification is the following case:
-            //TCK creates Access list (ie nodes), later removes it and 
-            //never calls "session.save()"
-            //finaly it calls session.refresh(false) to restore original state
-            //session.refresh() fails with exception NodeNotFound.
             boolean isAtOrBelow = false;
             try {
                 isAtOrBelow = changedNode.isAtOrBelow(this, nodePath);

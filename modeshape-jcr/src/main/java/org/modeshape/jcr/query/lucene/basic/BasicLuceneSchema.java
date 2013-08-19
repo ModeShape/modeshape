@@ -363,9 +363,13 @@ public class BasicLuceneSchema implements LuceneSchema {
             previous = new DynamicField(previous, propertyName, stringifiedRef, false, true); // must store references since not
                                                                                               // analyzed
 
-            // And add it to the field for all the weak or strong references from this node ...
-            String propName = ref.isWeak() ? FieldName.ALL_REFERENCES : FieldName.STRONG_REFERENCES;
-            previous = new DynamicField(previous, propName, stringifiedRef, false, isStored);
+            // If it's a strong reference, add it to the strong ref field
+            if (!ref.isWeak() && !ref.isSimple()) {
+                previous = new DynamicField(previous, FieldName.STRONG_REFERENCES, stringifiedRef, false, isStored);
+            }
+
+            //*always* add it to the ALL_REFERENCES field
+            previous = new DynamicField(previous, FieldName.ALL_REFERENCES, stringifiedRef, false, isStored);
 
             // Add a field with the length of the value ...
             previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, (long)stringifiedRef.length(), false,

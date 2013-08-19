@@ -131,7 +131,8 @@ public abstract class AbstractHandler {
                     return restValueForBinary(absPropertyPath, baseUrl);
                 }
                 case PropertyType.REFERENCE:
-                case PropertyType.WEAKREFERENCE: {
+                case PropertyType.WEAKREFERENCE:
+                case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE: {
                     assert session != null;
                     return restValueForReference(value, baseUrl, session);
                 }

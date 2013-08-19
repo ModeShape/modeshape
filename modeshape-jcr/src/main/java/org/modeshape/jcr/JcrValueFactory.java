@@ -216,6 +216,13 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
         return valueFactories.getNameFactory().create(namespaceUri, localName).getString();
     }
 
+    @Override
+    public JcrValue createSimpleReference( Node node ) throws RepositoryException {
+        AbstractJcrNode abstractJcrNode = validateReferenceableNode(node);
+        Reference ref = valueFactories.getSimpleReferenceFactory().create(abstractJcrNode.key(), abstractJcrNode.isForeign());
+        return new JcrValue(valueFactories, org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE, ref);
+    }
+
     protected org.modeshape.jcr.value.ValueFactory<?> valueFactoryFor( int jcrPropertyType ) {
         switch (jcrPropertyType) {
             case PropertyType.BOOLEAN:
@@ -227,8 +234,11 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
             case PropertyType.PATH:
                 return valueFactories.getPathFactory();
             case PropertyType.REFERENCE:
-            case PropertyType.WEAKREFERENCE:
                 return valueFactories.getReferenceFactory();
+            case PropertyType.WEAKREFERENCE:
+                return valueFactories.getWeakReferenceFactory();
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                return valueFactories.getSimpleReferenceFactory();
             case PropertyType.DOUBLE:
                 return valueFactories.getDoubleFactory();
             case PropertyType.LONG:

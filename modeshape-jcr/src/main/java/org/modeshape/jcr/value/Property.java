@@ -109,9 +109,11 @@ public interface Property extends Iterable<Object>, Comparable<Property>, Readab
     boolean isEmpty();
 
     /**
-     * Determine whether this property contains reference values, based upon the first value in the property.
+     * Determine whether this property contains reference values, based upon the first value in the property. Note that
+     * {@link PropertyType#SIMPLEREFERENCE} properties *are not* treated as references in order to avoid setting the
+     * back-pointer.
      * 
-     * @return true if this property is a reference property, or false otherwise
+     * @return true if this property is a reference property, or false otherwise.
      */
     boolean isReference();
 

@@ -58,6 +58,16 @@ public class StringReference implements Reference {
     }
 
     @Override
+    public boolean isSimple() {
+        return false;
+    }
+
+    @Override
+    public boolean isForeign() {
+        return false;
+    }
+
+    @Override
     public String getString() {
         return this.id;
     }

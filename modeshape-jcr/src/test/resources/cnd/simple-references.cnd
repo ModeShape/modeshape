@@ -1,0 +1,11 @@
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<test='http://www.modeshape.com/jcr/test/1.0'>
+
+[test:node]
+- test:singleRef (simplereference)
+- test:multiRef (simplereference) multiple

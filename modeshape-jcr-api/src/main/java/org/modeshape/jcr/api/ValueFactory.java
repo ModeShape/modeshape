@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.api;
 
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import java.io.InputStream;
@@ -82,4 +84,13 @@ public interface ValueFactory extends javax.jcr.ValueFactory {
      */
     public String createName( String namespaceUri,
                               String localName );
+    /**
+     * Returns a <code>Value</code> object of {@link PropertyType#SIMPLE_REFERENCE} that holds the identifier of the specified <code>Node</code>.
+     * This <code>Value</code> object can then be used to set a property that will be a reference to that <code>Node</code>.
+     *
+     * @param node a <code>Node</code>
+     * @return a <code>Value</code> of {@link PropertyType#SIMPLE_REFERENCE}
+     * @throws javax.jcr.RepositoryException if an error occurs.
+     */
+    public Value createSimpleReference( Node node ) throws RepositoryException;
 }

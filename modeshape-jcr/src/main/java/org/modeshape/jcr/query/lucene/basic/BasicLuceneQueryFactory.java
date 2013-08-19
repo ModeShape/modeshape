@@ -654,7 +654,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                    Object value ) {
         String field = referenceValue.getPropertyName();
         if (field == null) {
-            if (referenceValue.includesWeakReferences()) {
+            if (referenceValue.includesWeakReferences() || referenceValue.includeSimpleReferences()) {
                 field = FieldName.ALL_REFERENCES;
             } else {
                 field = FieldName.STRONG_REFERENCES;
