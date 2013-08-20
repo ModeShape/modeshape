@@ -125,9 +125,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
     public Set<NodeKey> getAdditionalParentKeys( NodeCache cache ) {
         if (additionalParents == null) {
             WorkspaceCache wsCache = workspaceCache(cache);
-            Set<NodeKey> additionalParents = wsCache.translator().getParentKeys(document(wsCache),
-                                                                                wsCache.getWorkspaceKey(),
-                                                                                key.getWorkspaceKey());
+            Set<NodeKey> additionalParents = wsCache.translator().getAdditionalParentKeys(document(wsCache));
             this.additionalParents = additionalParents.isEmpty() ? additionalParents : Collections.unmodifiableSet(additionalParents);
         }
         return additionalParents;

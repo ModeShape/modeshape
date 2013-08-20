@@ -1613,7 +1613,7 @@ final class JcrVersionManager implements VersionManager {
 
             for (int i = versionDates.size() - 1; i >= 0; i--) {
                 DateTime versionDate = versionDates.get(i);
-                if (versionDate.isBefore(checkinTime) || versionDate.isSameAs(checkinTime)) {
+                if (versionDate.isBefore(checkinTime)) {
                     Version version = versions.get(versionDate);
                     return ((JcrVersionNode)version).getFrozenNode();
                 }

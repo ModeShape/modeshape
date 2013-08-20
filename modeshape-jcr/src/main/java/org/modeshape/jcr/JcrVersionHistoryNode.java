@@ -107,6 +107,9 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
     public JcrVersionNode getVersionByLabel( String label ) throws VersionException, RepositoryException {
         try {
             javax.jcr.Property prop = versionLabels().getProperty(nameFrom(label));
+            if (prop == null) {
+                throw new VersionException(JcrI18n.labeledNodeNotFound.text(label, getPath()));
+            }
             return (JcrVersionNode)prop.getNode();
         } catch (PathNotFoundException e) {
             throw new VersionException(JcrI18n.invalidVersionLabel.text(label, getPath()));
