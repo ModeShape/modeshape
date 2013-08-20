@@ -359,19 +359,16 @@ public class RepositoryCache implements Observable {
                 V result = operation.call();
                 txn.commit();
                 return result;
-            } catch (RuntimeException re) {
-                txn.rollback();
-                throw re;
             } catch (Exception e) {
                 txn.rollback();
-                throw new RuntimeException(e);
+                throw (e instanceof RuntimeException) ? (RuntimeException) e : new RuntimeException(e);
             }
         } catch (IllegalStateException err) {
             throw new SystemFailureException(err);
         } catch (SystemException err) {
             throw new SystemFailureException(err);
         } catch (NotSupportedException e) {
-            logger.debug(e, "unexpected exception while committing transaction");
+            logger.debug(e, "nested transactions not supported");
             return null;
         }
     }
@@ -434,9 +431,9 @@ public class RepositoryCache implements Observable {
 
     protected void refreshRepositoryMetadata( boolean update ) {
         // Read the node document ...
-        DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumStringLengthForBinaryStorage.get());
+        final DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumStringLengthForBinaryStorage.get());
         final String systemMetadataKeyStr = this.systemMetadataKey.toString();
-        boolean accessControlEnabled = this.accessControlEnabled.get();
+        final boolean accessControlEnabled = this.accessControlEnabled.get();
         SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
 
         if (!update && entry != null) {
@@ -458,53 +455,33 @@ public class RepositoryCache implements Observable {
             return;
         }
 
-        // Otherwise, we need to update/create the document, so always do it within a transaction ...
-        Transaction txn = null;
         try {
-            txn = sessionContext.getTransactions().begin();
-            // Re-read the entry within the transaction ...
-            entry = documentStore.get(systemMetadataKeyStr);
-            if (entry == null) {
-                // We need to create a new entry ...
-                EditableDocument newDoc = Schematic.newDocument();
-                translator.setKey(newDoc, systemMetadataKey);
-                entry = documentStore.localStore().putIfAbsent(systemMetadataKeyStr, newDoc);
-                if (entry == null) {
-                    // Read-read the entry that we just put, so we can populate it with the same code that edits it ...
-                    entry = documentStore.localStore().get(systemMetadataKeyStr);
+            runInTransaction(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    // Re-read the entry within the transaction ...
+                    SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
+                    if (entry == null) {
+                        // We need to create a new entry ...
+                        EditableDocument newDoc = Schematic.newDocument();
+                        translator.setKey(newDoc, systemMetadataKey);
+                        entry = documentStore.localStore().putIfAbsent(systemMetadataKeyStr, newDoc);
+                        if (entry == null) {
+                            // Read-read the entry that we just put, so we can populate it with the same code that edits it ...
+                            entry = documentStore.localStore().get(systemMetadataKeyStr);
+                        }
+                    }
+                    EditableDocument doc = entry.editDocumentContent();
+                    PropertyFactory propFactory = context.getPropertyFactory();
+                    translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
+                    translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null);
+
+                    return null;
                 }
-            }
-            EditableDocument doc = entry.editDocumentContent();
-            PropertyFactory propFactory = context.getPropertyFactory();
-            translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
-            translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null);
-            txn.commit();
-        } catch (NotSupportedException err) {
-            // No nested transactions are supported ...
-            return;
-        } catch (SecurityException err) {
-            // No privilege to commit ...
-            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-        } catch (IllegalStateException err) {
-            // Not associated with a txn??
-            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-        } catch (RollbackException err) {
-            // Couldn't be committed, but the txn is already rolled back ...
-            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-        } catch (SystemException err) {
-            // Transaction service failed, so probably can't rollback either ...
-            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
-        } catch (Exception err) {
-            if (txn != null) {
-                try {
-                    txn.rollback();
-                } catch (RuntimeException e) {
-                    throw e;
-                } catch (Throwable t) {
-                    throw new WrappedException(t);
-                }
-            }
-            throw new SystemFailureException(JcrI18n.errorUpdatingRepositoryMetadata.text(name, err.getMessage()));
+            });
+        } catch (RuntimeException re) {
+            LOGGER.error(JcrI18n.errorUpdatingRepositoryMetadata, name, re.getMessage());
+            throw re;
         }
     }
 
@@ -604,7 +581,7 @@ public class RepositoryCache implements Observable {
 
                     // And remove any already-cached workspaces. Note any open sessions to these workspaces will
                     for (String removedName : removedNames) {
-                        removeWorkspace(removedName);
+                        removeWorkspaceCaches(removedName);
                     }
                 }
             }
@@ -806,7 +783,7 @@ public class RepositoryCache implements Observable {
         return this.translator;
     }
 
-    void removeWorkspace( String name ) {
+    void removeWorkspaceCaches( String name ) {
         assert name != null;
         assert !this.workspaceNames.contains(name);
         WorkspaceCache removed = this.workspaceCachesByName.remove(name);
@@ -881,16 +858,19 @@ public class RepositoryCache implements Observable {
     }
 
     /**
-     * Permanently destroys the workspace with the supplied name, if the repository is appropriately configured. If no such
-     * workspace exists in this repository, this method simply returns. Otherwise, this method attempts to destroy the named
-     * workspace.
+     * Permanently destroys the workspace with the supplied name, if the repository is appropriately configured, also unlinking
+     * the jcr:system node from the root node . If no such workspace exists in this repository, this method simply returns.
+     * Otherwise, this method attempts to destroy the named workspace.
      * 
      * @param name the workspace name
+     * @param removeSession an outside session which will be used to unlink the jcr:system node and which is needed to guarantee
+     * atomicity.
      * @return true if the workspace with the supplied name existed and was destroyed, or false otherwise
      * @throws UnsupportedOperationException if this repository was not configured to allow
      *         {@link RepositoryConfiguration#isCreatingWorkspacesAllowed() creation (and destruction) of workspaces}.
      */
-    public boolean destroyWorkspace( String name ) {
+    public boolean destroyWorkspace( final String name,
+                                     final WritableSessionCache removeSession ) {
         if (workspaceNames.contains(name)) {
             if (configuration.getPredefinedWorkspaceNames().contains(name)) {
                 throw new UnsupportedOperationException(JcrI18n.unableToDestroyPredefinedWorkspaceInRepository.text(name,
@@ -905,11 +885,23 @@ public class RepositoryCache implements Observable {
             if (!configuration.isCreatingWorkspacesAllowed()) {
                 throw new UnsupportedOperationException(JcrI18n.creatingWorkspacesIsNotAllowedInRepository.text(getName()));
             }
-            // Otherwise, remove the workspace and persist it ...
-            this.workspaceNames.remove(name);
-            refreshRepositoryMetadata(true);
+            //persist *all* the changes in one unit, because in case of failure we need to remain in consistent state
+            runInTransaction(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    //unlink the system node
+                    removeSession.mutable(removeSession.getRootKey()).removeChild(removeSession, getSystemKey());
+                    //remove the workspace and persist it
+                    RepositoryCache.this.workspaceNames.remove(name);
+                    refreshRepositoryMetadata(true);
+                    //persist the active changes in the session
+                    removeSession.save();
 
-            // And notify the others ...
+                    return null;
+                }
+            });
+
+            // And notify the others - this notification will clear & close the WS cache via the local listener
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();

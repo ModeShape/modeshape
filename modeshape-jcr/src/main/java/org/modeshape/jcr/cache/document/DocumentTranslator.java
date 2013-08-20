@@ -179,9 +179,7 @@ public class DocumentTranslator implements DocumentConstants {
         return keyFrom(value, primaryWorkspaceKey, secondaryWorkspaceKey);
     }
 
-    public Set<NodeKey> getParentKeys( Document document,
-                                       String primaryWorkspaceKey,
-                                       String secondaryWorkspaceKey ) {
+    public Set<NodeKey> getAdditionalParentKeys( Document document ) {
         Object value = document.get(PARENT);
         if (value instanceof String) {
             // The first key is the primary parent, so there are no more additional parents ...
@@ -203,11 +201,7 @@ public class DocumentTranslator implements DocumentConstants {
                     continue;
                 }
                 String key = (String)v;
-                NodeKey nodeKey = new NodeKey(key);
-                String workspaceKey = nodeKey.getWorkspaceKey();
-                if (workspaceKey.equals(primaryWorkspaceKey) || workspaceKey.equals(secondaryWorkspaceKey)) {
-                    keys.add(nodeKey);
-                }
+                keys.add(new NodeKey(key));
             }
             return keys;
         }

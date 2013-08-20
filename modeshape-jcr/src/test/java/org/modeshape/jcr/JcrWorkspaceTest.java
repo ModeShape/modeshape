@@ -32,6 +32,8 @@ import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -41,6 +43,10 @@ import javax.jcr.query.QueryManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.cache.change.Change;
+import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 
 /**
  * @author jverhaeg
@@ -261,8 +267,52 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         workspace.move("/a/b", "/b/b-copy");
     }
 
-    protected void assertNotFound( String absPath,
-                                   JcrSession jcrSession ) throws RepositoryException {
+    @Test
+    @FixFor( "MODE-2009" )
+    public void shouldRemoveAllNodesWhenRemovingWorkspace() throws Exception {
+        final String wsName = "testWS";
+        workspace.createWorkspace(wsName);
+        JcrSession testWsSession = repository.login(wsName);
+        testWsSession.getRootNode().addNode("testRoot").addNode("subNode");
+        assertNotNull(testWsSession.getNode("/jcr:system"));
+        testWsSession.save();
+        testWsSession.logout();
+
+        //workspace deletion clears the cache asynchronously so we need to wait until that completes
+        final CountDownLatch workspaceDeletedLatch = new CountDownLatch(1);
+        repository.repositoryCache().register(new ChangeSetListener() {
+            @Override
+            public void notify( ChangeSet changeSet ) {
+                for (Change change : changeSet) {
+                    if (change instanceof WorkspaceRemoved && ((WorkspaceRemoved) change).getWorkspaceName().equals(wsName)) {
+                        try {
+                            //we know the ws removed event has been issued, but we need to wait to make sure ISPN has finished
+                            //shutting down the ws cache
+                            Thread.sleep(300);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        workspaceDeletedLatch.countDown();
+                    }
+                }
+            }
+        });
+        workspace.deleteWorkspace(wsName);
+        workspaceDeletedLatch.await(10, TimeUnit.SECONDS);
+
+        workspace.createWorkspace(wsName);
+        testWsSession = repository.login(wsName);
+        assertNotNull(testWsSession.getNode("/jcr:system"));
+        assertNotFound("/testRoot/subNode", testWsSession);
+        assertNotFound("/testRoot", testWsSession);
+        assertEquals(1, testWsSession.getRootNode().getNodes().getSize());
+
+        assertNotNull(session.getNode("/jcr:system"));
+        testWsSession.logout();
+    }
+
+    private void assertNotFound( String absPath,
+                                 JcrSession jcrSession ) throws RepositoryException {
         try {
             jcrSession.getNode(absPath);
             fail("Node " + absPath + " should not have been found in the session " + session);
