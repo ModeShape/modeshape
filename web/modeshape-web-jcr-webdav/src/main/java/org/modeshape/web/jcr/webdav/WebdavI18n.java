@@ -34,6 +34,8 @@ public final class WebdavI18n {
 
     public static I18n noStoredRequest;
     public static I18n uriIsProperty;
+    public static I18n warnMultiValuedProperty;
+    public static I18n errorPropertyPath;
 
     // DefaultRequestResolver messages
     public static I18n requiredParameterMissing;

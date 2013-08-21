@@ -105,7 +105,6 @@ public class ModeShapeWebdavStoreClientTest extends WebdavStoreClientTest {
     @Test
     @FixFor( "MODE-984" )
     public void shouldRetrieveFileCustomProperties() throws Exception {
-
         String folderUri = resourceUri(testFolder());
         sardine.createDirectory(folderUri);
 
@@ -156,6 +155,17 @@ public class ModeShapeWebdavStoreClientTest extends WebdavStoreClientTest {
         Map<String, String> customProperties = resource.getCustomProps();
         assertTrue(!customProperties.isEmpty());
         assertFalse(customProperties.containsKey("myProp"));
+    }
+
+    @Test
+    @FixFor( "MODE-2010" )
+    public void shouldIgnoreMultiValuedProperties() throws Exception {
+        //created via initial content
+        String nodeUri = resourceUri("node");
+        DavResource resource = sardine.getResources(nodeUri).get(0);
+        Map<String, String> customProperties = resource.getCustomProps();
+        assertTrue(!customProperties.isEmpty());
+        assertEquals("value", customProperties.get("single-value-prop"));
     }
 
     private String testFolder() {
