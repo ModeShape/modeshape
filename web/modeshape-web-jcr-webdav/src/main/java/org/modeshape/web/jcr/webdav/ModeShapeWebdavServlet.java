@@ -29,6 +29,7 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.LoginException;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -147,6 +148,8 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
         } else if (t instanceof PathNotFoundException) {
             return new ObjectNotFoundException(t.getMessage(), t);
         } else if (t instanceof ItemNotFoundException) {
+            return new ObjectNotFoundException(t.getMessage(), t);
+        } else if (t instanceof NoSuchWorkspaceException) {
             return new ObjectNotFoundException(t.getMessage(), t);
         } else {
             return new WebdavException(t.getMessage(), t);

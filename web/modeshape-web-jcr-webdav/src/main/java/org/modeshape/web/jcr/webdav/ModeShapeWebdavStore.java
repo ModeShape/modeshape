@@ -567,6 +567,10 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             PropertyIterator propertyIterator = node.getProperties();
             while (propertyIterator.hasNext()) {
                 Property property = propertyIterator.nextProperty();
+                if (property.isMultiple()) {
+                    logger().warn(WebdavI18n.warnMultiValuedProperty, property.getPath());
+                    continue;
+                }
                 String webDavPropertyName = webdavPropertyName(property.getName());
                 response.put(webDavPropertyName, property.getString());
             }
@@ -577,12 +581,16 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     }
 
     private String webdavPropertyName( String jcrPropertyName ) {
-        if (!jcrPropertyName.startsWith("{") && !(jcrPropertyName.lastIndexOf("}") > 0)) {
-            return jcrPropertyName;
+        String namespaceUri = "D";
+        String propertyName = jcrPropertyName;
+
+        if (jcrPropertyName.startsWith("{") && (jcrPropertyName.lastIndexOf("}") > 0)) {
+            int closingBracketIdx = jcrPropertyName.lastIndexOf("}");
+            namespaceUri = jcrPropertyName.substring(1, closingBracketIdx);
+            propertyName = jcrPropertyName.substring(closingBracketIdx + 1);
         }
-        int closingBracketIdx = jcrPropertyName.lastIndexOf("}");
-        String namespaceUri = jcrPropertyName.substring(1, closingBracketIdx);
-        return namespaceUri + ":" + jcrPropertyName.substring(closingBracketIdx + 1);
+
+        return namespaceUri + ":" + propertyName;
     }
 
     @Override
@@ -718,8 +726,8 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 try {
                     result = RepositoryManager.getSession(request.getRequest(), repositoryName, workspaceName);
                 } catch (RepositoryException e) {
-                    logger().debug(e, "Cannot obtain a session for the repository '{0}': {1}", repositoryName, e.getMessage());
-                    throw e;
+                    logger().warn(WebdavI18n.cannotGetRepositorySession, repositoryName, e.getMessage());
+                    throw translate(e);
                 }
                 sessions.put(key, result);
             }
@@ -730,7 +738,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             Session session = session(request);
             Item item = session.getItem(request.getPath());
             if (item instanceof Property) {
-                throw new WebdavException();
+                throw new WebdavException(WebdavI18n.errorPropertyPath.text(item.getPath()));
             }
             return (Node)item;
         }
@@ -806,8 +814,8 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                         session = RepositoryManager.getSession(request.getRequest(), repositoryName, null);
                         return session.getWorkspace().getAccessibleWorkspaceNames();
                     } catch (RepositoryException e) {
-                        logger().debug(e, "Cannot obtain a session for the repository '{0}': {1}", repositoryName, e.getMessage());
-                        throw e;
+                        logger().warn(WebdavI18n.cannotGetRepositorySession, repositoryName, e.getMessage());
+                        throw translate(e);
                     } finally {
                         if (session != null) {
                             session.logout(); // always terminate this session!
