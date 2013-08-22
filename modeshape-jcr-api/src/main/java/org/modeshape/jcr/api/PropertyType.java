@@ -70,9 +70,8 @@ public final class PropertyType {
     public static int valueFromName(String name) {
         if (name.equals(TYPENAME_SIMPLE_REFERENCE)) {
             return SIMPLE_REFERENCE;
-        } else {
-           return javax.jcr.PropertyType.valueFromName(name);
         }
+        return javax.jcr.PropertyType.valueFromName(name);
     }
 
     /**

@@ -183,6 +183,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * @param pathFactory the path factory that should be used; if null, a default implementation will be used
      * @param referenceFactory the strong reference factory that should be used; if null, a default implementation will be used
      * @param weakReferenceFactory the weak reference factory that should be used; if null, a default implementation will be used
+     * @param simpleReferenceFactory the simple reference factory that should be used; if null, a default implementation will be used
      * @param uriFactory the URI factory that should be used; if null, a default implementation will be used
      * @param uuidFactory the UUID factory that should be used; if null, a default implementation will be used
      * @param objectFactory the object factory that should be used; if null, a default implementation will be used
@@ -818,6 +819,8 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
                     return getReferenceFactory();
                 case WEAKREFERENCE:
                     return getWeakReferenceFactory();
+                case SIMPLEREFERENCE:
+                    return getSimpleReferenceFactory();
                 case STRING:
                     return getStringFactory();
                 case URI:

@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.infinispan.schematic.internal.HashCode;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -267,6 +268,11 @@ public class QueryContext {
      */
     public Map<String, Object> getVariables() {
         return variables;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCode.compute(this.typeSystem, this.schemata, this.variables);
     }
 
     /**

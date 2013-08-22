@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.query.parse;
 
+import org.infinispan.schematic.internal.HashCode;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.CheckArg;
@@ -93,6 +94,11 @@ class ColumnExpression {
      */
     public final String getColumnName() {
         return columnName;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCode.compute(this.selectorName, this.propertyName, this.columnName);
     }
 
     @Override

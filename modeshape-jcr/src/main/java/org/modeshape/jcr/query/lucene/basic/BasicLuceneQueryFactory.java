@@ -383,6 +383,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
         switch (valueType) {
             case REFERENCE:
             case WEAKREFERENCE:
+            case SIMPLEREFERENCE:
             case UUID:
             case PATH:
             case NAME:
@@ -763,6 +764,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
             case STRING:
             case REFERENCE:
             case WEAKREFERENCE:
+            case SIMPLEREFERENCE:
             case BINARY:
                 assert false;
         }
