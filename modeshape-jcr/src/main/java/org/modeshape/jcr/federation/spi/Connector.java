@@ -71,8 +71,17 @@ public abstract class Connector {
 
     /**
      * The logger instance, set via reflection
+     * 
+     * @see #simpleLogger
      */
     private Logger logger;
+
+    /**
+     * The simpler API logger instance, set via reflection
+     * 
+     * @see #logger
+     */
+    private org.modeshape.jcr.api.Logger simpleLogger;
 
     /**
      * The name of this connector, set via reflection immediately after instantiation.
@@ -158,7 +167,7 @@ public abstract class Connector {
      * to perform class-path related operations.
      * <p>
      * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
-     * </p>     *
+     * </p>
      */
     private Environment environment;
 
@@ -188,13 +197,38 @@ public abstract class Connector {
     }
 
     /**
-     * Get the logger for this connector instance. This is available for use in or after the
+     * Get the I18n-compatible logger for this connector instance. This is available for use in or after the
      * {@link #initialize(NamespaceRegistry, NodeTypeManager)} method.
+     * <p>
+     * This logger is a bit more complicated than the {@link #log() simple logger} because it requires use of ModeShape's
+     * internationalization and localization framework. All of ModeShape's code uses this I18n framework, making it much easier to
+     * localize ModeShape to other languages. Using this logger would make it just as easy to localize the Connector
+     * implementation. But since it is more complicated, it may not be for every developer. Subclasses can use this logger or the
+     * simpler logger; you can even mix and match (though we'd recommend that you just pick one and only use it).
+     * <p>
      * 
-     * @return the logger; never null
+     * @return the logger that requires using ModeShape I18n framework; never null
+     * @see #log()
      */
     public final Logger getLogger() {
         return logger;
+    }
+
+    /**
+     * Get the simpler, String-based logger for this connector instance. This is available for use in or after the
+     * {@link #initialize(NamespaceRegistry, NodeTypeManager)} method.
+     * <p>
+     * This logger is much simpler than the {@link #getLogger() I18n-compatible logger}, especially since all of the log messages
+     * take simple strings. However, this simple logger is not easily internationalized. Subclasses can use this logger or the
+     * more formal, I18n-compatible logger; you can even mix and match (though we'd recommend that you just pick one and only use
+     * it).
+     * <p>
+     * 
+     * @return the simple logger that requires String messages; never null
+     * @see #getLogger()
+     */
+    public final org.modeshape.jcr.api.Logger log() {
+        return simpleLogger;
     }
 
     /**
