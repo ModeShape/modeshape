@@ -276,16 +276,14 @@ public enum PropertyType {
                 return ref.isWeak() ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
             }
             return classBasedType;
-        } else {
-            for (PropertyType type : PropertyType.values()) {
-                if (type == OBJECT)
-                    continue;
-                if (type.isTypeFor(value)) {
-                    return type;
-                }
-            }
-            return OBJECT;
         }
+        for (PropertyType type : PropertyType.values()) {
+            if (type == OBJECT) continue;
+            if (type.isTypeFor(value)) {
+                return type;
+            }
+        }
+        return OBJECT;
     }
 
     /**
