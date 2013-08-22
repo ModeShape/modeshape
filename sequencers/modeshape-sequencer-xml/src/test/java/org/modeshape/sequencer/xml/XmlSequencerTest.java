@@ -29,6 +29,7 @@ import javax.jcr.Session;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import static org.modeshape.jcr.api.JcrConstants.JCR_PRIMARY_TYPE;
 import static org.modeshape.sequencer.xml.DtdLexicon.ENTITY;
 import static org.modeshape.sequencer.xml.DtdLexicon.NAME;
@@ -354,6 +355,20 @@ public class XmlSequencerTest extends AbstractXmlSequencerTest {
     public void shouldParseXmlDocumentWithDtd() throws Exception {
         sequenceAndAssertDocument("master.xml", "book", "-//OASIS//DTD DocBook XML V4.4//EN",
                                   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd");
+    }
+
+    @Test
+    @FixFor("MODE-2011")
+    public void shouldParseXmlDocumentWithRootNamespace() throws Exception {
+        Node document = sequenceAndAssertDocument("docWithRootNamespace.xml");
+        String generatedPrefix = session.getNamespacePrefix("http://maven.apache.org/POM/4.0.0") + ":";
+        assertElement(document, generatedPrefix + "project");
+        assertElement(document, generatedPrefix + "project/" + generatedPrefix + "modelVersion");
+        assertContent(document, generatedPrefix + "project/" + generatedPrefix + "modelVersion", 1, "4.0.0");
+        assertElement(document, generatedPrefix + "project/" + generatedPrefix + "artifactId");
+        assertContent(document, generatedPrefix + "project/" + generatedPrefix + "artifactId", 1, "test");
+        assertElement(document, generatedPrefix + "project/" + generatedPrefix + "packaging");
+        assertContent(document, generatedPrefix + "project/" + generatedPrefix + "packaging", 1, "pom");
     }
 
     private void registerDefaultNamespace() throws RepositoryException {
