@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import javax.jcr.NamespaceException;
-import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -37,6 +36,7 @@ import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.NamespaceRegistry;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -124,13 +124,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#startDocument()
-     */
     @Override
     public void startDocument() throws SAXException {
         try {
@@ -140,13 +133,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.xml.sax.ext.DefaultHandler2#startDTD(String, String, String)
-     */
     @Override
     public void startDTD( String name,
                           String publicId,
@@ -160,13 +146,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.xml.sax.ext.DefaultHandler2#externalEntityDecl(String, String, String)
-     */
     @Override
     public void externalEntityDecl( String name,
                                     String publicId,
@@ -187,11 +166,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.ext.DefaultHandler2#internalEntityDecl(String, String)
-     */
     @Override
     public void internalEntityDecl( String name,
                                     String value ) throws SAXException {
@@ -208,13 +182,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#processingInstruction(String, String)
-     */
     @Override
     public void processingInstruction( String target,
                                        String data ) throws SAXException {
@@ -232,7 +199,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     }
 
     /**
-     * {@inheritDoc}
      * <p>
      * This method ensures that the namespace is registered with the {@link NamespaceRegistry registry}, using the supplied prefix
      * to register the namespace if required. Note that because this class does not really use the namespace prefixes to create
@@ -244,8 +210,22 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     @Override
     public void startPrefixMapping( String prefix,
                                     String uri ) throws SAXException {
-        if (StringUtil.isBlank(prefix)) {
-            return;
+        try {
+            if (isUriRegistered(uri) && !StringUtil.isBlank(prefix)) {
+                // It is already registered, but re-register it locally using the supplied prefix ...
+                session.setNamespacePrefix(prefix, uri);
+            } else {
+                // The namespace is not already registered so we have to register it with the ws namespace registry.
+                // This should also make the prefix available to the current session
+                NamespaceRegistry namespaceRegistry = (NamespaceRegistry)session.getWorkspace().getNamespaceRegistry();
+                if (StringUtil.isBlank(prefix)) {
+                    prefix = namespaceRegistry.registerNamespace(uri);
+                } else {
+                    namespaceRegistry.registerNamespace(prefix, uri);
+                }
+            }
+        } catch (RepositoryException e) {
+            throw new SAXException(e);
         }
 
         // Add the prefix to the stack ...
@@ -255,20 +235,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
             this.prefixStackByUri.put(uri, prefixStack);
         }
         prefixStack.addFirst(prefix);
-
-        try {
-            if (isUriRegistered(uri)) {
-                // It is already registered, but re-register it locally using the supplied prefix ...
-                session.setNamespacePrefix(prefix, uri);
-            } else {
-                // The namespace is not already registered so we have to register it with the ws namespace registry.
-                // This should also make the prefix available to the current session
-                NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
-                namespaceRegistry.registerNamespace(prefix, uri);
-            }
-        } catch (RepositoryException e) {
-            throw new SAXException(e);
-        }
     }
 
     private boolean isUriRegistered( String uri ) throws RepositoryException {
@@ -280,11 +246,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#endPrefixMapping(String)
-     */
     @Override
     public void endPrefixMapping( String prefix ) throws SAXException {
         CheckArg.isNotNull(prefix, "prefix");
@@ -314,39 +275,18 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.xml.sax.ext.DefaultHandler2#startEntity(String)
-     */
     @Override
     public void startEntity( String name ) {
         // Record that we've started an entity by capturing the name of the entity ...
         currentEntityName = name;
     }
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.xml.sax.ext.DefaultHandler2#endEntity(String)
-     */
     @Override
     public void endEntity( String name ) {
         // currentEntityName is nulled in 'characters(...)', not here.
         // See ModeShape-231 for an issue related to this
     }
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.xml.sax.ext.DefaultHandler2#startCDATA()
-     */
     @Override
     public void startCDATA() throws SAXException {
         // CDATA sections can start in the middle of element content, so there may already be some
@@ -361,11 +301,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         cDataContent = new StringBuilder();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.ext.DefaultHandler2#endCDATA()
-     */
     @Override
     public void endCDATA() throws SAXException {
         // Output CDATA built in characters() method
@@ -380,11 +315,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         cDataContent = null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
-     */
     @Override
     public void characters( char[] ch,
                             int start,
@@ -426,11 +356,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.ext.DefaultHandler2#comment(char[], int, int)
-     */
     @Override
     public void comment( char[] ch,
                          int start,
@@ -445,11 +370,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#startElement(String, String, String, org.xml.sax.Attributes)
-     */
     @Override
     public void startElement( String uri,
                               String localName,
@@ -516,21 +436,11 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         }
     }
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#warning(org.xml.sax.SAXParseException)
-     */
     @Override
     public void warning( SAXParseException warning ) {
         LOGGER.debug(warning, "SAX warning:");
     }
 
-    /**
-     * @see org.xml.sax.helpers.DefaultHandler#error(org.xml.sax.SAXParseException)
-     */
     @Override
     public void error( SAXParseException error ) {
         LOGGER.debug(error, "SAX error:");
