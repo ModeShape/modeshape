@@ -51,13 +51,12 @@ public class NodeIdentifierReferenceFactory extends ReferenceValueFactory {
                                                               boolean simple ) {
         if (simple) {
             return new NodeIdentifierReferenceFactory(PropertyType.SIMPLEREFERENCE, decoder, factories, weak, simple, rootKey);
-        } else {
-            return new NodeIdentifierReferenceFactory(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder,
-                                                      factories,
-                                                      weak,
-                                                      simple,
-                                                      rootKey);
         }
+        return new NodeIdentifierReferenceFactory(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder,
+                                                  factories,
+                                                  weak,
+                                                  simple,
+                                                  rootKey);
     }
 
     protected NodeIdentifierReferenceFactory( PropertyType type,

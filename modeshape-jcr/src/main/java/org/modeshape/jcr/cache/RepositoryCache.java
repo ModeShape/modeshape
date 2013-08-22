@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import org.infinispan.AdvancedCache;
@@ -123,9 +122,9 @@ public class RepositoryCache implements Observable {
     private final String sourceKey;
     private final String rootNodeId;
     private final ChangeBus changeBus;
-    private final NodeKey systemMetadataKey;
+    protected final NodeKey systemMetadataKey;
     private final NodeKey systemKey;
-    private final Set<String> workspaceNames;
+    protected final Set<String> workspaceNames;
     private final String systemWorkspaceName;
     protected final Logger logger;
     private final SessionEnvironment sessionContext;
@@ -361,7 +360,7 @@ public class RepositoryCache implements Observable {
                 return result;
             } catch (Exception e) {
                 txn.rollback();
-                throw (e instanceof RuntimeException) ? (RuntimeException) e : new RuntimeException(e);
+                throw (e instanceof RuntimeException) ? (RuntimeException)e : new RuntimeException(e);
             }
         } catch (IllegalStateException err) {
             throw new SystemFailureException(err);
@@ -431,7 +430,8 @@ public class RepositoryCache implements Observable {
 
     protected void refreshRepositoryMetadata( boolean update ) {
         // Read the node document ...
-        final DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumStringLengthForBinaryStorage.get());
+        final DocumentTranslator translator = new DocumentTranslator(context, documentStore,
+                                                                     minimumStringLengthForBinaryStorage.get());
         final String systemMetadataKeyStr = this.systemMetadataKey.toString();
         final boolean accessControlEnabled = this.accessControlEnabled.get();
         SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
@@ -460,19 +460,19 @@ public class RepositoryCache implements Observable {
                 @Override
                 public Void call() throws Exception {
                     // Re-read the entry within the transaction ...
-                    SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
+                    SchematicEntry entry = documentStore().get(systemMetadataKeyStr);
                     if (entry == null) {
                         // We need to create a new entry ...
                         EditableDocument newDoc = Schematic.newDocument();
                         translator.setKey(newDoc, systemMetadataKey);
-                        entry = documentStore.localStore().putIfAbsent(systemMetadataKeyStr, newDoc);
+                        entry = documentStore().localStore().putIfAbsent(systemMetadataKeyStr, newDoc);
                         if (entry == null) {
                             // Read-read the entry that we just put, so we can populate it with the same code that edits it ...
-                            entry = documentStore.localStore().get(systemMetadataKeyStr);
+                            entry = documentStore().localStore().get(systemMetadataKeyStr);
                         }
                     }
                     EditableDocument doc = entry.editDocumentContent();
-                    PropertyFactory propFactory = context.getPropertyFactory();
+                    PropertyFactory propFactory = context().getPropertyFactory();
                     translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
                     translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null);
 
@@ -864,7 +864,7 @@ public class RepositoryCache implements Observable {
      * 
      * @param name the workspace name
      * @param removeSession an outside session which will be used to unlink the jcr:system node and which is needed to guarantee
-     * atomicity.
+     *        atomicity.
      * @return true if the workspace with the supplied name existed and was destroyed, or false otherwise
      * @throws UnsupportedOperationException if this repository was not configured to allow
      *         {@link RepositoryConfiguration#isCreatingWorkspacesAllowed() creation (and destruction) of workspaces}.
@@ -885,16 +885,16 @@ public class RepositoryCache implements Observable {
             if (!configuration.isCreatingWorkspacesAllowed()) {
                 throw new UnsupportedOperationException(JcrI18n.creatingWorkspacesIsNotAllowedInRepository.text(getName()));
             }
-            //persist *all* the changes in one unit, because in case of failure we need to remain in consistent state
+            // persist *all* the changes in one unit, because in case of failure we need to remain in consistent state
             runInTransaction(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    //unlink the system node
+                    // unlink the system node
                     removeSession.mutable(removeSession.getRootKey()).removeChild(removeSession, getSystemKey());
-                    //remove the workspace and persist it
+                    // remove the workspace and persist it
                     RepositoryCache.this.workspaceNames.remove(name);
                     refreshRepositoryMetadata(true);
-                    //persist the active changes in the session
+                    // persist the active changes in the session
                     removeSession.save();
 
                     return null;
