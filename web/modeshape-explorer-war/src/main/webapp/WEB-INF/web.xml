@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
+	version="2.4">
+
+	<display-name>jackrabbitexplorer</display-name>
+
+	<!-- Admin username and password used by the binary servlet -->
+	<context-param>
+		<param-name>adminUserName</param-name>
+		<param-value>admin</param-value>
+	</context-param>
+	<context-param>
+		<param-name>adminPassword</param-name>
+		<param-value>admin</param-value>
+	</context-param>
+
+	<!-- Browserable content filter regular expression. Matches property values which can be opened in a new window -->
+	<context-param>
+		<param-name>browsableContentFilterRegex</param-name>
+		<param-value>^https?:\/\/.+?$</param-value>
+	</context-param>
+
+	<session-config>
+		<session-timeout>120</session-timeout>
+	</session-config>
+
+	<!-- Servlets -->
+	<servlet>
+		<servlet-name>JcrServlet</servlet-name>
+		<servlet-class>org.modeshape.explorer.server.JcrServiceImpl</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>JcrServlet</servlet-name>
+		<url-pattern>/explorer/JcrService</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>BinaryServlet</servlet-name>
+		<servlet-class>org.modeshape.explorer.server.BinaryServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>BinaryServlet</servlet-name>
+		<url-pattern>/BinaryServlet</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>BinaryServlet</servlet-name>
+		<url-pattern>/explorer/BinaryServlet</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>UploadServlet</servlet-name>
+		<servlet-class>org.modeshape.explorer.server.UploadServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>UploadServlet</servlet-name>
+		<url-pattern>/UploadServlet</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>UploadServlet</servlet-name>
+		<url-pattern>/explorer/UploadServlet</url-pattern>
+	</servlet-mapping>
+
+	<!-- Default page to serve -->
+	<welcome-file-list>
+		<welcome-file>Explorer.html</welcome-file>
+	</welcome-file-list>
+
+</web-app>
