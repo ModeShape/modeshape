@@ -837,6 +837,39 @@ public class JcrTools {
         return getClass().getClassLoader().getResource(name);
     }
 
+    /**
+     * Execute the supplied operation on each node in the workspace accessible by the supplied session.
+     * 
+     * @param session the session
+     * @param includeSystemNodes true if all nodes under "/jcr:system" should be included, or false if the system nodes should be
+     *        excluded
+     * @param operation the operation
+     * @throws Exception the exception thrown by the repository or the operation
+     */
+    public void onEachNode( Session session,
+                            boolean includeSystemNodes,
+                            NodeOperation operation ) throws Exception {
+        Node node = session.getRootNode();
+        operation.run(node);
+        NodeIterator iter = node.getNodes();
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            if (!includeSystemNodes && child.getName().equals("jcr:system")) continue;
+            operation.run(child);
+            onEachNodeBelow(child, operation);
+        }
+    }
+
+    protected void onEachNodeBelow( Node parent,
+                                    NodeOperation operation ) throws Exception {
+        NodeIterator iter = parent.getNodes();
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            operation.run(child);
+            onEachNodeBelow(child, operation);
+        }
+    }
+
     public void repeatedlyWithSession( Repository repository,
                                        int times,
                                        Operation operation ) throws Exception {
@@ -860,6 +893,10 @@ public class JcrTools {
 
     public static interface Operation {
         public void run( Session session ) throws Exception;
+    }
+
+    public static interface NodeOperation {
+        public void run( Node node ) throws Exception;
     }
 
     public static abstract class BasicOperation implements Operation {
