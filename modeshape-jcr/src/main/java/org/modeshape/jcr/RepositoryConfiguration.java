@@ -445,6 +445,8 @@ public class RepositoryConfiguration {
          * for a single repository, simply use a name that is unique from all other repositories.
          */
         public static final String THREAD_POOL = "threadPool";
+
+        @Deprecated
         public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = "removeDerivedContentWithOriginal";
 
         public static final String INDEXING_ANALYZER = "analyzer";
@@ -559,6 +561,7 @@ public class RepositoryConfiguration {
 
         public static final boolean MONITORING_ENABLED = true;
 
+        @Deprecated
         public static final boolean REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = true;
 
         public static final String SEQUENCING_POOL = "modeshape-sequencer";
@@ -2194,7 +2197,9 @@ public class RepositoryConfiguration {
          * removed if that input is updated and the sequencer re-run.
          * 
          * @return true if the original derived content should be removed upon subsequent sequencing of the same input.
+         * @deprecated because it was never used
          */
+        @Deprecated
         public boolean removeDerivedContentWithOriginal() {
             return sequencing.getBoolean(FieldName.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL,
                                          Default.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL);

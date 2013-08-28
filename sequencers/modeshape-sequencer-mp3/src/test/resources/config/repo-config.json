@@ -1,7 +1,6 @@
 {
     "name" : "Mp3 Sequencers Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "Mp3s in the same location" : {
                 "classname" : "mp3",

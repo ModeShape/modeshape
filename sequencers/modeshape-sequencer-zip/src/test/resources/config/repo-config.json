@@ -1,7 +1,6 @@
 {
     "name" : "ZIP Sequencer Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "ZIP sequencer" :  {
                 "classname" : "zipsequencer",

@@ -1,7 +1,6 @@
 {
     "name" : "TeiidSequencer Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "Teiid Sequencer in different location" : {
                 "classname" : "org.modeshape.sequencer.teiid.VdbSequencer",

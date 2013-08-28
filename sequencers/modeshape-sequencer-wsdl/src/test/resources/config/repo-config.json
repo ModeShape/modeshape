@@ -1,7 +1,6 @@
 {
     "name" : "WSDL Sequencer Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "WSDL sequencer" : {
                 "classname" : "wsdlsequencer",

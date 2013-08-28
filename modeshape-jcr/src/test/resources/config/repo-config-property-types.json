@@ -1,7 +1,6 @@
 {
     "name":"Test Config with various property types",
     "sequencing":{
-        "removeDerivedContentWithOriginal":true,
         "sequencers": {
             "Test sequencer" : {
                 "classname":"org.modeshape.jcr.TestSequencersHolder$SequencerWithProperties",

@@ -1,7 +1,6 @@
 {
     "name" : "Java Sequencers Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "Classes in the same location" : {
                 "classname" : "ClassSequencer",

@@ -1,7 +1,6 @@
 {
     "name" : "XSD Sequencer Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "XSD sequencer" : {
                 "classname" : "xsdsequencer",

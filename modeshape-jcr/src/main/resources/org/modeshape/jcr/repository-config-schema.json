@@ -1249,7 +1249,7 @@
                 "removeDerivedContentWithOriginal" : {
                     "type" : "boolean",
                     "default" : true,
-                    "description" : "Boolean option that controls whether the repository should also remove the content automatically derived by sequencers from the original content when that original content is removed. The default is 'true', since often times the derived content should not be kept if the original is being deleted."
+                    "description" : "DEPRECATED: This was never used and is currently ignored."
                 },
                 "threadPool" : {
                     "type" : "string",

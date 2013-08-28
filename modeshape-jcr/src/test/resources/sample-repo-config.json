@@ -65,7 +65,6 @@
         }
     },
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "ZIP Sequencer" : {
                 "classname" : "ZipSequencer",

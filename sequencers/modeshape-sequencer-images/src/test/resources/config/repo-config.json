@@ -1,7 +1,6 @@
 {
     "name" : "ImageSequencer Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "Images in separate location" : {
                 "classname" : "ImageSequencer",

@@ -1,7 +1,6 @@
 {
     "name" : "MS Office Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "Office sequencer" : {
                 "classname" : "msoffice",
