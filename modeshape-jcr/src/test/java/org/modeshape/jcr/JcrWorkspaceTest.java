@@ -24,25 +24,34 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.api.JcrTools;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
@@ -278,16 +287,16 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         testWsSession.save();
         testWsSession.logout();
 
-        //workspace deletion clears the cache asynchronously so we need to wait until that completes
+        // workspace deletion clears the cache asynchronously so we need to wait until that completes
         final CountDownLatch workspaceDeletedLatch = new CountDownLatch(1);
         repository.repositoryCache().register(new ChangeSetListener() {
             @Override
             public void notify( ChangeSet changeSet ) {
                 for (Change change : changeSet) {
-                    if (change instanceof WorkspaceRemoved && ((WorkspaceRemoved) change).getWorkspaceName().equals(wsName)) {
+                    if (change instanceof WorkspaceRemoved && ((WorkspaceRemoved)change).getWorkspaceName().equals(wsName)) {
                         try {
-                            //we know the ws removed event has been issued, but we need to wait to make sure ISPN has finished
-                            //shutting down the ws cache
+                            // we know the ws removed event has been issued, but we need to wait to make sure ISPN has finished
+                            // shutting down the ws cache
                             Thread.sleep(300);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
@@ -309,6 +318,278 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
 
         assertNotNull(session.getNode("/jcr:system"));
         testWsSession.logout();
+    }
+
+    @FixFor( "MODE-2012" )
+    @Test
+    public void shouldCorrectlyImportSameContentIntoMultipleWorkspaces() throws Exception {
+        // Register the Cars node types used in the content ...
+        tools.registerNodeTypes(session, "cars.cnd");
+
+        createWorkspace("workspaceA");
+        createWorkspace("workspaceB");
+        createWorkspace("workspaceC");
+        importFile("/", "workspaceA", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+        importFile("/", "workspaceB", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+        importFile("/", "workspaceC", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+        // print = true;
+        printWorkspace("workspaceA", false);
+        printWorkspace("workspaceB", false);
+        printWorkspace("workspaceC", false);
+
+        checkCorrespondingPaths("workspaceA", "workspaceB", "workspaceC");
+        checkCorrespondingPaths("workspaceB", "workspaceA", "workspaceC");
+        checkCorrespondingPaths("workspaceC", "workspaceA", "workspaceB");
+
+        Session sessionA = repository.login("workspaceA");
+        Session sessionB = repository.login("workspaceB");
+        Session sessionC = repository.login("workspaceC");
+
+        for (int i = 0; i != 3; ++i) {
+
+            Node utilityA = sessionA.getNode("/Cars/Utility");
+            Node utilityB = sessionB.getNode("/Cars/Utility");
+            Node utilityC = sessionC.getNode("/Cars/Utility");
+
+            NodeKey utilityAkey = ((AbstractJcrNode)utilityA).key();
+            NodeKey utilityBkey = ((AbstractJcrNode)utilityA).key();
+            NodeKey utilityCkey = ((AbstractJcrNode)utilityA).key();
+            final String sourceKey = utilityAkey.getSourceKey();
+            assertThat(utilityAkey.getSourceKey(), is(utilityBkey.getSourceKey()));
+            assertThat(utilityAkey.getSourceKey(), is(utilityCkey.getSourceKey()));
+
+            NodeIterator iterA = utilityA.getNodes();
+            NodeIterator iterB = utilityB.getNodes();
+            NodeIterator iterC = utilityC.getNodes();
+            while (iterA.hasNext()) {
+                Node childA = iterA.nextNode();
+                Node childB = iterB.nextNode();
+                Node childC = iterC.nextNode();
+                assertThat(childA.getName(), is(childB.getName()));
+                assertThat(childA.getName(), is(childC.getName()));
+                if (i != 0 && childA.getName().startsWith("newChild")) {
+                    // Must be our new node ...
+                    continue;
+                }
+                assertThat(childA.isNodeType("mix:referenceable"), is(true));
+                assertThat(childB.isNodeType("mix:referenceable"), is(true));
+                assertThat(childC.isNodeType("mix:referenceable"), is(true));
+                NodeKey childAkey = ((AbstractJcrNode)childA).key();
+                NodeKey childBkey = ((AbstractJcrNode)childB).key();
+                NodeKey childCkey = ((AbstractJcrNode)childC).key();
+                assertThat(childAkey.getSourceKey(), is(sourceKey));
+                assertThat(childBkey.getSourceKey(), is(sourceKey));
+                assertThat(childCkey.getSourceKey(), is(sourceKey));
+                assertThat(childBkey.getWorkspaceKey(), is(not(childAkey.getWorkspaceKey())));
+                assertThat(childCkey.getWorkspaceKey(), is(not(childAkey.getWorkspaceKey())));
+                assertThat(childBkey.getIdentifier(), is(childAkey.getIdentifier()));
+                assertThat(childCkey.getIdentifier(), is(childAkey.getIdentifier()));
+            }
+
+            // Now add a new non-referencable child to "/Cars/Utility" ...
+            Node childA = utilityA.addNode("newChild" + (i + 1));
+            Node childB = utilityB.addNode("newChild" + (i + 1));
+            Node childC = utilityC.addNode("newChild" + (i + 1));
+            childA.getSession().save();
+            childB.getSession().save();
+            childC.getSession().save();
+        }
+
+        checkCorrespondingPaths("workspaceA", "workspaceB", "workspaceC");
+        checkCorrespondingPaths("workspaceB", "workspaceA", "workspaceC");
+        checkCorrespondingPaths("workspaceC", "workspaceA", "workspaceB");
+
+        sessionA.logout();
+        sessionB.logout();
+        sessionC.logout();
+    }
+
+    @FixFor( "MODE-2012" )
+    @Test
+    public void shouldCorrectlyCloneWorkspacesWithCorrespondingContent() throws Exception {
+        // Register the Cars node types used in the content ...
+        tools.registerNodeTypes(session, "cars.cnd");
+
+        createWorkspace("workspaceA");
+        createWorkspace("workspaceB");
+        createWorkspace("workspaceC");
+        importFile("/", "workspaceA", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+        cloneWorkspace("workspaceA", "workspaceB", false);
+        cloneWorkspace("workspaceA", "workspaceC", false);
+
+        // print = true;
+        printWorkspace("workspaceA", false);
+        printWorkspace("workspaceB", false);
+        printWorkspace("workspaceC", false);
+
+        checkCorrespondingPaths("workspaceA", "workspaceB", "workspaceC");
+        checkCorrespondingPaths("workspaceB", "workspaceA", "workspaceC");
+        checkCorrespondingPaths("workspaceC", "workspaceA", "workspaceB");
+
+        Session sessionA = repository.login("workspaceA");
+        Session sessionB = repository.login("workspaceB");
+        Session sessionC = repository.login("workspaceC");
+
+        for (int i = 0; i != 3; ++i) {
+
+            Node utilityA = sessionA.getNode("/Cars/Utility");
+            Node utilityB = sessionB.getNode("/Cars/Utility");
+            Node utilityC = sessionC.getNode("/Cars/Utility");
+
+            NodeKey utilityAkey = ((AbstractJcrNode)utilityA).key();
+            NodeKey utilityBkey = ((AbstractJcrNode)utilityA).key();
+            NodeKey utilityCkey = ((AbstractJcrNode)utilityA).key();
+            final String sourceKey = utilityAkey.getSourceKey();
+            assertThat(utilityAkey.getSourceKey(), is(utilityBkey.getSourceKey()));
+            assertThat(utilityAkey.getSourceKey(), is(utilityCkey.getSourceKey()));
+
+            NodeIterator iterA = utilityA.getNodes();
+            NodeIterator iterB = utilityB.getNodes();
+            NodeIterator iterC = utilityC.getNodes();
+            while (iterA.hasNext()) {
+                Node childA = iterA.nextNode();
+                if (childA.getName().startsWith("newChild")) {
+                    assertThat(iterB.hasNext(), is(false));
+                    assertThat(iterC.hasNext(), is(false));
+                    continue;
+                }
+                Node childB = iterB.nextNode();
+                Node childC = iterC.nextNode();
+                assertThat(childA.getName(), is(childB.getName()));
+                assertThat(childA.getName(), is(childC.getName()));
+                assertThat(childA.isNodeType("mix:referenceable"), is(true));
+                assertThat(childB.isNodeType("mix:referenceable"), is(true));
+                assertThat(childC.isNodeType("mix:referenceable"), is(true));
+                NodeKey childAkey = ((AbstractJcrNode)childA).key();
+                NodeKey childBkey = ((AbstractJcrNode)childB).key();
+                NodeKey childCkey = ((AbstractJcrNode)childC).key();
+                assertThat(childAkey.getSourceKey(), is(sourceKey));
+                assertThat(childBkey.getSourceKey(), is(sourceKey));
+                assertThat(childCkey.getSourceKey(), is(sourceKey));
+                assertThat(childBkey.getWorkspaceKey(), is(not(childAkey.getWorkspaceKey())));
+                assertThat(childCkey.getWorkspaceKey(), is(not(childAkey.getWorkspaceKey())));
+                assertThat(childBkey.getIdentifier(), is(childAkey.getIdentifier()));
+                assertThat(childCkey.getIdentifier(), is(childAkey.getIdentifier()));
+            }
+
+            // Now add a new non-referencable child to "/Cars/Utility" in workspace A only ...
+            Node childA = utilityA.addNode("newChild" + (i + 1));
+            childA.getSession().save();
+        }
+
+        checkCorrespondingPaths("workspaceA", "workspaceB", "workspaceC");
+        checkCorrespondingPaths("workspaceB", "workspaceA", "workspaceC");
+        checkCorrespondingPaths("workspaceC", "workspaceA", "workspaceB");
+
+        sessionA.logout();
+        sessionB.logout();
+        sessionC.logout();
+
+    }
+
+    protected void checkCorrespondingPaths( String workspace,
+                                            final String... otherWorkspaces ) throws Exception {
+        final Session session = repository.login(workspace);
+        final Map<String, Session> otherWorkspaceSessions = new HashMap<String, Session>();
+        for (String otherWorkspace : otherWorkspaces) {
+            assertThat(otherWorkspace, is(not(workspace)));
+            Session otherSession = repository.login(otherWorkspace);
+            otherWorkspaceSessions.put(otherWorkspace, otherSession);
+        }
+        final String expectedWorkspaceKey = ((AbstractJcrNode)session.getRootNode()).key().getWorkspaceKey();
+
+        try {
+            tools.onEachNode(session, false, new JcrTools.NodeOperation() {
+                @Override
+                public void run( Node node ) throws Exception {
+                    final String path = node.getPath();
+                    final NodeKey key = ((AbstractJcrNode)node).key();
+                    assertThat(key.getWorkspaceKey(), is(expectedWorkspaceKey));
+                    if (node.isNodeType("mix:referenceable")) {
+                        for (String otherWorkspace : otherWorkspaces) {
+                            String correspondingPath = node.getCorrespondingNodePath(otherWorkspace);
+                            assertThat(correspondingPath, is(path));
+                            // Check that the node keys are actually different ...
+                            final Node correspondingNode = otherWorkspaceSessions.get(otherWorkspace).getNode(correspondingPath);
+                            final NodeKey correspondingKey = ((AbstractJcrNode)correspondingNode).key();
+                            assertThat(correspondingKey, is(not(key)));
+                            assertThat(correspondingKey.getIdentifier(), is(key.getIdentifier()));
+                            assertThat(correspondingKey.getSourceKey(), is(key.getSourceKey()));
+                            assertThat(correspondingKey.getWorkspaceKey(), is(not(key.getWorkspaceKey()))); // this is what
+                                                                                                            // differs
+                        }
+                    }
+                }
+            });
+        } finally {
+            session.logout();
+            for (Session otherSession : otherWorkspaceSessions.values()) {
+                otherSession.logout();
+            }
+        }
+    }
+
+    protected void printWorkspace( String workspace,
+                                   boolean includeSystem ) throws Exception {
+        printWorkspace(workspace, includeSystem, Integer.MAX_VALUE);
+    }
+
+    protected void printWorkspace( String workspaceName,
+                                   boolean includeSystem,
+                                   int maxDepthToPrint ) throws Exception {
+        if (!print) return;
+        Session session = repository.login(workspaceName);
+        try {
+            printMessage("Content of workspace '" + workspaceName + "'");
+            NodeIterator iter = session.getRootNode().getNodes();
+            while (iter.hasNext()) {
+                Node node = iter.nextNode();
+                if (!includeSystem && node.getName().equals("jcr:system")) continue;
+                tools.printSubgraph(node, " ", 1, maxDepthToPrint);
+            }
+        } finally {
+            session.logout();
+        }
+    }
+
+    protected void createWorkspace( String workspaceName ) throws Exception {
+        Session session = repository.login();
+        try {
+            session.getWorkspace().createWorkspace(workspaceName);
+        } finally {
+            session.logout();
+        }
+    }
+
+    protected void cloneWorkspace( String sourceWorkspace,
+                                   String targetWorkspace,
+                                   boolean removeExisting ) throws Exception {
+        Session session = repository.login(targetWorkspace);
+        try {
+            session.getWorkspace().clone(sourceWorkspace, "/", "/", removeExisting);
+        } finally {
+            session.logout();
+        }
+    }
+
+    protected void importFile( String importIntoPath,
+                               String workspaceName,
+                               String resourceName,
+                               int importBehavior ) throws Exception {
+        // Import the car content ...
+        InputStream stream = getClass().getClassLoader().getResourceAsStream(resourceName);
+        assertThat(stream, is(notNullValue()));
+        Session session = repository.login(workspaceName);
+        try {
+            session.getWorkspace().importXML(importIntoPath, stream, importBehavior); // shouldn't exist yet
+        } finally {
+            try {
+                stream.close();
+            } finally {
+                session.logout();
+            }
+        }
     }
 
     private void assertNotFound( String absPath,
