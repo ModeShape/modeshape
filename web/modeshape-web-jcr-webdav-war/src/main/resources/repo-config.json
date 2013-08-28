@@ -2,9 +2,11 @@
     "name" : "webdav_repo",
     "jndiName" : "",
     "workspaces" : {
-        "predefined" : [],
         "default" : "default",
-        "allowCreation" : true
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "initial-content.xml"
+        }
     },
     "security" : {
         "anonymous" : {

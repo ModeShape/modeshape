@@ -27,6 +27,7 @@ import javax.jcr.Node;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.ValueFactories;
@@ -42,17 +43,29 @@ public class NodeIdentifierReferenceFactory extends ReferenceValueFactory {
 
     private final NodeKey rootKey;
 
-    /**
-     * @param rootKey
-     * @param decoder
-     * @param factories
-     * @param weak
-     */
-    public NodeIdentifierReferenceFactory( NodeKey rootKey,
-                                           TextDecoder decoder,
-                                           ValueFactories factories,
-                                           boolean weak ) {
-        super(decoder, factories, weak);
+
+    public static NodeIdentifierReferenceFactory newInstance( NodeKey rootKey,
+                                                              TextDecoder decoder,
+                                                              ValueFactories factories,
+                                                              boolean weak,
+                                                              boolean simple ) {
+        if (simple) {
+            return new NodeIdentifierReferenceFactory(PropertyType.SIMPLEREFERENCE, decoder, factories, weak, simple, rootKey);
+        }
+        return new NodeIdentifierReferenceFactory(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder,
+                                                  factories,
+                                                  weak,
+                                                  simple,
+                                                  rootKey);
+    }
+
+    protected NodeIdentifierReferenceFactory( PropertyType type,
+                                              TextDecoder decoder,
+                                              ValueFactories valueFactories,
+                                              boolean weak,
+                                              boolean simple,
+                                              NodeKey rootKey ) {
+        super(type, decoder, valueFactories, weak, simple);
         this.rootKey = rootKey;
     }
 
@@ -62,11 +75,12 @@ public class NodeIdentifierReferenceFactory extends ReferenceValueFactory {
         NodeKey key = JcrSession.createNodeKeyFromIdentifier(value, rootKey);
         boolean isForeign = !(key.getSourceKey().equals(rootKey.getSourceKey()) && key.getWorkspaceKey()
                                                                                       .equals(rootKey.getWorkspaceKey()));
-        return new NodeKeyReference(key, weak, isForeign);
+        return new NodeKeyReference(key, weak, isForeign, simple);
     }
 
     @Override
     public ReferenceFactory with( ValueFactories valueFactories ) {
-        return new NodeIdentifierReferenceFactory(rootKey, decoder, valueFactories, weak);
+        return valueFactories == this.valueFactories ?
+               this : new NodeIdentifierReferenceFactory(super.getPropertyType(), decoder, valueFactories, weak, simple, rootKey);
     }
 }

@@ -106,6 +106,7 @@ public class DocumentTranslator implements DocumentConstants {
     private final ValueFactory<String> strings;
     private final ReferenceFactory refs;
     private final ReferenceFactory weakrefs;
+    private final ReferenceFactory simplerefs;
     private final UuidFactory uuids;
     private final TextEncoder encoder = NoOpEncoder.getInstance();
     private final TextDecoder decoder = NoOpEncoder.getInstance();
@@ -128,6 +129,7 @@ public class DocumentTranslator implements DocumentConstants {
         this.decimals = this.factories.getDecimalFactory();
         this.refs = this.factories.getReferenceFactory();
         this.weakrefs = this.factories.getWeakReferenceFactory();
+        this.simplerefs = this.factories.getSimpleReferenceFactory();
         this.uuids = this.factories.getUuidFactory();
         this.strings = this.factories.getStringFactory();
         assert this.largeStringSize.get() >= 0;
@@ -177,9 +179,7 @@ public class DocumentTranslator implements DocumentConstants {
         return keyFrom(value, primaryWorkspaceKey, secondaryWorkspaceKey);
     }
 
-    public Set<NodeKey> getParentKeys( Document document,
-                                       String primaryWorkspaceKey,
-                                       String secondaryWorkspaceKey ) {
+    public Set<NodeKey> getAdditionalParentKeys( Document document ) {
         Object value = document.get(PARENT);
         if (value instanceof String) {
             // The first key is the primary parent, so there are no more additional parents ...
@@ -201,11 +201,7 @@ public class DocumentTranslator implements DocumentConstants {
                     continue;
                 }
                 String key = (String)v;
-                NodeKey nodeKey = new NodeKey(key);
-                String workspaceKey = nodeKey.getWorkspaceKey();
-                if (workspaceKey.equals(primaryWorkspaceKey) || workspaceKey.equals(secondaryWorkspaceKey)) {
-                    keys.add(nodeKey);
-                }
+                keys.add(new NodeKey(key));
             }
             return keys;
         }
@@ -1136,9 +1132,16 @@ public class DocumentTranslator implements DocumentConstants {
         }
         if (value instanceof Reference) {
             Reference ref = (Reference)value;
-            String key = ref.isWeak() ? "$wref" : "$ref";
-            String refString = value instanceof NodeKeyReference ? ((NodeKeyReference)value).getNodeKey().toString() : this.strings.create(ref);
-            boolean isForeign = (value instanceof NodeKeyReference) && ((NodeKeyReference)value).isForeign();
+            String key = null;
+            if (ref.isSimple()) {
+                key = SIMPLE_REFERENCE_FIELD;
+            } else {
+                key = ref.isWeak() ? WEAK_REFERENCE_FIELD : REFERENCE_FIELD;
+            }
+
+            String refString = ref instanceof NodeKeyReference ? ((NodeKeyReference)ref).getNodeKey().toString() :
+                               this.strings.create(ref);
+            boolean isForeign = ref.isForeign();
             return Schematic.newDocument(key, refString, "$foreign", isForeign);
         }
         if (value instanceof URI) {
@@ -1295,11 +1298,14 @@ public class DocumentTranslator implements DocumentConstants {
             if (!Null.matches(valueStr = doc.getString("$dec"))) {
                 return decimals.create(valueStr);
             }
-            if (!Null.matches(valueStr = doc.getString("$ref"))) {
+            if (!Null.matches(valueStr = doc.getString(REFERENCE_FIELD))) {
                 return createReferenceFromString(refs, doc, valueStr);
             }
-            if (!Null.matches(valueStr = doc.getString("$wref"))) {
+            if (!Null.matches(valueStr = doc.getString(WEAK_REFERENCE_FIELD))) {
                 return createReferenceFromString(weakrefs, doc, valueStr);
+            }
+            if (!Null.matches(valueStr = doc.getString(SIMPLE_REFERENCE_FIELD))) {
+                return createReferenceFromString(simplerefs, doc, valueStr);
             }
             if (!Null.matches(valueStr = doc.getString("$uuid"))) {
                 return uuids.create(valueStr);

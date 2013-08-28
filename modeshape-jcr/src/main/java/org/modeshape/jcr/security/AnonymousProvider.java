@@ -41,7 +41,7 @@ public class AnonymousProvider implements AuthenticationProvider {
 
     /**
      * Creates a new anonymous provider.
-     *
+     * 
      * @param anonymousUsername the anonymous user name
      * @param userRoles the set of roles for the anonymous user
      */
@@ -58,6 +58,7 @@ public class AnonymousProvider implements AuthenticationProvider {
                                           String workspaceName,
                                           ExecutionContext repositoryContext,
                                           Map<String, Object> sessionAttributes ) {
+
         if (credentials == null) {
             return repositoryContext.with(anonymousContext);
         }
@@ -101,5 +102,6 @@ public class AnonymousProvider implements AuthenticationProvider {
         public void logout() {
             // do nothing
         }
+
     }
 }

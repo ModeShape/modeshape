@@ -52,8 +52,6 @@ import org.modeshape.jcr.value.ValueFactories;
 @NotThreadSafe
 final class JcrValue implements javax.jcr.Value {
 
-    static final JcrValue[] EMPTY_ARRAY = new JcrValue[] {};
-
     private final ValueFactories factories;
     private final int type;
     private final Object value;
@@ -68,11 +66,9 @@ final class JcrValue implements javax.jcr.Value {
         assert type == PropertyType.BINARY || type == PropertyType.BOOLEAN || type == PropertyType.DATE
                || type == PropertyType.DECIMAL || type == PropertyType.DOUBLE || type == PropertyType.LONG
                || type == PropertyType.NAME || type == PropertyType.PATH || type == PropertyType.REFERENCE
-               || type == PropertyType.WEAKREFERENCE || type == PropertyType.STRING || type == PropertyType.URI : "Unxpected PropertyType: "
-                                                                                                                  + PropertyType.nameFromValue(type)
-                                                                                                                  + " for value "
-                                                                                                                  + (value == null ? "null" : ("\""
-                                                                                                                                               + value + "\""));
+               || type == PropertyType.WEAKREFERENCE || type == PropertyType.STRING || type == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE
+               || type == PropertyType.URI :
+                  "Unxpected PropertyType: " + org.modeshape.jcr.api.PropertyType.nameFromValue(type) + " for value " + (value == null ? "null" : ("\"" + value + "\""));
 
         // Leaving this assertion out for now so that values can be created in node type sources, which are created outside
         // the context of any particular session.
@@ -259,6 +255,7 @@ final class JcrValue implements javax.jcr.Value {
                         return thisNameValue.equals(thatNameValue);
                     case PropertyType.REFERENCE:
                     case PropertyType.WEAKREFERENCE:
+                    case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
                         return this.getString().equals(that.getString());
                     case PropertyType.URI:
                         return this.getString().equals(that.getString());
@@ -294,6 +291,8 @@ final class JcrValue implements javax.jcr.Value {
                     case PropertyType.NAME:
                         return this.getString().equals(that.getString());
                     case PropertyType.REFERENCE:
+                    case PropertyType.WEAKREFERENCE:
+                    case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
                         return this.getString().equals(that.getString());
                     case PropertyType.URI:
                         return this.getString().equals(that.getString());
@@ -419,6 +418,16 @@ final class JcrValue implements javax.jcr.Value {
                 } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.REFERENCE
+                        && this.type != PropertyType.WEAKREFERENCE) {
+                    throw createValueFormatException(Node.class);
+                }
+                try {
+                    return this.withTypeAndValue(type, factories().getSimpleReferenceFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
             case PropertyType.DOUBLE:
                 if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.LONG
                     && this.type != PropertyType.DATE) {
@@ -494,8 +503,11 @@ final class JcrValue implements javax.jcr.Value {
             case PropertyType.PATH:
                 return factories().getPathFactory().create(value.getString());
             case PropertyType.REFERENCE:
-            case PropertyType.WEAKREFERENCE:
                 return factories().getReferenceFactory().create(value.getString());
+            case PropertyType.WEAKREFERENCE:
+                return factories().getWeakReferenceFactory().create(value.getString());
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                return factories().getSimpleReferenceFactory().create(value.getString());
             case PropertyType.DOUBLE:
                 return factories().getDoubleFactory().create(value.getDouble());
             case PropertyType.LONG:
@@ -531,8 +543,11 @@ final class JcrValue implements javax.jcr.Value {
             case PropertyType.PATH:
                 return factories().getPathFactory().create(value);
             case PropertyType.REFERENCE:
-            case PropertyType.WEAKREFERENCE:
                 return factories().getReferenceFactory().create(value);
+            case PropertyType.WEAKREFERENCE:
+                return factories().getWeakReferenceFactory().create(value);
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                return factories().getSimpleReferenceFactory().create(value);
             case PropertyType.DOUBLE:
                 return factories().getDoubleFactory().create(value);
             case PropertyType.LONG:

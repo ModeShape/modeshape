@@ -147,6 +147,7 @@ import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryUsageChangeSetListener;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
+import org.modeshape.jmx.RepositoryStatisticsBean;
 
 /**
  * 
@@ -653,7 +654,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
-
             running.addSession(session, false);
             return session;
         } catch (AccessDeniedException ace) {
@@ -787,7 +787,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.OPTION_SIMPLE_VERSIONING_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_ACTIVITIES_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_BASELINES_SUPPORTED, valueFor(factories, false));
-        descriptors.put(Repository.OPTION_ACCESS_CONTROL_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_ACCESS_CONTROL_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
@@ -900,6 +900,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
         private final WeakHashMap<JcrSession, Object> internalSessions = new WeakHashMap<JcrSession, Object>();
         private final RepositoryStatistics statistics;
+        private final RepositoryStatisticsBean mbean;
         private final BinaryStore binaryStore;
         private final ScheduledExecutorService statsRollupService;
         private final Sequencers sequencers;
@@ -943,14 +944,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (other != null && !change.monitoringChanged) {
                 this.statistics = other.statistics;
                 this.statsRollupService = other.statsRollupService;
+                this.mbean = other.mbean;
             } else {
                 this.statistics = other != null ? other.statistics : new RepositoryStatistics(tempContext);
                 if (this.config.getMonitoring().enabled()) {
                     // Start the Cron service, with a minimum of a single thread ...
                     this.statsRollupService = tempContext.getScheduledThreadPool("modeshape-stats");
                     this.statistics.start(this.statsRollupService);
+                    this.mbean = new RepositoryStatisticsBean(statistics, getName());
+                    this.mbean.start();
                 } else {
                     this.statsRollupService = null;
+                    this.mbean = null;
                 }
             }
 
@@ -1608,6 +1613,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             if (statistics != null) {
                 statistics.stop();
+                mbean.stop();
             }
 
             this.context().terminateAllPools(30, TimeUnit.SECONDS);
@@ -1957,7 +1963,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     private final class InternalSecurityContext implements SecurityContext {
         private final String username;
-
+        
         protected InternalSecurityContext( String username ) {
             this.username = username;
         }
@@ -1981,6 +1987,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         public void logout() {
             // do nothing
         }
+
     }
 
     /**

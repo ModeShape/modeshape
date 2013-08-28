@@ -31,6 +31,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
@@ -70,6 +71,7 @@ import org.modeshape.jcr.cache.change.NodeRenamed;
 import org.modeshape.jcr.cache.change.NodeReordered;
 import org.modeshape.jcr.cache.change.Observable;
 import org.modeshape.jcr.cache.change.RecordingChanges;
+import org.modeshape.jcr.cache.change.RepositoryMetadataChanged;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.cache.document.DocumentOptimizer;
@@ -114,14 +116,15 @@ public class RepositoryCache implements Observable {
     private final DocumentTranslator translator;
     private final ConcurrentHashMap<String, WorkspaceCache> workspaceCachesByName;
     private final AtomicLong minimumStringLengthForBinaryStorage = new AtomicLong();
+    private final AtomicBoolean accessControlEnabled = new AtomicBoolean(false);
     private final String name;
     private final String repoKey;
     private final String sourceKey;
     private final String rootNodeId;
     private final ChangeBus changeBus;
-    private final NodeKey systemMetadataKey;
+    protected final NodeKey systemMetadataKey;
     private final NodeKey systemKey;
-    private final Set<String> workspaceNames;
+    protected final Set<String> workspaceNames;
     private final String systemWorkspaceName;
     protected final Logger logger;
     private final SessionEnvironment sessionContext;
@@ -223,7 +226,7 @@ public class RepositoryCache implements Observable {
         this.systemMetadataKey = new NodeKey(this.sourceKey, systemWorkspaceKey, SYSTEM_METADATA_IDENTIFIER);
 
         // Initialize the workspaces ..
-        refreshWorkspaces(false);
+        refreshRepositoryMetadata(false);
 
         this.changeBus = changeBus;
         this.changeBus.register(new LocalChangeListener());
@@ -298,6 +301,25 @@ public class RepositoryCache implements Observable {
         return initializingRepository;
     }
 
+    public final boolean isAccessControlEnabled() {
+        return accessControlEnabled.get();
+    }
+
+    public final void setAccessControlEnabled( boolean enabled ) {
+        if (this.accessControlEnabled.compareAndSet(!enabled, enabled)) {
+            refreshRepositoryMetadata(true);
+
+            // And notify the others ...
+            String userId = context.getSecurityContext().getUserName();
+            Map<String, String> userData = context.getData();
+            DateTime timestamp = context.getValueFactories().getDateFactory().create();
+            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey());
+            changes.repositoryMetadataChanged();
+            changes.freeze(userId, userData, timestamp);
+            this.changeBus.notify(changes);
+        }
+    }
+
     protected final DocumentStore documentStore() {
         return this.documentStore;
     }
@@ -336,19 +358,16 @@ public class RepositoryCache implements Observable {
                 V result = operation.call();
                 txn.commit();
                 return result;
-            } catch (RuntimeException re) {
-                txn.rollback();
-                throw re;
             } catch (Exception e) {
                 txn.rollback();
-                throw new RuntimeException(e);
+                throw (e instanceof RuntimeException) ? (RuntimeException)e : new RuntimeException(e);
             }
         } catch (IllegalStateException err) {
             throw new SystemFailureException(err);
         } catch (SystemException err) {
             throw new SystemFailureException(err);
         } catch (NotSupportedException e) {
-            logger.debug(e, "unexpected exception while committing transaction");
+            logger.debug(e, "nested transactions not supported");
             return null;
         }
     }
@@ -409,48 +428,60 @@ public class RepositoryCache implements Observable {
         return minimumStringLengthForBinaryStorage.get();
     }
 
-    protected void refreshWorkspaces( boolean update ) {
+    protected void refreshRepositoryMetadata( boolean update ) {
         // Read the node document ...
-        DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumStringLengthForBinaryStorage.get());
-        Set<String> workspaceNames = new HashSet<String>(this.workspaceNames);
-        String systemMetadataKeyStr = this.systemMetadataKey.toString();
+        final DocumentTranslator translator = new DocumentTranslator(context, documentStore,
+                                                                     minimumStringLengthForBinaryStorage.get());
+        final String systemMetadataKeyStr = this.systemMetadataKey.toString();
+        final boolean accessControlEnabled = this.accessControlEnabled.get();
         SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
-        if (entry == null) {
-            // it doesn't exist, so set it up ...
-            PropertyFactory propFactory = context.getPropertyFactory();
-            EditableDocument doc = Schematic.newDocument();
-            translator.setKey(doc, systemMetadataKey);
-            translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
-            entry = documentStore.localStore().putIfAbsent(systemMetadataKeyStr, doc);
-            // we'll need to read the entry if one was inserted between 'containsKey' and 'putIfAbsent' ...
-        }
-        if (entry != null) {
-            // There was an existing document ...
+
+        if (!update && entry != null) {
+            // We just need to read the metadata from the document, and we don't need a transaction for it ...
             Document doc = entry.getContentAsDocument();
+            Property accessProp = translator.getProperty(doc, name("accessControl"));
+            boolean enabled = context.getValueFactories().getBooleanFactory().create(accessProp.getFirstValue());
+            this.accessControlEnabled.set(enabled);
+
             Property prop = translator.getProperty(doc, name("workspaces"));
-            if (prop != null && !prop.isEmpty() && !update) {
-                workspaceNames.clear();
-                ValueFactory<String> strings = context.getValueFactories().getStringFactory();
-                for (Object value : prop) {
-                    String workspaceName = strings.create(value);
-                    workspaceNames.add(workspaceName);
-                }
-                this.workspaceNames.addAll(workspaceNames);
-                this.workspaceNames.retainAll(workspaceNames);
-            } else {
-                // Set the property ...
-                try {
-                    Transaction txn = sessionContext.getTransactions().begin();
-                    EditableDocument editable = entry.editDocumentContent();
-                    PropertyFactory propFactory = context.getPropertyFactory();
-                    translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
-                    // we need to update local the cache immediately, so the changes are persisted
-                    documentStore.localStore().replace(systemMetadataKeyStr, editable);
-                    txn.commit();
-                } catch (Exception err) {
-                    throw new SystemFailureException(JcrI18n.errorUpdatingWorkspaceNames.text(name, err.getMessage()));
-                }
+            final Set<String> workspaceNames = new HashSet<String>();
+            ValueFactory<String> strings = context.getValueFactories().getStringFactory();
+            for (Object value : prop) {
+                String workspaceName = strings.create(value);
+                workspaceNames.add(workspaceName);
             }
+            this.workspaceNames.addAll(workspaceNames);
+            this.workspaceNames.retainAll(workspaceNames);
+            return;
+        }
+
+        try {
+            runInTransaction(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    // Re-read the entry within the transaction ...
+                    SchematicEntry entry = documentStore().get(systemMetadataKeyStr);
+                    if (entry == null) {
+                        // We need to create a new entry ...
+                        EditableDocument newDoc = Schematic.newDocument();
+                        translator.setKey(newDoc, systemMetadataKey);
+                        entry = documentStore().localStore().putIfAbsent(systemMetadataKeyStr, newDoc);
+                        if (entry == null) {
+                            // Read-read the entry that we just put, so we can populate it with the same code that edits it ...
+                            entry = documentStore().localStore().get(systemMetadataKeyStr);
+                        }
+                    }
+                    EditableDocument doc = entry.editDocumentContent();
+                    PropertyFactory propFactory = context().getPropertyFactory();
+                    translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
+                    translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null);
+
+                    return null;
+                }
+            });
+        } catch (RuntimeException re) {
+            LOGGER.error(JcrI18n.errorUpdatingRepositoryMetadata, name, re.getMessage());
+            throw re;
         }
     }
 
@@ -540,15 +571,17 @@ public class RepositoryCache implements Observable {
                         if (getWorkspaceNames().contains(removedName)) {
                             changed = true;
                         }
+                    } else if (change instanceof RepositoryMetadataChanged) {
+                        changed = true;
                     }
                 }
                 if (changed) {
-                    // The set of workspaces was changed, so refresh them now ...
-                    refreshWorkspaces(false);
+                    // The set of workspaces (or repository metadata) was changed, so refresh them now ...
+                    refreshRepositoryMetadata(false);
 
                     // And remove any already-cached workspaces. Note any open sessions to these workspaces will
                     for (String removedName : removedNames) {
-                        removeWorkspace(removedName);
+                        removeWorkspaceCaches(removedName);
                     }
                 }
             }
@@ -750,7 +783,7 @@ public class RepositoryCache implements Observable {
         return this.translator;
     }
 
-    void removeWorkspace( String name ) {
+    void removeWorkspaceCaches( String name ) {
         assert name != null;
         assert !this.workspaceNames.contains(name);
         WorkspaceCache removed = this.workspaceCachesByName.remove(name);
@@ -801,7 +834,7 @@ public class RepositoryCache implements Observable {
             }
             // Otherwise, create the workspace and persist it ...
             this.workspaceNames.add(name);
-            refreshWorkspaces(true);
+            refreshRepositoryMetadata(true);
 
             // Now make sure that the "/jcr:system" node is a child of the root node ...
             SessionCache session = createSession(context, name, false);
@@ -825,16 +858,19 @@ public class RepositoryCache implements Observable {
     }
 
     /**
-     * Permanently destroys the workspace with the supplied name, if the repository is appropriately configured. If no such
-     * workspace exists in this repository, this method simply returns. Otherwise, this method attempts to destroy the named
-     * workspace.
+     * Permanently destroys the workspace with the supplied name, if the repository is appropriately configured, also unlinking
+     * the jcr:system node from the root node . If no such workspace exists in this repository, this method simply returns.
+     * Otherwise, this method attempts to destroy the named workspace.
      * 
      * @param name the workspace name
+     * @param removeSession an outside session which will be used to unlink the jcr:system node and which is needed to guarantee
+     *        atomicity.
      * @return true if the workspace with the supplied name existed and was destroyed, or false otherwise
      * @throws UnsupportedOperationException if this repository was not configured to allow
      *         {@link RepositoryConfiguration#isCreatingWorkspacesAllowed() creation (and destruction) of workspaces}.
      */
-    public boolean destroyWorkspace( String name ) {
+    public boolean destroyWorkspace( final String name,
+                                     final WritableSessionCache removeSession ) {
         if (workspaceNames.contains(name)) {
             if (configuration.getPredefinedWorkspaceNames().contains(name)) {
                 throw new UnsupportedOperationException(JcrI18n.unableToDestroyPredefinedWorkspaceInRepository.text(name,
@@ -849,11 +885,23 @@ public class RepositoryCache implements Observable {
             if (!configuration.isCreatingWorkspacesAllowed()) {
                 throw new UnsupportedOperationException(JcrI18n.creatingWorkspacesIsNotAllowedInRepository.text(getName()));
             }
-            // Otherwise, remove the workspace and persist it ...
-            this.workspaceNames.remove(name);
-            refreshWorkspaces(true);
+            // persist *all* the changes in one unit, because in case of failure we need to remain in consistent state
+            runInTransaction(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    // unlink the system node
+                    removeSession.mutable(removeSession.getRootKey()).removeChild(removeSession, getSystemKey());
+                    // remove the workspace and persist it
+                    RepositoryCache.this.workspaceNames.remove(name);
+                    refreshRepositoryMetadata(true);
+                    // persist the active changes in the session
+                    removeSession.save();
 
-            // And notify the others ...
+                    return null;
+                }
+            });
+
+            // And notify the others - this notification will clear & close the WS cache via the local listener
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();

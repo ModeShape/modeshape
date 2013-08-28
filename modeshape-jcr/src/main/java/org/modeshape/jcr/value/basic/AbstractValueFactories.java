@@ -75,6 +75,8 @@ public abstract class AbstractValueFactories implements ValueFactories {
                 return getReferenceFactory();
             case WEAKREFERENCE:
                 return getWeakReferenceFactory();
+            case SIMPLEREFERENCE:
+                return getSimpleReferenceFactory();
             case STRING:
                 return getStringFactory();
             case URI:

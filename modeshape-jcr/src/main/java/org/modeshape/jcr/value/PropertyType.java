@@ -76,6 +76,9 @@ public enum PropertyType {
               NodeKeyReference.class, StringReference.class, UuidReference.class),
     WEAKREFERENCE("WeakReference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
                   NodeKeyReference.class, StringReference.class, UuidReference.class),
+    SIMPLEREFERENCE(org.modeshape.jcr.api.PropertyType.TYPENAME_SIMPLE_REFERENCE,
+                    ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
+                    NodeKeyReference.class),
     URI("URI", ValueComparators.URI_COMPARATOR, new ObjectCanonicalizer(), URI.class),
     OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, new ObjectCanonicalizer(), Object.class);
 
@@ -123,20 +126,6 @@ public enum PropertyType {
 
     private static interface TypeChecker {
         boolean isTypeFor( Object value );
-    }
-
-    protected final static class StrongReferenceTypeChecker implements TypeChecker {
-        @Override
-        public boolean isTypeFor( Object value ) {
-            return value instanceof Reference && !((Reference)value).isWeak();
-        }
-    }
-
-    protected final static class WeakReferenceTypeChecker implements TypeChecker {
-        @Override
-        public boolean isTypeFor( Object value ) {
-            return value instanceof Reference && ((Reference)value).isWeak();
-        }
     }
 
     protected final static class ClassBasedTypeChecker implements TypeChecker {
@@ -281,18 +270,16 @@ public enum PropertyType {
         if (classBasedType != null) {
             if (classBasedType == PropertyType.REFERENCE && value instanceof Reference) {
                 Reference ref = (Reference)value;
+                if (ref.isSimple()) {
+                    return PropertyType.SIMPLEREFERENCE;
+                }
                 return ref.isWeak() ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
             }
             return classBasedType;
         }
-
         for (PropertyType type : PropertyType.values()) {
             if (type == OBJECT) continue;
             if (type.isTypeFor(value)) {
-                if (classBasedType == PropertyType.REFERENCE && value instanceof Reference) {
-                    Reference ref = (Reference)value;
-                    return ref.isWeak() ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
-                }
                 return type;
             }
         }

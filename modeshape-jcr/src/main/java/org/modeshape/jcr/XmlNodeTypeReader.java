@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
@@ -322,7 +321,7 @@ class XmlNodeTypeReader extends DefaultHandler {
     }
 
     protected int type( String value ) {
-        return PropertyType.valueFromName(value);
+        return org.modeshape.jcr.api.PropertyType.valueFromName(value);
     }
 
     protected int opv( String value ) {

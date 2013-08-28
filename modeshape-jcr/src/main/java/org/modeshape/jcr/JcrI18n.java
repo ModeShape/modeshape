@@ -245,6 +245,7 @@ public final class JcrI18n {
     public static I18n errorObtainingWorkspaceNames;
     public static I18n errorObtainingDefaultWorkspaceName;
     public static I18n errorUpdatingWorkspaceNames;
+    public static I18n errorUpdatingRepositoryMetadata;
     public static I18n workspaceNameIsInvalid;
     public static I18n errorVerifyingWorkspaceName;
 
@@ -504,6 +505,10 @@ public final class JcrI18n {
     public static I18n beginChildrenOptimization;
     public static I18n completeChildrenOptimization;
     public static I18n errorDuringChildrenOptimization;
+
+    public static I18n mBeanAlreadyRegistered;
+    public static I18n cannotRegisterMBean;
+    public static I18n cannotUnRegisterMBean;
 
     static {
         try {

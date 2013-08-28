@@ -29,6 +29,7 @@ import java.util.List;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Reference;
 
 /**
  * An immutable version of a property that has 2 or more values. This is done for efficiency of the in-memory representation,
@@ -87,7 +88,11 @@ public class BasicMultiValueProperty extends BasicProperty {
 
     @Override
     public boolean isReference() {
-        return getFirstValue() instanceof NodeKeyReference;
+        Object firstValue = getFirstValue();
+        if (firstValue instanceof NodeKeyReference) {
+            return !((NodeKeyReference) firstValue).isSimple();
+        }
+        return firstValue instanceof Reference;
     }
 
     @Override

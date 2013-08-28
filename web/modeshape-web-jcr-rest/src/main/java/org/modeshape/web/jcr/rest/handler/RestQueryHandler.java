@@ -172,13 +172,13 @@ public final class RestQueryHandler extends QueryHandler {
                                            String baseUrl,
                                            Row resultRow,
                                            RestQueryResult.RestRow restRow ) throws RepositoryException {
-        String defaultPath = resultRow.getPath();
+        String defaultPath = encodedPath(resultRow.getPath());
         if (!StringUtil.isBlank(defaultPath)) {
             restRow.addValue(MODE_URI, RestHelper.urlFrom(baseUrl, RestHelper.ITEMS_METHOD_NAME, defaultPath));
         }
         for (String selectorName : result.getSelectorNames()) {
             try {
-                String selectorPath = resultRow.getPath(selectorName);
+                String selectorPath = encodedPath(resultRow.getPath(selectorName));
                 if (!StringUtil.isBlank(defaultPath) && !selectorPath.equals(defaultPath)) {
                     restRow.addValue(MODE_URI + "-" + selectorName,
                                      RestHelper.urlFrom(baseUrl, RestHelper.ITEMS_METHOD_NAME, selectorPath));

@@ -139,6 +139,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private final long nanosCreated;
 
     private ExecutionContext context;
+
+    private final AccessControlManagerImpl acm;
+
     private final AdvancedAuthorizationProvider.Context authorizerContext = new AdvancedAuthorizationProvider.Context() {
         @Override
         public ExecutionContext getExecutionContext() {
@@ -176,9 +179,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // Now create a specific reference factories that know about the root node key ...
         TextDecoder decoder = context.getDecoder();
         ValueFactories factories = context.getValueFactories();
-        ReferenceFactory rootKeyAwareStrongRefFactory = new NodeIdentifierReferenceFactory(rootKey, decoder, factories, false);
-        ReferenceFactory rootKeyAwareWeakRefFactory = new NodeIdentifierReferenceFactory(rootKey, decoder, factories, true);
-        context = context.with(rootKeyAwareStrongRefFactory).with(rootKeyAwareWeakRefFactory);
+        ReferenceFactory rootKeyAwareStrongRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, false, false);
+        ReferenceFactory rootKeyAwareWeakRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, true, false);
+        ReferenceFactory rootKeyAwareSimpleRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, true, true);
+        context = context.with(rootKeyAwareStrongRefFactory).with(rootKeyAwareWeakRefFactory).with(rootKeyAwareSimpleRefFactory);
 
         // Create an execution context for this session that uses a local namespace registry ...
         final NamespaceRegistry globalNamespaceRegistry = context.getNamespaceRegistry(); // thread-safe!
@@ -200,6 +204,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
         repository.statistics().increment(ValueMetric.SESSION_COUNT);
+
+        acm = new AccessControlManagerImpl(this);
     }
 
     protected JcrSession( JcrSession original,
@@ -220,6 +226,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
         repository.statistics().increment(ValueMetric.SESSION_COUNT);
+        acm = new AccessControlManagerImpl(this);
     }
 
     final JcrWorkspace workspace() {
@@ -273,6 +280,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     final String sessionId() {
         return context.getId();
+    }
+
+    public final boolean isReadOnly() {
+        return cache().isReadOnly();
     }
 
     /**
@@ -767,10 +778,18 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     @Override
     public AbstractJcrNode getNode( String absPath ) throws PathNotFoundException, RepositoryException {
+        return getNode(absPath, false);
+    }
+
+    protected AbstractJcrNode getNode( String absPath,
+                                       boolean accessControlScope ) throws PathNotFoundException, RepositoryException {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absolutePath");
         Path path = absolutePathFor(absPath);
 
+        if (!accessControlScope) {
+            checkPermission(path, ModeShapePermissions.READ);
+        }
         // Return root node if path is "/" ...
         if (path.isRoot()) {
             return getRootNode();
@@ -779,6 +798,19 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return node(path);
     }
 
+    /*    protected Node getAclNode( String absPath ) throws PathNotFoundException, RepositoryException {
+            checkLive();
+            CheckArg.isNotEmpty(absPath, "absolutePath");
+            Path path = absolutePathFor(absPath);
+
+            // Return root node if path is "/" ...
+            if (path.isRoot()) {
+                return getRootNode();
+            }
+
+            return node(path);
+        }
+    */
     @Override
     public AbstractJcrItem getItem( String absPath ) throws PathNotFoundException, RepositoryException {
         checkLive();
@@ -1206,8 +1238,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     /**
-     * Determine if the current user does not have permission for all of the named actions in the named workspace, otherwise
-     * returns silently.
+     * Determine if the current user does not have permission for all of the named actions in the named workspace in the given
+     * context, otherwise returns silently.
      * 
      * @param workspaceName the name of the workspace in which the path exists
      * @param path the path on which the actions are occurring
@@ -1219,20 +1251,37 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                          Path path,
                                          String... actions ) {
         assert path == null ? true : path.isAbsolute() : "The path (if provided) must be absolute";
-        final String repositoryName = this.repository.repositoryName();
         SecurityContext sec = context.getSecurityContext();
+        final boolean checkAcl = repository.repositoryCache().isAccessControlEnabled();
+
+        boolean hasPermission = true;
+
+        final String repositoryName = this.repository.repositoryName();
         if (sec instanceof AuthorizationProvider) {
             // Delegate to the security context ...
             AuthorizationProvider authorizer = (AuthorizationProvider)sec;
-            return authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
+            hasPermission = authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
+
+            if (checkAcl && hasPermission) {
+                hasPermission = acm.hasPermission(path, actions);
+            }
+
+            return hasPermission;
         }
+
         if (sec instanceof AdvancedAuthorizationProvider) {
             // Delegate to the security context ...
             AdvancedAuthorizationProvider authorizer = (AdvancedAuthorizationProvider)sec;
-            return authorizer.hasPermission(authorizerContext, path, actions);
+            hasPermission = authorizer.hasPermission(authorizerContext, path, actions);
+
+            if (checkAcl && hasPermission) {
+                hasPermission = acm.hasPermission(path, actions);
+            }
+
+            return hasPermission;
         }
+
         // It is a role-based security context, so apply role-based authorization ...
-        boolean hasPermission = true;
         for (String action : actions) {
             if (ModeShapePermissions.READ.equals(action)) {
                 hasPermission &= hasRole(sec, ModeShapeRoles.READONLY, repositoryName, workspaceName)
@@ -1250,6 +1299,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                  || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName);
             }
         }
+
+        if (checkAcl && hasPermission) {
+            hasPermission = acm.hasPermission(path, actions);
+        }
+
         return hasPermission;
     }
 
@@ -1318,6 +1372,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                           Path path,
                           String... actions ) throws AccessDeniedException {
         CheckArg.isNotEmpty(actions, "actions");
+
         if (hasPermission(workspaceName, path, actions)) return;
 
         String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
@@ -1561,8 +1616,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     @Override
-    public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+    public AccessControlManager getAccessControlManager() {
+        return acm;
     }
 
     @Override
@@ -1872,7 +1927,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         JcrVersionNode baseVersion = null;
                         for (VersionIterator versionIterator = versionHistoryNode.getAllVersions(); versionIterator.hasNext();) {
                             JcrVersionNode version = (JcrVersionNode)versionIterator.nextVersion();
-                            if (baseVersion == null || version.isSuccessorOf(baseVersion)) {
+                            if (baseVersion == null || version.isLinearSuccessorOf(baseVersion)) {
                                 baseVersion = version;
                             }
                         }
@@ -1945,7 +2000,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                 jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
                             } else {
                                 // don't skip constraint checks or protected checks
-                                jcrNode.setProperty(propName, defaultValues[0], false, false, false);
+                                jcrNode.setProperty(propName, defaultValues[0], false, false, false, false);
                             }
                         } else {
                             // There is no default for this mandatory property, so this is a constraint violation ...

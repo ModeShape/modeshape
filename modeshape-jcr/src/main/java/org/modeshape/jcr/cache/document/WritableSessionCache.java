@@ -247,7 +247,14 @@ public class WritableSessionCache extends AbstractSessionCache {
         List<SessionNode> changedNodesChildrenFirst = new ArrayList<SessionNode>();
         for (NodeKey key : changedNodes.keySet()) {
             SessionNode changedNode = changedNodes.get(key);
-            if (!changedNode.isAtOrBelow(this, nodePath)) {
+            boolean isAtOrBelow = false;
+            try {
+                isAtOrBelow = changedNode.isAtOrBelow(this, nodePath);
+            } catch (NodeNotFoundException e) {
+                isAtOrBelow = false;
+            }
+            
+            if (!isAtOrBelow) {
                 continue;
             }
 

@@ -292,6 +292,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
                 setValue(value.getString());
                 break;
             case PropertyType.REFERENCE:
+            case PropertyType.WEAKREFERENCE:
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
                 setValue(value.getString());
                 break;
             default:
@@ -299,7 +301,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         }
     }
 
-    protected void setValue( JcrValue jcrValue )
+    protected void internalSetValue( JcrValue jcrValue )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert jcrValue != null;
 
@@ -328,7 +330,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(value, PropertyType.STRING).asType(this.getType()));
+        internalSetValue(createValue(value, PropertyType.STRING).asType(this.getType()));
     }
 
     @Override
@@ -341,7 +343,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(context().getValueFactories().getBinaryFactory().create(value), PropertyType.BINARY).asType(this.getType()));
+        internalSetValue(createValue(context().getValueFactories().getBinaryFactory().create(value), PropertyType.BINARY).asType(this.getType()));
     }
 
     @Override
@@ -350,7 +352,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(value, PropertyType.LONG).asType(this.getType()));
+        internalSetValue(createValue(value, PropertyType.LONG).asType(this.getType()));
     }
 
     @Override
@@ -359,7 +361,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(value, PropertyType.DOUBLE).asType(this.getType()));
+        internalSetValue(createValue(value, PropertyType.DOUBLE).asType(this.getType()));
     }
 
     @Override
@@ -372,7 +374,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(context().getValueFactories().getDateFactory().create(value), PropertyType.DATE).asType(this.getType()));
+        internalSetValue(createValue(context().getValueFactories().getDateFactory().create(value), PropertyType.DATE).asType(this.getType()));
     }
 
     @Override
@@ -381,7 +383,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(value, PropertyType.BOOLEAN).asType(this.getType()));
+        internalSetValue(createValue(value, PropertyType.BOOLEAN).asType(this.getType()));
     }
 
     @Override
@@ -404,7 +406,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             throw new RepositoryException(JcrI18n.nodeNotInTheSameSession.text(jcrNode.path()));
         }
         JcrValue referenceValue = session().valueFactory().createValue(jcrNode);
-        setValue(referenceValue.asType(this.getType()));
+        internalSetValue(referenceValue.asType(this.getType()));
     }
 
     @Override
@@ -426,7 +428,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             // Otherwise, this isn't our instance, so copy the data ...
             binary = context().getValueFactories().getBinaryFactory().create(value.getStream());
         }
-        setValue(createValue(binary, PropertyType.BINARY).asType(this.getType()));
+        internalSetValue(createValue(binary, PropertyType.BINARY).asType(this.getType()));
     }
 
     @Override
@@ -439,7 +441,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(value, PropertyType.DECIMAL).asType(this.getType()));
+        internalSetValue(createValue(value, PropertyType.DECIMAL).asType(this.getType()));
     }
 
     @Override

@@ -38,19 +38,34 @@ public class NodeKeyReference implements Reference {
     private static final long serialVersionUID = 2299467578161645109L;
 
     private final NodeKey key;
-    private final boolean isWeak;
-    private final boolean isForeign;
+    private final boolean weak;
+    private final boolean foreign;
+    private final boolean simple;
 
-    public NodeKeyReference( NodeKey key,
-                             boolean weak,
-                             boolean isForeign ) {
-        this.key = key;
-        this.isWeak = weak;
-        this.isForeign = isForeign;
+    protected NodeKeyReference( NodeKey key,
+                                boolean weak,
+                                boolean foreign ) {
+        this(key, weak, foreign, false);
     }
 
+    protected NodeKeyReference( NodeKey key,
+                                boolean weak,
+                                boolean foreign,
+                                boolean simple ) {
+        this.key = key;
+        this.weak = weak;
+        this.foreign = foreign;
+        this.simple = simple;
+    }
+
+    @Override
     public boolean isForeign() {
-        return isForeign;
+        return foreign;
+    }
+
+    @Override
+    public boolean isSimple() {
+        return simple;
     }
 
     /**
@@ -62,18 +77,20 @@ public class NodeKeyReference implements Reference {
 
     @Override
     public String getString() {
-        return isForeign ? this.key.toString() : this.key.getIdentifier();
+        return foreign ? this.key.toString() : this.key.getIdentifier();
     }
 
     @Override
     public String getString( TextEncoder encoder ) {
-        if (encoder == null) encoder = Path.DEFAULT_ENCODER;
+        if (encoder == null) {
+            encoder = Path.DEFAULT_ENCODER;
+        }
         return encoder.encode(getString());
     }
 
     @Override
     public boolean isWeak() {
-        return isWeak;
+        return weak;
     }
 
     @Override
@@ -83,18 +100,30 @@ public class NodeKeyReference implements Reference {
 
     @Override
     public int compareTo( Reference that ) {
-        if (this == that) return 0;
+        if (this == that) {
+            return 0;
+        }
         if (this.isWeak()) {
-            if (!that.isWeak()) return -1;
+            if (!that.isWeak()) {
+                return -1;
+            }
         } else {
-            if (that.isWeak()) return 1;
+            if (that.isWeak()) {
+                return 1;
+            }
         }
         if (that instanceof NodeKeyReference) {
             NodeKeyReference thatNodeKeyReference = (NodeKeyReference)that;
-            if (this.isForeign && !thatNodeKeyReference.isForeign) {
+            if (this.foreign && !thatNodeKeyReference.foreign) {
                 return 1;
             }
-            if (!this.isForeign && thatNodeKeyReference.isForeign) {
+            if (!this.foreign && thatNodeKeyReference.foreign) {
+                return -1;
+            }
+            if (this.simple && !thatNodeKeyReference.simple) {
+                return 1;
+            }
+            if (!this.simple && thatNodeKeyReference.simple) {
                 return -1;
             }
             return this.key.compareTo(thatNodeKeyReference.getNodeKey());
@@ -104,10 +133,12 @@ public class NodeKeyReference implements Reference {
 
     @Override
     public boolean equals( Object obj ) {
-        if (obj == this) return true;
+        if (obj == this) {
+            return true;
+        }
         if (obj instanceof NodeKeyReference) {
             NodeKeyReference that = (NodeKeyReference)obj;
-            return this.isWeak() == that.isWeak() && this.key.equals(that.getNodeKey()) && isForeign == that.isForeign;
+            return this.isWeak() == that.isWeak() && this.key.equals(that.getNodeKey()) && foreign == that.foreign && simple == that.simple;
         }
         if (obj instanceof Reference) {
             Reference that = (Reference)obj;

@@ -75,6 +75,16 @@ public class UuidReference implements Reference {
     }
 
     @Override
+    public boolean isSimple() {
+        return false;
+    }
+
+    @Override
+    public boolean isForeign() {
+        return false;
+    }
+
+    @Override
     public int hashCode() {
         return uuid.hashCode();
     }

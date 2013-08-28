@@ -66,6 +66,60 @@ public interface EditableDocument extends Document {
     void putAll( Map<? extends String, ? extends Object> map );
 
     /**
+     * Merges the supplied document onto this document. This will set on this document each of the fields in the supplied
+     * document; nested documents in the supplied document will be merged recursively.
+     * <p>
+     * Consider the following example. If this document contains:
+     * 
+     * <pre>
+     * {
+     *   "firstName" : "Jane",
+     *   "lastName" : "Smith",
+     *   "address" : {
+     *     "street" : "Main Street",
+     *     "city" : "Springfield"
+     *   },
+     *   "phone" : "(800)555-1212"
+     * }
+     * </pre>
+     * 
+     * and another document 'other' contains:
+     * 
+     * <pre>
+     * {
+     *   "lastName" : "Doe",
+     *   "address" : {
+     *     "city" : "Memphis",
+     *     "zip" : 12345
+     *   },
+     *   "phone" : {
+     *     "home" : "(800)555-1212"
+     *   }
+     * }
+     * </pre>
+     * 
+     * then merging 'other' onto the first will result in the first being modified to contain:
+     * 
+     * <pre>
+     * {
+     *   "firstName" : "Jane",
+     *   "lastName" : "Doe",
+     *   "address" : {
+     *     "street" : "Main Street",
+     *     "city" : "Memphis",
+     *     "zip" : 12345
+     *   },
+     *   "phone" : {
+     *     "home" : "(800)555-1212"
+     *   }
+     * }
+     * </pre>
+     * 
+     * @param other the other document whose values should be merged
+     */
+    void merge( Document other );
+
+    /**
      * Set the value for the field with the given name to the supplied value.
      * 
      * @param name The name of the field

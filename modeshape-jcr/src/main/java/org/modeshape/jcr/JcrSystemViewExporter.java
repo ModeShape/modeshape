@@ -124,7 +124,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
         atts.addAttribute(JcrSvLexicon.NAME.getNamespaceUri(),
                           JcrSvLexicon.NAME.getLocalName(),
                           getPrefixedName(JcrSvLexicon.NAME),
-                          PropertyType.nameFromValue(PropertyType.STRING),
+                          org.modeshape.jcr.api.PropertyType.nameFromValue(PropertyType.STRING),
                           nodeName);
 
         startElement(contentHandler, JcrSvLexicon.NODE, atts);
@@ -219,7 +219,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                               JcrSvLexicon.TYPE.getLocalName(),
                               getPrefixedName(JcrSvLexicon.TYPE),
                               PropertyType.nameFromValue(PropertyType.STRING),
-                              PropertyType.nameFromValue(prop.getType()));
+                              org.modeshape.jcr.api.PropertyType.nameFromValue(prop.getType()));
 
         // and it's sv:multiple attribute
         if (prop.isMultiple()) {
@@ -374,7 +374,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                               JcrSvLexicon.TYPE.getLocalName(),
                               getPrefixedName(JcrSvLexicon.TYPE),
                               PropertyType.nameFromValue(PropertyType.STRING),
-                              PropertyType.nameFromValue(propertyType));
+                              org.modeshape.jcr.api.PropertyType.nameFromValue(propertyType));
 
         // output the sv:property element
         startElement(contentHandler, JcrSvLexicon.PROPERTY, propAtts);

@@ -24,7 +24,6 @@
 
 package org.modeshape.web.jcr.rest.model;
 
-import javax.jcr.PropertyType;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
@@ -56,7 +55,7 @@ public final class RestPropertyType implements JSONAble {
      */
     public RestPropertyType( PropertyDefinition definition ) {
         this.name = definition.getName();
-        this.requiredType = PropertyType.nameFromValue(definition.getRequiredType());
+        this.requiredType = org.modeshape.jcr.api.PropertyType.nameFromValue(definition.getRequiredType());
         NodeType declaringNodeType = definition.getDeclaringNodeType();
         this.declaringNodeTypeName = declaringNodeType == null ? null : declaringNodeType.getName();
         this.isAutoCreated = definition.isAutoCreated();

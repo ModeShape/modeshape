@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-    <version>3.4-SNAPSHOT</version>
+    <version>3.5-SNAPSHOT</version>
     <name>ModeShape Parent</name>
 
     <url>http://www.modeshape.org</url>
@@ -336,15 +336,6 @@
         <!--Versions used by the integration/kit tests an -->
         <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-4</jboss-javaee-6.0-with-tools.version>
         <jboss-as-arquillian-container-managed.version>7.2.0.Final</jboss-as-arquillian-container-managed.version>
-
-        <!--
-            RHQ
-        -->
-        <!--
-        <org.jboss.rhq.as5.version>1.2.0.GA</org.jboss.rhq.as5.version>
-        <org.rhq.version>1.3.0.GA</org.rhq.version>
-        <rhq.jboss.as5.plugin.version>1.4.0.B01</rhq.jboss.as5.plugin.version>
-        -->
 
         <!--
           Maven plugin versions

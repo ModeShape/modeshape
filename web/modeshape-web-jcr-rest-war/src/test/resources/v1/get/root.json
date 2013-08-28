@@ -39,7 +39,7 @@
             "node.type.management.multivalued.properties.supported":"true",
             "jcr.specification.name":"Content Repository for Java Technology API",
             "jcr.repository.name":"ModeShape",
-            "option.access.control.supported":"false",
+            "option.access.control.supported":"true",
             "query.languages":[
                 "xpath",
                 "JCR-SQL2",

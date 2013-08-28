@@ -426,6 +426,9 @@ public final class Connectors {
             // Set the logger instance
             ReflectionUtil.setValue(connector, "logger", Logger.getLogger(connector.getClass()));
 
+            // Set the logger instance
+            ReflectionUtil.setValue(connector, "simpleLogger", ExtensionLogger.getLogger(connector.getClass()));
+
             // We'll initialize it later in #intialize() ...
             return connector;
         } catch (Throwable t) {

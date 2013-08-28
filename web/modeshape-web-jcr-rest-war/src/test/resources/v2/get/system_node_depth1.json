@@ -1,254 +1,254 @@
 {
-    "self":"http://localhost:8090/resources/repo/default/items/jcr:system",
+    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem",
     "up":"http://localhost:8090/resources/repo/default/items/",
     "jcr:primaryType":"mode:system",
     "children":{
         "jcr:nodeTypes":{
-            "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes",
-            "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
+            "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes",
+            "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem",
             "jcr:primaryType":"mode:nodeTypes",
             "children":{
                 "nt:base":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3abase",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:unstructured":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:unstructured",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aunstructured",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:created":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:created",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3acreated",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:hierarchyNode":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:hierarchyNode",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3ahierarchyNode",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:file":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:file",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3afile",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:linkedFile":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:linkedFile",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3alinkedFile",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:folder":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:folder",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3afolder",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:referenceable":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:referenceable",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3areferenceable",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:mimeType":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:mimeType",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3amimeType",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:lastModified":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:lastModified",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3alastModified",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:resource":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:resource",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aresource",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:nodeType":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:nodeType",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3anodeType",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:propertyDefinition":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:propertyDefinition",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3apropertyDefinition",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:childNodeDefinition":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:childNodeDefinition",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3achildNodeDefinition",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:versionHistory":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:versionHistory",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aversionHistory",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:versionLabels":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:versionLabels",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aversionLabels",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:version":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:version",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aversion",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:frozenNode":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:frozenNode",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3afrozenNode",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:versionedChild":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:versionedChild",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aversionedChild",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:query":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:query",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aquery",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:activity":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:activity",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aactivity",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:simpleVersionable":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:simpleVersionable",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3asimpleVersionable",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:versionable":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:versionable",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3aversionable",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:configuration":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:configuration",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aconfiguration",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:address":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:address",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3aaddress",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "nt:naturalText":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:naturalText",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/nt%3anaturalText",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:etag":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:etag",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3aetag",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:lockable":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:lockable",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3alockable",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:lifecycle":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:lifecycle",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3alifecycle",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:managedRetention":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:managedRetention",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3amanagedRetention",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:shareable":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:shareable",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3ashareable",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:title":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:title",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3atitle",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mix:language":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mix:language",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mix%3alanguage",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:namespace":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:namespace",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3anamespace",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:namespaces":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:namespaces",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3anamespaces",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:nodeTypes":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:nodeTypes",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3anodeTypes",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:lock":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:lock",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3alock",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:locks":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:locks",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3alocks",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:versionHistoryFolder":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:versionHistoryFolder",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aversionHistoryFolder",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:versionStorage":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:versionStorage",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aversionStorage",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:system":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:system",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3asystem",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:root":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:root",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aroot",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:resource":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:resource",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aresource",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:share":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:share",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3ashare",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:hashed":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:hashed",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3ahashed",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:publishArea":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:publishArea",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3apublishArea",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
                 "mode:derived":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/mode:derived",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aderived",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 }
             }
         },
         "jcr:versionStorage":{
-            "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:versionStorage",
-            "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
+            "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3aversionStorage",
+            "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem",
             "jcr:primaryType":"mode:versionStorage"
         },
         "mode:namespaces":{
-            "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces",
-            "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
+            "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces",
+            "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem",
             "jcr:primaryType":"mode:namespaces",
             "children":{
                 "jcr":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/jcr",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/jcr",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 },
                 "nt":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/nt",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/nt",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 },
                 "mix":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/mix",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/mix",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 },
                 "sv":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/sv",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/sv",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 },
                 "mode":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/mode",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/mode",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 },
                 "xml":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/xml",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/xml",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 },
                 "xmlns":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/xmlns",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/xmlns",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 },
                 "xs":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/xs",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/xs",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 },
                 "xsi":{
-                    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/xsi",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces"
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces/xsi",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3anamespaces"
                 }
             }
         },
         "mode:locks":{
-            "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:locks",
-            "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
+            "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/mode%3alocks",
+            "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem",
             "jcr:primaryType":"mode:locks"
         }
     }

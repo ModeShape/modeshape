@@ -55,7 +55,6 @@ import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
@@ -210,7 +209,7 @@ public class CndSequencer extends Sequencer {
         propertyDefinitionNode.setProperty(PROTECTED, propertyDefinition.isProtected());
         propertyDefinitionNode.setProperty(ON_PARENT_VERSION,
                                            OnParentVersionAction.nameFromValue(propertyDefinition.getOnParentVersion()));
-        propertyDefinitionNode.setProperty(REQUIRED_TYPE, PropertyType.nameFromValue(propertyDefinition.getRequiredType())
+        propertyDefinitionNode.setProperty(REQUIRED_TYPE, org.modeshape.jcr.api.PropertyType.nameFromValue(propertyDefinition.getRequiredType())
                                                                       .toUpperCase());
         String[] availableQueryOperators = propertyDefinition.getAvailableQueryOperators();
         propertyDefinitionNode.setProperty(AVAILABLE_QUERY_OPERATORS,

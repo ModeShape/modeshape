@@ -32,35 +32,37 @@
                 }
             ],
             "subTypes":[
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:federation",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:lock",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:locks",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:namespace",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:namespaces",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:nodeTypes",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:projection",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:repository",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:resource",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:root",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:share",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:system",
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:versionHistoryFolder",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:activity",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:address",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:childNodeDefinition",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:configuration",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:frozenNode",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:hierarchyNode",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:naturalText",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:nodeType",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:propertyDefinition",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:query",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:resource",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:unstructured",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:version",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:versionHistory",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:versionLabels",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:versionedChild"
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aAcl",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aPermission",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3afederation",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3alock",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3alocks",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3anamespace",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3anamespaces",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3anodeTypes",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aprojection",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3arepository",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aresource",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aroot",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3ashare",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3asystem",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aversionHistoryFolder",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aactivity",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aaddress",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3achildNodeDefinition",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aconfiguration",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3afrozenNode",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3ahierarchyNode",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3anaturalText",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3anodeType",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3apropertyDefinition",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aquery",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aresource",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aunstructured",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aversion",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aversionHistory",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aversionLabels",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3aversionedChild"
             ]
         }
     },
@@ -97,7 +99,7 @@
                 }
             ],
             "superTypes":[
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:base"
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3abase"
             ]
         }
     },
@@ -134,8 +136,8 @@
                 }
             ],
             "subTypes":[
-                "http://localhost:8090/resources/repo/default/nodetypes/mode:repository",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt:hierarchyNode"
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3arepository",
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3ahierarchyNode"
             ]
         }
     }

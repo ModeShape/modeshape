@@ -46,7 +46,6 @@ import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
@@ -160,7 +159,9 @@ public class SequencersIntegrationTest {
 
     @Test
     public void shouldSequenceModelXMIFile() throws Exception {
-        uploadFileAndAssertSequenced("/MyBooksView.xmi", "/derived/teiid/models", "org.modeshape.sequencer.teiid.model.ModelSequencer");
+        uploadFileAndAssertSequenced("/MyBooksView.xmi",
+                                     "/derived/teiid/models",
+                                     "org.modeshape.sequencer.teiid.model.ModelSequencer");
     }
 
     private void uploadFileAndAssertSequenced( String fileName,

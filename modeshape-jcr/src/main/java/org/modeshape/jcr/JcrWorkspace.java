@@ -39,6 +39,7 @@ import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
@@ -59,7 +60,9 @@ import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.document.WritableSessionCache;
 import org.modeshape.jcr.value.InvalidPathException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -211,7 +214,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             */
             AbstractJcrNode copy = newNodeName == null ? parentNode : parentNode.addChildNode(newNodeName,
                                                                                               sourceNode.getPrimaryTypeName(),
-                                                                                              null, false);
+                                                                                              null, false, false);
             Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(),
                                                                                   sourceNode.node(),
                                                                                   sourceSession.cache(),
@@ -235,7 +238,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 if (dstNode.isNodeType(JcrMixLexicon.REFERENCEABLE) && dstNode.hasProperty(JcrLexicon.UUID)) {
                     // for referenceable nodes, update the UUID to be be same as the new identifier
                     JcrValue identifierValue = dstNode.valueFactory().createValue(dstNode.getIdentifier());
-                    dstNode.setProperty(JcrLexicon.UUID, identifierValue, true, true, false);
+                    dstNode.setProperty(JcrLexicon.UUID, identifierValue, true, true, false, false);
 
                     // if there are any incoming references within the copied subgraph, they need to point to the new nodes
                     for (PropertyIterator incomingReferencesIterator = dstNode.getAllReferences(); incomingReferencesIterator.hasNext();) {
@@ -298,6 +301,16 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                        String srcAbsPath,
                        String destAbsPath,
                        boolean removeExisting )
+        throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
+        PathNotFoundException, ItemExistsException, LockException, RepositoryException {
+        internalClone(srcWorkspace, srcAbsPath, destAbsPath, removeExisting, false);
+    }
+
+    void internalClone( String srcWorkspace,
+                        String srcAbsPath,
+                        String destAbsPath,
+                        boolean removeExisting,
+                        boolean skipVersioningValidation)
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
         PathNotFoundException, ItemExistsException, LockException, RepositoryException {
         CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
@@ -458,10 +471,10 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 }
 
                 NodeKey cloneKey = null;
-                if (!parentNode.isRoot()) {
+                if (!destPath.isRoot()) {
                     // Use the JCR add child here to perform the parent validations
                     cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
-                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, false);
+                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, skipVersioningValidation, false);
                 } else {
                     cloneKey = parentNode.key();
                 }
@@ -834,14 +847,36 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     public void deleteWorkspace( String name )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
         session.checkLive();
+        session.checkPermission(name, null, ModeShapePermissions.DELETE_WORKSPACE);
+        //start an internal remove session which needs to act as a unit for the entire operation
+        JcrSession removeSession = session.spawnSession(name, false);
+        JcrRepository repository = session.repository();
+        RepositoryCache repositoryCache = repository.repositoryCache();
+        NodeKey systemKey = repositoryCache.getSystemKey();
         try {
-            JcrRepository repository = session.repository();
-            if (!repository.repositoryCache().destroyWorkspace(name)) {
+            JcrRootNode rootNode = removeSession.getRootNode();
+
+            //first remove all the nodes via JCR, because we need validations to be performed
+            for (NodeIterator nodeIterator = rootNode.getNodes(); nodeIterator.hasNext(); ) {
+                AbstractJcrNode child = (AbstractJcrNode)nodeIterator.nextNode();
+                if (child.key().equals(systemKey)) {
+                    //we don't remove the jcr:system node here, we just unlink it via the cache
+                    continue;
+                }
+                child.remove();
+            }
+
+            //then remove the workspace itself and unlink the system content. This method will create & save the session cache
+            //therefore, we don't need to call removeSession.save() from here.
+            if (!repositoryCache.destroyWorkspace(name, (WritableSessionCache)removeSession.cache())) {
                 throw new NoSuchWorkspaceException(JcrI18n.workspaceNotFound.text(name, getName()));
             }
+
             repository.statistics().decrement(ValueMetric.WORKSPACE_COUNT);
         } catch (UnsupportedOperationException e) {
             throw new UnsupportedRepositoryOperationException(e.getMessage());
+        } finally {
+            removeSession.logout();
         }
     }
 

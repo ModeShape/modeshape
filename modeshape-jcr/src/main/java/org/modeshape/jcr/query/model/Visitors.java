@@ -1098,6 +1098,9 @@ public class Visitors {
                     case PropertyType.WEAKREFERENCE:
                         typeName = PropertyType.TYPENAME_WEAKREFERENCE;
                         break;
+                    case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                        typeName = org.modeshape.jcr.api.PropertyType.TYPENAME_SIMPLE_REFERENCE;
+                        break;
                     case PropertyType.BINARY:
                         typeName = PropertyType.TYPENAME_BINARY;
                         break;

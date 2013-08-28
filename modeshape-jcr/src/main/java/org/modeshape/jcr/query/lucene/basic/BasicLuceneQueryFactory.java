@@ -383,6 +383,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
         switch (valueType) {
             case REFERENCE:
             case WEAKREFERENCE:
+            case SIMPLEREFERENCE:
             case UUID:
             case PATH:
             case NAME:
@@ -654,7 +655,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                    Object value ) {
         String field = referenceValue.getPropertyName();
         if (field == null) {
-            if (referenceValue.includesWeakReferences()) {
+            if (referenceValue.includesWeakReferences() || referenceValue.includeSimpleReferences()) {
                 field = FieldName.ALL_REFERENCES;
             } else {
                 field = FieldName.STRONG_REFERENCES;
@@ -763,6 +764,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
             case STRING:
             case REFERENCE:
             case WEAKREFERENCE:
+            case SIMPLEREFERENCE:
             case BINARY:
                 assert false;
         }

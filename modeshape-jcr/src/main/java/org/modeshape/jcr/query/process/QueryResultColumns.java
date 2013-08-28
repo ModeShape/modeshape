@@ -533,6 +533,11 @@ public class QueryResultColumns implements Columns {
     }
 
     @Override
+    public int hashCode() {
+        return getColumns().hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
         if (obj instanceof QueryResultColumns) {

@@ -917,6 +917,12 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     }
 
     @Override
+    public int hashCode() {
+        // Quite a few methods rely upon instance/reference equality ...
+        return super.hashCode();
+    }
+
+    @Override
     public final boolean equals( Object obj ) {
         // Quite a few methods rely upon instance/reference equality ...
         return super.equals(obj);

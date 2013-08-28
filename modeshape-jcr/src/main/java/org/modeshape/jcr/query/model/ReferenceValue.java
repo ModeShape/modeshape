@@ -39,6 +39,7 @@ public class ReferenceValue implements DynamicOperand, org.modeshape.jcr.api.que
     private final String propertyName;
     private final int hc;
     private final boolean includeWeakReferences;
+    private final boolean includeSimpleReferences;
 
     /**
      * Create a dynamic operand that evaluates to all of the reference values of the node identified by the selector.
@@ -51,24 +52,29 @@ public class ReferenceValue implements DynamicOperand, org.modeshape.jcr.api.que
         this.propertyName = null;
         this.hc = HashCode.compute(selectorName, this.propertyName);
         this.includeWeakReferences = true;
+        this.includeSimpleReferences = true;
     }
 
     /**
      * Create a dynamic operand that evaluates to the values of a single reference property of the node identified by the
      * selector.
      * 
+     *
      * @param selectorName the name of the selector
      * @param propertyName the name of the property
      * @param includeWeakReferences true if weak references are to be included
+     * @param includeSimpleReferences true if simple references are to be included
      * @throws IllegalArgumentException if the selector name is null
      */
     public ReferenceValue( SelectorName selectorName,
                            String propertyName,
-                           boolean includeWeakReferences ) {
+                           boolean includeWeakReferences,
+                           boolean includeSimpleReferences ) {
         this.selectorNames = SelectorName.nameSetFrom(selectorName);
         this.propertyName = propertyName;
         this.hc = HashCode.compute(selectorName, this.propertyName);
         this.includeWeakReferences = includeWeakReferences;
+        this.includeSimpleReferences = includeSimpleReferences;
     }
 
     /**
@@ -85,6 +91,7 @@ public class ReferenceValue implements DynamicOperand, org.modeshape.jcr.api.que
         this.propertyName = propertyName;
         this.hc = HashCode.compute(selectorName, this.propertyName);
         this.includeWeakReferences = true;
+        this.includeSimpleReferences = true;
     }
 
     /**
@@ -118,6 +125,15 @@ public class ReferenceValue implements DynamicOperand, org.modeshape.jcr.api.que
      */
     public boolean includesWeakReferences() {
         return includeWeakReferences;
+    }
+
+    /**
+     * Return whether simple references should be included
+     *
+     * @return true if simple references should be included, false otherwise.
+     */
+    public boolean includeSimpleReferences() {
+        return includeSimpleReferences;
     }
 
     @Override

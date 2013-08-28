@@ -299,6 +299,7 @@ final class SequencingRunner implements Runnable {
                                  outputSession.getValueFactory().createValue(work.getUserId()),
                                  true,
                                  true,
+                                 false,
                                  false);
             }
         }

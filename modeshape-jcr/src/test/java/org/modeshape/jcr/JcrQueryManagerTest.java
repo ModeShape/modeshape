@@ -3304,6 +3304,152 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertEquals(2, queryResult.getNodes().getSize());
     }
 
+    @Test
+    @FixFor( "MODE-1969" )
+    public void shouldRetrieveStrongReferrers() throws Exception {
+        Node nodeA = session.getRootNode().addNode("A");
+        nodeA.addMixin("mix:referenceable");
+        Node nodeB = session.getRootNode().addNode("B");
+        nodeB.addMixin("mix:referenceable");
+
+        Node referrerA = session.getRootNode().addNode("referrerA");
+        referrerA.setProperty("nodeARef", nodeA);
+        Node referrerB = session.getRootNode().addNode("referrerB");
+        referrerB.setProperty("nodeBRef", nodeB);
+        List<String> referrerIds = Arrays.asList(referrerA.getIdentifier(), referrerB.getIdentifier());
+        Collections.sort(referrerIds);
+
+        session.save();
+
+        String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+
+        NodeIterator nodes = result.getNodes();
+        assertEquals(2, nodes.getSize());
+        List<String> resultIds = new ArrayList<String>();
+        while (nodes.hasNext()) {
+            resultIds.add(nodes.nextNode().getIdentifier());
+        }
+        Collections.sort(resultIds);
+
+        assertEquals(referrerIds, resultIds);
+    }
+
+    @Test
+    @FixFor( "MODE-1969" )
+    public void shouldRetrieveWeakReferrers() throws Exception {
+        Node nodeA = session.getRootNode().addNode("A");
+        nodeA.addMixin("mix:referenceable");
+        Node nodeB = session.getRootNode().addNode("B");
+        nodeB.addMixin("mix:referenceable");
+
+        Node referrerA = session.getRootNode().addNode("referrerA");
+        referrerA.setProperty("nodeAWRef", session.getValueFactory().createValue(nodeA, true));
+        Node referrerB = session.getRootNode().addNode("referrerB");
+        referrerB.setProperty("nodeBWRef", session.getValueFactory().createValue(nodeB, true));
+        List<String> referrerIds = Arrays.asList(referrerA.getIdentifier(), referrerB.getIdentifier());
+        Collections.sort(referrerIds);
+
+        session.save();
+
+        String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+
+        NodeIterator nodes = result.getNodes();
+        assertEquals(2, nodes.getSize());
+        List<String> resultIds = new ArrayList<String>();
+        while (nodes.hasNext()) {
+            resultIds.add(nodes.nextNode().getIdentifier());
+        }
+        Collections.sort(resultIds);
+
+        assertEquals(referrerIds, resultIds);
+    }
+
+    @Test
+    @FixFor( "MODE-1969" )
+    public void shouldRetrieveSimpleReferrers() throws Exception {
+        Node nodeA = session.getRootNode().addNode("A");
+        nodeA.addMixin("mix:referenceable");
+        Node nodeB = session.getRootNode().addNode("B");
+        nodeB.addMixin("mix:referenceable");
+
+        Node referrerA = session.getRootNode().addNode("referrerA");
+        referrerA.setProperty("nodeASRef", session.getValueFactory().createSimpleReference(nodeA));
+        Node referrerB = session.getRootNode().addNode("referrerB");
+        referrerB.setProperty("nodeBSRef", session.getValueFactory().createSimpleReference(nodeB));
+        List<String> referrerIds = Arrays.asList(referrerA.getIdentifier(), referrerB.getIdentifier());
+        Collections.sort(referrerIds);
+
+        session.save();
+
+        String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+
+        NodeIterator nodes = result.getNodes();
+        assertEquals(2, nodes.getSize());
+        List<String> resultIds = new ArrayList<String>();
+        while (nodes.hasNext()) {
+            resultIds.add(nodes.nextNode().getIdentifier());
+        }
+        Collections.sort(resultIds);
+
+        assertEquals(referrerIds, resultIds);
+    }
+
+    @Test
+    @FixFor( "MODE-1969" )
+    public void shouldRetrieveStrongWeakSimpleReferrers() throws Exception {
+        Node nodeA = session.getRootNode().addNode("A");
+        nodeA.addMixin("mix:referenceable");
+        Node nodeB = session.getRootNode().addNode("B");
+        nodeB.addMixin("mix:referenceable");
+
+        Node referrerA = session.getRootNode().addNode("referrerA");
+        referrerA.setProperty("nodeARef", nodeA);
+        Node referrerB = session.getRootNode().addNode("referrerB");
+        referrerB.setProperty("nodeBWRef", session.getValueFactory().createValue(nodeB, true));
+        Node referrerC = session.getRootNode().addNode("referrerC");
+        referrerC.setProperty("nodeCSRef", session.getValueFactory().createSimpleReference(nodeB));
+        List<String> referrerIds = Arrays.asList(referrerA.getIdentifier(), referrerB.getIdentifier(), referrerC.getIdentifier());
+        Collections.sort(referrerIds);
+
+        session.save();
+
+        String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+
+        NodeIterator nodes = result.getNodes();
+        assertEquals(3, nodes.getSize());
+        List<String> resultIds = new ArrayList<String>();
+        while (nodes.hasNext()) {
+            resultIds.add(nodes.nextNode().getIdentifier());
+        }
+        Collections.sort(resultIds);
+
+        assertEquals(referrerIds, resultIds);
+    }
+
+    private String idList(Node...nodes) throws RepositoryException {
+        StringBuilder builder = new StringBuilder("(");
+        for (int i = 0; i < nodes.length - 1; i++) {
+            builder.append("'").append(nodes[i].getIdentifier()).append("'").append(",");
+        }
+        if (nodes.length > 0) {
+            builder.append("'").append(nodes[nodes.length - 1].getIdentifier()).append("'");
+        }
+        builder.append(")");
+        return builder.toString();
+    }
+
     private void assertNodesAreFound( String queryString,
                                       String queryType,
                                       String... expectedNodesPaths ) throws RepositoryException {

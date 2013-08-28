@@ -609,7 +609,7 @@ class JcrContentHandler extends DefaultHandler {
                     if (JcrLexicon.UUID.equals(name)) return;
 
                     // The node was already created, so set the property using the editor ...
-                    node.setProperty(name, (JcrValue)valueFor(value, propertyType), true, true, true);
+                    node.setProperty(name, (JcrValue)valueFor(value, propertyType), true, true, true, false);
                 } else {
                     // The node hasn't been created yet, so just enqueue the property value into the map ...
                     List<Value> values = properties.get(name);
@@ -626,7 +626,8 @@ class JcrContentHandler extends DefaultHandler {
                             // Strings and binaries can be empty -- other data types cannot
                             values.add(valueFor(value, propertyType));
                         } else if (value != null
-                                   && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE)) {
+                                   && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE
+                        || propertyType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE)) {
                             try {
                                 boolean isSystemReference = name.getNamespaceUri().equals(JcrLexicon.Namespace.URI)
                                                             || name.getNamespaceUri()
@@ -763,7 +764,7 @@ class JcrContentHandler extends DefaultHandler {
                     }
 
                     // Otherwise, it's just a regular node...
-                    child = parent.addChildNode(nodeName, primaryTypeName, key, true);
+                    child = parent.addChildNode(nodeName, primaryTypeName, key, true, false);
                 } else {
                     child = existingNode;
                 }
@@ -807,13 +808,15 @@ class JcrContentHandler extends DefaultHandler {
 
                     if (values.size() == 1 && !this.multiValuedPropertyNames.contains(propertyName)) {
                         // Don't check references or the protected status ...
-                        prop = child.setProperty(propertyName, (JcrValue)values.get(0), true, true, true);
+                        prop = child.setProperty(propertyName, (JcrValue)values.get(0), true, true, true, false);
                     } else {
                         prop = child.setProperty(propertyName,
                                                  values.toArray(new JcrValue[values.size()]),
                                                  PropertyType.UNDEFINED,
                                                  true,
-                                                 true);
+                                                 true,
+                                                 false,
+                                                 false);
                     }
 
                     if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0
@@ -970,7 +973,7 @@ class JcrContentHandler extends DefaultHandler {
                 current = nodeHandlerFactory.createFor(nameFor(nodeName), current, uuidBehavior);
             } else if ("property".equals(localName)) {
                 currentPropertyName = atts.getValue(SYSTEM_VIEW_NAME_DECODER.decode(svNameName));
-                currentPropertyType = PropertyType.valueFromName(atts.getValue(svTypeName));
+                currentPropertyType = org.modeshape.jcr.api.PropertyType.valueFromName(atts.getValue(svTypeName));
 
                 String svMultiple = atts.getValue(svMultipleName);
                 currentPropertyIsMultiValued = Boolean.TRUE.equals(Boolean.valueOf(svMultiple));

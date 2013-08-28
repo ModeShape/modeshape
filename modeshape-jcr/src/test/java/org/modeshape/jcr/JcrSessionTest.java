@@ -1179,7 +1179,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         QueryResult queryResult = tools.printQuery(session, "select n from [nt:unstructured] as n where localname(n)='"
                                                             + localNodeName + "'");
         NodeIterator nodeIterator = queryResult.getNodes();
-        assertEquals(1, nodeIterator.getSize());
+        assertTrue(nodeIterator.hasNext());
         Node node = nodeIterator.nextNode();
         assertEquals(localNodeName, node.getName());
         assertEquals(expectedPath, node.getPath());

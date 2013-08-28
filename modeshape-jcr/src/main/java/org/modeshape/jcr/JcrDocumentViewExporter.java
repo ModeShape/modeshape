@@ -23,6 +23,13 @@
  */
 package org.modeshape.jcr;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -42,13 +49,6 @@ import org.modeshape.jcr.value.ValueFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.text.CharacterIterator;
-import java.text.StringCharacterIterator;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Implementation of {@link AbstractJcrExporter} that implements the document view mapping described in section 6.4.2 of the JCR
@@ -164,7 +164,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         atts.addAttribute(propertyName.getNamespaceUri(),
                           propertyName.getLocalName(),
                           localPropName,
-                          PropertyType.nameFromValue(propertyType),
+                          org.modeshape.jcr.api.PropertyType.nameFromValue(propertyType),
                           valueAsString);
 
     }
@@ -183,7 +183,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             atts.addAttribute(propName.getNamespaceUri(),
                               propName.getLocalName(),
                               localPropName,
-                              PropertyType.nameFromValue(prop.getType()),
+                              org.modeshape.jcr.api.PropertyType.nameFromValue(prop.getType()),
                               "");
             return;
         }
@@ -215,7 +215,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         atts.addAttribute(propName.getNamespaceUri(),
                           propName.getLocalName(),
                           localPropName,
-                          PropertyType.nameFromValue(prop.getType()),
+                          org.modeshape.jcr.api.PropertyType.nameFromValue(prop.getType()),
                           valueAsString);
     }
 

@@ -28,6 +28,7 @@ import com.googlecode.sardine.Sardine;
 import com.googlecode.sardine.SardineFactory;
 import com.googlecode.sardine.util.SardineException;
 import org.jboss.arquillian.junit.Arquillian;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.modeshape.web.jcr.webdav.ModeShapeWebdavStoreClientTest;
 
@@ -53,5 +54,10 @@ public class ModeShapeWebdavStoreIntegrationTest extends ModeShapeWebdavStoreCli
     @Override
     protected String getRepositoryName() {
         return "sample";
+    }
+
+    @Override
+    @Ignore ("Doesn't apply to the EAP kit")
+    public void shouldIgnoreMultiValuedProperties() throws Exception {
     }
 }

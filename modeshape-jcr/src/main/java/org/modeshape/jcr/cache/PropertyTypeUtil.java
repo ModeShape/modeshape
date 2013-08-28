@@ -89,6 +89,8 @@ public class PropertyTypeUtil {
                 return org.modeshape.jcr.value.PropertyType.URI;
             case PropertyType.WEAKREFERENCE:
                 return org.modeshape.jcr.value.PropertyType.WEAKREFERENCE;
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                return org.modeshape.jcr.value.PropertyType.SIMPLEREFERENCE;
             case PropertyType.UNDEFINED:
                 return org.modeshape.jcr.value.PropertyType.OBJECT;
             default:
@@ -134,6 +136,9 @@ public class PropertyTypeUtil {
                 return PropertyType.REFERENCE;
             case WEAKREFERENCE:
                 return PropertyType.WEAKREFERENCE;
+            case SIMPLEREFERENCE: {
+                return org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE;
+            }
         }
         assert false;
         return PropertyType.UNDEFINED;

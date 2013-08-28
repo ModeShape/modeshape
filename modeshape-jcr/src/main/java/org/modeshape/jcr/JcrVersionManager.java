@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1002,34 +1002,25 @@ final class JcrVersionManager implements VersionManager {
         AbstractJcrProperty prop = targetNode.getProperty(JcrLexicon.MERGE_FAILED);
         Value[] values = prop.getValues();
 
+        List<Value> newValues = new ArrayList<Value>();
         String uuidString = version.getUUID();
         int matchIndex = -1;
         for (int i = 0; i < values.length; i++) {
             if (uuidString.equals(values[i].getString())) {
                 matchIndex = i;
-                break;
+            } else {
+                newValues.add(values[i]);
             }
         }
 
         if (matchIndex == -1) {
             throw new VersionException(JcrI18n.versionNotInMergeFailed.text(version.getName(), targetNode.getPath()));
         }
-
-        if (values.length == 1) {
-            prop.remove();
+        if (newValues.isEmpty()) {
+            // remove the property without looking at the node's "checked out" status
+            targetNode.removeProperty(prop);
         } else {
-            Value[] newValues = new JcrValue[values.length - 2];
-
-            if (matchIndex == 0) {
-                System.arraycopy(values, 1, newValues, 0, values.length - 1);
-            } else if (matchIndex == values.length - 1) {
-                System.arraycopy(values, 0, newValues, 0, values.length - 2);
-            } else {
-                System.arraycopy(values, 0, newValues, 0, matchIndex);
-                System.arraycopy(values, matchIndex + 1, newValues, matchIndex, values.length - matchIndex - 1);
-            }
-
-            prop.setValue(newValues);
+            ((JcrMultiValueProperty)prop).internalSetValue(newValues.toArray(new Value[newValues.size()]));
         }
 
     }
@@ -1620,8 +1611,9 @@ final class JcrVersionManager implements VersionManager {
             Collections.sort(versionDates);
 
             for (int i = versionDates.size() - 1; i >= 0; i--) {
-                if (versionDates.get(i).isBefore(checkinTime)) {
-                    Version version = versions.get(versionDates.get(i));
+                DateTime versionDate = versionDates.get(i);
+                if (versionDate.isBefore(checkinTime)) {
+                    Version version = versions.get(versionDate);
                     return ((JcrVersionNode)version).getFrozenNode();
                 }
             }
@@ -1638,7 +1630,7 @@ final class JcrVersionManager implements VersionManager {
         private final boolean isShallow;
         private final JcrSession sourceSession;
         private final SessionCache cache;
-        private final String workspaceName;
+        private final String sourceWorkspaceName;
 
         public MergeCommand( AbstractJcrNode targetNode,
                              JcrSession sourceSession,
@@ -1650,7 +1642,7 @@ final class JcrVersionManager implements VersionManager {
             this.bestEffort = bestEffort;
             this.isShallow = isShallow;
 
-            this.workspaceName = sourceSession.getWorkspace().getName();
+            this.sourceWorkspaceName = sourceSession.getWorkspace().getName();
             this.failures = new LinkedList<AbstractJcrNode>();
         }
 
@@ -1677,7 +1669,7 @@ final class JcrVersionManager implements VersionManager {
         private void doMerge( AbstractJcrNode targetNode ) throws RepositoryException {
             // n is targetNode
             // n' is sourceNode
-            Path sourcePath = targetNode.correspondingNodePath(workspaceName);
+            Path sourcePath = targetNode.correspondingNodePath(sourceWorkspaceName);
 
             AbstractJcrNode sourceNode;
             try {
@@ -1698,7 +1690,7 @@ final class JcrVersionManager implements VersionManager {
             JcrVersionNode sourceVersion = sourceNode.getBaseVersion();
             JcrVersionNode targetVersion = targetNode.getBaseVersion();
 
-            if (sourceVersion.isSuccessorOf(targetVersion) && !targetNode.isCheckedOut()) {
+            if (sourceVersion.isEventualSuccessorOf(targetVersion) && !targetNode.isCheckedOut()) {
                 doUpdate(targetNode, sourceNode);
                 return;
             }
@@ -1708,7 +1700,7 @@ final class JcrVersionManager implements VersionManager {
                 return;
             }
 
-            if (targetVersion.isSuccessorOf(sourceVersion)) {
+            if (targetVersion.isEventualSuccessorOf(sourceVersion)) {
                 doLeave(targetNode);
                 return;
             }
@@ -1733,7 +1725,7 @@ final class JcrVersionManager implements VersionManager {
         let S be the set of child nodes of n. 
         let S' be the set of child nodes of n'. 
 
-        judging by the name of the child node:
+        judging by node correspondence rules for each child node:
         let C be the set of nodes in S and in S' 
         let D be the set of nodes in S but not in S'. 
         let D' be the set of nodes in S' but not in S.
@@ -1746,43 +1738,46 @@ final class JcrVersionManager implements VersionManager {
                                AbstractJcrNode sourceNode ) throws RepositoryException {
             restoreProperties(sourceNode, targetNode);
 
-            LinkedHashMap<String, AbstractJcrNode> sourceNodes = childNodeMapFor(sourceNode);
-            LinkedHashMap<String, AbstractJcrNode> targetNodes = childNodeMapFor(targetNode);
+            Set<AbstractJcrNode> sourceOnly = new LinkedHashSet<AbstractJcrNode>();
+            Set<AbstractJcrNode> targetOnly = new LinkedHashSet<AbstractJcrNode>();
+            Set<AbstractJcrNode> targetNodesPresentInBoth = new LinkedHashSet<AbstractJcrNode>();
+            Set<AbstractJcrNode> sourceNodesPresentInBoth = new LinkedHashSet<AbstractJcrNode>();
 
-            // D' set in algorithm above
-            Map<String, AbstractJcrNode> sourceOnly = new LinkedHashMap<String, AbstractJcrNode>(sourceNodes);
-            sourceOnly.keySet().removeAll(targetNodes.keySet());
-
-            for (AbstractJcrNode node : sourceOnly.values()) {
-                workspace().copy(workspaceName, node.getPath(), targetNode.getPath() + "/" + node.getName());
+            for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
+                AbstractJcrNode targetChild = (AbstractJcrNode) iter.nextNode();
+                try {
+                    Path srcPath = targetChild.correspondingNodePath(sourceWorkspaceName);
+                    AbstractJcrNode sourceChild = sourceSession.node(srcPath);
+                    targetNodesPresentInBoth.add(targetChild);
+                    sourceNodesPresentInBoth.add(sourceChild);
+                } catch (ItemNotFoundException infe) {
+                    targetOnly.add(targetChild);
+                } catch (PathNotFoundException pnfe) {
+                    targetOnly.add(targetChild);
+                }
+            }
+            for (NodeIterator iter = sourceNode.getNodes(); iter.hasNext();) {
+                AbstractJcrNode sourceChild = (AbstractJcrNode) iter.nextNode();
+                if (!sourceNodesPresentInBoth.contains(sourceChild)) {
+                    sourceOnly.add(sourceChild);
+                }
             }
 
             // D set in algorithm above
-            LinkedHashMap<String, AbstractJcrNode> targetOnly = new LinkedHashMap<String, AbstractJcrNode>(targetNodes);
-            targetOnly.keySet().removeAll(targetOnly.keySet());
+            for (AbstractJcrNode node : targetOnly) {
+                node.internalRemove(true);
+            }
 
-            for (AbstractJcrNode node : targetOnly.values()) {
-                node.remove();
+            // D' set in algorithm above
+            for (AbstractJcrNode node : sourceOnly) {
+                workspace().internalClone(sourceWorkspaceName, node.getPath(), targetNode.getPath() + "/" + node.getName(), false, true);
             }
 
             // C set in algorithm above
-            Map<String, AbstractJcrNode> presentInBoth = new HashMap<String, AbstractJcrNode>(targetNodes);
-            presentInBoth.keySet().retainAll(sourceNodes.keySet());
-            for (AbstractJcrNode node : presentInBoth.values()) {
+            for (AbstractJcrNode node : targetNodesPresentInBoth) {
                 if (isShallow && node.isNodeType(JcrMixLexicon.VERSIONABLE)) continue;
                 doMerge(node);
             }
-        }
-
-        private LinkedHashMap<String, AbstractJcrNode> childNodeMapFor( AbstractJcrNode node ) throws RepositoryException {
-            LinkedHashMap<String, AbstractJcrNode> childNodes = new LinkedHashMap<String, AbstractJcrNode>();
-
-            for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
-                AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
-                childNodes.put(child.getName(), child);
-            }
-
-            return childNodes;
         }
 
         /*
@@ -1816,12 +1811,12 @@ final class JcrVersionManager implements VersionManager {
                     JcrValue[] newValues = new JcrValue[existingValues.length + 1];
                     System.arraycopy(existingValues, 0, newValues, 0, existingValues.length);
                     newValues[newValues.length - 1] = targetNode.valueFrom(sourceVersion);
-                    targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false);
+                    targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false, false, true);
                 }
 
             } else {
                 JcrValue[] newValues = new JcrValue[] {targetNode.valueFrom(sourceVersion)};
-                targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false);
+                targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false, false, true);
             }
             failures.add(targetNode);
 

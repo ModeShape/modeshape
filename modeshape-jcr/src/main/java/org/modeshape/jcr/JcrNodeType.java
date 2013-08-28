@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
@@ -561,12 +560,12 @@ class JcrNodeType implements NodeType, Namespaced {
     }
 
     @Override
-    public String getLocalName() throws RepositoryException {
+    public String getLocalName() {
         return name.getLocalName();
     }
 
     @Override
-    public String getNamespaceURI() throws RepositoryException {
+    public String getNamespaceURI() {
         return name.getNamespaceUri();
     }
 

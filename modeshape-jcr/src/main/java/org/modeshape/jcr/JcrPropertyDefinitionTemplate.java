@@ -98,7 +98,7 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
                || requiredType == PropertyType.LONG || requiredType == PropertyType.NAME || requiredType == PropertyType.PATH
                || requiredType == PropertyType.REFERENCE || requiredType == PropertyType.WEAKREFERENCE
                || requiredType == PropertyType.URI || requiredType == PropertyType.STRING
-               || requiredType == PropertyType.UNDEFINED;
+               || requiredType == PropertyType.UNDEFINED || requiredType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE;
         this.requiredType = requiredType;
     }
 
