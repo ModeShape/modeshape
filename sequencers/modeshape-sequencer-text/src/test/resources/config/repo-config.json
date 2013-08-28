@@ -1,7 +1,6 @@
 {
     "name" : "Text Sequencers Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "Delimited text sequencer" : {
                 "classname" : "delimitedtext",

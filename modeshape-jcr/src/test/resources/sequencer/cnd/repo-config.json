@@ -1,7 +1,6 @@
 {
     "name" : "CNDSequencer Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "CND Sequencer Same Location" : {
                 "classname" : "CNDSequencer",
