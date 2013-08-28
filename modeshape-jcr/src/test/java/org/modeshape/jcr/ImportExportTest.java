@@ -47,6 +47,7 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.Workspace;
 import javax.jcr.nodetype.ConstraintViolationException;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -922,8 +923,10 @@ public class ImportExportTest extends SingleUseAbstractTest {
         // Register the node types ...
         tools.registerNodeTypes(session, "cnd/magnolia.cnd");
         // Now import the file ...
-        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs expected
-        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs expected
+        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs
+                                                                                                              // expected
+        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs
+                                                                                                              // expected
     }
 
     @Test
@@ -959,6 +962,109 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertNoNode("/a/b/Cars/Hybrid[2]");
         assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
         assertNoNode("/a/b/Cars/Sports[2]");
+    }
+
+    @Test
+    public void shouldBeAbleToImportAndCloneWorkspaces() throws Exception {
+        String root = "/brix:root";
+
+        /**
+         * setup
+         */
+        String workspaceA = "workspace_a";
+        String workspaceB = "workspace_b";
+        String workspaceC = "workspace_c";
+
+        Workspace wsA, wsB, wsC;
+        JcrSession sessA, sessB, sessC;
+
+        JcrWorkspace rootWS = session.getWorkspace();
+        rootWS.createWorkspace(workspaceA);
+        sessA = repository.login(workspaceA);
+
+        rootWS.createWorkspace(workspaceB);
+        sessB = repository.login(workspaceB);
+
+        rootWS.createWorkspace(workspaceC);
+        sessC = repository.login(workspaceC);
+
+        wsA = sessA.getWorkspace();
+        wsB = sessB.getWorkspace();
+        wsC = sessC.getWorkspace();
+
+        /**
+         * namespace registering
+         */
+        wsA.getNamespaceRegistry().registerNamespace("brix", "http://brix-cms.googlecode.com");
+        wsB.getNamespaceRegistry().registerNamespace("brix", "http://brix-cms.googlecode.com");
+        wsC.getNamespaceRegistry().registerNamespace("brix", "http://brix-cms.googlecode.com");
+
+        /**
+         * initial imports
+         */
+        tools.registerNodeTypes(sessA, "cnd/brix.cnd");
+        sessA.save();
+        InputStream brixWorkspace = resourceStream("io/brixWorkspace.xml");
+        sessA.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+        sessA.save();
+
+        tools.registerNodeTypes(sessB, "cnd/brix.cnd");
+        sessB.save();
+
+        brixWorkspace = resourceStream("io/brixWorkspace.xml");
+        sessB.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+        sessB.save();
+
+        tools.registerNodeTypes(sessC, "cnd/brix.cnd");
+        sessC.save();
+
+        brixWorkspace = resourceStream("io/brixWorkspace.xml");
+        sessC.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+        sessC.save();
+
+        /**
+         * we re-import something.....
+         */
+        print = true;
+        if (print) {
+            new JcrTools().printSubgraph(sessA.getNode(root));
+        }
+        sessA.getItem(root).remove();
+        sessA.save();
+
+        brixWorkspace = resourceStream("io/brixWorkspace.xml");
+        sessA.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+        sessA.save();
+        /**
+         * now we clone the workspace A over the other ones at the path of root...
+         */
+
+        wsB.getSession().removeItem(root);
+        wsB.getSession().save();
+        wsB.clone(workspaceA, root, root, true); // This is what causes references in wsB to point to nodes in workspaceA
+        wsB.getSession().save();
+
+        wsC.getSession().removeItem(root);
+        wsC.getSession().save();
+        // wsC.clone(workspaceB, root, root, true);
+        wsC.getSession().save();
+
+        /**
+         * and here we want to reimport it again...
+         */
+        sessA.getItem(root).remove();
+        sessA.save();
+
+        brixWorkspace = resourceStream("io/brixWorkspace.xml");
+        /**
+         * BOOM: now it throws an: org.modeshape.jcr.cache.ReferentialIntegrityException !!! defenitely a bug!
+         */
+        sessA.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+        sessA.save();
+
+        sessA.logout();
+        sessB.logout();
+        sessC.logout();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
