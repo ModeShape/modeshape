@@ -118,6 +118,14 @@ public interface Property extends Iterable<Object>, Comparable<Property>, Readab
     boolean isReference();
 
     /**
+     * Determine whether this property contains simple reference values, based upon the first value in the property.
+     * @see {@link PropertyType#SIMPLEREFERENCE}.
+     *
+     * @return true if this property is a simple reference property, or false otherwise.
+     */
+    boolean isSimpleReference();
+
+    /**
      * Obtain the property's first value in its natural form. This is equivalent to calling
      * <code>isEmpty() ? null : iterator().next()</code>
      * 

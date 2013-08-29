@@ -77,6 +77,12 @@ public class BasicSingleValueProperty extends BasicProperty {
     }
 
     @Override
+    public boolean isSimpleReference() {
+        Object firstValue = getFirstValue();
+        return firstValue instanceof  Reference && ((Reference) firstValue).isSimple();
+    }
+
+    @Override
     public int size() {
         return 1;
     }
