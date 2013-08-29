@@ -44,13 +44,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.jcr.RepositoryException;
 import org.infinispan.util.concurrent.ConcurrentHashSet;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Connectors;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
+import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -63,6 +66,7 @@ import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -72,6 +76,7 @@ import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
 import org.modeshape.jcr.value.basic.UuidReference;
@@ -2211,9 +2216,11 @@ public class SessionNode implements MutableCachedNode {
         protected final String targetWorkspaceKey;
         protected final Map<NodeKey, NodeKey> linkedPlaceholdersToOriginal = new HashMap<NodeKey, NodeKey>();
         protected final Map<NodeKey, NodeKey> sourceToTargetKeys = new HashMap<NodeKey, NodeKey>();
+        protected final Map<NodeKey, Set<Property>> sourceKeyToReferenceProperties = new HashMap<NodeKey, Set<Property>>();
         protected final DocumentStore documentStore;
         protected final String systemWorkspaceKey;
         protected final Connectors connectors;
+        protected final ValueFactories valueFactories;
 
         protected DeepCopy( SessionNode targetNode,
                             WritableSessionCache cache,
@@ -2231,6 +2238,7 @@ public class SessionNode implements MutableCachedNode {
             this.documentStore = ((WorkspaceCache)sourceCache.getWorkspace()).documentStore();
             this.systemWorkspaceKey = systemWorkspaceKey;
             this.connectors = connectors;
+            this.valueFactories = this.targetCache.context().getValueFactories();
         }
 
         public Map<NodeKey, NodeKey> getSourceToTargetKeys() {
@@ -2240,6 +2248,7 @@ public class SessionNode implements MutableCachedNode {
         public void execute() {
             doPhase1(this.targetNode, this.sourceNode);
             doPhase2();
+            resolveReferences();
         }
 
         /**
@@ -2383,9 +2392,116 @@ public class SessionNode implements MutableCachedNode {
             }
         }
 
+        /**
+         * After the entire graph of nodes has been copied, look at each of the target nodes for reference properties pointing
+         * towards nodes in the source graph that now have equivalent nodes in the target graph.
+         *
+         * If that is the case, update those reference properties.
+         */
+        protected void resolveReferences() {
+            for (Map.Entry<NodeKey, NodeKey> entry : sourceToTargetKeys.entrySet()) {
+                NodeKey sourceKey = entry.getKey();
+                NodeKey targetKey = entry.getValue();
+
+                Set<Property> referenceProperties = sourceKeyToReferenceProperties.get(sourceKey);
+                if (referenceProperties == null) {
+                    continue;
+                }
+                MutableCachedNode targetNode = targetCache.mutable(targetKey);
+                for (Property property : referenceProperties) {
+                    List<Reference> resolvedReferences = new ArrayList<Reference>();
+                    for (Iterator<?> valuesIterator = property.getValues(); valuesIterator.hasNext(); ) {
+                        Reference reference = (Reference)valuesIterator.next();
+                        resolvedReferences.add(resolveReference(sourceKey, targetKey, property.getName(), reference));
+                    }
+                    Property updatedProperty = property.isMultiple() ?
+                                               propertyFactory.create(property.getName(), resolvedReferences) :
+                                               propertyFactory.create(property.getName(), resolvedReferences.get(0));
+                    targetNode.setProperty(targetCache, updatedProperty);
+                }
+            }
+        }
+
+        private Reference resolveReference( NodeKey sourceNodeKey,
+                                            NodeKey targetNodeKey,
+                                            Name propertyName,
+                                            Reference referenceInSource ) {
+            //try to resolve the reference into a node key that can be located in the source cache
+            String referenceStringValue = referenceInSource.getString();
+            NodeKey referenceInSourceKey = null;
+            if (referenceInSource instanceof NodeKeyReference) {
+                referenceInSourceKey = ((NodeKeyReference) referenceInSource).getNodeKey();
+            } else if (NodeKey.isValidFormat(referenceStringValue)) {
+                referenceInSourceKey = new NodeKey(referenceStringValue);
+            } else {
+                //the reference value can't be resolved into a node key directly, so try using the owning node's key
+                //to construct a reference
+                referenceInSourceKey = sourceNodeKey.withId(referenceStringValue);
+            }
+
+            if (referenceInSourceKey.getWorkspaceKey().equals(systemWorkspaceKey)) {
+                //in the case of the system workspace, we should preserve references as-is
+                return referenceInSource;
+            }
+
+            //we have a node key for the reference in the source so try to resolve it in the target
+            NodeKey referenceInTargetKey = sourceToTargetKeys.get(referenceInSourceKey);
+            if (referenceInTargetKey == null) {
+                //the source of this reference does not have a corresponding target in the copy/clone graph
+
+                //try to resolve the reference in the whole target (including outside the copy/clone graph)
+                referenceInTargetKey = referenceInSourceKey.withWorkspaceKey(targetNodeKey.getWorkspaceKey());
+                boolean resolvableInTargetWorkspace = targetCache.getNode(referenceInTargetKey) != null;
+                boolean resolvableInSourceWorkspace = sourceCache.getNode(referenceInSourceKey) != null;
+                if (!resolvableInTargetWorkspace && resolvableInSourceWorkspace) {
+                    //it's not resolvable in the target but it's resolvable in the source, so the clone/copy graph is not reference-isolated
+                    throw new WrappedException(new RepositoryException(JcrI18n.cannotCopyOrCloneReferenceOutsideGraph.text(
+                            propertyName, referenceInSourceKey, startingPathInSource)));
+                } else if (!resolvableInSourceWorkspace && !referenceInSource.isWeak() && !referenceInSource.isSimple()) {
+                    //it's a non resolvable strong reference, meaning it's corrupt
+                    throw new WrappedException(new RepositoryException(JcrI18n.cannotCopyOrCloneCorruptReference.text(
+                            propertyName, referenceInSourceKey)));
+                }
+            }
+            //there is a corresponding target node either in or outside the clone/copy graph or an invalid reference in the source
+            if (referenceInSource.isSimple()) {
+                return valueFactories.getSimpleReferenceFactory().create(referenceInTargetKey, referenceInSource.isForeign());
+            } else if (referenceInSource.isWeak()) {
+                return valueFactories.getWeakReferenceFactory().create(referenceInTargetKey, referenceInSource.isForeign());
+            } else {
+                return valueFactories.getReferenceFactory().create(referenceInTargetKey, referenceInSource.isForeign());
+            }
+        }
+
         protected void copyProperties( MutableCachedNode targetNode,
                                        CachedNode sourceNode ) {
-            targetNode.setProperties(targetCache, sourceNode.getProperties(sourceCache));
+            NodeKey sourceNodeKey = sourceNode.getKey();
+            for (Iterator<Property> propertyIterator = sourceNode.getProperties(sourceCache); propertyIterator.hasNext();) {
+                Property property = propertyIterator.next();
+                if (property.isReference() || property.isSimpleReference()) {
+                    //reference properties are not copied directly because that would cause incorrect back-pointers
+                    //they are processed at the end of the clone/copy operation.
+                    Set<Property> referenceProperties = sourceKeyToReferenceProperties.get(sourceNodeKey);
+                    if (referenceProperties == null) {
+                        referenceProperties = new HashSet<Property>();
+                        sourceKeyToReferenceProperties.put(sourceNodeKey, referenceProperties);
+                    }
+                    referenceProperties.add(property);
+                } else if (property.getName().equals(JcrLexicon.UUID)) {
+                    //UUIDs need to be handled differently
+                    copyUUIDProperty(property, targetNode, sourceNode);
+                } else {
+                    //it's a regular property, so copy as-is
+                    targetNode.setProperty(targetCache, property);
+                }
+            }
+        }
+
+        protected void copyUUIDProperty( Property sourceProperty,
+                                         MutableCachedNode targetNode,
+                                         CachedNode sourceNode ) {
+            String targetUUID = JcrSession.nodeIdentifier(targetNode.getKey(), targetCache.getRootKey());
+            targetNode.setProperty(targetCache, propertyFactory.create(sourceProperty.getName(), targetUUID));
         }
 
         @Override
@@ -2426,6 +2542,13 @@ public class SessionNode implements MutableCachedNode {
 
             // Then perform the normal copyProperties step ...
             super.copyProperties(targetNode, sourceNode);
+        }
+
+        @Override
+        protected void copyUUIDProperty( Property sourceProperty,
+                                         MutableCachedNode targetNode,
+                                         CachedNode sourceNode ) {
+            targetNode.setProperty(targetCache, sourceProperty);
         }
 
         @Override

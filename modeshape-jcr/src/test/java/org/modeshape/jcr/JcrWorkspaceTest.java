@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import static com.mongodb.util.MyAsserts.assertNotEquals;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -50,6 +51,7 @@ import javax.jcr.query.QueryManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
@@ -320,6 +322,106 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         testWsSession.logout();
     }
 
+    @Test
+    @FixFor( "MODE-2012" )
+    public void clonedReferencesShouldPointToTargetWorkspace() throws Exception {
+        tools.registerNodeTypes(session, "cnd/references.cnd");
+
+        Node nodeA = session.getRootNode().addNode("A", "test:node");
+        Node nodeB = session.getRootNode().addNode("B", "test:node");
+        Node nodeC = session.getRootNode().addNode("C", "test:node");
+        Node nodeD = session.getRootNode().addNode("D", "test:node");
+
+        nodeA.setProperty("test:strongReference", session.getValueFactory().createValue(nodeB));
+        nodeA.setProperty("test:weakReference", session.getValueFactory().createValue(nodeC, true));
+        nodeA.setProperty("test:simpleReference", session.getValueFactory().createSimpleReference(nodeD));
+
+        session.save();
+
+        otherWorkspace.clone("default", "/", "/", true);
+
+        nodeD.remove();
+        nodeC.remove();
+        nodeB.remove();
+        nodeA.remove();
+
+        session.save();
+
+        AbstractJcrNode otherA = otherSession.getNode("/A");
+        AbstractJcrNode otherB = otherSession.getNode("/B");
+        AbstractJcrNode otherC = otherSession.getNode("/C");
+        AbstractJcrNode otherD = otherSession.getNode("/D");
+
+        assertEquals(otherB.getIdentifier(), otherA.getProperty("test:strongReference").getNode().getIdentifier());
+        assertEquals(otherC.getIdentifier(), otherA.getProperty("test:weakReference").getNode().getIdentifier());
+        assertEquals(otherD.getIdentifier(), otherA.getProperty("test:simpleReference").getNode().getIdentifier());
+    }
+
+    @Test
+    @FixFor( "MODE-2012" )
+    public void clonedUUIDsShouldBeTheSame() throws Exception {
+        tools.registerNodeTypes(session, "cnd/references.cnd");
+
+        Node nodeA = session.getRootNode().addNode("A", "test:node");
+        Node nodeB = session.getRootNode().addNode("B", "test:node");
+        session.save();
+
+        otherWorkspace.clone("default", "/", "/", true);
+
+        assertEquals(nodeA.getIdentifier(), otherSession.getNode("/A").getIdentifier());
+        assertEquals(nodeB.getIdentifier(), otherSession.getNode("/B").getIdentifier());
+    }
+
+    @Test
+    @FixFor( "MODE-2012" )
+    public void copiedReferencesShouldPointToTargetWorkspace() throws Exception {
+        tools.registerNodeTypes(session, "cnd/references.cnd");
+
+        Node nodeA = session.getRootNode().addNode("A", "test:node");
+        Node nodeB = session.getRootNode().addNode("B", "test:node");
+        Node nodeC = session.getRootNode().addNode("C", "test:node");
+        Node nodeD = session.getRootNode().addNode("D", "test:node");
+
+        nodeA.setProperty("test:strongReference", session.getValueFactory().createValue(nodeB));
+        nodeA.setProperty("test:weakReference", session.getValueFactory().createValue(nodeC, true));
+        nodeA.setProperty("test:simpleReference", session.getValueFactory().createSimpleReference(nodeD));
+
+        session.save();
+
+        otherWorkspace.copy("default", "/", "/");
+
+        nodeD.remove();
+        nodeC.remove();
+        nodeB.remove();
+        nodeA.remove();
+        session.save();
+
+        AbstractJcrNode otherA = otherSession.getNode("/A");
+        AbstractJcrNode otherB = otherSession.getNode("/B");
+        AbstractJcrNode otherC = otherSession.getNode("/C");
+        AbstractJcrNode otherD = otherSession.getNode("/D");
+
+        assertEquals(otherB.getIdentifier(), otherA.getProperty("test:strongReference").getNode().getIdentifier());
+        assertEquals(otherC.getIdentifier(), otherA.getProperty("test:weakReference").getNode().getIdentifier());
+        assertEquals(otherD.getIdentifier(), otherA.getProperty("test:simpleReference").getNode().getIdentifier());
+    }
+
+    @Test
+    @FixFor( "MODE-2012" )
+    public void copiedUUIDsShouldNotBeTheSame() throws Exception {
+        tools.registerNodeTypes(session, "cnd/references.cnd");
+
+        Node nodeA = session.getRootNode().addNode("A", "test:node");
+        Node nodeB = session.getRootNode().addNode("B", "test:node");
+        session.save();
+
+        otherWorkspace.copy("default", "/", "/");
+
+        assertNotEquals(nodeA.getIdentifier(), otherSession.getNode("/A").getIdentifier());
+        assertNotEquals(nodeB.getIdentifier(), otherSession.getNode("/B").getIdentifier());
+    }
+
+    @SkipLongRunning
     @FixFor( "MODE-2012" )
     @Test
     public void shouldCorrectlyImportSameContentIntoMultipleWorkspaces() throws Exception {
@@ -405,6 +507,7 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         sessionC.logout();
     }
 
+    @SkipLongRunning
     @FixFor( "MODE-2012" )
     @Test
     public void shouldCorrectlyCloneWorkspacesWithCorrespondingContent() throws Exception {

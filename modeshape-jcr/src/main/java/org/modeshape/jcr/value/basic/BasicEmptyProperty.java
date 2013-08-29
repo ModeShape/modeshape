@@ -67,6 +67,11 @@ public class BasicEmptyProperty extends BasicProperty {
     }
 
     @Override
+    public boolean isSimpleReference() {
+        return false;
+    }
+
+    @Override
     public int size() {
         return 0;
     }

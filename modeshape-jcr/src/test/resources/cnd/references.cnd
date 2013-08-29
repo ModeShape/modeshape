@@ -1,0 +1,15 @@
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<test='http://www.jcp.org/jcr/test/1.0'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+[test:node] > mix:referenceable
+- test:strongReference (reference) < test:node
+- test:weakReference (weakreference) < test:node
+- test:simpleReference (simplereference) < test:node

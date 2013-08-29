@@ -69,6 +69,8 @@ public final class JcrI18n {
     public static I18n pathCannotHaveSameNameSiblingIndex;
     public static I18n cannotCopySubgraphIntoRoot;
     public static I18n cannotCloneSubgraphIntoRoot;
+    public static I18n cannotCopyOrCloneReferenceOutsideGraph;
+    public static I18n cannotCopyOrCloneCorruptReference;
     public static I18n permissionDenied;
     public static I18n repositoryMustBeConfigured;
     public static I18n sourceInUse;
