@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.cmis;
 
+import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -36,6 +37,7 @@ import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
+import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -309,5 +311,19 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         }
         file.setProperty("StringProp", "modeshape");
         getSession().save();
+    }
+
+    @Test
+    public void shouldBeAbleToMoveExternalNodes() throws Exception {
+        assertNotNull(session.getNode("/cmis/My_Folder-0-0/My_Document-1-0"));
+        ((Workspace)session.getWorkspace()).move("/cmis/My_Folder-0-0/My_Document-1-0", "/cmis/My_Folder-0-0/My_Document-1-X");
+        Node file = session.getNode("/cmis/My_Folder-0-0/My_Document-1-X");
+        assertNotNull(file);
+        assertEquals("nt:file", file.getPrimaryNodeType().getName());
+        assertNotNull(session.getNode("/cmis/My_Folder-0-0"));
+        ((Workspace)session.getWorkspace()).move("/cmis/My_Folder-0-0", "/cmis/My_Folder-0-X");
+        Node folder = session.getNode("/cmis/My_Folder-0-X");
+        assertNotNull(folder);
+        assertEquals("nt:folder", folder.getPrimaryNodeType().getName());
     }
 }
