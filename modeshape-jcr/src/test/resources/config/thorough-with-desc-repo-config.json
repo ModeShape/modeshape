@@ -94,7 +94,6 @@
     },
     "sequencing" : {
         "description" : "Define several sequencers to automatically analyze and extract structured content from files uploaded to the repository. If a file is updated, the content previously derived by the sequencer(s) will be removed before the newly-derived content is stored. Since sequencing is done asynchronously, specify that threads from the 'modeshape-workers' thread poool be used.",
-        "removeDerivedContentWithOriginal" : true,
         "threadPool" : "modeshape-workers",
         "sequencers" : {
             "zipSequencer" : {

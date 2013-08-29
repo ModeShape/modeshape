@@ -1,7 +1,6 @@
 {
     "name":"My Sequencing Example Repository",
     "sequencing":{
-        "removeDerivedContentWithOriginal":true,
         "sequencers":{
             "mp3s":{
                 "name":"MP3s",

@@ -1,7 +1,6 @@
 {
     "name" : "CND Sequencer Test Repository",
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "sequencers" : {
             "CND sequencer" : {
                 "classname" : "cnd",

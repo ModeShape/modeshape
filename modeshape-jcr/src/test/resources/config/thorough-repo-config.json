@@ -85,7 +85,6 @@
         }
     },
     "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
         "threadPool" : "modeshape-workers",
         "sequencers" : {
             "zipSequencer" : {
