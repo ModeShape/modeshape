@@ -12,11 +12,23 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release addesses 59 issues, most of which are bug fixes in lots of areas. One feature
-added to this release is support for JCR access controls, which has almost no effect on a
-repository until the first ACL is added (at which point there is some small overhead).
+This release addesses 14 issues, most of which are bug fixes in lots of areas. Several workspace
+clone and merge bugs were fixed, and we've remedied the missing optimization when not using JCR ACLs
+(see MODE-2004). If you're using 3.4 but not using ACLs, please be sure to upgrade to get this optimization.
+The JCR ACL feature is still considered a technology preview. 
 
-As with 3.3.0.Final, this release includes a kit that can be installed into EAP 6.1.0.GA.
+NOTE: If after upgrading the ACL feature doesn't seem function correctly, try creating and 
+saving a new ACL. (If this ACL is not needed, you can immediately remove it and re-save.)
+This will ensure that the non-ACL optimization added in 3.5 is disabled and that ACL checks are 
+performed correctly.
+
+This release adds support for monitoring repositories via JMX, and also adds a "simple" reference that is 
+similar to JCR weak references except no back-references are maintained (improving performance 
+for nodes that are referenced by lots of reference properties). Since "simple" references
+are not defined in the JCR specification, you'll need to use the ModeShape-specific API
+to create simple references using the session's value factory.
+
+As with 3.4.0.Final, this release includes a kit that can be installed into EAP 6.1.0.GA.
 
 
 ## Features
