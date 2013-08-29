@@ -4,13 +4,13 @@
     <parent>
         <groupId>org.modeshape.bom</groupId>
         <artifactId>modeshape-bom-parent</artifactId>
-        <version>3.5-SNAPSHOT</version>
+        <version>3.5.0.Final</version>
         <relativePath>../modeshape-bom-parent/pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>modeshape-bom-api</artifactId>
-    <version>3.5-SNAPSHOT</version>
+    <version>3.5.0.Final</version>
     <name>ModeShape BOM for public APIs</name>
 
     <url>http://www.modeshape.org</url>
