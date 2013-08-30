@@ -119,7 +119,7 @@ public interface Property extends Iterable<Object>, Comparable<Property>, Readab
 
     /**
      * Determine whether this property contains simple reference values, based upon the first value in the property.
-     * @see {@link PropertyType#SIMPLEREFERENCE}.
+     * @see PropertyType#SIMPLEREFERENCE
      *
      * @return true if this property is a simple reference property, or false otherwise.
      */
