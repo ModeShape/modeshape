@@ -23,6 +23,8 @@
 <module xmlns="urn:jboss:module:1.2" name="org.modeshape.sequencer.image">
     <resources>
         <resource-root path="modeshape-sequencer-images-${project.version}.jar" />
+        <resource-root path="metadata-extractor-${image.metadata.extractor}.jar" />
+        <resource-root path="xmpcore-5.1.2.jar" />
     </resources>
 
     <dependencies>

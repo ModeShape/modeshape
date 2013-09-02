@@ -13,4 +13,10 @@
     <name>ModeShape Sequencer for Image Files</name>
     <description>ModeShape Sequencer that processes PNG, JPEG, GIF and other image files</description>
     <url>http://www.modeshape.org</url>
+    <dependencies>
+        <dependency>
+            <groupId>com.drewnoakes</groupId>
+            <artifactId>metadata-extractor</artifactId>
+        </dependency>
+    </dependencies>
 </project>

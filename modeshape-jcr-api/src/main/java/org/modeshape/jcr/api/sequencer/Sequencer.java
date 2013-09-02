@@ -312,7 +312,7 @@ public abstract class Sequencer {
     protected final void registerDefaultMimeTypes( String... mimeTypes ) {
         assert !initialized : "No default MIME types can be registered after the sequencer has been initialized";
         if (mimeTypes != null && mimeTypes.length != 0 && acceptedMimeTypes.length == 0) {
-            // There are no overridden mime types, so we can regiser the default MIME types ...
+            // There are no overridden mime types, so we can register the default MIME types ...
             if (acceptedMimeTypesSet == null) acceptedMimeTypesSet = new HashSet<String>();
             for (String mimeType : mimeTypes) {
                 if (mimeType == null) continue;

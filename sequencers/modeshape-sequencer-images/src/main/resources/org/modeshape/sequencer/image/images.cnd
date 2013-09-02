@@ -39,7 +39,7 @@
  */
 [image:metadata] > nt:unstructured, mix:mimeType
   - image:formatName (string) mandatory
-    < 'JPEG', 'GIF', 'PNG', 'BMP', 'PCX', 'IFF', 'RAS', 'PBM', 'PGM', 'PPM', 'PSD'
+    < 'JPEG', 'GIF', 'PNG', 'BMP', 'PCX', 'IFF', 'RAS', 'PBM', 'PGM', 'PPM', 'PSD', 'TIFF'
   - image:width (long)
   - image:height (long)
   - image:bitsPerPixel (long)
@@ -49,6 +49,17 @@
   - image:physicalHeightDpi (long)
   - image:physicalWidthInches (double)
   - image:physicalHeightInches (double)
+  + image:exif (image:exif) = image:exif
 
-
- 
+[image:exif] > nt:unstructured
+ - image:artist (string)
+ - image:copyright (string)
+ - image:datetime (string)
+ - image:description (string)
+ - image:make (string)
+ - image:model (string)
+ - image:unit (string)
+ - image:orientation (string)
+ - image:software (string)
+ - image:resolution_x (double)
+ - image:resolution_x(double)

@@ -187,6 +187,8 @@
             <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/image/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-images:jar</include>
+                <include>com.drewnoakes:metadata-extractor:jar</include>
+                <include>com.adobe.xmp:xmpcore:jar</include>
             </includes>
         </dependencySet>
 

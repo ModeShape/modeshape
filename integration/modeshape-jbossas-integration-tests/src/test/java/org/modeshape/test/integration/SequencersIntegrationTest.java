@@ -81,7 +81,7 @@ public class SequencersIntegrationTest {
 
     @Test
     public void shouldSequenceImage() throws Exception {
-        uploadFileAndAssertSequenced("/image_file.png", "/derived/image", "org.modeshape.sequencer.image.ImageMetadataSequencer");
+        uploadFileAndAssertSequenced("/image_file.jpg", "/derived/image", "org.modeshape.sequencer.image.ImageMetadataSequencer");
     }
 
     @Test
