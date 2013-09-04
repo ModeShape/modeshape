@@ -30,6 +30,7 @@ public class TikaI18n {
     public static I18n errorWhileExtractingTextFrom;
     public static I18n parseExceptionWhileExtractingText;
     public static I18n warnCannotDetectMimeType;
+    public static I18n warnNoClassDefFound;
 
     static {
         try {

@@ -94,6 +94,12 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
         jcrTools.printQuery(session, sql, 0);
     }
 
+    @Test
+    public void shouldIgnoreMissingTikaDefaultDependendcy() throws Exception {
+        startRepositoryWithConfiguration(getResource("repo-config.json"));
+        uploadFile("image_file.jpg");
+    }
+
     private void assertExtractedTextHasBeenIndexed( String validationQuery ) throws RepositoryException {
         Query query = jcrSession().getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
         QueryResult result = query.execute();
