@@ -93,7 +93,7 @@ public final class TextExtractors {
 
             return output.getText();
         } catch (Exception e) {
-            LOGGER.error(JcrI18n.errorExtractingTextFromBinary, inMemoryBinaryValue.getHexHash(), e.getLocalizedMessage());
+            LOGGER.error(e, JcrI18n.errorExtractingTextFromBinary, inMemoryBinaryValue.getHexHash(), e.getLocalizedMessage());
         }
         return null;
     }
@@ -188,7 +188,7 @@ public final class TextExtractors {
                     store.storeExtractedText(binaryValue, extractedText);
                 }
             } catch (Exception e) {
-                LOGGER.error(JcrI18n.errorExtractingTextFromBinary, binaryValue.getHexHash(), e.getLocalizedMessage());
+                LOGGER.error(e, JcrI18n.errorExtractingTextFromBinary, binaryValue.getHexHash(), e.getLocalizedMessage());
             } finally {
                 // decrement the latch regardless of success/failure to avoid blocking, as extraction is not retried
                 latch.countDown();

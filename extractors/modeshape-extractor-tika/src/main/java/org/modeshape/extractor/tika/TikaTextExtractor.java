@@ -81,19 +81,18 @@ public class TikaTextExtractor extends TextExtractor {
      * <li>application/x-tar</li>
      * <li>application/zip</li>
      * <li>application/vnd.teiid.vdb</li>
+     * <li>image/*</li>
+     * <li>audio/*</li>
+     * <li>video/*</li>
      * </ul>
      */
-    public static final Set<String> DEFAULT_EXCLUDED_MIME_TYPES = Collections.unmodifiableSet("application/x-archive",
-                                                                                              "application/x-bzip",
-                                                                                              "application/x-bzip2",
-                                                                                              "application/x-cpio",
-                                                                                              "application/x-gtar",
-                                                                                              "application/x-gzip",
-                                                                                              "application/x-tar",
-                                                                                              "application/zip",
-                                                                                              "application/vnd.teiid.vdb");
+    public static final Set<MediaType> DEFAULT_EXCLUDED_MIME_TYPES = Collections.unmodifiableSet(
+            MediaType.application("x-archive"), MediaType.application("x-bzip"), MediaType.application("x-bzip2"),
+            MediaType.application("x-cpio"), MediaType.application("x-gtar"), MediaType.application("x-gzip"),
+            MediaType.application("x-tar"), MediaType.application("zip"), MediaType.application("vnd.teiid.vdb"),
+            MediaType.image("*"), MediaType.audio("*"), MediaType.video("*"));
 
-    private Set<String> excludedMimeTypes = new HashSet<String>();
+    private Set<MediaType> excludedMimeTypes = new HashSet<MediaType>();
     private Set<String> includedMimeTypes = new HashSet<String>();
     private Set<String> supportedMediaTypes = new HashSet<String>();
 
@@ -102,13 +101,29 @@ public class TikaTextExtractor extends TextExtractor {
     private final Lock initLock = new ReentrantLock();
     private DefaultParser parser;
 
+    /**
+     * No-arg constructor is required because this is instantiated by reflection.
+     */
     public TikaTextExtractor() {
         this.excludedMimeTypes.addAll(DEFAULT_EXCLUDED_MIME_TYPES);
     }
 
     @Override
     public boolean supportsMimeType( String mimeType ) {
-        if (excludedMimeTypes.contains(mimeType)) return false;
+        MediaType mediaType = MediaType.parse(mimeType);
+        if (mediaType == null) {
+            getLogger().debug("Invalid mime-type:" + mimeType);
+            return false;
+        }
+
+        for (MediaType excludedMediaType : excludedMimeTypes) {
+            if (excludedMediaType.equals(mediaType)) {
+                return false;
+            }
+            if (excludedMediaType.getSubtype().equalsIgnoreCase("*") && mediaType.getType().equalsIgnoreCase(excludedMediaType.getType())) {
+                return false;
+            }
+        }
         initialize();
         return includedMimeTypes.isEmpty() ? supportedMediaTypes.contains(mimeType) : supportedMediaTypes.contains(mimeType)
                                                                                       && includedMimeTypes.contains(mimeType);
@@ -139,6 +154,8 @@ public class TikaTextExtractor extends TextExtractor {
                     LOGGER.debug("TikaTextExtractor found text: " + text);
                 } catch (SAXException sae) {
                     LOGGER.warn(TikaI18n.parseExceptionWhileExtractingText, sae.getMessage());
+                } catch (NoClassDefFoundError ncdfe) {
+                    LOGGER.warn(TikaI18n.warnNoClassDefFound, ncdfe.getMessage());
                 } catch (Throwable e) {
                     LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, e.getMessage());
                 }
@@ -224,6 +241,11 @@ public class TikaTextExtractor extends TextExtractor {
         }
     }
 
+    /**
+     * Sets the mime-types supported by this extractor.
+     *
+     * @param includedMimeTypes a collection of mime-types.
+     */
     public void setIncludedMimeTypes( Collection<String> includedMimeTypes ) {
         if (includedMimeTypes != null) {
             this.includedMimeTypes = new HashSet<String>(includedMimeTypes);
@@ -247,7 +269,11 @@ public class TikaTextExtractor extends TextExtractor {
      * @return the set of MIME types that are to be excluded; never null
      */
     public Set<String> getExcludedMimeTypes() {
-        return Collections.unmodifiableSet(excludedMimeTypes);
+        Set<String> result = new HashSet<String>();
+        for (MediaType mediaType : this.excludedMimeTypes) {
+            result.add(mediaType.toString());
+        }
+        return Collections.unmodifiableSet(result);
     }
 
     /**
@@ -263,9 +289,18 @@ public class TikaTextExtractor extends TextExtractor {
         }
     }
 
+
+    /**
+     * Sets the mime-types ignored by this extractor
+     *
+     * @param excludedMimeTypes a collection of mime-types.
+     */
     public void setExcludedMimeTypes( Collection<String> excludedMimeTypes ) {
         if (excludedMimeTypes != null) {
-            this.excludedMimeTypes = new HashSet<String>(excludedMimeTypes);
+            this.excludedMimeTypes.clear();
+            for (String excludedMimeType : excludedMimeTypes) {
+                excludeMimeType(excludedMimeType);
+            }
         }
     }
 
@@ -275,9 +310,12 @@ public class TikaTextExtractor extends TextExtractor {
      * @param mimeType MIME type that should be excluded
      */
     private void excludeMimeType( String mimeType ) {
-        if (mimeType == null) return;
-        mimeType = mimeType.trim();
-        if (mimeType.length() != 0) excludedMimeTypes.add(mimeType);
+        MediaType mediaType = MediaType.parse(mimeType);
+        if (mediaType == null) {
+            getLogger().debug("Invalid media type: {0}", mimeType);
+            return;
+        }
+        excludedMimeTypes.add(mediaType);
     }
 
 

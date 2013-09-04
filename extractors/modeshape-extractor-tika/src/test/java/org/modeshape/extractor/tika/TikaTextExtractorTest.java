@@ -77,11 +77,6 @@ public class TikaTextExtractorTest {
     }
 
     @Test
-    public void shouldExcludedPackageTypeMimeTypesByDefault() {
-        assertThat(extractor.getExcludedMimeTypes().containsAll(TikaTextExtractor.DEFAULT_EXCLUDED_MIME_TYPES), is(true));
-    }
-
-    @Test
     public void shouldSupportExtractingFromTextFiles() throws Exception {
         assertThat(extractor.supportsMimeType("text/plain"), is(true));
     }
