@@ -32,15 +32,8 @@ import org.modeshape.common.annotation.Immutable;
 @Immutable
 public final class ImageMetadataLexicon {
 
-    public static class Namespace {
-        public static final String URI = "http://www.modeshape.org/images/1.0";
-        public static final String PREFIX = "image";
-
-        private Namespace() {
-        }
-    }
-
     public static final String METADATA_NODE = "image:metadata";
+    public static final String EXIF_NODE = "image:exif";
     public static final String FORMAT_NAME = "image:formatName";
     public static final String WIDTH = "image:width";
     public static final String HEIGHT = "image:height";
@@ -51,6 +44,17 @@ public final class ImageMetadataLexicon {
     public static final String PHYSICAL_HEIGHT_DPI = "image:physicalHeightDpi";
     public static final String PHYSICAL_WIDTH_INCHES = "image:physicalWidthInches";
     public static final String PHYSICAL_HEIGHT_INCHES = "image:physicalHeightInches";
+    public static final String ARTIST = "image:artist";
+    public static final String COPYRIGHT = "image:copyright";
+    public static final String DATETIME = "image:datetime";
+    public static final String DESCRIPTION = "image:description";
+    public static final String MAKE = "image:make";
+    public static final String MODEL = "image:model";
+    public static final String ORIENTATION = "image:orientation";
+    public static final String UNIT = "image:unit";
+    public static final String SOFTWARE = "image:software";
+    public static final String RESOLUTION_X = "image:resolution_x";
+    public static final String RESOLUTION_Y = "image:resolution_y";
 
 
     private ImageMetadataLexicon() {

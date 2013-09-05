@@ -26,7 +26,9 @@ package org.modeshape.sequencer.image;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
@@ -83,7 +85,37 @@ public class ImageMetadataSequencerTest extends AbstractSequencerTest {
         Node imageNode = createNodeWithContentFromFile(filename, filename);
         assertNull(getOutputNode(rootNode, "sequenced/images/" + filename, 1));
         assertNull(getOutputNode(imageNode, ImageMetadataLexicon.METADATA_NODE, 1));
-    }   
+    }
+
+    @Test
+    @FixFor( "MODE-2021")
+    public void shouldExtractExifInformationFromJpeg() throws Exception {
+        String filename = "image_with_exif.jpg";
+        createNodeWithContentFromFile(filename, filename);
+        Node sequencedNode = getOutputNode(rootNode, "sequenced/images/" + filename);
+        assertNotNull(sequencedNode);
+
+        Node exifNode = sequencedNode.getNode(ImageMetadataLexicon.EXIF_NODE);
+        assertEquals("Top, left side (Horizontal / normal)", exifNode.getProperty(ImageMetadataLexicon.ORIENTATION).getString());
+        assertEquals("NIKON", exifNode.getProperty(ImageMetadataLexicon.MAKE).getString());
+        assertEquals("E4600", exifNode.getProperty(ImageMetadataLexicon.MODEL).getString());
+        assertEquals(300.0, exifNode.getProperty(ImageMetadataLexicon.RESOLUTION_X).getDouble(), 0);
+        assertEquals(300.0, exifNode.getProperty(ImageMetadataLexicon.RESOLUTION_Y).getDouble(), 0);
+        assertEquals("Inch", exifNode.getProperty(ImageMetadataLexicon.UNIT).getString());
+        assertEquals("2008:05:08 14:54:46", exifNode.getProperty(ImageMetadataLexicon.DATETIME).getString());
+        assertEquals("Adobe Photoshop CS3 Windows", exifNode.getProperty(ImageMetadataLexicon.SOFTWARE).getString());
+    }
+
+    @Test
+    @FixFor( "MODE-1847" )
+    public void shouldSequenceTIFFiles() throws Exception {
+        String filename = "tif_image.tif";
+        createNodeWithContentFromFile(filename, filename);
+        Node sequencedNodeDifferentLocation = getOutputNode(rootNode, "sequenced/images/" + filename);
+        assertEquals(ImageMetadataLexicon.METADATA_NODE, sequencedNodeDifferentLocation.getProperty(JcrConstants.JCR_PRIMARY_TYPE).getString());
+        assertEquals("image/tiff", sequencedNodeDifferentLocation.getProperty(JcrConstants.JCR_MIME_TYPE).getString());
+    }
+
 
     private void assertMetaDataProperties( Node metadataNode, String mimeType, String format, int width, int height, int bitsPerPixel,
                                            boolean progressive, int numberOfImages, int physicalWidthDpi, int physicalHeightDpi,
