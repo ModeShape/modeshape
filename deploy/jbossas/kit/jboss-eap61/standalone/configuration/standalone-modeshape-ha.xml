@@ -3,7 +3,7 @@
 <server xmlns="urn:jboss:domain:1.4">
     <extensions>
         <extension module="org.jboss.as.clustering.infinispan"/>
-        <extension module="org.jboss.as.configadmin"/>
+        <extension module="org.jboss.as.clustering.jgroups"/>
         <extension module="org.jboss.as.connector"/>
         <extension module="org.jboss.as.deployment-scanner"/>
         <extension module="org.jboss.as.ee"/>
@@ -15,8 +15,8 @@
         <extension module="org.jboss.as.jsf"/>
         <extension module="org.jboss.as.logging"/>
         <extension module="org.jboss.as.mail"/>
+        <extension module="org.jboss.as.modcluster"/>
         <extension module="org.jboss.as.naming"/>
-        <extension module="org.jboss.as.osgi"/>
         <extension module="org.jboss.as.pojo"/>
         <extension module="org.jboss.as.remoting"/>
         <extension module="org.jboss.as.sar"/>
@@ -56,7 +56,7 @@
         </management-interfaces>
     </management>
     <profile>
-        <subsystem xmlns="urn:jboss:domain:logging:1.1">
+        <subsystem xmlns="urn:jboss:domain:logging:1.2">
             <console-handler name="CONSOLE">
                 <level name="INFO"/>
                 <formatter>
@@ -97,7 +97,6 @@
                 </handlers>
             </root-logger>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:configadmin:1.0"/>
         <subsystem xmlns="urn:jboss:domain:datasources:1.1">
             <datasources>
                 <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true">
@@ -108,22 +107,9 @@
                         <password>sa</password>
                     </security>
                 </datasource>
-
-                <datasource jndi-name="java:/datasources/ModeShapeDS" pool-name="ModeShapeDS" enabled="true" use-java-context="true">
-                    <connection-url>jdbc:jcr:jndi:jcr?repositoryName=artifacts</connection-url>
-                    <driver>modeshape</driver>
-                    <connection-property name="workspace">extra</connection-property>
-                    <security>
-                        <user-name>admin</user-name>
-                        <password>admin</password>
-                    </security>
-                </datasource>
                 <drivers>
                     <driver name="h2" module="com.h2database.h2">
                         <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
-                    </driver>
-                    <driver name="modeshape" module="org.modeshape.jdbc">
-                        <driver-class>org.modeshape.jdbc.LocalJcrDriver</driver-class>
                     </driver>
                 </drivers>
             </datasources>
@@ -140,10 +126,9 @@
                 <stateless>
                     <bean-instance-pool-ref pool-name="slsb-strict-max-pool"/>
                 </stateless>
-                <stateful default-access-timeout="5000" cache-ref="simple"/>
+                <stateful default-access-timeout="5000" cache-ref="simple" clustered-cache-ref="clustered"/>
                 <singleton default-access-timeout="5000"/>
             </session-bean>
-            <default-security-domain value="other"/>
             <pools>
                 <bean-instance-pools>
                     <strict-max-pool name="slsb-strict-max-pool" max-pool-size="20" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="MINUTES"/>
@@ -153,9 +138,11 @@
             <caches>
                 <cache name="simple" aliases="NoPassivationCache"/>
                 <cache name="passivating" passivation-store-ref="file" aliases="SimpleStatefulCache"/>
+                <cache name="clustered" passivation-store-ref="infinispan" aliases="StatefulTreeCache"/>
             </caches>
             <passivation-stores>
                 <file-passivation-store name="file"/>
+                <cluster-passivation-store name="infinispan" cache-container="ejb"/>
             </passivation-stores>
             <async thread-pool-name="default"/>
             <timer-service thread-pool-name="default">
@@ -168,40 +155,69 @@
                     <keepalive-time time="100" unit="milliseconds"/>
                 </thread-pool>
             </thread-pools>
+            <default-security-domain value="other"/>
+            <default-missing-method-permissions-deny-access value="true"/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:infinispan:1.4">
-            <cache-container name="hibernate" default-cache="local-query" module="org.jboss.as.jpa.hibernate:4">
-                <local-cache name="entity">
-                    <transaction mode="NON_XA"/>
+            <cache-container name="singleton" aliases="cluster ha-partition" default-cache="default">
+                <transport lock-timeout="60000"/>
+                <replicated-cache name="default" mode="SYNC" batching="true">
+                    <locking isolation="REPEATABLE_READ"/>
+                </replicated-cache>
+            </cache-container>
+            <cache-container name="web" aliases="standard-session-cache" default-cache="repl" module="org.jboss.as.clustering.web.infinispan">
+                <transport lock-timeout="60000"/>
+                <replicated-cache name="repl" mode="ASYNC" batching="true">
+                    <file-store/>
+                </replicated-cache>
+                <replicated-cache name="sso" mode="SYNC" batching="true"/>
+                <distributed-cache name="dist" mode="ASYNC" batching="true" l1-lifespan="0">
+                    <file-store/>
+                </distributed-cache>
+            </cache-container>
+            <cache-container name="ejb" aliases="sfsb sfsb-cache" default-cache="repl" module="org.jboss.as.clustering.ejb3.infinispan">
+                <transport lock-timeout="60000"/>
+                <replicated-cache name="repl" mode="ASYNC" batching="true">
                     <eviction strategy="LRU" max-entries="10000"/>
-                    <expiration max-idle="100000"/>
-                </local-cache>
+                    <file-store/>
+                </replicated-cache>
+                <!--
+                  ~  Clustered cache used internally by EJB subsytem for managing the client-mapping(s) of
+                  ~                 the socketbinding referenced by the EJB remoting connector
+                  -->
+                <replicated-cache name="remote-connector-client-mappings" mode="SYNC" batching="true"/>
+                <distributed-cache name="dist" mode="ASYNC" batching="true" l1-lifespan="0">
+                    <eviction strategy="LRU" max-entries="10000"/>
+                    <file-store/>
+                </distributed-cache>
+            </cache-container>
+            <cache-container name="hibernate" default-cache="local-query" module="org.jboss.as.jpa.hibernate:4">
+                <transport lock-timeout="60000"/>
                 <local-cache name="local-query">
                     <transaction mode="NONE"/>
                     <eviction strategy="LRU" max-entries="10000"/>
                     <expiration max-idle="100000"/>
                 </local-cache>
-                <local-cache name="timestamps">
+                <invalidation-cache name="entity" mode="SYNC">
+                    <transaction mode="NON_XA"/>
+                    <eviction strategy="LRU" max-entries="10000"/>
+                    <expiration max-idle="100000"/>
+                </invalidation-cache>
+                <replicated-cache name="timestamps" mode="ASYNC">
                     <transaction mode="NONE"/>
                     <eviction strategy="NONE"/>
-                </local-cache>
+                </replicated-cache>
             </cache-container>
-            <!-- Each ModeShape repository uses one (or more) cache in a cache container. We define a single container
-                 named "modeshape" (other names require specifying the container names in each repository configuration,
-                 with a "sample" cache (each repository assumes the cache name matches the repository name). -->
-            <cache-container name="modeshape" default-cache="sample" module="org.modeshape">
-                <local-cache name="sample">
-                    <!-- ModeShape requires transactions -->
+            <cache-container name="modeshape" aliases="modeshape modeshape-cluster" default-cache="sample" module="org.modeshape">
+                <transport lock-timeout="60000"/>
+                <replicated-cache name="sample" mode="SYNC" batching="true">
                     <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store relative-to="jboss.server.data.dir" path="modeshape/store/sample" passivation="false" purge="false"/>
-                </local-cache>
-                <local-cache name="artifacts">
-                    <!-- ModeShape requires transactions -->
+                    <file-store relative-to="jboss.server.data.dir" path="modeshape/store/sample-${jboss.node.name}" passivation="false" purge="false"/>
+                </replicated-cache>
+                <replicated-cache name="artifacts" mode="SYNC" batching="true">
                     <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store relative-to="jboss.server.data.dir" path="modeshape/store/artifacts" passivation="false" purge="false"/>
-                </local-cache>
+                    <file-store relative-to="jboss.server.data.dir" path="modeshape/store/artifacts-${jboss.node.name}" passivation="false" purge="false"/>
+                </replicated-cache>
             </cache-container>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
@@ -212,9 +228,9 @@
             <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
-            <repository name="sample"/>
+            <repository name="sample" cache-name="sample" cache-container="modeshape" cluster-name="modeshape-sample-cluster" cluster-stack="tcp"/>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
-            <repository name="artifacts">
+            <repository name="artifacts" cache-name="artifacts" cache-container="modeshape" cluster-name="modeshape-artifacts-cluster" cluster-stack="tcp">
                 <indexing rebuild-upon-startup="never"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
@@ -263,10 +279,10 @@
                         <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
                     </sequencer>
                     <sequencer name="teiid-model-sequencer" classname="model" module="org.modeshape.sequencer.teiid">
-                      <path-expression>/files(//*.xmi[*])/jcr:content[@jcr:data] => /derived/teiid/models/$1</path-expression>
+                        <path-expression>/files(//*.xmi[*])/jcr:content[@jcr:data] => /derived/teiid/models/$1</path-expression>
                     </sequencer>
                     <sequencer name="teiid-vdb-sequencer" classname="vdb" module="org.modeshape.sequencer.teiid">
-                      <path-expression>/files(//*.vdb[*])/jcr:content[@jcr:data] => /derived/teiid/vdbs/$1</path-expression>
+                        <path-expression>/files(//*.vdb[*])/jcr:content[@jcr:data] => /derived/teiid/vdbs/$1</path-expression>
                     </sequencer>
                     <!--
                      The XSD, XML, WSDL, and ZIP sequencers all generate a node for the input documents, and so we don't want the filename to
@@ -317,50 +333,69 @@
             <cached-connection-manager/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jdr:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="udp">
+            <stack name="udp">
+                <transport type="UDP" socket-binding="jgroups-udp"/>
+                <protocol type="PING"/>
+                <protocol type="MERGE3"/>
+                <protocol type="FD_SOCK" socket-binding="jgroups-udp-fd"/>
+                <protocol type="FD"/>
+                <protocol type="VERIFY_SUSPECT"/>
+                <protocol type="pbcast.NAKACK"/>
+                <protocol type="UNICAST2"/>
+                <protocol type="pbcast.STABLE"/>
+                <protocol type="pbcast.GMS"/>
+                <protocol type="UFC"/>
+                <protocol type="MFC"/>
+                <protocol type="FRAG2"/>
+                <protocol type="RSVP"/>
+            </stack>
+            <stack name="tcp">
+                <transport type="TCP" socket-binding="jgroups-tcp"/>
+                <protocol type="MPING" socket-binding="jgroups-mping"/>
+                <protocol type="MERGE2"/>
+                <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd"/>
+                <protocol type="FD"/>
+                <protocol type="VERIFY_SUSPECT"/>
+                <protocol type="pbcast.NAKACK"/>
+                <protocol type="UNICAST2"/>
+                <protocol type="pbcast.STABLE"/>
+                <protocol type="pbcast.GMS"/>
+                <protocol type="UFC"/>
+                <protocol type="MFC"/>
+                <protocol type="FRAG2"/>
+                <protocol type="RSVP"/>
+            </stack>
+        </subsystem>
         <subsystem xmlns="urn:jboss:domain:jmx:1.2">
             <expose-resolved-model/>
             <expose-expression-model/>
             <remoting-connector/>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:jpa:1.0">
-            <jpa default-datasource=""/>
+        <subsystem xmlns="urn:jboss:domain:jpa:1.1">
+            <jpa default-datasource="" default-extended-persistence-inheritance="DEEP"/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jsf:1.0"/>
-        <subsystem xmlns="urn:jboss:domain:mail:1.0">
+        <subsystem xmlns="urn:jboss:domain:mail:1.1">
             <mail-session jndi-name="java:jboss/mail/Default">
                 <smtp-server outbound-socket-binding-ref="mail-smtp"/>
             </mail-session>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:naming:1.2">
-            <remote-naming/>
+        <subsystem xmlns="urn:jboss:domain:modcluster:1.1">
+            <mod-cluster-config advertise-socket="modcluster" connector="ajp">
+                <dynamic-load-provider>
+                    <load-metric type="busyness"/>
+                </dynamic-load-provider>
+            </mod-cluster-config>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:osgi:1.2" activation="lazy">
-            <properties>
-                <!-- Specifies the beginning start level of the framework -->
-                <property name="org.osgi.framework.startlevel.beginning">1</property>
-            </properties>
-            <capabilities>
-                <!-- modules registered with the OSGi layer on startup -->
-                <capability name="javax.jws.api"/>
-                <capability name="javax.persistence.api"/>
-                <capability name="javax.servlet.api"/>
-                <capability name="javax.transaction.api"/>
-                <capability name="javax.ws.rs.api"/>
-                <capability name="javax.xml.bind.api"/>
-                <capability name="javax.xml.ws.api"/>
-                <capability name="org.slf4j"/>
-                <!-- bundles started in startlevel 1 -->
-                <capability name="org.apache.felix.log" startlevel="1"/>
-                <capability name="org.jboss.osgi.logging" startlevel="1"/>
-                <capability name="org.apache.felix.configadmin" startlevel="1"/>
-                <capability name="org.jboss.as.osgi.configadmin" startlevel="1"/>
-            </capabilities>
+        <subsystem xmlns="urn:jboss:domain:naming:1.3">
+            <remote-naming/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:pojo:1.0"/>
         <subsystem xmlns="urn:jboss:domain:remoting:1.1">
             <connector name="remoting-connector" socket-binding="remoting" security-realm="ApplicationRealm"/>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:resource-adapters:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:resource-adapters:1.1"/>
         <subsystem xmlns="urn:jboss:domain:sar:1.0"/>
         <subsystem xmlns="urn:jboss:domain:security:1.2">
             <security-domains>
@@ -395,7 +430,7 @@
             </security-domains>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:threads:1.1"/>
-        <subsystem xmlns="urn:jboss:domain:transactions:1.2">
+        <subsystem xmlns="urn:jboss:domain:transactions:1.3">
             <core-environment>
                 <process-id>
                     <uuid/>
@@ -404,8 +439,9 @@
             <recovery-environment socket-binding="txn-recovery-environment" status-socket-binding="txn-status-manager"/>
             <coordinator-environment default-timeout="300"/>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:web:1.2" default-virtual-server="default-host" native="false">
+        <subsystem xmlns="urn:jboss:domain:web:1.4" default-virtual-server="default-host" native="false">
             <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"/>
+            <connector name="ajp" protocol="AJP/1.3" scheme="http" socket-binding="ajp"/>
             <virtual-server name="default-host" enable-welcome-root="true">
                 <alias name="localhost"/>
                 <alias name="example.com"/>
@@ -435,7 +471,7 @@
         <interface name="unsecure">
             <!--
               ~  Used for IIOP sockets in the standard configuration.
-              ~                  To secure JacORB you need to setup SSL 
+              ~                  To secure JacORB you need to setup SSL
               -->
             <inet-address value="${jboss.bind.address.unsecure:127.0.0.1}"/>
         </interface>
@@ -447,6 +483,12 @@
         <socket-binding name="ajp" port="8009"/>
         <socket-binding name="http" port="8080"/>
         <socket-binding name="https" port="8443"/>
+        <socket-binding name="jgroups-mping" port="0" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45700"/>
+        <socket-binding name="jgroups-tcp" port="7600"/>
+        <socket-binding name="jgroups-tcp-fd" port="57600"/>
+        <socket-binding name="jgroups-udp" port="55200" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45688"/>
+        <socket-binding name="jgroups-udp-fd" port="54200"/>
+        <socket-binding name="modcluster" port="0" multicast-address="224.0.1.105" multicast-port="23364"/>
         <socket-binding name="remoting" port="4447"/>
         <socket-binding name="txn-recovery-environment" port="4712"/>
         <socket-binding name="txn-status-manager" port="4713"/>

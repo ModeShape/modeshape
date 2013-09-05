@@ -28,6 +28,7 @@
 			<outputDirectory>${jboss.eap.modules.location}</outputDirectory>
             <excludes>
                 <exclude>standalone/**</exclude>
+                <exclude>domain/**</exclude>
             </excludes>
             <filtered>true</filtered>
 		</fileSet>
@@ -38,6 +39,7 @@
 			<outputDirectory>/</outputDirectory>
             <includes>
                 <include>standalone/**</include>
+                <include>domain/**</include>
             </includes>
             <filtered>true</filtered>
 		</fileSet>
