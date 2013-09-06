@@ -56,12 +56,13 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
 
     /**
      * Create a new instance.
-     *
+     * 
      * @param decoder the text decoder; may be null if the default decoder should be used
      * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
      *        factory}; may not be null
      * @param weak true if this factory should create weak references, or false if it should create strong references
      * @param simple true if this factory should create simple references, false otherwise
+     * @return the new reference factory; never null
      */
     public static ReferenceValueFactory newInstance( TextDecoder decoder,
                                                      ValueFactories factories,
@@ -69,11 +70,9 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
                                                      boolean simple ) {
         if (simple) {
             return new ReferenceValueFactory(PropertyType.SIMPLEREFERENCE, decoder, factories, weak, simple);
-        } else {
-            return new ReferenceValueFactory(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder, factories,
-                                             weak,
-                                             simple);
         }
+        return new ReferenceValueFactory(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder, factories, weak,
+                                         simple);
     }
 
     protected ReferenceValueFactory( PropertyType type,
@@ -101,7 +100,7 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
         if (NodeKey.isValidFormat(value)) {
             return new NodeKeyReference(new NodeKey(value), weak, false, simple);
         } else if (simple) {
-            //simple references should only be created from node keys
+            // simple references should only be created from node keys
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                               String.class.getSimpleName(),
@@ -223,7 +222,7 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
             return null;
         }
         if (simple) {
-            //simple references should only be allowed via NodeKeys, so in this case we need to reject the UUID
+            // simple references should only be allowed via NodeKeys, so in this case we need to reject the UUID
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                               UUID.class.getSimpleName(),
