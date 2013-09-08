@@ -515,6 +515,10 @@ public class Visitors {
         @Override
         public void visit( UpperCase obj ) {
         }
+
+        @Override
+        public void visit(Relike obj) {
+        }
     }
 
     /**
@@ -638,6 +642,14 @@ public class Visitors {
             strategy.visit(comparison);
             enqueue(comparison.getOperand1());
             enqueue(comparison.getOperand2());
+            visitNext();
+        }
+        
+        @Override
+        public void visit(Relike relike) {
+            strategy.visit(relike);
+            enqueue(relike.getOperand1());
+            enqueue(relike.getOperand2());
             visitNext();
         }
 
@@ -998,6 +1010,15 @@ public class Visitors {
         }
 
         @Override
+        public void visit(Relike relike) {
+            append("RELIKE(");
+            relike.getOperand1().accept(this);
+            append(',');
+            relike.getOperand2().accept(this);
+            append(')');
+        }
+        
+        @Override
         public void visit( DescendantNode descendant ) {
             append("ISDESCENDANTNODE(");
             append(descendant.selectorName());
@@ -1178,7 +1199,7 @@ public class Visitors {
             lowerCase.getOperand().accept(this);
             append(')');
         }
-
+        
         @Override
         public void visit( NodeDepth depth ) {
             append("DEPTH(").append(depth.selectorName()).append(')');

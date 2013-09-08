@@ -70,6 +70,7 @@ import org.modeshape.jcr.query.model.FullTextSearchScore;
 import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.Or;
 import org.modeshape.jcr.query.model.ReferenceValue;
+import org.modeshape.jcr.query.model.Relike;
 import org.modeshape.jcr.query.model.SameNode;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetCriteria;
@@ -209,6 +210,16 @@ public abstract class LuceneQueryFactory {
                                between.isLowerBoundIncluded(),
                                between.isUpperBoundIncluded(),
                                null);
+        }
+        if(constraint instanceof Relike) {
+            Relike relike = (Relike) constraint;
+            StaticOperand op1 = relike.getOperand1();
+            PropertyValue op2 = relike.getOperand2();
+            
+            Object relikeValue = createOperand(selectorName, op1, null);
+            assert relikeValue != null;
+            String filedName = op2.getPropertyName();
+            return new RelikeQuery(filedName, relikeValue.toString());
         }
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;

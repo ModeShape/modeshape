@@ -50,6 +50,7 @@ import org.modeshape.jcr.query.model.PropertyExistence;
 import org.modeshape.jcr.query.model.PropertyValue;
 import org.modeshape.jcr.query.model.Query;
 import org.modeshape.jcr.query.model.QueryCommand;
+import org.modeshape.jcr.query.model.Relike;
 import org.modeshape.jcr.query.model.SameNodeJoinCondition;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.Source;
@@ -89,6 +90,8 @@ public class JcrSqlQueryParserTest {
         parse("SELECT drools:title, drools:description, drools:archive FROM drools:assetNodeType WHERE drools:title LIKE 'findRulesByNameArchived1' AND jcr:path LIKE '/drools:repository/drools:package_area/%' AND drools:archive = 'false'");
         parse("SELECT drools:title, drools:description, drools:archive FROM drools:assetNodeType WHERE drools:title LIKE 'findRulesByNameArchived%' AND jcr:path LIKE '/drools:repository/drools:package_area/%' AND drools:archive = 'false'");
         parse("SELECT drools:title, drools:description, drools:archive FROM drools:assetNodeType WHERE drools:title LIKE 'findRulesByNameArchived%' AND jcr:path LIKE '/drools:repository/drools:package_area/%'");
+        parse("select * from drools:assetNodeType where relike('test-title', drools:title)");
+        parse("select * from drools:assetNodeType where relike('test-title', drools:title) and drools:archive = 'false'");
         parse("SELECT * FROM drools:assetNodeType WHERE jcr:path LIKE '/drools:repository/drools:package_area/testRestPost/assets[%]/%' and  ( drools:format='drl' OR drools:format='xls' )  AND drools:archive = 'false' ORDER BY drools:title");
         parse("SELECT * FROM drools:assetNodeType WHERE jcr:path LIKE '/drools:repository/drools:package_area/testRestDelete/assets[%]/%' and drools:format='drl' AND drools:archive = 'false' ORDER BY drools:title");
         parse("SELECT * FROM drools:assetNodeType WHERE jcr:path LIKE '/drools:repository/drools:package_area/testRestDelete/assets[%]/%' and drools:archive = 'true' ORDER BY drools:title");
@@ -284,6 +287,23 @@ public class JcrSqlQueryParserTest {
         assertThat(comparison2a.getOperand1(), is((DynamicOperand)nodePath(selectorName("nt:base"))));
         assertThat(comparison2a.getOperand2(), is((StaticOperand)literal("/a/b/%/%")));
     }
+    
+    @Test
+    public void shouldParseSelectStarFromSingleSourceWithWhereRelikeConstraint() {
+        query = parse("SELECT * FROM car:Car WHERE relike('test-model', car:model)");
+        assertThat(query.source(), is(instanceOf(NamedSelector.class)));
+        // SELECT * ...
+        assertThat(query.columns().isEmpty(), is(true));
+        // FROM ...
+        NamedSelector selector = (NamedSelector)query.source();
+        assertThat(selector.name(), is(selectorName("car:Car")));
+        assertThat(selector.aliasOrName(), is(selectorName("car:Car")));
+        assertThat(selector.alias(), is(nullValue()));
+        // WHERE ...
+        Relike relike = isRelike(query.constraint());
+        assertThat(relike.getOperand1(), is((StaticOperand)literal("test-model")));
+        assertThat(relike.getOperand2(), is((DynamicOperand)propertyValue(selectorName("car:Car"), "car:model")));
+    }
 
     protected Join isJoin( Source source ) {
         assertThat(source, is(instanceOf(Join.class)));
@@ -305,6 +325,11 @@ public class JcrSqlQueryParserTest {
         return (Comparison)constraint;
     }
 
+    protected Relike isRelike( Constraint constraint ) {
+        assertThat(constraint, is(instanceOf(Relike.class)));
+        return (Relike)constraint;
+    }
+    
     protected SameNodeJoinCondition isSameNodeJoinCondition( JoinCondition condition ) {
         assertThat(condition, is(instanceOf(SameNodeJoinCondition.class)));
         return (SameNodeJoinCondition)condition;
