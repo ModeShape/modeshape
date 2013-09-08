@@ -62,6 +62,7 @@ import org.modeshape.jcr.query.model.Ordering;
 import org.modeshape.jcr.query.model.PropertyExistence;
 import org.modeshape.jcr.query.model.PropertyValue;
 import org.modeshape.jcr.query.model.ReferenceValue;
+import org.modeshape.jcr.query.model.Relike;
 import org.modeshape.jcr.query.model.SameNode;
 import org.modeshape.jcr.query.model.SameNodeJoinCondition;
 import org.modeshape.jcr.query.model.SelectorName;
@@ -1207,6 +1208,14 @@ public class PlanUtil {
             if (lhs == comparison.getOperand1()) return comparison;
             return new Comparison(lhs, comparison.operator(), comparison.getOperand2());
         }
+        if(constraint instanceof Relike) {
+            Relike relike = (Relike) constraint;
+            StaticOperand op1 = relike.getOperand1();
+            PropertyValue op2 = relike.getOperand2();
+            PropertyValue newOp2 = replaceAliasesWithProperties(context, op2, propertyByAlias);
+            if (op2 == newOp2) return relike;
+            return new Relike(op1, op2);
+        }
         if (constraint instanceof SetCriteria) {
             SetCriteria criteria = (SetCriteria)constraint;
             DynamicOperand lhs = replaceAliasesWithProperties(context, criteria.leftOperand(), propertyByAlias);
@@ -1339,6 +1348,14 @@ public class PlanUtil {
             StaticOperand newRhs = replaceSubqueriesWithBindVariables(context, rhs, subqueriesByVariableName);
             if (rhs == newRhs) return comparison;
             return new Comparison(lhs, comparison.operator(), newRhs);
+        }
+        if( constraint instanceof Relike) {
+            Relike relike = (Relike)constraint;
+            StaticOperand op1 = relike.getOperand1(); 
+            PropertyValue op2 = relike.getOperand2();            
+            StaticOperand newOp1 = replaceSubqueriesWithBindVariables(context, op1, subqueriesByVariableName);
+            if(op1 == newOp1) return relike;
+            return new Relike(op1, op2);
         }
         if (constraint instanceof SetCriteria) {
             SetCriteria criteria = (SetCriteria)constraint;

@@ -3605,24 +3605,4 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         builder.append(")");
         return builder.toString();
     }
-
-    private void assertNodesAreFound( String queryString,
-                                      String queryType,
-                                      String... expectedNodesPaths ) throws RepositoryException {
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        Query query = queryManager.createQuery(queryString, queryType);
-        QueryResult result = query.execute();
-
-        List<String> actualNodePaths = new ArrayList<String>();
-        for (NodeIterator nodeIterator = result.getNodes(); nodeIterator.hasNext();) {
-            actualNodePaths.add(nodeIterator.nextNode().getPath().toLowerCase());
-        }
-
-        List<String> expectedNodePaths = Arrays.asList(expectedNodesPaths);
-
-        assertEquals(expectedNodePaths.toString(), expectedNodePaths.size(), actualNodePaths.size());
-        for (String expectedPath : expectedNodePaths) {
-            assertTrue(expectedPath + " not found", actualNodePaths.remove(expectedPath.toLowerCase()));
-        }
-    }
 }

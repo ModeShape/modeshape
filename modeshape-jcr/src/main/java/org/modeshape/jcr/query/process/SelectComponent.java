@@ -45,6 +45,7 @@ import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.Not;
 import org.modeshape.jcr.query.model.Or;
 import org.modeshape.jcr.query.model.PropertyExistence;
+import org.modeshape.jcr.query.model.Relike;
 import org.modeshape.jcr.query.model.SameNode;
 import org.modeshape.jcr.query.model.SetCriteria;
 import org.modeshape.jcr.query.model.StaticOperand;
@@ -237,6 +238,14 @@ public class SelectComponent extends DelegatingComponent {
                     return true;
                 }
             };
+        }
+        if(constraint instanceof Relike) {
+            return new ConstraintChecker() {
+                @Override
+                public boolean satisfiesConstraints( Object[] tuple ) {
+                    return true;
+                }
+            };           
         }
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;
