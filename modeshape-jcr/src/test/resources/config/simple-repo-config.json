@@ -9,6 +9,6 @@
         "anonymous" : {
             "roles" : ["readonly","readwrite","admin"],
             "useOnFailedLogin" : true
-        },
+        }
     }
 }
