@@ -28,9 +28,10 @@ public class Console implements EntryPoint {
     protected final JcrServiceAsync jcrService = GWT.create(JcrService.class);
 
     private VLayout mainForm = new VLayout();
+    private ToolBar toolBar = new ToolBar(this);
     private Navigator navigator;
     protected final NodePanel nodePanel = new NodePanel();
-    private RepositoryPanel repositoryPanel = new RepositoryPanel();
+    private RepositoryPanel repositoryPanel = new RepositoryPanel(this);
     private QueryPanel queryPanel = new QueryPanel();
     
     /**
@@ -179,8 +180,9 @@ public class Console implements EntryPoint {
         HLayout statusBar = new HLayout();
         statusBar.setHeight("5%");
         statusBar.setBorder("1px solid black");
-
-        mainForm.addMember(sp1);
+        
+        mainForm.addMember(toolBar);
+//        mainForm.addMember(sp1);
         mainForm.addMember(topPanel);
         mainForm.addMember(sp2);
         mainForm.addMember(bottomPanel);
@@ -188,6 +190,7 @@ public class Console implements EntryPoint {
         
         mainForm.draw();
         
+        repositoryPanel.display();
         //navigator.select();
     }
 }

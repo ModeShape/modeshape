@@ -12,9 +12,11 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.Value;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.naming.InitialContext;
 import org.jboss.logging.Logger;
@@ -98,11 +100,13 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     public JcrRepositoryDescriptor repositoryInfo() {
         Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
         JcrRepositoryDescriptor desc = new JcrRepositoryDescriptor();
-
+        
+        Repository repo = session.getRepository();
         try {
             String keys[] = session.getRepository().getDescriptorKeys();
             for (int i = 0; i < keys.length; i++) {
-                desc.add(keys[i], session.getRepository().getDescriptorValue(keys[i]).getString());
+                Value value = repo.getDescriptorValue(keys[i]);
+                desc.add(keys[i], value != null ? value.getString() : "N/A");
             }
         } catch (RepositoryException e) {
             e.printStackTrace();
