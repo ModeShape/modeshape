@@ -15,6 +15,7 @@ import com.smartgwt.client.widgets.layout.VLayout;
 import com.smartgwt.client.widgets.tab.Tab;
 import java.util.Collection;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
+import org.modeshape.web.shared.Param;
 
 /**
  *
@@ -24,10 +25,11 @@ public class RepositoryPanel extends Tab {
 
     private final RepositoryInfoPanel repositoryInfo;
     private final NodeTypesPanel nodeTypes;
-
-    public RepositoryPanel() {
+    private Console console;
+    
+    public RepositoryPanel(Console console) {
         super();
-
+        this.console = console;
         setTitle("Repository");
 
         repositoryInfo = new RepositoryInfoPanel();
@@ -86,6 +88,10 @@ public class RepositoryPanel extends Tab {
         }
     }
 
+    public void display() {
+            console.jcrService.repositoryInfo(new RepositoryInfoCallbackHandler());
+    }
+    
     private class NodeTypesPanel extends VLayout {
 
         public NodeTypesPanel() {
@@ -102,13 +108,13 @@ public class RepositoryPanel extends Tab {
 
         @Override
         public void onSuccess(JcrRepositoryDescriptor descriptor) {
-            Collection<JcrRepositoryDescriptor.Param> params = descriptor.info();
+            Collection<Param> params = descriptor.info();
             ListGridRecord[] data = new ListGridRecord[params.size()];
             int i = 0;
-            for (JcrRepositoryDescriptor.Param p : params) {
+            for (Param p : params) {
                 ListGridRecord record = new ListGridRecord();
-                record.setAttribute("name", p.name());
-                record.setAttribute("value", p.value());
+                record.setAttribute("name", p.getName());
+                record.setAttribute("value", p.getValue());
                 data[i++] = record;
             }
             RepositoryPanel.this.repositoryInfo.grid.setData(data);

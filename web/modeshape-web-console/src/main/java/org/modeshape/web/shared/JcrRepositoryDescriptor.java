@@ -27,23 +27,4 @@ public class JcrRepositoryDescriptor implements Serializable {
         return info;
     }
     
-    public class Param implements Serializable {
-        private String name, value;
-        
-        public Param() {
-        }
-        
-        public Param(String name, String value) {
-            this.name = name;
-            this.value = value;
-        }
-        
-        public String name() {
-            return name;
-        }
-        
-        public String value() {
-            return value;
-        }
-    }
 }
