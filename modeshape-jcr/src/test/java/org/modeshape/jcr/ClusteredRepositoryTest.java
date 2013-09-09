@@ -36,11 +36,14 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -48,7 +51,6 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
-import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.observation.Event;
 
 /**
@@ -237,42 +239,48 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
     private void assertIndexChangesAreVisibleToOtherProcesses( Session process1Session,
                                                                Session process2Session )
         throws RepositoryException, InterruptedException {
-        JcrTools jcrTools = new JcrTools();
         String pathQuery = "select * from [nt:unstructured] as n where n.[jcr:path]='/testNode'";
 
         // Add a jcr node in the 1st process and check it can be queried
         Node testNode = process1Session.getRootNode().addNode("testNode");
         process1Session.save();
-        assertEquals(1, jcrTools.printQuery(process1Session, pathQuery).getNodes().getSize());
+        queryAndExpectResults(process1Session, pathQuery, 1);
 
         // wait a bit for state transfer to complete
-        Thread.sleep(100);
+        Thread.sleep(1000);
 
         // check that the custom jcr node created on the other process, was sent to this one
         assertNotNull(process2Session.getNode("/testNode"));
-        assertEquals(1, jcrTools.printQuery(process2Session, pathQuery).getNodes().getSize());
+        queryAndExpectResults(process2Session, pathQuery, 1);
 
         // Update a property of that node and check it's send through the cluster
         testNode = process1Session.getNode("/testNode");
         testNode.setProperty("testProp", "test value");
         process1Session.save();
         String propertyQuery = "select * from [nt:unstructured] as n where n.[testProp]='test value'";
-        assertEquals(1, jcrTools.printQuery(process1Session, propertyQuery).getNodes().getSize());
+        queryAndExpectResults(process1Session, propertyQuery, 1);
 
         // wait a bit for state transfer to complete
-        Thread.sleep(100);
+        Thread.sleep(1000);
         // check the property change was made in the indexes on the second node
-        assertEquals(1, jcrTools.printQuery(process2Session, propertyQuery).getNodes().getSize());
+        queryAndExpectResults(process2Session, propertyQuery, 1);
 
         // Remove the node in the first process and check it's removed from the indexes across the cluster
         testNode = process1Session.getNode("/testNode");
         testNode.remove();
         process1Session.save();
-        assertEquals(0, jcrTools.printQuery(process1Session, pathQuery).getNodes().getSize());
+        queryAndExpectResults(process1Session, pathQuery, 0);
         // wait a bit for state transfer to complete
-        Thread.sleep(100);
+        Thread.sleep(1000);
         // check the node was removed from the indexes in the second cluster node
-        assertEquals(0, jcrTools.printQuery(process2Session, pathQuery).getNodes().getSize());
+        queryAndExpectResults(process2Session, pathQuery, 0);
+    }
+
+    private void queryAndExpectResults(Session session, String queryString, int howMany) throws RepositoryException{
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+        NodeIterator nodes = query.execute().getNodes();
+        assertEquals(howMany, nodes.getSize());
     }
 
     protected class ClusteringEventListener implements EventListener {

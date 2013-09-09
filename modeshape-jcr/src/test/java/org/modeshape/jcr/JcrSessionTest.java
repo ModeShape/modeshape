@@ -65,7 +65,8 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
-import javax.jcr.query.QueryResult;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.FixFor;
@@ -1118,21 +1119,14 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         a.setProperty("stringProperty1", "value");
         session.save();
 
-        QueryResult queryResult = tools.printQuery(session,
-                                                   "select * from [nt:unstructured] as node where node.stringProperty='value'");
-        assertEquals(2, queryResult.getNodes().getSize());
-
-        queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty1='value'");
-        assertEquals(1, queryResult.getNodes().getSize());
+        queryAndExpectResults("select * from [nt:unstructured] as node where node.stringProperty='value'", 2);
+        queryAndExpectResults("select * from [nt:unstructured] as node where node.stringProperty1='value'", 1);
 
         a.setProperty("stringProperty", "value1");
         session.save();
 
-        queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty='value'");
-        assertEquals(1, queryResult.getNodes().getSize());
-
-        queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty1='value'");
-        assertEquals(1, queryResult.getNodes().getSize());
+        queryAndExpectResults("select * from [nt:unstructured] as node where node.stringProperty='value'", 1);
+        queryAndExpectResults("select * from [nt:unstructured] as node where node.stringProperty1='value'", 1);
     }
 
     @Test
@@ -1146,9 +1140,9 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         // rename /a/b to /a/d
         session.getWorkspace().move("/a/b", "/a/d");
 
-        queryForAbsent("b");
-        queryForExistingNode("d", "/a/d");
-        queryForExistingNode("c", "/a/d/c");
+        queryForAbsentLocalName("b");
+        queryForExistingLocaLName("d", "/a/d");
+        queryForExistingLocaLName("c", "/a/d/c");
     }
 
     @Test
@@ -1162,25 +1156,79 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         // move /a to /w/q
         session.getWorkspace().move("/a", "/w/x");
 
-        queryForAbsent("a");
-        queryForExistingNode("x", "/w/x");
-        queryForExistingNode("b", "/w/x/b");
-        queryForExistingNode("c", "/w/x/b/c");
+        queryForAbsentLocalName("a");
+        queryForExistingLocaLName("x", "/w/x");
+        queryForExistingLocaLName("b", "/w/x/b");
+        queryForExistingLocaLName("c", "/w/x/b/c");
     }
 
-    private void queryForAbsent( String localNodeName ) throws RepositoryException {
-        QueryResult queryResult = tools.printQuery(session, "select n from [nt:unstructured] as n where localname(n)='"
-                                                            + localNodeName + "'");
-        assertEquals(0, queryResult.getNodes().getSize());
+    @Test
+    @FixFor( "MODE-2030")
+    public void shouldIndexChildrenOfRenamedNode() throws Exception {
+        Node rootNode = session().getRootNode();
+        Node folder = rootNode.addNode("folder", "nt:folder");
+        Node file = folder.addNode("file", "nt:file");
+        Node contentNode = file.addNode("jcr:content", "nt:resource");
+        contentNode.setProperty("jcr:data", session().getValueFactory().createBinary("test".getBytes()));
+
+        session().save();
+
+        queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder/%'", 1);
+
+        folder.getSession().move(folder.getPath(), "/folder_1");
+        folder.getSession().save();
+
+        queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder_1/%'", 1);
     }
 
-    private void queryForExistingNode( String localNodeName,
-                                       String expectedPath ) throws RepositoryException {
-        QueryResult queryResult = tools.printQuery(session, "select n from [nt:unstructured] as n where localname(n)='"
-                                                            + localNodeName + "'");
-        NodeIterator nodeIterator = queryResult.getNodes();
-        assertTrue(nodeIterator.hasNext());
-        Node node = nodeIterator.nextNode();
+    @Test
+    @FixFor( "MODE-2030")
+    public void shouldIndexChildrenOfMovedNode() throws Exception {
+        Node rootNode = session().getRootNode();
+        Node folder = rootNode.addNode("folder", "nt:folder");
+        Node file = folder.addNode("file", "nt:file");
+        Node contentNode = file.addNode("jcr:content", "nt:resource");
+        contentNode.setProperty("jcr:data", session().getValueFactory().createBinary("test".getBytes()));
+        String lastModifiedBy = "testCode";
+        contentNode.setProperty("jcr:lastModifiedBy", lastModifiedBy);
+        rootNode.addNode("folderA");
+
+        session().save();
+
+        queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder/%'", 1);
+        queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folderA/%'", 0);
+        queryAndExpectResults("SELECT * FROM [nt:resource] as r WHERE r.[jcr:lastModifiedBy]='"+ lastModifiedBy + "'" , 1);
+
+        folder.getSession().move(folder.getPath(), "/folderA/folderB");
+        folder.getSession().save();
+
+        queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder/%'", 0);
+        queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folderA/folderB/%'", 1);
+        queryAndExpectResults("SELECT * FROM [nt:resource] as r WHERE r.[jcr:lastModifiedBy]='"+ lastModifiedBy + "'" , 1);
+    }
+
+    private List<Node> queryAndExpectResults(String queryString, int howMany) throws RepositoryException{
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+
+        NodeIterator nodes = query.execute().getNodes();
+        List<Node> result = new ArrayList<Node>();
+        while (nodes.hasNext()) {
+            result.add(nodes.nextNode());
+        }
+        assertEquals("Invalid nodes retrieved from query: " + result, howMany, result.size());
+        return result;
+    }
+
+    private void queryForAbsentLocalName( String localNodeName ) throws RepositoryException {
+        queryAndExpectResults("select n from [nt:unstructured] as n where localname(n)='" + localNodeName + "'", 0);
+    }
+
+    private void queryForExistingLocaLName( String localNodeName,
+                                            String expectedPath ) throws RepositoryException {
+        List<Node> nodes = queryAndExpectResults(
+                "select n from [nt:unstructured] as n where localname(n)='" + localNodeName + "'", 1);
+        Node node = nodes.get(0);
         assertEquals(localNodeName, node.getName());
         assertEquals(expectedPath, node.getPath());
     }
