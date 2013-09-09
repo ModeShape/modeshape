@@ -32,7 +32,7 @@ public class Console implements EntryPoint {
     private Navigator navigator;
     protected final NodePanel nodePanel = new NodePanel();
     private RepositoryPanel repositoryPanel = new RepositoryPanel(this);
-    private QueryPanel queryPanel = new QueryPanel();
+    private QueryPanel queryPanel = new QueryPanel(this);
     
     /**
      * This is the entry point method.
@@ -191,6 +191,7 @@ public class Console implements EntryPoint {
         mainForm.draw();
         
         repositoryPanel.display();
+        queryPanel.init();
         //navigator.select();
     }
 }
