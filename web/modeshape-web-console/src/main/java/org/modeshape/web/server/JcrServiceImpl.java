@@ -18,6 +18,11 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
+import javax.jcr.query.QueryResult;
+import javax.jcr.query.Row;
+import javax.jcr.query.RowIterator;
 import javax.naming.InitialContext;
 import org.jboss.logging.Logger;
 import org.modeshape.jcr.JcrRepository;
@@ -25,6 +30,7 @@ import org.modeshape.web.shared.JcrNode;
 import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.shared.JcrProperty;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
+import org.modeshape.web.shared.ResultSet;
 
 /**
  * The server side implementation of the RPC service.
@@ -112,5 +118,51 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             e.printStackTrace();
         }
         return desc;
+    }
+    
+
+    @Override
+    public ResultSet query(String text, String lang) {
+        Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
+        ResultSet rs = new ResultSet();
+        try {
+            QueryManager qm = session.getWorkspace().getQueryManager();
+            Query q = qm.createQuery(text, text);
+            
+            QueryResult qr = q.execute();
+            
+            rs.setColumnNames(qr.getColumnNames());
+            ArrayList<String[]> rows = new ArrayList();
+            RowIterator it = qr.getRows();
+            while (it.hasNext()) {
+                Row row = it.nextRow();
+                String[] list = new String[qr.getColumnNames().length];
+
+                for (int i = 0; i < qr.getColumnNames().length; i++) {
+                    Value v = row.getValue(qr.getColumnNames()[i]);
+                    list[i] = v != null ? v.getString() : "null";
+                }
+
+                rows.add(list);
+            }
+            
+            rs.setRows(rows);
+        } catch (RepositoryException e) {
+            e.printStackTrace();
+        }
+        return rs;
+    }
+
+    @Override
+    public String[] supportedQueryLanguages() {
+        Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
+        ResultSet rs = new ResultSet();
+        try {
+            QueryManager qm = session.getWorkspace().getQueryManager();
+            return qm.getSupportedQueryLanguages();
+        } catch (RepositoryException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

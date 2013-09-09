@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import org.modeshape.web.shared.JcrProperty;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
+import org.modeshape.web.shared.ResultSet;
 
 /**
  * The client side stub for the RPC service.
@@ -38,4 +39,7 @@ public interface JcrService extends RemoteService {
      * @return description of the repository capabilities.
      */
     public JcrRepositoryDescriptor repositoryInfo();
+    
+    public String[] supportedQueryLanguages();
+    public ResultSet query(String text, String lang);
 }
