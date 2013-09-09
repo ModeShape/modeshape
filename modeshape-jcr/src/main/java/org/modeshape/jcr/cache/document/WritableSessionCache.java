@@ -1184,10 +1184,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                     boolean externalNodeChanged = isExternal
                                                   && (hasPropertyChanges || node.hasNonPropertyChanges() || node.changedChildren()
                                                                                                                 .renameCount() > 0);
-                    if (externalNodeChanged) {
-                        // in the case of external nodes, only if there are changes should the update be called
-                        documentStore.updateDocument(keyStr, doc, node);
-                    }
                     boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
                                                               .equalsIgnoreCase(node.getKey().getWorkspaceKey());
 
@@ -1226,6 +1222,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 }
                             } // otherwise the parent was not PERSISTED and there's nothing to do
                         }
+                        //for each of the children of the node which has the changed path, we need to update the path
+                        //in the indexes
+                       updateIndexesForAllChildren(node, sessionPaths, workspaceName, monitor);
+                    }
+
+                    //writable connectors *may* change their data in-place, so the update operation needs to be called only
+                    //after the index changes have finished.
+                    if (externalNodeChanged) {
+                        // in the case of external nodes, only if there are changes should the update be called
+                        documentStore.updateDocument(keyStr, doc, node);
                     }
                 }
 
@@ -1310,6 +1316,31 @@ public class WritableSessionCache extends AbstractSessionCache {
         changes.setChangedNodes(changedNodes.keySet()); // don't need to make a copy
         changes.freeze(userId, userData, timestamp);
         return changes;
+    }
+
+
+    private void updateIndexesForAllChildren( CachedNode parentNode,
+                                              PathCache sessionPaths,
+                                              String workspaceName,
+                                              Monitor indexingMonitor ) {
+        for (ChildReference childReference : parentNode.getChildReferences(this)) {
+            Path parentNodePath = sessionPaths.getPath(parentNode);
+            Path newChildPath = pathFactory().create(parentNodePath, childReference.getSegment());
+            NodeKey childKey = childReference.getKey();
+            CachedNode child = getNode(childKey);
+            if (child == null) {
+                //it has been removed
+                continue;
+            }
+            if (child instanceof SessionNode && ((SessionNode) child).hasIndexRelatedChanges()) {
+                //if the child has also been modified in this session and has index-related changes it either already has
+                //or it will be re-indexed, so we shouldn't re-index it here.
+                continue;
+            }
+            indexingMonitor.recordUpdate(workspaceName, childKey, newChildPath, child.getPrimaryType(this),
+                                         child.getMixinTypes(this), child.getProperties(this));
+            updateIndexesForAllChildren(child, sessionPaths, workspaceName, indexingMonitor);
+        }
     }
 
     private void lockAndPurgeCache( Iterable<NodeKey> changedNodesInOrder ) {
