@@ -765,26 +765,65 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public AbstractJcrNode getNode( String relativePath ) throws PathNotFoundException, RepositoryException {
+        return getNode(relativePath, false);
+    }
+    
+    /**
+     * Gets access to the node with given relative path with enabled or disabled 
+     * permission testing.
+     * 
+     * @param relativePath the relative path of the node to access
+     * @param aclScope true to disable permissions testing and false otherwise
+     * @return the node under relative path
+     * @throws PathNotFoundException 
+     * @throws RepositoryException 
+     * @throws AccessControlException in case of negative results of permission 
+     * check procedure.
+     * 
+     */
+    protected AbstractJcrNode getNode( String relativePath, boolean aclScope ) throws PathNotFoundException, RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
         checkSession();
-        if (relativePath.equals(".")) return this;
-        if (relativePath.equals("..")) return this.getParent();
+        if (relativePath.equals(".")) {
+            return this;
+        }
+        
+        if (relativePath.equals("..")) {
+            if (!aclScope) {
+                session().checkPermission(this.getParent().getPath(), ModeShapePermissions.READ);
+            }
+            return this.getParent();
+        }
+        
         int indexOfFirstSlash = relativePath.indexOf('/');
         if (indexOfFirstSlash == 0 || relativePath.startsWith("[")) {
             // Not a relative path ...
             throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath, "relativePath"));
         }
+        
         Path.Segment segment = null;
         if (indexOfFirstSlash != -1) {
             // We know it's a relative path with more than one segment ...
             Path path = pathFrom(relativePath).getNormalizedPath();
             if (path.size() == 1) {
-                if (path.getLastSegment().isSelfReference()) return this;
-                if (path.getLastSegment().isParentReference()) return this.getParent();
+                if (path.getLastSegment().isSelfReference()) {
+                    return this;
+                }
+                
+                if (path.getLastSegment().isParentReference()) {
+                    if (!aclScope) {
+                        session().checkPermission(this.getParent().getPath(), ModeShapePermissions.READ);
+                    }
+                    return this.getParent();
+                }
             }
             // We know it's a resolved relative path with more than one segment ...
             if (path.size() > 1) {
-                return session().node(node(), path);
+                AbstractJcrNode node = session().node(node(), path);
+                if (!aclScope) {
+                    session().checkPermission(node.getPath(), ModeShapePermissions.READ);
+                }
+                return node;
             }
             segment = path.getLastSegment();
         } else {
@@ -799,7 +838,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new PathNotFoundException(msg);
         }
         try {
-            return session().node(ref.getKey(), null, key());
+            AbstractJcrNode node = session().node(ref.getKey(), null, key());
+            if (!aclScope) {
+                session().checkPermission(node.getPath(), ModeShapePermissions.READ);
+            }
+            return node;
         } catch (ItemNotFoundException e) {
             // expected by TCK
             String msg = JcrI18n.pathNotFoundRelativeTo.text(relativePath, location(), workspaceName());
