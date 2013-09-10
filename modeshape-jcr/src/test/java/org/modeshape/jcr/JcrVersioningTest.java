@@ -827,6 +827,51 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2034" )
+    public void shouldRestoreNodeWithVersionedChildrenUsingCheckpoints() throws Exception {
+        // Create a parent and two children, make them versionable and check them in
+        Node parent = session.getRootNode().addNode("parent");
+        parent.addMixin("mix:versionable");
+        Node child1 = parent.addNode("child1");
+        child1.addMixin("mix:versionable");
+        child1.setProperty("myproperty", "v1_1");
+        Node child2 = parent.addNode("child2");
+        child2.addMixin("mix:versionable");
+        child2.setProperty("myproperty", "v2_1");
+        session.save();
+
+        Version v1 = versionManager.checkpoint(parent.getPath());
+        assertEquals("1.0", v1.getName());
+
+        child1.setProperty("myproperty", "v1_2");
+        child2.setProperty("myproperty", "v2_2");
+        session.save();
+        Version v2 = versionManager.checkpoint(parent.getPath());
+
+        assertEquals("1.1", v2.getName());
+
+        versionManager.restore(parent.getPath(), "1.0", true);
+        parent = session.getNode("/parent");
+        assertEquals("v1_2", parent.getNode("child1").getProperty("myproperty").getString());
+        assertEquals("v2_2", parent.getNode("child2").getProperty("myproperty").getString());
+    }
+
+    @Test
+    @FixFor( "MODE-2034" )
+    public void shouldRestoreNodeWithoutVersionedChildrenUsingCheckpoints() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node node = session.getRootNode().addNode("revert", "jj:page");
+        node.addNode("child1", "jj:content");
+        node.addNode("child2", "jj:content");
+        session.save();
+        //create two versions
+        versionManager.checkpoint(node.getPath());
+        versionManager.checkpoint(node.getPath());
+        versionManager.restore(node.getPath(), "1.0", true);
+    }
+
     private void assertPropertyIsAbsent( Node node,
                                          String propertyName ) throws Exception {
         try {

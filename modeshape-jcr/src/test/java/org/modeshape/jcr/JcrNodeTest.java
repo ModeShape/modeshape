@@ -196,6 +196,28 @@ public class JcrNodeTest extends MultiUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-2034" )
+    public void shouldReorderChildrenWithChanges() throws Exception {
+        Node parent = session.getRootNode().addNode("parent", "nt:unstructured");
+        Node child1 = parent.addNode("child1");
+        Node child2 = parent.addNode("child2");
+        session.save();
+
+        parent.orderBefore("child2", "child1");
+        child1.setProperty("prop", "value");
+        child2.setProperty("prop", "value");
+        session.save();
+
+        NodeIterator nodeIterator = parent.getNodes();
+        long childIdx = nodeIterator.getSize();
+        while (nodeIterator.hasNext()) {
+            Node child = nodeIterator.nextNode();
+            assertEquals("child" + childIdx, child.getName());
+            childIdx--;
+        }
+    }
+
+    @Test
     @FixFor( "MODE-1663" )
     public void shouldMakeReferenceableNodesUsingCustomTypes() throws Exception {
         Node cars = session.getNode("/Cars");

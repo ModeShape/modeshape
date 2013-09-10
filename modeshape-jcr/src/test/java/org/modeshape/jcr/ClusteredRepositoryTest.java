@@ -247,7 +247,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         queryAndExpectResults(process1Session, pathQuery, 1);
 
         // wait a bit for state transfer to complete
-        Thread.sleep(1000);
+        Thread.sleep(1500);
 
         // check that the custom jcr node created on the other process, was sent to this one
         assertNotNull(process2Session.getNode("/testNode"));
@@ -261,7 +261,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         queryAndExpectResults(process1Session, propertyQuery, 1);
 
         // wait a bit for state transfer to complete
-        Thread.sleep(1000);
+        Thread.sleep(1500);
         // check the property change was made in the indexes on the second node
         queryAndExpectResults(process2Session, propertyQuery, 1);
 
@@ -271,7 +271,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         process1Session.save();
         queryAndExpectResults(process1Session, pathQuery, 0);
         // wait a bit for state transfer to complete
-        Thread.sleep(1000);
+        Thread.sleep(1500);
         // check the node was removed from the indexes in the second cluster node
         queryAndExpectResults(process2Session, pathQuery, 0);
     }
