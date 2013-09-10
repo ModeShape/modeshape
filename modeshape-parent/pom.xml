@@ -234,22 +234,22 @@
         <jcr.version>2.0</jcr.version>
         <jackrabbit.jcr.tck.version>2.6.0</jackrabbit.jcr.tck.version>
         <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
-        <jbossjta.version>4.16.2.Final</jbossjta.version>
+        <jbossjta.version>4.16.6.Final</jbossjta.version>
         <atomikos.version>3.8.0</atomikos.version>
-        <picketbox.version>4.0.7.Final</picketbox.version>
+        <picketbox.version>4.0.17.SP2</picketbox.version>
         <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
 
         <!-- These versions of Hibernate Search transitive dependencies are used in creating the Hibernate Search AS7 module.
              When changing the version of Hiberate Search version, update these
              Note that Hibernate Search forcibly overrides the Jackson libraries -->
-        <hibernate.search.version>4.2.0.Final</hibernate.search.version>
+        <hibernate.search.version>4.3.0.Final</hibernate.search.version>
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
 
-        <infinispan.version>5.2.6.Final</infinispan.version>
+        <infinispan.version>5.2.7.Final</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.2.7.Final</jgroups.version>
+        <jgroups.version>3.2.10.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <jboss.logging.version>3.1.2.GA</jboss.logging.version>
 
@@ -318,11 +318,11 @@
         -->
 
         <!--Version of the artifacts (API) needed by the AS7 subsystem and provided as part of EAP-->
-        <jbossas.version>7.2.0.Final-redhat-8</jbossas.version>
+        <jbossas.version>7.2.1.Final-redhat-10</jbossas.version>
         <!--Properties which must be used when installing locally an EAP ZIP distribution -->
         <jboss.eap.groupId>org.jboss.as</jboss.eap.groupId>
         <jboss.eap.artifactId>jboss-eap</jboss.eap.artifactId>
-        <jboss.eap.version>6.1.0.GA</jboss.eap.version>
+        <jboss.eap.version>6.1.1.GA</jboss.eap.version>
         <jboss.eap.root.folder>jboss-eap-6.1</jboss.eap.root.folder>
 
         <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
@@ -335,7 +335,7 @@
         <javax.jta.version>1.1</javax.jta.version>
 
         <!--Versions used by the integration/kit tests an -->
-        <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-4</jboss-javaee-6.0-with-tools.version>
+        <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-9</jboss-javaee-6.0-with-tools.version>
         <jboss-as-arquillian-container-managed.version>7.2.0.Final</jboss-as-arquillian-container-managed.version>
 
         <!--
@@ -1177,6 +1177,14 @@
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-search-infinispan</artifactId>
                 <version>${hibernate.search.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-modules</artifactId>
+                <version>${hibernate.search.version}</version>
+                <classifier>jbossas-72-dist</classifier>
+                <type>zip</type>
             </dependency>
 
             <dependency>

@@ -8,20 +8,6 @@
 	<baseDirectory>/</baseDirectory>
 
 	<fileSets>
-        <!--
-            //TODO author=Horia Chiorean date=2/28/13 description=MODE-1838 - This should change after HSearch provides an EAP kit
-            This must be done first, so that we're able to ovewrite files with the one from our kit.
-            //TODO author=Horia Chiorean date=4/10/13 description=MODE-1895 - need to overwrite the SOLR module
-        -->
-        <fileSet>
-            <directory>${project.build.directory}/hsearch-71-kit/modules</directory>
-            <outputDirectory>${jboss.eap.modules.location}</outputDirectory>
-            <excludes>
-                <exclude>**/hibernate/search/engine/**/module.xml</exclude>
-                <exclude>**/apache/solr/**/module.xml</exclude>
-            </excludes>
-        </fileSet>
-
 		<!-- The modules part of the kit -->
 		<fileSet>
 			<directory>../deploy/jbossas/kit/jboss-eap61</directory>
@@ -83,6 +69,16 @@
     </files>
 
     <dependencySets>
+        <!--Hibernate Search's EAP kit -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.eap.modules.location}</outputDirectory>
+            <includes>
+                <include>org.hibernate:hibernate-search-modules</include>
+            </includes>
+            <unpack>true</unpack>
+        </dependencySet>
+
 		<!-- Module for the standard JCR API -->
 		<dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
