@@ -132,8 +132,8 @@ public abstract class AbstractChildReferences implements ChildReferences {
                         continue;
                     }
 
-                    // See if this child has been removed ...
-                    if (changes.isRemoved(next)) continue;
+                    // See if this child has been removed but not inserted ...
+                    if (changes.isRemoved(next) && changes.inserted(next.getKey()) == null) continue;
 
                     // See if this child has been renamed ...
                     Name newName = changes.renamed(next.getKey());
