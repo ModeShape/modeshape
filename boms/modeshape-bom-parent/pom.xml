@@ -52,17 +52,17 @@
         <!-- Versions of non-ModeShape dependencies -->
         <jcr.version>2.0</jcr.version>
         <joda.time.version>1.6.2</joda.time.version>
-        <infinispan.version>5.2.6.Final</infinispan.version>
+        <infinispan.version>5.2.7.Final</infinispan.version>
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
-        <jgroups.version>3.2.7.Final</jgroups.version> <!-- same as the one used by Infinispan -->
-        <hibernate.search.version>4.2.0.Final</hibernate.search.version>
+        <jgroups.version>3.2.10.Final</jgroups.version> <!-- same as the one used by Infinispan -->
+        <hibernate.search.version>4.3.0.Final</hibernate.search.version>
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
         <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
 
-        <jbossjta.version>4.16.2.Final</jbossjta.version>
-        <picketbox.version>4.0.7.Final</picketbox.version>
+        <jbossjta.version>4.16.6.Final</jbossjta.version>
+        <picketbox.version>4.0.17.SP2</picketbox.version>
         <resteasy.version>2.3.6.Final</resteasy.version>
         <jettison.version>1.3.1</jettison.version>
         <httpclient.version>4.1.2</httpclient.version>
