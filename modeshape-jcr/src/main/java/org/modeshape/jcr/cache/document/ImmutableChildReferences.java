@@ -296,10 +296,6 @@ public class ImmutableChildReferences {
                 if (context != null) {
                     Changes changes = context.changes();
                     if (changes != null) {
-                        if (changes.isRemoved(ref)) {
-                            // The node was removed ...
-                            return null;
-                        }
                         boolean renamed = false;
                         if (changes.isRenamed(ref)) {
                             // The node was renamed, so get the new name ...
@@ -317,7 +313,12 @@ public class ImmutableChildReferences {
                                 ChildReference child = iter.next();
                                 if (child.getKey().equals(key)) return child;
                             }
-                            // Shouldn't really happen ...
+                        }
+
+                        //check if the node was removed only at the end to that insertions before can be processed first
+                        if (changes.isRemoved(ref)) {
+                            // The node was removed ...
+                            return null;
                         }
                     } else {
                         // It's in our list but there are no changes ...

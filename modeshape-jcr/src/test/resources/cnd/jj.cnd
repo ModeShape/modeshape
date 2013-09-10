@@ -1,0 +1,10 @@
+<jj='http://jj.com/1.0'>
+
+[jj:content] > mix:referenceable orderable
+  - * (undefined) multiple
+  - * (undefined)
+  + * (jj:content) = jj:contentType sns
+
+[jj:page] > mix:versionable orderable
+  + * (jj:page) ignore
+  + * (jj:content)
