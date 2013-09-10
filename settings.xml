@@ -47,7 +47,7 @@
                 <repository>
                     <id>jboss-eap-techpreview</id>
                     <name>JBoss.org Public EAP Repository</name>
-                    <url>http://maven.repository.redhat.com/techpreview/eap6/6.1.0/maven-repository</url>
+                    <url>http://maven.repository.redhat.com/techpreview/eap6/6.1.1/maven-repository</url>
                     <layout>default</layout>
                     <releases>
                         <enabled>true</enabled>
