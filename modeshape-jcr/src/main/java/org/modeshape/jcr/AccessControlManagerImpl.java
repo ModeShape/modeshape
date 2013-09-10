@@ -150,7 +150,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
             JcrAccessControlList policy = new JcrAccessControlList(this, path);
 
             // load entries
-            Node aclNode = node.getNode(ACCESS_LIST_NODE);
+            AbstractJcrNode aclNode = ((AbstractJcrNode)node).getNode(ACCESS_LIST_NODE, true);
             NodeIterator it = aclNode.getNodes();
             while (it.hasNext()) {
                 Node entryNode = it.nextNode();
@@ -224,14 +224,14 @@ public class AccessControlManagerImpl implements AccessControlManager {
         // which belongs to the access list
         node.addMixin(MODE_ACCESS_CONTROLLABLE, false);
 
-        AbstractJcrNode aclNode = node.hasNode(ACCESS_LIST_NODE) ? node.getNode(ACCESS_LIST_NODE) : node.addAclNode(ACCESS_LIST_NODE,
+        AbstractJcrNode aclNode = node.hasNode(ACCESS_LIST_NODE) ? node.getNode(ACCESS_LIST_NODE, true) : node.addAclNode(ACCESS_LIST_NODE,
                                                                                                                     MODE_ACCESS_LIST_NODE);
         // store entries as child nodes of acl
         for (AccessControlEntry ace : acl.getAccessControlEntries()) {
             assert (ace.getPrincipal() != null);
             String name = ace.getPrincipal().getName();
 
-            AbstractJcrNode entryNode = aclNode.hasNode(name) ? aclNode.getNode(name) : aclNode.addAclNode(name,
+            AbstractJcrNode entryNode = aclNode.hasNode(name) ? aclNode.getNode(name, true) : aclNode.addAclNode(name,
                                                                                                            MODE_ACCESS_LIST_ENTRY_NODE);
 
             entryNode.setPropertyInAccessControlScope(PRINCIPAL_NAME, ace.getPrincipal().getName());
@@ -264,7 +264,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
             }
             Node node = session.getNode(path);
             if (node.hasNode(ACCESS_LIST_NODE)) {
-                Node aclNode = node.getNode(ACCESS_LIST_NODE);
+                AbstractJcrNode aclNode = ((AbstractJcrNode)node).getNode(ACCESS_LIST_NODE, true);
                 aclNode.remove();
                 node.removeMixin(MODE_ACCESS_CONTROLLABLE);
             }
@@ -281,7 +281,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
      * @throws RepositoryException
      */
     public JcrAccessControlList findAccessList( String absPath ) throws PathNotFoundException, RepositoryException {
-        Node node = session.getNode(absPath, true);
+        AbstractJcrNode node = session.getNode(absPath, true);
         while (!node.hasNode(ACCESS_LIST_NODE)) {
             try {
                 node = node.getParent();
@@ -291,7 +291,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         }
 
         if (node.hasNode(ACCESS_LIST_NODE)) {
-            return acl(node.getNode(ACCESS_LIST_NODE));
+            return acl(node.getNode(ACCESS_LIST_NODE, true));
         }
 
         return null;

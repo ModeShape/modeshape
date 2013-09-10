@@ -46,6 +46,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.security.acl.Privileges;
 
@@ -262,6 +263,36 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         setPolicy("/Cars/Luxury/Bentley Continental", Privilege.JCR_WRITE);
     }
 
+    @Test
+    @FixFor("MODE-2036")
+    public void shouldDenyAccessChildNode() throws Exception {
+        Node root = session.getRootNode();
+        Node truks = root.addNode("truks");
+        session.save();
+        
+        AccessControlManager acm = session.getAccessControlManager();
+        Privilege[] privileges = new Privilege[]{acm.privilegeFromName(Privilege.JCR_ALL)};
+        
+
+        AccessControlList acl;
+        AccessControlPolicyIterator it = acm.getApplicablePolicies(truks.getPath());
+        if (it.hasNext()) {
+            acl = (AccessControlList)it.nextAccessControlPolicy();
+        } else {
+            acl = (AccessControlList)acm.getPolicies(truks.getPath())[0];
+        }
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("admin"), privileges);
+
+        acm.setPolicy(truks.getPath(), acl);
+        session.save();
+        
+        try {
+            Node node = root.getNode("truks");
+            fail("Access list should deny access");
+        } catch (AccessControlException e) {
+        }
+    }
+ 
     // -------------------------------
 
     @Test
