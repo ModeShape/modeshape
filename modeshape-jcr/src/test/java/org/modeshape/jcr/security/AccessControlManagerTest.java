@@ -281,7 +281,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } else {
             acl = (AccessControlList)acm.getPolicies(truks.getPath())[0];
         }
-        acl.addAccessControlEntry(SimplePrincipal.newInstance("admin"), privileges);
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("Admin"), privileges);
 
         acm.setPolicy(truks.getPath(), acl);
         session.save();
