@@ -47,6 +47,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.ConfigurationException;
@@ -56,6 +57,7 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShape;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.Upgrades;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
@@ -95,8 +97,6 @@ import org.modeshape.jcr.value.ValueFactory;
  */
 public class RepositoryCache implements Observable {
 
-    private static final long MAX_NUMBER_OF_MINUTES_TO_WAIT_FOR_REPOSITORY_INITIALIZATION = 10;
-
     private static final Logger LOGGER = Logger.getLogger(RepositoryCache.class);
 
     private static final String SYSTEM_METADATA_IDENTIFIER = "jcr:system/mode:metadata";
@@ -109,6 +109,9 @@ public class RepositoryCache implements Observable {
     private static final String REPOSITORY_INITIALIZED_AT_FIELD_NAME = "intializedAt";
     private static final String REPOSITORY_INITIALIZER_FIELD_NAME = "intializer";
     private static final String REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME = "createdWithModeShapeVersion";
+    private static final String REPOSITORY_UPGRADE_ID_FIELD_NAME = "lastUpgradeId";
+    private static final String REPOSITORY_UPGRADED_AT_FIELD_NAME = "lastUpgradedAt";
+    private static final String REPOSITORY_UPGRADER_FIELD_NAME = "upgrader";
 
     private final ExecutionContext context;
     private final RepositoryConfiguration configuration;
@@ -131,6 +134,8 @@ public class RepositoryCache implements Observable {
     private final String processKey;
     private final CacheContainer workspaceCacheManager;
     private volatile boolean initializingRepository = false;
+    private volatile boolean upgradingRepository = false;
+    private int lastUpgradeId;
 
     public RepositoryCache( ExecutionContext context,
                             DocumentStore documentStore,
@@ -153,7 +158,9 @@ public class RepositoryCache implements Observable {
         this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
         this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
 
+        final Upgrades upgrades = Upgrades.STANDARD_UPGRADES;
         SchematicEntry repositoryInfo = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
+        boolean upgradeRequired = false;
         if (repositoryInfo == null) {
             // Create a UUID that we'll use as the string specifying who is doing the initialization ...
             String initializerId = UUID.randomUUID().toString();
@@ -171,6 +178,7 @@ public class RepositoryCache implements Observable {
             doc.setDate(REPOSITORY_CREATED_AT_FIELD_NAME, now.toDate());
             doc.setString(REPOSITORY_INITIALIZER_FIELD_NAME, initializerId);
             doc.setString(REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME, ModeShape.getVersion());
+            doc.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, upgrades.getLatestAvailableUpgradeId());
 
             // Try to put it, but don't overwrite one that might have been stored since we checked ...
             this.documentStore.localStore().putIfAbsent(REPOSITORY_INFO_KEY, doc);
@@ -189,36 +197,73 @@ public class RepositoryCache implements Observable {
             String sourceName = info.getString(REPOSITORY_SOURCE_NAME_FIELD_NAME, configuration.getStoreName());
             this.repoKey = info.getString(REPOSITORY_KEY_FIELD_NAME, NodeKey.keyForSourceName(repoName));
             this.sourceKey = info.getString(REPOSITORY_SOURCE_KEY_FIELD_NAME, NodeKey.keyForSourceName(sourceName));
+
+            // See if this existing repository needs to be upgraded ...
+            lastUpgradeId = info.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
+            upgradeRequired = upgrades.isUpgradeRequired(lastUpgradeId);
+            if (upgradeRequired && info.getString(REPOSITORY_UPGRADER_FIELD_NAME) == null) {
+                int nextId = upgrades.getLatestAvailableUpgradeId();
+                LOGGER.debug("The content in repository '{0}' needs to be upgraded (steps {1}->{2})", name, lastUpgradeId, nextId);
+
+                // The repository does need to be upgraded and nobody is yet doing it. Note that we only want one process in the
+                // cluster to do this, so we need to update the document store in an atomic fashion. So, first attempt to
+                // lock the document ...
+                this.upgradingRepository = runInTransaction(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        LocalDocumentStore store = documentStore().localStore();
+                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
+                        SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
+                        EditableDocument editor = repositoryInfo.editDocumentContent();
+                        if (editor.get(REPOSITORY_UPGRADER_FIELD_NAME) == null) {
+                            // Make sure that some other process didn't sneak in and already upgrade ...
+                            int lastUpgradeId = editor.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
+                            if (upgrades.isUpgradeRequired(lastUpgradeId)) {
+                                // An upgrade is still required, and we get to do it ...
+                                final String upgraderId = UUID.randomUUID().toString();
+                                editor.setString(REPOSITORY_UPGRADER_FIELD_NAME, upgraderId);
+                                return true;
+                            }
+                        }
+                        // Another process is upgrading (or has already upgraded) the repository ...
+                        return false;
+                    }
+                });
+                if (this.upgradingRepository) {
+                    LOGGER.debug("This process will upgrade the content in repository '{0}'", name);
+                } else {
+                    LOGGER.debug("The content in repository '{0}' does not need to be upgraded", name);
+                }
+            }
         }
 
         // If we're not doing the initialization of the repository, block for at most 10 minutes while another process does ...
         if (!initializingRepository) {
-            final long numMinutesToWait = MAX_NUMBER_OF_MINUTES_TO_WAIT_FOR_REPOSITORY_INITIALIZATION;
-            final long startTime = System.currentTimeMillis();
-            final long quitTime = startTime + TimeUnit.MILLISECONDS.convert(numMinutesToWait, TimeUnit.MINUTES);
-            boolean initialized = false;
-            while (System.currentTimeMillis() < quitTime) {
-                LOGGER.debug("Waiting for repository '{0}' to be fully initialized by another process in the cluster", name);
-                Document info = repositoryInfo.getContentAsDocument();
-                if (info.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) != null) {
-                    initialized = true;
-                    break;
+            LOGGER.debug("Waiting for another process in the cluster to initialize the repository '{0}'", name);
+            waitUntil(new Callable<Boolean>() {
+                @Override
+                public Boolean call() {
+                    Document info = documentStore().localStore().get(REPOSITORY_INFO_KEY).getContentAsDocument();
+                    return info.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) != null;
                 }
-                // Otherwise, sleep for a short bit ...
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    break;
-                }
-            }
-
-            if (!initialized) {
-                LOGGER.error(JcrI18n.repositoryWasNeverInitializedAfterMinutes, name, numMinutesToWait);
-                String msg = JcrI18n.repositoryWasNeverInitializedAfterMinutes.text(name, numMinutesToWait);
-                throw new SystemFailureException(msg);
-            }
+            }, 10, TimeUnit.MINUTES, JcrI18n.repositoryWasNeverInitializedAfterMinutes);
             LOGGER.debug("Found repository '{0}' to be fully initialized", name);
+        }
+
+        // If we're not doing the upgrade, then block for at most 10 minutes while another process does ...
+        if (upgradeRequired && !upgradingRepository) {
+            LOGGER.debug("Waiting for another process in the cluster to upgrade the content in existing repository '{0}'", name);
+            waitUntil(new Callable<Boolean>() {
+                @Override
+                public Boolean call() {
+                    Document info = documentStore().localStore().get(REPOSITORY_INFO_KEY).getContentAsDocument();
+                    int lastUpgradeId = info.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
+                    return !upgrades.isUpgradeRequired(lastUpgradeId);
+                }
+            }, 10, TimeUnit.MINUTES, JcrI18n.repositoryWasNeverUpgradedAfterMinutes);
+            LOGGER.debug("Content in existing repository '{0}' has been fully upgraded", name);
+        } else if (!initializingRepository) {
+            LOGGER.debug("Content in existing repository '{0}' does not need to be upgraded", name);
         }
 
         this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
@@ -265,6 +310,37 @@ public class RepositoryCache implements Observable {
 
         // set the local source key in the document store
         this.documentStore.setLocalSourceKey(this.sourceKey);
+    }
+
+    protected boolean waitUntil( Callable<Boolean> condition,
+                                 long time,
+                                 TimeUnit unit,
+                                 I18n failureMsg ) {
+        final long startTime = System.currentTimeMillis();
+        final long quitTime = startTime + TimeUnit.MILLISECONDS.convert(time, unit);
+        Exception lastError = null;
+        while (System.currentTimeMillis() < quitTime) {
+            try {
+                lastError = null;
+                if (condition.call()) return true;
+            } catch (Exception e) {
+                // Capture the exception ...
+                lastError = e;
+            }
+            // Otherwise, sleep for a short bit ...
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+                break;
+            }
+        }
+
+        // We waited to max amount of time, but still didn't see the successful condition, so abort by throwing an exception.
+        // The process can be restarted at any time, and hopefully will eventually see the upgrade.
+        LOGGER.error(lastError, failureMsg, name, time);
+        String msg = failureMsg.text(name, time);
+        throw new SystemFailureException(msg);
     }
 
     /**
@@ -328,7 +404,7 @@ public class RepositoryCache implements Observable {
         return this.context;
     }
 
-    public void completeInitialization() {
+    public RepositoryCache completeInitialization() {
         if (initializingRepository) {
             LOGGER.debug("Marking repository '{0}' as fully initialized", name);
             runInTransaction(new Callable<Void>() {
@@ -347,6 +423,40 @@ public class RepositoryCache implements Observable {
             });
             LOGGER.debug("Repository '{0}' is fully initialized", name);
         }
+        return this;
+    }
+
+    public RepositoryCache completeUpgrade( final Upgrades.Context resources ) {
+        if (upgradingRepository) {
+            try {
+                runInTransaction(new Callable<Void>() {
+                    @SuppressWarnings( "synthetic-access" )
+                    @Override
+                    public Void call() throws Exception {
+                        LOGGER.debug("Upgrading repository '{0}'", name);
+                        Upgrades upgrades = Upgrades.STANDARD_UPGRADES;
+                        lastUpgradeId = upgrades.applyUpgradesSince(lastUpgradeId, resources);
+                        LOGGER.debug("Recording upgrade completion in repository '{0}'", name);
+
+                        LocalDocumentStore store = documentStore().localStore();
+                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
+                        SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
+                        EditableDocument editor = repositoryInfo.editDocumentContent();
+                        DateTime now = context().getValueFactories().getDateFactory().create();
+                        editor.setDate(REPOSITORY_UPGRADED_AT_FIELD_NAME, now.toDate());
+                        editor.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, lastUpgradeId);
+                        editor.remove(REPOSITORY_UPGRADER_FIELD_NAME);
+                        return null;
+                    }
+                });
+                LOGGER.debug("Repository '{0}' is fully upgraded", name);
+            } catch (Throwable err) {
+                // We do NOT want an error during upgrade to prevent the repository from coming online.
+                // Therefore, we need to catch any exceptions here an log them, but continue ...
+                logger.error(err, JcrI18n.failureDuringUpgradeOperation, getName(), err);
+            }
+        }
+        return this;
     }
 
     private <V> V runInTransaction( Callable<V> operation ) {

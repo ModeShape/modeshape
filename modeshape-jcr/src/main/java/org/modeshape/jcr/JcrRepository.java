@@ -1244,8 +1244,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.nodeTypesImporter.importNodeTypes();
 
                 if (repositoryCache().isInitializingRepository()) {
-                    // import initial content for each of the workspaces (this has to be done after the running state has
-                    // "started"
+                    // import initial content for each of the workspaces; this has to be done after the running state has started
                     this.cache.runOneTimeSystemInitializationOperation(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
@@ -1260,11 +1259,19 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // connectors must be initialized after initial content because that can have an influence on projections
                 this.connectors.initialize();
 
-                // Now record in the content that we're finished initializing the repository. This will commit the startup
-                // transaction
+                // Now record in the content that we're finished initializing the repository.
+                // This will commit the startup transaction.
                 repositoryCache().completeInitialization();
+
+                // Now complete the upgrade of the repository, if required. This will be done transactionally.
+                repositoryCache().completeUpgrade(new Upgrades.Context() {
+                    @Override
+                    public RunningState getRepository() {
+                        return RunningState.this;
+                    }
+                });
             } catch (Throwable t) {
-                this.cache.rollbackRepositoryInfo();
+                repositoryCache().rollbackRepositoryInfo();
                 resumeExistingUserTransaction();
                 throw t instanceof Exception ? (Exception)t : new RuntimeException(t);
             }
@@ -1962,7 +1969,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     private final class InternalSecurityContext implements SecurityContext {
         private final String username;
-        
+
         protected InternalSecurityContext( String username ) {
             this.username = username;
         }
