@@ -66,11 +66,12 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
      * The list of the special JCR properties that must be exported first for each node. These properties must be exported in list
      * order if they are present on the node as per section 6.4.1 rule 11.
      */
-    private static final List<Name> SPECIAL_PROPERTY_NAMES = Arrays.asList(new Name[] {JcrLexicon.PRIMARY_TYPE,
-        JcrLexicon.MIXIN_TYPES, JcrLexicon.UUID});
+    private static final List<Name> SPECIAL_PROPERTY_NAMES = Arrays.asList(JcrLexicon.PRIMARY_TYPE,
+                                                                           JcrLexicon.MIXIN_TYPES,
+                                                                           JcrLexicon.UUID);
 
     JcrSystemViewExporter( JcrSession session ) {
-        super(session, Arrays.asList(new String[] {"xml"}));
+        super(session, Arrays.asList("xml"));
     }
 
     /**

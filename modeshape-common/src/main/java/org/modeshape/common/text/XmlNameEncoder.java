@@ -47,6 +47,11 @@ public class XmlNameEncoder implements TextDecoder, TextEncoder {
 
     private static final BitSet XML_NAME_ALLOWED_CHARACTERS = new BitSet(2 ^ 16);
 
+    /**
+     * @see <a href=http://www.w3.org/TR/xml/#NT-NameStartChar>http://www.w3.org/TR/xml/#NT-NameStartChar</a>
+     */
+    private static final BitSet XML_NAME_START_ALLOWED_CHARACTERS = new BitSet(2 ^ 16);
+
     static {
         // Initialize the unescaped bitset ...
 
@@ -393,6 +398,42 @@ public class XmlNameEncoder implements TextDecoder, TextEncoder {
         XML_NAME_ALLOWED_CHARACTERS.set('\u3031', '\u3035' + 1);
         XML_NAME_ALLOWED_CHARACTERS.set('\u309D', '\u309E' + 1);
         XML_NAME_ALLOWED_CHARACTERS.set('\u30FC', '\u30FE' + 1);
+
+        XML_NAME_START_ALLOWED_CHARACTERS.or(XML_NAME_ALLOWED_CHARACTERS);
+        // remove . and -
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('-');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('.');
+
+        // remove all digits
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0030', '\u0039' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0660', '\u0669' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u06F0', '\u06F9' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0966', '\u096F' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u09E6', '\u09EF' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0A66', '\u0A6F' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0AE6', '\u0AEF' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0B66', '\u0B6F' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0BE7', '\u0BEF' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0C66', '\u0C6F' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0CE6', '\u0CEF' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0D66', '\u0D6F' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0E50', '\u0E59' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0ED0', '\u0ED9' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0F20', '\u0F29' + 1);
+
+        // remove extender characters
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u00B7');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u02D0');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u02D1');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0387');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0640');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0E46');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u0EC6');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u3005');
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u3031', '\u3035' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u309D', '\u309E' + 1);
+        XML_NAME_START_ALLOWED_CHARACTERS.clear('\u30FC', '\u30FE' + 1);
+
     }
 
     /**
@@ -467,11 +508,6 @@ public class XmlNameEncoder implements TextDecoder, TextEncoder {
         return sb.toString();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.text.TextEncoder#encode(java.lang.String)
-     */
     @Override
     public String encode( String text ) {
         if (text == null) return null;
@@ -496,7 +532,10 @@ public class XmlNameEncoder implements TextDecoder, TextEncoder {
                 sb.append("_x005f_");
                 // And then write out the next character ...
                 sb.append(next);
-            } else if (XML_NAME_ALLOWED_CHARACTERS.get(c)) {
+            } else if (iter.getIndex() == 0 && XML_NAME_START_ALLOWED_CHARACTERS.get(c)) {
+                // The fist only allows a subset from the total list of characters
+                sb.append(c);
+            } else if (iter.getIndex() > 0 && XML_NAME_ALLOWED_CHARACTERS.get(c)) {
                 // Legal characters for an XML Name ...
                 sb.append(c);
             } else {

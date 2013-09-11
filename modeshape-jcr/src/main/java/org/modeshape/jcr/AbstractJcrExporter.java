@@ -70,7 +70,7 @@ abstract class AbstractJcrExporter {
     /**
      * The list of XML namespaces that are predefined and should not be exported by the content handler.
      */
-    private static final List<String> UNEXPORTABLE_NAMESPACES = Arrays.asList(new String[] {"", "xml", "xmlns"});
+    private static final List<String> UNEXPORTABLE_NAMESPACES = Arrays.asList("", "xml", "xmlns");
 
     /**
      * The session in which this exporter was created.
