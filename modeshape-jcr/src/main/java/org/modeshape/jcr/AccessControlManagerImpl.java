@@ -114,11 +114,11 @@ public class AccessControlManagerImpl implements AccessControlManager {
         JcrAccessControlList acl;
         if (!found(acl = findAccessList(path))) {
             // access list is not assigned, use default
-            return defaultACL.hasPrivileges(session.getUserID(), privileges);
+            return defaultACL.hasPrivileges(session.context().getSecurityContext(), privileges);
         }
 
         // perform checking of the privileges
-        return acl.isEmpty() || acl.hasPrivileges(session.getUserID(), privileges);
+        return acl.isEmpty() || acl.hasPrivileges(session.context().getSecurityContext(), privileges);
     }
 
     @Override

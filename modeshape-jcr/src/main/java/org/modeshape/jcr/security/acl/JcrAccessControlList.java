@@ -33,6 +33,7 @@ import javax.jcr.security.AccessControlException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.Privilege;
 import org.modeshape.jcr.AccessControlManagerImpl;
+import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
@@ -130,31 +131,31 @@ public class JcrAccessControlList implements AccessControlList {
     }
     
     /**
-     * Tests privileges for the given user.
+     * Tests privileges relatively to the given security context.
      * 
-     * @param username the name of the user
-     * @param privileges privileges for testing
-     * @return true if this access list contains all given privileges for 
-     * the given user
+     * @param sc security context carrying information about principals
+     * @param privileges privileges for test
+     * @return true when access list grants all given privileges within given security context.
      */
-    public boolean hasPrivileges(String username, Privilege[] privileges) {
+    public boolean hasPrivileges(SecurityContext sc, Privilege[] privileges) {
+        boolean res = false;
         for (AccessControlEntryImpl ace : principals.values()) {
             //check access list for everyone
             if (ace.getPrincipal().getName().equals(SimplePrincipal.EVERYONE.getName())) {
-                boolean hasPrivs = ace.hasPrivileges(privileges);
-                //break checking procedure if requested privileges are 
-                //applied for everyone
-                if (hasPrivs) {
-                    return true;
-                }
+                res |= ace.hasPrivileges(privileges);
             }
             
-            //check access list for the given user
-            if (ace.getPrincipal().getName().equals(username)) {
-                return ace.hasPrivileges(privileges);
+            //check user principal
+            if (ace.getPrincipal().getName().equals(sc.getUserName())) {
+                res |= ace.hasPrivileges(privileges);
             }
-        }
-        return false;
+            
+            //check group/role principal
+            if (sc.hasRole(ace.getPrincipal().getName())) {
+                res |= ace.hasPrivileges(privileges);
+            }
+        } 
+        return res;
     }
     
     /**
