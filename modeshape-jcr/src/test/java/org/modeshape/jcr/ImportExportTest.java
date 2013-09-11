@@ -952,6 +952,12 @@ public class ImportExportTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-2039" )
+    public void shouldImportVersionedSystemView() throws Exception {
+        assertImport("io/system-export-with-versioning.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs expected
+    }
+
+    @Test
     @FixFor ( "MODE-2012" )
     @SkipLongRunning("There are 4 other test cases in JcrWorkspaceTest which validate the fix")
     public void shouldBeAbleToImportAndCloneWorkspaces() throws Exception {
