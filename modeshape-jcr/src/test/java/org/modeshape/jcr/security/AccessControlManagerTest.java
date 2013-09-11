@@ -292,7 +292,32 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } catch (AccessControlException e) {
         }
     }
- 
+
+    @Test
+    public void shouldAllowAccessUsingRole() throws Exception {
+        Node root = session.getRootNode();
+        Node truks = root.addNode("tractors");
+        session.save();
+        
+        AccessControlManager acm = session.getAccessControlManager();
+        Privilege[] privileges = new Privilege[]{acm.privilegeFromName(Privilege.JCR_ALL)};
+        
+
+        AccessControlList acl;
+        AccessControlPolicyIterator it = acm.getApplicablePolicies(truks.getPath());
+        if (it.hasNext()) {
+            acl = (AccessControlList)it.nextAccessControlPolicy();
+        } else {
+            acl = (AccessControlList)acm.getPolicies(truks.getPath())[0];
+        }
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("admin"), privileges);
+
+        acm.setPolicy(truks.getPath(), acl);
+        session.save();
+        
+        Node node = root.getNode("tractors");
+    }
+    
     // -------------------------------
 
     @Test

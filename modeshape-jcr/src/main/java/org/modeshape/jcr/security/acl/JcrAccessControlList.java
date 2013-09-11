@@ -138,24 +138,29 @@ public class JcrAccessControlList implements AccessControlList {
      * @return true when access list grants all given privileges within given security context.
      */
     public boolean hasPrivileges(SecurityContext sc, Privilege[] privileges) {
-        boolean res = false;
         for (AccessControlEntryImpl ace : principals.values()) {
             //check access list for everyone
             if (ace.getPrincipal().getName().equals(SimplePrincipal.EVERYONE.getName())) {
-                res |= ace.hasPrivileges(privileges);
-            }
+                if (ace.hasPrivileges(privileges)) {
+                    return true;
+                }
+            }            
             
             //check user principal
             if (ace.getPrincipal().getName().equals(sc.getUserName())) {
-                res |= ace.hasPrivileges(privileges);
+                if (ace.hasPrivileges(privileges)) {
+                    return true;
+                }
             }
             
             //check group/role principal
             if (sc.hasRole(ace.getPrincipal().getName())) {
-                res |= ace.hasPrivileges(privileges);
+                if (ace.hasPrivileges(privileges)) {
+                    return true;
+                }
             }
         } 
-        return res;
+        return false;
     }
     
     /**
