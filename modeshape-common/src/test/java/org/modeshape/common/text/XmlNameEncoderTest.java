@@ -27,19 +27,17 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
+ * Unit test for {@link XmlNameEncoder}
+ *
  * @author Randall Hauch
+ * @author Horia Chiorean
  */
 public class XmlNameEncoderTest {
 
     private XmlNameEncoder encoder = new XmlNameEncoder();
-
-    @Before
-    public void beforeEach() {
-    }
 
     protected void checkEncoding( String input,
                                   String expected ) {
@@ -167,6 +165,20 @@ public class XmlNameEncoderTest {
         checkEncoding("Employee,xyz", "Employee_x002c_xyz");
         checkEncoding("Employee/xyz", "Employee_x002f_xyz");
         checkEncoding("Employee\u0B9Bxyz", "Employee_x0b9b_xyz");
+    }
+
+    @Test
+    public void shouldEncodeIllegalStartCharacter() {
+        checkEncoding("042b4500-a8bc-4b79-8af0-59fb408ecfa5", "_x0030_42b4500-a8bc-4b79-8af0-59fb408ecfa5");
+        checkEncoding("-42b4500-a8bc-4b79-8af0-59fb408ecfa5", "_x002d_42b4500-a8bc-4b79-8af0-59fb408ecfa5");
+        checkEncoding(".42b4500-a8bc-4b79-8af0-59fb408ecfa5", "_x002e_42b4500-a8bc-4b79-8af0-59fb408ecfa5");
+    }
+
+    @Test
+    public void shouldDecodeIllegalStartCharacter() {
+        checkDecoding("_x0030_42b4500-a8bc-4b79-8af0-59fb408ecfa5", "042b4500-a8bc-4b79-8af0-59fb408ecfa5");
+        checkDecoding("_x002d_42b4500-a8bc-4b79-8af0-59fb408ecfa5", "-42b4500-a8bc-4b79-8af0-59fb408ecfa5");
+        checkDecoding("_x002e_42b4500-a8bc-4b79-8af0-59fb408ecfa5", ".42b4500-a8bc-4b79-8af0-59fb408ecfa5");
     }
 
 }

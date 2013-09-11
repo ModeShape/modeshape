@@ -45,12 +45,12 @@
 + * (nt:nodeType) = nt:nodeType protected version
 
 [mode:lock] > nt:base
-- mode:lockedKey (string) protected ignore
+- mode:lockToken (string) protected ignore
 - jcr:lockOwner (string) protected ignore
 - mode:lockingSession (string) protected ignore
 - mode:expirationDate (date) protected ignore
-- mode:sessionScope (boolean) protected ignore
-- jcr:isDeep (boolean) protected ignore
+- mode:isSessionScoped (boolean) protected ignore
+- jcr:lockIsDeep (boolean) protected ignore
 - mode:isHeldBySession (boolean) protected ignore
 - mode:workspace (string) protected ignore
 

@@ -311,11 +311,6 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.common.text.TextEncoder#encode(java.lang.String)
-         */
         // See section 6.4.4 of the JCR 1.0.1 spec for why these hoops must be jumped through
         @Override
         public String encode( String text ) {
@@ -363,11 +358,6 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             return sb.toString();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.common.text.XmlNameEncoder#decode(java.lang.String)
-         */
         @Override
         public String decode( String encodedText ) {
             return super.decode(encodedText);

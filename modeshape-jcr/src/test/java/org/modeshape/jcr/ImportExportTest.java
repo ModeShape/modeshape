@@ -52,6 +52,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
+import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Workspace;
@@ -958,6 +959,23 @@ public class ImportExportTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-2035" )
+    public void shouldExportViewsWithLocks() throws Exception {
+        Node node1 = session.getRootNode().addNode("node1");
+        node1.addMixin("mix:lockable");
+        Node node1_1 = node1.addNode("node1_1");
+        node1_1.addMixin("mix:lockable");
+        Node node2 = session.getRootNode().addNode("node2");
+        node2.addMixin("mix:lockable");
+        session.save();
+        session.getWorkspace().lockManager().lock("/node1", true, true, Long.MAX_VALUE, null);
+        session.getWorkspace().lockManager().lock("/node2", false, false, Long.MAX_VALUE, null);
+
+        testImportExport("/", "/", ExportType.SYSTEM, true, false, true);
+        testImportExport("/", "/", ExportType.DOCUMENT, true, false, true);
+    }
+
+    @Test
     @FixFor ( "MODE-2012" )
     @SkipLongRunning("There are 4 other test cases in JcrWorkspaceTest which validate the fix")
     public void shouldBeAbleToImportAndCloneWorkspaces() throws Exception {
@@ -1170,5 +1188,4 @@ public class ImportExportTest extends SingleUseAbstractTest {
             ostream.close();
         }
     }
-
 }

@@ -409,7 +409,7 @@ class RepositoryLockManager implements ChangeSetListener {
             this.lockedNodeKey = lockedNodeKeyFromLockKey(lockKey);
             this.workspaceName = firstString(lockNode.getProperty(ModeShapeLexicon.WORKSPACE, cache));
             this.lockOwner = firstString(lockNode.getProperty(JcrLexicon.LOCK_OWNER, cache));
-            this.deep = firstBoolean(lockNode.getProperty(JcrLexicon.IS_DEEP, cache));
+            this.deep = firstBoolean(lockNode.getProperty(JcrLexicon.LOCK_IS_DEEP, cache));
             this.sessionScoped = firstBoolean(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED, cache));
             this.lockToken = firstString(lockNode.getProperty(ModeShapeLexicon.LOCK_TOKEN, cache));
         }
@@ -420,7 +420,7 @@ class RepositoryLockManager implements ChangeSetListener {
             this.lockedNodeKey = lockedNodeKeyFromLockKey(lockKey);
             this.workspaceName = firstString(properties.get(ModeShapeLexicon.WORKSPACE));
             this.lockOwner = firstString(properties.get(JcrLexicon.LOCK_OWNER));
-            this.deep = firstBoolean(properties.get(JcrLexicon.IS_DEEP));
+            this.deep = firstBoolean(properties.get(JcrLexicon.LOCK_IS_DEEP));
             this.sessionScoped = firstBoolean(properties.get(ModeShapeLexicon.IS_SESSION_SCOPED));
             this.lockToken = firstString(properties.get(ModeShapeLexicon.LOCK_TOKEN));
         }
