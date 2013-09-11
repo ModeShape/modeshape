@@ -866,7 +866,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * @param exception the repository exception
      * @return the WebDAV exception
      */
-    private WebdavException translate( RepositoryException exception ) {
+    protected WebdavException translate( RepositoryException exception ) {
         return ModeShapeWebdavServlet.translateError(exception);
     }
 

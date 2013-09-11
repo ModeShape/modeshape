@@ -23,10 +23,11 @@
  */
 package org.modeshape.sequencer.image;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrConstants;
