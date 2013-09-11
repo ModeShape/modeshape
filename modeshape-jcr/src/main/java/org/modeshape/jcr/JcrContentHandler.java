@@ -816,7 +816,7 @@ class JcrContentHandler extends DefaultHandler {
                                                  true,
                                                  true,
                                                  false,
-                                                 false);
+                                                 true);
                     }
 
                     if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0
