@@ -264,15 +264,14 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-2036")
+    @FixFor( "MODE-2036" )
     public void shouldDenyAccessChildNode() throws Exception {
         Node root = session.getRootNode();
         Node truks = root.addNode("truks");
         session.save();
-        
+
         AccessControlManager acm = session.getAccessControlManager();
-        Privilege[] privileges = new Privilege[]{acm.privilegeFromName(Privilege.JCR_ALL)};
-        
+        Privilege[] privileges = new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)};
 
         AccessControlList acl;
         AccessControlPolicyIterator it = acm.getApplicablePolicies(truks.getPath());
@@ -285,9 +284,9 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
 
         acm.setPolicy(truks.getPath(), acl);
         session.save();
-        
+
         try {
-            Node node = root.getNode("truks");
+            root.getNode("truks");
             fail("Access list should deny access");
         } catch (AccessControlException e) {
         }
@@ -318,8 +317,6 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         Node node = root.getNode("tractors");
     }
     
-    // -------------------------------
-
     @Test
     public void testGetApplicablePolicies() throws Exception {
         AccessControlList acl = (AccessControlList)acm.getApplicablePolicies("/Cars").nextAccessControlPolicy();
