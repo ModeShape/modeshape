@@ -1,0 +1,6 @@
+<jj='http://jj.com/1.0'>
+
+[jj:nameable] mixin
+ - _name (string) mandatory
+[jj:content] > jj:nameable
+ - _type (string) mandatory

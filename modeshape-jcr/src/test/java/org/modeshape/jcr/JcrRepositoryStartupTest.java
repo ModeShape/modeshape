@@ -53,7 +53,7 @@ import org.modeshape.jcr.api.federation.FederationManager;
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
  * methods).
- * 
+ *
  * @author rhauch
  * @author hchiorean
  */
@@ -389,16 +389,55 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @FixFor( "MODE-1872" )
     public void asyncReindexingWithoutSystemContentShouldNotCorruptSystemBranch() throws Exception {
         FileUtil.delete("target/persistent_repository/");
-       startRunStop(new RepositoryOperation() {
-           @Override
-           public Void call() throws Exception {
-               JcrSession session = repository.login();
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
 
-               javax.jcr.Node root = session.getRootNode();
-               AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
-               assertThat(system, is(notNullValue()));
-               return null;
-           }
-       }, "config/repo-config-persistent-indexes-always-async-without-system.json");
+                javax.jcr.Node root = session.getRootNode();
+                AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
+                assertThat(system, is(notNullValue()));
+                return null;
+            }
+        }, "config/repo-config-persistent-indexes-always-async-without-system.json");
+    }
+
+    @Test
+    @FixFor("MODE-2031")
+    public void shouldRestartWithModifiedCNDFile() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                Node content = session.getRootNode().addNode("content", "jj:content");
+                content.setProperty("_name", "name");
+                content.setProperty("_type", "type");
+                session.save();
+                return null;
+            }
+        }, "config/repo-config-jj-initial.json");
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                Node content = session.getNode("/content");
+                assertEquals("name", content.getProperty("_name").getString());
+                assertEquals("type", content.getProperty("_type").getString());
+                return null;
+            }
+        }, "config/repo-config-jj-modified.json");
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                Node content = session.getNode("/content");
+                assertEquals("name", content.getProperty("_name").getString());
+                assertEquals("type", content.getProperty("_type").getString());
+                return null;
+            }
+        }, "config/repo-config-jj-modified.json");
     }
 }
