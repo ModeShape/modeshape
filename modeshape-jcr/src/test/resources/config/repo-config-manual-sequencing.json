@@ -1,0 +1,10 @@
+{
+    "name":"Test Config with various property types",
+    "sequencing":{
+        "sequencers": {
+            "Counting sequencer" : {
+                "classname":"org.modeshape.jcr.TestSequencersHolder$DefaultSequencer"
+            }
+        }
+    }
+}

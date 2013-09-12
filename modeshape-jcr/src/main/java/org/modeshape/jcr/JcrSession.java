@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -75,8 +76,11 @@ import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.Binary;
+import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -179,9 +183,21 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // Now create a specific reference factories that know about the root node key ...
         TextDecoder decoder = context.getDecoder();
         ValueFactories factories = context.getValueFactories();
-        ReferenceFactory rootKeyAwareStrongRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, false, false);
-        ReferenceFactory rootKeyAwareWeakRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, true, false);
-        ReferenceFactory rootKeyAwareSimpleRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey, decoder, factories, true, true);
+        ReferenceFactory rootKeyAwareStrongRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey,
+                                                                                                   decoder,
+                                                                                                   factories,
+                                                                                                   false,
+                                                                                                   false);
+        ReferenceFactory rootKeyAwareWeakRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey,
+                                                                                                 decoder,
+                                                                                                 factories,
+                                                                                                 true,
+                                                                                                 false);
+        ReferenceFactory rootKeyAwareSimpleRefFactory = NodeIdentifierReferenceFactory.newInstance(rootKey,
+                                                                                                   decoder,
+                                                                                                   factories,
+                                                                                                   true,
+                                                                                                   true);
         context = context.with(rootKeyAwareStrongRefFactory).with(rootKeyAwareWeakRefFactory).with(rootKeyAwareSimpleRefFactory);
 
         // Create an execution context for this session that uses a local namespace registry ...
@@ -1232,7 +1248,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     @Override
-    public JcrValueFactory getValueFactory() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public JcrValueFactory getValueFactory() throws RepositoryException {
         checkLive();
         return valueFactory();
     }
@@ -1752,6 +1768,52 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      */
     protected final String nodeIdentifier( NodeKey key ) {
         return nodeIdentifier(key, cache.getRootKey());
+    }
+
+    @Override
+    public boolean sequence( String sequencerName,
+                             Property inputProperty,
+                             Node outputNode ) throws RepositoryException {
+        CheckArg.isSame(inputProperty.getSession(), "inputProperty", this, "this session");
+        CheckArg.isSame(outputNode.getSession(), "outputNode", this, "this session");
+        Sequencer sequencer = repository().runningState().sequencers().getSequencer(sequencerName);
+        if (sequencer == null) return false;
+
+        final ValueFactory values = getValueFactory();
+        final DateTime now = dateFactory().create();
+        final Sequencer.Context context = new Sequencer.Context() {
+
+            @Override
+            public ValueFactory valueFactory() {
+                return values;
+            }
+
+            @Override
+            public Calendar getTimestamp() {
+                return now.toCalendar();
+            }
+        };
+        try {
+            if (sequencer.hasAcceptedMimeTypes()) {
+                // Get the MIME type, first by looking at the changed property's parent node
+                // (or grand-parent node if parent is 'jcr:content') ...
+                String mimeType = SequencingRunner.getInputMimeType(inputProperty);
+
+                // See if the sequencer accepts the MIME type ...
+                if (mimeType != null && !sequencer.isAccepted(mimeType)) {
+                    Logger.getLogger(getClass())
+                          .debug("Skipping sequencing because input's MIME type '{0}' is not accepted by the '{1}' sequencer",
+                                 mimeType,
+                                 sequencerName);
+                    return false;
+                }
+            }
+            return sequencer.execute(inputProperty, outputNode, context);
+        } catch (RepositoryException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RepositoryException(e);
+        }
     }
 
     @Override

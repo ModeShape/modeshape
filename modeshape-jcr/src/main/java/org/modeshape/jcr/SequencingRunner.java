@@ -23,12 +23,14 @@
  */
 package org.modeshape.jcr;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -37,6 +39,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.ValueFormatException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrRepository.RunningState;
@@ -132,40 +135,7 @@ final class SequencingRunner implements Runnable {
             if (sequencer.hasAcceptedMimeTypes()) {
                 // Get the MIME type, first by looking at the changed property's parent node
                 // (or grand-parent node if parent is 'jcr:content') ...
-                Node parent = changedProperty.getParent();
-                String mimeType = null;
-                if (parent.hasProperty(JcrConstants.JCR_MIME_TYPE)) {
-                    // The parent node has a 'jcr:mimeType' node ...
-                    Property property = parent.getProperty(JcrConstants.JCR_MIME_TYPE);
-                    if (!property.isMultiple()) {
-                        // The standard 'jcr:mimeType' property is single valued, but we're technically not checking if
-                        // the property has that particular property definition (only by name) ...
-                        mimeType = property.getString();
-                    }
-                } else if (parent.getName().equals(JcrConstants.JCR_CONTENT)) {
-                    // There is no 'jcr:mimeType' property, and since the sequenced property is on the 'jcr:content' node,
-                    // get the parent (probably 'nt:file') node and look for the 'jcr:mimeType' property there ...
-                    try {
-                        parent = parent.getParent();
-                        if (parent.hasProperty(JcrConstants.JCR_MIME_TYPE)) {
-                            Property property = parent.getProperty(JcrConstants.JCR_MIME_TYPE);
-                            if (!property.isMultiple()) {
-                                // The standard 'jcr:mimeType' property is single valued, but we're technically not checking if
-                                // the property has that particular property definition (only by name) ...
-                                mimeType = property.getString();
-                            }
-                        }
-                    } catch (ItemNotFoundException e) {
-                        // must be the root ...
-                    }
-                }
-                if (mimeType == null && !changedProperty.isMultiple() && changedProperty.getType() == PropertyType.BINARY) {
-                    // Still don't know the MIME type of the property, so if it's a BINARY property we can check it ...
-                    javax.jcr.Binary binary = changedProperty.getBinary();
-                    if (binary instanceof org.modeshape.jcr.api.Binary) {
-                        mimeType = ((org.modeshape.jcr.api.Binary)binary).getMimeType(parent.getName());
-                    }
-                }
+                String mimeType = getInputMimeType(changedProperty);
 
                 // See if the sequencer accepts the MIME type ...
                 if (mimeType != null && !sequencer.isAccepted(mimeType)) {
@@ -292,6 +262,56 @@ final class SequencingRunner implements Runnable {
         }
     }
 
+    /**
+     * @param changedProperty the property being sequenced
+     * @return the MIME type, or null if the MIME type could not be found
+     * @throws ItemNotFoundException
+     * @throws AccessDeniedException
+     * @throws RepositoryException
+     * @throws PathNotFoundException
+     * @throws ValueFormatException
+     * @throws IOException
+     */
+    static String getInputMimeType( Property changedProperty )
+        throws ItemNotFoundException, AccessDeniedException, RepositoryException, PathNotFoundException, ValueFormatException,
+        IOException {
+        Node parent = changedProperty.getParent();
+        String mimeType = null;
+        if (parent.hasProperty(JcrConstants.JCR_MIME_TYPE)) {
+            // The parent node has a 'jcr:mimeType' node ...
+            Property property = parent.getProperty(JcrConstants.JCR_MIME_TYPE);
+            if (!property.isMultiple()) {
+                // The standard 'jcr:mimeType' property is single valued, but we're technically not checking if
+                // the property has that particular property definition (only by name) ...
+                mimeType = property.getString();
+            }
+        } else if (parent.getName().equals(JcrConstants.JCR_CONTENT)) {
+            // There is no 'jcr:mimeType' property, and since the sequenced property is on the 'jcr:content' node,
+            // get the parent (probably 'nt:file') node and look for the 'jcr:mimeType' property there ...
+            try {
+                parent = parent.getParent();
+                if (parent.hasProperty(JcrConstants.JCR_MIME_TYPE)) {
+                    Property property = parent.getProperty(JcrConstants.JCR_MIME_TYPE);
+                    if (!property.isMultiple()) {
+                        // The standard 'jcr:mimeType' property is single valued, but we're technically not checking if
+                        // the property has that particular property definition (only by name) ...
+                        mimeType = property.getString();
+                    }
+                }
+            } catch (ItemNotFoundException e) {
+                // must be the root ...
+            }
+        }
+        if (mimeType == null && !changedProperty.isMultiple() && changedProperty.getType() == PropertyType.BINARY) {
+            // Still don't know the MIME type of the property, so if it's a BINARY property we can check it ...
+            javax.jcr.Binary binary = changedProperty.getBinary();
+            if (binary instanceof org.modeshape.jcr.api.Binary) {
+                mimeType = ((org.modeshape.jcr.api.Binary)binary).getMimeType(parent.getName());
+            }
+        }
+        return mimeType;
+    }
+
     private void setCreatedByIfNecessary( JcrSession outputSession,
                                           List<AbstractJcrNode> outputNodes ) throws RepositoryException {
         // if the mix:created mixin is on any of the new nodes, we need to set the createdBy here, otherwise it will be
@@ -405,9 +425,9 @@ final class SequencingRunner implements Runnable {
      * @throws RepositoryException if there is a problem accessing the repository content
      */
     private void removeExistingOutputNodes( Node parentOfOutput,
-                                                  String outputNodeName,
-                                                  String selectedPath,
-                                                  String logMsg ) throws RepositoryException {
+                                            String outputNodeName,
+                                            String selectedPath,
+                                            String logMsg ) throws RepositoryException {
         // Determine if there is an existing output node ...
         if (TRACE) {
             LOGGER.trace("Looking under '{0}' for existing output to be removed for {1}", parentOfOutput.getPath(), logMsg);
