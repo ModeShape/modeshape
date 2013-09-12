@@ -147,7 +147,7 @@ public class JcrAccessControlList implements AccessControlList {
             }            
             
             //check user principal
-            if (ace.getPrincipal().getName().equals(sc.getUserName())) {
+            if (ace.getPrincipal().getName().equals(username(sc.getUserName()))) {
                 if (ace.hasPrivileges(privileges)) {
                     return true;
                 }
@@ -217,4 +217,14 @@ public class JcrAccessControlList implements AccessControlList {
         return this.path.hashCode();
     }
     
+    /**
+     * Removes brackets enclosing given user name
+     * 
+     * @param username the user name 
+     * @return user name without brackets.
+     */
+    private String username(String username) {
+        return (username.startsWith("<") && username.endsWith(">")) ?
+                username.substring(1, username.length() -1) : username;
+    }
 }

@@ -30,9 +30,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.security.AccessControlException;
+import java.security.Principal;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -318,6 +320,29 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         Node node = root.getNode("tractors");
     }
     
+    @Test
+    public void shouldAllowRead() throws Exception {
+        Node root = session.getRootNode();
+        Node aircraft = root.addNode("aircraft");
+        
+        
+        AccessControlList acl2 = getACL("/aircraft");
+        acl2.addAccessControlEntry(SimplePrincipal.newInstance("Admin"), new Privilege[]{acm.privilegeFromName(Privilege.JCR_ALL)});
+        acl2.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"), new Privilege[]{acm.privilegeFromName(Privilege.JCR_READ)});
+
+        acm.setPolicy("/aircraft", acl2);
+
+        AccessControlList acl = getACL("/");
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("Admin"), new Privilege[]{acm.privilegeFromName(Privilege.JCR_ALL)});
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"), new Privilege[]{acm.privilegeFromName(Privilege.JCR_READ)});
+
+        acm.setPolicy("/", acl);
+        
+        session.save();
+        
+        root = session.getRootNode();
+        aircraft = root.getNode("aircraft");
+    }
     // -------------------------------
 
     @Test
@@ -347,7 +372,16 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         acm.setPolicy(path, acl);
         session.save();
     }
-
+    
+    private AccessControlList getACL(String path) throws Exception {
+        AccessControlPolicyIterator it = acm.getApplicablePolicies(path);
+        if (it.hasNext()) {
+            return (AccessControlList)it.nextAccessControlPolicy();
+        } else {
+            return (AccessControlList)acm.getPolicies(path)[0];
+        }
+    }
+    
     private boolean contains( String name,
                               Privilege[] privileges ) {
         for (int i = 0; i < privileges.length; i++) {
