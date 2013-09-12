@@ -94,6 +94,12 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldAcceptSequencerWithNoPathExpression() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' : 'Repo', \"sequencing\" : { 'sequencers' : { 'foo' : { 'classname' : 'xsdsequencer' } } } }");
+        assertValid(config);
+    }
+
+    @Test
     public void shouldNotReplaceBlankValuesWithNull() throws Exception {
         RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' : 'Repo', 'jndiName' : '' }");
         assertThat(config.getJndiName(), is(""));

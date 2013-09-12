@@ -84,6 +84,7 @@ public class Sequencers implements ChangeSetListener {
 
     private final JcrRepository.RunningState repository;
     private final Map<UUID, Sequencer> sequencersById;
+    private final Map<String, Sequencer> sequencersByName;
     private final Collection<Component> components;
     private final Lock configChangeLock = new ReentrantLock();
     private final Map<UUID, Collection<SequencerPathExpression>> pathExpressionsBySequencerId;
@@ -110,12 +111,14 @@ public class Sequencers implements ChangeSetListener {
             this.sequencersById = null;
             this.pathExpressionsBySequencerId = null;
             this.initialized = true;
+            this.sequencersByName = Collections.emptyMap();
         } else {
             assert workQueue != null;
             this.processId = repository.context().getProcessId();
             ExecutionContext context = this.repository.context();
             this.stringFactory = context.getValueFactories().getStringFactory();
             this.sequencersById = new HashMap<UUID, Sequencer>();
+            this.sequencersByName = new HashMap<String, Sequencer>();
             this.configByWorkspaceName = new HashMap<String, Collection<SequencingConfiguration>>();
             this.pathExpressionsBySequencerId = new HashMap<UUID, Collection<SequencerPathExpression>>();
 
@@ -130,17 +133,29 @@ public class Sequencers implements ChangeSetListener {
                     ReflectionUtil.setValue(sequencer, "logger", ExtensionLogger.getLogger(sequencer.getClass()));
                     // We'll initialize it later in #intialize() ...
 
-                    // For each sequencer, figure out which workspaces apply ...
-                    UUID uuid = sequencer.getUniqueId();
-                    sequencersById.put(sequencer.getUniqueId(), sequencer);
-                    // For each sequencer, create the path expressions ...
-                    Set<SequencerPathExpression> pathExpressions = buildPathExpressionSet(sequencer);
-                    pathExpressionsBySequencerId.put(uuid, pathExpressions);
-                    if (DEBUG) {
-                        LOGGER.debug("Created sequencer '{0}' in repository '{1}' with valid path expressions: {2}",
-                                     sequencer.getName(),
-                                     repository.name(),
-                                     pathExpressions);
+                    sequencersByName.put(sequencer.getName(), sequencer);
+                    if (sequencer.getPathExpressions().length == 0) {
+                        // There are no path expressions, so this sequencer is only for explicit invocation ...
+                        if (DEBUG) {
+                            LOGGER.debug("Created sequencer '{0}' in repository '{1}' with no path expression; availabe only for explicit invocation",
+                                         sequencer.getName(),
+                                         repository.name());
+                        }
+
+                    } else {
+                        // For each sequencer, figure out which workspaces apply ...
+                        UUID uuid = sequencer.getUniqueId();
+                        sequencersById.put(sequencer.getUniqueId(), sequencer);
+                        // For each sequencer, create the path expressions ...
+
+                        Set<SequencerPathExpression> pathExpressions = buildPathExpressionSet(sequencer);
+                        pathExpressionsBySequencerId.put(uuid, pathExpressions);
+                        if (DEBUG) {
+                            LOGGER.debug("Created sequencer '{0}' in repository '{1}' with valid path expressions: {2}",
+                                         sequencer.getName(),
+                                         repository.name(),
+                                         pathExpressions);
+                        }
                     }
                 } catch (Throwable t) {
                     if (t.getCause() != null) {
@@ -166,6 +181,7 @@ public class Sequencers implements ChangeSetListener {
         this.stringFactory = repository.context().getValueFactories().getStringFactory();
         this.components = original.components;
         this.sequencersById = original.sequencersById;
+        this.sequencersByName = original.sequencersByName;
         this.configByWorkspaceName = original.configByWorkspaceName;
         this.pathExpressionsBySequencerId = original.pathExpressionsBySequencerId;
     }
@@ -334,6 +350,10 @@ public class Sequencers implements ChangeSetListener {
 
     public Sequencer getSequencer( UUID id ) {
         return sequencersById.get(id);
+    }
+
+    public Sequencer getSequencer( String sequencerName ) {
+        return sequencersByName.get(sequencerName);
     }
 
     protected Set<SequencerPathExpression> buildPathExpressionSet( Sequencer sequencer ) throws InvalidSequencerPathExpression {

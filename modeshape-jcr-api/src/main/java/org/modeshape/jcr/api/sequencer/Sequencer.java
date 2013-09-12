@@ -128,7 +128,11 @@ public abstract class Sequencer {
     public final String[] getPathExpressions() {
         String pathExpression = this.pathExpression;
         Object[] pathExpressions = this.pathExpressions;
-        if (pathExpression != null && pathExpressions == null || pathExpressions.length == 0) {
+        if (pathExpression == null && (pathExpressions == null || pathExpressions.length == 0)) {
+            // there's none ...
+            return new String[] {};
+        }
+        if (pathExpression != null && (pathExpressions == null || pathExpressions.length == 0)) {
             // There's just one ...
             return new String[] {pathExpression};
         }
