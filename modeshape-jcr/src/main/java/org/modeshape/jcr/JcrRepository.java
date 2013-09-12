@@ -1782,8 +1782,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        String systemWorkspaceName,
                                        boolean separateThreadForSystemWorkspace,
                                        String processId ) {
-            RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
-                                                                        separateThreadForSystemWorkspace);
+            RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName, separateThreadForSystemWorkspace);
             return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus,
                                                                                           processId) : standaloneBus;
         }

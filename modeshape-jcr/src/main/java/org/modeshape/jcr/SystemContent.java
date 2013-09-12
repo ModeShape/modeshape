@@ -312,6 +312,14 @@ public class SystemContent {
         if (nodeTypeNode != null) {
             // Update the properties ...
             nodeTypeNode.setProperties(system, properties);
+            //make sure each new supertype of the existing node is present *before* the existing node in the parent nodeTypes
+            //this because node type validation is a top-down process, expecting the parents before the children
+            for (NodeType superType : supertypes ) {
+                CachedNode superTypeNode = system.getNode(((JcrNodeType) superType).key());
+                if (superTypeNode instanceof MutableCachedNode && ((MutableCachedNode) superTypeNode).isNew()) {
+                    nodeTypes.reorderChild(system, superTypeNode.getKey(), nodeTypeNode.getKey());
+                }
+            }
         } else {
             // We have to create the node type node ...
             nodeTypeNode = nodeTypes.createChild(system, key, name, properties);
