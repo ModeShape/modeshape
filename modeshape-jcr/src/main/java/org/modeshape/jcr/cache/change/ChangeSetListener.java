@@ -24,10 +24,14 @@
 package org.modeshape.jcr.cache.change;
 
 /**
- * 
+ * Internal listener interface.
  */
 public interface ChangeSetListener {
 
+    /**
+     * Notifies a listener of the given changes.
+     *
+     * @param changeSet a {@code non-null} {@link ChangeSet}
+     */
     void notify( ChangeSet changeSet );
-
 }

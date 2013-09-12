@@ -1050,7 +1050,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.changeBus = createBus(config.getClustering(),
                                                this.changeDispatchingQueue,
                                                systemWorkspaceName(),
-                                               false,
                                                context.getProcessId());
                     this.changeBus.start();
 
@@ -1780,9 +1779,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected ChangeBus createBus( RepositoryConfiguration.Clustering clusteringConfiguration,
                                        ExecutorService executor,
                                        String systemWorkspaceName,
-                                       boolean separateThreadForSystemWorkspace,
                                        String processId ) {
-            RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName, separateThreadForSystemWorkspace);
+            RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName);
             return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus,
                                                                                           processId) : standaloneBus;
         }

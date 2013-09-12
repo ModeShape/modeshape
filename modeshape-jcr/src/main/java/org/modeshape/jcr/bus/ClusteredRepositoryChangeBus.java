@@ -173,15 +173,6 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         return delegate.hasObservers();
     }
 
-    /**
-     * Return whether this bus has been {@link #start() started} and not yet {@link #shutdown() shut down}.
-     *
-     * @return true if {@link #start()} has been called but {@link #shutdown()} has not, or false otherwise
-     */
-    public boolean isStarted() {
-        return channel != null;
-    }
-
     @Override
     public synchronized void shutdown() {
         if (channel != null) {
@@ -215,7 +206,6 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
             if (hasObservers()) {
                 delegate.notify(changeSet);
                 logReceivedOperation(changeSet);
-
             }
             return;
         }
@@ -367,11 +357,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     }
 
     /**
-     * ObjectInputStream extention that allows a different class loader to be used when resolving types.
+     * ObjectInputStream extension that allows a different class loader to be used when resolving types.
      */
     protected final class ObjectInputStreamWithClassLoader extends ObjectInputStream {
 
-        private final ClassLoader cl;
+        private ClassLoader cl;
 
         public ObjectInputStreamWithClassLoader(InputStream in, ClassLoader cl) throws IOException {
             super(in);
@@ -388,6 +378,12 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
             } catch (ClassNotFoundException ex) {
                 return super.resolveClass(desc);
             }
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.close();
+            this.cl = null;
         }
     }
 }

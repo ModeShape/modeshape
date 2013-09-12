@@ -24,81 +24,79 @@
 
 package org.modeshape.jcr.bus;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.HashCode;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
  * A standard {@link ChangeBus} implementation.
- * 
+ *
  * @author Horia Chiorean
  */
 @ThreadSafe
 public final class RepositoryChangeBus implements ChangeBus {
 
     private static final String NULL_WORKSPACE_NAME = "null_workspace_name";
-
-    private final ExecutorService executor;
-    private final ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>> workspaceListenerQueues;
-    private final Set<Future<?>> workers;
-
-    private final Set<ChangeSetListener> listeners;
-    private final ReadWriteLock listenersLock = new ReentrantReadWriteLock(true);
+    private static final Logger LOGGER = Logger.getLogger(RepositoryChangeBus.class);
 
     protected volatile boolean shutdown;
 
+    private final ExecutorService executor;
+    private final List<ChangeSetDispatcher> dispatchers;
+    private final Map<Integer, Future<?>> workers;
+    private final ReadWriteLock listenersLock;
+
     private final String systemWorkspaceName;
 
+    /**
+     * Creates new change bus
+     *
+     * @param executor the {@link ExecutorService} which will be used internally to submit workers to dispatching events to listeners.
+     * @param systemWorkspaceName the name of the system workspace, needed because internal (system) events are dispatched in the same
+     * thread; may no be null
+     */
     public RepositoryChangeBus( ExecutorService executor,
-                                String systemWorkspaceName,
-                                boolean separateThreadForSystemWorkspace ) {
+                                String systemWorkspaceName ) {
         this.systemWorkspaceName = systemWorkspaceName;
-        this.workers = new HashSet<Future<?>>();
-        this.workspaceListenerQueues = new ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>>();
+        this.workers = new HashMap<Integer, Future<?>>();
+        this.dispatchers = new ArrayList<ChangeSetDispatcher>();
+        this.listenersLock = new ReentrantReadWriteLock(true);
         this.executor = executor;
-        this.listeners = Collections.synchronizedSet(new LinkedHashSet<ChangeSetListener>());
         this.shutdown = false;
     }
 
-    RepositoryChangeBus( ExecutorService executor ) {
-        this(executor, null, false);
+    @Override
+    public synchronized void start() {
     }
 
     @Override
-    public void start() {
-    }
-
-    @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         shutdown = true;
-        try {
-            listenersLock.writeLock().lock();
-            listeners.clear();
-            workspaceListenerQueues.clear();
-            stopWork();
-        } finally {
-            listenersLock.writeLock().unlock();
-        }
+        dispatchers.clear();
+        stopWork();
     }
 
     private void stopWork() {
         executor.shutdown();
-        for (Future<?> worker : workers) {
-            if (!worker.isDone()) worker.cancel(true);
+        for (Future<?> worker : workers.values()) {
+            if (!worker.isDone()) {
+                worker.cancel(true);
+            }
         }
         workers.clear();
     }
@@ -109,9 +107,21 @@ public final class RepositoryChangeBus implements ChangeBus {
         if (listener == null) {
             return false;
         }
+        int hashCode = HashCode.compute(listener);
+        if (workers.containsKey(hashCode)) {
+            return false;
+        }
         try {
             listenersLock.writeLock().lock();
-            return listeners.add(listener);
+
+            if (!workers.containsKey(hashCode)) {
+                ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener);
+                dispatchers.add(dispatcher);
+                workers.put(hashCode, executor.submit(dispatcher));
+                return true;
+            } else {
+                return false;
+            }
         } finally {
             listenersLock.writeLock().unlock();
         }
@@ -123,14 +133,32 @@ public final class RepositoryChangeBus implements ChangeBus {
         if (listener == null) {
             return false;
         }
+        int hashCode = HashCode.compute(listener);
+        if (!workers.containsKey(hashCode)) {
+            return false;
+        }
         try {
             listenersLock.writeLock().lock();
-            return listeners.remove(listener);
+            if (!workers.containsKey(hashCode)) {
+                return false;
+            }
+            for (Iterator<ChangeSetDispatcher> dispatcherIterator = dispatchers.iterator(); dispatcherIterator.hasNext(); ) {
+                ChangeSetDispatcher dispatcher = dispatcherIterator.next();
+                if (dispatcher.listenerHashCode() == hashCode) {
+                    Future<?> work = workers.remove(hashCode);
+                    //cancelling the work will call shutdown on the dispatcher
+                    work.cancel(true);
+                    dispatcherIterator.remove();
+                    return true;
+                }
+            }
         } finally {
             listenersLock.writeLock().unlock();
         }
+        return false;
     }
 
+    @GuardedBy( "listenersLock" )
     @Override
     public void notify( ChangeSet changeSet ) {
         if (changeSet == null || !hasObservers()) {
@@ -138,68 +166,41 @@ public final class RepositoryChangeBus implements ChangeBus {
         }
 
         if (shutdown) {
-            throw new IllegalStateException("Change bus has been already shut down, should not be receiving events");
+            throw new IllegalStateException("Change bus has been already shut down, should not have any more observers");
         }
 
         String workspaceName = changeSet.getWorkspaceName() != null ? changeSet.getWorkspaceName() : NULL_WORKSPACE_NAME;
-
-        if (notifiedSystemWorkspaceListenersInline(changeSet, workspaceName)) {
-            return;
+        if (workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
+            //changes in the system workspace are always submitted in the same thread because they need immediate processing
+            submitChanges(changeSet, true);
+        } else {
+            submitChanges(changeSet, false);
         }
+    }
 
-        ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> listenersForWorkspace = workspaceListenerQueues.get(workspaceName);
-        if (listenersForWorkspace == null) {
-            listenersForWorkspace = new ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>();
-            ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> existingMap = workspaceListenerQueues.putIfAbsent(workspaceName,
-                                                                                                                             listenersForWorkspace);
-            if (existingMap != null) {
-                listenersForWorkspace = existingMap;
-            }
-        }
-
+    private boolean submitChanges( ChangeSet changeSet,
+                                   boolean inThread ) {
         try {
             listenersLock.readLock().lock();
-            for (ChangeSetListener listener : listeners) {
-                BlockingQueue<ChangeSet> listenerQueue = listenersForWorkspace.get(listener);
-                if (listenerQueue == null) {
-                    listenerQueue = new LinkedBlockingQueue<ChangeSet>();
-                    listenerQueue.add(changeSet);
-                    BlockingQueue<ChangeSet> existingQueue = listenersForWorkspace.putIfAbsent(listener, listenerQueue);
-                    if (existingQueue != null) {
-                        listenerQueue = existingQueue;
-                    }
-                    ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener, listenerQueue);
-                    workers.add(executor.submit(dispatcher));
+            for (ChangeSetDispatcher dispatcher : dispatchers) {
+                if (inThread) {
+                    dispatcher.listener().notify(changeSet);
                 } else {
-                    listenerQueue.add(changeSet);
+                    dispatcher.submit(changeSet);
                 }
             }
+            return true;
         } finally {
             listenersLock.readLock().unlock();
         }
     }
 
-    private boolean notifiedSystemWorkspaceListenersInline( ChangeSet changeSet,
-                                                            String workspaceName ) {
-        if (workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
-            listenersLock.readLock().lock();
-            try {
-                for (ChangeSetListener listener : listeners) {
-                    listener.notify(changeSet);
-                }
-                return true;
-            } finally {
-                listenersLock.readLock().unlock();
-            }
-        }
-        return false;
-    }
-
+    @GuardedBy( "listenersLock" )
     @Override
     public boolean hasObservers() {
         try {
             listenersLock.readLock().lock();
-            return !listeners.isEmpty();
+            return !dispatchers.isEmpty();
         } finally {
             listenersLock.readLock().unlock();
         }
@@ -207,22 +208,21 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     private class ChangeSetDispatcher implements Callable<Void> {
 
-        private static final int DEFAULT_POLL_TIMEOUT = 3;
-
+        private final int listenerHashCode;
         private ChangeSetListener listener;
-        private BlockingQueue<ChangeSet> changeSetQueue;
+        private BlockingQueue<ChangeSet> queue;
 
-        ChangeSetDispatcher( ChangeSetListener listener,
-                             BlockingQueue<ChangeSet> changeSetQueue ) {
+        private ChangeSetDispatcher( ChangeSetListener listener ) {
             this.listener = listener;
-            this.changeSetQueue = changeSetQueue;
+            this.listenerHashCode = HashCode.compute(listener);
+            this.queue = new LinkedBlockingQueue<ChangeSet>();
         }
 
         @Override
         public Void call() {
             while (!shutdown) {
                 try {
-                    ChangeSet changeSet = changeSetQueue.poll(DEFAULT_POLL_TIMEOUT, TimeUnit.SECONDS);
+                    ChangeSet changeSet = queue.take();
                     if (changeSet != null) {
                         listener.notify(changeSet);
                     }
@@ -235,12 +235,26 @@ public final class RepositoryChangeBus implements ChangeBus {
             return null;
         }
 
+        private void submit( ChangeSet changeSet ) {
+            if (!queue.offer(changeSet)) {
+                LOGGER.debug("Cannot submit change set: {0} because the queue is full", changeSet);
+            }
+        }
+
+        private int listenerHashCode() {
+            return listenerHashCode;
+        }
+
+        private ChangeSetListener listener() {
+            return listener;
+        }
+
         private void shutdown() {
-            while (!changeSetQueue.isEmpty()) {
-                listener.notify(changeSetQueue.poll());
+            while (!queue.isEmpty()) {
+                listener.notify(queue.remove());
             }
             this.listener = null;
-            this.changeSetQueue = null;
+            this.queue = null;
         }
     }
 }

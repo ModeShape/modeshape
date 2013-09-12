@@ -64,7 +64,7 @@ public class RepositoryChangeBusTest {
     }
 
     protected RepositoryChangeBus createRepositoryChangeBus() {
-        return new RepositoryChangeBus(Executors.newCachedThreadPool(), null, false);
+        return new RepositoryChangeBus(Executors.newCachedThreadPool(), null);
     }
 
     @After
