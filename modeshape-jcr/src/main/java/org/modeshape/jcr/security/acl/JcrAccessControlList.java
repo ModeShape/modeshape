@@ -162,14 +162,14 @@ public class JcrAccessControlList implements AccessControlList {
         } 
         return false;
     }
-    
+
     /**
      * Lists all privileges defined by this access list for the given user.
      * 
      * @param username the name of the user
      * @return list of privilege objects.
      */
-    public Privilege[] getPrivileges(String username) {
+    public Privilege[] getPrivileges(SecurityContext context) {
         ArrayList<Privilege> privs = new ArrayList<Privilege>();
         for (AccessControlEntryImpl ace : principals.values()) {
             //add privileges granted for everyone
@@ -178,7 +178,12 @@ public class JcrAccessControlList implements AccessControlList {
             }
             
             //add privileges granted for given user
-            if (ace.getPrincipal().getName().equals(username)) {
+            if (ace.getPrincipal().getName().equals(username(context.getUserName()))) {
+                privs.addAll(Arrays.asList(ace.getPrivileges()));
+            }
+            
+            //add privileges granted for given role
+            if (context.hasRole(ace.getPrincipal().getName())) {
                 privs.addAll(Arrays.asList(ace.getPrivileges()));
             }
         }
@@ -188,7 +193,7 @@ public class JcrAccessControlList implements AccessControlList {
         
         return res;
     }
-    
+        
     public boolean hasEntry(String name) {
         AccessControlEntry[] entries = this.getAccessControlEntries();
         for (int i = 0; i < entries.length; i++) {

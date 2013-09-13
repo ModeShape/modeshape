@@ -367,7 +367,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } else {
             acl = (AccessControlList)acm.getPolicies(path)[0];
         }
-        acl.addAccessControlEntry(SimplePrincipal.newInstance(session.getUserID()), permissions);
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"), permissions);
 
         acm.setPolicy(path, acl);
         session.save();
