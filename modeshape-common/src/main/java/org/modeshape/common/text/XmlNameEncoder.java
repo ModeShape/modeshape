@@ -48,7 +48,7 @@ public class XmlNameEncoder implements TextDecoder, TextEncoder {
     private static final BitSet XML_NAME_ALLOWED_CHARACTERS = new BitSet(2 ^ 16);
 
     /**
-     * @see <a href=http://www.w3.org/TR/xml/#NT-NameStartChar>http://www.w3.org/TR/xml/#NT-NameStartChar</a>
+     * @see "<a href=http://www.w3.org/TR/xml/#NT-NameStartChar/>http://www.w3.org/TR/xml/#NT-NameStartChar</a>"
      */
     private static final BitSet XML_NAME_START_ALLOWED_CHARACTERS = new BitSet(2 ^ 16);
 

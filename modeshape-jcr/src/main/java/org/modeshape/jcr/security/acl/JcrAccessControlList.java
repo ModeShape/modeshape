@@ -166,7 +166,7 @@ public class JcrAccessControlList implements AccessControlList {
     /**
      * Lists all privileges defined by this access list for the given user.
      * 
-     * @param username the name of the user
+     * @param context the security context of the user; never null
      * @return list of privilege objects.
      */
     public Privilege[] getPrivileges(SecurityContext context) {
