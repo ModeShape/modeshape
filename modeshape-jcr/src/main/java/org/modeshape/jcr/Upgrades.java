@@ -35,6 +35,8 @@ public class Upgrades {
 
     protected static final Logger LOGGER = Logger.getLogger(Upgrades.class);
 
+    protected static final int EMPTY_UPGRADES_ID = 0;
+
     public static interface Context {
         /**
          * Get the repository's running state.
@@ -102,7 +104,7 @@ public class Upgrades {
      * @return the latest identifier; 0 if there are no upgrades in this object, or positive number
      */
     public final int getLatestAvailableUpgradeId() {
-        return operations.isEmpty() ? 0 : operations.get(operations.size() - 1).getId();
+        return operations.isEmpty() ? EMPTY_UPGRADES_ID : operations.get(operations.size() - 1).getId();
     }
 
     protected static abstract class UpgradeOperation {

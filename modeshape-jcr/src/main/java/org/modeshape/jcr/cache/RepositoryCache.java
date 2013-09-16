@@ -133,6 +133,7 @@ public class RepositoryCache implements Observable {
     private final SessionEnvironment sessionContext;
     private final String processKey;
     private final CacheContainer workspaceCacheManager;
+    private final Upgrades upgrades;
     private volatile boolean initializingRepository = false;
     private volatile boolean upgradingRepository = false;
     private int lastUpgradeId;
@@ -143,7 +144,8 @@ public class RepositoryCache implements Observable {
                             ContentInitializer initializer,
                             SessionEnvironment sessionContext,
                             ChangeBus changeBus,
-                            CacheContainer workspaceCacheContainer ) {
+                            CacheContainer workspaceCacheContainer,
+                            Upgrades upgradeFunctions ) {
         this.context = context;
         this.configuration = configuration;
         this.documentStore = documentStore;
@@ -157,8 +159,8 @@ public class RepositoryCache implements Observable {
         this.name = configuration.getName();
         this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
         this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
+        this.upgrades = upgradeFunctions;
 
-        final Upgrades upgrades = Upgrades.STANDARD_UPGRADES;
         SchematicEntry repositoryInfo = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
         boolean upgradeRequired = false;
         if (repositoryInfo == null) {
@@ -434,7 +436,6 @@ public class RepositoryCache implements Observable {
                     @Override
                     public Void call() throws Exception {
                         LOGGER.debug("Upgrading repository '{0}'", name);
-                        Upgrades upgrades = Upgrades.STANDARD_UPGRADES;
                         lastUpgradeId = upgrades.applyUpgradesSince(lastUpgradeId, resources);
                         LOGGER.debug("Recording upgrade completion in repository '{0}'", name);
 
