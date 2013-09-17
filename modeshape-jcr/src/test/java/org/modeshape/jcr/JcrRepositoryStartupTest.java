@@ -26,7 +26,9 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -43,12 +45,20 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import org.infinispan.schematic.document.EditableDocument;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.mock.MockConnector;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
+import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.document.DocumentStore;
+import org.modeshape.jcr.value.PropertyFactory;
 
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
@@ -439,5 +449,63 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, "config/repo-config-jj-modified.json");
+    }
+
+    @Test
+    @FixFor("MODE-2044")
+    public void shouldRun3_6_0UpgradeFunction() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+        //first run is empty, so no upgrades will be performed
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                //modify the repository-info document to force an upgrade on the next restart
+                DocumentStore documentStore =  repository.documentStore();
+                EditableDocument editableDocument = documentStore.localStore().get("repository:info").editDocumentContent();
+                editableDocument.set("lastUpgradeId", Upgrades.ModeShape_3_6_0.INSTANCE.getId() - 1);
+                documentStore.localStore().put("repository:info", editableDocument);
+
+                //create a non-session lock on a node
+                JcrSession session = repository.login();
+                PropertyFactory propertyFactory = session.context().getPropertyFactory();
+                AbstractJcrNode node = session.getRootNode().addNode("/test");
+                node.addMixin("mix:lockable");
+                session.save();
+                session.lockManager().lock(node, true, false, Long.MAX_VALUE, null);
+
+                //manipulate that lock using the system cache to simulate corrupt data
+                SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), false);
+                SystemContent systemContent = new SystemContent(systemSession);
+                ChildReferences childReferences = systemContent.locksNode().getChildReferences(systemSession);
+                assertFalse("No locks found", childReferences.isEmpty());
+                for (ChildReference childReference : childReferences) {
+                    MutableCachedNode lock = systemSession.mutable(childReference.getKey());
+                    lock.setProperty(systemSession, propertyFactory.create(ModeShapeLexicon.IS_DEEP, true));
+                    lock.setProperty(systemSession, propertyFactory.create(ModeShapeLexicon.LOCKED_KEY, node.key().toString()));
+                    lock.setProperty(systemSession, propertyFactory.create(ModeShapeLexicon.SESSION_SCOPE, false));
+                }
+                systemSession.save();
+                return null;
+            }
+        }, "config/repo-config-persistent-no-query.json");
+
+        //second run should run the upgrade
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                //manipulate that lock using the system cache to simulate corrupt data
+                SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), true);
+                SystemContent systemContent = new SystemContent(systemSession);
+                ChildReferences childReferences = systemContent.locksNode().getChildReferences(systemSession);
+                assertFalse("No locks found", childReferences.isEmpty());
+                for (ChildReference childReference : childReferences) {
+                    CachedNode lock = systemSession.getNode(childReference.getKey());
+                    assertNull("Property not removed", lock.getProperty(ModeShapeLexicon.IS_DEEP, systemSession));
+                    assertNull("Property not removed", lock.getProperty(ModeShapeLexicon.LOCKED_KEY, systemSession));
+                    assertNull("Property not removed", lock.getProperty(ModeShapeLexicon.SESSION_SCOPE, systemSession));
+                }
+                return null;
+            }
+        }, "config/repo-config-persistent-no-query.json");
     }
 }
