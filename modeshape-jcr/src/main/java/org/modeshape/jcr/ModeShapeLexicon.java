@@ -90,4 +90,23 @@ public class ModeShapeLexicon {
     public static final Name EXTERNAL_NODE_KEY = new BasicName(Namespace.URI, "externalNodeKey");
     public static final Name PROJECTED_NODE_KEY = new BasicName(Namespace.URI, "projectedNodeKey");
     public static final Name PROJECTION_ALIAS = new BasicName(Namespace.URI, "alias");
+
+    /**
+     * ACL related
+     */
+    public static final Name ACCESS_CONTROLLABLE = new BasicName(Namespace.URI, "accessControllable");
+    public static final Name ACL = new BasicName(Namespace.URI, "Acl");
+    public static final Name PERMISSION = new BasicName(Namespace.URI, "Permission");
+
+    /**
+     * Deprecated names because of originally invalid node types in modeshape_builtins.cnd.
+     * DO NOT USE outside of upgrade functions & tests.
+     */
+    @Deprecated
+    public static final Name LOCKED_KEY =  new BasicName(Namespace.URI, "lockedKey");
+    @Deprecated
+    public static final Name SESSION_SCOPE =  new BasicName(Namespace.URI, "sessionScope");
+    @Deprecated
+    public static final Name IS_DEEP =  new BasicName(Namespace.URI, "isDeep");
+
 }

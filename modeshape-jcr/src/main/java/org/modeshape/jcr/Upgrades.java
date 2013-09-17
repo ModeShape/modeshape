@@ -24,9 +24,17 @@
 package org.modeshape.jcr;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import javax.jcr.nodetype.NodeTypeDefinition;
+import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
+import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.SessionCache;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -52,7 +60,7 @@ public class Upgrades {
     public static final Upgrades STANDARD_UPGRADES;
 
     static {
-        STANDARD_UPGRADES = new Upgrades(/*new ModeShape_3_6_0()*/);
+        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE);
     }
 
     private final List<UpgradeOperation> operations = new ArrayList<UpgradeOperation>();
@@ -137,14 +145,83 @@ public class Upgrades {
         }
     }
 
-    // protected static class ModeShape_3_6_0 extends UpgradeOperation {
-    // protected ModeShape_3_6_0() {
-    // super(1);
-    // }
-    //
-    // @Override
-    // public void apply( Context resources ) {
-    // // TODO
-    // }
-    // }
+    /**
+     * Upgrade operation handling moving to ModeShape 3.6.0.Final.
+     * This consists of:
+     * - making sure the internal node types are updated to reflect the ACL and mode:lock changes
+     * - updating any potential existing lock to the updated mode:lock node type
+     */
+    protected static class ModeShape_3_6_0 extends UpgradeOperation {
+        protected static final UpgradeOperation INSTANCE = new ModeShape_3_6_0();
+
+        protected ModeShape_3_6_0() {
+            super(1);
+        }
+
+        @Override
+        public void apply( Context resources ) {
+            LOGGER.info(JcrI18n.upgrade3_6_0Running);
+            RunningState repository = resources.getRepository();
+            if (updateInternalNodeTypes(repository)) {
+                updateLocks(repository);
+            }
+        }
+
+        private void updateLocks( RunningState repository ) {
+            try {
+                SessionCache systemSession = repository.createSystemSession(repository.context(), false);
+                SystemContent systemContent = new SystemContent(systemSession);
+                CachedNode locksNode = systemContent.locksNode();
+                if (locksNode == null) {
+                    return;
+                }
+                ChildReferences childReferences = locksNode.getChildReferences(systemSession);
+                if (childReferences.isEmpty()) {
+                    return;
+                }
+                for (ChildReference ref : childReferences) {
+                    MutableCachedNode lockNode = systemSession.mutable(ref.getKey());
+
+                    //remove properties that belong to the old (invalid) node type
+                    lockNode.removeProperty(systemSession, ModeShapeLexicon.LOCKED_KEY);
+                    lockNode.removeProperty(systemSession, ModeShapeLexicon.SESSION_SCOPE);
+                    lockNode.removeProperty(systemSession, ModeShapeLexicon.IS_DEEP);
+                }
+                systemContent.save();
+            } catch (Exception e) {
+                LOGGER.error(e, JcrI18n.upgrade3_6_0CannotUpdateLocks, e.getMessage());
+            }
+        }
+
+        private boolean updateInternalNodeTypes( RunningState repository ) {
+            CndImporter importer = new CndImporter(repository.context(), true);
+            SimpleProblems problems = new SimpleProblems();
+            try {
+                importer.importFrom(getClass().getClassLoader().getResourceAsStream(CndImporter.MODESHAPE_BUILT_INS),
+                                    problems, null);
+                if (!problems.isEmpty()) {
+                    LOGGER.error(JcrI18n.upgrade3_6_0CannotUpdateNodeTypes, problems.toString());
+                    return false;
+                }
+                List<NodeTypeDefinition> nodeTypeDefinitions = new ArrayList<NodeTypeDefinition>(importer.getNodeTypeDefinitions());
+                for (Iterator<NodeTypeDefinition> nodeTypeDefinitionIterator = nodeTypeDefinitions.iterator(); nodeTypeDefinitionIterator.hasNext(); ) {
+                    NodeTypeDefinition nodeTypeDefinition = nodeTypeDefinitionIterator.next();
+                    String name = nodeTypeDefinition.getName();
+                    //keep only the exact types that we know have changed to keep the overhead to a minimum
+                    if (ModeShapeLexicon.ACCESS_CONTROLLABLE.getString().equalsIgnoreCase(name) ||
+                        ModeShapeLexicon.ACL.getString().equalsIgnoreCase(name) ||
+                        ModeShapeLexicon.PERMISSION.getString().equalsIgnoreCase(name) ||
+                        ModeShapeLexicon.LOCK.getString().equalsIgnoreCase(name)) {
+                        continue;
+                    }
+                    nodeTypeDefinitionIterator.remove();
+                }
+                repository.nodeTypeManager().registerNodeTypes(nodeTypeDefinitions, false, false, true);
+            } catch (Exception e) {
+                LOGGER.error(e, JcrI18n.upgrade3_6_0CannotUpdateNodeTypes, e.getMessage());
+                return false;
+            }
+            return true;
+        }
+    }
 }
