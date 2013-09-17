@@ -7,6 +7,8 @@ package org.modeshape.web.client;
 import com.smartgwt.client.types.ListGridEditEvent;
 import com.smartgwt.client.types.VisibilityMode;
 import com.smartgwt.client.widgets.Label;
+import com.smartgwt.client.widgets.form.DynamicForm;
+import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.grid.ListGrid;
 import com.smartgwt.client.widgets.grid.ListGridField;
 import com.smartgwt.client.widgets.grid.ListGridRecord;
@@ -202,10 +204,43 @@ public class NodePanel extends Tab {
     }
 
     private class AccessControlPanel extends VLayout {
-
+        private HLayout principalPanel = new HLayout();
+        private ComboBoxItem principal = new ComboBoxItem();
+        private ListGrid grid = new ListGrid();
+        
         public AccessControlPanel() {
             super();
             setHeight(250);
+            
+            DynamicForm form = new DynamicForm();
+            principalPanel.addMember(form);
+            principalPanel.setHeight(30);
+            
+            form.setItems(principal);
+            
+            grid.setAlternateRecordStyles(true);
+            grid.setShowAllRecords(true);
+            grid.setCanEdit(true);
+            grid.setEditEvent(ListGridEditEvent.CLICK);
+            grid.setEditByCell(true);
+
+            ListGridField nameField = new ListGridField("permission", "Permission");
+            nameField.setCanEdit(false);
+            nameField.setShowHover(true);
+
+            ListGridField statusField = new ListGridField("status", "Status");
+            statusField.setCanEdit(false);
+            statusField.setShowHover(true);
+            
+
+            grid.setFields(nameField, statusField);
+
+            grid.setCanResizeFields(true);
+            grid.setWidth100();
+            grid.setHeight100();
+            
+            addMember(principalPanel);
+            addMember(grid);
         }
         
         public void display(JcrAccessControlList acl) {

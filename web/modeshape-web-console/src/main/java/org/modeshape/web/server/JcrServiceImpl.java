@@ -5,6 +5,7 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -23,6 +24,7 @@ import javax.jcr.query.RowIterator;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicy;
 import javax.jcr.security.Privilege;
 import javax.naming.InitialContext;
 import org.jboss.logging.Logger;
@@ -86,7 +88,11 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                         n.getPath(),
                         n.getPrimaryNodeType().getName());
                 no.setProperties(getProperties(n));
-                no.setAcessControlList(getAccessList(session.getAccessControlManager(), node));
+                try {
+                    no.setAcessControlList(getAccessList(session.getAccessControlManager(), node));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 children.add(no);
             }
 
@@ -99,18 +105,46 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     private JcrAccessControlList getAccessList(AccessControlManager acm, Node node) throws RepositoryException {
         JcrAccessControlList acl = new JcrAccessControlList();
         
-        AccessControlList accessList = (AccessControlList) acm.getPolicies(node.getPath())[0];
-        AccessControlEntry[] entries = accessList.getAccessControlEntries();
+        AccessControlList accessList = findAccessList(acm, node);
         
-        for (AccessControlEntry entry : entries) {
-            JcrACLEntry en = new JcrACLEntry();
-            en.setPrincipal(entry.getPrincipal().getName());
-            Privilege[] privileges = entry.getPrivileges();
-            for (Privilege p : privileges) {
-                en.add(new JcrPermission(p.getName()));
+        if (accessList != null) {
+            System.out.println("---- Access list found---");
+            AccessControlEntry[] entries = accessList.getAccessControlEntries();
+
+            for (AccessControlEntry entry : entries) {
+                JcrACLEntry en = new JcrACLEntry();
+                en.setPrincipal(entry.getPrincipal().getName());
+                Privilege[] privileges = entry.getPrivileges();
+                for (Privilege p : privileges) {
+                    en.add(new JcrPermission(p.getName()));
+                }
             }
+        } else {
+            JcrACLEntry en = new JcrACLEntry();
+            en.setPrincipal("EVERYONE");
+            en.add(new JcrPermission("READ"));
+            en.add(new JcrPermission("WRITE"));
         }
+        
+        
         return acl;
+    }
+    
+    private AccessControlList findAccessList(AccessControlManager acm, Node node) throws RepositoryException {
+        AccessControlPolicy[] policy = acm.getPolicies(node.getPath());
+        
+        if (policy != null && policy.length > 0) {
+            return (AccessControlList)policy[0];
+        }
+        
+        Node parent = null;
+        try {
+            parent = node.getParent();
+        } catch (ItemNotFoundException e) {
+            return null;
+        }
+        
+        return findAccessList(acm, parent);
     }
     
     private Collection<JcrProperty> getProperties(Node node) throws RepositoryException {
