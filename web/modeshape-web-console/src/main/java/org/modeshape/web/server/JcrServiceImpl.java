@@ -5,10 +5,8 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import javax.jcr.Credentials;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
@@ -17,17 +15,23 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import javax.jcr.security.AccessControlEntry;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.Privilege;
 import javax.naming.InitialContext;
 import org.jboss.logging.Logger;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.web.shared.JcrNode;
 import org.modeshape.web.client.RemoteException;
+import org.modeshape.web.shared.JcrACLEntry;
+import org.modeshape.web.shared.JcrAccessControlList;
+import org.modeshape.web.shared.JcrPermission;
 import org.modeshape.web.shared.JcrProperty;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
 import org.modeshape.web.shared.ResultSet;
@@ -82,6 +86,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                         n.getPath(),
                         n.getPrimaryNodeType().getName());
                 no.setProperties(getProperties(n));
+                no.setAcessControlList(getAccessList(session.getAccessControlManager(), node));
                 children.add(no);
             }
 
@@ -91,6 +96,23 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         return children;
     }
 
+    private JcrAccessControlList getAccessList(AccessControlManager acm, Node node) throws RepositoryException {
+        JcrAccessControlList acl = new JcrAccessControlList();
+        
+        AccessControlList accessList = (AccessControlList) acm.getPolicies(node.getPath())[0];
+        AccessControlEntry[] entries = accessList.getAccessControlEntries();
+        
+        for (AccessControlEntry entry : entries) {
+            JcrACLEntry en = new JcrACLEntry();
+            en.setPrincipal(entry.getPrincipal().getName());
+            Privilege[] privileges = entry.getPrivileges();
+            for (Privilege p : privileges) {
+                en.add(new JcrPermission(p.getName()));
+            }
+        }
+        return acl;
+    }
+    
     private Collection<JcrProperty> getProperties(Node node) throws RepositoryException {
         ArrayList<JcrProperty> list = new ArrayList();
         PropertyIterator it = node.getProperties();
@@ -127,7 +149,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         ResultSet rs = new ResultSet();
         try {
             QueryManager qm = session.getWorkspace().getQueryManager();
-            Query q = qm.createQuery(text, text);
+            Query q = qm.createQuery(text, lang);
             
             QueryResult qr = q.execute();
             

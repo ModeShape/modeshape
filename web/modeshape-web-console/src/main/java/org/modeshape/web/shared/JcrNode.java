@@ -20,6 +20,8 @@ public class JcrNode implements Serializable, IsSerializable {
     private String path;
     private String primaryType;
     
+    private JcrAccessControlList acl;
+    
     //children nodes
     private ArrayList<JcrNode> children = new ArrayList();
     private Collection<JcrProperty> properties;
@@ -71,5 +73,13 @@ public class JcrNode implements Serializable, IsSerializable {
     
     public void addProperty(String name, String type, String value) {
         properties.add(new JcrProperty(name, type, value));
+    }
+    
+    public JcrAccessControlList getAccessList() {
+        return acl;
+    }
+    
+    public void setAcessControlList(JcrAccessControlList acl) {
+        this.acl = acl;
     }
 }

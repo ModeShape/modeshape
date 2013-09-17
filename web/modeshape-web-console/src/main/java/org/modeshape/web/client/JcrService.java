@@ -3,9 +3,7 @@ package org.modeshape.web.client;
 import org.modeshape.web.shared.JcrNode;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
-import java.util.Collection;
 import java.util.List;
-import org.modeshape.web.shared.JcrProperty;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
 import org.modeshape.web.shared.ResultSet;
 
@@ -40,6 +38,20 @@ public interface JcrService extends RemoteService {
      */
     public JcrRepositoryDescriptor repositoryInfo();
     
+    /**
+     * Gets supported query languages.
+     * 
+     * @return language names
+     */
     public String[] supportedQueryLanguages();
+    
+    /**
+     * Executes query.
+     * 
+     * @param text the query text.
+     * @param lang query language name
+     * @return Query result
+     */
     public ResultSet query(String text, String lang);
+    
 }

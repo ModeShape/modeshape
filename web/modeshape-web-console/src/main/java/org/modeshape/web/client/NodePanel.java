@@ -20,6 +20,7 @@ import com.smartgwt.client.widgets.menu.MenuItem;
 import com.smartgwt.client.widgets.menu.MenuItemSeparator;
 import com.smartgwt.client.widgets.tab.Tab;
 import java.util.Collection;
+import org.modeshape.web.shared.JcrAccessControlList;
 import org.modeshape.web.shared.JcrProperty;
 
 /**
@@ -75,6 +76,7 @@ public class NodePanel extends Tab {
     public void display(JcrTreeNode node) {
         generalInfo.setNode(node);
         properties.setData(node.getProperties());
+        accessControl.display(node.getAccessList());
     }
     
     public void setProperties(Collection<JcrProperty> props) {
@@ -204,6 +206,10 @@ public class NodePanel extends Tab {
         public AccessControlPanel() {
             super();
             setHeight(250);
+        }
+        
+        public void display(JcrAccessControlList acl) {
+            
         }
     }
 

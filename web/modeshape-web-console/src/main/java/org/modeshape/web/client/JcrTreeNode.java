@@ -6,6 +6,7 @@ package org.modeshape.web.client;
 
 import com.smartgwt.client.widgets.tree.TreeNode;
 import java.util.Collection;
+import org.modeshape.web.shared.JcrAccessControlList;
 import org.modeshape.web.shared.JcrProperty;
 
 /**
@@ -16,7 +17,7 @@ public class JcrTreeNode extends TreeNode {
     
     private String primaryType;
     private Collection<JcrProperty> properties;
-    
+    private JcrAccessControlList acl;
     /**
      * 
      * @param name
@@ -47,4 +48,13 @@ public class JcrTreeNode extends TreeNode {
     public Collection<JcrProperty> getProperties() {
         return properties;
     }
+    
+    public JcrAccessControlList getAccessList() {
+        return acl;
+    }
+    
+    public void setAcessControlList(JcrAccessControlList acl) {
+        this.acl = acl;
+    }
+    
 }
