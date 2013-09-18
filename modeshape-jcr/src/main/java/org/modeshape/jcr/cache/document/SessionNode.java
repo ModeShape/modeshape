@@ -785,7 +785,7 @@ public class SessionNode implements MutableCachedNode {
         // first try to determine if there's old reference property with the same name so that old references can be removed
         boolean oldPropertyWasReference = false;
         List<Reference> referencesToRemove = new ArrayList<Reference>();
-        if (!isNew()) {
+        if (isPropertyModified(cache, propertyName) || isPropertyRemoved(propertyName)) {
             // remove potential existing references
             CachedNode persistedNode = nodeInWorkspace(session(cache));
             Property oldProperty = persistedNode.getProperty(propertyName, cache);
