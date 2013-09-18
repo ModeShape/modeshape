@@ -248,7 +248,7 @@ class JcrLockManager implements LockManager {
             throw new LockException(JcrI18n.nodeNotLockable.text(node.location()));
         }
 
-        if (node.isModified()) {
+        if (node.isNew()|| node.isModified()) {
             throw new InvalidItemStateException(JcrI18n.changedNodeCannotBeLocked.text(node.location()));
         }
 
