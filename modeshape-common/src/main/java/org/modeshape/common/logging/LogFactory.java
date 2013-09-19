@@ -24,6 +24,7 @@
 
 package org.modeshape.common.logging;
 
+import org.modeshape.common.CommonI18n;
 import org.modeshape.common.logging.jdk.JdkLoggerFactory;
 import org.modeshape.common.logging.log4j.Log4jLoggerFactory;
 import org.modeshape.common.logging.slf4j.SLF4JLoggerFactory;
@@ -60,24 +61,51 @@ public abstract class LogFactory {
     private static LogFactory LOGFACTORY;
 
     static {
-        if (isSLF4JAvailable()) {
-            LOGFACTORY = new SLF4JLoggerFactory();
-        } else if (isLog4jAvailable()) {
-            LOGFACTORY = new Log4jLoggerFactory();
-        } else if (isCustomLoggerAvailable()) {
+        Throwable customLoggingError = null;
+        boolean customLogging = false;
+        boolean slf4jLogging = false;
+        boolean log4jLogging = false;
+
+        if (isCustomLoggerAvailable()) {
             try {
                 @SuppressWarnings( "unchecked" )
                 Class<LogFactory> customClass = (Class<LogFactory>)Class.forName(CUSTOM_LOG_FACTORY_CLASSNAME);
                 LOGFACTORY = customClass.newInstance();
-            } catch (Throwable e) {
-                // We're going to fallback to the JDK logger anyway, so use it and log this problem ...
-                LOGFACTORY = new JdkLoggerFactory();
-                java.util.logging.Logger jdkLogger = java.util.logging.Logger.getLogger(LogFactory.class.getName());
-                String msg = org.modeshape.common.CommonI18n.errorInitializingCustomLoggerFactory.text(CUSTOM_LOG_FACTORY_CLASSNAME);
-                jdkLogger.log(java.util.logging.Level.WARNING, msg, e);
+                customLogging = true;
+            } catch (Throwable throwable) {
+                customLoggingError = throwable;
             }
+        }
+
+        if (LOGFACTORY == null) {
+            if (isSLF4JAvailable()) {
+                LOGFACTORY = new SLF4JLoggerFactory();
+                slf4jLogging = true;
+            } else if (isLog4jAvailable()) {
+                LOGFACTORY = new Log4jLoggerFactory();
+                log4jLogging = true;
+            } else {
+                LOGFACTORY = new JdkLoggerFactory();
+            }
+        }
+
+        Logger logger = LOGFACTORY.getLogger(LogFactory.class.getName());
+
+        if (customLogging) {
+            logger.info(CommonI18n.customLoggingAvailable, CUSTOM_LOG_FACTORY_CLASSNAME);
+        } else if (slf4jLogging) {
+            logger.info(CommonI18n.slf4jAvailable);
+        } else if (log4jLogging) {
+            logger.info(CommonI18n.log4jAvailable);
         } else {
-            LOGFACTORY = new JdkLoggerFactory();
+            logger.info(CommonI18n.jdkFallback);
+        }
+
+        if (customLoggingError != null) {
+            // log the problem related to the custom logger
+            logger.warn(customLoggingError,
+                        CommonI18n.errorInitializingCustomLoggerFactory,
+                        CUSTOM_LOG_FACTORY_CLASSNAME);
         }
     }
 

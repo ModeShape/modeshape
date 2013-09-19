@@ -121,6 +121,11 @@ public final class CommonI18n {
 
     public static I18n errorInitializingCustomLoggerFactory;
 
+    public static I18n customLoggingAvailable;
+    public static I18n slf4jAvailable;
+    public static I18n log4jAvailable;
+    public static I18n jdkFallback;
+
     static {
         try {
             I18n.initialize(CommonI18n.class);
