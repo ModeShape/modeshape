@@ -1,0 +1,17 @@
+{
+    "name" : "No Client Tx Repository",
+    "transactionMode" : "none",
+    "storage" : {
+        "cacheName" : "inmemoryRepository"
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    }
+}
