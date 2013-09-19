@@ -53,14 +53,16 @@ import org.modeshape.common.util.StringUtil;
 @ThreadSafe
 public final class I18n implements I18nResource {
 
-    private static final Logger LOGGER = Logger.getLogger(I18n.class);
-
     /**
      * The first level of this map indicates whether an i18n class has been localized to a particular locale. The second level
      * contains any problems encountered during localization.
+     *
+     * Make sure this is always the first member in the class because it must be initialized *before* the Logger (see below).
+     * Otherwise it's possible to trigger a NPE because of nested initializers.
      */
     static final ConcurrentMap<Locale, Map<Class<?>, Set<String>>> LOCALE_TO_CLASS_TO_PROBLEMS_MAP = new ConcurrentHashMap<Locale, Map<Class<?>, Set<String>>>();
 
+    private static final Logger LOGGER = Logger.getLogger(I18n.class);
 
     /**
      * Note, calling this method will <em>not</em> trigger localization of the supplied internationalization class.
@@ -422,9 +424,6 @@ public final class I18n implements I18nResource {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         try {
