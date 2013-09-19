@@ -1207,6 +1207,19 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         queryAndExpectResults("SELECT * FROM [nt:resource] as r WHERE r.[jcr:lastModifiedBy]='"+ lastModifiedBy + "'" , 1);
     }
 
+    @Test
+    @FixFor( "MODE-2029" )
+    public void shouldRetrieveNodesUsingIsChildNodeAfterMove() throws Exception {
+        Node rootNode = session().getRootNode();
+        rootNode.addNode("a").addNode("b").addNode("c");
+        rootNode.addNode("tmp");
+        session.save();
+        queryAndExpectResults("SELECT * FROM [nt:unstructured] as node WHERE ISCHILDNODE (node, '/a/b')", 1);
+        session.getWorkspace().move("/a/b", "/tmp/b");
+        queryAndExpectResults("SELECT * FROM [nt:unstructured] as node WHERE ISCHILDNODE (node, '/tmp/b')", 1);
+        queryAndExpectResults("SELECT * FROM [nt:unstructured] as node WHERE ISCHILDNODE (node, '/a/b')", 0);
+    }
+
     private List<Node> queryAndExpectResults(String queryString, int howMany) throws RepositoryException{
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
