@@ -29,7 +29,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.Node;
@@ -336,6 +342,43 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
     }
 
+    @Test
+    @FixFor( "MODE-2050" )
+    public void shouldBeAbleToUseNoClientTransactionsInMultithreadedEnvironment() throws Exception {
+        InputStream configFile = getClass().getClassLoader().getResourceAsStream(
+                "config/repo-config-inmemory-local-environment-no-client-tx.json");
+        startRepositoryWithConfiguration(configFile);
+        int threadsCount = 2;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadsCount);
+        List<Future<Void>> results = new ArrayList<Future<Void>>(threadsCount);
+        final int nodesCount = 5;
+        for (int i = 0; i < threadsCount; i++) {
+            Future<Void> result = executorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    Session session = repository.login();
+                    try {
+                        String threadName = Thread.currentThread().getName();
+                        for (int i = 0; i < nodesCount; i++) {
+                            session.getRootNode().addNode("test_" + threadName);
+                            session.save();
+                        }
+                        return null;
+                    } finally {
+                        session.logout();
+                    }
+                }
+            });
+            results.add(result);
+        }
+
+        for (Future<Void> result : results) {
+            result.get(10, TimeUnit.SECONDS);
+            result.cancel(true);
+        }
+        executorService.shutdown();
+    }
+
     protected void startTransaction() throws NotSupportedException, SystemException {
         TransactionManager txnMgr = transactionManager();
         // Change this to true if/when debugging ...
@@ -356,15 +399,11 @@ public class TransactionsTest extends SingleUseAbstractTest {
         txnMgr.commit();
     }
 
-    protected void rollbackTransaction() throws SystemException, SecurityException, IllegalStateException {
-        session.getRepository().transactionManager().rollback();
-    }
-
     protected TransactionManager transactionManager() {
         return session.getRepository().transactionManager();
     }
 
-    public void moveDocument( String nodeName ) throws Exception {
+    private void moveDocument( String nodeName ) throws Exception {
         Node section = session.getRootNode().addNode(nodeName);
         section.setProperty("name", nodeName);
 

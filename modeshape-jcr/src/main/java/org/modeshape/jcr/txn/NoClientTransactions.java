@@ -45,8 +45,13 @@ public final class NoClientTransactions extends Transactions {
      * nested simple transactions, so we need effective make sure that only 1 instance of an active transaction can exist at any
      * given time. We cannot use multiple instance because completion functions are instance-dependent
      */
-    protected NoClientTransaction activeTransaction;
+    protected static final ThreadLocal<NoClientTransaction> ACTIVE_TRANSACTION = new ThreadLocal<NoClientTransaction>();
 
+    /**
+     * Creates a new instance passing in the given monitor factory and transaction manager
+     * @param monitorFactory a {@link MonitorFactory} instance; never null
+     * @param txnMgr a {@link TransactionManager} instance; never null
+     */
     public NoClientTransactions( MonitorFactory monitorFactory,
                                  TransactionManager txnMgr ) {
         super(monitorFactory, txnMgr);
@@ -54,16 +59,15 @@ public final class NoClientTransactions extends Transactions {
 
     @Override
     public synchronized Transaction begin() throws NotSupportedException, SystemException {
-        if (activeTransaction == null) {
+        if (ACTIVE_TRANSACTION.get() == null) {
             // Start a transaction ...
             txnMgr.begin();
             if (logger.isTraceEnabled()) {
                 logger.trace("Begin transaction {0}", currentTransactionId());
             }
-            // and return immediately ...
-            activeTransaction = new NoClientTransaction(txnMgr);
+            ACTIVE_TRANSACTION.set(new NoClientTransaction(txnMgr));
         }
-        return activeTransaction.transactionBegin();
+        return ACTIVE_TRANSACTION.get().transactionBegin();
     }
 
     protected class NoClientTransaction extends TraceableSimpleTransaction {
@@ -78,7 +82,7 @@ public final class NoClientTransactions extends Transactions {
             throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
             IllegalStateException, SystemException {
             if (nestedLevel.getAndDecrement() == 1) {
-                NoClientTransactions.this.activeTransaction = null;
+                NoClientTransactions.ACTIVE_TRANSACTION.remove();
                 super.commit();
             } else {
                 logger.trace("Not committing transaction because it's nested within another transaction. Only the top level transaction should commit");
@@ -87,7 +91,7 @@ public final class NoClientTransactions extends Transactions {
 
         @Override
         public void rollback() throws IllegalStateException, SecurityException, SystemException {
-            NoClientTransactions.this.activeTransaction = null;
+            NoClientTransactions.ACTIVE_TRANSACTION.remove();
             super.rollback();
         }
 

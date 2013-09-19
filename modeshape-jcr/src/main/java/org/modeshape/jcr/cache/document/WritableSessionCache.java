@@ -625,6 +625,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                         --repeat;
                         Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                         continue;
+                    } catch (IllegalStateException err) {
+                        // Not associated with a txn??
+                        throw new SystemFailureException(err);
+                    } catch (IllegalArgumentException err) {
+                        // Not associated with a txn??
+                        throw new SystemFailureException(err);
                     } catch (Exception e) {
                         // Some error occurred (likely within our code) ...
                         txn.rollback();
@@ -793,6 +799,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                         --repeat;
                         Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                         continue;
+                    } catch (IllegalStateException err) {
+                        // Not associated with a txn??
+                        throw new SystemFailureException(err);
+                    } catch (IllegalArgumentException err) {
+                        // Not associated with a txn??
+                        throw new SystemFailureException(err);
                     } catch (Exception e) {
                         // Some error occurred (likely within our code) ...
                         txn.rollback();
