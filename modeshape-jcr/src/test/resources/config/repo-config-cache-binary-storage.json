@@ -1,0 +1,17 @@
+{
+    "name" : "Cache Binary Storage Repository",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "storage" : {
+        "cacheName" : "inmemory",
+        "binaryStorage" : {
+            "type"  : "cache",
+            "cacheConfiguration" : "config/infinispan-persistent-binary-store.xml",
+            "dataCacheName" : "binary-data",
+            "metadataCacheName" : "binary-meta-data",
+            "minimumBinarySizeInBytes" : 1024
+        }
+    }
+}

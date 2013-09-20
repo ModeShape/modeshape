@@ -3,36 +3,78 @@
             xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
             xmlns="urn:infinispan:config:5.2">
 
-  <global>
-    <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
-    <transport clusterName="modeshape-cluster">
-      <properties>
-        <property name="configurationFile" value="config/jgroups-test-config.xml" />
-      </properties>
-    </transport>
-  </global>
+    <global>
+        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
+        <transport clusterName="modeshape-cluster">
+            <properties>
+                <property name="configurationFile" value="config/jgroups-test-config.xml"/>
+            </properties>
+        </transport>
+    </global>
 
-  <namedCache name="persistentRepository">
-    <eviction strategy="LIRS" maxEntries="600"/>
+    <namedCache name="persistentRepository">
+        <eviction strategy="LIRS" maxEntries="600"/>
 
-    <!-- Configure a synchronous replication cache -->
-    <clustering mode="replication">
-      <sync />
-    </clustering>
+        <!-- Configure a synchronous replication cache -->
+        <clustering mode="replication">
+            <sync/>
+        </clustering>
 
-    <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                 transactionMode="TRANSACTIONAL" 
-                 lockingMode="PESSIMISTIC" />
-    <loaders passivation="false" 
-             shared="false" 
-             preload="false">
-      <loader class="org.infinispan.loaders.file.FileCacheStore" 
-              fetchPersistentState="true" 
-              purgeOnStartup="true">
-        <properties>
-          <property name="location" value="target/clustered/repository_2/store" />
-        </properties>
-      </loader>
-    </loaders>
-  </namedCache>
+        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                     transactionMode="TRANSACTIONAL"
+                     lockingMode="PESSIMISTIC"/>
+        <loaders passivation="false"
+                 shared="false"
+                 preload="false">
+            <loader class="org.infinispan.loaders.file.FileCacheStore"
+                    fetchPersistentState="true"
+                    purgeOnStartup="true">
+                <properties>
+                    <property name="location" value="target/clustered/repository_2/store"/>
+                </properties>
+            </loader>
+        </loaders>
+    </namedCache>
+    <namedCache name="binary-data">
+        <!-- Configure a synchronous replication cache -->
+        <clustering mode="replication">
+            <sync/>
+        </clustering>
+
+        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                     transactionMode="TRANSACTIONAL"
+                     lockingMode="PESSIMISTIC"/>
+        <loaders passivation="false"
+                 shared="false"
+                 preload="false">
+            <loader class="org.infinispan.loaders.file.FileCacheStore"
+                    fetchPersistentState="true"
+                    purgeOnStartup="true">
+                <properties>
+                    <property name="location" value="target/clustered/repository_2/binary"/>
+                </properties>
+            </loader>
+        </loaders>
+    </namedCache>
+    <namedCache name="binary-meta-data">
+        <!-- Configure a synchronous replication cache -->
+        <clustering mode="replication">
+            <sync/>
+        </clustering>
+
+        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                     transactionMode="TRANSACTIONAL"
+                     lockingMode="PESSIMISTIC"/>
+        <loaders passivation="false"
+                 shared="false"
+                 preload="false">
+            <loader class="org.infinispan.loaders.file.FileCacheStore"
+                    fetchPersistentState="true"
+                    purgeOnStartup="true">
+                <properties>
+                    <property name="location" value="target/clustered/repository_2/binary"/>
+                </properties>
+            </loader>
+        </loaders>
+    </namedCache>
 </infinispan>

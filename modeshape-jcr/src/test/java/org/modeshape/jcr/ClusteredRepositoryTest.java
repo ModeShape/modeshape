@@ -26,15 +26,19 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -51,6 +55,7 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.observation.Event;
 
 /**
@@ -59,6 +64,8 @@ import org.modeshape.jcr.api.observation.Event;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ClusteredRepositoryTest extends AbstractTransactionalTest {
+
+    private static final Random RANDOM = new Random();
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -131,8 +138,8 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
      * Each Infinispan configuration persists data in a separate location, and we use replication mode.
      */
     @Test
-    @FixFor( {"MODE-1733", "MODE-1943"} )
-    public void shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcess() throws Exception {
+    @FixFor( {"MODE-1733", "MODE-1943", "MODE-2051"} )
+    public void shouldClusterWithReplicatedCachePersistedToSeparateAreasForEachProcess() throws Exception {
         FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
@@ -148,7 +155,8 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             assertInitialContentPersisted(session2);
 
             // in this setup, index changes are local but we are in clustered mode, so changes should also be indexed
-            assertIndexChangesAreVisibleToOtherProcesses(session1, session2);
+            assertChangesArePropagatedInCluster(session1, session2, "node1");
+            assertChangesArePropagatedInCluster(session2, session1, "node2");
 
             session1.logout();
             session2.logout();
@@ -193,7 +201,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             Session session2 = repository2.login();
 
             // in this setup, index changes clustered, so they *should be* be sent across to other nodes
-            assertIndexChangesAreVisibleToOtherProcesses(session1, session2);
+            assertChangesArePropagatedInCluster(session1, session2, "node1");
 
             session1.logout();
             session2.logout();
@@ -236,13 +244,15 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         }
     }
 
-    private void assertIndexChangesAreVisibleToOtherProcesses( Session process1Session,
-                                                               Session process2Session )
-        throws RepositoryException, InterruptedException {
-        String pathQuery = "select * from [nt:unstructured] as n where n.[jcr:path]='/testNode'";
+    private void assertChangesArePropagatedInCluster( Session process1Session,
+                                                      Session process2Session,
+                                                      String nodeName )
+        throws Exception {
+        String nodeAbsPath = "/" + nodeName;
+        String pathQuery = "select * from [nt:unstructured] as n where n.[jcr:path]='" + nodeAbsPath + "'";
 
         // Add a jcr node in the 1st process and check it can be queried
-        Node testNode = process1Session.getRootNode().addNode("testNode");
+        Node nodeProcess1 = process1Session.getRootNode().addNode(nodeName);
         process1Session.save();
         queryAndExpectResults(process1Session, pathQuery, 1);
 
@@ -250,12 +260,18 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         Thread.sleep(1500);
 
         // check that the custom jcr node created on the other process, was sent to this one
-        assertNotNull(process2Session.getNode("/testNode"));
+        assertNotNull(process2Session.getNode(nodeAbsPath));
         queryAndExpectResults(process2Session, pathQuery, 1);
 
-        // Update a property of that node and check it's send through the cluster
-        testNode = process1Session.getNode("/testNode");
-        testNode.setProperty("testProp", "test value");
+        // set a property of that node and check it's send through the cluster
+        byte[] binaryData = new byte[4096 * 2];
+        RANDOM.nextBytes(binaryData);
+
+        nodeProcess1 = process1Session.getNode(nodeAbsPath);
+        //create a normal string property
+        nodeProcess1.setProperty("testProp", "test value");
+        //create a binary property
+        nodeProcess1.setProperty("binaryProp", process1Session.getValueFactory().createBinary(new ByteArrayInputStream(binaryData)));
         process1Session.save();
         String propertyQuery = "select * from [nt:unstructured] as n where n.[testProp]='test value'";
         queryAndExpectResults(process1Session, propertyQuery, 1);
@@ -265,15 +281,28 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         // check the property change was made in the indexes on the second node
         queryAndExpectResults(process2Session, propertyQuery, 1);
 
+        //check the properties were sent across the cluster
+        Node nodeProcess2 = process2Session.getNode(nodeAbsPath);
+        assertEquals("test value", nodeProcess2.getProperty("testProp").getString());
+        Binary binary = nodeProcess2.getProperty("binaryProp").getBinary();
+        byte[] process2Data = IoUtil.readBytes(binary.getStream());
+        assertArrayEquals("Binary data not propagated in cluster", binaryData, process2Data);
+
         // Remove the node in the first process and check it's removed from the indexes across the cluster
-        testNode = process1Session.getNode("/testNode");
-        testNode.remove();
+        nodeProcess1 = process1Session.getNode(nodeAbsPath);
+        nodeProcess1.remove();
         process1Session.save();
         queryAndExpectResults(process1Session, pathQuery, 0);
         // wait a bit for state transfer to complete
         Thread.sleep(1500);
         // check the node was removed from the indexes in the second cluster node
         queryAndExpectResults(process2Session, pathQuery, 0);
+        try {
+            process2Session.getNode(nodeAbsPath);
+            fail(nodeAbsPath + " not removed from other node in the cluster");
+        } catch (PathNotFoundException e) {
+            //expected
+        }
     }
 
     private void queryAndExpectResults(Session session, String queryString, int howMany) throws RepositoryException{

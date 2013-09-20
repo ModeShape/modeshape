@@ -13,9 +13,7 @@
   </global>
 
   <namedCache name="persistentRepository">
-    <eviction strategy="LIRS" maxEntries="600"/>
-
-    <!-- Configure a synchronous replication cache -->
+   <!-- Configure a synchronous replication cache -->
     <clustering mode="replication">
       <sync />
     </clustering>
@@ -35,4 +33,46 @@
       </loader>
     </loaders>
   </namedCache>
+  <namedCache name="binary-data">
+        <!-- Configure a synchronous replication cache -->
+        <clustering mode="replication">
+            <sync />
+        </clustering>
+
+        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                     transactionMode="TRANSACTIONAL"
+                     lockingMode="PESSIMISTIC" />
+        <loaders passivation="false"
+                 shared="false"
+                 preload="false">
+            <loader class="org.infinispan.loaders.file.FileCacheStore"
+                    fetchPersistentState="true"
+                    purgeOnStartup="true">
+                <properties>
+                    <property name="location" value="target/clustered/repository_1/binary" />
+                </properties>
+            </loader>
+        </loaders>
+    </namedCache>
+   <namedCache name="binary-meta-data">
+        <!-- Configure a synchronous replication cache -->
+        <clustering mode="replication">
+            <sync />
+        </clustering>
+
+        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                     transactionMode="TRANSACTIONAL"
+                     lockingMode="PESSIMISTIC" />
+        <loaders passivation="false"
+                 shared="false"
+                 preload="false">
+            <loader class="org.infinispan.loaders.file.FileCacheStore"
+                    fetchPersistentState="true"
+                    purgeOnStartup="true">
+                <properties>
+                    <property name="location" value="target/clustered/repository_1/binary" />
+                </properties>
+            </loader>
+        </loaders>
+    </namedCache>
 </infinispan>
