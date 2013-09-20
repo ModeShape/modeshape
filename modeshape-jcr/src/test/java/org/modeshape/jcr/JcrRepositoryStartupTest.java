@@ -508,4 +508,16 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             }
         }, "config/repo-config-persistent-no-query.json");
     }
+
+    @Test
+    @FixFor( "MODE-2049" )
+    public void shouldStartAndStopRepositoryWithoutMonitoringConfigured() throws Exception {
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                repository.login().logout();
+                return null;
+            }
+        }, "config/repo-config-inmemory-local-environment-no-monitoring.json");
+    }
 }

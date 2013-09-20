@@ -1619,6 +1619,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             if (statistics != null) {
                 statistics.stop();
+            }
+
+            if (mbean != null) {
                 mbean.stop();
             }
 
