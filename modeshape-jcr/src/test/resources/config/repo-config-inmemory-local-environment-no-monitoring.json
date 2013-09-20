@@ -1,0 +1,20 @@
+{
+    "name" : "No Monitoring Repository",
+    "transactionMode" : "none",
+    "monitoring" : {
+        "enabled" : false
+    },
+    "storage" : {
+        "cacheName" : "inmemoryRepository"
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    }
+}
