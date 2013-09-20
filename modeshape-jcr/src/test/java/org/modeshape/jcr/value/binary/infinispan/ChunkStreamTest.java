@@ -54,14 +54,17 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 
 public class ChunkStreamTest {
 
+    private static final Random RANDOM = new Random();
     private static DefaultCacheManager cacheManager;
 
     private Cache<String, byte[]> blobCache;
@@ -125,7 +128,7 @@ public class ChunkStreamTest {
     public void testStreamingSingleBytes() throws IOException {
         // usses read() and write() instead of read(byte[] ...)
         byte[] data = new byte[2048];
-        new Random().nextBytes(data);
+        RANDOM.nextBytes(data);
         BinaryKey dataKey = BinaryKey.keyFor(data);
 
         ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey.toString());
@@ -142,5 +145,20 @@ public class ChunkStreamTest {
         }
         chunkInputStream.close();
         assertEquals(dataKey, BinaryKey.keyFor(byteArrayOutputStream.toByteArray()));
+    }
+
+    @Test
+    public void shouldStreamMultipleChunks() throws Exception {
+        byte[] data = new byte[ChunkOutputStream.CHUNKSIZE * 3];
+        RANDOM.nextBytes(data);
+        BinaryKey dataKey = BinaryKey.keyFor(data);
+
+        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey.toString());
+        IoUtil.write(new ByteArrayInputStream(data), chunkOutputStream);
+
+        assertEquals(3, chunkOutputStream.getNumberChunks());
+        ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString());
+        byte[] storedData = IoUtil.readBytes(chunkInputStream);
+        assertArrayEquals("Invalid data read from the stream", data, storedData);
     }
 }

@@ -6,7 +6,14 @@
     },
     "storage" : {
         "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-clustered-persistent-2.xml"
+        "cacheConfiguration" : "config/infinispan-clustered-persistent-2.xml",
+        "binaryStorage":{
+            "type":"cache",
+            "cacheConfiguration" : "config/infinispan-clustered-persistent-1.xml",
+            "dataCacheName" : "binary-data",
+            "metadataCacheName" : "binary-meta-data",
+            "minimumBinarySizeInBytes":4096
+        }
     },
     "query":{
         "enabled": true,
