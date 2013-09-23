@@ -37,6 +37,7 @@ public class QueryPanel extends Tab {
         this.console = console;
         
         setTitle("Query");
+        langBox.setTitle("Query language");
         
         VLayout layout = new VLayout();
         

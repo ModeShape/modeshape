@@ -45,7 +45,7 @@ public class RepositoryPanel extends Tab {
 
 
         SectionStackSection section2 = new SectionStackSection("Node type management");
-        section2.setExpanded(true);
+        section2.setExpanded(false);
         section2.addItem(nodeTypes);
         stack.addSection(section2);
 

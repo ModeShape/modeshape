@@ -6,6 +6,7 @@ package org.modeshape.web.client;
 
 import com.smartgwt.client.types.ListGridEditEvent;
 import com.smartgwt.client.types.VisibilityMode;
+import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
@@ -22,7 +23,9 @@ import com.smartgwt.client.widgets.menu.MenuItem;
 import com.smartgwt.client.widgets.menu.MenuItemSeparator;
 import com.smartgwt.client.widgets.tab.Tab;
 import java.util.Collection;
+import org.modeshape.web.shared.JcrACLEntry;
 import org.modeshape.web.shared.JcrAccessControlList;
+import org.modeshape.web.shared.JcrPermissions;
 import org.modeshape.web.shared.JcrProperty;
 
 /**
@@ -96,7 +99,7 @@ public class NodePanel extends Tab {
     private class PropertiesPanel extends VLayout {
 
         private ListGrid grid = new ListGrid();
-        private PropertiesToolBar toolBar = new PropertiesToolBar();
+//        private PropertiesToolBar toolBar = new PropertiesToolBar();
 
         public PropertiesPanel() {
             super();
@@ -135,7 +138,7 @@ public class NodePanel extends Tab {
 
 //        grid.setContextMenu(createPropertyRightClickMenu());
 
-            addMember(toolBar);
+//            addMember(toolBar);
             addMember(grid);
         }
 
@@ -205,8 +208,9 @@ public class NodePanel extends Tab {
 
     private class AccessControlPanel extends VLayout {
         private HLayout principalPanel = new HLayout();
-        private ComboBoxItem principal = new ComboBoxItem();
+        private ComboBoxItem principalCombo = new ComboBoxItem();
         private ListGrid grid = new ListGrid();
+        private JcrAccessControlList acl;
         
         public AccessControlPanel() {
             super();
@@ -216,7 +220,8 @@ public class NodePanel extends Tab {
             principalPanel.addMember(form);
             principalPanel.setHeight(30);
             
-            form.setItems(principal);
+            principalCombo.setTitle("Principal");
+            form.setItems(principalCombo);
             
             grid.setAlternateRecordStyles(true);
             grid.setShowAllRecords(true);
@@ -229,7 +234,7 @@ public class NodePanel extends Tab {
             nameField.setShowHover(true);
 
             ListGridField statusField = new ListGridField("status", "Status");
-            statusField.setCanEdit(false);
+            statusField.setCanEdit(true);
             statusField.setShowHover(true);
             
 
@@ -244,7 +249,45 @@ public class NodePanel extends Tab {
         }
         
         public void display(JcrAccessControlList acl) {
+            this.acl = acl;
             
+            Collection<JcrACLEntry> entries = acl.entries();
+            String[] principals = new String[entries.size()];
+            
+            int i = 0;
+            for (JcrACLEntry entry : entries) {
+                principals[i++] = entry.getPrincipal();
+            }
+            
+            principalCombo.setValueMap(principals);
+            principalCombo.setValue(principals[0]);
+            
+            displayPermissions();
+        }
+        
+        /**
+         * Displays permissions for the current node and current principal
+         */
+        private void displayPermissions() {
+            JcrPermissions permissions = new JcrPermissions();
+            String principal = (String)principalCombo.getValue();
+            
+            //look up access list
+            JcrACLEntry list = null;
+            for (JcrACLEntry entry : acl.entries()) {
+                if (entry.getPrincipal().equals(principal)) {
+                    list = entry;
+                    break;
+                }
+            }
+            
+            if (list != null) {
+            //test permissions and build grid
+                ListGridRecord[] records = permissions.test(list.getPermissions());
+                
+                grid.setData(records);
+                grid.show();
+            } 
         }
     }
 

@@ -1,3 +1,26 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.modeshape.web.server;
 
 import org.modeshape.web.client.JcrService;
@@ -69,6 +92,37 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         }
     }
 
+    /**
+     * Provides access to the active jcr session.
+     * 
+     * @return reference to the session object
+     * @throws RemoteException when session has expired or does not exists.
+     */
+    private Session session() throws RemoteException {
+        Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
+        if (session == null) {
+            throw new RemoteException("Session has expired");
+        }
+        return session;
+    }
+    
+    @Override
+    public JcrNode getRootNode() throws RemoteException {
+        try {
+            //take root node
+            Node root = session().getRootNode();
+            
+            //convert into value object
+            JcrNode node = new JcrNode("root", root.getPath(), root.getPrimaryNodeType().getName());
+            node.setProperties(getProperties(root));
+            node.setAcessControlList(getAccessList(session().getAccessControlManager(), root));
+            
+            return node;
+        } catch (RepositoryException e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
+    
     @Override
     public List<JcrNode> childNodes(String path) {
         Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
@@ -108,7 +162,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         AccessControlList accessList = findAccessList(acm, node);
         
         if (accessList != null) {
-            System.out.println("---- Access list found---");
+            System.out.println("---- Access list found---: " + node.getPath());
             AccessControlEntry[] entries = accessList.getAccessControlEntries();
 
             for (AccessControlEntry entry : entries) {
@@ -122,11 +176,12 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         } else {
             JcrACLEntry en = new JcrACLEntry();
             en.setPrincipal("EVERYONE");
-            en.add(new JcrPermission("READ"));
-            en.add(new JcrPermission("WRITE"));
+            en.add(new JcrPermission(Privilege.JCR_ALL));
+            System.out.println("--- DEFAULT ACL: " + node.getPath());
+            acl.add(en);
         }
         
-        
+        System.out.println("ACL size=" + acl.entries().size());
         return acl;
     }
     

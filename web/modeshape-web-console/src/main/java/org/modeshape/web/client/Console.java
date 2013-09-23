@@ -1,3 +1,26 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.modeshape.web.client;
 
 import com.google.gwt.core.client.EntryPoint;
@@ -27,12 +50,13 @@ public class Console implements EntryPoint {
      */
     protected final JcrServiceAsync jcrService = GWT.create(JcrService.class);
 
-    private VLayout mainForm = new VLayout();
-    private ToolBar toolBar = new ToolBar(this);
-    private Navigator navigator;
+    private final VLayout mainForm = new VLayout();
+    private final ToolBar toolBar = new ToolBar(this);
     protected final NodePanel nodePanel = new NodePanel();
-    private RepositoryPanel repositoryPanel = new RepositoryPanel(this);
-    private QueryPanel queryPanel = new QueryPanel(this);
+    private final RepositoryPanel repositoryPanel = new RepositoryPanel(this);
+    private final QueryPanel queryPanel = new QueryPanel(this);
+
+    private Navigator navigator;
     
     /**
      * This is the entry point method.
@@ -40,104 +64,6 @@ public class Console implements EntryPoint {
     @Override
     public void onModuleLoad() {
         new LoginDialog(this).showDialog();
-        /*        final Button sendButton = new Button("Send");
-         final TextBox nameField = new TextBox();
-         nameField.setText("GWT User");
-         final Label errorLabel = new Label();
-
-         // We can add style names to widgets
-         sendButton.addStyleName("sendButton");
-
-         // Add the nameField and sendButton to the RootPanel
-         // Use RootPanel.get() to get the entire body element
-         RootPanel.get("nameFieldContainer").add(nameField);
-         RootPanel.get("sendButtonContainer").add(sendButton);
-         RootPanel.get("errorLabelContainer").add(errorLabel);
-
-         // Focus the cursor on the name field when the app loads
-         nameField.setFocus(true);
-         nameField.selectAll();
-
-         // Create the popup dialog box
-         final DialogBox dialogBox = new DialogBox();
-         dialogBox.setText("Remote Procedure Call");
-         dialogBox.setAnimationEnabled(true);
-         final Button closeButton = new Button("Close");
-         // We can set the id of a widget by accessing its Element
-         closeButton.getElement().setId("closeButton");
-         final Label textToServerLabel = new Label();
-         final HTML serverResponseLabel = new HTML();
-         VerticalPanel dialogVPanel = new VerticalPanel();
-         dialogVPanel.addStyleName("dialogVPanel");
-         dialogVPanel.add(new HTML("<b>Sending name to the server:</b>"));
-         dialogVPanel.add(textToServerLabel);
-         dialogVPanel.add(new HTML("<br><b>Server replies:</b>"));
-         dialogVPanel.add(serverResponseLabel);
-         dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
-         dialogVPanel.add(closeButton);
-         dialogBox.setWidget(dialogVPanel);
-
-         // Add a handler to close the DialogBox
-         closeButton.addClickHandler(new ClickHandler() {
-         public void onClick(ClickEvent event) {
-         dialogBox.hide();
-         sendButton.setEnabled(true);
-         sendButton.setFocus(true);
-         }
-         });
-
-         // Create a handler for the sendButton and nameField
-         class MyHandler implements ClickHandler, KeyUpHandler {
-
-         public void onClick(ClickEvent event) {
-         sendNameToServer();
-         }
-
-         public void onKeyUp(KeyUpEvent event) {
-         if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
-         sendNameToServer();
-         }
-         }
-
-         private void sendNameToServer() {
-         // First, we validate the input.
-         errorLabel.setText("");
-         String textToServer = nameField.getText();
-         if (!FieldVerifier.isValidName(textToServer)) {
-         errorLabel.setText("Please enter at least four characters");
-         return;
-         }
-
-         // Then, we send the input to the server.
-         sendButton.setEnabled(false);
-         textToServerLabel.setText(textToServer);
-         serverResponseLabel.setText("");
-         greetingService.greetServer(textToServer, new AsyncCallback<String>() {
-         public void onFailure(Throwable caught) {
-         // Show the RPC error message to the user
-         dialogBox.setText("Remote Procedure Call - Failure");
-         serverResponseLabel.addStyleName("serverResponseLabelError");
-         serverResponseLabel.setHTML(SERVER_ERROR);
-         dialogBox.center();
-         closeButton.setFocus(true);
-         }
-
-         public void onSuccess(String result) {
-         dialogBox.setText("Remote Procedure Call");
-         serverResponseLabel.removeStyleName("serverResponseLabelError");
-         serverResponseLabel.setHTML(result);
-         dialogBox.center();
-         closeButton.setFocus(true);
-         }
-         });
-         }
-         }
-
-         // Add a handler to send the name to the server
-         MyHandler handler = new MyHandler();
-         sendButton.addClickHandler(handler);
-         nameField.addKeyUpHandler(handler);
-         */
     }
 
     public void showMainForm() {
@@ -178,11 +104,10 @@ public class Console implements EntryPoint {
         sp2.setHeight("1%");
 
         HLayout statusBar = new HLayout();
-        statusBar.setHeight("5%");
-        statusBar.setBorder("1px solid black");
+        statusBar.setHeight("2%");
+        statusBar.setBorder("1px solid #d3d3d3");
         
         mainForm.addMember(toolBar);
-//        mainForm.addMember(sp1);
         mainForm.addMember(topPanel);
         mainForm.addMember(sp2);
         mainForm.addMember(bottomPanel);
@@ -190,8 +115,8 @@ public class Console implements EntryPoint {
         
         mainForm.draw();
         
+        navigator.showRoot();        
         repositoryPanel.display();
         queryPanel.init();
-        //navigator.select();
     }
 }

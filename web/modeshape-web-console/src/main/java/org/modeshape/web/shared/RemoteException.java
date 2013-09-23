@@ -21,23 +21,21 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.web.client;
+package org.modeshape.web.shared;
 
-import org.modeshape.web.shared.JcrNode;
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import java.util.List;
-import org.modeshape.web.shared.JcrRepositoryDescriptor;
-import org.modeshape.web.shared.ResultSet;
+import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
- * The async counterpart of <code>GreetingService</code>.
+ *
+ * @author kulikov
  */
-public interface JcrServiceAsync {
-  public void login(String jndiName, String userName, String password,
-          String workspace, AsyncCallback cb);
-  public void getRootNode(AsyncCallback<JcrNode> result);
-  public void childNodes(String path, AsyncCallback<List<JcrNode>> result);
-  public void repositoryInfo(AsyncCallback<JcrRepositoryDescriptor> result);
-  public void query(String text, String lang, AsyncCallback<ResultSet> result);
-  public void supportedQueryLanguages(AsyncCallback<String[]> result);
+public class RemoteException extends Exception implements IsSerializable {
+
+    public RemoteException() {
+        super();
+    }
+
+    public RemoteException(String e) {
+        super(e);
+    }
 }
