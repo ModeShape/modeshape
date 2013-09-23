@@ -56,7 +56,7 @@ public class Console implements EntryPoint {
     private final RepositoryPanel repositoryPanel = new RepositoryPanel(this);
     private final QueryPanel queryPanel = new QueryPanel(this);
 
-    private Navigator navigator;
+    protected Navigator navigator;
     
     /**
      * This is the entry point method.
@@ -78,7 +78,7 @@ public class Console implements EntryPoint {
         topPanel.setOverflow(Overflow.HIDDEN);
         topPanel.setHeight("5%");
         topPanel.setBackgroundColor("#d3d3d3");
-        topPanel.addMember(new PathPanel());
+        topPanel.addMember(new PathPanel(this));
 
         //main area
         HLayout bottomPanel = new HLayout();

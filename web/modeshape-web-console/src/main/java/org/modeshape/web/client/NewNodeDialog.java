@@ -28,7 +28,6 @@ import com.smartgwt.client.widgets.Window;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.events.SubmitValuesEvent;
 import com.smartgwt.client.widgets.form.events.SubmitValuesHandler;
-import com.smartgwt.client.widgets.form.fields.PasswordItem;
 import com.smartgwt.client.widgets.form.fields.SpacerItem;
 import com.smartgwt.client.widgets.form.fields.SubmitItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
@@ -38,50 +37,36 @@ import com.smartgwt.client.widgets.layout.VStack;
  *
  * @author kulikov
  */
-public class LoginDialog extends DynamicForm {
-
+public class NewNodeDialog extends DynamicForm {
     private Window window = new Window();
-    private TextItem jndiName = new TextItem();
-    private TextItem userName = new TextItem();
-    private TextItem workspace = new TextItem();
-    private PasswordItem password = new PasswordItem();
+    private TextItem name = new TextItem();
+    private TextItem primaryType = new TextItem();
 
     private Console console;
     
-    public LoginDialog(Console console) {
+    public NewNodeDialog(Console console) {
         super();
         this.console = console;
         
-        setID("loginDialog");
+        setID("newNodeDialog");
         setNumCols(2);
         setPadding(25);
 
-        jndiName.setName("jndiName");
-        jndiName.setTitle("jndiname");
-        jndiName.setDefaultValue("jcr/sample");
-        jndiName.setWidth(250);
-        jndiName.setRequired(true);
-        jndiName.setVisible(true);
+        name.setName("name");
+        name.setTitle("Node name");
+        name.setDefaultValue("");
+        name.setWidth(250);
+        name.setRequired(true);
+        name.setVisible(true);
 
-        workspace.setName("workspace");
-        workspace.setTitle("Workspace");
-        workspace.setDefaultValue("default");
-        workspace.setWidth(250);
-        workspace.setRequired(true);
+        primaryType.setName("primaryType");
+        primaryType.setTitle("Primary Type");
+        primaryType.setDefaultValue("");
+        primaryType.setWidth(250);
+        primaryType.setRequired(true);
 
-        userName.setName("username");
-        userName.setTitle("Username");
-        userName.setDefaultValue("");
-        userName.setWidth(250);
-        userName.setRequired(true);
-
-        password.setName("password");
-        password.setTitle("Password");
-        password.setDefaultValue("");
-        password.setWidth(250);
-
-        SubmitItem okButton = new SubmitItem("login");
-        okButton.setTitle("Login");
+        SubmitItem okButton = new SubmitItem("OK");
+        okButton.setTitle("OK");
         okButton.setWidth(100);
 
         VStack vStack = new VStack();
@@ -96,10 +81,10 @@ public class LoginDialog extends DynamicForm {
         okButton.setStartRow(false);
         okButton.setEndRow(true);
         
-        this.addSubmitValuesHandler(new LoginHandler());
+        this.addSubmitValuesHandler(new AddNodeHandler());
         
-        setItems(spacerItem1, jndiName, spacerItem1, userName,
-                password, workspace, spacerItem1, spacerItem2, okButton);
+        setItems(spacerItem1, name, spacerItem1, primaryType,
+                spacerItem1, spacerItem2, okButton);
 
         vStack.setTop(30);
         vStack.addMember(this);
@@ -115,40 +100,37 @@ public class LoginDialog extends DynamicForm {
         window.setAutoCenter(true);
         window.show();
 
-        userName.focusInItem();
+        name.focusInItem();
+        
     }
-
+    
     public void showDialog() {
         window.show();
     }
-
+    
     public void hideDialog() {
         window.hide();
     }
     
-    private class LoginHandler implements SubmitValuesHandler {
+    private class AddNodeHandler implements SubmitValuesHandler {
+
         @Override
         public void onSubmitValues(SubmitValuesEvent event) {
-            console.jcrService.login(
-                    jndiName.getValueAsString(), 
-                    userName.getValueAsString(), 
-                    password.getValueAsString(),
-                    workspace.getValueAsString(), 
-                    new LoginCallback());
-        }        
+            String path = console.navigator.getSelectedPath();
+            console.jcrService.addNode(path, name.getValueAsString(), primaryType.getValueAsString(), new AddNodeAsyncHandler());
+        }
+        
     }
     
-    private class LoginCallback implements AsyncCallback {
+    private class AddNodeAsyncHandler implements AsyncCallback {
 
         @Override
         public void onFailure(Throwable caught) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
         @Override
         public void onSuccess(Object result) {
-            LoginDialog.this.hideDialog();
-            console.showMainForm();
+            console.navigator.selectNode();
         }
         
     }

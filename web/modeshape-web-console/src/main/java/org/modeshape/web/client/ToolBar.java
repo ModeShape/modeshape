@@ -5,6 +5,8 @@
 package org.modeshape.web.client;
 
 import com.smartgwt.client.widgets.Button;
+import com.smartgwt.client.widgets.events.ClickEvent;
+import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
 
 /**
@@ -21,6 +23,12 @@ public class ToolBar extends HLayout {
         Button addNodeButton = new Button();
         addNodeButton.setTitle("New");
         addNodeButton.setWidth(30);
+        addNodeButton.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                
+            }            
+        });
 //        addNodeButton.setHeight(30);
         
         addMember(addNodeButton);

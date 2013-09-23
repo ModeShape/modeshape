@@ -40,4 +40,5 @@ public interface JcrServiceAsync {
   public void repositoryInfo(AsyncCallback<JcrRepositoryDescriptor> result);
   public void query(String text, String lang, AsyncCallback<ResultSet> result);
   public void supportedQueryLanguages(AsyncCallback<String[]> result);
+  public void addNode(String path, String name, String primaryType, AsyncCallback cb);
 }

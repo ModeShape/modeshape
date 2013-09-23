@@ -85,4 +85,12 @@ public interface JcrService extends RemoteService {
      */
     public ResultSet query(String text, String lang);
     
+    /**
+     * Adds new node.
+     * 
+     * @param path the path to the parent node
+     * @param name the name of node to add
+     * @param primaryType the primary type of the node to add.
+     */
+    public void addNode(String path, String name, String primaryType) throws RemoteException;
 }

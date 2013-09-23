@@ -31,6 +31,7 @@ import java.util.List;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
@@ -162,7 +163,6 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         AccessControlList accessList = findAccessList(acm, node);
         
         if (accessList != null) {
-            System.out.println("---- Access list found---: " + node.getPath());
             AccessControlEntry[] entries = accessList.getAccessControlEntries();
 
             for (AccessControlEntry entry : entries) {
@@ -177,11 +177,9 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             JcrACLEntry en = new JcrACLEntry();
             en.setPrincipal("EVERYONE");
             en.add(new JcrPermission(Privilege.JCR_ALL));
-            System.out.println("--- DEFAULT ACL: " + node.getPath());
             acl.add(en);
         }
         
-        System.out.println("ACL size=" + acl.entries().size());
         return acl;
     }
     
@@ -275,5 +273,15 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public void addNode(String path, String name, String primaryType) throws RemoteException {
+        try {
+            Node node = (Node) session().getItem(path);
+            node.addNode(name, primaryType);            
+        } catch (RepositoryException e) {
+            throw new RemoteException(e.getMessage());
+        }
     }
 }
