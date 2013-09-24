@@ -301,7 +301,7 @@ public class CompareStringQuery extends CompareQuery<String> {
      * @param likeExpression the like expression; may not be null
      * @return the expression that can be used with a WildcardQuery; never null
      */
-    protected static String toRegularExpression( String likeExpression ) {
+    public static String toRegularExpression( String likeExpression ) {
         // Replace all '\x' with 'x' ...
         String result = likeExpression.replaceAll("\\\\(.)", "$1");
         // Escape characters used as metacharacters in regular expressions, including
