@@ -28,15 +28,23 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeTypeDefinition;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.modeshape.jcr.api.query.QueryManager;
 
 /**
  * A base class for tests that require a single shared JcrSession and JcrRepository for all test methods.
@@ -151,5 +159,39 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
         InputStream stream = resourceStream(resourceName);
         assertThat(stream, is(notNullValue()));
         session.getWorkspace().importXML(parentPath, stream, uuidBehavior);
+    }
+
+    protected void assertNodesAreFound( String queryString,
+                                        String queryType,
+                                        String... expectedNodesPaths ) throws RepositoryException {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, queryType);
+        QueryResult result = query.execute();
+
+        List<String> actualNodePaths = new ArrayList<String>();
+        for (NodeIterator nodeIterator = result.getNodes(); nodeIterator.hasNext();) {
+            actualNodePaths.add(nodeIterator.nextNode().getPath().toLowerCase());
+        }
+
+        List<String> expectedNodePaths = Arrays.asList(expectedNodesPaths);
+
+        assertEquals(expectedNodePaths.toString() + ":" + actualNodePaths.toString(), expectedNodePaths.size(), actualNodePaths.size());
+        for (String expectedPath : expectedNodePaths) {
+            assertTrue(expectedPath + " not found", actualNodePaths.remove(expectedPath.toLowerCase()));
+        }
+    }
+
+    protected void assertNodesNotFound( String queryString,
+                                        String queryType ) throws RepositoryException {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, queryType);
+        QueryResult result = query.execute();
+
+        List<String> actualNodePaths = new ArrayList<String>();
+        for (NodeIterator nodeIterator = result.getNodes(); nodeIterator.hasNext();) {
+            actualNodePaths.add(nodeIterator.nextNode().getPath().toLowerCase());
+        }
+
+        assertTrue("expected empty result, but: " + actualNodePaths.toString(), actualNodePaths.isEmpty());
     }
 }

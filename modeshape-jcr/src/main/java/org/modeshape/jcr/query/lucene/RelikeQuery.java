@@ -165,6 +165,11 @@ public class RelikeQuery extends MultiTermQuery {
                 return CompareType.REGEXP;
             }
             if( c == '%' ) {
+                if( result != CompareType.EQ) {
+                    // pattern like '%abcdfe%' -> only regexp can handle this;
+                    return CompareType.REGEXP;
+                }
+
                 int index = iter.getIndex();
                 if( index == fistIndex ) {
                     result = CompareType.ENDS_WITH;
