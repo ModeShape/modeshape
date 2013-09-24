@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
+import org.modeshape.jcr.query.lucene.CompareStringQuery;
 import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.query.model.ChildNode;
@@ -351,7 +352,8 @@ public class SelectComponent extends DelegatingComponent {
                 };
             case LIKE:
                 // Convert the LIKE expression to a regular expression
-                final Pattern pattern = createRegexFromLikeExpression(types.asString(rhs));
+                String regex = CompareStringQuery.toRegularExpression(types.asString(rhs));
+                final Pattern pattern = Pattern.compile(regex);
                 return new ConstraintChecker() {
                     @Override
                     public boolean satisfiesConstraints( Object[] tuples ) {
@@ -363,10 +365,6 @@ public class SelectComponent extends DelegatingComponent {
                 };
         }
         assert false;
-        return null;
-    }
-
-    protected static Pattern createRegexFromLikeExpression( String likeExpression ) {
         return null;
     }
 }

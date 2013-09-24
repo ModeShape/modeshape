@@ -3438,6 +3438,19 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertEquals(referrerIds, resultIds);
     }
 
+    @Test
+    @FixFor( "MODE-2053" )
+    public void shouldRunLeftOuterJoin() throws Exception {
+        session.getRootNode().addNode("name_p1", "modetest:intermediate");
+        Node parent2 = session.getRootNode().addNode("name_p2", "modetest:intermediate");
+        parent2.addNode("name_c1", "modetest:child");
+        session.save();
+
+        String queryString = "SELECT parent.* FROM [modetest:intermediate] as parent LEFT OUTER JOIN [modetest:child] as child ON ISCHILDNODE(child, parent)"
+                + " WHERE parent.[jcr:name] LIKE 'name%' OR child.[jcr:name] LIKE 'name%'";
+        assertNodesAreFound(queryString, Query.JCR_SQL2, "/name_p1", "/name_p2");
+    }
+
     private String idList(Node...nodes) throws RepositoryException {
         StringBuilder builder = new StringBuilder("(");
         for (int i = 0; i < nodes.length - 1; i++) {
