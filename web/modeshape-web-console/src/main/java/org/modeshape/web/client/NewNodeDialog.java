@@ -24,13 +24,18 @@
 package org.modeshape.web.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Window;
+import com.smartgwt.client.widgets.events.ClickEvent;
+import com.smartgwt.client.widgets.events.CloseClickHandler;
+import com.smartgwt.client.widgets.events.CloseClientEvent;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.events.SubmitValuesEvent;
 import com.smartgwt.client.widgets.form.events.SubmitValuesHandler;
 import com.smartgwt.client.widgets.form.fields.SpacerItem;
 import com.smartgwt.client.widgets.form.fields.SubmitItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
+import com.smartgwt.client.widgets.form.fields.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.VStack;
 
 /**
@@ -39,6 +44,7 @@ import com.smartgwt.client.widgets.layout.VStack;
  */
 public class NewNodeDialog extends DynamicForm {
     private Window window = new Window();
+    
     private TextItem name = new TextItem();
     private TextItem primaryType = new TextItem();
 
@@ -58,13 +64,17 @@ public class NewNodeDialog extends DynamicForm {
         name.setWidth(250);
         name.setRequired(true);
         name.setVisible(true);
-
+        name.setStartRow(true);
+        name.setEndRow(true);
+        
         primaryType.setName("primaryType");
         primaryType.setTitle("Primary Type");
         primaryType.setDefaultValue("");
         primaryType.setWidth(250);
         primaryType.setRequired(true);
-
+        primaryType.setStartRow(true);
+        primaryType.setEndRow(true);
+        
         SubmitItem okButton = new SubmitItem("OK");
         okButton.setTitle("OK");
         okButton.setWidth(100);
@@ -75,33 +85,50 @@ public class NewNodeDialog extends DynamicForm {
         SpacerItem spacerItem2 = new SpacerItem();
         spacerItem1.setStartRow(true);
         spacerItem1.setEndRow(true);
+        
         spacerItem2.setStartRow(true);
         spacerItem2.setEndRow(false);
 
-        okButton.setStartRow(false);
-        okButton.setEndRow(true);
+        okButton.setStartRow(true);
+        okButton.setEndRow(false);
         
         this.addSubmitValuesHandler(new AddNodeHandler());
         
-        setItems(spacerItem1, name, spacerItem1, primaryType,
-                spacerItem1, spacerItem2, okButton);
+        SubmitItem cancelButton = new SubmitItem("Cancel");
+        cancelButton.setTitle("Cancel");
+        cancelButton.setWidth(100);
+        cancelButton.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(com.smartgwt.client.widgets.form.fields.events.ClickEvent event) {
+                hideDialog();
+            }
+            
+        });
+        cancelButton.setStartRow(false);
+        cancelButton.setEndRow(true);
+        
+        setItems(name, primaryType, spacerItem1, okButton, cancelButton);
 
         vStack.setTop(30);
         vStack.addMember(this);
 
         window.addChild(vStack);
-        window.setTitle("Login");
+        window.setTitle("New node");
         window.setCanDragReposition(true);
         window.setCanDragResize(false);
         window.setShowMinimizeButton(false);
-        window.setShowCloseButton(false);
-        window.setHeight(350);
-        window.setWidth(400);
+        window.setShowCloseButton(true);
+        window.setHeight(250);
+        window.setWidth(330);
         window.setAutoCenter(true);
-        window.show();
-
-        name.focusInItem();
         
+        window.addCloseClickHandler(new CloseClickHandler() {
+            @Override
+            public void onCloseClick(CloseClientEvent event) {
+                hideDialog();
+            }            
+        });
+        name.focusInItem();
     }
     
     public void showDialog() {
@@ -117,6 +144,7 @@ public class NewNodeDialog extends DynamicForm {
         @Override
         public void onSubmitValues(SubmitValuesEvent event) {
             String path = console.navigator.getSelectedPath();
+            SC.say("Path is " + path);
             console.jcrService.addNode(path, name.getValueAsString(), primaryType.getValueAsString(), new AddNodeAsyncHandler());
         }
         

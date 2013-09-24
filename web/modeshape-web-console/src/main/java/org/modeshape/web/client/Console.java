@@ -58,6 +58,7 @@ public class Console implements EntryPoint {
 
     protected Navigator navigator;
     
+    protected final NewNodeDialog newNodeDialog = new NewNodeDialog(this);
     /**
      * This is the entry point method.
      */

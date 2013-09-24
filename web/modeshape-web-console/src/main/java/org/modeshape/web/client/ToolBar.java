@@ -26,7 +26,9 @@ public class ToolBar extends HLayout {
         addNodeButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                
+                if (event.isLeftButtonDown()) {
+                    ToolBar.this.console.newNodeDialog.showDialog();
+                }
             }            
         });
 //        addNodeButton.setHeight(30);
