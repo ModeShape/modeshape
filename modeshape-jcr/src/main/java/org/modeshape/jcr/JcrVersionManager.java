@@ -1490,7 +1490,7 @@ final class JcrVersionManager implements VersionManager {
             /*
              * If there was a label for this restore operation, try to match that way
              */
-            JcrVersionHistoryNode versionHistory = (JcrVersionHistoryNode)session.getNodeByIdentifier(keyStr);
+            JcrVersionHistoryNode versionHistory = (JcrVersionHistoryNode)session.node(new NodeKey(keyStr), null);
             if (labelToRestore != null) {
                 try {
                     JcrVersionNode versionNode = versionHistory.getVersionByLabel(labelToRestore);
