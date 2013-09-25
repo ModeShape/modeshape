@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -14,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.jcr.Binary;
 import javax.jcr.Item;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -648,38 +648,7 @@ public class ItemHandler extends AbstractHandler {
 
         // If the JSON object has a children holder, then we need to update the list of children and child nodes ...
         if (hasChildren(jsonNode)) {
-            JSONObject children = getChildren(jsonNode);
-
-            // Get the existing children ...
-            Map<String, Node> existingChildNames = new LinkedHashMap<String, Node>();
-            NodeIterator childIter = node.getNodes();
-            while (childIter.hasNext()) {
-                Node child = childIter.nextNode();
-                existingChildNames.put(nameOf(child), child);
-            }
-
-            for (Iterator<?> iter = children.keys(); iter.hasNext();) {
-                String childName = (String)iter.next();
-                JSONObject child = children.getJSONObject(childName);
-                // Find the existing node ...
-                if (node.hasNode(childName)) {
-                    // The node exists, so get it and update it ...
-                    Node childNode = node.getNode(childName);
-                    updateNode(childNode, child, changes);
-                    existingChildNames.remove(nameOf(childNode));
-                } else {
-                    // Have to add the new child ...
-                    addNode(node, childName, child);
-                }
-            }
-
-            // Remove the children in reverse order (starting with the last child to be removed) ...
-            LinkedList<Node> childNodes = new LinkedList<Node>(existingChildNames.values());
-            Collections.reverse(childNodes);
-            while (!childNodes.isEmpty()) {
-                Node child = childNodes.removeLast();
-                child.remove();
-            }
+            updateChildren(node, jsonNode, changes);
         }
 
         // after all the children and properties have been processed, remove mixins because that will trigger validation
@@ -688,6 +657,96 @@ public class ItemHandler extends AbstractHandler {
         }
 
         return node;
+    }
+
+    private void updateChildren( Node node,
+                                 JSONObject jsonNode,
+                                 VersionableChanges changes ) throws JSONException, RepositoryException {
+        JSONObject children = getChildren(jsonNode);
+        Session session = node.getSession();
+
+        // Get the existing children ...
+        Map<String, Node> existingChildNames = new LinkedHashMap<String, Node>();
+        List<String> existingChildrenToUpdate = new ArrayList<String>();
+        NodeIterator childIter = node.getNodes();
+        while (childIter.hasNext()) {
+            Node child = childIter.nextNode();
+            String childName = nameOf(child);
+            existingChildNames.put(childName, child);
+            existingChildrenToUpdate.add(childName);
+        }
+        //keep track of the old/new order of children to be able to perform reorderings
+        List<String> newChildrenToUpdate = new ArrayList<String>();
+
+        for (Iterator<?> iter = children.keys(); iter.hasNext();) {
+            String childName = (String)iter.next();
+            JSONObject child = children.getJSONObject(childName);
+            // Find the existing node ...
+            if (node.hasNode(childName)) {
+                // The node exists, so get it and update it ...
+                Node childNode = node.getNode(childName);
+                String childNodeName = nameOf(childNode);
+                newChildrenToUpdate.add(childNodeName);
+                updateNode(childNode, child, changes);
+                existingChildNames.remove(childNodeName);
+            } else {
+                //try to see if the child name is actually an identifier
+                try {
+                    Node childNode = session.getNodeByIdentifier(childName);
+                    String childNodeName = nameOf(childNode);
+                    if (childNode.getParent().getIdentifier().equals(node.getIdentifier())) {
+                        //this is an existing child of the current node, referenced via an identifier
+                        newChildrenToUpdate.add(childNodeName);
+                        updateNode(childNode, child, changes);
+                        existingChildNames.remove(childNodeName);
+                    } else {
+                        //this is a child belonging to another node
+                        if (childNode.isNodeType("mix:shareable")) {
+                            //if it's a shared node, we can't clone it because clone is not a session-scoped operation
+                            logger.warn("The node {0} with the id {1} is a shared node belonging to another parent. It cannot be changed via the update operation",
+                                        childNode.getPath(), childNode.getIdentifier());
+                        } else {
+                            //move the node into this parent
+                            session.move(childNode.getPath(), node.getPath() + "/" + childNodeName);
+                        }
+                    }
+                } catch (ItemNotFoundException e) {
+                    //the child name is not a valid identifier, so treat it as a new child
+                    addNode(node, childName, child);
+                }
+            }
+        }
+
+        // Remove the children in reverse order (starting with the last child to be removed) ...
+        LinkedList<Node> childNodes = new LinkedList<Node>(existingChildNames.values());
+        while (!childNodes.isEmpty()) {
+            Node child = childNodes.removeLast();
+            existingChildrenToUpdate.remove(child.getIdentifier());
+            child.remove();
+        }
+
+        // Do any necessary reorderings
+        if (newChildrenToUpdate.equals(existingChildrenToUpdate)) {
+            //no order changes exist
+            return;
+        }
+
+        for (int i = 0; i < newChildrenToUpdate.size() - 1; i++) {
+            String startNodeName = newChildrenToUpdate.get(i);
+            int startNodeOriginalPosition = existingChildrenToUpdate.indexOf(startNodeName);
+            assert startNodeOriginalPosition != -1;
+
+            for (int j = i + 1; j < newChildrenToUpdate.size(); j++) {
+                String nodeName = newChildrenToUpdate.get(j);
+                int nodeOriginalPosition = existingChildrenToUpdate.indexOf(nodeName);
+                assert nodeOriginalPosition != -1;
+
+                if (startNodeOriginalPosition > nodeOriginalPosition) {
+                    //the start node should be moved *after* this node
+                    node.orderBefore(startNodeName, nodeName);
+                }
+            }
+        }
     }
 
     private String nameOf( Node node ) throws RepositoryException {

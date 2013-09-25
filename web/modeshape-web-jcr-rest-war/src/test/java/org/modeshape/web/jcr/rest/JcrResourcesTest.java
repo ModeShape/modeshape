@@ -27,6 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -75,6 +76,8 @@ public class JcrResourcesTest {
      */
     protected static final String REPOSITORY_NAME = "repo";
     protected static final String TEST_NODE = "testNode";
+    protected static final String CHILDREN_KEY = "children";
+    protected static final String ID_KEY = "id";
 
     private static final String SERVER_CONTEXT = "/resources/v1";
     private static final String SERVER_URL = "http://localhost:8090";
@@ -557,8 +560,25 @@ public class JcrResourcesTest {
         return postStream(is, url, null);
     }
 
+    protected Response doPost( JSONObject request,
+                               String url ) throws Exception {
+        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, url);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        OutputStreamWriter writer = new OutputStreamWriter(byteArrayOutputStream);
+        request.write(writer);
+        writer.flush();
+        writer.close();
+        connection.getOutputStream().write(byteArrayOutputStream.toByteArray());
+        return new Response(connection);
+    }
+
     protected InputStream fileStream( String file ) {
         return getClass().getClassLoader().getResourceAsStream(file);
+    }
+
+    protected JSONObject readJson(String file) throws Exception {
+        String fileContent = IoUtil.read(fileStream(file));
+        return new JSONObject(fileContent);
     }
 
     protected Response xpathQuery( String query,
@@ -663,6 +683,18 @@ public class JcrResourcesTest {
                               String url ) throws Exception {
         HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, url);
         connection.getOutputStream().write(IoUtil.readBytes(is));
+        return new Response(connection);
+    }
+
+    protected Response doPut( JSONObject request,
+                              String url ) throws Exception {
+        HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, url);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        OutputStreamWriter writer = new OutputStreamWriter(byteArrayOutputStream);
+        request.write(writer);
+        writer.flush();
+        writer.close();
+        connection.getOutputStream().write(byteArrayOutputStream.toByteArray());
         return new Response(connection);
     }
 
@@ -905,6 +937,10 @@ public class JcrResourcesTest {
 
         protected JSONObject json() throws Exception {
             return new JSONObject(responseString());
+        }
+
+        protected JSONObject children() throws Exception {
+            return json().getJSONObject(CHILDREN_KEY);
         }
 
         protected String responseString() throws IOException {

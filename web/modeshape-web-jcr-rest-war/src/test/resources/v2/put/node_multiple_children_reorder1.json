@@ -1,0 +1,14 @@
+{
+    "jcr:primaryType":"nt:unstructured",
+    "children":{
+        "child3":{
+            "child3_prop":"child3"
+        },
+        "child2":{
+            "child2_prop":"child2"
+        },
+        "child1":{
+            "child1_prop":"child1"
+        }
+    }
+}

@@ -28,11 +28,18 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import javax.ws.rs.core.MediaType;
+import org.codehaus.jettison.json.JSONObject;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -495,4 +502,111 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.QUERY_PLAN_METHOD_NAME, additionalPathSegments);
     }
 
+    @Test
+    @FixFor( "MODE-2048")
+    public void shouldAllowChildrenUpdateViaID() throws Exception {
+        /**
+         * testNode
+         *   - child1 [prop="child1"]
+         *   - child2 [prop="child2"]
+         *   - child3 [prop="child3"]
+         */
+        JSONObject nodeWithHierarchyRequest = readJson("v2/post/node_multiple_children_request.json");
+
+        //replace in the original request node paths with IDs
+        JSONObject children = doPost(nodeWithHierarchyRequest, itemsUrl(TEST_NODE)).isCreated().children();
+        String child1Id = children.getJSONObject("child1").getString(ID_KEY);
+        String child2Id = children.getJSONObject("child2").getString(ID_KEY);
+        String child3Id = children.getJSONObject("child3").getString(ID_KEY);
+
+        children = nodeWithHierarchyRequest.getJSONObject(CHILDREN_KEY);
+        JSONObject child1 = children.getJSONObject("child1");
+        child1.put("update", true);
+        children.put(child1Id, child1);
+        children.remove("child1");
+
+        JSONObject child2 = children.getJSONObject("child2");
+        child2.put("update", true);
+        children.put(child2Id, child2);
+        children.remove("child2");
+
+        JSONObject child3 = children.getJSONObject("child3");
+        child3.put("update", true);
+        children.put(child3Id, child3);
+        children.remove("child3");
+
+        doPut(nodeWithHierarchyRequest, itemsUrl(TEST_NODE)).isOk();
+        assertTrue(doGet(itemsUrl(TEST_NODE, "child1")).json().has("update"));
+        assertTrue(doGet(itemsUrl(TEST_NODE, "child2")).json().has("update"));
+        assertTrue(doGet(itemsUrl(TEST_NODE, "child3")).json().has("update"));
+    }
+
+    @Test
+    @FixFor( "MODE-2048")
+    public void shouldPerformChildReordering() throws Exception {
+        /**
+         * testNode
+         *   - child1
+         *   - child2
+         *   - child3
+         */
+        doPost("v2/post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isCreated();
+
+        /**
+         * testNode
+         *   - child3
+         *   - child2
+         *   - child1
+         */
+        JSONObject children = doPut("v2/put/node_multiple_children_reorder1.json", itemsUrl(TEST_NODE)).isOk().children();
+
+        List<String> actualOrder = new ArrayList<String>();
+        for (Iterator<?> iterator = children.keys(); iterator.hasNext();) {
+            actualOrder.add(iterator.next().toString());
+        }
+        assertEquals("Invalid child order", Arrays.asList("child3", "child2", "child1"), actualOrder);
+
+
+        /**
+         * testNode
+         *   - child2
+         *   - child3
+         *   - child1
+         */
+        children = doPut("v2/put/node_multiple_children_reorder2.json", itemsUrl(TEST_NODE)).isOk().children();
+        actualOrder = new ArrayList<String>();
+        for (Iterator<?> iterator = children.keys(); iterator.hasNext();) {
+            actualOrder.add(iterator.next().toString());
+        }
+        assertEquals("Invalid child order", Arrays.asList("child2", "child3", "child1"), actualOrder);
+    }
+
+    @Test
+    @FixFor( "MODE-2048")
+    public void shouldMoveNode() throws Exception {
+        /**
+         * node1
+         *   - child1
+         *   - child2
+         *   - child3
+         */
+        JSONObject children = doPost("v2/post/node_multiple_children_request.json", itemsUrl("node1")).isCreated().children();
+        String child2Id = children.getJSONObject("child2").getString(ID_KEY);
+
+        /**
+         * node2
+         *   - childNode
+         */
+        JSONObject request = readJson("v2/post/node_hierarchy_request.json");
+        doPost(request, itemsUrl("node2")).isCreated();
+
+        JSONObject requestChildren = request.getJSONObject(CHILDREN_KEY);
+        request.remove("childNode");
+        requestChildren.put(child2Id, Collections.emptyMap());
+
+        //move node1/child2 to node2
+        doPut(request, itemsUrl("node2")).isOk();
+        assertTrue(doGet(itemsUrl("node2")).children().has("child2"));
+        assertFalse(doGet(itemsUrl("node1")).children().has("child2"));
+    }
 }
