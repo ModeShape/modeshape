@@ -759,7 +759,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         try {
             String systemWorkspaceKey = this.repository().systemWorkspaceKey();
             key = key.withWorkspaceKey(systemWorkspaceKey);
-            return node(key, null);
+            AbstractJcrNode systemNode = node(key, null);
+            if (systemNode instanceof JcrVersionHistoryNode) {
+                //because the version history node has the same key as the original node, we don't want to expose it to clients
+                //this means that if we got this far, the original hasn't been found, so neither should the version history
+                throw first;
+            }
+            return systemNode;
         } catch (ItemNotFoundException e) {
             // Not found, so throw the original exception ...
             throw first;

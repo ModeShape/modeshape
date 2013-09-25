@@ -29,10 +29,12 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.net.URL;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -794,7 +796,12 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
 
             parent = session.getNodeByIdentifier(parent.getIdentifier());
             child1 = session.getNodeByIdentifier(qaChild1.getIdentifier());
-            child2 = session.getNodeByIdentifier(child2.getIdentifier()); // this one got removed
+            try {
+                session.getNodeByIdentifier(child2.getIdentifier()); // this one got removed
+                fail("Deleted child should not be retrieved");
+            } catch (ItemNotFoundException e) {
+                //continue
+            }
             Node child3 = session.getNodeByIdentifier(qaChild3.getIdentifier());
             Node child4 = session.getNodeByIdentifier(qaChild4.getIdentifier());
             Node child5 = session.getNodeByIdentifier(qaChild5.getIdentifier());
@@ -870,6 +877,26 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         versionManager.checkpoint(node.getPath());
         versionManager.checkpoint(node.getPath());
         versionManager.restore(node.getPath(), "1.0", true);
+    }
+
+    @Test
+    @FixFor( "MODE-2055" )
+    public void shouldNotReturnTheVersionHistoryNode() throws Exception {
+        Node node = session.getRootNode().addNode("outerFolder");
+        node.setProperty("jcr:mimeType", "text/plain");
+        node.addMixin("mix:versionable");
+        session.save();
+        versionManager.checkpoint("/outerFolder");
+
+        node.remove();
+        session.save();
+
+        try {
+            session.getNodeByIdentifier(node.getIdentifier());
+            fail("Removed versionable node should not be retrieved ");
+        } catch (ItemNotFoundException e) {
+            //expected
+        }
     }
 
     private void assertPropertyIsAbsent( Node node,
