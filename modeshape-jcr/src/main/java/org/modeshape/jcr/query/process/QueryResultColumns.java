@@ -42,6 +42,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
+import org.modeshape.jcr.query.QueryResults.TupleReformatter;
 import org.modeshape.jcr.query.model.Column;
 import org.modeshape.jcr.query.model.Constraint;
 import org.modeshape.jcr.query.model.FullTextSearch;
@@ -84,6 +85,7 @@ public class QueryResultColumns implements Columns {
     private final Map<String, Map<String, ColumnInfo>> columnIndexByPropertyNameBySelectorName;
     private final Map<String, Integer> fullTextSearchScoreIndexBySelectorName;
     private final Map<String, String> propertyNameByColumnName;
+    private final TupleReformatter reformatter;
 
     protected final static class ColumnInfo {
         protected final int columnIndex;
@@ -203,6 +205,7 @@ public class QueryResultColumns implements Columns {
             this.fullTextSearchScoreIndexBySelectorName = null;
             this.tupleSize = columnNames.size() + selectorNames.size();
         }
+        this.reformatter = null;
     }
 
     private QueryResultColumns( List<Column> columns,
@@ -300,6 +303,31 @@ public class QueryResultColumns implements Columns {
             this.fullTextSearchScoreIndexBySelectorName = null;
             this.tupleSize = columnNames.size() + selectorNames.size();
         }
+
+        // Create the indexes for the tuple reformatter ...
+        if (columnIndexByColumnName == null) {
+            this.reformatter = null;
+        } else {
+            int[] reformatIndexes = new int[this.tupleSize];
+            int i = 0;
+            // Add the columns ...
+            for (String columnName : columnNames) {
+                reformatIndexes[i++] = columnIndexByColumnName.get(columnName);
+            }
+            // Add the locations ...
+            for (String selectorName : selectorNames) {
+                reformatIndexes[i++] = locationIndexBySelectorName.get(selectorName);
+            }
+            // Add the full-text search scores ...
+            if (fullTextSearchScoreIndexBySelectorName != null) {
+                for (String selectorName : selectorNames) {
+                    reformatIndexes[i++] = fullTextSearchScoreIndexBySelectorName.get(selectorName);
+                }
+            }
+            this.reformatter = new WrappedReformatter(reformatIndexes,
+                                                      new QueryResultColumns(this.fullTextSearchScoreIndexBySelectorName != null,
+                                                                             this.columns, this.columnTypes));
+        }
     }
 
     public static boolean includeFullTextScores( Iterable<Constraint> constraints ) {
@@ -330,6 +358,11 @@ public class QueryResultColumns implements Columns {
     @Override
     public Columns subSelect( Column... columns ) {
         return new QueryResultColumns(Arrays.asList(columns), this);
+    }
+
+    @Override
+    public TupleReformatter getTupleReformatter() {
+        return reformatter;
     }
 
     @Override
@@ -607,5 +640,53 @@ public class QueryResultColumns implements Columns {
             sb.append(']');
         }
         return sb.toString();
+    }
+
+    protected static final class WrappedReformatter implements TupleReformatter {
+        private final int[] indexes;
+        private final int tupleSize;
+        private final Columns columns;
+
+        protected WrappedReformatter( int[] indexes,
+                                      Columns columns ) {
+            this.indexes = indexes;
+            this.tupleSize = indexes.length;
+            this.columns = columns;
+        }
+
+        @Override
+        public Columns getColumns() {
+            return columns;
+        }
+
+        @Override
+        public Object[] reformat( Object[] input ) {
+            Object[] result = new Object[tupleSize];
+            for (int i = 0; i != tupleSize; ++i) {
+                result[i] = input[indexes[i]];
+            }
+            return result;
+        }
+
+        @Override
+        public int hashCode() {
+            return tupleSize;
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof WrappedReformatter) {
+                WrappedReformatter that = (WrappedReformatter)obj;
+                return this.tupleSize == that.tupleSize && Arrays.equals(this.indexes, that.indexes);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return Arrays.toString(indexes);
+        }
+
     }
 }

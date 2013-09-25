@@ -1545,6 +1545,92 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, new String[] {"car2.jcr:name"});
     }
 
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinAndNoCriteria() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category)";
+        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+
+        final QueryResult result = query.execute();
+
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13L);
+        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
+    }
+
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinAndDepthCriteria() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE DEPTH(category) = 2";
+        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+
+        final QueryResult result = query.execute();
+
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13L);
+        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
+    }
+
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinAndDepthCriteria() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE DEPTH(category) = 2";
+        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+
+        final QueryResult result = query.execute();
+
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 17L);
+        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
+    }
+
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinWithFullTextSearch() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
+        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+
+        final QueryResult result = query.execute();
+
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
+    }
+
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinWithFullTextSearch() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
+        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+
+        final QueryResult result = query.execute();
+
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
+    }
+
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithUnionAndFullTextSearch() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE contains(category.*, 'Utility')"
+                     + "UNION "
+                     + "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(cars.*, 'Toyota') ";
+        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+
+        final QueryResult result = query.execute();
+
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 2L);
+        assertResultsHaveColumns(result, new String[] {"p"});
+    }
+
     @FixFor( "MODE-1679" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindReferenceableNodes() throws RepositoryException {
@@ -3447,11 +3533,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         session.save();
 
         String queryString = "SELECT parent.* FROM [modetest:intermediate] as parent LEFT OUTER JOIN [modetest:child] as child ON ISCHILDNODE(child, parent)"
-                + " WHERE parent.[jcr:name] LIKE 'name%' OR child.[jcr:name] LIKE 'name%'";
+                             + " WHERE parent.[jcr:name] LIKE 'name%' OR child.[jcr:name] LIKE 'name%'";
         assertNodesAreFound(queryString, Query.JCR_SQL2, "/name_p1", "/name_p2");
     }
 
-    private String idList(Node...nodes) throws RepositoryException {
+    private String idList( Node... nodes ) throws RepositoryException {
         StringBuilder builder = new StringBuilder("(");
         for (int i = 0; i < nodes.length - 1; i++) {
             builder.append("'").append(nodes[i].getIdentifier()).append("'").append(",");

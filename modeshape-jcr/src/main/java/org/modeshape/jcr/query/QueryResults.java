@@ -394,6 +394,19 @@ public interface QueryResults extends Serializable {
          * @return the new columns definition; never null
          */
         public Columns joinWith( Columns columns );
+
+        /**
+         * Get the reducer that converts a tuple of the form described by the wrapped columns format to this columns format.
+         * 
+         * @return the reformatter, or null if none is needed (e.g., if this columns is not a subselect of another)
+         */
+        public TupleReformatter getTupleReformatter();
+    }
+
+    public static interface TupleReformatter {
+        public Object[] reformat( Object[] input );
+
+        public Columns getColumns();
     }
 
     @Immutable

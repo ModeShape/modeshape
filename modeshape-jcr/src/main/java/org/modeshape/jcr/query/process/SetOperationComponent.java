@@ -23,18 +23,22 @@
  */
 package org.modeshape.jcr.query.process;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
+import org.modeshape.jcr.query.QueryResults.TupleReformatter;
 
 /**
  */
 public abstract class SetOperationComponent extends ProcessingComponent {
 
     private final Iterable<ProcessingComponent> sources;
+    protected final List<TupleReformatter> sourceReformatters;
     protected final Comparator<Object[]> removeDuplicatesComparator;
     private final Columns columns;
 
@@ -47,7 +51,25 @@ public abstract class SetOperationComponent extends ProcessingComponent {
         assert unionCompatible(columns, sources);
         this.sources = wrapWithLocationOrdering(sources, alreadySorted);
         // Use for sorting the columns that may have been wrapped with location ordering ...
-        this.columns = this.sources.iterator().next().getColumns();
+        List<TupleReformatter> reformatters = new ArrayList<TupleReformatter>();
+        Columns reformattedColumns = null;
+        for (ProcessingComponent component : sources) {
+            TupleReformatter reformatter = component.getColumns().getTupleReformatter();
+            reformatters.add(reformatter);
+            if (reformattedColumns == null && reformatter != null) {
+                reformattedColumns = reformatter.getColumns();
+            }
+        }
+        Columns newColumns = this.sources.iterator().next().getColumns();
+        if (Collections.frequency(reformatters, reformatters.get(0)) == reformatters.size()) {
+            // They are all the same, so don't reformat anything ...
+            this.sourceReformatters = Collections.nCopies(reformatters.size(), null);
+        } else {
+            // We have to reformat the tuples, and use the corresponding columns with proper indexes
+            this.sourceReformatters = reformatters;
+            if (reformattedColumns != null) newColumns = reformattedColumns;
+        }
+        this.columns = newColumns;
         this.removeDuplicatesComparator = all ? null : createSortComparator(context, this.columns);
     }
 

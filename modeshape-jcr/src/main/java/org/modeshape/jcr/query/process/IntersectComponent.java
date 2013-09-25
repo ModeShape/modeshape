@@ -28,8 +28,10 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
+import org.modeshape.jcr.query.QueryResults.TupleReformatter;
 
 /**
  */
@@ -54,11 +56,20 @@ public class IntersectComponent extends SetOperationComponent {
         // Execute all of the source components (so we can sort the results from the smallest to the largest) ...
         // TODO: Parallelize this ???
         List<List<Object[]>> allTuples = new LinkedList<List<Object[]>>();
+        Iterator<TupleReformatter> reformatters = sourceReformatters.iterator();
         while (sources.hasNext()) {
             List<Object[]> tuples = sources.next().execute();
             if (tuples == null) continue;
             if (tuples.isEmpty()) return emptyTuples();
+            TupleReformatter reformatter = reformatters.next();
+            if (reformatter != null) {
+                ListIterator<Object[]> iter = tuples.listIterator();
+                while (iter.hasNext()) {
+                    iter.set(reformatter.reformat(iter.next()));
+                }
+            }
             allTuples.add(tuples);
+
         }
         if (allTuples.isEmpty()) return emptyTuples();
         if (allTuples.size() == 1) return allTuples.get(0); // just one source
