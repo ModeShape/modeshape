@@ -61,6 +61,7 @@ public class RestServerHandler extends AbstractHandler {
                                                                                                                repositoryName));
         try {
             Repository jcrRepository = RepositoryManager.getRepository(repositoryName);
+            repository.setActiveSessionsCount(((org.modeshape.jcr.api.Repository)jcrRepository).getActiveSessionsCount());
             for (String metadataKey : jcrRepository.getDescriptorKeys()) {
                 Value[] descriptorValues = jcrRepository.getDescriptorValues(metadataKey);
                 if (descriptorValues != null) {

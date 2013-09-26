@@ -258,6 +258,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return repositoryName.get();
     }
 
+    @Override
+    public int getActiveSessionsCount() {
+        RunningState state = runningState.get();
+        return state == null ? 0 : state.activeSessionCount();
+    }
+
     /**
      * Get the component that can be used to obtain statistics for this repository.
      * <p>
@@ -1677,7 +1683,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
         }
 
-        int activeSessinCount() {
+        int activeSessionCount() {
             Lock lock = this.activeSessionLock.writeLock();
             try {
                 lock.lock();

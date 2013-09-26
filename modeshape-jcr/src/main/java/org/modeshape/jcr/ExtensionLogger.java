@@ -42,6 +42,12 @@ public final class ExtensionLogger implements org.modeshape.jcr.api.Logger {
         this.logger = logger;
     }
 
+    /**
+     * Creates a new logger instance for the underlying class.
+     *
+     * @param clazz a {@link Class} instance; never null
+     * @return a {@link org.modeshape.jcr.api.Logger} implementation
+     */
     public static org.modeshape.jcr.api.Logger getLogger(Class<?> clazz) {
         return new ExtensionLogger(Logger.getLogger(clazz));
     }
@@ -121,5 +127,30 @@ public final class ExtensionLogger implements org.modeshape.jcr.api.Logger {
         if (logger.isWarnEnabled()) {
             logger.warn(t, new TextI18n(message), params);
         }
+    }
+
+    @Override
+    public boolean isInfoEnabled() {
+        return logger.isInfoEnabled();
+    }
+
+    @Override
+    public boolean isWarnEnabled() {
+        return logger.isWarnEnabled();
+    }
+
+    @Override
+    public boolean isErrorEnabled() {
+        return logger.isErrorEnabled();
+    }
+
+    @Override
+    public boolean isDebugEnabled() {
+        return logger.isDebugEnabled();
+    }
+
+    @Override
+    public boolean isTraceEnabled() {
+        return logger.isTraceEnabled();
     }
 }

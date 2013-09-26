@@ -742,7 +742,7 @@ public class ItemHandler extends AbstractHandler {
                 assert nodeOriginalPosition != -1;
 
                 if (startNodeOriginalPosition > nodeOriginalPosition) {
-                    //the start node should be moved *after* this node
+                    //the start node should be moved *before* this node
                     node.orderBefore(startNodeName, nodeName);
                 }
             }
