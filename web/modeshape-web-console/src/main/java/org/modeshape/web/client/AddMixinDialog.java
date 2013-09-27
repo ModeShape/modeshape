@@ -25,57 +25,39 @@ package org.modeshape.web.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
-import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 
 /**
- * Dialog asking node's name and primary type and creating new node. 
+ * Dialog for asking mixin.
  * 
  * @author kulikov
  */
-public class NewNodeDialog extends ModalDialog {
-    
-    private TextItem name = new TextItem();
-    private TextItem primaryType = new TextItem();
+public class AddMixinDialog extends ModalDialog {
 
+    private TextItem name = new TextItem();
     private Console console;
-    
-    public NewNodeDialog(String title, Console console) {
-        super(title, 450, 250);
+
+    public AddMixinDialog(String title, Console console) {
+        super(title, 450, 150);
         this.console = console;
         
         name.setName("name");
-        name.setTitle("Node name");
+        name.setTitle("Mixin");
         name.setDefaultValue("");
         name.setWidth(250);
         name.setRequired(true);
         name.setVisible(true);
         name.setStartRow(true);
         name.setEndRow(true);
-        
-        primaryType.setName("primaryType");
-        primaryType.setTitle("Primary Type");
-        primaryType.setDefaultValue("");
-        primaryType.setWidth(250);
-        primaryType.setRequired(true);
-        primaryType.setStartRow(true);
-        primaryType.setEndRow(true);
-        
 
-        StaticTextItem description = new StaticTextItem();
-        description.setValue("Please specify the name of node and choose type");
-        description.setTitle("");
-        description.setStartRow(true);
-        description.setEndRow(true);
-        
-        setControls(description, name, primaryType);
+        setControls(name);
+        name.focusInItem();
     }
-    
+
     @Override
     public void onConfirm(com.smartgwt.client.widgets.form.fields.events.ClickEvent event) {
-        String path = NewNodeDialog.this.console.navigator.getSelectedPath();
-        NewNodeDialog.this.console.jcrService.addNode(path, name.getValueAsString(), primaryType.getValueAsString(), new AsyncCallback(){
-
+        String path = AddMixinDialog.this.console.navigator.getSelectedPath();
+        AddMixinDialog.this.console.jcrService.addMixin(path, name.getValueAsString(), new AsyncCallback() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -83,10 +65,8 @@ public class NewNodeDialog extends ModalDialog {
 
             @Override
             public void onSuccess(Object result) {
-                console.navigator.selectNode();
+                AddMixinDialog.this.console.navigator.selectNode();
             }
-            
         });
     }
-    
 }

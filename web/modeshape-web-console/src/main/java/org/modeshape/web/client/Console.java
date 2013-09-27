@@ -58,7 +58,8 @@ public class Console implements EntryPoint {
 
     protected Navigator navigator;
     
-    protected final NewNodeDialog newNodeDialog = new NewNodeDialog(this);
+    protected final NewNodeDialog newNodeDialog = new NewNodeDialog("Create new node", this);
+    protected final AddMixinDialog addMixinDialog = new AddMixinDialog("Add mixin", this);
     /**
      * This is the entry point method.
      */

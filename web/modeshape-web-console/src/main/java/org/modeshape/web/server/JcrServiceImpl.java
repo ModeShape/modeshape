@@ -284,4 +284,24 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             throw new RemoteException(e.getMessage());
         }
     }
+
+    @Override
+    public void removeNode(String path) throws RemoteException {
+        try {
+            Node node = (Node) session().getItem(path);
+            node.remove();
+        } catch (RepositoryException e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void addMixin(String path, String mixin) throws RemoteException {
+        try {
+            Node node = (Node) session().getItem(path);
+            node.addMixin(mixin);
+        } catch (RepositoryException e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
 }

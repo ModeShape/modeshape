@@ -93,4 +93,20 @@ public interface JcrService extends RemoteService {
      * @param primaryType the primary type of the node to add.
      */
     public void addNode(String path, String name, String primaryType) throws RemoteException;
+    
+    /**
+     * Deletes node.
+     * 
+     * @param path the pass to the node to be deleted.
+     */
+    public void removeNode(String path) throws RemoteException;
+    
+    /**
+     * Adds mixin to the node.
+     * 
+     * @param path the path to the node
+     * @param mixin mixin to add
+     * @throws RemoteException Any exception on the server side
+     */
+    public void addMixin(String path, String mixin) throws RemoteException;
 }
