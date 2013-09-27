@@ -505,7 +505,11 @@ public final class Connectors {
         }
         Snapshot current = this.snapshot.get();
         for (Connector connector : current.getConnectors()) {
-            connector.shutdown();
+            try {
+                connector.shutdown();
+            } catch (Exception e) {
+                LOGGER.debug(e, "Error while stopping connector for {0}", connector.getSourceName());
+            }
         }
         this.snapshot.set(current.withOnlyProjectionConfigurations());
     }

@@ -63,10 +63,10 @@ final class SequencingRunner implements Runnable {
     private static final String DERIVED_NODE_TYPE_NAME = "mode:derived";
     private static final String DERIVED_FROM_PROPERTY_NAME = "mode:derivedFrom";
 
-    private final JcrRepository repository;
+    private final RunningState repository;
     private final SequencingWorkItem work;
 
-    protected SequencingRunner( JcrRepository repository,
+    protected SequencingRunner( RunningState repository,
                                 SequencingWorkItem work ) {
         this.repository = repository;
         this.work = work;
@@ -76,26 +76,25 @@ final class SequencingRunner implements Runnable {
     public void run() {
         JcrSession inputSession = null;
         JcrSession outputSession = null;
-        final RunningState state = repository.runningState();
-        final RepositoryStatistics stats = state.statistics();
+        final RepositoryStatistics stats = repository.statistics();
         Sequencer sequencer = null;
         String sequencerName = null;
         try {
             // Create the required session(s) ...
-            inputSession = state.loginInternalSession(work.getInputWorkspaceName());
+            inputSession = repository.loginInternalSession(work.getInputWorkspaceName());
             if (work.getOutputWorkspaceName() != null && !work.getOutputWorkspaceName().equals(work.getInputWorkspaceName())) {
-                outputSession = state.loginInternalSession(work.getOutputWorkspaceName());
+                outputSession = repository.loginInternalSession(work.getOutputWorkspaceName());
             } else {
                 outputSession = inputSession;
             }
 
             // Get the sequencer ...
-            sequencer = state.sequencers().getSequencer(work.getSequencerId());
+            sequencer = repository.sequencers().getSequencer(work.getSequencerId());
             if (sequencer == null) {
                 if (DEBUG) {
                     LOGGER.debug("Unable to find sequencer with ID '{0}' in repository '{1}'; skipping input '{3}:{2}' and output '{5}:{4}'",
                                  work.getSequencerId(),
-                                 repository.getName(),
+                                 repository.name(),
                                  work.getInputPath(),
                                  work.getInputWorkspaceName(),
                                  work.getOutputPath(),
@@ -109,7 +108,7 @@ final class SequencingRunner implements Runnable {
             if (TRACE || DEBUG) {
                 logMsg = StringUtil.createString("sequencer '{0}' in repository '{1}' with input '{3}:{2}' to produce '{5}:{4}'",
                                                  sequencerName,
-                                                 repository.getName(),
+                                                 repository.name(),
                                                  work.getInputPath(),
                                                  work.getInputWorkspaceName(),
                                                  work.getOutputPath(),
@@ -240,7 +239,7 @@ final class SequencingRunner implements Runnable {
                 logger.error(t,
                              RepositoryI18n.errorWhileSequencingNodeIntoWorkspace,
                              sequencerName,
-                             state.name(),
+                             repository.name(),
                              work.getInputPath(),
                              work.getInputWorkspaceName(),
                              work.getOutputPath(),
@@ -249,7 +248,7 @@ final class SequencingRunner implements Runnable {
                 logger.error(t,
                              RepositoryI18n.errorWhileSequencingNode,
                              sequencerName,
-                             state.name(),
+                             repository.name(),
                              work.getInputPath(),
                              work.getInputWorkspaceName(),
                              work.getOutputPath());

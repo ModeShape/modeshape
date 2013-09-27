@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,9 +33,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.NamespaceRegistry;
@@ -93,16 +97,15 @@ public class Sequencers implements ChangeSetListener {
     private final String processId;
     private final ValueFactory<String> stringFactory;
     private final WorkQueue workQueue;
+    private final ExecutorService sequencingExecutor;
     private boolean initialized;
     private volatile boolean shutdown = false;
 
-    public Sequencers( JcrRepository.RunningState repository,
-                       Collection<Component> components,
-                       Iterable<String> workspaceNames,
-                       WorkQueue workQueue ) {
+    protected Sequencers( JcrRepository.RunningState repository,
+                          RepositoryConfiguration config,
+                          Iterable<String> workspaceNames) {
         this.repository = repository;
-        this.components = components;
-        this.workQueue = workQueue;
+        this.components = config.getSequencing().getSequencers();
         this.systemWorkspaceKey = repository.repositoryCache().getSystemKey().getWorkspaceKey();
         if (components.isEmpty()) {
             this.processId = null;
@@ -110,10 +113,14 @@ public class Sequencers implements ChangeSetListener {
             this.configByWorkspaceName = null;
             this.sequencersById = null;
             this.pathExpressionsBySequencerId = null;
+            this.sequencingExecutor = null;
+            this.workQueue = null;
             this.initialized = true;
             this.sequencersByName = Collections.emptyMap();
         } else {
-            assert workQueue != null;
+            String threadPoolName = config.getSequencing().getThreadPoolName();
+            this.sequencingExecutor = repository.context().getCachedTreadPool(threadPoolName);
+            this.workQueue = new SequencingWorkQueue();
             this.processId = repository.context().getProcessId();
             ExecutionContext context = this.repository.context();
             this.stringFactory = context.getValueFactories().getStringFactory();
@@ -168,6 +175,7 @@ public class Sequencers implements ChangeSetListener {
             for (String workspaceName : workspaceNames) {
                 workspaceAdded(workspaceName);
             }
+            repository.repositoryCache().register(this);
             this.initialized = false;
         }
     }
@@ -175,6 +183,7 @@ public class Sequencers implements ChangeSetListener {
     private Sequencers( Sequencers original,
                         JcrRepository.RunningState repository ) {
         this.repository = repository;
+        this.sequencingExecutor = original.sequencingExecutor;
         this.workQueue = original.workQueue;
         this.systemWorkspaceKey = original.systemWorkspaceKey;
         this.processId = original.processId;
@@ -231,6 +240,7 @@ public class Sequencers implements ChangeSetListener {
                     sequencersIterator.remove();
                 }
             }
+            this.initialized = true;
         } catch (RepositoryException e) {
             throw new SystemFailureException(e);
         } finally {
@@ -238,7 +248,6 @@ public class Sequencers implements ChangeSetListener {
                 session.logout();
             }
         }
-
     }
 
     /**
@@ -325,7 +334,10 @@ public class Sequencers implements ChangeSetListener {
     }
 
     protected final void shutdown() {
-        repository.sequencingQueue().shutdown();
+        if (workQueue != null) {
+            sequencingExecutor.shutdown();
+            workQueue.shutdown();
+        }
         shutdown = true;
     }
 
@@ -348,7 +360,7 @@ public class Sequencers implements ChangeSetListener {
         workQueue.submit(workItem);
     }
 
-    public Sequencer getSequencer( UUID id ) {
+    protected Sequencer getSequencer( UUID id ) {
         return sequencersById.get(id);
     }
 
@@ -504,8 +516,26 @@ public class Sequencers implements ChangeSetListener {
         }
     }
 
-    public static interface WorkQueue {
+    protected static interface WorkQueue {
         void submit( SequencingWorkItem work );
+        void shutdown();
+    }
+
+    protected final class SequencingWorkQueue implements WorkQueue {
+        private final List<Future<?>> results = new ArrayList<Future<?>>();
+
+        @Override
+        public void submit( SequencingWorkItem work ) {
+            results.add(sequencingExecutor.submit(new SequencingRunner(repository, work)));
+        }
+
+        @Override
+        public void shutdown() {
+            for (Future<?> workItem : results) {
+                workItem.cancel(true);
+            }
+            results.clear();
+        }
     }
 
     /**
@@ -666,17 +696,11 @@ public class Sequencers implements ChangeSetListener {
             return outputWorkspaceName;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public int hashCode() {
             return this.hc;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
@@ -693,11 +717,6 @@ public class Sequencers implements ChangeSetListener {
             return false;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             return sequencerId + " @ " + inputPath + " -> " + outputPath

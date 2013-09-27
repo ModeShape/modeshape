@@ -103,6 +103,9 @@ public class LuceneQueryEngine extends QueryEngine {
         ((LuceneQueryProcessor)this.processor).initialize(schema);
     }
 
+    /**
+     * Shuts down the query engine
+     */
     public void shutdown() {
         this.schema.shutdown();
     }
