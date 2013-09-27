@@ -183,7 +183,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                     }
                 }
             } else {
-                LOG.warnv("Queries are disabled for the '{0}' repository", repositoryName);
+                LOG.warnv("Queries are disabled for the {0} repository", repositoryName);
             }
             Document queryConfig = indexStorageConfig.getQueryConfiguration();
             assert queryConfig != null;

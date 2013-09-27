@@ -362,7 +362,6 @@ public class AddRepository extends AbstractAddStepHandler {
         EditableArray providers = security.getOrCreateArray(FieldName.PROVIDERS);
         EditableDocument servlet = Schematic.newDocument();
         servlet.set(FieldName.CLASSNAME, "servlet");
-        servlet.set(FieldName.NAME, "Authenticator that uses the Servlet context");
         providers.add(servlet);
     }
 

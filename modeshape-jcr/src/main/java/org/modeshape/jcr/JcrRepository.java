@@ -99,7 +99,6 @@ import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
-import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.RepositoryManager;
@@ -910,7 +909,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final BinaryStore binaryStore;
         private final ScheduledExecutorService statsRollupService;
         private final Sequencers sequencers;
-        private final ExecutorService sequencingQueue;
         private final QueryParsers queryParsers;
         private final RepositoryQueryManager repositoryQueryManager;
         private final ExecutorService indexingExecutor;
@@ -1029,9 +1027,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.connectors = new Connectors(this, connectorComponents, preconfiguredProjectionsByWorkspace);
                     logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
                     SchematicDb database = Schematic.get(container, cacheName);
-                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
-                                                                                                                                                database);
-                    // this.documentStore = new LocalDocumentStore(database);
+                    this.documentStore = connectors.hasConnectors() ?
+                                         new FederatedDocumentStore(connectors, database) :
+                                         new LocalDocumentStore(database);
                     this.txnMgr = this.documentStore.transactionManager();
                     MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                     this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
@@ -1122,32 +1120,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.binaryStore.setTextExtractors(this.extractors);
 
                 if (other != null && !change.sequencingChanged) {
-                    this.sequencingQueue = other.sequencingQueue;
                     this.sequencers = other.sequencers.with(this);
                     if (!sequencers.isEmpty()) this.cache.register(this.sequencers);
                     this.cache.unregister(other.sequencers);
                 } else {
-                    // There are changes to the sequencers ...
-                    Sequencers.WorkQueue queue = null;
-                    List<Component> sequencerComponents = config.getSequencing().getSequencers();
-                    if (sequencerComponents.isEmpty()) {
-                        // There are no sequencers ...
-                        this.sequencingQueue = null;
-                        this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
-                    } else {
-                        // Create an in-memory queue of sequencing work items ...
-                        String threadPoolName = config.getSequencing().getThreadPoolName();
-                        this.sequencingQueue = this.context.getThreadPool(threadPoolName);
-                        queue = new Sequencers.WorkQueue() {
-                            @SuppressWarnings( "synthetic-access" )
-                            @Override
-                            public void submit( final SequencingWorkItem work ) {
-                                sequencingQueue.execute(new SequencingRunner(JcrRepository.this, work));
-                            }
-                        };
-                        this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
-                        this.cache.register(this.sequencers);
-                    }
+                    this.sequencers = new Sequencers(this, config, cache.getWorkspaceNames());
                 }
 
                 if (other != null && !change.indexingChanged) {
@@ -1368,10 +1345,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return sequencers;
         }
 
-        protected ExecutorService sequencingQueue() {
-            return sequencingQueue;
-        }
-
         protected final boolean useXaSessions() {
             return useXaSessions;
         }
@@ -1577,10 +1550,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // Unregister from JNDI ...
             unbindFromJndi();
 
-            if (this.sequencingQueue != null) {
-                // Shutdown the sequencers ...
-                sequencers().shutdown();
-            }
+            // Shutdown the sequencers ...
+            sequencers().shutdown();
 
             // Now wait until all the internal sessions are gone ...
             if (!internalSessions.isEmpty()) {
@@ -1649,6 +1620,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     logger.warn(JcrI18n.jndiReadOnly, config.getName(), jndiName);
                 } catch (NamingException e) {
                     logger.error(e, JcrI18n.unableToBindToJndi, config.getName(), jndiName, e.getMessage());
+                } catch (Exception e) {
+                    logger.debug(e,
+                                 "Error while registering the '{0}' repository from the '{1}' name in JNDI",
+                                 config.getName(),
+                                 jndiName);
                 }
             }
         }
@@ -1661,8 +1637,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 } catch (NoInitialContextException e) {
                     // No JNDI here ...
                     logger.debug("No JNDI found, so not registering '{0}' repository", getName());
-                } catch (NamingException e) {
-                    // Maybe it wasn't registered ??
+                } catch (OperationNotSupportedException e) {
+                    logger.warn(JcrI18n.jndiReadOnly, config.getName(), jndiName);
+                }
+                catch (Exception e) {
                     logger.debug(e,
                                  "Error while unregistering the '{0}' repository from the '{1}' name in JNDI",
                                  config.getName(),

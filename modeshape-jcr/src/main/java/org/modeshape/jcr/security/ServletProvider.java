@@ -38,12 +38,6 @@ import org.modeshape.jcr.api.ServletCredentials;
  */
 public class ServletProvider implements AuthenticationProvider {
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
-     */
     @Override
     public ExecutionContext authenticate( Credentials credentials,
                                           String repositoryName,
@@ -69,41 +63,21 @@ public class ServletProvider implements AuthenticationProvider {
             this.username = request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.security.SecurityContext#isAnonymous()
-         */
         @Override
         public boolean isAnonymous() {
             return false;
         }
 
-        /**
-         * {@inheritDoc SecurityContext#getUserName()}
-         * 
-         * @see SecurityContext#getUserName()
-         */
         @Override
         public final String getUserName() {
             return username;
         }
 
-        /**
-         * {@inheritDoc SecurityContext#hasRole(String)}
-         * 
-         * @see SecurityContext#hasRole(String)
-         */
         @Override
         public final boolean hasRole( String roleName ) {
             return request != null && request.isUserInRole(roleName);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.security.SecurityContext#logout()
-         */
         @Override
         public void logout() {
             request = null;

@@ -120,9 +120,16 @@ public class BasicLuceneSchema implements LuceneSchema {
         this.indexesWereEmpty = indexesEmpty();
     }
 
+    /**
+     * Attempts to stop any active work items
+     */
     public void shutdown() {
-        this.searchFactory.getWorker().close();
-        this.searchFactory.close();
+        try {
+            this.searchFactory.getWorker().close();
+            this.searchFactory.close();
+        } catch (Exception e) {
+            logger.debug(e, "Error while shutting down Lucene schema");
+        }
     }
 
     @Override

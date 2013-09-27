@@ -93,7 +93,7 @@ public class TextExtractorService implements Service<JcrRepository> {
         if (!queryDocument.getBoolean(FieldName.QUERY_ENABLED, Default.QUERY_ENABLED)) {
             // Queries are disabled, so do nothing for text extraction ...
             queryDocument.remove(FieldName.TEXT_EXTRACTING);
-            LOG.warnv("Queries are disabled for the '{0}' repository, so all configured text extractors will be disabled.",
+            LOG.warnv("Queries are disabled for the {0} repository, so all configured text extractors will be disabled.",
                       repositoryConfig.getName());
             return;
         }

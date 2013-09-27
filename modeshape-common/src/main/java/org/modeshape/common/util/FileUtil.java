@@ -77,8 +77,11 @@ public class FileUtil {
 
         // The file/directory exists, so if a directory delete all of the contents ...
         if (fileOrDirectory.isDirectory()) {
-            for (File childFile : fileOrDirectory.listFiles()) {
-                delete(childFile); // recursive call (good enough for now until we need something better)
+            File[] files = fileOrDirectory.listFiles();
+            if (files != null) {
+                for (File childFile : files) {
+                    delete(childFile); // recursive call (good enough for now until we need something better)
+                }
             }
             // Now an empty directory ...
         }
