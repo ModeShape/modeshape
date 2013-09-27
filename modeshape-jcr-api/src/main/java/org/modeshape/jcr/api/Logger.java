@@ -170,4 +170,39 @@ public interface Logger {
     public abstract void warn( Throwable t,
                                String message,
                                Object... params );
+
+    /**
+     * Return whether messages at the INFORMATION level are being logged.
+     *
+     * @return true if INFORMATION log messages are currently being logged, or false otherwise.
+     */
+    public abstract boolean isInfoEnabled();
+
+    /**
+     * Return whether messages at the WARNING level are being logged.
+     *
+     * @return true if WARNING log messages are currently being logged, or false otherwise.
+     */
+    public abstract boolean isWarnEnabled();
+
+    /**
+     * Return whether messages at the ERROR level are being logged.
+     *
+     * @return true if ERROR log messages are currently being logged, or false otherwise.
+     */
+    public abstract boolean isErrorEnabled();
+
+    /**
+     * Return whether messages at the DEBUG level are being logged.
+     *
+     * @return true if DEBUG log messages are currently being logged, or false otherwise.
+     */
+    public abstract boolean isDebugEnabled();
+
+    /**
+     * Return whether messages at the TRACE level are being logged.
+     *
+     * @return true if TRACE log messages are currently being logged, or false otherwise.
+     */
+    public abstract boolean isTraceEnabled();
 }

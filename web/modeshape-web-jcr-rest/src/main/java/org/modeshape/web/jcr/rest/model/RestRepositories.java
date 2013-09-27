@@ -77,6 +77,7 @@ public final class RestRepositories implements JSONAble {
         private final String name;
         private final String url;
         private final Map<String, List<String>> metadata;
+        private int activeSessionsCount;
 
         protected Repository( String name,
                             String url ) {
@@ -98,11 +99,21 @@ public final class RestRepositories implements JSONAble {
             }
         }
 
+        /**
+         * Sets the number of active sessions for this repository.
+         *
+         * @param activeSessionsCount the number of active sessions
+         */
+        public void setActiveSessionsCount(int activeSessionsCount) {
+            this.activeSessionsCount = activeSessionsCount;
+        }
+
         @Override
         public JSONObject toJSON() throws JSONException {
             JSONObject object = new JSONObject();
             object.put("name", name);
             object.put("workspaces", url);
+            object.put("activeSessionsCount", activeSessionsCount);
             JSONObject metadata = new JSONObject();
             for (String metadataKey : this.metadata.keySet()) {
                 List<String> values = this.metadata.get(metadataKey);

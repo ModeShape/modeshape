@@ -30,8 +30,6 @@ import org.modeshape.web.jcr.rest.model.RestProperty;
  */
 public abstract class AbstractHandler {
 
-    protected static final String BASE64_ENCODING_SUFFIX = "/base64/";
-
     /**
      * Name to be used when the repository name is empty string as {@code "//"} is not a valid path.
      */
@@ -42,10 +40,20 @@ public abstract class AbstractHandler {
      */
     public static final String NODE_ID_CUSTOM_PROPERTY = RestNode.ID_FIELD_NAME;
 
+    protected static final String BASE64_ENCODING_SUFFIX = "/base64/";
+
     /**
      * Name to be used when the workspace name is empty string as {@code "//"} is not a valid path.
      */
     protected static final String EMPTY_WORKSPACE_NAME = "<default>";
+
+    /**
+     * The holder of the active session. Since we're dealing with a service which operates on a request-response basis and
+     * after each request the active session is closed, we don't need multiple active sessions (e.g. for each WS and repository)
+     */
+    private static final ThreadLocal<Session> ACTIVE_SESSION = new ThreadLocal<Session>();
+
+    private static final Logger LOGGER = WebLogger.getLogger(AbstractHandler.class);
 
     protected final Logger logger = WebLogger.getLogger(getClass());
 
@@ -62,7 +70,28 @@ public abstract class AbstractHandler {
                                   String rawRepositoryName,
                                   String rawWorkspaceName ) throws RepositoryException {
         assert request != null;
-        return RepositoryManager.getSession(request, repositoryNameFor(rawRepositoryName), workspaceNameFor(rawWorkspaceName));
+        if (ACTIVE_SESSION.get() == null) {
+            Session session = RepositoryManager.getSession(request, repositoryNameFor(rawRepositoryName), workspaceNameFor(
+                    rawWorkspaceName));
+            ACTIVE_SESSION.set(session);
+        }
+        return ACTIVE_SESSION.get();
+    }
+
+    /**
+     * Cleans up any resources related to {@link AbstractHandler#ACTIVE_SESSION}
+     */
+    public static void cleanupActiveSession() {
+        Session session = AbstractHandler.ACTIVE_SESSION.get();
+        if (session != null) {
+            try {
+                AbstractHandler.ACTIVE_SESSION.remove();
+                session.logout();
+                LOGGER.debug("Logged out REST service session");
+            } catch (Exception e) {
+                LOGGER.warn(e, "Error while trying to logout REST service session");
+            }
+        }
     }
 
     private String workspaceNameFor( String rawWorkspaceName ) {

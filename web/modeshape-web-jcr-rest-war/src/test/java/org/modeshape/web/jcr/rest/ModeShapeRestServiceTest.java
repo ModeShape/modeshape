@@ -566,7 +566,6 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         }
         assertEquals("Invalid child order", Arrays.asList("child3", "child2", "child1"), actualOrder);
 
-
         /**
          * testNode
          *   - child2
@@ -608,5 +607,20 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         doPut(request, itemsUrl("node2")).isOk();
         assertTrue(doGet(itemsUrl("node2")).children().has("child2"));
         assertFalse(doGet(itemsUrl("node1")).children().has("child2"));
+    }
+
+    @Test
+    @FixFor( "MODE-2056" )
+    public void shouldCloseActiveSessions() throws Exception {
+        //execute 3 requests
+        doPost("v2/post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("v2/post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isOk();
+        doGet(itemsUrl(TEST_NODE));
+
+        JSONObject repositories = doGet("/").isOk().json();
+        JSONObject repository = repositories.getJSONArray("repositories").getJSONObject(0);
+        int activeSessionsCount = repository.getInt("activeSessionsCount");
+
+        assertEquals("There are active sessions in the repository", 0, activeSessionsCount);
     }
 }

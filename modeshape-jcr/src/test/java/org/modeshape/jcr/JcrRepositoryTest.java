@@ -631,7 +631,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         System.gc();
         Thread.sleep(100);
 
-        assertThat(repository.runningState().activeSessinCount(), is(0));
+        assertThat(repository.runningState().activeSessionCount(), is(0));
     }
 
     /**
@@ -1146,6 +1146,29 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
                                                                       "Fail if missing indexes");
         repository = new JcrRepository(config);
         repository.start();
+    }
+
+    @Test
+    @FixFor( "MODE-2056")
+    public void shouldReturnActiveSessions() throws Exception {
+        shutdownDefaultRepository();
+
+        config = new RepositoryConfiguration("repoName", environment);
+        repository = new JcrRepository(config);
+        assertEquals(0, repository.getActiveSessionsCount());
+
+        repository.start();
+
+        JcrSession session1 = repository.login();
+        JcrSession session2 = repository.login();
+        assertEquals(2, repository.getActiveSessionsCount());
+        session2.logout();
+        assertEquals(1, repository.getActiveSessionsCount());
+        session1.logout();
+        assertEquals(0, repository.getActiveSessionsCount());
+        repository.login();
+        repository.shutdown().get();
+        assertEquals(0, repository.getActiveSessionsCount());
     }
 
     protected void nodeExists( Session session,

@@ -50,14 +50,14 @@ public final class RestException implements JSONAble {
     }
 
     /**
-     * Creates a new exception, based on an existing {@link Exception}
+     * Creates a new exception, based on an existing {@link Throwable}
      *
-     * @param e a {@code non-null} {@link Exception}
+     * @param t a {@code non-null} {@link Exception}
      */
-    public RestException( Exception e ) {
-        this.message = e.getMessage();
+    public RestException( Throwable t ) {
+        this.message = t.getMessage();
         StringWriter stringWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stringWriter));
+        t.printStackTrace(new PrintWriter(stringWriter));
         this.stackTrace = stringWriter.toString();
     }
 

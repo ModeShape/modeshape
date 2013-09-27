@@ -37,8 +37,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -68,7 +66,6 @@ public class ModeShapeEngine implements Repositories {
 
     private final Map<String, JcrRepository> repositories = new HashMap<String, JcrRepository>();
     private ExecutorService repositoryStarterService;
-    private ScheduledExecutorService cronStarterService;
     private volatile State state = State.NOT_RUNNING;
 
     public enum State {
@@ -111,10 +108,6 @@ public class ModeShapeEngine implements Repositories {
             // Create an executor service that we'll use to start the repositories ...
             ThreadFactory threadFactory = new NamedThreadFactory("modeshape-start-repo");
             repositoryStarterService = Executors.newCachedThreadPool(threadFactory);
-
-            // Start the Cron service, with a minimum of a single thread ...
-            ThreadFactory cronThreadFactory = new NamedThreadFactory("modeshape-cron");
-            cronStarterService = new ScheduledThreadPoolExecutor(1, cronThreadFactory);
 
             state = State.RUNNING;
         } catch (RuntimeException e) {
@@ -181,13 +174,12 @@ public class ModeShapeEngine implements Repositories {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             // Submit a runnable to shutdown the repositories ...
-            Future<Boolean> future = executor.submit(new Callable<Boolean>() {
+            return executor.submit(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     return doShutdown();
                 }
             });
-            return future;
         } finally {
             // Now shutdown the executor and return the future ...
             executor.shutdown();
@@ -243,9 +235,6 @@ public class ModeShapeEngine implements Repositories {
                 // All repositories were properly shutdown, so now stop the service for starting and shutting down the repos ...
                 repositoryStarterService.shutdown();
                 repositoryStarterService = null;
-
-                cronStarterService.shutdown();
-                cronStarterService = null;
 
                 // Do not clear the set of repositories, so that restarting will work just fine ...
                 this.state = State.NOT_RUNNING;
@@ -607,19 +596,6 @@ public class ModeShapeEngine implements Repositories {
                                                                                                           e.getMessage()), e);
             }
             return new ImmediateFuture<JcrRepository>(repository);
-            //
-            // // Create an initializer that will start the repository ...
-            // Future<JcrRepository> future = repositoryStarterService.submit(new Callable<JcrRepository>() {
-            // @Override
-            // public JcrRepository call() throws Exception {
-            // // Apply the changes to the repository ...
-            // repository.apply(changes);
-            // return repository;
-            // }
-            // });
-            //
-            // // And return the future
-            // return future;
         } finally {
             lock.unlock();
         }
