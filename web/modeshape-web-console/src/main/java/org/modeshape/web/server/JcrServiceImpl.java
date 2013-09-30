@@ -135,30 +135,19 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
     
     @Override
-    public List<JcrNode> childNodes(String path) {
-        Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
-        if (session == null) {
-            log.error("Session has expired");
-        }
-
+    public List<JcrNode> childNodes(String path) throws RemoteException {
         ArrayList<JcrNode> children = new ArrayList();
         try {
-            Node node = (Node) session.getItem(path);
+            Node node = (Node) session().getItem(path);
             NodeIterator it = node.getNodes();
 
             while (it.hasNext()) {
                 Node n = it.nextNode();
-                JcrNode no = new JcrNode(
-                        n.getName(),
-                        n.getPath(),
-                        n.getPrimaryNodeType().getName());
-                no.setProperties(getProperties(n));
-                try {
-                    no.setAcessControlList(getAccessList(session.getAccessControlManager(), node));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                children.add(no);
+                JcrNode childNode = new JcrNode(n.getName(), n.getPath(), n.getPrimaryNodeType().getName());
+                childNode.setProperties(getProperties(n));
+                childNode.setAcessControlList(getAccessList(session().getAccessControlManager(), node));
+                childNode.setMixins(mixins(n));
+                children.add(childNode);
             }
 
         } catch (RepositoryException e) {
@@ -167,6 +156,22 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         return children;
     }
 
+    /**
+     * Lists mixin types of the given node.
+     * 
+     * @param node given node
+     * @return list of mixin types names.
+     * @throws RepositoryException 
+     */
+    private String[] mixins(Node node) throws RepositoryException {
+        NodeType[] mixins = node.getMixinNodeTypes();
+        String[] res = new String[mixins.length];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = mixins[i].getName();
+        }
+        return res;
+    }
+    
     private JcrAccessControlList getAccessList(AccessControlManager acm, Node node) throws RepositoryException {
         JcrAccessControlList acl = new JcrAccessControlList();
         

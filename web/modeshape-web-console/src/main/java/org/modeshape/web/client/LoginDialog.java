@@ -24,6 +24,7 @@
 package org.modeshape.web.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Window;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.events.SubmitValuesEvent;
@@ -142,7 +143,7 @@ public class LoginDialog extends DynamicForm {
 
         @Override
         public void onFailure(Throwable caught) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            SC.say(caught.getMessage());
         }
 
         @Override

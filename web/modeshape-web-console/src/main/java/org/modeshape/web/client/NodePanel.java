@@ -344,13 +344,15 @@ public class NodePanel extends Tab {
         private RecordPane currentNodeName = new RecordPane("Current Node");
         private RecordPane primaryType = new RecordPane("Primary Type");
         private RecordPane versions = new RecordPane("Number of Versions");
-
+        private RecordPane mixins = new RecordPane("Mixin types");
+        
         public GeneralNodeInformationPanel() {
             super();
             setWidth100();
             addMember(currentNodeName);
             addMember(primaryType);
             addMember(versions);
+            addMember(mixins);
         }
         
         /**
@@ -362,6 +364,26 @@ public class NodePanel extends Tab {
             currentNodeName.setValue(node.getName());
             primaryType.setValue(node.getPrimaryType());
             versions.setValue("Versions here");
+            mixins.setValue(combine(node.getMixins()));
+        }
+        
+        /**
+         * Combines list of text items into single line.
+         * 
+         * @param text 
+         * @return 
+         */
+        private String combine(String[] text) {
+            if (text.length == 1) {
+                return text[0];
+            }
+                        
+            String s = text[0];
+            for (int i = 1; i < text.length; i++) {
+                s += "," + text[i];
+            }
+            
+            return s;
         }
     }
 

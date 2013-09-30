@@ -62,7 +62,7 @@ public interface JcrService extends RemoteService {
      * @param path the path to the node
      * @return children nodes.
      */
-    public List<JcrNode> childNodes(String path);
+    public List<JcrNode> childNodes(String path) throws RemoteException;
 
     /**
      * Gets repository capabilities.

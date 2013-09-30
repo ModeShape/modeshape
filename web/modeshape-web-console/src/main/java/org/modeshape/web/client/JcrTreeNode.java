@@ -37,7 +37,7 @@ public class JcrTreeNode extends TreeNode {
     private String primaryType;
     private Collection<JcrProperty> properties;
     private JcrAccessControlList acl;
-    
+    private String[] mixins;
     /**
      * 
      * @param name
@@ -79,6 +79,14 @@ public class JcrTreeNode extends TreeNode {
     
     public void setAcessControlList(JcrAccessControlList acl) {
         this.acl = acl;
+    }
+    
+    public void setMixins(String[] mixins) {
+        this.mixins = mixins;
+    }
+    
+    public String[] getMixins() {
+        return mixins;
     }
     
 }
