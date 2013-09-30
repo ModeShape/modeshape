@@ -86,7 +86,14 @@ public class ToolBar extends HLayout {
                 ToolBar.this.console.addMixinDialog.showModal();
             }            
         });
-        
+
+        //Remove mixin
+        button("", "icons/delete.png", "Remove mixin", new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                ToolBar.this.console.removeMixinDialog.showModal();
+            }            
+        });
         
     }
 

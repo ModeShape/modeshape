@@ -1,9 +1,29 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.modeshape.web.client;
 
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.ListGridEditEvent;
 import com.smartgwt.client.types.VisibilityMode;
 import com.smartgwt.client.util.SC;
@@ -13,6 +33,8 @@ import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.grid.ListGrid;
 import com.smartgwt.client.widgets.grid.ListGridField;
 import com.smartgwt.client.widgets.grid.ListGridRecord;
+import com.smartgwt.client.widgets.grid.events.CellSavedEvent;
+import com.smartgwt.client.widgets.grid.events.CellSavedHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
 import com.smartgwt.client.widgets.layout.SectionStack;
 import com.smartgwt.client.widgets.layout.SectionStackSection;
@@ -37,9 +59,14 @@ public class NodePanel extends Tab {
     private GeneralNodeInformationPanel generalInfo = new GeneralNodeInformationPanel();
     private PropertiesPanel properties;
     private AccessControlPanel accessControl;
-
-    public NodePanel() {
+    
+    private JcrTreeNode node;
+    private String path;
+    private Console console;
+    
+    public NodePanel(Console console) {
         super();
+        this.console = console;
         setTitle("Node Properties");
 
         properties = new PropertiesPanel();
@@ -79,6 +106,8 @@ public class NodePanel extends Tab {
      * @param node the node to display.
      */
     public void display(JcrTreeNode node) {
+        this.node = node;
+        path = node.getPath();
         generalInfo.setNode(node);
         properties.setData(node.getProperties());
         accessControl.display(node.getAccessList());
@@ -130,6 +159,25 @@ public class NodePanel extends Tab {
             grid.setWidth100();
             grid.setHeight100();
 
+            grid.addCellSavedHandler(new CellSavedHandler(){
+                @Override
+                public void onCellSaved(CellSavedEvent event) {
+                    String name = event.getRecord().getAttribute("name");
+                    String value = (String) event.getNewValue();
+                    console.jcrService.setProperty(path, name, value, new AsyncCallback() {
+                        @Override
+                        public void onFailure(Throwable caught) {
+                            SC.say(caught.getMessage());
+                            display(node);
+                        }
+                        @Override
+                        public void onSuccess(Object result) {
+                            display(node);
+                        }
+                    });
+                }                
+            });
+            
 //            ListGridRecord listGridRecord = new ListGridRecord();
 //            grid.setData(new ListGridRecord[]{listGridRecord});
 

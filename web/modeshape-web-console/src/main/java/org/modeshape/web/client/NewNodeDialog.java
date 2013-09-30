@@ -25,6 +25,7 @@ package org.modeshape.web.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
+import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 
@@ -36,7 +37,7 @@ import com.smartgwt.client.widgets.form.fields.TextItem;
 public class NewNodeDialog extends ModalDialog {
     
     private TextItem name = new TextItem();
-    private TextItem primaryType = new TextItem();
+    private ComboBoxItem primaryType = new ComboBoxItem();
 
     private Console console;
     
@@ -60,7 +61,6 @@ public class NewNodeDialog extends ModalDialog {
         primaryType.setRequired(true);
         primaryType.setStartRow(true);
         primaryType.setEndRow(true);
-        
 
         StaticTextItem description = new StaticTextItem();
         description.setValue("Please specify the name of node and choose type");
@@ -69,6 +69,21 @@ public class NewNodeDialog extends ModalDialog {
         description.setEndRow(true);
         
         setControls(description, name, primaryType);
+    }
+    
+    @Override
+    public void showModal() {
+        console.jcrService.getPrimaryTypes(false, new AsyncCallback<String[]>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+            @Override
+            public void onSuccess(String[] result) {
+                primaryType.setValueMap(result);
+                NewNodeDialog.super.showModal();
+            }
+        });
     }
     
     @Override

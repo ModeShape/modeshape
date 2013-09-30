@@ -26,7 +26,9 @@ package org.modeshape.web.client;
 import org.modeshape.web.shared.JcrNode;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+import java.util.Collection;
 import java.util.List;
+import org.modeshape.web.shared.JcrPermission;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
 import org.modeshape.web.shared.ResultSet;
 
@@ -109,4 +111,67 @@ public interface JcrService extends RemoteService {
      * @throws RemoteException Any exception on the server side
      */
     public void addMixin(String path, String mixin) throws RemoteException;
+    
+    /**
+     * Removes mixin from the given node.
+     * 
+     * @param path the path to the node
+     * @param mixin mixin to remove
+     * @throws RemoteException any server side exception.
+     */
+    public void removeMixin(String path, String mixin) throws RemoteException;
+    
+    /**
+     * Set's property value.
+     * 
+     * @param path the path to the node.
+     * @param name the name of the property to add.
+     * @param value the text representation of the value
+     */
+    public void setProperty(String path, String name, String value) throws RemoteException;
+    
+    /**
+     * Creates empty access list for given principal.
+     * 
+     * @param path the path to the node.
+     * @param principal the principal name
+     * @throws RemoteException 
+     */
+    public void addAccessList(String path, String principal) throws RemoteException;
+    
+    /**
+     * Modifies access control list.
+     * 
+     * @param path the path to the node
+     * @param principal name of the principal
+     * @param permissions list of permissions.
+     */
+    public void updateAccessList(String path, String principal, JcrPermission[] permissions) throws RemoteException;
+
+    /**
+     * Removes access list for the principal.
+     * 
+     * @param path the path to the node.
+     * @param principal the name of the principal.
+     * @throws RemoteException 
+     */
+    public void removeAccessList(String path, String principal) throws RemoteException;
+    
+    /**
+     * Reads list of primary types.
+     * 
+     * @param allowAbstract true if allow to load abstract node types.
+     * @return list of type names.
+     * @throws RemoteException 
+     */
+    public String[] getPrimaryTypes(boolean allowAbstract) throws RemoteException;
+    
+    /**
+     * Reads list of mixin types.
+     * 
+     * @param allowAbstract true if allow to load abstract node types.
+     * @return list of type names.
+     * @throws RemoteException 
+     */
+    public String[] getMixinTypes(boolean allowAbstract) throws RemoteException;
 }

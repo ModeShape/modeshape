@@ -25,7 +25,7 @@ package org.modeshape.web.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
-import com.smartgwt.client.widgets.form.fields.TextItem;
+import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 
 /**
  * Dialog for asking mixin.
@@ -34,7 +34,7 @@ import com.smartgwt.client.widgets.form.fields.TextItem;
  */
 public class AddMixinDialog extends ModalDialog {
 
-    private TextItem name = new TextItem();
+    private ComboBoxItem name = new ComboBoxItem();
     private Console console;
 
     public AddMixinDialog(String title, Console console) {
@@ -54,6 +54,22 @@ public class AddMixinDialog extends ModalDialog {
         name.focusInItem();
     }
 
+    @Override
+    public void showModal() {
+        console.jcrService.getMixinTypes(false, new AsyncCallback<String[]>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+
+            @Override
+            public void onSuccess(String[] result) {
+                name.setValueMap(result);
+                AddMixinDialog.super.showModal();
+            }
+        });
+    }
+    
     @Override
     public void onConfirm(com.smartgwt.client.widgets.form.fields.events.ClickEvent event) {
         String path = AddMixinDialog.this.console.navigator.getSelectedPath();

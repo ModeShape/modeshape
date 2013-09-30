@@ -52,7 +52,7 @@ public class Console implements EntryPoint {
 
     private final VLayout mainForm = new VLayout();
     private final ToolBar toolBar = new ToolBar(this);
-    protected final NodePanel nodePanel = new NodePanel();
+    protected final NodePanel nodePanel = new NodePanel(this);
     private final RepositoryPanel repositoryPanel = new RepositoryPanel(this);
     private final QueryPanel queryPanel = new QueryPanel(this);
 
@@ -60,6 +60,7 @@ public class Console implements EntryPoint {
     
     protected final NewNodeDialog newNodeDialog = new NewNodeDialog("Create new node", this);
     protected final AddMixinDialog addMixinDialog = new AddMixinDialog("Add mixin", this);
+    protected final RemoveMixinDialog removeMixinDialog = new RemoveMixinDialog("Remove mixin", this);
     /**
      * This is the entry point method.
      */
