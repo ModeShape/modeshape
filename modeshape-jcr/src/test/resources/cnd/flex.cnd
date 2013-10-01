@@ -13,3 +13,10 @@
 [flex:anyProperties] mixin
 - * (undefined) multiple 
 - * (undefined) 
+
+/*
+ * Some content that can have a checksum
+ */
+[jcr:binary] mixin
+  - jcr:size (LONG) COPY
+  - jcr:digest (URI) COPY

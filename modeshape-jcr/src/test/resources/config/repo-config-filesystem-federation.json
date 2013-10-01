@@ -48,6 +48,13 @@
             "extraPropertiesStorage" : "none",
             "pageSize" : 2
         } ,
+        "large-files" : {
+            "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath" : "F:/ff/large-files",
+            "extraPropertiesStorage" : "none",
+            "opensslDeployment" : "F:/openssl-0.9.8h-1-bin/bin",            
+            "hashMode" : "cached"         
+        } ,
         "targetDirectory" : {
             "classname" : "filesystem",
             "directoryPath" : "target/classes",

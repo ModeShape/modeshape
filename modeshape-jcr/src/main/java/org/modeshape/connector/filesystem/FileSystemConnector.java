@@ -24,15 +24,18 @@
 package org.modeshape.connector.filesystem;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
@@ -142,6 +145,19 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      */
     private String directoryPath;
     private File directory;
+    
+    /**
+     * opensslDeployment represents the install location of a local openssl bin directory. This is set
+     * via reflection and is required to use the openssl dgst commandline tool which is faster than the SecureHash algorithm.
+     */
+    private String opensslDeployment;
+    
+    /**
+     * hashMode can be in 3 modes default|cached|mocked. This is set via reflection.
+     *  default - UseSecureHash no cache, cached - cached hash and use openssl if configured, mock - hash the file path rather
+     *  than the file for performance
+     */    
+    private String hashMode;
 
     /**
      * A string that is created in the {@link #initialize(NamespaceRegistry, NodeTypeManager)} method that represents the absolute
@@ -196,6 +212,11 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     private String extraPropertiesStorage;
 
     private NamespaceRegistry registry;
+    
+    /**
+     * Used to store already calculated hashes of files
+     */
+    private HashMap<String,byte[]> fileHashes;
 
     @Override
     public void initialize( NamespaceRegistry registry,
@@ -236,6 +257,9 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             setExtraPropertiesStore(new NoExtraPropertiesStorage(this));
         }
         // otherwise use the default extra properties storage
+        
+        //Initialize the hashmap
+        fileHashes = new HashMap();
     }
 
     /**
@@ -335,7 +359,24 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      */
     protected ExternalBinaryValue binaryFor( File file ) {
         try {
-            byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
+            byte[] sha1 = null;
+            if (hashMode==null || hashMode.equals("default")) {
+                sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
+            } else if (hashMode.equals("cached")) {
+                sha1 = fileHashes.get(file.getPath());
+                if (sha1==null) {
+                    if (opensslDeployment==null) {
+                        sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
+                    } else {
+                        sha1 = openSSLSHA1(file);
+                    }
+                    fileHashes.put(file.getPath(),sha1);
+                }
+            } else if (hashMode.equals("mocked")) {
+                sha1 = mockSHA1(file);
+            } else {
+                throw new Exception("hashMode:"+hashMode+" unrecognized");
+            }
             BinaryKey key = new BinaryKey(sha1);
             return createBinaryValue(key, file);
         } catch (RuntimeException e) {
@@ -344,7 +385,34 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             throw new RuntimeException(e);
         }
     }
+    
+    /**
+     * Utility method for calculating a sha1 hash using the openssl dgst commandline tool as configured in external sources 
+     */    
+    protected byte[] openSSLSHA1(File file) throws Exception {
+        Runtime rt = Runtime.getRuntime();
+        String cmd = opensslDeployment+"/openssl dgst -sha1 "+file.getPath(); 
+        Process pr = rt.exec(cmd);
+        BufferedReader input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+        String s = input.readLine();
+        String s2 = "";
+        if (s.startsWith("SHA1")) {
+            s2 = s.substring(s.lastIndexOf(" ")+1);   
+        } else {
+            throw new Exception("Check opensslDeployment property.  Error calculating checksum using command:"+cmd);
+        }
+        return s2.getBytes();
+    }
 
+    /**
+     * Utility method for calculating a sha1 hash from the file path rather than entire file.  Currently unused,
+     * potentially for faking the hash of file to large to efficiently hash.
+     */  
+    public byte[] mockSHA1(File file) throws Exception {
+        byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1,file.getPath().getBytes());
+        return sha1;
+    }
+    
     /**
      * Utility method to create a {@link BinaryValue} object for the given file. Subclasses should rarely override this method,
      * since the {@link UrlBinaryValue} will be applicable in most situations.
@@ -625,6 +693,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         DocumentReader reader = readDocument(document);
 
         File file = fileFor(id);
+        String idOrig = id;
 
         // if we're dealing with the root of the connector, we can't process any moves/removes because that would go "outside" the
         // connector scope
@@ -678,6 +747,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
         String primaryType = reader.getPrimaryTypeName();
         Map<Name, Property> properties = reader.getProperties();
+        id = idOrig;
         ExtraProperties extraProperties = extraPropertiesFor(id, true);
         extraProperties.addAll(properties).except(JCR_PRIMARY_TYPE, JCR_CREATED, JCR_LAST_MODIFIED, JCR_DATA);
         try {
