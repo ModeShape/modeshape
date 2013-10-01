@@ -374,6 +374,10 @@ public class NodePanel extends Tab {
          * @return 
          */
         private String combine(String[] text) {
+            if (text == null) {
+                return "";
+            }
+            
             if (text.length == 1) {
                 return text[0];
             }

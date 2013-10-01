@@ -180,6 +180,19 @@ public class Navigator extends Label {
         console.nodePanel.display(node);
     }
 
+    /**
+     * Gets access to the currently selected node.
+     * 
+     * @return selected node.
+     */
+    public JcrTreeNode getSelectedNode() {
+        JcrTreeNode node = (JcrTreeNode) jcrTreeGrid.getSelectedRecord();
+        if (node == null) {
+            node = (JcrTreeNode) ROOT;
+        }
+        return node;
+    }
+    
     private class NodeLoader implements CellClickHandler {
 
         @Override
@@ -262,6 +275,7 @@ public class Navigator extends Label {
         item.setChildren(childs);
         item.setAcessControlList(node.getAccessList());
         item.setMixins(node.getMixins());
+        item.setPropertyDefs(node.getPropertyDefs());
         return item;
     }
 }

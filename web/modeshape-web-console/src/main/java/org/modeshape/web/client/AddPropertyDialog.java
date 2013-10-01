@@ -26,33 +26,38 @@ package org.modeshape.web.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
+import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 
 /**
  *
  * @author kulikov
  */
-public class RemoveMixinDialog extends ModalDialog {
+public class AddPropertyDialog extends ModalDialog{
     
     private Console console;
-    private ComboBoxItem mixins = new ComboBoxItem();
+    private ComboBoxItem name = new ComboBoxItem("Property name");
+    private TextItem value = new TextItem("Value");
     
-    public RemoveMixinDialog(String title, Console console) {
-        super(title, 450, 150);
+    public AddPropertyDialog(String title, Console console) {
+        super(title, 400, 200);
+        setControls(name, value);
         this.console = console;
-        setControls(mixins);
     }
     
     @Override
     public void showModal() {
-        mixins.setValueMap(console.navigator.getSelectedNode().getMixins());
+        JcrTreeNode node = console.navigator.getSelectedNode();
+        if (node != null) {
+            name.setValueMap(node.getPropertyDefs());
+        } 
         super.showModal();
     }
-    
+        
     @Override
     public void onConfirm(ClickEvent event) {
-        console.jcrService.removeMixin(console.navigator.getSelectedPath(), mixins.getValueAsString(), new AsyncCallback(){
-
+        String path = console.navigator.getSelectedPath();
+        console.jcrService.setProperty(path, name.getValueAsString(), value.getValueAsString(), new AsyncCallback() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -60,9 +65,7 @@ public class RemoveMixinDialog extends ModalDialog {
 
             @Override
             public void onSuccess(Object result) {
-                console.navigator.selectNode();
             }
-            
         });
     }
     

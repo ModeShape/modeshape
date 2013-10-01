@@ -38,7 +38,10 @@ public class JcrTreeNode extends TreeNode {
     private Collection<JcrProperty> properties;
     private JcrAccessControlList acl;
     private String[] mixins;
+    private String[] propertyDefs;
+    
     /**
+     * Creates new instance.
      * 
      * @param name
      * @param path 
@@ -87,6 +90,14 @@ public class JcrTreeNode extends TreeNode {
     
     public String[] getMixins() {
         return mixins;
+    }
+    
+    public void setPropertyDefs(String[] propertyDefs) {
+        this.propertyDefs = propertyDefs;
+    }
+    
+    public String[] getPropertyDefs() {
+        return propertyDefs;
     }
     
 }

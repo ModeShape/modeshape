@@ -46,6 +46,7 @@ public class JcrNode implements Serializable, IsSerializable {
     //children nodes
     private ArrayList<JcrNode> children = new ArrayList();
     private Collection<JcrProperty> properties;
+    private String[] propertyDefs;
     
     public JcrNode() {
     }
@@ -110,5 +111,13 @@ public class JcrNode implements Serializable, IsSerializable {
     
     public String[] getMixins() {
         return mixins;
+    }
+    
+    public void setPropertyDefs(String[] propertyDefs) {
+        this.propertyDefs = propertyDefs;
+    }
+    
+    public String[] getPropertyDefs() {
+        return propertyDefs;
     }
 }

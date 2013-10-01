@@ -45,7 +45,7 @@ public class ToolBar extends HLayout {
         this.setHeight(30);
         
         //add node button       
-        button("", "icons/add.png", "Adds new node", new ClickHandler() {
+        button("", "icons/folder_modernist_add.png", "Add new node", new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
                 ToolBar.this.console.newNodeDialog.showModal();
@@ -53,7 +53,7 @@ public class ToolBar extends HLayout {
         });
         
         //remove node button
-        button("", "icons/delete.png", "Deletes node", new ClickHandler() {
+        button("", "icons/folder_modernist_remove.png", "Delete node", new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
                 SC.ask("Remove node", "Do you want to remove node?", new BooleanCallback() {
@@ -80,7 +80,7 @@ public class ToolBar extends HLayout {
         });
         
         //Add mixin
-        button("", "icons/add.png", "Add mixin to the node", new ClickHandler() {
+        button("", "icons/hcards_add.png", "Add mixin to the node", new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
                 ToolBar.this.console.addMixinDialog.showModal();
@@ -88,10 +88,25 @@ public class ToolBar extends HLayout {
         });
 
         //Remove mixin
-        button("", "icons/delete.png", "Remove mixin", new ClickHandler() {
+        button("", "icons/hcards_remove.png", "Remove mixin", new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
                 ToolBar.this.console.removeMixinDialog.showModal();
+            }            
+        });
+
+        //Remove mixin
+        button("", "icons/tag_add.png", "Add property", new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                ToolBar.this.console.addPropertyDialog.showModal();
+            }            
+        });
+
+        button("", "icons/save.png", "Save", new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                ToolBar.this.console.addPropertyDialog.showModal();
             }            
         });
         

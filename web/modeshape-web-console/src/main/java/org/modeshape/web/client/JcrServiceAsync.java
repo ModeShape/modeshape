@@ -52,4 +52,5 @@ public interface JcrServiceAsync {
   public void removeAccessList(String path, String principal, AsyncCallback cb);
   public void getPrimaryTypes(boolean allowAbstract, AsyncCallback<String[]> cb);
   public void getMixinTypes(boolean allowAbstract, AsyncCallback<String[]> cb);
+  public void save(AsyncCallback cb);
 }

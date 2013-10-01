@@ -26,7 +26,6 @@ package org.modeshape.web.client;
 import org.modeshape.web.shared.JcrNode;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
-import java.util.Collection;
 import java.util.List;
 import org.modeshape.web.shared.JcrPermission;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
@@ -174,4 +173,9 @@ public interface JcrService extends RemoteService {
      * @throws RemoteException 
      */
     public String[] getMixinTypes(boolean allowAbstract) throws RemoteException;
+    
+    /**
+     * Saves changes in the current session.
+     */
+    public void save() throws RemoteException;
 }
