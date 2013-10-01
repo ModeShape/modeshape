@@ -26,6 +26,7 @@ package org.modeshape.web.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
+import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 
@@ -41,7 +42,13 @@ public class AddPropertyDialog extends ModalDialog{
     
     public AddPropertyDialog(String title, Console console) {
         super(title, 400, 200);
-        setControls(name, value);
+        StaticTextItem description = new StaticTextItem();
+        description.setValue("Select property name and specify value");
+        description.setTitle("");
+        description.setStartRow(true);
+        description.setEndRow(true);
+        
+        setControls(description, name, value);
         this.console = console;
     }
     

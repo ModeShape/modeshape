@@ -60,7 +60,7 @@ public abstract class ModalDialog {
         form.setPadding(25);
         
         VStack vStack = new VStack();
-        vStack.setTop(30);
+        vStack.setTop(10);
         vStack.addMember(form);
         
         window.addChild(vStack);        

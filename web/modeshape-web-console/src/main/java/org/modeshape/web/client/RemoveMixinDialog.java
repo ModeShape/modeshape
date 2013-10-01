@@ -26,6 +26,7 @@ package org.modeshape.web.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
+import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 
 /**
@@ -35,12 +36,19 @@ import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 public class RemoveMixinDialog extends ModalDialog {
     
     private Console console;
-    private ComboBoxItem mixins = new ComboBoxItem();
+    private ComboBoxItem mixins = new ComboBoxItem("Mixin type");
     
     public RemoveMixinDialog(String title, Console console) {
         super(title, 450, 150);
         this.console = console;
-        setControls(mixins);
+        
+        StaticTextItem description = new StaticTextItem();
+        description.setValue("Select mixin type");
+        description.setTitle("");
+        description.setStartRow(true);
+        description.setEndRow(true);
+        
+        setControls(description, mixins);
     }
     
     @Override

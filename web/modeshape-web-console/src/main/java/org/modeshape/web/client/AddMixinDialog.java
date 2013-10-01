@@ -26,6 +26,7 @@ package org.modeshape.web.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
+import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 
 /**
  * Dialog for asking mixin.
@@ -50,7 +51,13 @@ public class AddMixinDialog extends ModalDialog {
         name.setStartRow(true);
         name.setEndRow(true);
 
-        setControls(name);
+        StaticTextItem description = new StaticTextItem();
+        description.setValue("Select mixin type");
+        description.setTitle("");
+        description.setStartRow(true);
+        description.setEndRow(true);
+        
+        setControls(description, name);
         name.focusInItem();
     }
 
