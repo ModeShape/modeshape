@@ -24,12 +24,16 @@
 package org.modeshape.web.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.smartgwt.client.types.Alignment;
 import com.smartgwt.client.types.ListGridEditEvent;
+import com.smartgwt.client.types.ListGridFieldType;
 import com.smartgwt.client.types.VisibilityMode;
 import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
+import com.smartgwt.client.widgets.form.fields.events.ChangeEvent;
+import com.smartgwt.client.widgets.form.fields.events.ChangeHandler;
 import com.smartgwt.client.widgets.grid.ListGrid;
 import com.smartgwt.client.widgets.grid.ListGridField;
 import com.smartgwt.client.widgets.grid.ListGridRecord;
@@ -61,6 +65,7 @@ public class NodePanel extends Tab {
     private AccessControlPanel accessControl;
     
     private JcrTreeNode node;
+    
     private String path;
     private Console console;
     
@@ -110,7 +115,7 @@ public class NodePanel extends Tab {
         path = node.getPath();
         generalInfo.setNode(node);
         properties.setData(node.getProperties());
-        accessControl.display(node.getAccessList());
+        accessControl.display(node.getAccessList(), null);
     }
     
     public void setProperties(Collection<JcrProperty> props) {
@@ -125,9 +130,19 @@ public class NodePanel extends Tab {
         properties.refresh();
     }
 
+    public void display(JcrAccessControlList acl) {
+        accessControl.display(acl, null);
+    }
+    
+    public void display(JcrAccessControlList acl, String principal) {
+        accessControl.display(acl, principal);
+    }
+    
     private class PropertiesPanel extends VLayout {
 
         private ListGrid grid = new ListGrid();
+        private ListGridField valueField;
+        
 //        private PropertiesToolBar toolBar = new PropertiesToolBar();
 
         public PropertiesPanel() {
@@ -142,18 +157,53 @@ public class NodePanel extends Tab {
             grid.setEditEvent(ListGridEditEvent.CLICK);
             grid.setEditByCell(true);
 
+            ListGridField iconField = new ListGridField("icon", " ");
+            iconField.setCanEdit(false);
+            iconField.setShowHover(true);
+            iconField.setWidth(20);
+            iconField.setType(ListGridFieldType.IMAGE);
+            iconField.setImageURLPrefix("icons/bullet_");
+            iconField.setImageURLSuffix(".png");
+            iconField.setTitle(" ");
+            iconField.setAlign(Alignment.CENTER);
+            
             ListGridField nameField = new ListGridField("name", "Name");
             nameField.setCanEdit(false);
             nameField.setShowHover(true);
+            nameField.setIcon("icons/folder_modernist_add.png");
 
             ListGridField typeField = new ListGridField("type", "Type");
             typeField.setCanEdit(false);
             typeField.setShowHover(true);
+            typeField.setWidth(100);
+            typeField.setIcon("icons/tag.png");
             
-            ListGridField valueField = new ListGridField("value", "Value");
+            ListGridField isProtectedField = new ListGridField("isProtected", "Protected");
+            isProtectedField.setCanEdit(false);
+            isProtectedField.setShowHover(true);
+            isProtectedField.setIcon("icons/document_letter_locked.png");
+            isProtectedField.setWidth(100);
+            isProtectedField.setType(ListGridFieldType.IMAGE);
+            isProtectedField.setImageURLPrefix("icons/");
+            isProtectedField.setImageURLSuffix(".png");
+            isProtectedField.setAlign(Alignment.CENTER);
+            
+            ListGridField isMultipleField = new ListGridField("isMultiple", "Multiple");
+            isMultipleField.setCanEdit(false);
+            isMultipleField.setShowHover(true);
+            isMultipleField.setIcon("icons/documents.png");
+            isMultipleField.setWidth(100);
+            isMultipleField.setType(ListGridFieldType.IMAGE);
+            isMultipleField.setImageURLPrefix("icons/");
+            isMultipleField.setImageURLSuffix(".png");
+            isMultipleField.setAlign(Alignment.CENTER);
+            
+            valueField = new ListGridField("value", "Value");
             valueField.setShowHover(true);
-
-            grid.setFields(nameField, typeField, valueField);
+            valueField.setIcon("icons/tag_edit.png");
+            
+            grid.setFields(iconField, nameField, typeField, isProtectedField, 
+                    isMultipleField, valueField);
 
             grid.setCanResizeFields(true);
             grid.setWidth100();
@@ -190,13 +240,17 @@ public class NodePanel extends Tab {
             addMember(grid);
         }
 
-        public void setData(Collection<JcrProperty> props) {
+        public void setData(Collection<JcrProperty> props) {            
             ListGridRecord[] data = new ListGridRecord[props.size()];
             int i = 0;
             for (JcrProperty p : props) {
                 ListGridRecord record = new ListGridRecord();
+                valueField.setType(ListGridFieldType.SEQUENCE);
+                record.setAttribute("icon", "blue");
                 record.setAttribute("name", p.getName());
                 record.setAttribute("type", p.getType());
+                record.setAttribute("isProtected", Boolean.toString(p.isProtected()));
+                record.setAttribute("isMultiple", Boolean.toString(p.isMultiValue()));
                 record.setAttribute("value", p.getValue());
                 data[i++] = record;
             }
@@ -210,6 +264,13 @@ public class NodePanel extends Tab {
 
         public void refresh() {
 //            grid.setData(propertiesListGridRecords);
+        }
+        
+        private ListGridFieldType typeOf(JcrProperty property) {
+            if (property.getType().equals("Boolean")) {
+                return ListGridFieldType.BOOLEAN;
+            }
+            return ListGridFieldType.TEXT;
         }
     }
 
@@ -267,8 +328,17 @@ public class NodePanel extends Tab {
             DynamicForm form = new DynamicForm();
             principalPanel.addMember(form);
             principalPanel.setHeight(30);
+            principalPanel.addMember(new AclToolbar(console));
+            principalPanel.setBackgroundColor("#d3d3d3");
             
             principalCombo.setTitle("Principal");
+            principalCombo.addChangeHandler(new ChangeHandler() {
+                @Override
+                public void onChange(ChangeEvent event) {
+                    displayPermissions();
+                }
+            });
+            
             form.setItems(principalCombo);
             
             grid.setAlternateRecordStyles(true);
@@ -277,6 +347,16 @@ public class NodePanel extends Tab {
             grid.setEditEvent(ListGridEditEvent.CLICK);
             grid.setEditByCell(true);
 
+            ListGridField iconField = new ListGridField("icon", " ");
+            iconField.setCanEdit(false);
+            iconField.setShowHover(true);
+            iconField.setWidth(20);
+            iconField.setType(ListGridFieldType.IMAGE);
+            iconField.setImageURLPrefix("icons/bullet_");
+            iconField.setImageURLSuffix(".png");
+            iconField.setTitle(" ");
+            iconField.setAlign(Alignment.CENTER);
+            
             ListGridField nameField = new ListGridField("permission", "Permission");
             nameField.setCanEdit(false);
             nameField.setShowHover(true);
@@ -286,17 +366,25 @@ public class NodePanel extends Tab {
             statusField.setShowHover(true);
             
 
-            grid.setFields(nameField, statusField);
+            grid.setFields(iconField, nameField, statusField);
 
             grid.setCanResizeFields(true);
             grid.setWidth100();
             grid.setHeight100();
             
+            grid.addCellSavedHandler(new CellSavedHandler() {
+                @Override
+                public void onCellSaved(CellSavedEvent event) {
+                    event.getNewValue();
+                    JcrACLEntry policy = acl.find(principalCombo.getValueAsString());
+                }
+            });
+            
             addMember(principalPanel);
             addMember(grid);
         }
         
-        public void display(JcrAccessControlList acl) {
+        public void display(JcrAccessControlList acl, String principal) {
             this.acl = acl;
             
             Collection<JcrACLEntry> entries = acl.entries();
@@ -308,7 +396,11 @@ public class NodePanel extends Tab {
             }
             
             principalCombo.setValueMap(principals);
-            principalCombo.setValue(principals[0]);
+            if (principal != null) {
+                principalCombo.setValue(principal);
+            } else {
+                principalCombo.setValue(principals[0]);
+            }
             
             displayPermissions();
         }
@@ -317,11 +409,12 @@ public class NodePanel extends Tab {
          * Displays permissions for the current node and current principal
          */
         private void displayPermissions() {
-            JcrPermissions permissions = new JcrPermissions();
+//            JcrPermissions permissions = new JcrPermissions();
             String principal = (String)principalCombo.getValue();
-            
+            grid.setData(acl.test(principal));
+            grid.show();
             //look up access list
-            JcrACLEntry list = null;
+/*            JcrACLEntry list = null;
             for (JcrACLEntry entry : acl.entries()) {
                 if (entry.getPrincipal().equals(principal)) {
                     list = entry;
@@ -336,6 +429,7 @@ public class NodePanel extends Tab {
                 grid.setData(records);
                 grid.show();
             } 
+            */ 
         }
     }
 
@@ -352,7 +446,7 @@ public class NodePanel extends Tab {
             addMember(currentNodeName);
             addMember(primaryType);
             addMember(versions);
-            addMember(mixins);
+            addMember(mixins);            
         }
         
         /**

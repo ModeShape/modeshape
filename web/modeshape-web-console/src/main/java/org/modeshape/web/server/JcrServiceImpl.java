@@ -230,7 +230,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         } else {
             JcrACLEntry en = new JcrACLEntry();
             en.setPrincipal("EVERYONE");
-            en.add(new JcrPermission(Privilege.JCR_ALL));
+            en.add(JcrPermission.ALL);
             acl.add(en);
         }
         
@@ -274,8 +274,11 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         PropertyIterator it = node.getProperties();
         while (it.hasNext()) {
             Property p = it.nextProperty();
-                list.add(new JcrProperty(p.getName(),
-                    PropertyType.nameFromValue(p.getType()), values(p)));
+            JcrProperty property = new JcrProperty(p.getName(),
+                    PropertyType.nameFromValue(p.getType()), values(p));
+            property.setProtected(p.getDefinition().isProtected());
+            property.setProtected(p.getDefinition().isMultiple());
+            list.add(property);
         }
         return list;
     }

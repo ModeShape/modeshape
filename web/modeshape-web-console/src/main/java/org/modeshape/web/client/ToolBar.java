@@ -103,7 +103,40 @@ public class ToolBar extends HLayout {
             }            
         });
 
+        spacer();
+        
+        //Save button
         button("", "icons/save.png", "Save", new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                ToolBar.this.console.addPropertyDialog.showModal();
+            }            
+        });
+        
+        spacer();
+
+        button("", "icons/hcard_add.png", "Add access control list", new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                ToolBar.this.console.addPropertyDialog.showModal();
+            }            
+        });
+
+        button("", "icons/hcard_remove.png", "Remove access control list", new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                ToolBar.this.console.addPropertyDialog.showModal();
+            }            
+        });
+
+        button("", "icons/group_blue_add.png", "Add principal", new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                ToolBar.this.console.addPropertyDialog.showModal();
+            }            
+        });
+
+        button("", "icons/group_blue_remove.png", "Remove principal", new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
                 ToolBar.this.console.addPropertyDialog.showModal();
@@ -131,4 +164,9 @@ public class ToolBar extends HLayout {
         addMember(button);
     }
 
+    private void spacer() {
+        HLayout spacer = new HLayout();
+        spacer.setWidth(5);
+        addMember(spacer);
+    }
 }
