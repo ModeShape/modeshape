@@ -2270,7 +2270,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
+     *
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -3559,7 +3559,42 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertEquals(expected, actual);
     }
 
-    private String idList( Node... nodes ) throws RepositoryException {
+    @FixFor( "MODE-2062" )
+    public void fullTextShouldWorkWithBindVar() throws Exception {
+        Node n1 = session.getRootNode().addNode("n1");
+        n1.setProperty("n1-prop-1", "wow");
+        n1.setProperty("n1-prop-2", "any");
+
+        Node n2 = session.getRootNode().addNode("n2");
+        n2.setProperty("n2-prop-1", "test");
+
+        try {
+            session.save();
+
+            // test with literal
+            String queryString = "select * from [nt:unstructured] as a where contains(a.*, 'wow')";
+            assertNodesAreFound(queryString, Query.JCR_SQL2, "/n1");
+
+            // test with bind
+            String queryStringWithBind = "select * from [nt:unstructured] as a where contains(a.*, $text)";
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery(queryStringWithBind, Query.JCR_SQL2);
+            query.bindValue("text", session.getValueFactory().createValue("wow"));
+            QueryResult result = query.execute();
+
+            NodeIterator nit = result.getNodes();
+            assertTrue(nit.hasNext());
+            Node n11 = nit.nextNode();
+            assertEquals("n1", n11.getName());
+            assertTrue(!nit.hasNext());
+        } finally {
+            n1.remove();
+            n2.remove();
+            session.save();
+        }
+    }
+
+    private String idList(Node...nodes) throws RepositoryException {
         StringBuilder builder = new StringBuilder("(");
         for (int i = 0; i < nodes.length - 1; i++) {
             builder.append("'").append(nodes[i].getIdentifier()).append("'").append(",");

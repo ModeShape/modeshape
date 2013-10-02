@@ -810,14 +810,15 @@ public class PlanUtil {
                     SelectorName newSelectorName = mapping.getSingleMappedSelectorName();
                     if (newSelectorName != null) {
                         node.addSelector(newSelectorName);
-                        return new FullTextSearch(newSelectorName, search.fullTextSearchExpression());
+                        return new FullTextSearch(newSelectorName, search.getPropertyName(),
+                                search.fullTextSearchExpression(), search.getFullTextSearchExpression());
                     }
                 }
                 return search;
             }
             node.addSelector(sourceColumn.selectorName());
             return new FullTextSearch(sourceColumn.selectorName(), sourceColumn.getPropertyName(),
-                                      search.fullTextSearchExpression());
+                    search.fullTextSearchExpression(), search.getFullTextSearchExpression());
         }
         if (constraint instanceof SetCriteria) {
             SetCriteria set = (SetCriteria)constraint;
