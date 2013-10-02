@@ -3537,6 +3537,28 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertNodesAreFound(queryString, Query.JCR_SQL2, "/name_p1", "/name_p2");
     }
 
+    @FixFor( "MODE-2027" )
+    @Test
+    public void shouldSearchAllPropertiesUsingDotSelectorJCRSql2FullTextSearch() throws RepositoryException {
+        String sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(., 'Toyota') ";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        NodeIterator nodes = query.execute().getNodes();
+        List<Node> actual = new ArrayList<Node>();
+        while (nodes.hasNext()) {
+            actual.add(nodes.nextNode());
+        }
+
+        sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(cars.*, 'Toyota')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        nodes = query.execute().getNodes();
+        List<Node> expected = new ArrayList<Node>();
+        while (nodes.hasNext()) {
+            expected.add(nodes.nextNode());
+        }
+
+        assertEquals(expected, actual);
+    }
+
     private String idList( Node... nodes ) throws RepositoryException {
         StringBuilder builder = new StringBuilder("(");
         for (int i = 0; i < nodes.length - 1; i++) {
