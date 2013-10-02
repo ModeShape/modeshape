@@ -3448,24 +3448,30 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Node n2 = session.getRootNode().addNode("n2");
         n2.setProperty("n2-prop-1", "test");
 
-        session.save();
+        try {
+            session.save();
 
-        // test with literal
-        String queryString = "select * from [nt:unstructured] as a where contains(a.*, 'wow')";
-        assertNodesAreFound(queryString, Query.JCR_SQL2, "/n1");
+            // test with literal
+            String queryString = "select * from [nt:unstructured] as a where contains(a.*, 'wow')";
+            assertNodesAreFound(queryString, Query.JCR_SQL2, "/n1");
 
-        // tst with bind
-        String queryStringWithBind = "select * from [nt:unstructured] as a where contains(a.*, $text)";
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        Query query = queryManager.createQuery(queryStringWithBind, Query.JCR_SQL2);
-        query.bindValue("text", session.getValueFactory().createValue("wow"));
-        QueryResult result = query.execute();
+            // test with bind
+            String queryStringWithBind = "select * from [nt:unstructured] as a where contains(a.*, $text)";
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery(queryStringWithBind, Query.JCR_SQL2);
+            query.bindValue("text", session.getValueFactory().createValue("wow"));
+            QueryResult result = query.execute();
 
-        NodeIterator nit = result.getNodes();
-        assertTrue(nit.hasNext());
-        Node n11 = nit.nextNode();
-        assertEquals("n1", n11.getName());
-        assertTrue(!nit.hasNext());
+            NodeIterator nit = result.getNodes();
+            assertTrue(nit.hasNext());
+            Node n11 = nit.nextNode();
+            assertEquals("n1", n11.getName());
+            assertTrue(!nit.hasNext());
+        } finally {
+            n1.remove();
+            n2.remove();
+            session.save();
+        }
     }
 
     private String idList(Node...nodes) throws RepositoryException {
