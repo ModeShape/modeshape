@@ -95,7 +95,7 @@
                 <configuration>
                     <instructions>
                         <Export-Package>
-                            ${project.groupId}.schematic.*;version=${project.version};-split-package:=error
+                            org.infinispan.schematic*;version=${project.version};-split-package:=error
                         </Export-Package>
                     </instructions>
                 </configuration>
