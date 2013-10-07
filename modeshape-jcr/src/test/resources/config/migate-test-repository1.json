@@ -1,0 +1,20 @@
+{
+    "name" : "Repository1",
+    "jndiName":"",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "node-types": ["config/migate-test-types1.cnd"],
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : true
+        }
+    },
+    
+    "storage" : {
+        "cacheName" : "app_cache",
+        "cacheConfiguration" : "config/migate-test-infinispan.xml"
+    }
+}

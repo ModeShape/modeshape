@@ -1,0 +1,99 @@
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<notifications='http://engagepoint.com/document/notifications'>
+<meta='http://engagepoint.com/document/meta'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+// ------------ onbase in memory -----------------
+[notifications:inMemoryClientFolderType] > nt:folder abstract
+- parentId (string)
+- name (string)
+- lastModifiedBy (string)
+- title (string)
+
+[notifications:EnrolleeInfo] > notifications:inMemoryClientFolderType
+
+[notifications:inMemoryClientFileType] > nt:file abstract
+- parentId (string)
+- name (string)
+- lastModifiedBy (string)
+- title (string)
+
+[notifications:MemberCorrespondence] > notifications:inMemoryClientFileType
+[notifications:EnrollmentRequest] > notifications:inMemoryClientFileType
+// ---------------------------------------------------------
+
+[notifications:templateGroup] > nt:folder
+- notifications:tags (string) multiple
+- notifications:description (string)
+- notifications:locked (boolean)
+
+[notifications:mnCorrespondence] > nt:file abstract
+- meta:ssn (string)
+- meta:otherInfo (string)
+
+[notifications:baseNotification] > notifications:mnCorrespondence abstract
+- notifications:tags (string) multiple
+- notifications:templateId (string)
+- notifications:crossReferenceNumber (string)
+
+[notifications:emailNotification] > notifications:baseNotification, mix:simpleVersionable
+- notifications:subject (string)
+- notifications:from (string)
+- notifications:to (string) multiple
+- notifications:cc (string) multiple
+- notifications:bcc (string) multiple
+- notifications:attachments (string) multiple
+
+[notifications:printMailNotification] > notifications:baseNotification, mix:simpleVersionable
+- notifications:name (string)
+- notifications:company (string)
+- notifications:streetAddress (string)
+- notifications:city (string)
+- notifications:state (string)
+- notifications:zipCode (string)
+
+[notifications:hixEmailNotification] > notifications:emailNotification
+- notifications:contractId (string)
+- notifications:choiceOption (string) < "optionOne", "optionTwo"
+
+[notifications:smsNotification] > notifications:baseNotification, mix:simpleVersionable
+- notifications:from (string)
+- notifications:to (string) multiple
+- notifications:deliveryReceiptDate (date)
+- notifications:deliveryReceiptStatus (string)
+
+[notifications:notificationAttachment] > notifications:baseNotification, mix:simpleVersionable
+- notifications:fileName (string)
+
+[notifications:mnHixDefaultMetadata] > nt:file abstract
+- meta:ssn (string)
+- meta:otherInfo (string)
+
+[notifications:baseTemplate] > notifications:mnHixDefaultMetadata abstract
+- notifications:locale (string)
+- notifications:outputMimeType (string)
+- notifications:renderingEngine (string)
+- notifications:targetDocumentTypeId (string)
+- notifications:placeholderKeys (string) multiple
+- notifications:placeholderValues (string) multiple
+
+[notifications:emailTemplate] > notifications:baseTemplate, mix:simpleVersionable
+- notifications:subject (string)
+- notifications:staticAttachments (string) multiple
+- notifications:dynamicAttachments (string) multiple
+
+[notifications:printMailTemplate] > notifications:baseTemplate, mix:simpleVersionable
+- notifications:staticAttachments (string) multiple
+- notifications:dynamicAttachments (string) multiple
+
+[notifications:smsTemplate] > notifications:baseTemplate, mix:simpleVersionable
+
+[notifications:attachmentTemplate] > notifications:baseTemplate, mix:simpleVersionable
+- notifications:targetFileName (string)
