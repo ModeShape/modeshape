@@ -26,11 +26,14 @@ package org.modeshape.web.server;
 import org.modeshape.web.client.JcrService;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -58,9 +61,6 @@ import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicy;
 import javax.jcr.security.Privilege;
 import javax.naming.InitialContext;
-import org.jboss.logging.Logger;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.security.SimplePrincipal;
 import org.modeshape.web.shared.JcrNode;
 import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.shared.JcrPolicy;
@@ -77,13 +77,13 @@ import org.modeshape.web.shared.ResultSet;
 @SuppressWarnings("serial")
 public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
-    private final static Logger log = Logger.getLogger(JcrServiceImpl.class);
+    private final static Logger log = Logger.getLogger("JcrServiceImpl");
 
     @Override
     public boolean login(String jndiName, String userName, String password, String workspace) throws RemoteException {
         try {
             InitialContext context = new InitialContext();
-            JcrRepository repository = (JcrRepository) context.lookup(jndiName);
+            Repository repository = (Repository) context.lookup(jndiName);
 
             Session session = null;
             if (userName != null && userName.length() > 0) {
@@ -153,7 +153,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             }
 
         } catch (RepositoryException e) {
-            log.error("Unexpected error", e);
+            log.log(Level.SEVERE, "Unexpected error", e);
             throw new RemoteException(e.getMessage());
         }
 
@@ -450,7 +450,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                     
             }
         } catch (Exception e) {
-            log.error("Unexpected error", e);
+            log.log(Level.SEVERE, "Unexpected error", e);
             throw new RemoteException(e.getMessage());
         }
     }
@@ -490,7 +490,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             AccessControlPolicy[] policies = acm.getPolicies(path);
             if (policies != null && policies.length > 0) {
                 AccessControlList acl = (AccessControlList) policies[0];
-                acl.addAccessControlEntry(SimplePrincipal.newInstance(principal), new Privilege[]{});
+                acl.addAccessControlEntry(new SimplePrincipal(principal), new Privilege[]{});
             }
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
@@ -505,7 +505,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             if (policies != null && policies.length > 0) {
                 AccessControlList acl = (AccessControlList) policies[0];
                 acl.removeAccessControlEntry(find(acl.getAccessControlEntries(), principal));
-                acl.addAccessControlEntry(SimplePrincipal.newInstance(principal), privileges(acm, permissions));
+                acl.addAccessControlEntry(new SimplePrincipal(principal), privileges(acm, permissions));
             }
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
@@ -623,7 +623,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         Collection<JcrPolicy> policies = a1.entries();
         for (JcrPolicy policy : policies) {
             a2.addAccessControlEntry(
-                    SimplePrincipal.newInstance(policy.getPrincipal()), privileges(acm, policy.getPermissions()));
+                    new SimplePrincipal(policy.getPrincipal()), privileges(acm, policy.getPermissions()));
         }
     }
     
@@ -663,5 +663,20 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             throw new RemoteException(e.getMessage());
         }
         return list;
+    }
+    
+    private class SimplePrincipal implements Principal {
+        private String name;
+        
+        protected SimplePrincipal(String name) {
+            this.name = name;
+        }
+        
+        
+        @Override
+        public String getName() {
+            return name;
+        }
+        
     }
 }
