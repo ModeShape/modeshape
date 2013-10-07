@@ -15,8 +15,8 @@
     <dependencies>
         <!--  TESTING DEPENDENCIES -->
         <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr</artifactId>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
             <scope>provided</scope>
         </dependency>
 
