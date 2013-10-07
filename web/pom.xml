@@ -14,6 +14,7 @@
   <url>http://www.modeshape.org</url>
   <description>Build the ModeShape web components</description>
   <modules>
+    <module>modeshape-web-console</module>
     <module>modeshape-web-jcr</module>
     <module>modeshape-web-jcr-rest</module>
     <module>modeshape-web-jcr-rest-war</module>

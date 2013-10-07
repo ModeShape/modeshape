@@ -21,6 +21,9 @@ overlays
 .idea
 atlassian-ide-plugin.xml
 
+# GWT-generated classes
+web/*/war/WEB-INF/classes/
+
 # log files
 *.log
 
