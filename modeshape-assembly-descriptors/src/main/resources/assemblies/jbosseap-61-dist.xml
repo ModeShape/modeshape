@@ -66,6 +66,14 @@
             <outputDirectory>${jboss.eap.modules.location}/org/modeshape/main/deployments</outputDirectory>
             <destName>modeshape-cmis.war</destName>
         </file>
+
+        <!-- Deployment for the ModeShape Explorer -->
+        <file>
+            <source>../deploy/jbossas/modeshape-jbossas-explorer-war/target/modeshape-jbossas-explorer-war-${project.version}.war
+            </source>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/main/deployments</outputDirectory>
+            <destName>modeshape-explorer.war</destName>
+        </file>
     </files>
 
     <dependencySets>
