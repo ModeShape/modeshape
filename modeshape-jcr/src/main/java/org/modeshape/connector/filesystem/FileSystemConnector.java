@@ -473,7 +473,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
     private DocumentWriter newFolderWriter( String id,
                                             File file,
-                                            int offset) {
+                                            int offset ) {
         boolean root = isRoot(id);
         DocumentWriter writer = newDocument(id);
         writer.setPrimaryType(NT_FOLDER);
@@ -487,9 +487,9 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             // Only include as a child if we can access and read the file. Permissions might prevent us from
             // reading the file, and the file might not exist if it is a broken symlink (see MODE-1768 for details).
             if (child.exists() && child.canRead() && (child.isFile() || child.isDirectory())) {
-                //we need to count the total accessible children
+                // we need to count the total accessible children
                 totalChildren++;
-                //only add a child if it's in the current page
+                // only add a child if it's in the current page
                 if (i >= offset && i < offset + pageSize) {
                     // We use identifiers that contain the file/directory name ...
                     String childName = child.getName();
@@ -499,7 +499,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 }
             }
         }
-        //if there are still accessible children add the next page
+        // if there are still accessible children add the next page
         if (nextOffset < totalChildren) {
             writer.addPage(id, nextOffset, pageSize, totalChildren);
         }
@@ -625,6 +625,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         DocumentReader reader = readDocument(document);
 
         File file = fileFor(id);
+        String idOrig = id;
 
         // if we're dealing with the root of the connector, we can't process any moves/removes because that would go "outside" the
         // connector scope
@@ -663,7 +664,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             }
         }
 
-        //children renames have to be processed in the parent
+        // children renames have to be processed in the parent
         DocumentChanges.ChildrenChanges childrenChanges = documentChanges.getChildrenChanges();
         Map<String, Name> renamedChildren = childrenChanges.getRenamed();
         for (String renamedChildId : renamedChildren.keySet()) {
@@ -678,6 +679,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
         String primaryType = reader.getPrimaryTypeName();
         Map<Name, Property> properties = reader.getProperties();
+        id = idOrig;
         ExtraProperties extraProperties = extraPropertiesFor(id, true);
         extraProperties.addAll(properties).except(JCR_PRIMARY_TYPE, JCR_CREATED, JCR_LAST_MODIFIED, JCR_DATA);
         try {
