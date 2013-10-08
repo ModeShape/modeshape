@@ -25,7 +25,8 @@
         },
         "mutable-files-store" : {
             "classname" : "filesystem",
-            "directoryPath" : "target/federation/files-store"
+            "directoryPath" : "target/federation/files-store",
+            "largeFileSize" : 10
         },
         "mutable-files-json" : {
             "classname" : "filesystem",
