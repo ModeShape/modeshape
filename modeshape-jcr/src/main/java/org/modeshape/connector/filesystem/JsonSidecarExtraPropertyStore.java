@@ -140,7 +140,7 @@ class JsonSidecarExtraPropertyStore implements ExtraPropertiesStore {
     }
 
     protected String resourceExtension() {
-        return DEFAULT_EXTENSION;
+        return DEFAULT_RESOURCE_EXTENSION;
     }
 
     @Override

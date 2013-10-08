@@ -29,12 +29,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import org.junit.Before;
@@ -43,17 +46,21 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.value.BinaryKey;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 
 public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
@@ -68,6 +75,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     private Projection legacyProjection;
     private Projection noneProjection;
     private Projection pagedProjection;
+    private Projection largeFilesProjection;
     private Projection[] projections;
     private JcrTools tools;
 
@@ -82,6 +90,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
         noneProjection = new Projection("mutable-files-none", "target/federation/files-none");
         pagedProjection = new PagedProjection("paged-files", "target/federation/paged-files");
+        largeFilesProjection = new Projection("large-files","F:/ff/large-files");
+        
 
         projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
                 storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection};
@@ -106,8 +116,45 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.create(testRoot, "legacy");
         noneProjection.create(testRoot, "none");
         pagedProjection.create(testRoot, "pagedFiles");
+        largeFilesProjection.create(testRoot,"largeFiles");
     }
+    
+    /**
+     * For potential use to test large files and the time to reference a node.  Must:
+     * 1) Set up a large-files externalSources in repo-config-filesystem-federation.json
+     * 2) Add a large file called arbitrarily here "large-file1.tif" to the configured directoryPath
+     * 3) Use the directoryPath as the second parameter in the above "largeFilesProjection" constructor
+     * 4) Uncomment this test
+     */
+    /*
+    @Test
+    @FixFor( "MODE-2061" )
+    public void largeFilesTest() throws Exception {
+        String childName = "largeFiles";
+        Session session = (Session)testRoot.getSession();
+        String path = testRoot.getPath() + "/" + childName;
 
+        Node files = session.getNode(path);
+        assertThat(files.getName(), is(childName));
+        assertThat(files.getPrimaryNodeType().getName(), is("nt:folder"));
+        
+        long before = System.currentTimeMillis();
+        Node node1 = session.getNode(path + "/large-file1.tif");
+        long after = System.currentTimeMillis();
+        long elapsed = after-before;
+        assertThat(node1.getName(),is("large-file1.tif"));
+        assertThat(node1.getPrimaryNodeType().getName(),is("nt:file"));
+        System.out.println("elapsed getting nt:file:"+elapsed);
+        
+        before = System.currentTimeMillis();
+        Node node1Content = node1.getNode("jcr:content");
+        after = System.currentTimeMillis();
+        elapsed = after-before;;
+        assertThat(node1Content.getName(),is("jcr:content"));
+        assertThat(node1Content.getPrimaryNodeType().getName(),is("nt:resource"));
+        System.out.println("elapsed getting jcr:content:"+elapsed);
+    }
+*/
     @Test
     @FixFor( "MODE-1982" )
     public void shouldReadNodesInAllProjections() throws Exception {
@@ -189,6 +236,58 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-2060" )
+    public void shouldAllowHashInWritableStoreBasedProjection() throws Exception {
+        System.out.println("in shouldAllowHashInWritableStoreBasedProjection");//
+        
+        Node file = session.getNode("/testRoot/store/dir3/simple.json");
+        file.addMixin("flex:anyProperties");
+        file.setProperty("extraProp", "extraValue");
+        session.save();
+        assertNoSidecarFile(storeProjection, "dir3/simple.json.modeshape");
+        Node file2 = session.getNode("/testRoot/store/dir3/simple.json");
+        assertThat(file2.getProperty("extraProp").getString(), is("extraValue"));
+        
+        System.out.println("jcr:file properties");
+        PropertyIterator i = file2.getProperties();                
+        while(i.hasNext()) {
+            Property p = i.nextProperty();
+            if (p.getName().equals("jcr:digest")) {
+                System.out.println("  property:"+ p.getName()+ " "+p.getString());
+            
+            } else {
+                System.out.println("  property:"+ p.getName());
+            }
+        } 
+        
+        Node fileContent = session.getNode("/testRoot/store/dir3/simple.json/jcr:content");
+        fileContent.addMixin("jcr:binary");
+        fileContent.addMixin("flex:anyProperties");
+        String dir = "target/federation/files-store";
+        File simpleJsonFile = new File(dir, "dir3/simple.json");
+        byte[] hash = SecureHash.getHash(Algorithm.SHA_1, simpleJsonFile);
+        String hashString = new BinaryKey(hash).toString();
+        //System.out.println("in store test "+ hashString);
+        fileContent.setProperty("jcr:digest",new URI(hashString).toString());
+        fileContent.setProperty("extraProp2", "extraValue");
+        session.save();
+        Node file2Content2 = session.getNode("/testRoot/store/dir3/simple.json/jcr:content");
+        
+        System.out.println("jcr:content properties");
+        PropertyIterator ii = file2Content2.getProperties();                
+        while(ii.hasNext()) {
+            Property p = ii.nextProperty();
+            if (p.getName().equals("jcr:digest")) {
+                System.out.println("  property:"+ p.getName()+ " "+p.getString());
+            
+            } else {
+                System.out.println("  property:"+ p.getName());
+            }
+        }
+        
+    }
+    
+    @Test
     @FixFor( { "MODE-1971", "MODE-1976" } )
     public void shouldBeAbleToCopyExternalNodesInTheSameSource() throws Exception {
         ((Workspace)session.getWorkspace()).copy("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
@@ -255,6 +354,65 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             // expected
         }
     }
+    
+    @Test
+    @FixFor( "MODE-2060" )
+    public void shouldAllowHashInWritableJsonBasedProjection() throws Exception {
+        System.out.println("in shouldAllowHashInWritableJsonBasedProjection");
+
+        Node file = session.getNode("/testRoot/json/dir3/simple.json");
+        file.addMixin("flex:anyProperties");
+        file.setProperty("extraProp", "extraValue");
+        session.save();
+        assertJsonSidecarFile(jsonProjection, "dir3/simple.json");
+        Node file2 = session.getNode("/testRoot/json/dir3/simple.json");
+        assertThat(file2.getProperty("extraProp").getString(), is("extraValue"));
+        
+        System.out.println("jcr:file properties");
+        PropertyIterator i = file2.getProperties();                
+        while(i.hasNext()) {
+            Property p = i.nextProperty();
+            if (p.getName().equals("jcr:digest") || p.getName().equals("jcr:primaryType")) {
+                System.out.println("  property:"+ p.getName()+ " "+p.getString());
+            
+            } else {
+                System.out.println("  property:"+ p.getName());
+            }
+        }        
+        
+        Node file2Content = file2.getNode("jcr:content");
+        file2Content.addMixin("jcr:binary");
+        file2Content.addMixin("flex:anyProperties");
+        String dir = "target/federation/files-json";
+        File simpleJsonFile = new File(dir, "dir3/simple.json");
+        byte[] hash = SecureHash.getHash(Algorithm.SHA_1, simpleJsonFile);
+        String hashString = new BinaryKey(hash).toString();
+        file2Content.setProperty("jcr:digest",new URI(hashString).toString());
+        session.save();
+        Node file2Content2 = file2.getNode("jcr:content");
+        assertThat(file2Content2.getProperty("jcr:digest").getString(), is(new URI(hashString).toString()));
+        
+        System.out.println("jcr:content properties");
+        PropertyIterator ii = file2Content2.getProperties();                
+        while(ii.hasNext()) {
+            Property p = ii.nextProperty();
+            if (p.getName().equals("jcr:digest") || p.getName().equals("jcr:primaryType")) {
+                System.out.println("  property:"+ p.getName()+ " "+p.getString());
+            
+            } else {
+                System.out.println("  property:"+ p.getName());
+            }
+        }
+        
+        try {
+            // Make sure the sidecar file can't be seen via JCR ...
+            session.getNode("/testRoot/json/dir3/simple.json.modeshape.json");
+            fail("found sidecar file as JCR node");
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+   
 
     @Test
     public void shouldAllowUpdatingNodesInWritableLegacyBasedProjection() throws Exception {
@@ -448,6 +606,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
         public void testContent( Node federatedNode,
                                  String childName ) throws RepositoryException {
+
             Session session = (Session)federatedNode.getSession();
             String path = federatedNode.getPath() + "/" + childName;
 
