@@ -156,10 +156,10 @@ public final class Connectors {
         throws RepositoryException {
         try {
             session.getNode(projectionCfg.getProjectedPath());
-            LOGGER.warn(JcrI18n.projectedPathPointsTowardsInternalNode,
-                        projectionCfg,
-                        projectionCfg.getSourceName(),
-                        projectionCfg.getProjectedPath());
+            repository.warn(JcrI18n.projectedPathPointsTowardsInternalNode,
+                            projectionCfg,
+                            projectionCfg.getSourceName(),
+                            projectionCfg.getProjectedPath());
             return true;
         } catch (PathNotFoundException e) {
             return false;
@@ -240,7 +240,7 @@ public final class Connectors {
                 try {
                     initializeConnector(connector, registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
                 } catch (Throwable t) {
-                    logger.error(t, JcrI18n.unableToInitializeConnector, connector, repository.name(), t.getMessage());
+                    repository.error(t, JcrI18n.unableToInitializeConnector, connector, repository.name(), t.getMessage());
                     connectorsWithErrors.add(connector);
                 }
             }

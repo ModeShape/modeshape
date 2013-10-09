@@ -50,6 +50,11 @@ import org.modeshape.jcr.value.Property;
  */
 public final class SynchronizedTransactions extends Transactions {
 
+    /**
+     * Creates a new instance which wrapps a transaction manager and monitor factory
+     * @param monitorFactory a {@link MonitorFactory} instance; never null
+     * @param txnMgr a {@link TransactionManager} instance; never null
+     */
     public SynchronizedTransactions( MonitorFactory monitorFactory,
                                      TransactionManager txnMgr ) {
         super(monitorFactory, txnMgr);
@@ -83,7 +88,7 @@ public final class SynchronizedTransactions extends Transactions {
             if (!ACTIVE_TRACE_SYNCHRONIZATIONS.contains(id)) {
                 if (result instanceof SynchronizedTransaction) {
                     logger.trace("Found user transaction {0}", txn);
-                } else if (result instanceof SimpleTransaction) {
+                } else {
                     logger.trace("Begin transaction {0}", id);
                 }
                 // Only if we don't already have one ...

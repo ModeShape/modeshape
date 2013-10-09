@@ -455,6 +455,7 @@ public class RepositoryCache implements Observable {
                 // We do NOT want an error during upgrade to prevent the repository from coming online.
                 // Therefore, we need to catch any exceptions here an log them, but continue ...
                 logger.error(err, JcrI18n.failureDuringUpgradeOperation, getName(), err);
+                resources.getProblems().addError(err, JcrI18n.failureDuringUpgradeOperation, getName(), err);
             }
         }
         return this;

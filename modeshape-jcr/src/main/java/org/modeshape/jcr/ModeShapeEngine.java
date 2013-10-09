@@ -583,6 +583,7 @@ public class ModeShapeEngine implements Repositories {
             // Determine if the changes would result in a valid repository configuration ...
             RepositoryConfiguration config = repository.getConfiguration();
             Problems problems = config.validate(changes);
+            repository.setConfigurationProblems(problems);
             if (problems.hasErrors()) {
                 throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName,
                                                                                                           problems.toString()));

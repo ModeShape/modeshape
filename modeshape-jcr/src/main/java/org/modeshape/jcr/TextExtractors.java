@@ -126,7 +126,7 @@ public final class TextExtractors {
 
     private static List<TextExtractor> getConfiguredExtractors( JcrRepository.RunningState repository,
                                                                 RepositoryConfiguration.TextExtracting extracting ) {
-        List<Component> extractorComponents = extracting.getTextExtractors();
+        List<Component> extractorComponents = extracting.getTextExtractors(repository.problems());
         List<TextExtractor> extractors = new ArrayList<TextExtractor>(extractorComponents.size());
         for (Component component : extractorComponents) {
             try {
@@ -136,7 +136,7 @@ public final class TextExtractors {
             } catch (Throwable t) {
                 String desc = component.getName();
                 String repoName = repository.name();
-                LOGGER.error(t, JcrI18n.unableToInitializeTextExtractor, desc, repoName, t.getMessage());
+                repository.error(t, JcrI18n.unableToInitializeTextExtractor, desc, repoName, t.getMessage());
             }
         }
         return extractors;

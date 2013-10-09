@@ -85,6 +85,7 @@ import org.infinispan.schematic.internal.document.Paths;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.NamedThreadFactory;
@@ -204,6 +205,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     private final AtomicReference<State> state = new AtomicReference<State>(State.NOT_RUNNING);
     private final Lock stateLock = new ReentrantLock();
     private final AtomicBoolean allowAutoStartDuringLogin = new AtomicBoolean(AUTO_START_REPO_UPON_LOGIN);
+    private Problems configurationProblems = null;
 
     /**
      * Create a Repository instance given the {@link RepositoryConfiguration configuration}.
@@ -218,6 +220,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         // Validate the configuration to make sure there are no errors ...
         Problems results = configuration.validate();
+        setConfigurationProblems(results);
         if (results.hasErrors()) {
             String msg = JcrI18n.errorsInRepositoryConfiguration.text(this.repositoryName,
                                                                       results.errorCount(),
@@ -232,6 +235,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         // Set up the descriptors ...
         this.descriptors = new HashMap<String, Object>();
         initializeDescriptors();
+    }
+
+    void setConfigurationProblems(Problems configurationProblems) {
+        this.configurationProblems = configurationProblems;
     }
 
     RepositoryConfiguration repositoryConfiguration() {
@@ -277,6 +284,37 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      */
     public RepositoryStatistics getRepositoryStatistics() {
         return statistics();
+    }
+
+    /**
+     * Starts this repository instance (if not already started) and returns all the possible startup problems & warnings which did not
+     * prevent the repository from starting up.
+     * <p>
+     * The are 2 general categories of issues that can be logged as problems:
+     * <ul>
+     *     <li>
+     *         configuration warnings - any warnings raised by the structure of the repository configuration file
+     *     </li>
+     *     <li>
+     *         startup warnings/error - any warnings/errors raised by various repository components which didn't prevent them from
+     *         starting up, but could mean they are only partly intialized.
+     *     </li>
+     * </ul>
+     * </p>
+     * 
+     * @return a {@link Problems} instance which may contains errors and warnings raised by various components; may be empty if 
+     * nothing unusual happened during start but never {@code null}
+     *
+     * @throws FileNotFoundException if the Infinispan configuration file is specified but could not be found
+     * @throws IOException if there is a problem with the specified Infinispan configuration file
+     * @throws Exception if there is a problem with underlying resource setup
+     */
+    public Problems getStartupProblems() throws Exception {
+        doStart();  
+        SimpleProblems result = new SimpleProblems();
+        result.addAll(this.configurationProblems);
+        result.addAll(runningState().problems());
+        return result;
     }
 
     /**
@@ -924,6 +962,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final Connectors connectors;
         private final RepositoryConfiguration.IndexRebuildOptions indexRebuildOptions;
         private final List<ScheduledFuture<?>> backgroundProcesses = new ArrayList<ScheduledFuture<?>>();
+        private final Problems problems;
 
         private Transaction existingUserTransaction;
         private RepositoryCache cache;
@@ -939,8 +978,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             this.systemContentInitializer = new SystemContentInitializer();
             if (other == null) {
                 logger.debug("Starting '{0}' repository with configuration: \n{1}", repositoryName(), this.config);
+                this.problems = new SimpleProblems();
             } else {
                 logger.debug("Updating '{0}' repository with configuration: \n{1}", repositoryName(), this.config);
+                this.problems = other.problems;                
             }
             ExecutionContext tempContext = new ExecutionContext();
 
@@ -977,11 +1018,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 if (other != null) {
                     if (change.storageChanged) {
                         // Can't change where we're storing the content while we're running, so take effect upon next startup
-                        logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
+                        warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
                     }
                     if (change.binaryStorageChanged) {
                         // Can't change where we're storing the content while we're running, so take effect upon next startup
-                        logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
+                        warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
                     }
                     // reuse the existing storage-related components ...
                     this.cache = other.cache;
@@ -1007,7 +1048,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                             this.cache.createWorkspace(workspaceName);
                         }
                     }
-                    this.mimeTypeDetector = new MimeTypeDetectors(other.config.environment());
+                    this.mimeTypeDetector = new MimeTypeDetectors(other.config.environment(), this.problems);
                     this.binaryStore = other.binaryStore;
                     this.internalWorkerContext = other.internalWorkerContext;
                     this.nodeTypes = other.nodeTypes.with(this, true, true);
@@ -1021,7 +1062,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // find the Schematic database and Infinispan Cache ...
                     CacheContainer container = config.getContentCacheContainer();
                     String cacheName = config.getCacheName();
-                    List<Component> connectorComponents = config.getFederation().getConnectors();
+                    List<Component> connectorComponents = config.getFederation().getConnectors(this.problems);
                     Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace = config.getFederation()
                                                                                                                                    .getProjectionsByWorkspace();
                     this.connectors = new Connectors(this, connectorComponents, preconfiguredProjectionsByWorkspace);
@@ -1044,7 +1085,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Now create the registry implementation and the execution context that uses it ...
                     this.persistentRegistry = new SystemNamespaceRegistry(this);
-                    this.mimeTypeDetector = new MimeTypeDetectors(this.config.environment());
+                    this.mimeTypeDetector = new MimeTypeDetectors(this.config.environment(), this.problems);
                     this.context = tempContext.with(persistentRegistry);
                     this.persistentRegistry.setContext(this.context);
                     this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
@@ -1084,7 +1125,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         try {
                             // Read in the built-in node types ...
                             CndImporter importer = new CndImporter(context, true);
-                            importer.importBuiltIns(new SimpleProblems());
+                            importer.importBuiltIns(this.problems);
                             this.nodeTypes.registerNodeTypes(importer.getNodeTypeDefinitions(), false, true, true);
                         } catch (RepositoryException re) {
                             throw new IllegalStateException("Could not load node type definition files", re);
@@ -1251,6 +1292,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     public RunningState getRepository() {
                         return RunningState.this;
                     }
+
+                    @Override
+                    public Problems getProblems() {
+                        return RunningState.this.problems();
+                    }
                 });
             } catch (Throwable t) {
                 repositoryCache().rollbackRepositoryInfo();
@@ -1320,7 +1366,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 DocumentOptimization optConfig = config.getDocumentOptimization();
                 if (optConfig.isEnabled()) {
-                    logger.warn(JcrI18n.enablingDocumentOptimization, name());
+                    warn(JcrI18n.enablingDocumentOptimization, name());
                     threadPoolName = optConfig.getThreadPoolName();
                     long optInitialTimeInMillis = determineInitialDelay(optConfig.getInitialTimeExpression());
                     long optIntervalInHours = optConfig.getIntervalInHours();
@@ -1455,6 +1501,25 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return backupService;
         }
 
+        protected final void warn(I18n message, Object...params) {
+            logger.warn(message, params);
+            problems.addWarning(message, params);
+        }
+
+        protected final void error(I18n message, Object...params) {
+            logger.error(message, params);
+            problems.addError(message, params);
+        }
+
+        protected final void error(Throwable t, I18n message, Object...params) {
+            logger.error(t, message, params);
+            problems.addError(t, message, params);
+        }
+
+        protected final Problems problems() {
+            return this.problems;
+        }
+
         final InitialContentImporter initialContentImporter() {
             return initialContentImporter;
         }
@@ -1474,26 +1539,26 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         authenticators = authenticators.with(jaasProvider);
                     } catch (java.lang.SecurityException e) {
                         if (MISSING_JAAS_POLICIES.add(policyName)) {
-                            logger.warn(JcrI18n.loginConfigNotFound,
-                                        policyName,
-                                        RepositoryConfiguration.FieldName.SECURITY + "/"
-                                        + RepositoryConfiguration.FieldName.JAAS_POLICY_NAME,
-                                        repositoryName());
+                            warn(JcrI18n.loginConfigNotFound,
+                                 policyName,
+                                 RepositoryConfiguration.FieldName.SECURITY + "/"
+                                 + RepositoryConfiguration.FieldName.JAAS_POLICY_NAME,
+                                 repositoryName());
                         }
                     } catch (javax.security.auth.login.LoginException e) {
                         if (MISSING_JAAS_POLICIES.add(policyName)) {
-                            logger.warn(JcrI18n.loginConfigNotFound,
-                                        policyName,
-                                        RepositoryConfiguration.FieldName.SECURITY + "/"
-                                        + RepositoryConfiguration.FieldName.JAAS_POLICY_NAME,
-                                        repositoryName());
+                            warn(JcrI18n.loginConfigNotFound,
+                                 policyName,
+                                 RepositoryConfiguration.FieldName.SECURITY + "/"
+                                 + RepositoryConfiguration.FieldName.JAAS_POLICY_NAME,
+                                 repositoryName());
                         }
                     }
                 }
             }
 
             // Set up any custom AuthenticationProvider classes ...
-            for (Component component : securityConfig.getCustomProviders()) {
+            for (Component component : securityConfig.getCustomProviders(problems())) {
                 try {
                     AuthenticationProvider provider = component.createInstance(getClass().getClassLoader());
                     authenticators = authenticators.with(provider);
@@ -1617,7 +1682,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // No JNDI here ...
                     logger.debug("No JNDI found, so not registering '{0}' repository", getName());
                 } catch (OperationNotSupportedException e) {
-                    logger.warn(JcrI18n.jndiReadOnly, config.getName(), jndiName);
+                    warn(JcrI18n.jndiReadOnly, config.getName(), jndiName);
                 } catch (NamingException e) {
                     logger.error(e, JcrI18n.unableToBindToJndi, config.getName(), jndiName, e.getMessage());
                 } catch (Exception e) {
@@ -1638,7 +1703,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // No JNDI here ...
                     logger.debug("No JNDI found, so not registering '{0}' repository", getName());
                 } catch (OperationNotSupportedException e) {
-                    logger.warn(JcrI18n.jndiReadOnly, config.getName(), jndiName);
+                    warn(JcrI18n.jndiReadOnly, config.getName(), jndiName);
                 }
                 catch (Exception e) {
                     logger.debug(e,

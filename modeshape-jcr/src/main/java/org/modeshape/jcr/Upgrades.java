@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import javax.jcr.nodetype.NodeTypeDefinition;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrRepository.RunningState;
@@ -52,6 +53,12 @@ public class Upgrades {
          * @return the repository state
          */
         RunningState getRepository();
+
+        /**
+         * Get a problems instance which can be used to record failures/warnings/information messages.
+         * @return a {@link Problems} instance, never null.
+         */
+        Problems getProblems();
     }
 
     /**
