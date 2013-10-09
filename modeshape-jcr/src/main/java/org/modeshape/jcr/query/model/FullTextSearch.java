@@ -94,8 +94,8 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
      * 
      * @param selectorName the name of the node selector defining the search scope
      * @param propertyName the name of the property to be searched; may be null if all property values are to be searched
+     * @param expressionString the string form of the full text search expression; may not be null or empty
      * @param fullTextSearchExpression the search expression
-     * @throws RepositoryException if there is an error converting the full text search expression to a string
      */
     public FullTextSearch( SelectorName selectorName,
                            String propertyName,

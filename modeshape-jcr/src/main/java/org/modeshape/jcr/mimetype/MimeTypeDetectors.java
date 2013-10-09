@@ -28,7 +28,6 @@ import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrI18n;
@@ -45,7 +44,7 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
     private final MimeTypeDetector delegate;
 
     public MimeTypeDetectors() {
-        this(null,  null);
+        this(null, null);
     }
 
     /**

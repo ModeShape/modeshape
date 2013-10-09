@@ -86,7 +86,7 @@ public class Sequencers implements ChangeSetListener {
     private static final boolean TRACE = LOGGER.isTraceEnabled();
     private static final boolean DEBUG = LOGGER.isDebugEnabled();
 
-    private final JcrRepository.RunningState repository;
+    protected final JcrRepository.RunningState repository;
     private final Map<UUID, Sequencer> sequencersById;
     private final Map<String, Sequencer> sequencersByName;
     private final Collection<Component> components;
@@ -97,13 +97,13 @@ public class Sequencers implements ChangeSetListener {
     private final String processId;
     private final ValueFactory<String> stringFactory;
     private final WorkQueue workQueue;
-    private final ExecutorService sequencingExecutor;
+    protected final ExecutorService sequencingExecutor;
     private boolean initialized;
     private volatile boolean shutdown = false;
 
     protected Sequencers( JcrRepository.RunningState repository,
                           RepositoryConfiguration config,
-                          Iterable<String> workspaceNames) {
+                          Iterable<String> workspaceNames ) {
         this.repository = repository;
         this.components = config.getSequencing().getSequencers(repository.problems());
         this.systemWorkspaceKey = repository.repositoryCache().getSystemKey().getWorkspaceKey();
@@ -518,6 +518,7 @@ public class Sequencers implements ChangeSetListener {
 
     protected static interface WorkQueue {
         void submit( SequencingWorkItem work );
+
         void shutdown();
     }
 

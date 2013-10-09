@@ -457,6 +457,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         FileUtil.delete("target/persistent_repository/");
         //first run is empty, so no upgrades will be performed
         startRunStop(new RepositoryOperation() {
+            @SuppressWarnings( "deprecation" )
             @Override
             public Void call() throws Exception {
                 //modify the repository-info document to force an upgrade on the next restart
@@ -491,6 +492,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
         //second run should run the upgrade
         startRunStop(new RepositoryOperation() {
+            @SuppressWarnings( "deprecation" )
             @Override
             public Void call() throws Exception {
                 //manipulate that lock using the system cache to simulate corrupt data

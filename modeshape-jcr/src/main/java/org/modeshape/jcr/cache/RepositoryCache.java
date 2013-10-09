@@ -133,7 +133,7 @@ public class RepositoryCache implements Observable {
     private final SessionEnvironment sessionContext;
     private final String processKey;
     private final CacheContainer workspaceCacheManager;
-    private final Upgrades upgrades;
+    protected final Upgrades upgrades;
     private volatile boolean initializingRepository = false;
     private volatile boolean upgradingRepository = false;
     private int lastUpgradeId;

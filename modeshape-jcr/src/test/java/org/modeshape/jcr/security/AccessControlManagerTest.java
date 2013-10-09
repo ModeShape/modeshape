@@ -30,11 +30,9 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.security.AccessControlException;
-import java.security.Principal;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -299,10 +297,9 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         Node root = session.getRootNode();
         Node truks = root.addNode("tractors");
         session.save();
-        
+
         AccessControlManager acm = session.getAccessControlManager();
-        Privilege[] privileges = new Privilege[]{acm.privilegeFromName(Privilege.JCR_ALL)};
-        
+        Privilege[] privileges = new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)};
 
         AccessControlList acl;
         AccessControlPolicyIterator it = acm.getApplicablePolicies(truks.getPath());
@@ -315,33 +312,39 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
 
         acm.setPolicy(truks.getPath(), acl);
         session.save();
-        
+
         Node node = root.getNode("tractors");
+        assertThat(node, is(notNullValue()));
     }
-    
+
     @Test
     public void shouldAllowRead() throws Exception {
         Node root = session.getRootNode();
         Node aircraft = root.addNode("aircraft");
-        
-        
+        assertThat(aircraft, is(notNullValue()));
+
         AccessControlList acl2 = getACL("/aircraft");
-        acl2.addAccessControlEntry(SimplePrincipal.newInstance("Admin"), new Privilege[]{acm.privilegeFromName(Privilege.JCR_ALL)});
-        acl2.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"), new Privilege[]{acm.privilegeFromName(Privilege.JCR_READ)});
+        acl2.addAccessControlEntry(SimplePrincipal.newInstance("Admin"),
+                                   new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+        acl2.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                   new Privilege[] {acm.privilegeFromName(Privilege.JCR_READ)});
 
         acm.setPolicy("/aircraft", acl2);
 
         AccessControlList acl = getACL("/");
-        acl.addAccessControlEntry(SimplePrincipal.newInstance("Admin"), new Privilege[]{acm.privilegeFromName(Privilege.JCR_ALL)});
-        acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"), new Privilege[]{acm.privilegeFromName(Privilege.JCR_READ)});
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("Admin"),
+                                  new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                  new Privilege[] {acm.privilegeFromName(Privilege.JCR_READ)});
 
         acm.setPolicy("/", acl);
-        
+
         session.save();
-        
+
         root = session.getRootNode();
         aircraft = root.getNode("aircraft");
     }
+
     // -------------------------------
 
     @Test
@@ -371,16 +374,15 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         acm.setPolicy(path, acl);
         session.save();
     }
-    
-    private AccessControlList getACL(String path) throws Exception {
+
+    private AccessControlList getACL( String path ) throws Exception {
         AccessControlPolicyIterator it = acm.getApplicablePolicies(path);
         if (it.hasNext()) {
             return (AccessControlList)it.nextAccessControlPolicy();
-        } else {
-            return (AccessControlList)acm.getPolicies(path)[0];
         }
+        return (AccessControlList)acm.getPolicies(path)[0];
     }
-    
+
     private boolean contains( String name,
                               Privilege[] privileges ) {
         for (int i = 0; i < privileges.length; i++) {

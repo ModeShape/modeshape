@@ -1558,11 +1558,7 @@ public class RepositoryConfiguration {
         }
 
         protected List<Component> getCustomProviders( Problems problems ) {
-            return readComponents(security,
-                                  FieldName.PROVIDERS,
-                                  FieldName.CLASSNAME,
-                                  PROVIDER_ALIASES,
-                                  problems);
+            return readComponents(security, FieldName.PROVIDERS, FieldName.CLASSNAME, PROVIDER_ALIASES, problems);
 
         }
 
@@ -2003,15 +1999,12 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
-         *
+         * 
+         * @param problems the container with which should be recorded any problems during component initialization
          * @return the immutable list of text extractors; never null but possibly empty
          */
-        protected List<Component> getTextExtractors(Problems problems) {
-            return readComponents(textExtracting,
-                                  FieldName.EXTRACTORS,
-                                  FieldName.CLASSNAME,
-                                  EXTRACTOR_ALIASES,
-                                  problems);
+        protected List<Component> getTextExtractors( Problems problems ) {
+            return readComponents(textExtracting, FieldName.EXTRACTORS, FieldName.CLASSNAME, EXTRACTOR_ALIASES, problems);
         }
 
         protected void validateTextExtractors( Problems problems ) {
@@ -2226,12 +2219,8 @@ public class RepositoryConfiguration {
             return components;
         }
 
-        protected List<Component> getSequencers(Problems problems) {
-            return readComponents(sequencing,
-                                  FieldName.SEQUENCERS,
-                                  FieldName.CLASSNAME,
-                                  SEQUENCER_ALIASES,
-                                  problems);
+        protected List<Component> getSequencers( Problems problems ) {
+            return readComponents(sequencing, FieldName.SEQUENCERS, FieldName.CLASSNAME, SEQUENCER_ALIASES, problems);
         }
 
         /**
@@ -2258,9 +2247,10 @@ public class RepositoryConfiguration {
         /**
          * Get the list of connector configurations.
          * 
+         * @param problems the container with which should be recorded any problems during component initialization
          * @return the immutable list of connectors; never null but possibly empty
          */
-        public List<Component> getConnectors(Problems problems) {
+        public List<Component> getConnectors( Problems problems ) {
             List<Component> components = readComponents(federation,
                                                         FieldName.EXTERNAL_SOURCES,
                                                         FieldName.CLASSNAME,
