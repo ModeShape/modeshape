@@ -27,6 +27,8 @@ import java.io.IOException;
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrI18n;
@@ -43,10 +45,16 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
     private final MimeTypeDetector delegate;
 
     public MimeTypeDetectors() {
-        this(null);
+        this(null,  null);
     }
 
-    public MimeTypeDetectors( Environment environment ) {
+    /**
+     * Creates a new instance with a given environment and optional problems collector.
+     *
+     * @param environment an {@link Environment}; possibly null
+     * @param problems an {@link Problems} instance; possibly null;
+     */
+    public MimeTypeDetectors( Environment environment, Problems problems ) {
         ClassLoader defaultLoader = getClass().getClassLoader();
         // the extra classpath entry is the package name of the tika extractor, so it can be located inside AS7 (see
         // RepositoryService)
@@ -56,7 +64,10 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
             delegate = new TikaMimeTypeDetector(classLoader);
         } catch (Throwable e) {
             delegate = NullMimeTypeDetector.INSTANCE;
-            LOGGER.warn(JcrI18n.noMimeTypeDetectorsFound);
+            LOGGER.warn(e, JcrI18n.noMimeTypeDetectorsFound);
+            if (problems != null) {
+                problems.addWarning(e, JcrI18n.noMimeTypeDetectorsFound);
+            }
         }
         this.delegate = delegate;
     }

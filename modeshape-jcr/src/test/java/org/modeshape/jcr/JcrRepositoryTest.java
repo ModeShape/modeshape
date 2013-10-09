@@ -63,6 +63,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.RepositoryStatistics.MetricHistory;
@@ -1169,6 +1170,45 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         repository.login();
         repository.shutdown().get();
         assertEquals(0, repository.getActiveSessionsCount());
+    }
+
+    @FixFor( "MODE-2033" )
+    @Test
+    public void shouldStartAndReturnStartupProblems() throws Exception {
+        shutdownDefaultRepository();
+        RepositoryConfiguration config = RepositoryConfiguration.read(
+                getClass().getClassLoader().getResourceAsStream("config/repo-config-with-startup-problems.json"), "Deprecated config");
+        repository = new JcrRepository(config);
+        Problems problems = repository.getStartupProblems();
+        assertEquals("Expected 2 startup warnings:" + problems.toString(), 2, problems.warningCount());
+        assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
+    }
+
+    @FixFor( "MODE-2033" )
+    @Test
+    public void shouldClearStartupProblemsOnRestart() throws Exception {
+        shutdownDefaultRepository();
+        RepositoryConfiguration config = RepositoryConfiguration.read(
+                getClass().getClassLoader().getResourceAsStream("config/repo-config-with-startup-problems.json"), "Deprecated config");
+        repository = new JcrRepository(config);
+        Problems problems = repository.getStartupProblems();
+        assertEquals("Invalid startup problems:" + problems.toString(), 4, problems.size());
+        repository.shutdown().get();
+        problems = repository.getStartupProblems();
+        assertEquals("Invalid startup problems:" + problems.toString(), 4, problems.size());
+    }
+
+    @FixFor( "MODE-2033" )
+    @Test
+    public void shouldReturnStartupProblemsAfterStarting() throws Exception {
+        shutdownDefaultRepository();
+        RepositoryConfiguration config = RepositoryConfiguration.read(
+                getClass().getClassLoader().getResourceAsStream("config/repo-config-with-startup-problems.json"), "Deprecated config");
+        repository = new JcrRepository(config);
+        repository.start();
+        Problems problems = repository.getStartupProblems();
+        assertEquals("Expected 2 startup warnings:" + problems.toString(), 2, problems.warningCount());
+        assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
     }
 
     protected void nodeExists( Session session,

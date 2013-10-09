@@ -52,13 +52,13 @@ public final class InitialContentImporter {
 
     private static final Logger LOGGER = Logger.getLogger(InitialContentImporter.class);
 
-    private final JcrRepository.RunningState runningState;
+    private final JcrRepository.RunningState repository;
     private final RepositoryConfiguration.InitialContent initialContentConfig;
 
     InitialContentImporter( RepositoryConfiguration.InitialContent initialContentConfig,
-                            JcrRepository.RunningState runningState ) {
+                            JcrRepository.RunningState repository ) {
         this.initialContentConfig = initialContentConfig;
-        this.runningState = runningState;
+        this.repository = repository;
     }
 
     protected void importInitialContent( String workspaceName ) throws RepositoryException {
@@ -67,7 +67,7 @@ public final class InitialContentImporter {
             return;
         }
 
-        RepositoryCache repositoryCache = runningState.repositoryCache();
+        RepositoryCache repositoryCache = repository.repositoryCache();
         WorkspaceCache wsCache = repositoryCache.getWorkspaceCache(workspaceName);
         if (!wsCache.isEmpty()) {
             // the ws cache must be empty for initial content to be imported
@@ -85,7 +85,7 @@ public final class InitialContentImporter {
 
     private void doImport( String workspaceName,
                            InputStream initialContentFileStream ) throws RepositoryException {
-        JcrSession internalSession = runningState.loginInternalSession(workspaceName);
+        JcrSession internalSession = repository.loginInternalSession(workspaceName);
         ImportDestination importDestination = new ImportDestination(internalSession);
         NodeImportXmlHandler handler = new NodeImportXmlHandler(importDestination);
         try {
@@ -114,11 +114,11 @@ public final class InitialContentImporter {
     private InputStream getInitialContentFileStream( String workspaceName )  {
         String initialContentFileString = initialContentConfig.getInitialContentFile(workspaceName);
         InputStream stream = IoUtil.getResourceAsStream(initialContentFileString,
-                                                        runningState.environment().getClassLoader(
+                                                        repository.environment().getClassLoader(
                                                                 InitialContentImporter.class.getClassLoader()),
                                                         null);
         if (stream == null) {
-            LOGGER.warn(JcrI18n.cannotLoadInitialContentFile, initialContentFileString);
+            repository.warn(JcrI18n.cannotLoadInitialContentFile, initialContentFileString);
         }
         return stream;
     }

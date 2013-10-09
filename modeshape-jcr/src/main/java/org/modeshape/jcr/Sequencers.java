@@ -105,7 +105,7 @@ public class Sequencers implements ChangeSetListener {
                           RepositoryConfiguration config,
                           Iterable<String> workspaceNames) {
         this.repository = repository;
-        this.components = config.getSequencing().getSequencers();
+        this.components = config.getSequencing().getSequencers(repository.problems());
         this.systemWorkspaceKey = repository.repositoryCache().getSystemKey().getWorkspaceKey();
         if (components.isEmpty()) {
             this.processId = null;
@@ -168,7 +168,7 @@ public class Sequencers implements ChangeSetListener {
                     if (t.getCause() != null) {
                         t = t.getCause();
                     }
-                    LOGGER.error(t, JcrI18n.unableToInitializeSequencer, component, repoName, t.getMessage());
+                    this.repository.error(t, JcrI18n.unableToInitializeSequencer, component, repoName, t.getMessage());
                 }
             }
             // Now process each workspace ...
@@ -236,7 +236,7 @@ public class Sequencers implements ChangeSetListener {
                     if (t.getCause() != null) {
                         t = t.getCause();
                     }
-                    LOGGER.error(t, JcrI18n.unableToInitializeSequencer, sequencer, repository.name(), t.getMessage());
+                    repository.error(t, JcrI18n.unableToInitializeSequencer, sequencer, repository.name(), t.getMessage());
                     sequencersIterator.remove();
                 }
             }

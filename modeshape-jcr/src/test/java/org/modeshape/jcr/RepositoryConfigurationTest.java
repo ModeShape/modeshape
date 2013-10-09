@@ -114,7 +114,7 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldSuccessfullyValidateSampleRepositoryConfiguration() {
-        RepositoryConfiguration config = assertValid("sample-repo-config.json");
+        RepositoryConfiguration config = assertHasWarnings(1, "sample-repo-config.json");
         assertThat(config.getTransactionMode(), is(TransactionMode.AUTO));
     }
 
@@ -146,12 +146,12 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfiguration() {
-        assertValid("config/thorough-repo-config.json");
+        assertHasWarnings(1, "config/thorough-repo-config.json");
     }
 
     @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfigurationWithDescriptions() {
-        assertValid("config/thorough-with-desc-repo-config.json");
+        assertHasWarnings(1, "config/thorough-with-desc-repo-config.json");
     }
 
     @Test
@@ -421,6 +421,10 @@ public class RepositoryConfigurationTest {
 
     protected RepositoryConfiguration assertValid( String configContent ) {
         return assertValid(assertRead(configContent));
+
+    }
+    protected RepositoryConfiguration assertHasWarnings( int numberOfWarnings, String configContent ) {
+        return assertHasWarnings(numberOfWarnings, assertRead(configContent));
     }
 
     protected void assertNotValid( int numberOfErrors,
@@ -432,6 +436,20 @@ public class RepositoryConfigurationTest {
         if (print) {
             System.out.println(results);
         }
+    }
+
+    protected RepositoryConfiguration assertHasWarnings( int numberOfWarnings,
+                                      RepositoryConfiguration config ) {
+        Problems results = config.validate();
+        assertThat(results.toString(), results.hasProblems(), is(true));
+        assertThat(results.toString(), results.hasErrors(), is(false));
+        assertThat(results.toString(), results.hasWarnings(), is(true));
+        assertThat(results.toString(), results.errorCount(), is(0));
+        assertThat(results.toString(), results.warningCount(), is(numberOfWarnings));
+        if (print) {
+            System.out.println(results);
+        }
+        return config;
     }
 
     protected void print( Object obj ) {

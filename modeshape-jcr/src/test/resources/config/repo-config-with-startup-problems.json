@@ -1,0 +1,41 @@
+{
+    "name" : "Test Repository",
+    "jndiName" : "",
+    "transactionMode" : "none",
+    "monitoring" : {
+        "enabled" : true
+    },
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "storage" : {
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+    },
+    "query" : {
+        "enabled" : true,
+        "rebuildUponStartup" : "never",
+        "enableFullTextSearch" : true,
+        "indexStorage" : {
+            "type" : "ram"
+        }
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+    "sequencing": {
+        "sequencers": {
+            "Invalid sequencer": {
+                "classname": "invalid.class",
+                "pathExpressions": [
+                    "default://(*.cnd)/jcr:content[@jcr:data]"
+                ]
+            }
+        }
+    },
+    "node-types" : ["cnd/invalid.cnd"]
+}

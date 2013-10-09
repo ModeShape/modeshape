@@ -33,9 +33,9 @@ import java.util.List;
 import java.util.Set;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeTypeDefinition;
+import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
@@ -46,15 +46,13 @@ import org.modeshape.jcr.value.NamespaceRegistry;
  */
 public final class NodeTypesImporter {
 
-    protected static final Logger LOGGER = Logger.getLogger(NodeTypesImporter.class);
-
-    protected final JcrRepository.RunningState runningState;
+    protected final JcrRepository.RunningState repository;
     private final List<String> nodeTypesFiles;
 
-    public NodeTypesImporter( List<String> nodeTypesFiles,
-                              JcrRepository.RunningState runningState ) {
+    protected NodeTypesImporter( List<String> nodeTypesFiles,
+                                 JcrRepository.RunningState repository ) {
         this.nodeTypesFiles = nodeTypesFiles;
-        this.runningState = runningState;
+        this.repository = repository;
     }
 
     void importNodeTypes() throws RepositoryException {
@@ -73,11 +71,11 @@ public final class NodeTypesImporter {
         }
 
         if (!nodeTypeDefinitions.isEmpty()) {
-            runningState.nodeTypeManager().registerNodeTypes(nodeTypeDefinitions, false, false, true);
+            repository.nodeTypeManager().registerNodeTypes(nodeTypeDefinitions, false, false, true);
         }
 
         if (!namespaces.isEmpty()) {
-            runningState.persistentRegistry().register(namespaces);
+            repository.persistentRegistry().register(namespaces);
         }
     }
 
@@ -93,27 +91,38 @@ public final class NodeTypesImporter {
                 InputStream cndFileStream = getInputStreamForFile(cndFile);
 
                 if (cndFileStream == null) {
-                    LOGGER.warn(JcrI18n.cannotLoadCndFile, cndFile);
+                    repository.warn(JcrI18n.cannotLoadCndFile, cndFile);
                     return;
                 }
 
-                CndImporter cndImporter = new CndImporter(runningState.context(), true);
+                CndImporter cndImporter = new CndImporter(repository.context(), true);
                 Problems importProblems = new SimpleProblems();
                 cndImporter.importFrom(cndFileStream, importProblems, cndFile);
+
+                for (Problem problem : importProblems) {
+                    if (problem.getStatus() == Problem.Status.ERROR) {
+                        if (problem.getThrowable() != null) {
+                            repository.error(problem.getThrowable(), problem.getMessage(), problem.getParameters());
+                        } else {
+                            repository.error(problem.getMessage(), problem.getParameters());
+                        }
+                    } else if (problem.getStatus() == Problem.Status.WARNING) {
+                         repository.warn(problem.getMessage(), problem.getParameters());
+                    }
+                }
                 if (importProblems.hasErrors()) {
-                    importProblems.writeTo(LOGGER);
                     return;
                 }
                 this.nodeTypeDefinitions = cndImporter.getNodeTypeDefinitions();
                 this.namespaces = cndImporter.getNamespaces();
             } catch (IOException e) {
-                LOGGER.error(e, JcrI18n.errorReadingCndFile, cndFile);
+                repository.error(e, JcrI18n.errorReadingCndFile, cndFile);
             }
         }
 
         private InputStream getInputStreamForFile( String cndFileString ) {
             return IoUtil.getResourceAsStream(cndFileString,
-                                              runningState.environment().getClassLoader(
+                                              repository.environment().getClassLoader(
                                                       NodeTypesImporter.class.getClassLoader()),
                                               null);
         }

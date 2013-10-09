@@ -931,7 +931,6 @@ public class RepositoryConfiguration {
         Document replaced = replaceSystemPropertyVariables(document);
         this.doc = ensureNamed(replaced, documentName);
         this.docName = documentName;
-        warnUseOfDeprecatedFields();
     }
 
     public RepositoryConfiguration( String name,
@@ -947,7 +946,6 @@ public class RepositoryConfiguration {
         this.doc = ensureNamed(replaced, documentName);
         this.docName = documentName;
         this.environment = environment;
-        warnUseOfDeprecatedFields();
     }
 
     protected Environment environment() {
@@ -1552,15 +1550,20 @@ public class RepositoryConfiguration {
          * 
          * @return the immutable list of custom providers; never null but possibly empty
          */
-        public List<Component> getCustomProviders() {
+        protected List<Component> getCustomProviders() {
             Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(security,
-                                                        FieldName.PROVIDERS,
-                                                        FieldName.CLASSNAME,
-                                                        PROVIDER_ALIASES,
-                                                        problems);
+            List<Component> components = getCustomProviders(problems);
             assert !problems.hasErrors();
             return components;
+        }
+
+        protected List<Component> getCustomProviders( Problems problems ) {
+            return readComponents(security,
+                                  FieldName.PROVIDERS,
+                                  FieldName.CLASSNAME,
+                                  PROVIDER_ALIASES,
+                                  problems);
+
         }
 
         protected void validateCustomProviders( Problems problems ) {
@@ -2000,18 +2003,15 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
-         * 
+         *
          * @return the immutable list of text extractors; never null but possibly empty
          */
-        public List<Component> getTextExtractors() {
-            Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(textExtracting,
-                                                        FieldName.EXTRACTORS,
-                                                        FieldName.CLASSNAME,
-                                                        EXTRACTOR_ALIASES,
-                                                        problems);
-            assert !problems.hasErrors();
-            return components;
+        protected List<Component> getTextExtractors(Problems problems) {
+            return readComponents(textExtracting,
+                                  FieldName.EXTRACTORS,
+                                  FieldName.CLASSNAME,
+                                  EXTRACTOR_ALIASES,
+                                  problems);
         }
 
         protected void validateTextExtractors( Problems problems ) {
@@ -2221,13 +2221,17 @@ public class RepositoryConfiguration {
          */
         public List<Component> getSequencers() {
             Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(sequencing,
-                                                        FieldName.SEQUENCERS,
-                                                        FieldName.CLASSNAME,
-                                                        SEQUENCER_ALIASES,
-                                                        problems);
+            List<Component> components = getSequencers(problems);
             assert !problems.hasErrors();
             return components;
+        }
+
+        protected List<Component> getSequencers(Problems problems) {
+            return readComponents(sequencing,
+                                  FieldName.SEQUENCERS,
+                                  FieldName.CLASSNAME,
+                                  SEQUENCER_ALIASES,
+                                  problems);
         }
 
         /**
@@ -2256,8 +2260,7 @@ public class RepositoryConfiguration {
          * 
          * @return the immutable list of connectors; never null but possibly empty
          */
-        public List<Component> getConnectors() {
-            Problems problems = new SimpleProblems();
+        public List<Component> getConnectors(Problems problems) {
             List<Component> components = readComponents(federation,
                                                         FieldName.EXTERNAL_SOURCES,
                                                         FieldName.CLASSNAME,
@@ -2577,6 +2580,7 @@ public class RepositoryConfiguration {
     public Problems validate() {
         if (problems == null) {
             SimpleProblems problems = new SimpleProblems();
+            warnUseOfDeprecatedFields(problems);
             Results results = SCHEMA_LIBRARY.validate(doc, JSON_SCHEMA_URI);
             for (Problem problem : results) {
                 switch (problem.getType()) {
@@ -2634,7 +2638,7 @@ public class RepositoryConfiguration {
         return new RepositoryConfiguration(doc.clone(), docName, environment);
     }
 
-    protected void warnUseOfDeprecatedFields() {
+    protected void warnUseOfDeprecatedFields( SimpleProblems problems ) {
         for (List<String> path : DEPRECATED_FIELDS) {
             Document nested = this.doc;
             Object value = null;
@@ -2646,6 +2650,7 @@ public class RepositoryConfiguration {
             if (value != null) {
                 String p = StringUtil.join(path, ".");
                 LOGGER.warn(JcrI18n.repositoryConfigurationContainsDeprecatedField, p, this.doc);
+                problems.addWarning(JcrI18n.repositoryConfigurationContainsDeprecatedField, p, this.doc);
             }
         }
     }

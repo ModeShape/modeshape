@@ -304,11 +304,6 @@ public abstract class AbstractProblems implements Problems {
         return getProblems().size();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Problems#iterator()
-     */
     @Override
     public Iterator<Problem> iterator() {
         return getProblems().iterator();
@@ -318,11 +313,6 @@ public abstract class AbstractProblems implements Problems {
 
     protected abstract List<Problem> getProblems();
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.logging.Logger)
-     */
     @Override
     public void writeTo( Logger logger ) {
         if (hasProblems()) {
@@ -333,12 +323,6 @@ public abstract class AbstractProblems implements Problems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.logging.Logger,
-     *      org.modeshape.common.collection.Problem.Status,org.modeshape.common.collection.Problem.Status[])
-     */
     @Override
     public void writeTo( Logger logger,
                          Status firstStatus,
@@ -367,11 +351,6 @@ public abstract class AbstractProblems implements Problems {
         return Level.INFO;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

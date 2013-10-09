@@ -25,9 +25,9 @@ package org.modeshape.common.collection;
 
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
-import org.modeshape.common.logging.Logger;
 
 /**
  * An immutable representation of a problem, with a status, code, internationalized and parameterized message, values for the
@@ -132,28 +132,15 @@ public class Problem {
         return this.status;
     }
 
-    /**
-     * @return throwable
-     */
     public Throwable getThrowable() {
         return this.throwable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         return HashCode.compute(status, code, message, resource, location);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -186,11 +173,6 @@ public class Problem {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
