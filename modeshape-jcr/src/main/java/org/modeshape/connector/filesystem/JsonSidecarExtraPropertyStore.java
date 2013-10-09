@@ -54,7 +54,7 @@ class JsonSidecarExtraPropertyStore implements ExtraPropertiesStore {
     private final DocumentTranslator translator;
 
     protected JsonSidecarExtraPropertyStore( FileSystemConnector connector,
-                                                     DocumentTranslator translator ) {
+                                             DocumentTranslator translator ) {
         this.connector = connector;
         this.translator = translator;
     }
@@ -140,7 +140,7 @@ class JsonSidecarExtraPropertyStore implements ExtraPropertiesStore {
     }
 
     protected String resourceExtension() {
-        return DEFAULT_EXTENSION;
+        return DEFAULT_RESOURCE_EXTENSION;
     }
 
     @Override

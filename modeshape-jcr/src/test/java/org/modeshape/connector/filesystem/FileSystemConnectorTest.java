@@ -24,6 +24,12 @@
 
 package org.modeshape.connector.filesystem;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -48,12 +54,6 @@ import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
@@ -75,8 +75,10 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     public void before() throws Exception {
         tools = new JcrTools();
         readOnlyProjection = new Projection("readonly-files", "target/federation/files-read");
-        readOnlyProjectionWithExclusion = new Projection("readonly-files-with-exclusion", "target/federation/files-read-exclusion");
-        readOnlyProjectionWithInclusion = new Projection("readonly-files-with-inclusion", "target/federation/files-read-inclusion");
+        readOnlyProjectionWithExclusion = new Projection("readonly-files-with-exclusion",
+                                                         "target/federation/files-read-exclusion");
+        readOnlyProjectionWithInclusion = new Projection("readonly-files-with-inclusion",
+                                                         "target/federation/files-read-inclusion");
         storeProjection = new Projection("mutable-files-store", "target/federation/files-store");
         jsonProjection = new Projection("mutable-files-json", "target/federation/files-json");
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
@@ -84,7 +86,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         pagedProjection = new PagedProjection("paged-files", "target/federation/paged-files");
 
         projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
-                storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection};
+            storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection};
 
         // Remove and then make the directory for our federation test ...
         for (Projection projection : projections) {
@@ -189,7 +191,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( { "MODE-1971", "MODE-1976" } )
+    @FixFor( {"MODE-1971", "MODE-1976"} )
     public void shouldBeAbleToCopyExternalNodesInTheSameSource() throws Exception {
         ((Workspace)session.getWorkspace()).copy("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
         Node file = session.getNode("/testRoot/store/dir3/simple2.json");
@@ -225,7 +227,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( { "MODE-1971", "MODE-1977" } )
+    @FixFor( {"MODE-1971", "MODE-1977"} )
     public void shouldBeAbleToMoveExternalNodes() throws Exception {
         ((Workspace)session.getWorkspace()).move("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
         Node file = session.getNode("/testRoot/store/dir3/simple2.json");
@@ -243,7 +245,13 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         Node file = session.getNode("/testRoot/json/dir3/simple.json");
         file.addMixin("flex:anyProperties");
         file.setProperty("extraProp", "extraValue");
+        Node content = file.getNode("jcr:content");
+        content.addMixin("flex:anyProperties");
+        content.setProperty("extraProp2", "extraValue2");
         session.save();
+        assertThat(file.getProperty("extraProp").getString(), is("extraValue"));
+        assertThat(file.getProperty("jcr:content/extraProp2").getString(), is("extraValue2"));
+        assertJsonSidecarFile(jsonProjection, "dir3/simple.json");
         assertJsonSidecarFile(jsonProjection, "dir3/simple.json");
         Node file2 = session.getNode("/testRoot/json/dir3/simple.json");
         assertThat(file2.getProperty("extraProp").getString(), is("extraValue"));
@@ -277,6 +285,22 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-1882" )
     public void shouldAllowCreatingNodesInWritablStoreBasedProjection() throws Exception {
+        String actualContent = "This is the content of the file.";
+        tools.uploadFile(session, "/testRoot/store/dir3/newFile.txt", new ByteArrayInputStream(actualContent.getBytes()));
+        session.save();
+
+        // Make sure the file on the file system contains what we put in ...
+        assertFileContains(storeProjection, "dir3/newFile.txt", actualContent.getBytes());
+
+        // Make sure that we can re-read the binary content via JCR ...
+        Node contentNode = session.getNode("/testRoot/store/dir3/newFile.txt/jcr:content");
+        Binary value = (Binary)contentNode.getProperty("jcr:data").getBinary();
+        assertBinaryContains(value, actualContent.getBytes());
+    }
+
+    @Test
+    @FixFor( "MODE-2061" )
+    public void shouldUseOpenSSLtoComputeSha1() throws Exception {
         String actualContent = "This is the content of the file.";
         tools.uploadFile(session, "/testRoot/store/dir3/newFile.txt", new ByteArrayInputStream(actualContent.getBytes()));
         session.save();
@@ -394,12 +418,12 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertThat(content.getProperty("jcr:lastModified").getLong(), is(lastModified));
     }
 
-    private void assertPathNotFound(String path) throws Exception {
+    private void assertPathNotFound( String path ) throws Exception {
         try {
             session.getNode(path);
             fail(path + " was found, even though it shouldn't have been");
         } catch (PathNotFoundException e) {
-            //expected
+            // expected
         }
     }
 
@@ -503,14 +527,23 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             String path = federatedNode.getPath() + "/" + childName;
 
             assertFolder(session, path, "dir1", "dir2", "dir3", "dir4", "dir5");
-            assertFolder(session, path + "/dir1", "simple1.json", "simple2.json", "simple3.json", "simple4.json", "simple5.json", "simple6.json");
+            assertFolder(session,
+                         path + "/dir1",
+                         "simple1.json",
+                         "simple2.json",
+                         "simple3.json",
+                         "simple4.json",
+                         "simple5.json",
+                         "simple6.json");
             assertFolder(session, path + "/dir2", "simple1.json", "simple2.json");
             assertFolder(session, path + "/dir3", "simple1.json");
             assertFolder(session, path + "/dir4", "simple1.json", "simple2.json", "simple3.json");
             assertFolder(session, path + "/dir5", "simple1.json", "simple2.json", "simple3.json", "simple4.json", "simple5.json");
         }
 
-        private void assertFolder(Session session, String path, String...childrenNames) throws RepositoryException {
+        private void assertFolder( Session session,
+                                   String path,
+                                   String... childrenNames ) throws RepositoryException {
             Node folderNode = session.getNode(path);
             assertThat(folderNode.getPrimaryNodeType().getName(), is("nt:folder"));
             List<String> expectedChildren = new ArrayList<String>(Arrays.asList(childrenNames));
@@ -558,7 +591,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             addFile("dir5/simple5.json", "data/simple.json");
         }
 
-        private void addFile(String path, String contentFile) throws IOException {
+        private void addFile( String path,
+                              String contentFile ) throws IOException {
             File file = new File(directory, path);
             IoUtil.write(getClass().getClassLoader().getResourceAsStream(contentFile), new FileOutputStream(file));
         }
