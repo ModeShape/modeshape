@@ -63,10 +63,9 @@ public final class AstNodeFactory {
         CheckArg.isNotNull(parent, "parent");
         CheckArg.isNotEmpty(types, "types");
 
-        AstNode node = new AstNode(name);
+        AstNode node = new AstNode(parent, name);
         node.setProperty(JCR_MIXIN_TYPES, types);
         node.setProperty(JCR_PRIMARY_TYPE, NT_UNSTRUCTURED);
-        node.setParent(parent);
         return node;
     }
 
@@ -85,10 +84,9 @@ public final class AstNodeFactory {
         CheckArg.isNotNull(parent, "parent");
         CheckArg.isNotNull(type, "type");
 
-        AstNode node = new AstNode(name);
+        AstNode node = new AstNode(parent, name);
         node.setProperty(JCR_MIXIN_TYPES, type);
         node.setProperty(JCR_PRIMARY_TYPE, NT_UNSTRUCTURED);
-        node.setParent(parent);
         return node;
     }
 
