@@ -25,7 +25,10 @@ package org.modeshape.sequencer.ddl.dialect.teiid;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+
+import java.util.ArrayList;
 import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
@@ -37,10 +40,12 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  */
 public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlConstants {
 
+    public static final String DDL_FILE_PATH = "ddl/dialect/teiid/";
+	
     @Before
     public void beforeEach() {
         this.parser = new TeiidDdlParser();
-        this.rootNode = this.parser.nodeFactory().node("ddlRootNode");
+        setRootNode(this.parser.nodeFactory().node("DdlRootNode"));
         this.scorer = new DdlParserScorer();
     }
 
@@ -54,7 +59,7 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
                                + "(param string) RETURNS string";
         assertScoreAndParse(content, null, 2);
 
-        final List<AstNode> kids = this.rootNode.getChildren();
+        final List<AstNode> kids = getRootNode().getChildren();
         assertMixinType(kids.get(0), TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         assertMixinType(kids.get(1), TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
     }
@@ -68,13 +73,13 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
         assertScoreAndParse(content, null, 2);
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("SourceFunc");
+            final List<AstNode> kids = getRootNode().childrenWithName("SourceFunc");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("SourceFunc1");
+            final List<AstNode> kids = getRootNode().childrenWithName("SourceFunc1");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         }
@@ -90,13 +95,13 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
         assertScoreAndParse(content, null, 2);
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("V1");
+            final List<AstNode> kids = getRootNode().childrenWithName("V1");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("FOO");
+            final List<AstNode> kids = getRootNode().childrenWithName("FOO");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         }
@@ -120,13 +125,13 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
         assertScoreAndParse(content, null, 2);
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("getTweets");
+            final List<AstNode> kids = getRootNode().childrenWithName("getTweets");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("Tweet");
+            final List<AstNode> kids = getRootNode().childrenWithName("Tweet");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         }
@@ -144,14 +149,14 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
         assertScoreAndParse(content, null, 3);
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("G1");
+            final List<AstNode> kids = getRootNode().childrenWithName("G1");
             assertThat(kids.size(), is(2)); // view, trigger
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
             assertMixinType(kids.get(1), TeiidDdlLexicon.CreateTrigger.STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("G2");
+            final List<AstNode> kids = getRootNode().childrenWithName("G2");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         }
@@ -167,13 +172,13 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
         assertScoreAndParse(content, null, 2);
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("G1");
+            final List<AstNode> kids = getRootNode().childrenWithName("G1");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("G2");
+            final List<AstNode> kids = getRootNode().childrenWithName("G2");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         }
@@ -189,13 +194,13 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
         assertScoreAndParse(content, null, 2);
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("G1");
+            final List<AstNode> kids = getRootNode().childrenWithName("G1");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("G2");
+            final List<AstNode> kids = getRootNode().childrenWithName("G2");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         }
@@ -212,7 +217,7 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
                                + "  DATECLOSED timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' OPTIONS (ANNOTATION '', NAMEINSOURCE '`DATECLOSED`', NATIVE_TYPE 'TIMESTAMP')"
                                + "  )" + " OPTIONS (ANNOTATION '', NAMEINSOURCE '`accounts`.`ACCOUNT`', UPDATABLE TRUE);";
         assertScoreAndParse(content, null, 1);
-        final AstNode tableNode = this.rootNode.getChildren().get(0);
+        final AstNode tableNode = getRootNode().getChildren().get(0);
         assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
     }
@@ -258,25 +263,25 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
         assertScoreAndParse(content, null, 4);
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("performRuleOnData");
+            final List<AstNode> kids = getRootNode().childrenWithName("performRuleOnData");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("StockPrices");
+            final List<AstNode> kids = getRootNode().childrenWithName("StockPrices");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("Stock");
+            final List<AstNode> kids = getRootNode().childrenWithName("Stock");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         }
 
         {
-            final List<AstNode> kids = this.rootNode.childrenWithName("StockValidation");
+            final List<AstNode> kids = getRootNode().childrenWithName("StockValidation");
             assertThat(kids.size(), is(1));
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         }
@@ -290,18 +295,89 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
 		assertScoreAndParse(content, null, 2);
 
 		{
-			final List<AstNode> kids = this.rootNode.childrenWithName("G1");
+			final List<AstNode> kids = getRootNode().childrenWithName("G1");
 			assertThat(kids.size(), is(1));
 			assertMixinType(kids.get(0),
 					TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
 		}
 
 		{
-			final List<AstNode> kids = this.rootNode.childrenWithName("G2");
+			final List<AstNode> kids = getRootNode().childrenWithName("G2");
 			assertThat(kids.size(), is(1));
 			assertMixinType(kids.get(0),
 					TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
 		}
 	}
+    
+    @Test
+    public void shouldParseTeiidStatements_1() {
+    	// Parses a simplified DDL that contains 3 tables, 2 with Foreign keys.
+    	// The Tables in the DDL are arranged, such that the first table has FK reference to 3rd table
+    	// and results in an Unresolved table reference that should be handled by a postProcess() method
+    	
+        printTest("shouldParseTeiidStatements_1()");
+        String content = getFileContent(DDL_FILE_PATH + "sap_short_test.ddl");
+        assertScoreAndParse(content, "teiid_test_statements_1", 3);
+        final AstNode tableNode = getRootNode().getChildren().get(0);
+        if( tableNode != null) {
+        	final List<AstNode> kids = getRootNode().childrenWithName("BookingCollection");
+            assertThat(kids.size(), is(1));
+            final List<AstNode> tableKids = kids.get(0).getChildren();
+            assertThat(tableKids.size(), is(9));
+            final List<AstNode> fkNodes = kids.get(0).childrenWithName("BookingFlight");
+            assertThat(fkNodes.size(), is(1));
+            
+            final List<AstNode> fc_kids = getRootNode().childrenWithName("FlightCollection");
+            assertThat(fc_kids.size(), is(1));
+            final List<AstNode> fc_columns = fc_kids.get(0).childrenWithName("carrid");
+            assertThat(fc_columns.size(), is(1));
+            AstNode columnNode = fc_columns.get(0);
+            
+            @SuppressWarnings("unchecked")
+			ArrayList<AstNode> props = ((ArrayList<AstNode>)fkNodes.get(0).getProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE_REFERENCES));
+            AstNode refColumnNode = props.get(0);
+            assertThat(refColumnNode, is(columnNode));
+        }
+    }
+    
+    @Test
+    public void shouldParseTeiidStatements_2() {
+    	// Parses a full DDL file that contains multiple tables with multiple FK's
+    	// The Tables in the DDL are arranged, such that the at least one table has FK reference to table defined later in the DDL
+    	// and results in an Unresolved table reference that should be handled by a postProcess() method
+    	
+        printTest("shouldParseTeiidStatements_2()");
+        String content = getFileContent(DDL_FILE_PATH + "sap-flight.ddl");
+        assertScoreAndParse(content, "teiid_test_statements_2", 12);
+        final AstNode tableNode = getRootNode().getChildren().get(0);
+        
+        if( tableNode != null) {
+        	final List<AstNode> kids = getRootNode().childrenWithName("BookingCollection");
+            assertThat(kids.size(), is(1));
+            final List<AstNode> tableKids = kids.get(0).getChildren();
+            assertThat(tableKids.size(), is(28));
+            final List<AstNode> fkNodes = kids.get(0).childrenWithName("BookingFlight");
+            assertThat(fkNodes.size(), is(1));
+            
+            final List<AstNode> fc_kids = getRootNode().childrenWithName("FlightCollection");
+            assertThat(fc_kids.size(), is(1));
+            final List<AstNode> fc_columns = fc_kids.get(0).childrenWithName("carrid");
+            assertThat(fc_columns.size(), is(1));
+            AstNode columnNode = fc_columns.get(0);
+            
+            @SuppressWarnings("unchecked")
+			ArrayList<AstNode> props = ((ArrayList<AstNode>)fkNodes.get(0).getProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE_REFERENCES));
+            AstNode refColumnNode = null;
+            for( AstNode nextColumnNode : props ) {
+	            
+	        	if( nextColumnNode.getName().equals("carrid")) {
+	        		refColumnNode = nextColumnNode;
+	        		break;
+	        	}
+        	}
+            
+            assertThat(refColumnNode, is(columnNode));
+        }
+    }
 
 }

@@ -67,6 +67,14 @@ public class DdlParserTestHelper implements DdlConstants {
     public boolean isPrintToConsole() {
         return printToConsole;
     }
+    
+    public void setRootNode(AstNode rootNode) {
+    	this.rootNode = rootNode;
+    }
+    
+    public AstNode getRootNode() {
+    	return this.rootNode;
+    }
 
     /**
      * @param printToConsole Sets printToConsole to the specified value.
@@ -143,18 +151,18 @@ public class DdlParserTestHelper implements DdlConstants {
                                         int childCount ) {
         // First try with scoring ...
         Object result = parser.score(content, filename, scorer);
-        parser.parse(content, rootNode, result);
+        parser.parse(content, getRootNode(), result);
         assertThat(scorer.getScore() > 0, is(true));
         if (childCount >= 0) {
-            assertThat(rootNode.getChildCount(), is(childCount));
+            assertThat(getRootNode().getChildCount(), is(childCount));
         }
 
         // Do it again, but this time without scoring first ...
-        rootNode = parser.nodeFactory().node("ddlRootNode");
-        parser.setRootNode(rootNode);
-        parser.parse(content, rootNode, null);
+        setRootNode(parser.nodeFactory().node("ddlRootNode"));
+        parser.setRootNode(getRootNode());
+        parser.parse(content, getRootNode(), null);
         if (childCount >= 0) {
-            assertThat(rootNode.getChildCount(), is(childCount));
+            assertThat(getRootNode().getChildCount(), is(childCount));
         }
     }
 
