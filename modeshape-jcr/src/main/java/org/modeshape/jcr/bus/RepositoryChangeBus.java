@@ -45,14 +45,14 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
  * A standard {@link ChangeBus} implementation.
- *
+ * 
  * @author Horia Chiorean
  */
 @ThreadSafe
 public final class RepositoryChangeBus implements ChangeBus {
 
     private static final String NULL_WORKSPACE_NAME = "null_workspace_name";
-    private static final Logger LOGGER = Logger.getLogger(RepositoryChangeBus.class);
+    protected static final Logger LOGGER = Logger.getLogger(RepositoryChangeBus.class);
 
     protected volatile boolean shutdown;
 
@@ -65,10 +65,11 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     /**
      * Creates new change bus
-     *
-     * @param executor the {@link ExecutorService} which will be used internally to submit workers to dispatching events to listeners.
-     * @param systemWorkspaceName the name of the system workspace, needed because internal (system) events are dispatched in the same
-     * thread; may no be null
+     * 
+     * @param executor the {@link ExecutorService} which will be used internally to submit workers to dispatching events to
+     *        listeners.
+     * @param systemWorkspaceName the name of the system workspace, needed because internal (system) events are dispatched in the
+     *        same thread; may no be null
      */
     public RepositoryChangeBus( ExecutorService executor,
                                 String systemWorkspaceName ) {
@@ -119,9 +120,8 @@ public final class RepositoryChangeBus implements ChangeBus {
                 dispatchers.add(dispatcher);
                 workers.put(hashCode, executor.submit(dispatcher));
                 return true;
-            } else {
-                return false;
             }
+            return false;
         } finally {
             listenersLock.writeLock().unlock();
         }
@@ -142,11 +142,11 @@ public final class RepositoryChangeBus implements ChangeBus {
             if (!workers.containsKey(hashCode)) {
                 return false;
             }
-            for (Iterator<ChangeSetDispatcher> dispatcherIterator = dispatchers.iterator(); dispatcherIterator.hasNext(); ) {
+            for (Iterator<ChangeSetDispatcher> dispatcherIterator = dispatchers.iterator(); dispatcherIterator.hasNext();) {
                 ChangeSetDispatcher dispatcher = dispatcherIterator.next();
                 if (dispatcher.listenerHashCode() == hashCode) {
                     Future<?> work = workers.remove(hashCode);
-                    //cancelling the work will call shutdown on the dispatcher
+                    // cancelling the work will call shutdown on the dispatcher
                     work.cancel(true);
                     dispatcherIterator.remove();
                     return true;
@@ -171,7 +171,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
         String workspaceName = changeSet.getWorkspaceName() != null ? changeSet.getWorkspaceName() : NULL_WORKSPACE_NAME;
         if (workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
-            //changes in the system workspace are always submitted in the same thread because they need immediate processing
+            // changes in the system workspace are always submitted in the same thread because they need immediate processing
             submitChanges(changeSet, true);
         } else {
             submitChanges(changeSet, false);
@@ -212,7 +212,7 @@ public final class RepositoryChangeBus implements ChangeBus {
         private ChangeSetListener listener;
         private BlockingQueue<ChangeSet> queue;
 
-        private ChangeSetDispatcher( ChangeSetListener listener ) {
+        protected ChangeSetDispatcher( ChangeSetListener listener ) {
             this.listener = listener;
             this.listenerHashCode = HashCode.compute(listener);
             this.queue = new LinkedBlockingQueue<ChangeSet>();
@@ -235,17 +235,17 @@ public final class RepositoryChangeBus implements ChangeBus {
             return null;
         }
 
-        private void submit( ChangeSet changeSet ) {
+        protected void submit( ChangeSet changeSet ) {
             if (!queue.offer(changeSet)) {
                 LOGGER.debug("Cannot submit change set: {0} because the queue is full", changeSet);
             }
         }
 
-        private int listenerHashCode() {
+        protected int listenerHashCode() {
             return listenerHashCode;
         }
 
-        private ChangeSetListener listener() {
+        protected ChangeSetListener listener() {
             return listener;
         }
 

@@ -56,6 +56,7 @@ public class Upgrades {
 
         /**
          * Get a problems instance which can be used to record failures/warnings/information messages.
+         * 
          * @return a {@link Problems} instance, never null.
          */
         Problems getProblems();
@@ -153,10 +154,11 @@ public class Upgrades {
     }
 
     /**
-     * Upgrade operation handling moving to ModeShape 3.6.0.Final.
-     * This consists of:
-     * - making sure the internal node types are updated to reflect the ACL and mode:lock changes
-     * - updating any potential existing lock to the updated mode:lock node type
+     * Upgrade operation handling moving to ModeShape 3.6.0.Final. This consists of:making sure the internal node types are
+     * <ul>
+     * <li>updated to reflect the ACL and mode:lock changes</li>
+     * <li>updating any potential existing lock to the updated mode:lock node type</li>
+     * </ul>
      */
     protected static class ModeShape_3_6_0 extends UpgradeOperation {
         protected static final UpgradeOperation INSTANCE = new ModeShape_3_6_0();
@@ -174,6 +176,7 @@ public class Upgrades {
             }
         }
 
+        @SuppressWarnings( "deprecation" )
         private void updateLocks( RunningState repository ) {
             try {
                 SessionCache systemSession = repository.createSystemSession(repository.context(), false);
@@ -189,7 +192,7 @@ public class Upgrades {
                 for (ChildReference ref : childReferences) {
                     MutableCachedNode lockNode = systemSession.mutable(ref.getKey());
 
-                    //remove properties that belong to the old (invalid) node type
+                    // remove properties that belong to the old (invalid) node type
                     lockNode.removeProperty(systemSession, ModeShapeLexicon.LOCKED_KEY);
                     lockNode.removeProperty(systemSession, ModeShapeLexicon.SESSION_SCOPE);
                     lockNode.removeProperty(systemSession, ModeShapeLexicon.IS_DEEP);
@@ -205,20 +208,22 @@ public class Upgrades {
             SimpleProblems problems = new SimpleProblems();
             try {
                 importer.importFrom(getClass().getClassLoader().getResourceAsStream(CndImporter.MODESHAPE_BUILT_INS),
-                                    problems, null);
+                                    problems,
+                                    null);
                 if (!problems.isEmpty()) {
                     LOGGER.error(JcrI18n.upgrade3_6_0CannotUpdateNodeTypes, problems.toString());
                     return false;
                 }
-                List<NodeTypeDefinition> nodeTypeDefinitions = new ArrayList<NodeTypeDefinition>(importer.getNodeTypeDefinitions());
-                for (Iterator<NodeTypeDefinition> nodeTypeDefinitionIterator = nodeTypeDefinitions.iterator(); nodeTypeDefinitionIterator.hasNext(); ) {
+                List<NodeTypeDefinition> nodeTypeDefinitions = new ArrayList<NodeTypeDefinition>(
+                                                                                                 importer.getNodeTypeDefinitions());
+                for (Iterator<NodeTypeDefinition> nodeTypeDefinitionIterator = nodeTypeDefinitions.iterator(); nodeTypeDefinitionIterator.hasNext();) {
                     NodeTypeDefinition nodeTypeDefinition = nodeTypeDefinitionIterator.next();
                     String name = nodeTypeDefinition.getName();
-                    //keep only the exact types that we know have changed to keep the overhead to a minimum
-                    if (ModeShapeLexicon.ACCESS_CONTROLLABLE.getString().equalsIgnoreCase(name) ||
-                        ModeShapeLexicon.ACL.getString().equalsIgnoreCase(name) ||
-                        ModeShapeLexicon.PERMISSION.getString().equalsIgnoreCase(name) ||
-                        ModeShapeLexicon.LOCK.getString().equalsIgnoreCase(name)) {
+                    // keep only the exact types that we know have changed to keep the overhead to a minimum
+                    if (ModeShapeLexicon.ACCESS_CONTROLLABLE.getString().equalsIgnoreCase(name)
+                        || ModeShapeLexicon.ACL.getString().equalsIgnoreCase(name)
+                        || ModeShapeLexicon.PERMISSION.getString().equalsIgnoreCase(name)
+                        || ModeShapeLexicon.LOCK.getString().equalsIgnoreCase(name)) {
                         continue;
                     }
                     nodeTypeDefinitionIterator.remove();

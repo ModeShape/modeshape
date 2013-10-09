@@ -52,7 +52,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
-import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Workspace;
@@ -925,8 +924,10 @@ public class ImportExportTest extends SingleUseAbstractTest {
         // Register the node types ...
         tools.registerNodeTypes(session, "cnd/magnolia.cnd");
         // Now import the file ...
-        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs expected
-        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs expected
+        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs
+                                                                                                              // expected
+        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs
+                                                                                                              // expected
     }
 
     @Test
@@ -976,12 +977,12 @@ public class ImportExportTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor ( "MODE-2012" )
-    @SkipLongRunning("There are 4 other test cases in JcrWorkspaceTest which validate the fix")
+    @FixFor( "MODE-2012" )
+    @SkipLongRunning( "There are 4 other test cases in JcrWorkspaceTest which validate the fix" )
     public void shouldBeAbleToImportAndCloneWorkspaces() throws Exception {
         String root = "/brix:root";
 
-        //setup
+        // setup
         String workspaceA = "workspace_a";
         String workspaceB = "workspace_b";
         String workspaceC = "workspace_c";
@@ -1003,12 +1004,12 @@ public class ImportExportTest extends SingleUseAbstractTest {
         wsB = sessB.getWorkspace();
         wsC = sessC.getWorkspace();
 
-        //namespace registering
+        // namespace registering
         wsA.getNamespaceRegistry().registerNamespace("brix", "http://brix-cms.googlecode.com");
         wsB.getNamespaceRegistry().registerNamespace("brix", "http://brix-cms.googlecode.com");
         wsC.getNamespaceRegistry().registerNamespace("brix", "http://brix-cms.googlecode.com");
 
-        //initial imports
+        // initial imports
         tools.registerNodeTypes(sessA, "cnd/brix.cnd");
         sessA.save();
         InputStream brixWorkspace = resourceStream("io/brixWorkspace.xml");
@@ -1029,7 +1030,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         sessC.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
         sessC.save();
 
-        //re-import
+        // re-import
         if (print) {
             new JcrTools().printSubgraph(sessA.getNode(root));
         }
@@ -1040,7 +1041,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         sessA.importXML("/", brixWorkspace, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
         sessA.save();
 
-        //now we clone the workspace A over the other ones at the path of root...
+        // now we clone the workspace A over the other ones at the path of root...
         wsB.getSession().removeItem(root);
         wsB.getSession().save();
         wsB.clone(workspaceA, root, root, true);
@@ -1051,7 +1052,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         wsC.clone(workspaceB, root, root, true);
         wsC.getSession().save();
 
-        //re-import a second time
+        // re-import a second time
         sessA.getItem(root).remove();
         sessA.save();
 

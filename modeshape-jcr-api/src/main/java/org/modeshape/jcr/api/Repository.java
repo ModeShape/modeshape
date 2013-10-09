@@ -3,7 +3,6 @@ package org.modeshape.jcr.api;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -76,7 +75,7 @@ public interface Repository extends NamedRepository {
     /**
      * Returns the number of active client sessions for this repository. An active session is a session on which
      * {@link org.modeshape.jcr.api.Session#logout()} hasn't been called yet.
-     *
+     * 
      * @return the number of sessions
      */
     public int getActiveSessionsCount();
