@@ -3,11 +3,11 @@ package org.modeshape.jcr;
 import org.junit.Test;
 
 /*
-	Test with property notifications:crossReferenceNumber
-	in notifications:baseNotification in Repository 2
+	Test without notifications:printMailNotification
+	and notifications:baseNotification in Repository 3
  */
 
-public class MigrateDataTest extends SingleUseAbstractTest
+public class MigrateDataTest2 extends SingleUseAbstractTest
 {
 	@Test
 	public void shouldLoadRepositories() throws Exception
@@ -17,7 +17,7 @@ public class MigrateDataTest extends SingleUseAbstractTest
 		stopRepository();
 
 		// Successes
-		startRepositoryWithConfiguration(resourceStream("config/migate-test-repository2.json"));
+		startRepositoryWithConfiguration(resourceStream("config/migate-test-repository3.json"));
 		stopRepository();
 
 		// Successes
