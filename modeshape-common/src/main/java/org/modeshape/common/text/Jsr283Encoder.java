@@ -76,9 +76,6 @@ public class Jsr283Encoder implements TextEncoder, TextDecoder {
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String encode( String publicName ) {
         if (publicName == null) return null;
@@ -104,9 +101,6 @@ public class Jsr283Encoder implements TextEncoder, TextDecoder {
         return sb.toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String decode( String jcrNodeName ) {
         if (jcrNodeName == null) return null;

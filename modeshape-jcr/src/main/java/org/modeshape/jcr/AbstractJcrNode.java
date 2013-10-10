@@ -877,10 +877,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public NodeIterator getNodes( String namePattern ) throws RepositoryException {
         CheckArg.isNotNull(namePattern, "namePattern");
         checkSession();
-        namePattern = namePattern.trim();
         if (namePattern.length() == 0) return JcrEmptyNodeIterator.INSTANCE;
         if ("*".equals(namePattern)) return getNodes();
-        return getNodes(namePattern.split("[|]"));
+        return getNodes(patternStringToGlobArray(namePattern));
     }
 
     @Override
@@ -901,13 +900,23 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), iter);
     }
 
-    protected static List<?> createPatternsFor( String[] namePatterns ) throws RepositoryException {
+    protected static String[] patternStringToGlobArray( String namePattern ) {
+        List<String> globs = new ArrayList<String>();
+        for (String glob : namePattern.split("\\|")) {
+            String trimmedGlob = glob.trim();
+            if (trimmedGlob.length() > 0) {
+                globs.add(trimmedGlob);
+            }
+        }
+        return globs.toArray(new String[globs.size()]);
+    }
+
+    protected static List<?> createPatternsFor( String... namePatterns ) throws RepositoryException {
         List<Object> patterns = new LinkedList<Object>();
         for (String stringPattern : namePatterns) {
-            stringPattern = stringPattern.trim();
             int length = stringPattern.length();
             if (length == 0) continue;
-            if (stringPattern.indexOf("*") == -1) {
+            if (!stringPattern.contains("*")) {
                 // Doesn't use wildcard, so use String not Pattern
                 patterns.add(stringPattern);
             } else {
@@ -916,20 +925,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 for (int i = 0; i != length; i++) {
                     char c = stringPattern.charAt(i);
                     switch (c) {
-                    // Per the spec, the the following characters are not allowed in patterns:
+                        //the following characters must be escaped when used in regular expressions ...
+                        case '\'':
+                        case '|':
                         case '/':
+                        case ':':
                         case '[':
                         case ']':
-                        case '\'':
-                        case '"':
-                        case '|':
-                        case '\t':
-                        case '\n':
-                        case '\r':
-                            String msg = JcrI18n.invalidNamePattern.text(c, stringPattern);
-                            throw new RepositoryException(msg);
-                            // The following characters must be escaped when used in regular expressions ...
                         case '?':
+                        case '!':
                         case '(':
                         case ')':
                         case '$':
@@ -946,12 +950,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                             sb.append(".*");
                             break;
                         default:
+                            // any other characters are added as-is to the regular expression
                             sb.append(c);
                             break;
                     }
                 }
                 String escapedString = sb.toString();
-                Pattern pattern = Pattern.compile(escapedString);
+                Pattern pattern = Pattern.compile(escapedString, Pattern.DOTALL);
                 patterns.add(pattern);
             }
         }
@@ -2111,10 +2116,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public PropertyIterator getProperties( String namePattern ) throws RepositoryException {
-        namePattern = namePattern.trim();
         if (namePattern.length() == 0) return JcrEmptyPropertyIterator.INSTANCE;
         if ("*".equals(namePattern)) return getProperties();
-        return getProperties(namePattern.split("[|]"));
+        return getProperties(patternStringToGlobArray(namePattern));
     }
 
     @Override

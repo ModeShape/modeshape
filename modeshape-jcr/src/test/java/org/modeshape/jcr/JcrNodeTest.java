@@ -338,4 +338,75 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             //expected
         }
     }
+
+    @Test
+    @FixFor("MODE-2069")
+    public void shouldAllowSearchingForSNSViaRegex() throws Exception {
+        JcrRootNode rootNode = session.getRootNode();
+        rootNode.addNode("child");
+        rootNode.addNode("child");
+        session.save();
+
+        assertEquals(0, rootNode.getNodes("child[2]").getSize());
+        assertEquals(0, rootNode.getNodes("*[2]").getSize());
+        assertEquals(0, rootNode.getNodes("*[1]|*[2]").getSize());
+        assertEquals(0, rootNode.getNodes(new String[] { "*[2]" }).getSize());
+        assertEquals(0, rootNode.getNodes(new String[] { "*[1]", "*[2]" }).getSize());
+
+        assertEquals(2, rootNode.getNodes(new String[] { "child", "child" }).getSize());
+        assertEquals(2, rootNode.getNodes(new String[] { "*child"}).getSize());
+        assertEquals(2, rootNode.getNodes(new String[] { "child*"}).getSize());
+        assertEquals(2, rootNode.getNodes(new String[] { "child"}).getSize());
+    }
+
+    @Test
+    @FixFor("MODE-2069")
+    public void shouldEscapeSpecialCharactersWhenSearchingNodesViaRegex() throws Exception {
+        JcrRootNode rootNode = session.getRootNode();
+        rootNode.addNode("special\t\r\n()\\?!^${}.\"");
+        session.save();
+
+        assertEquals(1, rootNode.getNodes("*\t*").getSize());
+        assertEquals(1, rootNode.getNodes("*\r*").getSize());
+        assertEquals(1, rootNode.getNodes("*\n*").getSize());
+        assertEquals(1, rootNode.getNodes("*(*").getSize());
+        assertEquals(1, rootNode.getNodes("*)*").getSize());
+        assertEquals(1, rootNode.getNodes("*()*").getSize());
+        assertEquals(1, rootNode.getNodes("*\\*").getSize());
+        assertEquals(1, rootNode.getNodes("*?*").getSize());
+        assertEquals(1, rootNode.getNodes("*!*").getSize());
+        assertEquals(1, rootNode.getNodes("*^*").getSize());
+        assertEquals(1, rootNode.getNodes("*$*").getSize());
+        assertEquals(1, rootNode.getNodes("*{*").getSize());
+        assertEquals(1, rootNode.getNodes("*}*").getSize());
+        assertEquals(1, rootNode.getNodes("*{}*").getSize());
+        assertEquals(1, rootNode.getNodes("*.*").getSize());
+        assertEquals(1, rootNode.getNodes("*\"*").getSize());
+
+        assertEquals(0, rootNode.getNodes("*[*").getSize());
+        assertEquals(0, rootNode.getNodes("*]*").getSize());
+        assertEquals(0, rootNode.getNodes("*[]*").getSize());
+        assertEquals(1, rootNode.getNodes("*:*").getSize()); //jcr:system
+        assertEquals(0, rootNode.getNodes("*/*").getSize());
+    }
+
+    @Test
+    @FixFor("MODE-2069")
+    public void shouldOnlyTrimLeadingAndTrailingSpacesWhenSearchingViaRegex() throws Exception {
+        JcrRootNode rootNode = session.getRootNode();
+        rootNode.addNode(" A ");
+        rootNode.addNode("B ");
+        rootNode.addNode(" C");
+        rootNode.addNode("D E");
+        session.save();
+
+        assertEquals(1, rootNode.getNodes(" A ").getSize());
+        assertEquals(1, rootNode.getNodes("B ").getSize());
+        assertEquals(1, rootNode.getNodes(" C").getSize());
+        assertEquals(2, rootNode.getNodes(" A |B ").getSize());
+        assertEquals(3, rootNode.getNodes(" A | B | C ").getSize());
+        assertEquals(1, rootNode.getNodes("D E").getSize());
+        assertEquals(1, rootNode.getNodes(" D E ").getSize());
+        assertEquals(2, rootNode.getNodes(" A |D E").getSize());
+    }
 }
