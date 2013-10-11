@@ -1,0 +1,4 @@
+<mode = "http://www.modeshape.org/1.0">
+
+[mode:type2] > mode:type1
+- mode:property2 (string)

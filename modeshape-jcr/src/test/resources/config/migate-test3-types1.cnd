@@ -1,0 +1,9 @@
+<mode = "http://www.modeshape.org/1.0">
+
+[mode:type1] > nt:folder
+- mode:property1 (string)
+- mode:property2 (string)
+
+[mode:type2] > mode:type1
+- mode:property1 (string)
+- mode:property2 (string)
