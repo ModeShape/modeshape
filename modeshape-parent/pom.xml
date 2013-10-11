@@ -313,6 +313,12 @@
         <!-- Apache chemistry version -->
         <chemistry.version>0.9.0-beta-1</chemistry.version>
 
+        <!-- GWT version -->
+        <gwt.version>2.5.1</gwt.version>
+
+        <!-- Smart GWT version -->
+        <smartgwt.version>2.4</smartgwt.version>
+
         <!--
             JBOSS AS/EAP constants
         -->
@@ -1337,6 +1343,32 @@
                 <version>${chemistry.version}</version>
                 <type>war</type>
             </dependency>
+
+		<!-- GWT dependency -->
+	<dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-servlet</artifactId>
+            <version>${gwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-user</artifactId>
+            <version>${gwt.version}</version>
+            <scope>provided</scope>
+        </dependency>              
+        <dependency>
+            <groupId>smartgwt</groupId>
+            <artifactId>smartgwt</artifactId>
+            <version>${smartgwt.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.smartgwt</groupId>
+            <artifactId>smartgwt-skins</artifactId>
+            <version>${smartgwt.version}</version>
+            <type>jar</type>
+        </dependency>
             <!--
                 Demo module
             -->
