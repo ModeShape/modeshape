@@ -7,7 +7,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>jcrServlet</servlet-name>
-        <url-pattern>/console/jcr</url-pattern>
+        <url-pattern>/explorer/jcr</url-pattern>
     </servlet-mapping>
     <!-- Default page to serve -->
     <welcome-file-list>
