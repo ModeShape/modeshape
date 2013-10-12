@@ -27,12 +27,15 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public final class Metadata implements Externalizable {
 
     /* These are not final because of the #readExternal method */
     private long length;
     private int numberChunks;
+    private Map<String, Integer> chunks;
     private long modificationTime;
     private long unusedSince;
     private String mimeType;
@@ -43,31 +46,35 @@ public final class Metadata implements Externalizable {
 
     public Metadata( long modificationTime,
                      long length,
-                     int numberOfChunks ) {
+                     Map<String, Integer> chunks ) {
         this.length = length;
         this.modificationTime = modificationTime;
-        this.numberChunks = numberOfChunks;
+        this.chunks = chunks;
+        this.numberChunks = chunks.size();
         this.unusedSince = 0L;
         this.mimeType = null;
         this.numberTextChunks = 0;
     }
 
-    protected Metadata( long modificationTime,
-                        long length,
-                        int numberOfChunks,
-                        long unusedSince,
-                        String mimeType,
-                        int numberTextChunks ) {
+    private Metadata( long modificationTime,
+                      long length,
+                      Map<String, Integer> chunks,
+                      int numberOfChunks,
+                      long unusedSince,
+                      String mimeType,
+                      int numberTextChunks ) {
         this.length = length;
         this.modificationTime = modificationTime;
+        this.chunks = chunks;
         this.numberChunks = numberOfChunks;
         this.unusedSince = unusedSince;
         this.mimeType = mimeType;
         this.numberTextChunks = numberTextChunks;
     }
 
-    protected Metadata( Metadata metadata ) {
+    private Metadata( Metadata metadata ) {
         length = metadata.length;
+        chunks = metadata.chunks;
         numberChunks = metadata.numberChunks;
         modificationTime = metadata.modificationTime;
         unusedSince = metadata.unusedSince;
@@ -83,49 +90,29 @@ public final class Metadata implements Externalizable {
         return length;
     }
 
-    // public void setLength( long length ) {
-    // this.length = length;
-    // }
-
     public long getModificationTime() {
         return modificationTime;
     }
-
-    // public void setModificationTime( long modificationTime ) {
-    // this.modificationTime = modificationTime;
-    // }
 
     public String getMimeType() {
         return mimeType;
     }
 
     public Metadata withMimeType( String mimeType ) {
-        return new Metadata(modificationTime, length, numberChunks, unusedSince, mimeType, numberTextChunks);
+        return new Metadata(modificationTime, length, chunks, numberChunks, unusedSince, mimeType, numberTextChunks);
     }
-
-    // public void setMimeType( String mimeType ) {
-    // this.mimeType = mimeType;
-    // }
 
     public int getNumberTextChunks() {
         return numberTextChunks;
     }
 
     public Metadata withNumberOfTextChunks( int numberTextChunks ) {
-        return new Metadata(modificationTime, length, numberChunks, unusedSince, mimeType, numberTextChunks);
+        return new Metadata(modificationTime, length, chunks, numberChunks, unusedSince, mimeType, numberTextChunks);
     }
-
-    // public void setNumberTextChunks( int numberTextChunks ) {
-    // this.numberTextChunks = numberTextChunks;
-    // }
 
     public int getNumberChunks() {
         return numberChunks;
     }
-
-    // public void setNumberChunks( int numberChunks ) {
-    // this.numberChunks = numberChunks;
-    // }
 
     public boolean isUnused() {
         return unusedSince > 0;
@@ -146,19 +133,28 @@ public final class Metadata implements Externalizable {
         return unusedSince;
     }
 
-    // public void setUnused() {
-    // unusedSince = System.currentTimeMillis();
-    // }
-    //
-    // public void setUsed() {
-    // unusedSince = 0;
-    // }
-
     @Override
     public void writeExternal( ObjectOutput out ) throws IOException {
-        out.writeShort(1); // take 1st value as version number (maybe data format changes in future)
-        out.writeLong(length);
-        out.writeInt(numberChunks);
+        // In version 2 was introduced the serialization of all referenced chunks and their size.
+        if(chunks == null){
+            // write version 1
+            out.writeShort(1);
+            out.writeLong(length);
+            out.writeInt(numberChunks);
+        } else {
+            // write version 2
+            out.writeShort(2);
+            out.writeLong(length);
+            out.writeInt(chunks.size());
+            // chunkkey<->size pairs
+            if(chunks.size() > 0){
+                for(Map.Entry<String, Integer> entry : chunks.entrySet()){
+                    out.writeUTF(entry.getKey());
+                    out.writeInt(entry.getValue());
+                }
+            }
+        }
+
         out.writeLong(modificationTime);
         out.writeLong(unusedSince);
         out.writeInt(numberTextChunks);
@@ -172,9 +168,16 @@ public final class Metadata implements Externalizable {
 
     @Override
     public void readExternal( ObjectInput in ) throws IOException {
-        in.readShort(); // ignore, no additional version ATM
+        short version = in.readShort();
         length = in.readLong();
         numberChunks = in.readInt();
+        if(version != 1){
+            // read chunkkey <-> size pairs
+            chunks = new LinkedHashMap<String, Integer>(numberChunks);
+            for(int i = 0; i < numberChunks; i++){
+                chunks.put(in.readUTF(), in.readInt());
+            }
+        }
         modificationTime = in.readLong();
         unusedSince = in.readLong();
         numberTextChunks = in.readInt();

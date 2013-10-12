@@ -240,7 +240,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                 ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey);
                 IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
                 // now store metadata
-                metadata = new Metadata(lastModified, fileLength, chunkOutputStream.getNumberChunks());
+                metadata = new Metadata(lastModified, fileLength, chunkOutputStream.getChunks());
                 putMetadata(metadataKey, metadata);
                 value = new StoredBinaryValue(this, binaryKey, fileLength);
             } finally {
