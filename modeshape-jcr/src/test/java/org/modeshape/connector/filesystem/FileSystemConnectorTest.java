@@ -112,7 +112,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         pagedProjection.create(testRoot, "pagedFiles");
         largeFilesProjection.create(testRoot,"largeFiles");
     }
-
+/*
     @Test
     @FixFor( "MODE-2061" )
     public void bookendTest() throws Exception {
@@ -148,7 +148,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         System.out.println("NodeSize "+value.getSize());
         System.out.println("NodeHash "+value.getHexHash());
     }
-    
+  */  
     @Test
     @FixFor( "MODE-1982" )
     public void shouldReadNodesInAllProjections() throws Exception {
