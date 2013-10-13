@@ -68,6 +68,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     private Projection legacyProjection;
     private Projection noneProjection;
     private Projection pagedProjection;
+    private Projection largeFilesProjection;
     private Projection[] projections;
     private JcrTools tools;
 
@@ -84,6 +85,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
         noneProjection = new Projection("mutable-files-none", "target/federation/files-none");
         pagedProjection = new PagedProjection("paged-files", "target/federation/paged-files");
+        largeFilesProjection = new Projection("large-files","F:/ff/large-files");
 
         projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
             storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection};
@@ -108,8 +110,45 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.create(testRoot, "legacy");
         noneProjection.create(testRoot, "none");
         pagedProjection.create(testRoot, "pagedFiles");
+        largeFilesProjection.create(testRoot,"largeFiles");
     }
 
+    @Test
+    @FixFor( "MODE-2061" )
+    public void bookendTest() throws Exception {
+        //test modes "bookend" "openssl" "streaming" (default)
+        System.out.println("in large FilesTest");
+        String childName = "largeFiles";
+        Session session = (Session)testRoot.getSession();
+        String path = testRoot.getPath() + "/" + childName;
+        System.out.println("node path "+path);
+        Node files = session.getNode(path);
+        assertThat(files.getName(), is(childName));
+        assertThat(files.getPrimaryNodeType().getName(), is("nt:folder"));
+        
+        Node node1 = session.getNode(path + "/large-file1.jpg");
+        long before = System.currentTimeMillis();
+        Node node1Content = node1.getNode("jcr:content");
+        long after = System.currentTimeMillis();
+        long elapsed = after-before;
+        System.out.println("Elapsed "+elapsed);
+        
+        Binary value = (Binary)node1Content.getProperty("jcr:data").getBinary();
+        System.out.println("NodeSize "+value.getSize());
+        System.out.println("NodeHash "+value.getHexHash());
+        
+        node1 = session.getNode(path + "/small-file1.txt");
+        before = System.currentTimeMillis();
+        node1Content = node1.getNode("jcr:content");
+        after = System.currentTimeMillis();
+        elapsed = after-before;
+        System.out.println("Elapsed "+elapsed);
+        
+        value = (Binary)node1Content.getProperty("jcr:data").getBinary();
+        System.out.println("NodeSize "+value.getSize());
+        System.out.println("NodeHash "+value.getHexHash());
+    }
+    
     @Test
     @FixFor( "MODE-1982" )
     public void shouldReadNodesInAllProjections() throws Exception {

@@ -25,12 +25,14 @@ package org.modeshape.connector.filesystem;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
@@ -208,6 +210,8 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     private NamespaceRegistry registry;
 
     private BinaryKeyFactory binaryKeyFactory;
+    
+    private String binaryKeyMode;
 
     @Override
     public void initialize( NamespaceRegistry registry,
@@ -251,13 +255,12 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
         // Set up the binary key factory ...
         try {
-            BinaryKeyFactory smallFileFactory = new StreamingBinaryKeyFactory();
-            BinaryKeyFactory largeFileFactory = new OpenSslBinaryKeyFactory(smallFileFactory); // fails if openssl not available
-            binaryKeyFactory = new SwitchingBinaryKeyFactory(smallFileFactory, largeFileFactory, largeFileSize);
+            BinaryKeyFactory streamingFactory = new StreamingBinaryKeyFactory();
+            BinaryKeyFactory openSslFactory = new OpenSslBinaryKeyFactory(streamingFactory); // fails if openssl not available
+            BinaryKeyFactory bookendFactory = new BookendBinaryKeyFactory();
+            binaryKeyFactory = new SwitchingBinaryKeyFactory(streamingFactory, openSslFactory, bookendFactory);
         } catch (Throwable e) {
-            log().warn("The \"{0}\" connector cannot use the OpenSSL utility. SHA-1s will be calculated by streaming contents and may be slower for large files.",
-                       getSourceName());
-            binaryKeyFactory = new StreamingBinaryKeyFactory();
+            log().error("Error setting up BinaryKeyFactory in \"{0}\" connector", getSourceName());
         }
     }
 
@@ -744,20 +747,66 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
     protected static interface BinaryKeyFactory {
         BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException;
+        boolean isAvailable();
     }
 
     protected class StreamingBinaryKeyFactory implements BinaryKeyFactory {
+        private boolean available = true;
         @Override
         public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
+            log().info("using secure hash");
             byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
+            log().info("hexhash:"+SecureHash.asHexString(sha1));
             BinaryKey key = new BinaryKey(sha1);
             log().trace("SHA-1 of '{0}' = {1} computed using internal SecureHash", file, key);
             return key;
+        }
+        
+        public boolean isAvailable() {
+            return available;
+        }
+    }
+
+    protected class BookendBinaryKeyFactory implements BinaryKeyFactory {
+        private boolean available = true;
+        @Override
+        public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
+            log().info("using bookend hash");
+            long filelength = file.length();
+            log().info("size:"+filelength);
+            byte[] sha1 = null;
+            if (filelength<=2048) {
+                log().info("small file, overriding bookend hash");
+                sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
+            } else {
+                byte[] beginning = new byte[1024];
+                byte[] ending = new byte[1024];
+                byte[] concat = new byte[2048];
+                RandomAccessFile raf = new RandomAccessFile(file, "r");
+                raf.seek(0);
+                raf.read(beginning,0,1024);
+                raf.seek(filelength-1024);
+                raf.read(ending,0,1024);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                outputStream.write(beginning);
+                outputStream.write(ending);
+                concat = outputStream.toByteArray();
+                sha1 = SecureHash.getHash(Algorithm.SHA_1,concat);
+            }
+            log().info("hexhash:"+SecureHash.asHexString(sha1));
+            BinaryKey key = new BinaryKey(sha1);
+            log().trace("SHA-1 of '{0}' = {1} computed using internal SecureHash", file, key);
+            return key;
+        }
+        
+        public boolean isAvailable() {
+            return available;
         }
     }
 
     protected class OpenSslBinaryKeyFactory implements BinaryKeyFactory {
         private final Runtime rt;
+        private boolean available = true;
 
         public OpenSslBinaryKeyFactory( BinaryKeyFactory verifier ) throws IOException, NoSuchAlgorithmException {
             rt = Runtime.getRuntime();
@@ -767,26 +816,31 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 BinaryKey opensslKey = createKey(tmp);
                 BinaryKey streamKey = verifier.createKey(tmp);
                 if (!opensslKey.equals(streamKey)) {
-                    log().warn("The \"{0}\" connector attempted to use the OpenSSL utility, but it returned unexpected results.",
-                               getSourceName());
-                    throw new RuntimeException("Unmatched SHA-1s from streaming and openssl");
+                    available = false;
                 }
             } finally {
                 tmp.delete();
             }
         }
+        
+        public boolean isAvailable() {
+            return available;
+        }
 
         @Override
         public BinaryKey createKey( File file ) throws IOException {
+            log().info("using openssl hash");
             String cmd = "openssl dgst -sha1 " + file.getPath();
             Process pr = rt.exec(cmd);
             BufferedReader input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
             String s = input.readLine();
             String sha1 = "";
             if (!s.startsWith("SHA1")) {
-                throw new RuntimeException("Error calculating checksum using command: " + cmd);
+                available = false;
+                sha1 = "garbagestr";
             }
             sha1 = s.substring(s.lastIndexOf(" ") + 1);
+            log().info("hexhash:"+sha1);
             BinaryKey key = new BinaryKey(sha1);
             log().trace("SHA-1 of '{0}' = {1} computed using: {2}", file, key, cmd);
             return key;
@@ -794,24 +848,42 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     }
 
     protected class SwitchingBinaryKeyFactory implements BinaryKeyFactory {
-        private BinaryKeyFactory smallFileFactory;
-        private BinaryKeyFactory largeFileFactory;
-        private final long largeSizeInBytes;
-
-        protected SwitchingBinaryKeyFactory( BinaryKeyFactory smallFileFactory,
-                                             BinaryKeyFactory largeFileFactory,
-                                             long largeSizeInBytes ) {
-            this.smallFileFactory = smallFileFactory;
-            this.largeFileFactory = largeFileFactory;
-            this.largeSizeInBytes = largeSizeInBytes;
+        private boolean available = true;
+        private BinaryKeyFactory streamingFactory;
+        private BinaryKeyFactory openSslFactory;
+        private BinaryKeyFactory bookendFactory;
+        
+        protected SwitchingBinaryKeyFactory( BinaryKeyFactory streamingFactory,
+                                             BinaryKeyFactory openSslFactory,
+                                             BinaryKeyFactory bookendFactory) {
+            this.streamingFactory = streamingFactory;
+            this.openSslFactory = openSslFactory;
+            this.bookendFactory = bookendFactory;
+        }
+        
+        public boolean isAvailable() {
+            return available;
         }
 
         @Override
         public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
-            if (file.length() < largeSizeInBytes) {
-                return this.smallFileFactory.createKey(file);
+            if (binaryKeyMode==null) {
+                binaryKeyMode = "";
             }
-            return this.largeFileFactory.createKey(file);
+            if (binaryKeyMode.equals("streaming")) {
+                return this.streamingFactory.createKey(file);
+            } else if (binaryKeyMode.equals("openssl")) {
+                if (this.openSslFactory.isAvailable()) {
+                    return this.openSslFactory.createKey(file);
+                } else {
+                    log().warn("The \"{0}\" connector cannot use the OpenSSL utility. SHA-1s will be calculated by SecureHash",
+                            getSourceName());
+                    return this.streamingFactory.createKey(file);
+                }
+            } else if (binaryKeyMode.equals("bookend")) {
+                return this.bookendFactory.createKey(file);
+            }
+            return this.streamingFactory.createKey(file);
         }
     }
 

@@ -49,6 +49,12 @@
             "extraPropertiesStorage" : "none",
             "pageSize" : 2
         } ,
+        "large-files" : {
+            "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath" : "F:/ff/large-files",
+            "extraPropertiesStorage" : "none",
+            "binaryKeyMode" : "bookend"        
+        } ,
         "targetDirectory" : {
             "classname" : "filesystem",
             "directoryPath" : "target/classes",
