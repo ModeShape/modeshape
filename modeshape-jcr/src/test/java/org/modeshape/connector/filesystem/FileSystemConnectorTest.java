@@ -31,10 +31,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +51,8 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
@@ -68,6 +72,9 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     private Projection legacyProjection;
     private Projection noneProjection;
     private Projection pagedProjection;
+    private Projection altHashProjectionBookend;
+    private Projection altHashProjectionOpenSsl;
+    private Projection altHashProjectionStreaming;
     private Projection[] projections;
     private JcrTools tools;
 
@@ -84,9 +91,13 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
         noneProjection = new Projection("mutable-files-none", "target/federation/files-none");
         pagedProjection = new PagedProjection("paged-files", "target/federation/paged-files");
+        altHashProjectionBookend = new AlternateHashProjection("althash-files-bookend","target/federation/althash-files");
+        altHashProjectionOpenSsl = new AlternateHashProjection("althash-files-openssl","target/federation/althash-files2");
+        altHashProjectionStreaming = new AlternateHashProjection("althash-files-streaming","target/federation/althash-files3");
 
         projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
-            storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection};
+            storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection, altHashProjectionBookend,
+            altHashProjectionOpenSsl, altHashProjectionStreaming};
 
         // Remove and then make the directory for our federation test ...
         for (Projection projection : projections) {
@@ -108,8 +119,93 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.create(testRoot, "legacy");
         noneProjection.create(testRoot, "none");
         pagedProjection.create(testRoot, "pagedFiles");
+        altHashProjectionBookend.create(testRoot,"altHashFilesBookend");
+        altHashProjectionOpenSsl.create(testRoot,"altHashFilesOpenSsl");
+        altHashProjectionStreaming.create(testRoot,"altHashFilesStreaming");
     }
 
+    @Test
+    @FixFor( "MODE-2061" )
+    public void altHashTest() throws Exception {
+        System.out.println("in altHashTests");
+        String dir1 = "target/federation/althash-files";
+        String dir2 = "target/federation/althash-files2";
+        String dir3 = "target/federation/althash-files3";
+        
+        altHashTestImpl("altHashFilesBookend",dir1);
+        altHashTestImpl("altHashFilesOpenSsl",dir2);
+        altHashTestImpl("altHashFilesStreaming",dir3);
+    }
+
+    public void altHashTestImpl(String childName, String dir) throws Exception {
+        //test modes "bookend" "openssl" "streaming" (default)
+        System.out.println("---------in altHashTest "+ childName);
+        //String childName = "altHashFiles";
+        Session session = (Session)testRoot.getSession();
+        String path = testRoot.getPath() + "/" + childName;
+        System.out.println("node path "+path);
+        Node files = session.getNode(path);
+        assertThat(files.getName(), is(childName));
+        assertThat(files.getPrimaryNodeType().getName(), is("nt:folder"));
+        
+        File f1 = new File(dir + "/medium-file1.jpg");
+        String sha1Str = "";
+        if (childName.equals("altHashFilesBookend")) {
+            //in bookendmode use bookend hash for file > 2048
+            sha1Str = altHash(f1);
+        } else {
+            byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, f1);
+            sha1Str = SecureHash.asHexString(sha1);
+        }
+        
+        Node node1 = session.getNode(path + "/medium-file1.jpg");
+        long before = System.currentTimeMillis();
+        Node node1Content = node1.getNode("jcr:content");
+        long after = System.currentTimeMillis();
+        long elapsed = after-before;
+        System.out.println("medium-file1.jpg elapsed "+elapsed);
+        
+        Binary value = (Binary)node1Content.getProperty("jcr:data").getBinary();
+        System.out.println("medium-file1.jpg nodesize "+value.getSize());
+        System.out.println("medium-file1.jpg nodehash "+value.getHexHash());
+        assertEquals(sha1Str,value.getHexHash());
+        
+        f1 = new File(dir + "/small-file1.txt");
+        byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, f1);
+        sha1Str = SecureHash.asHexString(sha1);
+        
+        node1 = session.getNode(path + "/small-file1.txt");
+        before = System.currentTimeMillis();
+        node1Content = node1.getNode("jcr:content");
+        after = System.currentTimeMillis();
+        elapsed = after-before;
+        System.out.println("small-file1.txt elapsed "+elapsed);
+        
+        value = (Binary)node1Content.getProperty("jcr:data").getBinary();
+        System.out.println("small-file1.txt nodesize "+value.getSize());
+        System.out.println("small-file1.txt nodehash "+value.getHexHash());
+        assertEquals(sha1Str,value.getHexHash());
+    }
+    
+    public String altHash(File file) throws Exception {
+        long filelength = file.length();
+        byte[] beginning = new byte[1024];
+        byte[] ending = new byte[1024];
+        byte[] concat = new byte[2048];
+        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        raf.seek(0);
+        raf.read(beginning,0,1024);
+        raf.seek(filelength-1024);
+        raf.read(ending,0,1024);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        outputStream.write(beginning);
+        outputStream.write(ending);
+        concat = outputStream.toByteArray();
+        byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1,concat);
+        String s = SecureHash.asHexString(sha1);
+        return s;
+    }
+    
     @Test
     @FixFor( "MODE-1982" )
     public void shouldReadNodesInAllProjections() throws Exception {
@@ -119,6 +215,9 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.testContent(testRoot, "legacy");
         noneProjection.testContent(testRoot, "none");
         pagedProjection.testContent(testRoot, "pagedFiles");
+        altHashProjectionBookend.testContent(testRoot, "altHashFilesBookend");
+        altHashProjectionOpenSsl.testContent(testRoot, "altHashFilesOpenSsl");
+        altHashProjectionStreaming.testContent(testRoot, "altHashFilesStreaming");
     }
 
     @Test
@@ -597,5 +696,53 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             IoUtil.write(getClass().getClassLoader().getResourceAsStream(contentFile), new FileOutputStream(file));
         }
     }
+    
+    protected class AlternateHashProjection extends Projection {
+
+        public AlternateHashProjection( String name,
+                                String directoryPath ) {
+            super(name, directoryPath);
+        }
+
+        @Override
+        public void testContent( Node federatedNode,
+                                 String childName ) throws RepositoryException {
+            Session session = (Session)federatedNode.getSession();
+            String path = federatedNode.getPath() + "/" + childName;
+            assertFolder(session, path, "small-file1.txt", "medium-file1.jpg");
+        }
+
+        private void assertFolder( Session session,
+                                   String path,
+                                   String... childrenNames ) throws RepositoryException {
+            Node folderNode = session.getNode(path);
+            assertThat(folderNode.getPrimaryNodeType().getName(), is("nt:folder"));
+            List<String> expectedChildren = new ArrayList<String>(Arrays.asList(childrenNames));
+
+            NodeIterator nodes = folderNode.getNodes();
+            assertEquals(expectedChildren.size(), nodes.getSize());
+            while (nodes.hasNext()) {
+                Node node = nodes.nextNode();
+                String nodeName = node.getName();
+                assertTrue(expectedChildren.contains(nodeName));
+                expectedChildren.remove(nodeName);
+            }
+        }
+
+        @Override
+        public void initialize() throws IOException {
+            if (directory.exists()) FileUtil.delete(directory);
+            directory.mkdirs();
+            // Make some content ...
+            addFile("small-file1.txt", "data/small-file1.txt");
+            addFile("medium-file1.jpg", "data/medium-file1.jpg");
+        }
+
+        private void addFile( String path,
+                              String contentFile ) throws IOException {
+            File file = new File(directory, path);
+            IoUtil.write(getClass().getClassLoader().getResourceAsStream(contentFile), new FileOutputStream(file));
+        }
+    }    
 
 }
