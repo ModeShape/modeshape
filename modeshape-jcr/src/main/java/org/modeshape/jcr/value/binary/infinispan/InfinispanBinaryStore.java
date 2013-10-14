@@ -55,7 +55,6 @@ import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.InfinispanUtil;
@@ -74,6 +73,8 @@ import org.modeshape.jcr.value.binary.StoredBinaryValue;
 @ThreadSafe
 public class InfinispanBinaryStore extends AbstractBinaryStore {
 
+    public static final int DEFAULT_CHUNK_SIZE = 1024 * 1024 * 1; // 1 MB
+
     private static final String META_SUFFIX = "-meta";
     private static final String DATA_SUFFIX = "-data";
     private static final String TEXT_SUFFIX = "-text";
@@ -84,17 +85,19 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     private static final int RETRY_COUNT = 5;
 
-    private final Logger logger;
+    private Cache<String, Metadata> metadataCache;
     private LockFactory lockFactory;
     private CacheContainer cacheContainer;
     private boolean dedicatedCacheContainer;
-    protected Cache<String, Metadata> metadataCache;
     private Cache<String, byte[]> blobCache;
+    private int chunkSize;
 
     private String metadataCacheName;
     private String blobCacheName;
 
     /**
+     * Creates a new instance.
+     *
      * @param cacheContainer cache container which used for cache management
      * @param dedicatedCacheContainer true if the cache container should be started/stopped when store is start or stopped
      * @param metadataCacheName name of the cache used for metadata
@@ -104,11 +107,31 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                                   boolean dedicatedCacheContainer,
                                   String metadataCacheName,
                                   String blobCacheName ) {
-        logger = Logger.getLogger(getClass());
+        this(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName, DEFAULT_CHUNK_SIZE);
+    }
+
+    /**
+     * Creates a new instance.
+     *
+     * @param cacheContainer cache container which used for cache management
+     * @param dedicatedCacheContainer true if the cache container should be started/stopped when store is start or stopped
+     * @param metadataCacheName name of the cache used for metadata
+     * @param blobCacheName name of the cache used for store of chunked binary values
+     * @param chunkSize the size (in bytes) of a chunk
+     */
+    public InfinispanBinaryStore( CacheContainer cacheContainer,
+                                  boolean dedicatedCacheContainer,
+                                  String metadataCacheName,
+                                  String blobCacheName,
+                                  int chunkSize) {
         this.cacheContainer = cacheContainer;
         this.dedicatedCacheContainer = dedicatedCacheContainer;
         this.metadataCacheName = metadataCacheName;
         this.blobCacheName = blobCacheName;
+        if (chunkSize <= 0) {
+            throw new IllegalArgumentException("Invalid chunk size:" + chunkSize);
+        }
+        this.chunkSize = chunkSize;
     }
 
     protected final String lockKeyFrom( BinaryKey key ) {
@@ -237,10 +260,10 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                 final long lastModified = tmpFile.lastModified();
                 final long fileLength = tmpFile.length();
                 int bufferSize = bestBufferSize(fileLength);
-                ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey);
+                ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey, chunkSize);
                 IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
                 // now store metadata
-                metadata = new Metadata(lastModified, fileLength, chunkOutputStream.getNumberChunks());
+                metadata = new Metadata(lastModified, fileLength, chunkOutputStream.chunksCount(), chunkSize);
                 putMetadata(metadataKey, metadata);
                 value = new StoredBinaryValue(this, binaryKey, fileLength);
             } finally {
@@ -274,7 +297,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         if (metadata.getLength() == 0) {
             return new ByteArrayInputStream(new byte[0]);
         }
-        return new ChunkInputStream(blobCache, dataKeyFrom(binaryKey));
+        return new ChunkInputStream(blobCache, dataKeyFrom(binaryKey), metadata.getChunkSize(), metadata.getLength());
     }
 
     @Override
@@ -487,7 +510,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         }
         try {
             final String textKey = textKeyFrom(key);
-            return IoUtil.read(new ChunkInputStream(blobCache, textKey), "UTF-8");
+            return IoUtil.read(new ChunkInputStream(blobCache, textKey, metadata.getChunkSize(), metadata.getLength()), "UTF-8");
         } catch (IOException ex) {
             logger.debug(ex, "Error during read of extracted text for {0}", key);
             throw new BinaryStoreException(JcrI18n.errorReadingExtractedText.text(ex.getCause().getMessage()));
@@ -510,12 +533,12 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             final String textKey = textKeyFrom(key);
             ChunkOutputStream chunkOutputStream = null;
             try {
-                chunkOutputStream = new ChunkOutputStream(blobCache, textKey);
+                chunkOutputStream = new ChunkOutputStream(blobCache, textKey, chunkSize);
                 chunkOutputStream.write(extractedText.getBytes("UTF-8"));
             } finally {
                 IoUtil.closeQuietly(chunkOutputStream);
             }
-            putMetadata(metadataKey, metadata.withNumberOfTextChunks(chunkOutputStream.getNumberChunks()));
+            putMetadata(metadataKey, metadata.withNumberOfTextChunks(chunkOutputStream.chunksCount()));
         } catch (IOException ex) {
             logger.debug(ex, "Error during store of extracted text for {0}", key);
             throw new BinaryStoreException(JcrI18n.errorStoringExtractedText.text(ex.getCause().getMessage()));

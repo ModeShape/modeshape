@@ -32,14 +32,11 @@ import org.modeshape.common.logging.Logger;
  */
 abstract class RetryOperation {
 
-    private final Logger logger;
+    private static final Logger LOGGER = Logger.getLogger(RetryOperation.class);
 
     private static final int RETRIES = 3;
     private static final long SLEEP_BETWEEN_RETRIES = 2000L;
 
-    public RetryOperation() {
-        logger = Logger.getLogger(getClass());
-    }
 
     public boolean doTry() throws IOException {
         boolean sleepInterrupted = false;
@@ -53,8 +50,7 @@ abstract class RetryOperation {
             } catch (Exception ex) {
                 lastException = new IOException(ex);
             }
-            // todo detailed info about operation
-            logger.debug(lastException, "Failed to execute cache operation.");
+            LOGGER.debug(lastException, "Failed to execute cache operation.");
             failures++;
             if (failures <= RETRIES) {
                 try {
@@ -62,7 +58,7 @@ abstract class RetryOperation {
                 } catch (InterruptedException e1) {
                     Thread.currentThread().interrupt();
                     sleepInterrupted = true;
-                    logger.debug("Retry interrupted. ");
+                    LOGGER.debug("Retry interrupted. ");
                 }
             }
         }

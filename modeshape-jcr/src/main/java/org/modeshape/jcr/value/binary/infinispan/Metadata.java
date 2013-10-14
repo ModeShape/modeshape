@@ -28,9 +28,17 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+/**
+ * Class which holds various information about the binary data that is stored in ISPN.
+ */
 public final class Metadata implements Externalizable {
 
-    /* These are not final because of the #readExternal method */
+    private static final int VERSION_1 = 1;
+    private static final int VERSION_2 = 2;
+
+    /**
+     * since v1
+     */
     private long length;
     private int numberChunks;
     private long modificationTime;
@@ -38,18 +46,22 @@ public final class Metadata implements Externalizable {
     private String mimeType;
     private int numberTextChunks;
 
+    /**
+     * since v2
+     */
+    private int chunkSize;
+
+    /**
+     * Public no-arg ctr, required by serialization
+     */
     public Metadata() {
     }
 
-    public Metadata( long modificationTime,
-                     long length,
-                     int numberOfChunks ) {
-        this.length = length;
-        this.modificationTime = modificationTime;
-        this.numberChunks = numberOfChunks;
-        this.unusedSince = 0L;
-        this.mimeType = null;
-        this.numberTextChunks = 0;
+    protected Metadata( long modificationTime,
+                        long length,
+                        int numberOfChunks,
+                        int chunkSize) {
+        this(modificationTime, length, numberOfChunks, 0, null, 0, chunkSize);
     }
 
     protected Metadata( long modificationTime,
@@ -57,106 +69,67 @@ public final class Metadata implements Externalizable {
                         int numberOfChunks,
                         long unusedSince,
                         String mimeType,
-                        int numberTextChunks ) {
+                        int numberTextChunks,
+                        int chunkSize) {
         this.length = length;
         this.modificationTime = modificationTime;
         this.numberChunks = numberOfChunks;
         this.unusedSince = unusedSince;
         this.mimeType = mimeType;
         this.numberTextChunks = numberTextChunks;
+        this.chunkSize = chunkSize;
     }
 
-    protected Metadata( Metadata metadata ) {
-        length = metadata.length;
-        numberChunks = metadata.numberChunks;
-        modificationTime = metadata.modificationTime;
-        unusedSince = metadata.unusedSince;
-        mimeType = metadata.mimeType;
-        numberTextChunks = metadata.numberTextChunks;
-    }
-
-    public Metadata copy() {
-        return new Metadata(this);
-    }
-
-    public long getLength() {
+    protected long getLength() {
         return length;
     }
 
-    // public void setLength( long length ) {
-    // this.length = length;
-    // }
-
-    public long getModificationTime() {
-        return modificationTime;
-    }
-
-    // public void setModificationTime( long modificationTime ) {
-    // this.modificationTime = modificationTime;
-    // }
-
-    public String getMimeType() {
+    protected String getMimeType() {
         return mimeType;
     }
 
-    public Metadata withMimeType( String mimeType ) {
-        return new Metadata(modificationTime, length, numberChunks, unusedSince, mimeType, numberTextChunks);
+    protected Metadata withMimeType( String mimeType ) {
+        return new Metadata(modificationTime, length, numberChunks, unusedSince, mimeType, numberTextChunks, chunkSize);
     }
 
-    // public void setMimeType( String mimeType ) {
-    // this.mimeType = mimeType;
-    // }
-
-    public int getNumberTextChunks() {
+    protected int getNumberTextChunks() {
         return numberTextChunks;
     }
 
-    public Metadata withNumberOfTextChunks( int numberTextChunks ) {
-        return new Metadata(modificationTime, length, numberChunks, unusedSince, mimeType, numberTextChunks);
+    protected Metadata withNumberOfTextChunks( int numberTextChunks ) {
+        return new Metadata(modificationTime, length, numberChunks, unusedSince, mimeType, numberTextChunks, chunkSize);
     }
 
-    // public void setNumberTextChunks( int numberTextChunks ) {
-    // this.numberTextChunks = numberTextChunks;
-    // }
-
-    public int getNumberChunks() {
+    protected int getNumberChunks() {
         return numberChunks;
     }
 
-    // public void setNumberChunks( int numberChunks ) {
-    // this.numberChunks = numberChunks;
-    // }
-
-    public boolean isUnused() {
+    protected boolean isUnused() {
         return unusedSince > 0;
     }
 
-    public void markAsUnusedSince( long unusedSince ) {
+    protected void markAsUnusedSince( long unusedSince ) {
         this.unusedSince = unusedSince;
     }
 
-    public void markAsUsed() {
+    protected void markAsUsed() {
         this.unusedSince = 0L;
+    }
+
+    protected int getChunkSize() {
+        return chunkSize;
     }
 
     /**
      * @return unused time in MS or 0 if still in use
      */
-    public long unusedSince() {
+    protected long unusedSince() {
         return unusedSince;
     }
 
-    // public void setUnused() {
-    // unusedSince = System.currentTimeMillis();
-    // }
-    //
-    // public void setUsed() {
-    // unusedSince = 0;
-    // }
-
     @Override
     public void writeExternal( ObjectOutput out ) throws IOException {
-        out.writeShort(1); // take 1st value as version number (maybe data format changes in future)
+        out.writeShort(VERSION_2); // take 1st value as version number
         out.writeLong(length);
         out.writeInt(numberChunks);
         out.writeLong(modificationTime);
@@ -168,11 +141,12 @@ public final class Metadata implements Externalizable {
         } else {
             out.writeBoolean(false);
         }
+        out.writeInt(chunkSize);
     }
 
     @Override
     public void readExternal( ObjectInput in ) throws IOException {
-        in.readShort(); // ignore, no additional version ATM
+        int version = in.readShort(); //read the version
         length = in.readLong();
         numberChunks = in.readInt();
         modificationTime = in.readLong();
@@ -180,6 +154,16 @@ public final class Metadata implements Externalizable {
         numberTextChunks = in.readInt();
         if (in.readBoolean()) {
             mimeType = in.readUTF();
+        }
+        switch (version) {
+            case VERSION_1: {
+                chunkSize = InfinispanBinaryStore.DEFAULT_CHUNK_SIZE;
+                break;
+            }
+            case VERSION_2: {
+                chunkSize = in.readInt();
+                break;
+            }
         }
     }
 }

@@ -63,6 +63,12 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     private static final int SMALL_BUFFER_SIZE = 1 << 12; // 4K
     private static final int TINY_BUFFER_SIZE = 1 << 11; // 2K
 
+    protected Logger logger = Logger.getLogger(getClass());
+    private final AtomicLong minBinarySizeInBytes = new AtomicLong(DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES);
+
+    private volatile TextExtractors extractors;
+    private volatile MimeTypeDetector detector = NullMimeTypeDetector.INSTANCE;
+
     /**
      * Given a number of bytes representing the length of a file, returns the optimum size for a buffer that should be used
      * when reading/working with that file
@@ -87,11 +93,6 @@ public abstract class AbstractBinaryStore implements BinaryStore {
         return LARGE_BUFFER_SIZE;
     }
 
-    protected Logger logger = Logger.getLogger(getClass());
-
-    private final AtomicLong minBinarySizeInBytes = new AtomicLong(DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES);
-    private volatile TextExtractors extractors;
-    private volatile MimeTypeDetector detector = NullMimeTypeDetector.INSTANCE;
 
     @Override
     public long getMinimumBinarySizeInBytes() {

@@ -34,34 +34,39 @@ import org.modeshape.common.logging.Logger;
  */
 class ChunkOutputStream extends OutputStream {
 
-    protected final Logger logger;
-
-    public static final int CHUNKSIZE = 1024 * 1024 * 1; // 1 MB
+    protected static final Logger LOGGER = Logger.getLogger(ChunkOutputStream.class);
+    private static final int BUFFER_SIZE = 1024;
 
     protected final Cache<String, byte[]> blobCache;
     protected final String keyPrefix;
-    private ByteArrayOutputStream chunkBuffer;
-    private boolean closed;
     protected int chunkIndex;
 
-    public ChunkOutputStream( Cache<String, byte[]> blobCache,
-                              String keyPrefix ) {
-        logger = Logger.getLogger(getClass());
-        this.blobCache = blobCache;
-        this.keyPrefix = keyPrefix;
-        chunkBuffer = new ByteArrayOutputStream(1024);
+    private final ByteArrayOutputStream chunkBuffer;
+    private final int chunkSize;
+    private boolean closed;
+
+    protected ChunkOutputStream( Cache<String, byte[]> blobCache,
+                                 String keyPrefix ) {
+        this(blobCache, keyPrefix, InfinispanBinaryStore.DEFAULT_CHUNK_SIZE);
     }
 
-    /**
-     * @return Number of chunks stored.
-     */
-    public int getNumberChunks() {
+    protected ChunkOutputStream( Cache<String, byte[]> blobCache,
+                                 String keyPrefix,
+                                 int chunkSize ) {
+        this.blobCache = blobCache;
+        this.keyPrefix = keyPrefix;
+        this.chunkIndex = 0;
+        this.chunkBuffer = new ByteArrayOutputStream(BUFFER_SIZE);
+        this.chunkSize = chunkSize;
+    }
+
+    protected int chunksCount() {
         return chunkIndex;
     }
 
     @Override
     public void write( int b ) throws IOException {
-        if (chunkBuffer.size() == CHUNKSIZE) {
+        if (chunkBuffer.size() == chunkSize) {
             storeBufferInBLOBCache();
         }
         chunkBuffer.write(b);
@@ -71,10 +76,10 @@ class ChunkOutputStream extends OutputStream {
     public void write( byte[] b,
                        int off,
                        int len ) throws IOException {
-        if (len + chunkBuffer.size() <= CHUNKSIZE) {
+        if (len + chunkBuffer.size() <= chunkSize) {
             chunkBuffer.write(b, off, len);
         } else {
-            int storeLength = CHUNKSIZE - chunkBuffer.size();
+            int storeLength = chunkSize - chunkBuffer.size();
             write(b, off, storeLength);
             storeBufferInBLOBCache();
             write(b, off + storeLength, len - storeLength);
@@ -83,9 +88,9 @@ class ChunkOutputStream extends OutputStream {
 
     @Override
     public void close() throws IOException {
-        logger.debug("Close. Buffer size at close: {0}", chunkBuffer.size());
+        LOGGER.debug("Close. Buffer size at close: {0}", chunkBuffer.size());
         if (closed) {
-            logger.debug("Stream already closed.");
+            LOGGER.debug("Stream already closed.");
             return;
         }
         closed = true;
@@ -102,7 +107,7 @@ class ChunkOutputStream extends OutputStream {
                 @Override
                 protected boolean call() {
                     String chunkKey = keyPrefix + "-" + chunkIndex;
-                    logger.debug("Store chunk {0}", chunkKey);
+                    LOGGER.debug("Store chunk {0}", chunkKey);
                     blobCache.put(chunkKey, chunk);
                     return true;
                 }
@@ -115,5 +120,4 @@ class ChunkOutputStream extends OutputStream {
         chunkIndex++;
         chunkBuffer.reset();
     }
-
 }
