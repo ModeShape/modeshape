@@ -49,11 +49,22 @@
             "extraPropertiesStorage" : "none",
             "pageSize" : 2
         } ,
-        "large-files" : {
+        "althash-files-bookend" : {
             "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
-            "directoryPath" : "F:/ff/large-files",
+            "directoryPath" : "target/federation/althash-files",
             "extraPropertiesStorage" : "none",
             "binaryKeyMode" : "bookend"        
+        } ,
+        "althash-files-openssl" : {
+            "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath" : "target/federation/althash-files2",
+            "extraPropertiesStorage" : "none",
+            "binaryKeyMode" : "openssl"        
+        } ,
+        "althash-files-streaming" : {
+            "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath" : "target/federation/althash-files3",
+            "extraPropertiesStorage" : "none"       
         } ,
         "targetDirectory" : {
             "classname" : "filesystem",

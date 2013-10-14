@@ -756,7 +756,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
             log().info("using secure hash");
             byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
-            log().info("hexhash:"+SecureHash.asHexString(sha1));
+            log().trace("hexhash:"+SecureHash.asHexString(sha1));
             BinaryKey key = new BinaryKey(sha1);
             log().trace("SHA-1 of '{0}' = {1} computed using internal SecureHash", file, key);
             return key;
@@ -773,7 +773,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
             log().info("using bookend hash");
             long filelength = file.length();
-            log().info("size:"+filelength);
+            log().trace("size:"+filelength);
             byte[] sha1 = null;
             if (filelength<=2048) {
                 log().info("small file, overriding bookend hash");
@@ -793,7 +793,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 concat = outputStream.toByteArray();
                 sha1 = SecureHash.getHash(Algorithm.SHA_1,concat);
             }
-            log().info("hexhash:"+SecureHash.asHexString(sha1));
+            log().trace("hexhash:"+SecureHash.asHexString(sha1));
             BinaryKey key = new BinaryKey(sha1);
             log().trace("SHA-1 of '{0}' = {1} computed using internal SecureHash", file, key);
             return key;
@@ -837,10 +837,10 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             String sha1 = "";
             if (!s.startsWith("SHA1")) {
                 available = false;
-                sha1 = "garbagestr";
+                sha1 = "a mock string for a failed hash";
             }
             sha1 = s.substring(s.lastIndexOf(" ") + 1);
-            log().info("hexhash:"+sha1);
+            log().trace("hexhash:"+sha1);
             BinaryKey key = new BinaryKey(sha1);
             log().trace("SHA-1 of '{0}' = {1} computed using: {2}", file, key, cmd);
             return key;
