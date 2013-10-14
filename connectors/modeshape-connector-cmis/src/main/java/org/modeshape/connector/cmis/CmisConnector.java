@@ -66,6 +66,7 @@ import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
+import org.modeshape.jcr.federation.spi.DocumentChanges.ChildrenChanges;
 import org.modeshape.jcr.federation.spi.DocumentChanges.PropertyChanges;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.value.BinaryValue;
@@ -237,6 +238,7 @@ public class CmisConnector extends Connector {
 
     @Override
     public Collection<String> getDocumentPathsById( String id ) {
+System.out.println("------------- Get document by Id");        
         CmisObject obj = session.getObject(id);
         // check that object exist
         if (obj instanceof Folder) {
@@ -483,7 +485,7 @@ public class CmisConnector extends Connector {
                 // modifing cmis:folders and cmis:documents
                 cmisObject = session.getObject(objectId.getIdentifier());
                 changes = delta.getPropertyChanges();
-
+                
                 Document props = delta.getDocument().getDocument("properties");
 
                 // checking that object exists
@@ -552,6 +554,19 @@ public class CmisConnector extends Connector {
                 // run update action
                 if (!updateProperties.isEmpty()) {
                     cmisObject.updateProperties(updateProperties);
+                }
+                
+                ChildrenChanges childrenChanges = delta.getChildrenChanges();
+                Map<String, Name> renamed = childrenChanges.getRenamed();
+                
+                for (String key : renamed.keySet()) {
+                    CmisObject object = session.getObject(key);
+                    if (object == null) continue;
+                    
+                    Map<String, Object> newName = new HashMap<String, Object>();
+                    newName.put("cmis:name", renamed.get(key).getLocalName());
+                    
+                    object.updateProperties(newName);
                 }
                 break;
         }
