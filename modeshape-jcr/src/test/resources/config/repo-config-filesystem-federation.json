@@ -53,7 +53,8 @@
             "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
             "directoryPath" : "target/federation/althash-files",
             "extraPropertiesStorage" : "none",
-            "binaryKeyMode" : "bookend"        
+            "binaryKeyMode" : "bookend",
+            "minAltHashFileSize" : "2048"        
         } ,
         "althash-files-openssl" : {
             "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",

@@ -179,10 +179,9 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     private int pageSize = 20;
 
     /**
-     * The size in bytes of files for which OpenSSL should be used to calculate the SHA-1. OpenSSL is generally slower for small
-     * files, but significantly faster for large files. The default is 50kB.
+     * The size in bytes to be used calculate the hash in bookend mode at the beginning and end of the file
      */
-    private long largeFileSize = 1024 * 50; // 50kB
+    private int minAltHashFileSize = 1024;
 
     /**
      * The {@link FilenameFilter} implementation that is instantiated in the
@@ -209,10 +208,16 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
     private NamespaceRegistry registry;
 
+    /**
+     * The factory that creates the BinaryKey. Configured by binaryKeyMode 
+     */
     private BinaryKeyFactory binaryKeyFactory;
     
+    /**
+     * A string that tells how to compute the hash used in the BinaryKey.  Options "streaming" (Default), "bookend", openssl 
+     */
     private String binaryKeyMode;
-
+    
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
@@ -253,15 +258,8 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         }
         // otherwise use the default extra properties storage
 
-        // Set up the binary key factory ...
-        try {
-            BinaryKeyFactory streamingFactory = new StreamingBinaryKeyFactory();
-            BinaryKeyFactory openSslFactory = new OpenSslBinaryKeyFactory(streamingFactory); // fails if openssl not available
-            BinaryKeyFactory bookendFactory = new BookendBinaryKeyFactory();
-            binaryKeyFactory = new SwitchingBinaryKeyFactory(streamingFactory, openSslFactory, bookendFactory);
-        } catch (Throwable e) {
-            log().error("Error setting up BinaryKeyFactory in \"{0}\" connector", getSourceName());
-        }
+        binaryKeyFactory = new BinaryKeyFactory();
+ 
     }
 
     /**
@@ -745,145 +743,78 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         return newFolderWriter(parentId, folder, pageKey.getOffsetInt()).document();
     }
 
-    protected static interface BinaryKeyFactory {
-        BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException;
-        boolean isAvailable();
-    }
-
-    protected class StreamingBinaryKeyFactory implements BinaryKeyFactory {
-        private boolean available = true;
-        @Override
-        public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
-            log().info("using secure hash");
-            byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
-            log().trace("hexhash:"+SecureHash.asHexString(sha1));
-            BinaryKey key = new BinaryKey(sha1);
-            log().trace("SHA-1 of '{0}' = {1} computed using internal SecureHash", file, key);
-            return key;
-        }
+    public class BinaryKeyFactory {
         
-        public boolean isAvailable() {
-            return available;
-        }
-    }
-
-    protected class BookendBinaryKeyFactory implements BinaryKeyFactory {
-        private boolean available = true;
-        @Override
-        public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
-            log().info("using bookend hash");
-            long filelength = file.length();
-            log().trace("size:"+filelength);
-            byte[] sha1 = null;
-            if (filelength<=2048) {
-                log().info("small file, overriding bookend hash");
-                sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
+        public BinaryKey createKey ( File file ) throws IOException, NoSuchAlgorithmException {
+            BinaryKey binaryKey = null;
+            if (binaryKeyMode==null) {
+                binaryKey = streaming(file);
+            } else if ("streaming".equals(binaryKeyMode)) {
+                binaryKey = streaming(file);
+            } else if ("openssl".equals(binaryKeyMode)) {
+                binaryKey = openssl(file);
+            } else if ("bookend".equals(binaryKeyMode)) {
+                binaryKey = bookend(file);
             } else {
-                byte[] beginning = new byte[1024];
-                byte[] ending = new byte[1024];
-                byte[] concat = new byte[2048];
-                RandomAccessFile raf = new RandomAccessFile(file, "r");
-                raf.seek(0);
-                raf.read(beginning,0,1024);
-                raf.seek(filelength-1024);
-                raf.read(ending,0,1024);
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                outputStream.write(beginning);
-                outputStream.write(ending);
-                concat = outputStream.toByteArray();
-                sha1 = SecureHash.getHash(Algorithm.SHA_1,concat);
+                binaryKey = streaming(file);
             }
-            log().trace("hexhash:"+SecureHash.asHexString(sha1));
+            return binaryKey;
+        }
+        
+        protected BinaryKey streaming(File file) throws IOException, NoSuchAlgorithmException {
+            byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
             BinaryKey key = new BinaryKey(sha1);
             log().trace("SHA-1 of '{0}' = {1} computed using internal SecureHash", file, key);
             return key;
         }
         
-        public boolean isAvailable() {
-            return available;
-        }
-    }
-
-    protected class OpenSslBinaryKeyFactory implements BinaryKeyFactory {
-        private final Runtime rt;
-        private boolean available = true;
-
-        public OpenSslBinaryKeyFactory( BinaryKeyFactory verifier ) throws IOException, NoSuchAlgorithmException {
-            rt = Runtime.getRuntime();
-            File tmp = File.createTempFile("openssltest", "txt");
-            try {
-                IoUtil.write("this is a test", tmp);
-                BinaryKey opensslKey = createKey(tmp);
-                BinaryKey streamKey = verifier.createKey(tmp);
-                if (!opensslKey.equals(streamKey)) {
-                    available = false;
-                }
-            } finally {
-                tmp.delete();
-            }
-        }
-        
-        public boolean isAvailable() {
-            return available;
-        }
-
-        @Override
-        public BinaryKey createKey( File file ) throws IOException {
-            log().info("using openssl hash");
+        protected BinaryKey openssl(File file) throws IOException, NoSuchAlgorithmException {
+            Runtime rt = Runtime.getRuntime();
             String cmd = "openssl dgst -sha1 " + file.getPath();
             Process pr = rt.exec(cmd);
             BufferedReader input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
             String s = input.readLine();
             String sha1 = "";
             if (!s.startsWith("SHA1")) {
-                available = false;
-                sha1 = "a mock string for a failed hash";
+                log().info("error using openssl, trying securehash ");
+                byte[] sha1bytes = SecureHash.getHash(Algorithm.SHA_1, file);
+                sha1 = SecureHash.asHexString(sha1bytes);
+            } else {
+                sha1 = s.substring(s.lastIndexOf(" ") + 1);
             }
-            sha1 = s.substring(s.lastIndexOf(" ") + 1);
-            log().trace("hexhash:"+sha1);
             BinaryKey key = new BinaryKey(sha1);
             log().trace("SHA-1 of '{0}' = {1} computed using: {2}", file, key, cmd);
             return key;
         }
-    }
-
-    protected class SwitchingBinaryKeyFactory implements BinaryKeyFactory {
-        private boolean available = true;
-        private BinaryKeyFactory streamingFactory;
-        private BinaryKeyFactory openSslFactory;
-        private BinaryKeyFactory bookendFactory;
         
-        protected SwitchingBinaryKeyFactory( BinaryKeyFactory streamingFactory,
-                                             BinaryKeyFactory openSslFactory,
-                                             BinaryKeyFactory bookendFactory) {
-            this.streamingFactory = streamingFactory;
-            this.openSslFactory = openSslFactory;
-            this.bookendFactory = bookendFactory;
-        }
-        
-        public boolean isAvailable() {
-            return available;
-        }
-
-        @Override
-        public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
-            if (binaryKeyMode==null) {
-                binaryKeyMode = "";
+        protected BinaryKey bookend(File file) throws IOException, NoSuchAlgorithmException{
+            long filelength = file.length();
+            if (minAltHashFileSize < 1024) {
+                minAltHashFileSize = 1024;
             }
-            if (binaryKeyMode.equals("streaming")) {
-                return this.streamingFactory.createKey(file);
-            } else if (binaryKeyMode.equals("openssl")) {
-                if (this.openSslFactory.isAvailable()) {
-                    return this.openSslFactory.createKey(file);
-                } else {
-                    log().warn("The \"{0}\" connector cannot use the OpenSSL utility. SHA-1s will be calculated by SecureHash",
-                            getSourceName());
-                    return this.streamingFactory.createKey(file);
-                }
-            } else if (binaryKeyMode.equals("bookend")) {
-                return this.bookendFactory.createKey(file);
+            byte[] sha1 = null;
+            if (filelength <= (minAltHashFileSize*2)) {
+                log().trace("small file, overriding bookend hash");
+                sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
+            } else {
+                byte[] beginning = new byte[minAltHashFileSize];
+                byte[] ending = new byte[minAltHashFileSize];
+                byte[] concat = new byte[(minAltHashFileSize*2)];
+                RandomAccessFile raf = new RandomAccessFile(file, "r");
+                raf.seek(0);
+                raf.read(beginning,0,minAltHashFileSize);
+                raf.seek(filelength-minAltHashFileSize);
+                raf.read(ending,0,minAltHashFileSize);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                outputStream.write(beginning);
+                outputStream.write(ending);
+                concat = outputStream.toByteArray();
+                sha1 = SecureHash.getHash(Algorithm.SHA_1,concat);
             }
-            return this.streamingFactory.createKey(file);
+            BinaryKey key = new BinaryKey(sha1);
+            log().trace("SHA-1 of '{0}' = {1} computed using internal SecureHash", file, key);
+            return key;
+            
         }
     }
 

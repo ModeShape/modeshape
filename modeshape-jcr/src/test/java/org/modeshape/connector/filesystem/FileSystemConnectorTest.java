@@ -188,15 +188,16 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
     
     public String altHash(File file) throws Exception {
+        int fs = 2048;
         long filelength = file.length();
-        byte[] beginning = new byte[1024];
-        byte[] ending = new byte[1024];
-        byte[] concat = new byte[2048];
+        byte[] beginning = new byte[fs];
+        byte[] ending = new byte[fs];
+        byte[] concat = new byte[fs*2];
         RandomAccessFile raf = new RandomAccessFile(file, "r");
         raf.seek(0);
-        raf.read(beginning,0,1024);
-        raf.seek(filelength-1024);
-        raf.read(ending,0,1024);
+        raf.read(beginning,0,fs);
+        raf.seek(filelength-fs);
+        raf.read(ending,0,fs);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(beginning);
         outputStream.write(ending);
