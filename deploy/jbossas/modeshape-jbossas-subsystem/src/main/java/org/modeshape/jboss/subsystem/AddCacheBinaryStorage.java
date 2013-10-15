@@ -65,6 +65,10 @@ public class AddCacheBinaryStorage extends AbstractAddBinaryStorage {
         String metaCache = metaNode.isDefined() ? metaNode.asString() : defaultMetaCache;
         binaries.set(FieldName.DATA_CACHE_NAME, dataCache);
         binaries.set(FieldName.METADATA_CACHE_NAME, metaCache);
+        ModelNode chunkSize = ModelAttributes.CHUNK_SIZE.resolveModelAttribute(context, model);
+        if (chunkSize.isDefined()) {
+            binaries.set(FieldName.CHUNK_SIZE, chunkSize.asInt());
+        }
         if (ModelAttributes.CACHE_CONTAINER.isMarshallable(model, false)) {
             // There's a non-default value ...
             containerName = ModelAttributes.CACHE_CONTAINER.resolveModelAttribute(context, model).asString();

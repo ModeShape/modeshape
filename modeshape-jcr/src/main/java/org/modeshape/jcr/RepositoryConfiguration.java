@@ -414,6 +414,7 @@ public class RepositoryConfiguration {
         public static final String DATA_CACHE_NAME = "dataCacheName";
         public static final String FULL_TEXT_SEARCH_ENABLED = "enableFullTextSearch";
         public static final String METADATA_CACHE_NAME = "metadataCacheName";
+        public static final String CHUNK_SIZE = "chunkSize";
         public static final String QUERY = "query";
         public static final String QUERY_ENABLED = "enabled";
         public static final String INDEX_STORAGE = "indexStorage";
@@ -1194,6 +1195,7 @@ public class RepositoryConfiguration {
                 String metadataCacheName = binaryStorage.getString(FieldName.METADATA_CACHE_NAME, getName());
                 String blobCacheName = binaryStorage.getString(FieldName.DATA_CACHE_NAME, getName());
                 String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION); // may be null
+                int chunkSize = binaryStorage.getInteger(FieldName.CHUNK_SIZE, InfinispanBinaryStore.DEFAULT_CHUNK_SIZE);
                 boolean dedicatedCacheContainer = false;
                 if (cacheConfiguration == null) {
                     cacheConfiguration = getCacheConfiguration();
@@ -1204,7 +1206,7 @@ public class RepositoryConfiguration {
 
                 // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
-                store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName);
+                store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName, chunkSize);
             } else if (type.equalsIgnoreCase("composite")) {
 
                 Map<String, BinaryStore> binaryStores = new LinkedHashMap<String, BinaryStore>();
