@@ -26,6 +26,10 @@ package org.modeshape.jcr.value.binary.infinispan;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.infinispan.Cache;
 import org.modeshape.common.logging.Logger;
 
@@ -42,7 +46,7 @@ class ChunkOutputStream extends OutputStream {
     protected final String keyPrefix;
     private ByteArrayOutputStream chunkBuffer;
     private boolean closed;
-    protected int chunkIndex;
+    protected Map<String, Integer> chunks;
 
     public ChunkOutputStream( Cache<String, byte[]> blobCache,
                               String keyPrefix ) {
@@ -50,14 +54,24 @@ class ChunkOutputStream extends OutputStream {
         this.blobCache = blobCache;
         this.keyPrefix = keyPrefix;
         chunkBuffer = new ByteArrayOutputStream(1024);
+        // preserve inserting order with LinkedHashMap
+        chunks = new LinkedHashMap<String, Integer>(1);
     }
 
     /**
      * @return Number of chunks stored.
      */
     public int getNumberChunks() {
-        return chunkIndex;
+        return chunks.size();
     }
+
+    /**
+     * @return Unmodifiable Map of referenced chunk keys and their size.
+     */
+    public Map<String, Integer> getChunks(){
+        return Collections.unmodifiableMap(chunks);
+    }
+
 
     @Override
     public void write( int b ) throws IOException {
@@ -101,9 +115,10 @@ class ChunkOutputStream extends OutputStream {
             new RetryOperation() {
                 @Override
                 protected boolean call() {
-                    String chunkKey = keyPrefix + "-" + chunkIndex;
+                    String chunkKey = keyPrefix + "-" + chunks.size();
                     logger.debug("Store chunk {0}", chunkKey);
                     blobCache.put(chunkKey, chunk);
+                    chunks.put(chunkKey, chunk.length);
                     return true;
                 }
             }.doTry();
@@ -112,7 +127,6 @@ class ChunkOutputStream extends OutputStream {
         } catch (Exception e) {
             throw new IOException(e);
         }
-        chunkIndex++;
         chunkBuffer.reset();
     }
 
