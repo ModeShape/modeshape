@@ -73,6 +73,7 @@ public class ModelKeys {
     static final String LOCK_CACHE_NAME = "lock-cache-name";
     static final String LOCKING_STRATEGY = "locking-strategy";
     static final String METADATA_CACHE_NAME = "metadata-cache-name";
+    static final String CHUNK_SIZE = "chunk-size";
     static final String MINIMUM_BINARY_SIZE = "minimum-binary-size";
     static final String MINIMUM_STRING_SIZE = "minimum-string-size";
     static final String MODE = "indexing-mode";

@@ -25,6 +25,7 @@
 package org.modeshape.jcr.value.binary;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,7 +61,6 @@ public class BinaryStorageTest extends SingleUseAbstractTest {
     @Test
     @FixFor("MODE-2051")
     public void shouldStoreBinariesIntoCacheBinaryStoreWithTransientRepository() throws Exception {
-        FileUtil.delete("target/persistent_repository");
         startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
         byte[] smallData = randomBytes(100);
         storeAndAssert(smallData, "smallNode");
@@ -80,6 +80,58 @@ public class BinaryStorageTest extends SingleUseAbstractTest {
         storeAndAssert(largeData, "largeNode");
     }
 
+    @Test
+    @FixFor("MODE-1752")
+    public void shouldCorrectlySkipBytesFromCacheBinaryStoreStream() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
+        //chunk size is configured to 1000
+        byte[] data = randomBytes(3003);
+        InputStream inputStream = storeBinaryProperty(data, "skipNode1");
+        assertEquals(2, inputStream.skip(2));
+        assertEquals(1, inputStream.skip(1));
+        assertEquals(1000, inputStream.skip(1000));
+        assertEquals(1001, inputStream.skip(1001));
+        assertEquals(999, inputStream.skip(1000));
+        assertEquals(0, inputStream.skip(1));
+        assertEquals(0, inputStream.skip(10));
+        inputStream.close();
+
+        inputStream = storeBinaryProperty(data, "skipNode2");
+        assertEquals(3003, inputStream.skip(3003));
+        assertEquals(0, inputStream.skip(1));
+        assertEquals(0, inputStream.skip(10));
+        inputStream.close();
+
+        inputStream = storeBinaryProperty(data, "skipNode3");
+        assertEquals(2000, inputStream.skip(2000));
+        assertEquals(1003, inputStream.skip(1003));
+        assertEquals(0, inputStream.skip(1));
+        inputStream.close();
+    }
+
+    @Test
+    @FixFor("MODE-1752")
+    public void shouldCorrectlyReadBytesAfterSkippingFromCacheBinaryStoreStream() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
+        //chunk size is configured to 1000
+        byte[] data = randomBytes(3003);
+        InputStream inputStream = storeBinaryProperty(data, "skipNode1");
+        assertEquals(2, inputStream.skip(2));
+        byte[] expected = new byte[data.length - 2];
+        System.arraycopy(data, 2, expected, 0, data.length - 2);
+        assertArrayEquals(expected, IoUtil.readBytes(inputStream));
+
+        inputStream = storeBinaryProperty(data, "skipNode2");
+        assertEquals(3003, inputStream.skip(3003));
+        assertArrayEquals(new byte[0], IoUtil.readBytes(inputStream));
+
+        inputStream = storeBinaryProperty(data, "skipNode3");
+        assertEquals(2000, inputStream.skip(2000));
+        expected = new byte[data.length - 2000];
+        System.arraycopy(data, 2000, expected, 0, data.length - 2000);
+        assertArrayEquals(expected, IoUtil.readBytes(inputStream));
+    }
+
     private byte[] randomBytes(int size) {
         byte[] data = new byte[size];
         RANDOM.nextBytes(data);
@@ -87,14 +139,19 @@ public class BinaryStorageTest extends SingleUseAbstractTest {
     }
 
     private void storeAndAssert(byte[] data, String nodeName) throws RepositoryException, IOException {
+        InputStream stream = storeBinaryProperty(data, nodeName);
+        byte[] storedData = IoUtil.readBytes(stream);
+        assertArrayEquals("Data retrieved does not match data stored", data, storedData);
+    }
+
+    private InputStream storeBinaryProperty( byte[] data,
+                                             String nodeName ) throws RepositoryException {
         Node testRoot = jcrSession().getRootNode().addNode(nodeName);
         testRoot.setProperty("binary", session.getValueFactory().createValue(new ByteArrayInputStream(data)));
         jcrSession().save();
 
         Property binary = jcrSession().getNode("/" + nodeName).getProperty("binary");
         Assert.assertNotNull(binary);
-        InputStream stream = binary.getBinary().getStream();
-        byte[] storedData = IoUtil.readBytes(stream);
-        assertArrayEquals("Data retrieved does not match data stored", data, storedData);
+        return binary.getBinary().getStream();
     }
 }

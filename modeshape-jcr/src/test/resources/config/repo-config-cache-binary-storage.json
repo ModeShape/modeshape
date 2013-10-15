@@ -11,7 +11,8 @@
             "cacheConfiguration" : "config/infinispan-persistent-binary-store.xml",
             "dataCacheName" : "binary-data",
             "metadataCacheName" : "binary-meta-data",
-            "minimumBinarySizeInBytes" : 1024
+            "minimumBinarySizeInBytes" : 1000,
+            "chunkSize" : 1000
         }
     }
 }

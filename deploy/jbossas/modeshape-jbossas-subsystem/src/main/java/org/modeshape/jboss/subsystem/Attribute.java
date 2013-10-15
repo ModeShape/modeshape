@@ -68,6 +68,7 @@ public enum Attribute {
     LOCK_CACHE_NAME("lock-cache-name"),
     LOCKING_STRATEGY("locking-strategy"),
     META_CACHE_NAME("metadata-cache-name"),
+    CHUNK_SIZE("chunk-size"),
     MIN_VALUE_SIZE("min-value-size"),
     MIN_STRING_SIZE("min-string-size"),
     MODE("mode"),

@@ -458,6 +458,13 @@ public class ModelAttributes {
                                                                                                                               .setAllowNull(true)
                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                               .build();
+    public static final SimpleAttributeDefinition CHUNK_SIZE = new MappedAttributeDefinitionBuilder(
+                                                                                                             ModelKeys.CHUNK_SIZE,
+                                                                                                             ModelType.INT).setXmlName(Attribute.CHUNK_SIZE.getLocalName())
+                                                                                                                              .setAllowExpression(false)
+                                                                                                                              .setAllowNull(true)
+                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                              .build();
 
     public static final SimpleAttributeDefinition MINIMUM_BINARY_SIZE = new MappedAttributeDefinitionBuilder(
                                                                                                              ModelKeys.MINIMUM_BINARY_SIZE,
@@ -862,7 +869,7 @@ public class ModelAttributes {
         RELATIVE_TO, STORE_NAME};
 
     public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
-        DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER, STORE_NAME};
+        CHUNK_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER, STORE_NAME};
 
     public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
         DATA_SOURCE_JNDI_NAME, STORE_NAME};

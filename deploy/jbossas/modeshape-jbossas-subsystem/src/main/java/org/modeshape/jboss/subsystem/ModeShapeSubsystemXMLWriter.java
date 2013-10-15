@@ -389,6 +389,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.DATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.METADATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.CHUNK_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.CACHE_CONTAINER.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();

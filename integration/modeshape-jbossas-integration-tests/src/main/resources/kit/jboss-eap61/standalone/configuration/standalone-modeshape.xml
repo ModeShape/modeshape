@@ -609,7 +609,8 @@
                                       metadata-cache-name="binary-fs-meta"
                                       cache-container="binary-cache-container"
                                       min-string-size="10"
-                                      min-value-size="1024"/>
+                                      min-value-size="1024"
+                                      chunk-size="1000"/>
                 <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
             <repository name="binaryJDBCRepository" enable-queries="false">

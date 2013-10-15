@@ -139,7 +139,7 @@
                             "properties" : {
                                 "type" : {
                                     "type" : "string",
-                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database.",
+                                    "description" : "The specification of the Infinispan binary store, which stores BINARY values in an Infinispan cache.",
                                     "enum" : [ "cache" ]
                                 },
                                 "dataCacheName" : {
@@ -161,10 +161,15 @@
                                     "default" : 4096,
                                     "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
                                 },
+                                "chunkSize" : {
+                                    "type" : "integer",
+                                    "default" : 1048576,
+                                    "description" : "The size (in bytes) of a segment which dictates into how many segments a binary value is split when stored in the cache. Each chunk represents an entry in the cache"
+                                },
                                 "description" : {
                                     "type" : "string",
                                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                },
+                                }
                             }
                         },
                     ]

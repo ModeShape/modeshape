@@ -358,6 +358,12 @@ public class RepositoryConfigurationTest {
         assertValid("config/repo-config-jdbc-binary-storage.json");
     }
 
+    @Test
+    @FixFor( "MODE-1752" )
+    public void shouldAllowCacheBinaryStorage() throws Exception {
+        assertValid("config/repo-config-cache-binary-storage.json");
+    }
+
     @FixFor( "MODE-1988" )
     @Test
     public void shouldNotEnableDocumentOptimizationByDefault() {
