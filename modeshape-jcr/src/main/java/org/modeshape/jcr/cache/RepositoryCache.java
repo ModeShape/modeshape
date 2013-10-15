@@ -552,7 +552,10 @@ public class RepositoryCache implements Observable {
             // We just need to read the metadata from the document, and we don't need a transaction for it ...
             Document doc = entry.getContentAsDocument();
             Property accessProp = translator.getProperty(doc, name("accessControl"));
-            boolean enabled = context.getValueFactories().getBooleanFactory().create(accessProp.getFirstValue());
+            boolean enabled = false;
+            if (accessProp != null) {
+                enabled = context.getValueFactories().getBooleanFactory().create(accessProp.getFirstValue());
+            }
             this.accessControlEnabled.set(enabled);
 
             Property prop = translator.getProperty(doc, name("workspaces"));
