@@ -25,7 +25,9 @@
 package org.modeshape.connector.filesystem;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -41,6 +43,7 @@ import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import org.junit.Before;
@@ -54,6 +57,7 @@ import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
@@ -344,6 +348,23 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         session.save();
 
         assertNotNull(root.getNode("test"));
+    }
+
+    @Test
+    @FixFor( "MODE-2073" )
+    public void shouldBeAbleToCopyExternalNodesWithBinaryValuesIntoTheRepository() throws Exception {
+        javax.jcr.Binary externalBinary = jcrSession().getNode("/testRoot/store/dir3/simple.json/jcr:content").getProperty("jcr:data").getBinary();
+        jcrSession().getRootNode().addNode("files");
+        jcrSession().save();
+        jcrSession().getWorkspace().copy("/testRoot/store/dir3/simple.json", "/files/simple.json");
+        Node file = session.getNode("/files/simple.json");
+        assertNotNull(file);
+        assertEquals("nt:file", file.getPrimaryNodeType().getName());
+        Property property = file.getNode("jcr:content").getProperty("jcr:data");
+        assertNotNull(property);
+        javax.jcr.Binary copiedBinary = property.getBinary();
+        assertFalse(copiedBinary instanceof ExternalBinaryValue);
+        assertArrayEquals(IoUtil.readBytes(externalBinary.getStream()), IoUtil.readBytes(copiedBinary.getStream()));
     }
 
     protected void assertNoSidecarFile( Projection projection,

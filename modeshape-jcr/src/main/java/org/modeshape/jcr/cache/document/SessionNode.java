@@ -80,6 +80,7 @@ import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
 import org.modeshape.jcr.value.basic.UuidReference;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -2394,9 +2395,8 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * After the entire graph of nodes has been copied, look at each of the target nodes for reference properties pointing
-         * towards nodes in the source graph that now have equivalent nodes in the target graph.
-         *
-         * If that is the case, update those reference properties.
+         * towards nodes in the source graph that now have equivalent nodes in the target graph. If that is the case, update those
+         * reference properties.
          */
         protected void resolveReferences() {
             for (Map.Entry<NodeKey, NodeKey> entry : sourceToTargetKeys.entrySet()) {
@@ -2410,13 +2410,13 @@ public class SessionNode implements MutableCachedNode {
                 MutableCachedNode targetNode = targetCache.mutable(targetKey);
                 for (Property property : referenceProperties) {
                     List<Reference> resolvedReferences = new ArrayList<Reference>();
-                    for (Iterator<?> valuesIterator = property.getValues(); valuesIterator.hasNext(); ) {
+                    for (Iterator<?> valuesIterator = property.getValues(); valuesIterator.hasNext();) {
                         Reference reference = (Reference)valuesIterator.next();
                         resolvedReferences.add(resolveReference(sourceKey, targetKey, property.getName(), reference));
                     }
-                    Property updatedProperty = property.isMultiple() ?
-                                               propertyFactory.create(property.getName(), resolvedReferences) :
-                                               propertyFactory.create(property.getName(), resolvedReferences.get(0));
+                    Property updatedProperty = property.isMultiple() ? propertyFactory.create(property.getName(),
+                                                                                              resolvedReferences) : propertyFactory.create(property.getName(),
+                                                                                                                                           resolvedReferences.get(0));
                     targetNode.setProperty(targetCache, updatedProperty);
                 }
             }
@@ -2426,44 +2426,51 @@ public class SessionNode implements MutableCachedNode {
                                             NodeKey targetNodeKey,
                                             Name propertyName,
                                             Reference referenceInSource ) {
-            //try to resolve the reference into a node key that can be located in the source cache
+            // try to resolve the reference into a node key that can be located in the source cache
             String referenceStringValue = referenceInSource.getString();
             NodeKey referenceInSourceKey = null;
             if (referenceInSource instanceof NodeKeyReference) {
-                referenceInSourceKey = ((NodeKeyReference) referenceInSource).getNodeKey();
+                referenceInSourceKey = ((NodeKeyReference)referenceInSource).getNodeKey();
             } else if (NodeKey.isValidFormat(referenceStringValue)) {
                 referenceInSourceKey = new NodeKey(referenceStringValue);
             } else {
-                //the reference value can't be resolved into a node key directly, so try using the owning node's key
-                //to construct a reference
+                // the reference value can't be resolved into a node key directly, so try using the owning node's key
+                // to construct a reference
                 referenceInSourceKey = sourceNodeKey.withId(referenceStringValue);
             }
 
             if (referenceInSourceKey.getWorkspaceKey().equals(systemWorkspaceKey)) {
-                //in the case of the system workspace, we should preserve references as-is
+                // in the case of the system workspace, we should preserve references as-is
                 return referenceInSource;
             }
 
-            //we have a node key for the reference in the source so try to resolve it in the target
+            // we have a node key for the reference in the source so try to resolve it in the target
             NodeKey referenceInTargetKey = sourceToTargetKeys.get(referenceInSourceKey);
             if (referenceInTargetKey == null) {
-                //the source of this reference does not have a corresponding target in the copy/clone graph
+                // the source of this reference does not have a corresponding target in the copy/clone graph
 
-                //try to resolve the reference in the whole target (including outside the copy/clone graph)
+                // try to resolve the reference in the whole target (including outside the copy/clone graph)
                 referenceInTargetKey = referenceInSourceKey.withWorkspaceKey(targetNodeKey.getWorkspaceKey());
                 boolean resolvableInTargetWorkspace = targetCache.getNode(referenceInTargetKey) != null;
                 boolean resolvableInSourceWorkspace = sourceCache.getNode(referenceInSourceKey) != null;
                 if (!resolvableInTargetWorkspace && resolvableInSourceWorkspace) {
-                    //it's not resolvable in the target but it's resolvable in the source, so the clone/copy graph is not reference-isolated
-                    throw new WrappedException(new RepositoryException(JcrI18n.cannotCopyOrCloneReferenceOutsideGraph.text(
-                            propertyName, referenceInSourceKey, startingPathInSource)));
+                    // it's not resolvable in the target but it's resolvable in the source, so the clone/copy graph is not
+                    // reference-isolated
+                    throw new WrappedException(
+                                               new RepositoryException(
+                                                                       JcrI18n.cannotCopyOrCloneReferenceOutsideGraph.text(propertyName,
+                                                                                                                           referenceInSourceKey,
+                                                                                                                           startingPathInSource)));
                 } else if (!resolvableInSourceWorkspace && !referenceInSource.isWeak() && !referenceInSource.isSimple()) {
-                    //it's a non resolvable strong reference, meaning it's corrupt
-                    throw new WrappedException(new RepositoryException(JcrI18n.cannotCopyOrCloneCorruptReference.text(
-                            propertyName, referenceInSourceKey)));
+                    // it's a non resolvable strong reference, meaning it's corrupt
+                    throw new WrappedException(
+                                               new RepositoryException(
+                                                                       JcrI18n.cannotCopyOrCloneCorruptReference.text(propertyName,
+                                                                                                                      referenceInSourceKey)));
                 }
             }
-            //there is a corresponding target node either in or outside the clone/copy graph or an invalid reference in the source
+            // there is a corresponding target node either in or outside the clone/copy graph or an invalid reference in the
+            // source
             if (referenceInSource.isSimple()) {
                 return valueFactories.getSimpleReferenceFactory().create(referenceInTargetKey, referenceInSource.isForeign());
             } else if (referenceInSource.isWeak()) {
@@ -2479,8 +2486,8 @@ public class SessionNode implements MutableCachedNode {
             for (Iterator<Property> propertyIterator = sourceNode.getProperties(sourceCache); propertyIterator.hasNext();) {
                 Property property = propertyIterator.next();
                 if (property.isReference() || property.isSimpleReference()) {
-                    //reference properties are not copied directly because that would cause incorrect back-pointers
-                    //they are processed at the end of the clone/copy operation.
+                    // reference properties are not copied directly because that would cause incorrect back-pointers
+                    // they are processed at the end of the clone/copy operation.
                     Set<Property> referenceProperties = sourceKeyToReferenceProperties.get(sourceNodeKey);
                     if (referenceProperties == null) {
                         referenceProperties = new HashSet<Property>();
@@ -2488,13 +2495,44 @@ public class SessionNode implements MutableCachedNode {
                     }
                     referenceProperties.add(property);
                 } else if (property.getName().equals(JcrLexicon.UUID)) {
-                    //UUIDs need to be handled differently
+                    // UUIDs need to be handled differently
                     copyUUIDProperty(property, targetNode, sourceNode);
                 } else {
-                    //it's a regular property, so copy as-is
-                    targetNode.setProperty(targetCache, property);
+                    boolean sourceExternal = !sourceNodeKey.getSourceKey().equals(sourceCache.getRootKey().getSourceKey());
+                    boolean targetInternal = targetNode.getKey().getSourceKey().equals(targetCache.getRootKey().getSourceKey());
+                    // we're trying to copy an external binary into an internal node
+                    if (sourceExternal && targetInternal && property.getFirstValue() instanceof ExternalBinaryValue) {
+                        Property newProperty = null;
+                        if (property.isMultiple()) {
+                            List<Object> values = new ArrayList<Object>(property.size());
+                            for (Object value : property) {
+                                values.add(convertToInternalBinaryValue(value));
+                            }
+                            newProperty = propertyFactory.create(property.getName(), values.iterator());
+                        } else if (property.isSingle()) {
+                            Object value = convertToInternalBinaryValue(property.getFirstValue());
+                            newProperty = propertyFactory.create(property.getName(), value);
+                        }
+                        // otherwise the property is empty
+
+                        if (newProperty != null) targetNode.setProperty(targetCache, newProperty);
+                    } else {
+                        // it's a regular property, so copy as-is
+                        targetNode.setProperty(targetCache, property);
+                    }
                 }
             }
+        }
+
+        protected Object convertToInternalBinaryValue( Object value ) {
+            if (value instanceof ExternalBinaryValue) {
+                try {
+                    return valueFactories.getBinaryFactory().create(((ExternalBinaryValue)value).getStream());
+                } catch (RepositoryException e) {
+                    throw new WrappedException(e);
+                }
+            }
+            return value;
         }
 
         protected void copyUUIDProperty( Property sourceProperty,
