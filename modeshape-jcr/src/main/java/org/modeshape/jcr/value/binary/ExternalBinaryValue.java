@@ -49,25 +49,6 @@ public abstract class ExternalBinaryValue extends AbstractBinary {
     /**
      * Creates a new instance, with the given params
      * 
-     * @param sha1 the SHA-1 of the binary, never {@code null}
-     * @param sourceName name of the external source which owns the value, {@code never null}
-     * @param id the source-specific identifier of the binary, never {@code null}
-     * @param size the length of the binary
-     * @param nameHint optional name which can help with mime-type detection
-     * @param mimeTypeDetector the repository's {@link MimeTypeDetector}
-     */
-    protected ExternalBinaryValue( String sha1,
-                                   String sourceName,
-                                   String id,
-                                   long size,
-                                   String nameHint,
-                                   MimeTypeDetector mimeTypeDetector ) {
-        this(new BinaryKey(sha1), id, sourceName, size, nameHint, mimeTypeDetector);
-    }
-
-    /**
-     * Creates a new instance, with the given params
-     * 
      * @param key the binary key, never {@code null}
      * @param sourceName name of the external source which owns the value, {@code never null}
      * @param id the source-specific identifier of the binary, never {@code null}

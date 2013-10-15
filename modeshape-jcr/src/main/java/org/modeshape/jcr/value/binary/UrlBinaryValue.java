@@ -18,13 +18,12 @@ public class UrlBinaryValue extends ExternalBinaryValue {
 
     private URL url;
 
-    public UrlBinaryValue( BinaryKey key,
-                           String sourceName,
+    public UrlBinaryValue( String sourceName,
                            URL content,
                            long size,
                            String nameHint,
                            MimeTypeDetector mimeTypeDetector ) {
-        super(key, sourceName, content.toExternalForm(), size, nameHint, mimeTypeDetector);
+        super(new BinaryKey(content.toString()), sourceName, content.toExternalForm(), size, nameHint, mimeTypeDetector);
         this.url = content;
     }
 

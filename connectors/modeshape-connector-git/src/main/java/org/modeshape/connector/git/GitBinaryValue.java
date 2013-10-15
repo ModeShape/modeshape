@@ -30,6 +30,7 @@ import javax.jcr.RepositoryException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.AbstractBinary;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
@@ -48,7 +49,7 @@ public class GitBinaryValue extends ExternalBinaryValue {
                            String sourceName,
                            String nameHint,
                            MimeTypeDetector mimeTypeDetector ) {
-        super(id.getName(), sourceName, id.getName(), loader.getSize(), nameHint, mimeTypeDetector);
+        super(new BinaryKey(id.getName()), sourceName, id.getName(), loader.getSize(), nameHint, mimeTypeDetector);
         this.loader = loader;
     }
 

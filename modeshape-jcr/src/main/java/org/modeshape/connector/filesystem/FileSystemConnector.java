@@ -40,8 +40,6 @@ import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.SecureHash;
-import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -57,7 +55,6 @@ import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Pageable;
 import org.modeshape.jcr.federation.spi.WritableConnector;
-import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
@@ -335,9 +332,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      */
     protected ExternalBinaryValue binaryFor( File file ) {
         try {
-            byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
-            BinaryKey key = new BinaryKey(sha1);
-            return createBinaryValue(key, file);
+            return createBinaryValue(file);
         } catch (RuntimeException e) {
             throw e;
         } catch (Throwable e) {
@@ -349,15 +344,13 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * Utility method to create a {@link BinaryValue} object for the given file. Subclasses should rarely override this method,
      * since the {@link UrlBinaryValue} will be applicable in most situations.
      * 
-     * @param key the binary key; never null
      * @param file the file for which the {@link BinaryValue} is to be created; never null
      * @return the binary value; never null
      * @throws IOException if there is an error creating the value
      */
-    protected ExternalBinaryValue createBinaryValue( BinaryKey key,
-                                                     File file ) throws IOException {
+    protected ExternalBinaryValue createBinaryValue( File file ) throws IOException {
         URL content = createUrlForFile(file);
-        return new UrlBinaryValue(key, getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
+        return new UrlBinaryValue(getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
     }
 
     /**
