@@ -80,6 +80,7 @@ import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
 import org.modeshape.jcr.value.basic.UuidReference;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -2491,6 +2492,21 @@ public class SessionNode implements MutableCachedNode {
                     //UUIDs need to be handled differently
                     copyUUIDProperty(property, targetNode, sourceNode);
                 } else {
+                    boolean sourceExternal = !sourceNodeKey.getSourceKey().equals(sourceCache.getRootKey().getSourceKey());
+                    boolean targetInternal = targetNode.getKey().getSourceKey().equals(targetCache.getRootKey().getSourceKey());
+                    //we're trying to copy an external binary into an internal node
+                    if (sourceExternal && targetInternal && property.getFirstValue() instanceof ExternalBinaryValue) {
+                        try {
+                            ExternalBinaryValue externalBinaryValue = (ExternalBinaryValue)property.getFirstValue();
+                            BinaryValue internalBinary = valueFactories.getBinaryFactory().create(
+                                    externalBinaryValue.getStream());
+                            Property internalBinaryProperty = propertyFactory.create(property.getName(), internalBinary);
+                            targetNode.setProperty(targetCache, internalBinaryProperty);
+                            continue;
+                        } catch (RepositoryException e) {
+                            throw new WrappedException(e);
+                        }
+                    }
                     //it's a regular property, so copy as-is
                     targetNode.setProperty(targetCache, property);
                 }
