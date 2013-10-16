@@ -321,6 +321,7 @@ final class CreateTableParser extends StatementParser {
      * 
      * @param tokens the tokens being processed (cannot be <code>null</code> or empty)
      * @param tableNode the table node used to lookup referenced column nodes (cannot be <code>null</code>)
+     * @param unresolvedReferencedTableNode the unresolved table references component; may be null
      * @return the collection of referenced column nodes (never <code>null</code> or empty)
      * @throws ParsingException if a node of a referenced column cannot be found
      */
