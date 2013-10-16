@@ -303,22 +303,6 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-2061" )
-    public void shouldUseOpenSSLtoComputeSha1() throws Exception {
-        String actualContent = "This is the content of the file.";
-        tools.uploadFile(session, "/testRoot/store/dir3/newFile.txt", new ByteArrayInputStream(actualContent.getBytes()));
-        session.save();
-
-        // Make sure the file on the file system contains what we put in ...
-        assertFileContains(storeProjection, "dir3/newFile.txt", actualContent.getBytes());
-
-        // Make sure that we can re-read the binary content via JCR ...
-        Node contentNode = session.getNode("/testRoot/store/dir3/newFile.txt/jcr:content");
-        Binary value = (Binary)contentNode.getProperty("jcr:data").getBinary();
-        assertBinaryContains(value, actualContent.getBytes());
-    }
-
-    @Test
     @FixFor( "MODE-1802" )
     public void shouldSupportRootProjection() throws Exception {
         // Clean up the folder that the test creates

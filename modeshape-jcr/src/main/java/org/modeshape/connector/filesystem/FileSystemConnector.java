@@ -24,16 +24,13 @@
 package org.modeshape.connector.filesystem;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -43,8 +40,6 @@ import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.SecureHash;
-import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -54,14 +49,12 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.federation.NoExtraPropertiesStorage;
 import org.modeshape.jcr.federation.spi.Connector;
-import org.modeshape.jcr.federation.spi.ConnectorException;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Pageable;
 import org.modeshape.jcr.federation.spi.WritableConnector;
-import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
@@ -177,12 +170,6 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     private int pageSize = 20;
 
     /**
-     * The size in bytes of files for which OpenSSL should be used to calculate the SHA-1. OpenSSL is generally slower for small
-     * files, but significantly faster for large files. The default is 50kB.
-     */
-    private long largeFileSize = 1024 * 50; // 50kB
-
-    /**
      * The {@link FilenameFilter} implementation that is instantiated in the
      * {@link #initialize(NamespaceRegistry, NodeTypeManager)} method.
      */
@@ -206,8 +193,6 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     private String extraPropertiesStorage;
 
     private NamespaceRegistry registry;
-
-    private BinaryKeyFactory binaryKeyFactory;
 
     @Override
     public void initialize( NamespaceRegistry registry,
@@ -248,17 +233,6 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             setExtraPropertiesStore(new NoExtraPropertiesStorage(this));
         }
         // otherwise use the default extra properties storage
-
-        // Set up the binary key factory ...
-        try {
-            BinaryKeyFactory smallFileFactory = new StreamingBinaryKeyFactory();
-            BinaryKeyFactory largeFileFactory = new OpenSslBinaryKeyFactory(smallFileFactory); // fails if openssl not available
-            binaryKeyFactory = new SwitchingBinaryKeyFactory(smallFileFactory, largeFileFactory, largeFileSize);
-        } catch (Throwable e) {
-            log().warn("The \"{0}\" connector cannot use the OpenSSL utility. SHA-1s will be calculated by streaming contents and may be slower for large files.",
-                       getSourceName());
-            binaryKeyFactory = new StreamingBinaryKeyFactory();
-        }
     }
 
     /**
@@ -358,11 +332,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      */
     protected ExternalBinaryValue binaryFor( File file ) {
         try {
-            if (!file.canRead() || !file.isFile()) {
-                throw new ConnectorException("Unable to compute the SHA-1 of a directory or non-existant or non-readable file");
-            }
-            BinaryKey key = binaryKeyFactory.createKey(file);
-            return createBinaryValue(key, file);
+            return createBinaryValue(file);
         } catch (RuntimeException e) {
             throw e;
         } catch (Throwable e) {
@@ -374,15 +344,13 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * Utility method to create a {@link BinaryValue} object for the given file. Subclasses should rarely override this method,
      * since the {@link UrlBinaryValue} will be applicable in most situations.
      * 
-     * @param key the binary key; never null
      * @param file the file for which the {@link BinaryValue} is to be created; never null
      * @return the binary value; never null
      * @throws IOException if there is an error creating the value
      */
-    protected ExternalBinaryValue createBinaryValue( BinaryKey key,
-                                                     File file ) throws IOException {
+    protected ExternalBinaryValue createBinaryValue( File file ) throws IOException {
         URL content = createUrlForFile(file);
-        return new UrlBinaryValue(key, getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
+        return new UrlBinaryValue(getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
     }
 
     /**
@@ -741,78 +709,4 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         }
         return newFolderWriter(parentId, folder, pageKey.getOffsetInt()).document();
     }
-
-    protected static interface BinaryKeyFactory {
-        BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException;
-    }
-
-    protected class StreamingBinaryKeyFactory implements BinaryKeyFactory {
-        @Override
-        public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
-            byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
-            BinaryKey key = new BinaryKey(sha1);
-            log().trace("SHA-1 of '{0}' = {1} computed using internal SecureHash", file, key);
-            return key;
-        }
-    }
-
-    protected class OpenSslBinaryKeyFactory implements BinaryKeyFactory {
-        private final Runtime rt;
-
-        public OpenSslBinaryKeyFactory( BinaryKeyFactory verifier ) throws IOException, NoSuchAlgorithmException {
-            rt = Runtime.getRuntime();
-            File tmp = File.createTempFile("openssltest", "txt");
-            try {
-                IoUtil.write("this is a test", tmp);
-                BinaryKey opensslKey = createKey(tmp);
-                BinaryKey streamKey = verifier.createKey(tmp);
-                if (!opensslKey.equals(streamKey)) {
-                    log().warn("The \"{0}\" connector attempted to use the OpenSSL utility, but it returned unexpected results.",
-                               getSourceName());
-                    throw new RuntimeException("Unmatched SHA-1s from streaming and openssl");
-                }
-            } finally {
-                tmp.delete();
-            }
-        }
-
-        @Override
-        public BinaryKey createKey( File file ) throws IOException {
-            String cmd = "openssl dgst -sha1 " + file.getPath();
-            Process pr = rt.exec(cmd);
-            BufferedReader input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-            String s = input.readLine();
-            String sha1 = "";
-            if (!s.startsWith("SHA1")) {
-                throw new RuntimeException("Error calculating checksum using command: " + cmd);
-            }
-            sha1 = s.substring(s.lastIndexOf(" ") + 1);
-            BinaryKey key = new BinaryKey(sha1);
-            log().trace("SHA-1 of '{0}' = {1} computed using: {2}", file, key, cmd);
-            return key;
-        }
-    }
-
-    protected class SwitchingBinaryKeyFactory implements BinaryKeyFactory {
-        private BinaryKeyFactory smallFileFactory;
-        private BinaryKeyFactory largeFileFactory;
-        private final long largeSizeInBytes;
-
-        protected SwitchingBinaryKeyFactory( BinaryKeyFactory smallFileFactory,
-                                             BinaryKeyFactory largeFileFactory,
-                                             long largeSizeInBytes ) {
-            this.smallFileFactory = smallFileFactory;
-            this.largeFileFactory = largeFileFactory;
-            this.largeSizeInBytes = largeSizeInBytes;
-        }
-
-        @Override
-        public BinaryKey createKey( File file ) throws IOException, NoSuchAlgorithmException {
-            if (file.length() < largeSizeInBytes) {
-                return this.smallFileFactory.createKey(file);
-            }
-            return this.largeFileFactory.createKey(file);
-        }
-    }
-
 }
