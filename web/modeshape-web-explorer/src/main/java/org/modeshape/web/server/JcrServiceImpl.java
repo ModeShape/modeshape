@@ -63,6 +63,7 @@ import javax.jcr.security.Privilege;
 import javax.naming.InitialContext;
 import org.modeshape.web.shared.JcrNode;
 import org.modeshape.web.client.RemoteException;
+import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.shared.JcrPolicy;
 import org.modeshape.web.shared.JcrAccessControlList;
 import org.modeshape.web.shared.JcrNodeType;
@@ -81,11 +82,22 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public boolean login(String jndiName, String userName, String password, String workspace) throws RemoteException {
+        Repository repository = null;
+        
         try {
-            InitialContext context = new InitialContext();
-            Repository repository = (Repository) context.lookup(jndiName);
-
-            Session session = null;
+            repository = RepositoryManager.getRepository(jndiName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            try {
+                InitialContext context = new InitialContext();
+                repository = (Repository) context.lookup(jndiName);
+            } catch (Exception ex) {
+               throw new RemoteException(e.getMessage() + " or " + ex.getMessage()) ;
+            }
+        }
+        
+        try {
+            Session session;
             if (userName != null && userName.length() > 0) {
                 SimpleCredentials creds = new SimpleCredentials(userName, password.toCharArray());
                 session = repository.login(creds, workspace);
@@ -93,11 +105,9 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 session = repository.login(workspace);
             }
 
-            log.info("Logged in :" + session);
             this.getThreadLocalRequest().getSession().setAttribute("session", session);
             return true;
         } catch (Exception e) {
-            log.info("Failed Login. " + e.getMessage());
             throw new RemoteException(e.getMessage());
         }
     }
@@ -663,6 +673,19 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             throw new RemoteException(e.getMessage());
         }
         return list;
+    }
+
+    @Override
+    public String getRequestedURI() {
+        String uri = (String) getThreadLocalRequest().getSession(true).getAttribute("initial.uri");
+        if (uri != null) {
+            return uri;
+        }
+        
+        uri =  getThreadLocalRequest().getRequestURI();
+        String servletPath = getThreadLocalRequest().getServletPath();
+        
+        return uri.substring(0, uri.indexOf(servletPath));
     }
     
     private class SimplePrincipal implements Principal {

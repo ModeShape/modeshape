@@ -23,6 +23,7 @@
  */
 package org.modeshape.web.client;
 
+import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.data.Record;
 import com.smartgwt.client.types.Alignment;
@@ -120,6 +121,9 @@ public class NodePanel extends Tab {
         generalInfo.setNode(node);
         properties.setData(node.getProperties());
         accessControl.display(node.getAccessList(), null);
+        
+        console.jcrURL.setPath(path);
+        console.htmlHistory.newItem(console.jcrURL.toString(), true);
     }
     
     public void setProperties(Collection<JcrProperty> props) {

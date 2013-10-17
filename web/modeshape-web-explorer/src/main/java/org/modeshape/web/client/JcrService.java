@@ -40,6 +40,13 @@ import org.modeshape.web.shared.ResultSet;
 @RemoteServiceRelativePath("jcr")
 public interface JcrService extends RemoteService {
     /**
+     * Gets initial request line.
+     * 
+     * @return 
+     */
+    public String getRequestedURI();
+    
+    /**
      * Provides access for the given user to the given repository.
      * 
      * @param jndiName the jndi name of the repository.

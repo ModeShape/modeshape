@@ -44,7 +44,7 @@
             <groupId>com.googlecode.sardine</groupId>
             <artifactId>sardine</artifactId>
         </dependency>
-	<dependency>
+        <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-servlet</artifactId>
             <scope>runtime</scope>
@@ -63,6 +63,12 @@
             <groupId>com.smartgwt</groupId>
             <artifactId>smartgwt-skins</artifactId>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr</artifactId>
+            <scope>provided</scope>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <build>
