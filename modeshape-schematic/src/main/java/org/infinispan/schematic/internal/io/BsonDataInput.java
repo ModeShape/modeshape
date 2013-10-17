@@ -237,7 +237,7 @@ public class BsonDataInput implements DataInput {
      */
     public static String readUTF( DataInput dis,
                                   int len ) throws IOException {
-        CharsetDecoder decoder = Utf8Util.getUtf8Decoder();
+        CharsetDecoder decoder = Utf8Util.CHARSET.newDecoder();
         BufferCache bufferCache = getBufferCache();
         ByteBuffer byteBuf = bufferCache.getByteBuffer(BufferCache.MINIMUM_SIZE);
         CharBuffer charBuf = bufferCache.getCharBuffer(BufferCache.MINIMUM_SIZE);
@@ -281,9 +281,13 @@ public class BsonDataInput implements DataInput {
                     // We've not read enough bytes yet, so move the bytes that weren't read to the beginning of the buffer
                     byteBuf.compact();
                     // and try again ...
-                } else if (result.isOverflow()) {
-                    // We've read too many bytes, so the output buffer was too small. Allocate a new one ...
-                    CharBuffer newBuffer = bufferCache.getCharBuffer(charBuf.capacity() + 1048);
+                }
+                if (len > 0 && (charBuf.remaining() == 0 || result.isOverflow())) {
+                    // the output buffer was too small or is at its end.
+                    // allocate a new one which need to have enough capacity to hold the current one (we're appending buffers) and also to hold
+                    // the data from the new iteration.
+                    int newBufferIncrement = (len >  BufferCache.MINIMUM_SIZE) ?  BufferCache.MINIMUM_SIZE : len;
+                    CharBuffer newBuffer = bufferCache.getCharBuffer(charBuf.capacity() + newBufferIncrement);
                     // prepare the old buffer for reading ...
                     charBuf.flip();
                     // and copy the contents ...
@@ -291,7 +295,6 @@ public class BsonDataInput implements DataInput {
                     // and use the new buffer ...
                     charBuf = newBuffer;
                 }
-
             }
             // We're done, so prepare the character buffer for reading and then convert to a String ...
             charBuf.flip();

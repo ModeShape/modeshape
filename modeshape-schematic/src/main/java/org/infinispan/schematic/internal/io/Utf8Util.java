@@ -22,38 +22,7 @@
 package org.infinispan.schematic.internal.io;
 
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 
 public final class Utf8Util {
-
-   private static transient Charset utf8;
-   private static transient CharsetDecoder utf8Decoder;
-   private static transient CharsetEncoder utf8Encoder;
-
-   private Utf8Util() {
-      // prevent instantiation
-   }
-
-   protected static Charset getUtf8() {
-      if (utf8 == null) {
-         utf8 = Charset.forName("UTF-8");
-      }
-      return utf8;
-   }
-
-   protected static CharsetDecoder getUtf8Decoder() {
-      if (utf8Decoder == null) {
-         utf8Decoder = getUtf8().newDecoder();
-      }
-      return utf8Decoder;
-   }
-
-   protected static CharsetEncoder getUtf8Encoder() {
-      if (utf8Encoder == null) {
-         utf8Encoder = getUtf8().newEncoder();
-      }
-      return utf8Encoder;
-   }
-
+    public static final Charset CHARSET = Charset.forName("UTF-8");
 }
