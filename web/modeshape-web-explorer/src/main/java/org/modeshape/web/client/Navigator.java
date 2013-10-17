@@ -264,7 +264,7 @@ public class Navigator extends Label {
      * @param node jcr node value object
      * @return tree node object
      */
-    private JcrTreeNode convert(JcrNode node) {
+    protected JcrTreeNode convert(JcrNode node) {
         JcrTreeNode item = new JcrTreeNode(node.getName(), node.getPath(), node.getPrimaryType());
         item.setProperties(node.getProperties());
 

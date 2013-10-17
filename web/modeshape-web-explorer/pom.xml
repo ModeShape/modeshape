@@ -64,6 +64,10 @@
             <artifactId>smartgwt-skins</artifactId>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <finalName>modeshape-explorer-${project.version}</finalName>

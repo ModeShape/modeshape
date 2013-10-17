@@ -36,6 +36,8 @@ import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
 import com.smartgwt.client.widgets.layout.VLayout;
 import com.smartgwt.client.widgets.tab.TabSet;
+import java.util.List;
+import org.modeshape.web.shared.JcrNode;
 
 /**
  * Entry point classes define
@@ -67,15 +69,58 @@ public class Console implements EntryPoint {
     protected final AddMixinDialog addMixinDialog = new AddMixinDialog("Add mixin", this);
     protected final RemoveMixinDialog removeMixinDialog = new RemoveMixinDialog("Remove mixin", this);
     protected final AddPropertyDialog addPropertyDialog = new AddPropertyDialog("Add property", this);
+    
+    protected JcrURL jcrURL = new JcrURL();
+    protected HtmlHistory htmlHistory = new HtmlHistory();
+    
     /**
      * This is the entry point method.
      */
     @Override
     public void onModuleLoad() {
-        new LoginDialog(this).showDialog();
+        jcrService.getRequestedURI(new AsyncCallback<String>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+
+            @Override
+            public void onSuccess(String result) {
+                jcrURL.parse(result);
+                LoginDialog loginDialog = new LoginDialog(Console.this);
+                loginDialog.setJndiName(jcrURL.getRepository());
+                loginDialog.setWorkspace(jcrURL.getWorkspace());
+            }
+        });
     }
 
-    public void showMainForm() {
+    /**
+     * Reconstructs URL and points browser to the requested node path.
+     * 
+     * @param repository
+     * @param workspace 
+     */
+    public void init(String repository, String workspace) {
+        //upd
+        jcrURL.setRepository(repository);
+        jcrURL.setWorkspace(workspace);
+        jcrService.childNodes(parent(jcrURL.getPath()), new AsyncCallback<List<JcrNode>>() {
+            @Override
+            public void onFailure(Throwable caught) {
+            }
+
+            @Override
+            public void onSuccess(List<JcrNode> result) {
+                for (JcrNode node : result) {
+                    if (node.getPath().equals(jcrURL.getPath())) {
+                        nodePanel.display(navigator.convert(node));
+                    }
+                }
+            }
+        });
+    }
+    
+    public void showMainForm(String repository, String workspace) {
         mainForm.setLayoutMargin(5);
         mainForm.setWidth100();
         mainForm.setHeight100();
@@ -172,5 +217,11 @@ public class Console implements EntryPoint {
         navigator.showRoot();        
         repositoryPanel.display();        
         queryPanel.init();
+        
+        this.init(repository, workspace);
+    }
+    
+    private String parent(String path) {
+        return path.substring(0, path.lastIndexOf('/'));
     }
 }
