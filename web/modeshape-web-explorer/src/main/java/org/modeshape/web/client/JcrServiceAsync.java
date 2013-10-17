@@ -37,6 +37,7 @@ import org.modeshape.web.shared.ResultSet;
  * The async counterpart of <code>GreetingService</code>.
  */
 public interface JcrServiceAsync {
+  public void getRequestedURI(AsyncCallback<String> result);
   public void login(String jndiName, String userName, String password,
           String workspace, AsyncCallback cb);
   public void getRootNode(AsyncCallback<JcrNode> result);

@@ -23,6 +23,7 @@
  */
 package org.modeshape.web.client;
 
+import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Window;
@@ -31,6 +32,7 @@ import com.smartgwt.client.widgets.form.events.SubmitValuesEvent;
 import com.smartgwt.client.widgets.form.events.SubmitValuesHandler;
 import com.smartgwt.client.widgets.form.fields.PasswordItem;
 import com.smartgwt.client.widgets.form.fields.SpacerItem;
+import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.SubmitItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.layout.VStack;
@@ -58,7 +60,7 @@ public class LoginDialog extends DynamicForm {
         setPadding(25);
 
         jndiName.setName("jndiName");
-        jndiName.setTitle("jndiname");
+        jndiName.setTitle("Repository name");
         jndiName.setDefaultValue("jcr/sample");
         jndiName.setWidth(250);
         jndiName.setRequired(true);
@@ -99,8 +101,14 @@ public class LoginDialog extends DynamicForm {
         
         this.addSubmitValuesHandler(new LoginHandler());
         
-        setItems(spacerItem1, jndiName, spacerItem1, userName,
-                password, workspace, spacerItem1, spacerItem2, okButton);
+        StaticTextItem description = new StaticTextItem();
+        description.setTitle("");
+        description.setValue("Specify either repository name or jndi name");
+        description.setStartRow(true);
+        description.setEndRow(true);
+        
+        setItems(spacerItem1, description, jndiName, workspace, spacerItem1, userName,
+                password,  spacerItem2, okButton);
 
         vStack.setTop(30);
         vStack.addMember(this);
@@ -119,6 +127,14 @@ public class LoginDialog extends DynamicForm {
         userName.focusInItem();
     }
 
+    public void setJndiName(String name) {
+        this.jndiName.setValue(name);
+    }
+    
+    public void setWorkspace(String name) {
+        this.workspace.setValue(name);
+    }
+    
     public void showDialog() {
         window.show();
     }
@@ -149,7 +165,7 @@ public class LoginDialog extends DynamicForm {
         @Override
         public void onSuccess(Object result) {
             LoginDialog.this.hideDialog();
-            console.showMainForm();
+            console.showMainForm(jndiName.getValueAsString(), workspace.getValueAsString());
         }
         
     }
