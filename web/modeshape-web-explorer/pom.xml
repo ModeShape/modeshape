@@ -9,15 +9,37 @@
     </parent>
     <artifactId>modeshape-web-explorer</artifactId>
     <packaging>war</packaging>
-    <name>ModeShape Repository Explorer</name>
-    <description>ModeShape repository explorer</description>
+    <name>ModeShape Repository Explorer (Bare)</name>
+    <description>ModeShape repository explorer that does not contain ModeShape libraries</description>
     <url>http://www.modeshape.org</url>
     <dependencies>
-        <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>javax.jcr</groupId>
             <artifactId>jcr</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr</artifactId>
         </dependency>
 
         <dependency>
@@ -64,12 +86,14 @@
             <artifactId>smartgwt-skins</artifactId>
             <type>jar</type>
         </dependency>
+
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-jcr</artifactId>
-            <scope>provided</scope>
-            <version>${project.version}</version>
+            <artifactId>modeshape-jcr</artifactId>
+            <scope>test</scope>
         </dependency>
+
+>>>>>>> MODE-2072: Implement path reflection in the address bar
     </dependencies>
     <build>
         <finalName>modeshape-explorer-${project.version}</finalName>

@@ -348,6 +348,14 @@
 
                 <dependency>
                     <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-web-explorer</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-jdbc-local</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>

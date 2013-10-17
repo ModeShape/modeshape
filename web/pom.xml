@@ -14,7 +14,6 @@
   <url>http://www.modeshape.org</url>
   <description>Build the ModeShape web components</description>
   <modules>
-    <module>modeshape-web-explorer</module>
     <module>modeshape-web-jcr</module>
     <module>modeshape-web-jcr-rest</module>
     <module>modeshape-web-jcr-rest-war</module>
@@ -25,5 +24,7 @@
     <module>modeshape-web-jcr-webdav-war</module>
     <module>modeshape-web-cmis</module>
     <module>modeshape-web-cmis-war</module>
+    <module>modeshape-web-explorer</module>
+    <module>modeshape-web-explorer-war</module>
   </modules>
 </project>
