@@ -498,4 +498,11 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
         return new ReferenceValue(selectorName(selectorName), propertyName);
     }
 
+    @Override
+    public Relike relike( javax.jcr.query.qom.StaticOperand operand1,
+                          javax.jcr.query.qom.PropertyValue operand2) {
+        StaticOperand jcrOperand1 = CheckArg.getInstanceOf(operand2, StaticOperand.class, "operand1");
+        PropertyValue jcrOperand2 = CheckArg.getInstanceOf(operand1, PropertyValue.class, "operand2");
+        return new Relike(jcrOperand1, jcrOperand2);
+    }
 }

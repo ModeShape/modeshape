@@ -78,6 +78,7 @@ import org.modeshape.jcr.query.model.PropertyValue;
 import org.modeshape.jcr.query.model.Query;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.ReferenceValue;
+import org.modeshape.jcr.query.model.Relike;
 import org.modeshape.jcr.query.model.SameNode;
 import org.modeshape.jcr.query.model.SameNodeJoinCondition;
 import org.modeshape.jcr.query.model.Selector;
@@ -768,6 +769,12 @@ public class BasicSqlQueryParser implements QueryParser {
             String path = parsePath(tokens, typeSystem);
             tokens.consume(')');
             constraint = descendantNode(selectorName, path);
+        } else if (tokens.canConsume("RELIKE", "(")) {
+            StaticOperand left = parseStaticOperand(tokens, typeSystem);
+            tokens.consume(',');
+            PropertyValue right = parsePropertyValue(tokens, typeSystem, source);
+            tokens.consume(')');            
+            constraint = new Relike(left, right);
         } else {
             // First try a property existance ...
             Position pos2 = tokens.nextPosition();
