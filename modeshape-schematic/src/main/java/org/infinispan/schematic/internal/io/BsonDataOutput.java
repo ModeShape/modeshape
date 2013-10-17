@@ -382,7 +382,7 @@ public class BsonDataOutput implements DataOutput {
     public int writeUTF( int position,
                          String str ) {
         CharBuffer chars = CharBuffer.wrap(str);
-        CharsetEncoder encoder = Utf8Util.getUtf8Encoder();
+        CharsetEncoder encoder = Utf8Util.CHARSET.newEncoder();
         ByteBuffer output = getBufferFor(position);
         int index = position % bufferSize;
         int newPosition = position;

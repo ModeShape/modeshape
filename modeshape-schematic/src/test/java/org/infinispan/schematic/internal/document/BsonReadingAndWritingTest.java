@@ -21,16 +21,22 @@
  */
 package org.infinispan.schematic.internal.document;
 
+import static org.junit.Assert.assertNotNull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.bson.BSONObject;
@@ -41,6 +47,7 @@ import org.bson.BasicBSONObject;
 import org.bson.types.BSONTimestamp;
 import org.bson.types.BasicBSONList;
 import org.codehaus.jackson.JsonToken;
+import org.infinispan.schematic.FixFor;
 import org.infinispan.schematic.TestUtil;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Code;
@@ -53,7 +60,6 @@ import org.infinispan.schematic.document.ObjectId;
 import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.document.Timestamp;
 import org.junit.After;
-import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -277,6 +283,64 @@ public class BsonReadingAndWritingTest {
         // os.flush();
         // os.close();
         assertRoundtrip(doc);
+    }
+
+    @Test
+    @FixFor( "MODE-2074" )
+    public void shouldRoundTripBsonWithLargeStringField() throws Exception {
+        //use a string which overflows the default buffer BufferCache.MINIMUM_SIZE
+        final String largeString = readFile("json/sample-large-modeshape-doc3.json");
+        Document document = new BasicDocument("largeString", largeString);
+        assertRoundtrip(document);
+    }
+
+    @Test
+    @FixFor( "MODE-2074" )
+    public void shouldRoundTripBsonWithLargeStringFieldFromMultipleThreads() throws Exception {
+        final String largeString = readFile("json/sample-large-modeshape-doc3.json");
+        int threadCount = 10;
+        List<Future<Void>> results = new ArrayList<Future<Void>>();
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            results.add(executorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    Document document = new BasicDocument("largeString", largeString);
+                    assertRoundtrip(document);
+                    return null;
+                }
+            }));
+        }
+
+        for (Future<Void> result : results) {
+            result.get(1, TimeUnit.SECONDS);
+        }
+    }
+
+    protected String readFile(String filePath) throws IOException {
+        InputStreamReader reader = new InputStreamReader(TestUtil.resource(filePath));
+        StringBuilder stringBuilder = new StringBuilder();
+        boolean error = false;
+        try {
+            int numRead = 0;
+            char[] buffer = new char[1024];
+            while ((numRead = reader.read(buffer)) > -1) {
+                stringBuilder.append(buffer, 0, numRead);
+            }
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error closing reader
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error closing reader
+            throw e;
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                if (!error) throw e;
+            }
+        }
+        return stringBuilder.toString();
     }
 
     protected void assertRoundtrip( Document input ) {
