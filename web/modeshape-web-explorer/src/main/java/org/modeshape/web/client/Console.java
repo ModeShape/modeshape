@@ -222,6 +222,7 @@ public class Console implements EntryPoint {
     }
     
     private String parent(String path) {
-        return path.substring(0, path.lastIndexOf('/'));
+        String parent = path.substring(0, path.lastIndexOf('/'));
+        return parent.length() > 0 ? parent : "/";
     }
 }

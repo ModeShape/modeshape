@@ -57,10 +57,6 @@ public class Navigator extends Label {
     private TreeNode ROOT = new TreeNode();
     private Console console;
 
-//    static {
-//        ROOT.setTitle("root");
-//        ROOT.setAttribute("path", "/");
-//    }
     public Navigator(Console console) {
         super();
         this.console = console;
@@ -178,7 +174,19 @@ public class Navigator extends Label {
         if (node == null) {
             node = (JcrTreeNode) ROOT;
         }
-        console.jcrService.childNodes(node.getAttribute("path"), new ChildrenHandler());
+        
+        String path = node.getAttribute("path");
+        if (path == null) {
+            path = "/";
+        }
+        
+        path = path.trim();
+        
+        if (path.length() == 0) {
+            path = "/";
+        }
+                
+        console.jcrService.childNodes(path, new ChildrenHandler());
         console.nodePanel.display(node);
     }
 
@@ -225,7 +233,7 @@ public class Navigator extends Label {
         public void onSuccess(JcrNode node) {
             //one more conversation of the value object into tree node object
             JcrTreeNode root = convert(node);
-            ROOT = new JcrTreeNode("", "", root);
+            ROOT = new JcrTreeNode("root", "/", root);
 
             jcrTree.setModelType(TreeModelType.PARENT);
             jcrTree.setNameProperty("name");
