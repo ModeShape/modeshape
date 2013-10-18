@@ -36,7 +36,7 @@ public class JcrProperty implements Serializable {
     private String value;
     private boolean isProtected;
     private boolean isMultiValue;
-    
+
     public JcrProperty() {
     }
 
@@ -47,12 +47,14 @@ public class JcrProperty implements Serializable {
      * @param type text description for the type
      * @param value text view of the value.
      */
-    public JcrProperty(String name, String type, String value) {
+    public JcrProperty( String name,
+                        String type,
+                        String value ) {
         this.name = name;
         this.value = value;
         this.type = type;
     }
-    
+
     /**
      * Gets name of the property.
      * 
@@ -85,7 +87,7 @@ public class JcrProperty implements Serializable {
      * 
      * @param name the new name for the property.
      */
-    public void setName(String name) {
+    public void setName( String name ) {
         this.name = name;
     }
 
@@ -94,52 +96,42 @@ public class JcrProperty implements Serializable {
      * 
      * @param type the new type of the property.
      */
-    public void setType(String type) {
+    public void setType( String type ) {
         this.type = type;
     }
 
     /**
      * Modifies value of the property.
      * 
-     * @param value 
+     * @param value
      */
-    public void setValue(String value) {
+    public void setValue( String value ) {
         this.value = value;
     }
-    
-    /**
-     * Gets true if property has multiple values.
-     * 
-     * @return 
-     */
+
     public boolean isMultiValue() {
         return this.isMultiValue;
     }
-    
+
     /**
      * Marks property as multiple or single value.
      * 
-     * @param isMultiValue  true if property has multiple value
+     * @param isMultiValue true if property has multiple value
      */
-    public void setMultiValue(boolean isMultiValue) {
+    public void setMultiValue( boolean isMultiValue ) {
         this.isMultiValue = isMultiValue;
     }
-    
-    /**
-     * Gets true if this property is protected.
-     * 
-     * @return 
-     */
+
     public boolean isProtected() {
         return this.isProtected;
     }
-    
+
     /**
      * Marks property either protected or not.
      * 
      * @param isProtected true if property is protected false otherwise.
      */
-    public void setProtected(boolean isProtected) {
+    public void setProtected( boolean isProtected ) {
         this.isProtected = isProtected;
     }
 }

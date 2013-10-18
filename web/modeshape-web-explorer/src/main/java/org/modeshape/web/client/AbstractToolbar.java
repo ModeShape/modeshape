@@ -23,11 +23,7 @@
  */
 package org.modeshape.web.client;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.smartgwt.client.util.BooleanCallback;
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Button;
-import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
 
@@ -38,29 +34,21 @@ import com.smartgwt.client.widgets.layout.HLayout;
  */
 public class AbstractToolbar extends HLayout {
     private Console console;
-    
-    public AbstractToolbar(Console console) {
+
+    public AbstractToolbar( Console console ) {
         super();
         this.console = console;
         this.setHeight(30);
     }
 
-    /**
-     * Gets access to the main form.
-     * @return 
-     */
     protected Console console() {
         return console;
     }
-    
-    /**
-     * Adds new button to the toolbar.
-     * 
-     * @param title the title of the button
-     * @param icon the icon of the button
-     * @param handler handler class
-     */
-    protected void button(String title, String icon, String toolTip, ClickHandler handler) {
+
+    protected void button( String title,
+                           String icon,
+                           String toolTip,
+                           ClickHandler handler ) {
         Button button = new Button();
         button.setWidth(30);
         button.setHeight(30);
@@ -68,7 +56,7 @@ public class AbstractToolbar extends HLayout {
         button.setIcon(icon);
         button.setTooltip(toolTip);
         button.setMargin(1);
-        button.addClickHandler(handler);        
+        button.addClickHandler(handler);
         addMember(button);
     }
 

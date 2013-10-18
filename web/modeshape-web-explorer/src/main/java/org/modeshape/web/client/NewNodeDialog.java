@@ -30,21 +30,22 @@ import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 
 /**
- * Dialog asking node's name and primary type and creating new node. 
+ * Dialog asking node's name and primary type and creating new node.
  * 
  * @author kulikov
  */
 public class NewNodeDialog extends ModalDialog {
-    
+
     private TextItem name = new TextItem();
     private ComboBoxItem primaryType = new ComboBoxItem();
 
     private Console console;
-    
-    public NewNodeDialog(String title, Console console) {
+
+    public NewNodeDialog( String title,
+                          Console console ) {
         super(title, 450, 250);
         this.console = console;
-        
+
         name.setName("name");
         name.setTitle("Node name");
         name.setDefaultValue("");
@@ -53,10 +54,10 @@ public class NewNodeDialog extends ModalDialog {
         name.setVisible(true);
         name.setStartRow(true);
         name.setEndRow(true);
-        
+
         primaryType.setName("primaryType");
         primaryType.setTitle("Primary Type");
-        primaryType.setDefaultValue("");
+        primaryType.setDefaultValue("nt:unstructured");
         primaryType.setWidth(250);
         primaryType.setRequired(true);
         primaryType.setStartRow(true);
@@ -67,41 +68,45 @@ public class NewNodeDialog extends ModalDialog {
         description.setTitle("");
         description.setStartRow(true);
         description.setEndRow(true);
-        
+
         setControls(description, name, primaryType);
     }
-    
+
     @Override
     public void showModal() {
         console.jcrService.getPrimaryTypes(false, new AsyncCallback<String[]>() {
             @Override
-            public void onFailure(Throwable caught) {
+            public void onFailure( Throwable caught ) {
                 SC.say(caught.getMessage());
             }
+
             @Override
-            public void onSuccess(String[] result) {
+            public void onSuccess( String[] result ) {
                 primaryType.setValueMap(result);
                 NewNodeDialog.super.showModal();
             }
         });
     }
-    
+
     @Override
-    public void onConfirm(com.smartgwt.client.widgets.form.fields.events.ClickEvent event) {
+    public void onConfirm( com.smartgwt.client.widgets.form.fields.events.ClickEvent event ) {
         String path = NewNodeDialog.this.console.navigator.getSelectedPath();
-        NewNodeDialog.this.console.jcrService.addNode(path, name.getValueAsString(), primaryType.getValueAsString(), new AsyncCallback(){
+        NewNodeDialog.this.console.jcrService.addNode(path,
+                                                      name.getValueAsString(),
+                                                      primaryType.getValueAsString(),
+                                                      new AsyncCallback() {
 
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
+                                                          @Override
+                                                          public void onFailure( Throwable caught ) {
+                                                              SC.say(caught.getMessage());
+                                                          }
 
-            @Override
-            public void onSuccess(Object result) {
-                console.navigator.selectNode();
-            }
-            
-        });
+                                                          @Override
+                                                          public void onSuccess( Object result ) {
+                                                              console.navigator.selectNode();
+                                                          }
+
+                                                      });
     }
-    
+
 }
