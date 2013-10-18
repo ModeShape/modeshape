@@ -36,123 +36,120 @@ import com.smartgwt.client.widgets.layout.HLayout;
  * 
  * @author kulikov
  */
+@SuppressWarnings( "synthetic-access" )
 public class ToolBar extends HLayout {
     private Console console;
-    
-    public ToolBar(Console console) {
+
+    public ToolBar( Console console ) {
         super();
         this.console = console;
         this.setHeight(30);
-        
-        //add node button       
+
+        // add node button
         button("", "icons/folder_modernist_add.png", "Add new node", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.newNodeDialog.showModal();
-            }            
+            }
         });
-        
-        //remove node button
+
+        // remove node button
         button("", "icons/folder_modernist_remove.png", "Delete node", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 SC.ask("Remove node", "Do you want to remove node?", new BooleanCallback() {
                     @Override
-                    public void execute(Boolean confirmed) {
+                    public void execute( Boolean confirmed ) {
                         if (!confirmed) {
                             return;
                         }
                         String path = ToolBar.this.console.navigator.getSelectedPath();
                         ToolBar.this.console.jcrService.removeNode(path, new AsyncCallback() {
                             @Override
-                            public void onFailure(Throwable caught) {
+                            public void onFailure( Throwable caught ) {
                                 SC.say(caught.getMessage());
                             }
-                            
+
                             @Override
-                            public void onSuccess(Object result) {
+                            public void onSuccess( Object result ) {
                                 ToolBar.this.console.navigator.selectNode();
-                            }                            
+                            }
                         });
-                    }                    
+                    }
                 });
-            }            
+            }
         });
-        
-        //Add mixin
+
+        // Add mixin
         button("", "icons/hcards_add.png", "Add mixin to the node", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.addMixinDialog.showModal();
-            }            
+            }
         });
 
-        //Remove mixin
+        // Remove mixin
         button("", "icons/hcards_remove.png", "Remove mixin", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.removeMixinDialog.showModal();
-            }            
+            }
         });
 
-        //Remove mixin
+        // Remove mixin
         button("", "icons/tag_add.png", "Add property", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.addPropertyDialog.showModal();
-            }            
+            }
         });
 
         spacer();
-        
-        //Save button
+
+        // Save button
         button("", "icons/save.png", "Save", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.addPropertyDialog.showModal();
-            }            
+            }
         });
-        
+
         spacer();
 
         button("", "icons/hcard_add.png", "Add access control list", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.addPropertyDialog.showModal();
-            }            
+            }
         });
 
         button("", "icons/hcard_remove.png", "Remove access control list", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.addPropertyDialog.showModal();
-            }            
+            }
         });
 
         button("", "icons/group_blue_add.png", "Add principal", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.addPropertyDialog.showModal();
-            }            
+            }
         });
 
         button("", "icons/group_blue_remove.png", "Remove principal", new ClickHandler() {
             @Override
-            public void onClick(ClickEvent event) {
+            public void onClick( ClickEvent event ) {
                 ToolBar.this.console.addPropertyDialog.showModal();
-            }            
+            }
         });
-        
+
     }
 
-    /**
-     * Adds new button to the toolbar.
-     * 
-     * @param title the title of the button
-     * @param icon the icon of the button
-     * @param handler handler class
-     */
-    private void button(String title, String icon, String toolTip, ClickHandler handler) {
+    private void button( String title,
+                         String icon,
+                         String toolTip,
+                         ClickHandler handler ) {
         Button button = new Button();
         button.setWidth(30);
         button.setHeight(30);
@@ -160,7 +157,7 @@ public class ToolBar extends HLayout {
         button.setIcon(icon);
         button.setTooltip(toolTip);
         button.setMargin(1);
-        button.addClickHandler(handler);        
+        button.addClickHandler(handler);
         addMember(button);
     }
 

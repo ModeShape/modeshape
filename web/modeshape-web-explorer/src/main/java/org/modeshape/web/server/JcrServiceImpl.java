@@ -23,20 +23,20 @@
  */
 package org.modeshape.web.server;
 
-import org.modeshape.web.client.JcrService;
-import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
@@ -61,40 +61,46 @@ import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicy;
 import javax.jcr.security.Privilege;
 import javax.naming.InitialContext;
-import org.modeshape.web.shared.JcrNode;
+import org.modeshape.web.client.JcrService;
 import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.jcr.RepositoryManager;
-import org.modeshape.web.shared.JcrPolicy;
 import org.modeshape.web.shared.JcrAccessControlList;
+import org.modeshape.web.shared.JcrNode;
 import org.modeshape.web.shared.JcrNodeType;
 import org.modeshape.web.shared.JcrPermission;
+import org.modeshape.web.shared.JcrPolicy;
 import org.modeshape.web.shared.JcrProperty;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
 import org.modeshape.web.shared.ResultSet;
+import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 /**
  * The server side implementation of the RPC service.
  */
-@SuppressWarnings("serial")
+@SuppressWarnings( "serial" )
 public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     private final static Logger log = Logger.getLogger("JcrServiceImpl");
 
     @Override
-    public boolean login(String jndiName, String userName, String password, String workspace) throws RemoteException {
+    public boolean login( String jndiName,
+                          String userName,
+                          String password,
+                          String workspace ) throws RemoteException {
         Repository repository = null;
-        
+
         try {
             repository = RepositoryManager.getRepository(jndiName);
         } catch (Exception e) {
+            e.printStackTrace();
             try {
                 InitialContext context = new InitialContext();
-                repository = (Repository) context.lookup(jndiName);
+                repository = (Repository)context.lookup(jndiName);
             } catch (Exception ex) {
-               throw new RemoteException(e.getMessage() + " or " + ex.getMessage()) ;
+                throw new RemoteException(e.getMessage() + " or " + ex.getMessage());
             }
         }
-        
+
         try {
             Session session;
             if (userName != null && userName.length() > 0) {
@@ -118,36 +124,40 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      * @throws RemoteException when session has expired or does not exists.
      */
     private Session session() throws RemoteException {
-        Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
+        Session session = (Session)this.getThreadLocalRequest().getSession().getAttribute("session");
         if (session == null) {
             throw new RemoteException("Session has expired");
         }
         return session;
     }
-    
+
     @Override
     public JcrNode getRootNode() throws RemoteException {
         try {
-            //take root node
+            // take root node
             Node root = session().getRootNode();
-            
-            //convert into value object
+
+            // convert into value object
             JcrNode node = new JcrNode("root", root.getPath(), root.getPrimaryNodeType().getName());
             node.setProperties(getProperties(root));
             node.setAcessControlList(getAccessList(session().getAccessControlManager(), root));
-            
+
             return node;
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
     }
-    
+
     @Override
-    public List<JcrNode> childNodes(String path) throws RemoteException {
-        ArrayList<JcrNode> children = new ArrayList();
+    public List<JcrNode> childNodes( String path ) throws RemoteException {
+        List<JcrNode> children = null;
+        if (path == null || path.trim().length() == 0) {
+            return Collections.emptyList();
+        }
         try {
-            Node node = (Node) session().getItem(path);
+            Node node = (Node)session().getItem(path);
             NodeIterator it = node.getNodes();
+            children = new ArrayList<JcrNode>((int)it.getSize());
 
             while (it.hasNext()) {
                 Node n = it.nextNode();
@@ -159,7 +169,10 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 children.add(childNode);
             }
 
+        } catch (PathNotFoundException e) {
+            log.log(Level.FINER, e.getLocalizedMessage());
         } catch (RepositoryException e) {
+            log.log(Level.SEVERE, "Unexpected error", e);
             throw new RemoteException(e.getMessage());
         }
 
@@ -171,20 +184,20 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      * 
      * @param node the node instance.
      * @return list of property names.
-     * @throws RepositoryException 
+     * @throws RepositoryException
      */
-    private String[] propertyDefs(Node node) throws RepositoryException {
+    private String[] propertyDefs( Node node ) throws RepositoryException {
         ArrayList<String> list = new ArrayList();
-        
+
         NodeType primaryType = node.getPrimaryNodeType();
         PropertyDefinition[] defs = primaryType.getPropertyDefinitions();
-        
+
         for (PropertyDefinition def : defs) {
             if (!def.isProtected()) {
                 list.add(def.getName());
             }
         }
-        
+
         NodeType[] mixinType = node.getMixinNodeTypes();
         for (NodeType type : mixinType) {
             defs = type.getPropertyDefinitions();
@@ -194,20 +207,20 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 }
             }
         }
-        
+
         String[] res = new String[list.size()];
         list.toArray(res);
         return res;
     }
-    
+
     /**
      * Lists mixin types of the given node.
      * 
      * @param node given node
      * @return list of mixin types names.
-     * @throws RepositoryException 
+     * @throws RepositoryException
      */
-    private String[] mixins(Node node) throws RepositoryException {
+    private String[] mixins( Node node ) throws RepositoryException {
         NodeType[] mixins = node.getMixinNodeTypes();
         int len = mixins != null ? mixins.length : 0;
         String[] res = new String[len];
@@ -216,14 +229,14 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         }
         return res;
     }
-    
-    
-    private JcrAccessControlList getAccessList(AccessControlManager acm, Node node) throws RepositoryException {
+
+    private JcrAccessControlList getAccessList( AccessControlManager acm,
+                                                Node node ) throws RepositoryException {
         AccessControlList accessList = findAccessList(acm, node);
         if (accessList == null) {
             return JcrAccessControlList.defaultInstance();
         }
-        
+
         JcrAccessControlList acl = new JcrAccessControlList();
 
         AccessControlEntry[] entries = accessList.getAccessControlEntries();
@@ -237,46 +250,46 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         }
         return acl;
     }
-    
+
     /**
      * Searches access list for the given node.
      * 
-     * @param acm access manager 
+     * @param acm access manager
      * @param node the node instance
      * @return access list representation.
-     * @throws RepositoryException 
+     * @throws RepositoryException
      */
-    private AccessControlList findAccessList(AccessControlManager acm, Node node) throws RepositoryException {
+    private AccessControlList findAccessList( AccessControlManager acm,
+                                              Node node ) throws RepositoryException {
         AccessControlPolicy[] policy = acm.getPolicies(node.getPath());
-        
+
         if (policy != null && policy.length > 0) {
             return (AccessControlList)policy[0];
         }
-        
+
         Node parent = null;
         try {
             parent = node.getParent();
         } catch (ItemNotFoundException e) {
             return null;
         }
-        
+
         return findAccessList(acm, parent);
     }
-    
+
     /**
      * Reads properties of the given node.
      * 
      * @param node the node instance
      * @return list of node's properties.
-     * @throws RepositoryException 
+     * @throws RepositoryException
      */
-    private Collection<JcrProperty> getProperties(Node node) throws RepositoryException {
+    private Collection<JcrProperty> getProperties( Node node ) throws RepositoryException {
         ArrayList<JcrProperty> list = new ArrayList();
         PropertyIterator it = node.getProperties();
         while (it.hasNext()) {
             Property p = it.nextProperty();
-            JcrProperty property = new JcrProperty(p.getName(),
-                    PropertyType.nameFromValue(p.getType()), values(p));
+            JcrProperty property = new JcrProperty(p.getName(), PropertyType.nameFromValue(p.getType()), values(p));
             property.setProtected(p.getDefinition().isProtected());
             property.setProtected(p.getDefinition().isMultiple());
             list.add(property);
@@ -289,40 +302,36 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      * 
      * @param p the property to display
      * @return property value as text string
-     * @throws RepositoryException 
+     * @throws RepositoryException
      */
-    private String values(Property p) throws RepositoryException {
+    private String values( Property p ) throws RepositoryException {
         if (!p.isMultiple()) {
             return p.getString();
         }
-        
+
         Value[] values = p.getValues();
-        
-        if (values == null) {
+
+        if (values == null || values.length == 0) {
             return "";
         }
-        
-        if (values.length == 0) {
-            return "";
-        }
-        
+
         if (values.length == 1) {
             return values[0].getString();
         }
-        
+
         String s = values[0].getString();
         for (int i = 1; i < values.length; i++) {
             s += "," + values[i].getString();
         }
-        
+
         return s;
     }
-    
+
     @Override
-    public JcrRepositoryDescriptor repositoryInfo() throws RemoteException {
-        Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
+    public JcrRepositoryDescriptor repositoryInfo() {
+        Session session = (Session)this.getThreadLocalRequest().getSession().getAttribute("session");
         JcrRepositoryDescriptor desc = new JcrRepositoryDescriptor();
-        
+
         Repository repo = session.getRepository();
         try {
             String keys[] = session.getRepository().getDescriptorKeys();
@@ -331,22 +340,22 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 desc.add(keys[i], value != null ? value.getString() : "N/A");
             }
         } catch (RepositoryException e) {
-            throw new RemoteException(e.getMessage());
+            log.log(Level.SEVERE, "Error getting repository information", e);
         }
         return desc;
     }
-    
 
     @Override
-    public ResultSet query(String text, String lang) throws RemoteException {
-        Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
+    public ResultSet query( String text,
+                            String lang ) {
+        Session session = (Session)this.getThreadLocalRequest().getSession().getAttribute("session");
         ResultSet rs = new ResultSet();
         try {
             QueryManager qm = session.getWorkspace().getQueryManager();
             Query q = qm.createQuery(text, lang);
-            
+
             QueryResult qr = q.execute();
-            
+
             rs.setColumnNames(qr.getColumnNames());
             ArrayList<String[]> rows = new ArrayList();
             RowIterator it = qr.getRows();
@@ -361,167 +370,185 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
                 rows.add(list);
             }
-            
+
             rs.setRows(rows);
         } catch (RepositoryException e) {
-            throw new RemoteException(e.getMessage());
+            log.log(Level.SEVERE, "Error executing query: " + text, e);
         }
         return rs;
     }
 
     @Override
-    public String[] supportedQueryLanguages() throws RemoteException {
-        Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
+    public String[] supportedQueryLanguages() {
+        Session session = (Session)this.getThreadLocalRequest().getSession().getAttribute("session");
         try {
             QueryManager qm = session.getWorkspace().getQueryManager();
             return qm.getSupportedQueryLanguages();
         } catch (RepositoryException e) {
-            throw new RemoteException(e.getMessage());
+            log.log(Level.SEVERE, "Error getting supported query languages", e);
         }
+        return null;
     }
 
     @Override
-    public void addNode(String path, String name, String primaryType) throws RemoteException {
+    public void addNode( String path,
+                         String name,
+                         String primaryType ) throws RemoteException {
         try {
-            Node node = (Node) session().getItem(path);
-            node.addNode(name, primaryType);            
+            Node node = (Node)session().getItem(path);
+            node.addNode(name, primaryType);
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
     }
 
     @Override
-    public void removeNode(String path) throws RemoteException {
+    public void removeNode( String path ) throws RemoteException {
         try {
-            Node node = (Node) session().getItem(path);
+            Node node = (Node)session().getItem(path);
             node.remove();
+        } catch (PathNotFoundException e) {
+            log.log(Level.FINER, e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
     }
 
     @Override
-    public void addMixin(String path, String mixin) throws RemoteException {
+    public void addMixin( String path,
+                          String mixin ) throws RemoteException {
         try {
-            Node node = (Node) session().getItem(path);
+            Node node = (Node)session().getItem(path);
             node.addMixin(mixin);
+        } catch (PathNotFoundException e) {
+            log.log(Level.FINER, e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
     }
 
     @Override
-    public void removeMixin(String path, String mixin) throws RemoteException {
+    public void removeMixin( String path,
+                             String mixin ) throws RemoteException {
         try {
-            Node node = (Node) session().getItem(path);
+            Node node = (Node)session().getItem(path);
             node.removeMixin(mixin);
+        } catch (PathNotFoundException e) {
+            log.log(Level.FINER, e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
     }
-    
+
     @Override
-    public void setProperty(String path, String name, String value) throws RemoteException {
+    public void setProperty( String path,
+                             String name,
+                             String value ) throws RemoteException {
         try {
-            Node node = (Node) session().getItem(path);
-            switch (type(node,name)) {
-                case PropertyType.BOOLEAN :
+            Node node = (Node)session().getItem(path);
+            switch (type(node, name)) {
+                case PropertyType.BOOLEAN:
                     node.setProperty(name, Boolean.parseBoolean(value));
                     break;
-                case PropertyType.DATE :
+                case PropertyType.DATE:
                     Calendar cal = Calendar.getInstance();
                     cal.setTime(new SimpleDateFormat("").parse(value));
                     node.setProperty(name, cal);
                     break;
-                case PropertyType.DECIMAL :
+                case PropertyType.DECIMAL:
                     node.setProperty(name, BigDecimal.valueOf(Double.parseDouble(value)));
                     break;
-                case PropertyType.DOUBLE :
+                case PropertyType.DOUBLE:
                     node.setProperty(name, Double.parseDouble(value));
                     break;
-                case PropertyType.LONG :
+                case PropertyType.LONG:
                     node.setProperty(name, Long.parseLong(value));
                     break;
-                case PropertyType.NAME :
+                case PropertyType.NAME:
                     node.setProperty(name, value);
                     break;
-                case PropertyType.PATH :
+                case PropertyType.PATH:
                     node.setProperty(name, value);
                     break;
-                case PropertyType.STRING :
+                case PropertyType.STRING:
                     node.setProperty(name, value);
                     break;
-                case PropertyType.URI :
+                case PropertyType.URI:
                     node.setProperty(name, value);
                     break;
-                    
+
             }
+        } catch (PathNotFoundException e) {
+            log.log(Level.FINER, e.getLocalizedMessage());
         } catch (Exception e) {
             log.log(Level.SEVERE, "Unexpected error", e);
             throw new RemoteException(e.getMessage());
         }
     }
 
-    /**
-     * Determine property type.
-     * 
-     * @param node
-     * @param name
-     * @return 
-     */
-    private int type(Node node, String name) throws RepositoryException {
+    private int type( Node node,
+                      String propertyName ) throws RepositoryException {
         PropertyDefinition[] defs = node.getPrimaryNodeType().getPropertyDefinitions();
         for (PropertyDefinition def : defs) {
-            if (def.getName().equals(name)) {
+            if (def.getName().equals(propertyName)) {
                 return def.getRequiredType();
             }
         }
-        
+
         NodeType[] mixins = node.getMixinNodeTypes();
         for (NodeType type : mixins) {
             defs = type.getPropertyDefinitions();
             for (PropertyDefinition def : defs) {
-                if (def.getName().equals(name)) {
+                if (def.getName().equals(propertyName)) {
                     return def.getRequiredType();
                 }
             }
         }
-        
+
         return -1;
     }
-    
+
     @Override
-    public void addAccessList(String path, String principal) throws RemoteException {
+    public void addAccessList( String path,
+                               String principal ) throws RemoteException {
         try {
             AccessControlManager acm = session().getAccessControlManager();
             AccessControlPolicy[] policies = acm.getPolicies(path);
             if (policies != null && policies.length > 0) {
-                AccessControlList acl = (AccessControlList) policies[0];
-                acl.addAccessControlEntry(new SimplePrincipal(principal), new Privilege[]{});
+                AccessControlList acl = (AccessControlList)policies[0];
+                acl.addAccessControlEntry(new SimplePrincipal(principal), new Privilege[] {});
             }
+        } catch (PathNotFoundException e) {
+            log.log(Level.FINER, e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
     }
 
     @Override
-    public void updateAccessList(String path, String principal, JcrPermission[] permissions) throws RemoteException {
+    public void updateAccessList( String path,
+                                  String principal,
+                                  JcrPermission[] permissions ) throws RemoteException {
         try {
             AccessControlManager acm = session().getAccessControlManager();
             AccessControlPolicy[] policies = acm.getPolicies(path);
             if (policies != null && policies.length > 0) {
-                AccessControlList acl = (AccessControlList) policies[0];
+                AccessControlList acl = (AccessControlList)policies[0];
                 acl.removeAccessControlEntry(find(acl.getAccessControlEntries(), principal));
                 acl.addAccessControlEntry(new SimplePrincipal(principal), privileges(acm, permissions));
             }
+        } catch (PathNotFoundException e) {
+            log.log(Level.FINER, e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
     }
 
     @Override
-    public void removeAccessList(String path, String principal) throws RemoteException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void removeAccessList( String path,
+                                  String principal ) /*throws RemoteException*/{
+        throw new UnsupportedOperationException("Not supported yet."); // To change body of generated methods, choose Tools |
+                                                                       // Templates.
     }
 
     /**
@@ -530,8 +557,10 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      * @param entries the set of entries
      * @param principal the name of the principal
      * @return access control entry.
+     * @throws RemoteException if there is a problem using the repository
      */
-    private AccessControlEntry find(AccessControlEntry[] entries, String principal) throws RemoteException {
+    private AccessControlEntry find( AccessControlEntry[] entries,
+                                     String principal ) throws RemoteException {
         for (AccessControlEntry entry : entries) {
             if (entry.getPrincipal().getName().equals(principal)) {
                 return entry;
@@ -539,24 +568,27 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         }
         throw new RemoteException("Access list has been deleted");
     }
-    
+
     /**
      * Converts permissions objects to JCR privileges.
      * 
+     * @param acm the access control manager
      * @param permissions permissions object
      * @return JCR privileges
+     * @throws AccessControlException if the user has no privilege to perform this operation
+     * @throws RepositoryException if there is a problem using the repository
      */
-    private Privilege[] privileges(AccessControlManager acm, JcrPermission[] permissions) 
-            throws AccessControlException, RepositoryException {
+    private Privilege[] privileges( AccessControlManager acm,
+                                    JcrPermission[] permissions ) throws AccessControlException, RepositoryException {
         Privilege[] privileges = new Privilege[permissions.length];
         for (int i = 0; i < privileges.length; i++) {
             privileges[i] = acm.privilegeFromName(permissions[i].getName());
         }
         return privileges;
     }
-    
+
     @Override
-    public String[] getPrimaryTypes(boolean allowAbstract) throws RemoteException {
+    public String[] getPrimaryTypes( boolean allowAbstract ) throws RemoteException {
         ArrayList<String> list = new ArrayList();
         try {
             NodeTypeManager mgr = session().getWorkspace().getNodeTypeManager();
@@ -568,15 +600,15 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 }
             }
             String[] res = new String[list.size()];
-            list.toArray(res);            
+            list.toArray(res);
             return res;
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
     }
-    
+
     @Override
-    public String[] getMixinTypes(boolean allowAbstract) throws RemoteException {
+    public String[] getMixinTypes( boolean allowAbstract ) throws RemoteException {
         ArrayList<String> list = new ArrayList();
         try {
             NodeTypeManager mgr = session().getWorkspace().getNodeTypeManager();
@@ -588,7 +620,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 }
             }
             String[] res = new String[list.size()];
-            list.toArray(res);            
+            list.toArray(res);
             return res;
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
@@ -596,7 +628,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
 
     @Override
-    public void save()  throws RemoteException {
+    public void save() throws RemoteException {
         try {
             session().save();
         } catch (RepositoryException e) {
@@ -605,36 +637,39 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
 
     @Override
-    public void updateAccessList(String path, JcrAccessControlList acl) throws RemoteException {
+    public void updateAccessList( String path,
+                                  JcrAccessControlList acl ) throws RemoteException {
         try {
             AccessControlManager acm = session().getAccessControlManager();
             AccessControlPolicy[] policies = acm.getPolicies(path);
-            
+
             AccessControlList accessList = null;
             if (policies != null && policies.length > 0) {
-                accessList = (AccessControlList) policies[0];
+                accessList = (AccessControlList)policies[0];
             } else {
-                accessList = (AccessControlList) acm.getApplicablePolicies(path).nextAccessControlPolicy();
+                accessList = (AccessControlList)acm.getApplicablePolicies(path).nextAccessControlPolicy();
             }
-        
+
             clean(accessList);
             update(acm, acl, accessList);
-            
+
             acm.setPolicy(path, accessList);
         } catch (Exception e) {
             throw new RemoteException(e.getMessage());
         }
     }
-    
-    private void update(AccessControlManager acm, JcrAccessControlList a1, AccessControlList a2) throws AccessControlException, RepositoryException {
+
+    private void update( AccessControlManager acm,
+                         JcrAccessControlList a1,
+                         AccessControlList a2 ) throws AccessControlException, RepositoryException {
         Collection<JcrPolicy> policies = a1.entries();
         for (JcrPolicy policy : policies) {
-            a2.addAccessControlEntry(
-                    new SimplePrincipal(policy.getPrincipal()), privileges(acm, policy.getPermissions()));
+            a2.addAccessControlEntry(new SimplePrincipal(policy.getPrincipal()), privileges(acm, policy.getPermissions()));
         }
     }
-    
-    private Privilege[] privileges(AccessControlManager acm, Collection<JcrPermission> permissions) throws AccessControlException, RepositoryException {
+
+    private Privilege[] privileges( AccessControlManager acm,
+                                    Collection<JcrPermission> permissions ) throws AccessControlException, RepositoryException {
         Privilege[] privileges = new Privilege[permissions.size()];
         int i = 0;
         for (JcrPermission permission : permissions) {
@@ -642,14 +677,14 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         }
         return privileges;
     }
-    
-    private void clean(AccessControlList acl) throws RepositoryException {
+
+    private void clean( AccessControlList acl ) throws RepositoryException {
         AccessControlEntry[] entries = acl.getAccessControlEntries();
         for (AccessControlEntry entry : entries) {
             acl.removeAccessControlEntry(entry);
         }
     }
-    
+
     @Override
     public Collection<JcrNodeType> nodeTypes() throws RemoteException {
         ArrayList<JcrNodeType> list = new ArrayList();
@@ -674,29 +709,28 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public String getRequestedURI() {
-        String uri = (String) getThreadLocalRequest().getSession(true).getAttribute("initial.uri");
+        String uri = (String)getThreadLocalRequest().getSession(true).getAttribute("initial.uri");
         if (uri != null) {
             return uri;
         }
-        
-        uri =  getThreadLocalRequest().getRequestURI();
+
+        uri = getThreadLocalRequest().getRequestURI();
         String servletPath = getThreadLocalRequest().getServletPath();
-        
+
         return uri.substring(0, uri.indexOf(servletPath));
     }
-    
+
     private class SimplePrincipal implements Principal {
         private String name;
-        
-        protected SimplePrincipal(String name) {
+
+        protected SimplePrincipal( String name ) {
             this.name = name;
         }
-        
-        
+
         @Override
         public String getName() {
             return name;
         }
-        
+
     }
 }

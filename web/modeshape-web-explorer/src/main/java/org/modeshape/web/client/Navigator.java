@@ -23,6 +23,8 @@
  */
 package org.modeshape.web.client;
 
+import java.util.Collection;
+import java.util.List;
 import org.modeshape.web.shared.JcrNode;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.Alignment;
@@ -33,7 +35,6 @@ import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.grid.events.CellClickEvent;
 import com.smartgwt.client.widgets.grid.events.CellClickHandler;
-import com.smartgwt.client.widgets.layout.HLayout;
 import com.smartgwt.client.widgets.layout.VLayout;
 import com.smartgwt.client.widgets.tab.Tab;
 import com.smartgwt.client.widgets.tab.TabSet;
@@ -42,22 +43,23 @@ import com.smartgwt.client.widgets.tree.TreeGrid;
 import com.smartgwt.client.widgets.tree.TreeNode;
 import com.smartgwt.client.widgets.tree.events.FolderClickEvent;
 import com.smartgwt.client.widgets.tree.events.FolderClickHandler;
-import java.util.Collection;
-import java.util.List;
 
 /**
- *
  * @author kulikov
  */
 public class Navigator extends Label {
 
     private Tree jcrTree = new Tree();
     private TreeGrid jcrTreeGrid = new TreeGrid();
-//    private HLayout layout = new HLayout();
+    // private HLayout layout = new HLayout();
     private TreeNode ROOT = new TreeNode();
     private Console console;
 
-    public Navigator(Console console) {
+    // static {
+    // ROOT.setTitle("root");
+    // ROOT.setAttribute("path", "/");
+    // }
+    public Navigator( Console console ) {
         super();
         this.console = console;
 
@@ -66,16 +68,16 @@ public class Navigator extends Label {
         setWidth("20%");
         setShowResizeBar(true);
 
-        //create tree tabset
+        // create tree tabset
         Tab treeTab = new Tab();
 
-//        JcrTreeNode root = new JcrTreeNode("", "", new JcrTreeNode("root", "/"));
+        // JcrTreeNode root = new JcrTreeNode("", "", new JcrTreeNode("root", "/"));
 
-//        jcrTree.setModelType(TreeModelType.PARENT);
-//        jcrTree.setNameProperty("name");
-//        jcrTree.setRoot(root);
+        // jcrTree.setModelType(TreeModelType.PARENT);
+        // jcrTree.setNameProperty("name");
+        // jcrTree.setRoot(root);
 
-//        jcrTreeGrid.setData(jcrTree);
+        // jcrTreeGrid.setData(jcrTree);
         jcrTreeGrid.setWidth100();
         jcrTreeGrid.setHeight100();
         jcrTreeGrid.setCanDragResize(true);
@@ -90,18 +92,18 @@ public class Navigator extends Label {
         jcrTreeGrid.setSelectionType(SelectionStyle.SINGLE);
         jcrTreeGrid.addCellClickHandler(new NodeLoader());
         jcrTreeGrid.addFolderClickHandler(new FolderClickHandlerImpl());
-//        jcrTreeGrid.setContextMenu(createRightClickMenu());
-//        jcrTreeGrid.addCellMouseDownHandler(new JcrTreeCellMouseDownHandler());
-//        jcrTreeGrid.addDropHandler(new JcrTreeDropHandler(Explorer.this));
+        // jcrTreeGrid.setContextMenu(createRightClickMenu());
+        // jcrTreeGrid.addCellMouseDownHandler(new JcrTreeCellMouseDownHandler());
+        // jcrTreeGrid.addDropHandler(new JcrTreeDropHandler(Explorer.this));
 
         VLayout vlayout = new VLayout();
         vlayout.addMember(new TreeToolbar(console));
         vlayout.addMember(jcrTreeGrid);
-        
+
         treeTab.setPane(vlayout);
         treeTab.setTitle("Repository");
         treeTab.setIcon("icons/view_tree_modernist.png");
-        
+
         TabSet tabset = new TabSet();
 
         tabset.setTabs(treeTab);
@@ -113,7 +115,7 @@ public class Navigator extends Label {
     }
 
     public String getSelectedPath() {
-        return ((JcrTreeNode) jcrTreeGrid.getSelectedRecord()).getPath();
+        return ((JcrTreeNode)jcrTreeGrid.getSelectedRecord()).getPath();
     }
 
     /**
@@ -125,23 +127,23 @@ public class Navigator extends Label {
 
     /**
      * Opens node in the tree with given path.
-     *
+     * 
      * @param path the path to the node.
      */
-    public void openFolder(String path) {
-        JcrTreeNode n = (JcrTreeNode) jcrTree.find("path", path);
+    public void openFolder( String path ) {
+        JcrTreeNode n = (JcrTreeNode)jcrTree.find("path", path);
         SC.say("Node is null " + (n == null));
         jcrTree.openFolder(n);
     }
 
-    public void openFolder(TreeNode node) {
+    public void openFolder( TreeNode node ) {
         jcrTree.openFolder(node);
     }
 
-//    public TreeNode[] getChildren(JcrTreeNode node) {
-//        return jcrTree.getChildren(node);
-//    }
-    public void remove(TreeNode node) {
+    // public TreeNode[] getChildren(JcrTreeNode node) {
+    // return jcrTree.getChildren(node);
+    // }
+    public void remove( TreeNode node ) {
         jcrTree.remove(node);
     }
 
@@ -149,7 +151,7 @@ public class Navigator extends Label {
         this.jcrTreeGrid.deselectAllRecords();
     }
 
-    public boolean hasChildren(TreeNode node) {
+    public boolean hasChildren( TreeNode node ) {
         return jcrTree.hasChildren(node);
     }
 
@@ -170,23 +172,14 @@ public class Navigator extends Label {
      }
      */
     public void selectNode() {
-        JcrTreeNode node = (JcrTreeNode) jcrTreeGrid.getSelectedRecord();
+        JcrTreeNode node = (JcrTreeNode)jcrTreeGrid.getSelectedRecord();
         if (node == null) {
-            node = (JcrTreeNode) ROOT;
+            node = (JcrTreeNode)ROOT;
         }
-        
         String path = node.getAttribute("path");
-        if (path == null) {
-            path = "/";
+        if (path != null && path.trim().length() != 0) {
+            console.jcrService.childNodes(path, new ChildrenHandler());
         }
-        
-        path = path.trim();
-        
-        if (path.length() == 0) {
-            path = "/";
-        }
-                
-        console.jcrService.childNodes(path, new ChildrenHandler());
         console.nodePanel.display(node);
     }
 
@@ -196,17 +189,17 @@ public class Navigator extends Label {
      * @return selected node.
      */
     public JcrTreeNode getSelectedNode() {
-        JcrTreeNode node = (JcrTreeNode) jcrTreeGrid.getSelectedRecord();
+        JcrTreeNode node = (JcrTreeNode)jcrTreeGrid.getSelectedRecord();
         if (node == null) {
-            node = (JcrTreeNode) ROOT;
+            node = (JcrTreeNode)ROOT;
         }
         return node;
     }
-    
+
     private class NodeLoader implements CellClickHandler {
 
         @Override
-        public void onCellClick(CellClickEvent event) {
+        public void onCellClick( CellClickEvent event ) {
             selectNode();
         }
     }
@@ -214,8 +207,7 @@ public class Navigator extends Label {
     private class FolderClickHandlerImpl implements FolderClickHandler {
 
         @Override
-        public void onFolderClick(FolderClickEvent event) {
-            System.out.println("--------------- Folder has been clicked!-------");
+        public void onFolderClick( FolderClickEvent event ) {
         }
     }
 
@@ -225,15 +217,16 @@ public class Navigator extends Label {
     private class RootAccessorHandler implements AsyncCallback<JcrNode> {
 
         @Override
-        public void onFailure(Throwable caught) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        public void onFailure( Throwable caught ) {
+            throw new UnsupportedOperationException("Not supported yet."); // To change body of generated methods, choose Tools |
+                                                                           // Templates.
         }
 
         @Override
-        public void onSuccess(JcrNode node) {
-            //one more conversation of the value object into tree node object
+        public void onSuccess( JcrNode node ) {
+            // one more conversation of the value object into tree node object
             JcrTreeNode root = convert(node);
-            ROOT = new JcrTreeNode("root", "/", root);
+            ROOT = new JcrTreeNode("", "", root);
 
             jcrTree.setModelType(TreeModelType.PARENT);
             jcrTree.setNameProperty("name");
@@ -247,19 +240,19 @@ public class Navigator extends Label {
     private class ChildrenHandler implements AsyncCallback<List<JcrNode>> {
 
         @Override
-        public void onFailure(Throwable caught) {
+        public void onFailure( Throwable caught ) {
         }
 
         @Override
-        public void onSuccess(List<JcrNode> result) {
-            //pick up selected record
-            JcrTreeNode parent = (JcrTreeNode) jcrTreeGrid.getSelectedRecord();
+        public void onSuccess( List<JcrNode> result ) {
+            // pick up selected record
+            JcrTreeNode parent = (JcrTreeNode)jcrTreeGrid.getSelectedRecord();
 
-            //clean up selected node
+            // clean up selected node
             TreeNode[] children = jcrTree.getChildren(parent);
             jcrTree.removeList(children);
 
-            //reload child nodes
+            // reload child nodes
             for (JcrNode n : result) {
                 jcrTree.add(convert(n), parent);
             }
@@ -272,7 +265,7 @@ public class Navigator extends Label {
      * @param node jcr node value object
      * @return tree node object
      */
-    protected JcrTreeNode convert(JcrNode node) {
+    protected JcrTreeNode convert( JcrNode node ) {
         JcrTreeNode item = new JcrTreeNode(node.getName(), node.getPath(), node.getPrimaryType());
         item.setProperties(node.getProperties());
 

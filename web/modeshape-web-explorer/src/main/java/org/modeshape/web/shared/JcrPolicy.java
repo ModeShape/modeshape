@@ -28,56 +28,51 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- *
  * @author kulikov
  */
 public class JcrPolicy implements Serializable {
     private String principal;
     private ArrayList<JcrPermission> permissions = new ArrayList();
-    
-    /**
-     * Policy with all permissions for everyone.
-     * 
-     * @return 
-     */
+
     public static JcrPolicy everyone() {
         return new JcrPolicy("EVERYONE");
     }
-    
+
     public JcrPolicy() {
     }
-    
+
     /**
      * Creates ACL entry for the given principal and granting all permissions.
      * 
      * @param principal the name of the principal.
      */
-    public JcrPolicy(String principal) {
+    public JcrPolicy( String principal ) {
         this.principal = principal;
         this.permissions.add(JcrPermission.ALL);
     }
-    
+
     public String getPrincipal() {
         return principal;
     }
-    
-    public void setPrincipal(String principal) {
+
+    public void setPrincipal( String principal ) {
         this.principal = principal;
     }
-    
-    public void add(JcrPermission permission) {
+
+    public void add( JcrPermission permission ) {
         permissions.add(permission);
     }
-    
-    public void remove(JcrPermission permission) {
+
+    public void remove( JcrPermission permission ) {
         permissions.remove(permission);
     }
-    
+
     public Collection getPermissions() {
         return permissions;
     }
-    
-    public void update(String action, String value) {
+
+    public void update( String action,
+                        String value ) {
         Boolean enable = value.equals("Allow");
         if (enable) {
             permissions.add(JcrPermission.fromDisplayName(action));
@@ -86,8 +81,8 @@ public class JcrPolicy implements Serializable {
             permissions.remove(find(action));
         }
     }
-    
-    private JcrPermission find(String name) {
+
+    private JcrPermission find( String name ) {
         JcrPermission permission = JcrPermission.fromDisplayName(name);
         for (JcrPermission p : permissions) {
             if (permission.getName().equals(p.getName())) {
@@ -96,5 +91,5 @@ public class JcrPolicy implements Serializable {
         }
         return null;
     }
-    
+
 }
