@@ -87,7 +87,6 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         try {
             repository = RepositoryManager.getRepository(jndiName);
         } catch (Exception e) {
-            e.printStackTrace();
             try {
                 InitialContext context = new InitialContext();
                 repository = (Repository) context.lookup(jndiName);
@@ -148,12 +147,10 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         ArrayList<JcrNode> children = new ArrayList();
         try {
             Node node = (Node) session().getItem(path);
-            System.out.println("----- path: " + path);
             NodeIterator it = node.getNodes();
 
             while (it.hasNext()) {
                 Node n = it.nextNode();
-                System.out.println("+++++ child: " + n.getName());
                 JcrNode childNode = new JcrNode(n.getName(), n.getPath(), n.getPrimaryNodeType().getName());
                 childNode.setProperties(getProperties(n));
                 childNode.setAcessControlList(getAccessList(session().getAccessControlManager(), node));
@@ -163,7 +160,6 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             }
 
         } catch (RepositoryException e) {
-            log.log(Level.SEVERE, "Unexpected error", e);
             throw new RemoteException(e.getMessage());
         }
 
@@ -306,6 +302,10 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             return "";
         }
         
+        if (values.length == 0) {
+            return "";
+        }
+        
         if (values.length == 1) {
             return values[0].getString();
         }
@@ -319,7 +319,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
     
     @Override
-    public JcrRepositoryDescriptor repositoryInfo() {
+    public JcrRepositoryDescriptor repositoryInfo() throws RemoteException {
         Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
         JcrRepositoryDescriptor desc = new JcrRepositoryDescriptor();
         
@@ -331,14 +331,14 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 desc.add(keys[i], value != null ? value.getString() : "N/A");
             }
         } catch (RepositoryException e) {
-            e.printStackTrace();
+            throw new RemoteException(e.getMessage());
         }
         return desc;
     }
     
 
     @Override
-    public ResultSet query(String text, String lang) {
+    public ResultSet query(String text, String lang) throws RemoteException {
         Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
         ResultSet rs = new ResultSet();
         try {
@@ -364,22 +364,20 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             
             rs.setRows(rows);
         } catch (RepositoryException e) {
-            e.printStackTrace();
+            throw new RemoteException(e.getMessage());
         }
         return rs;
     }
 
     @Override
-    public String[] supportedQueryLanguages() {
+    public String[] supportedQueryLanguages() throws RemoteException {
         Session session = (Session) this.getThreadLocalRequest().getSession().getAttribute("session");
-        ResultSet rs = new ResultSet();
         try {
             QueryManager qm = session.getWorkspace().getQueryManager();
             return qm.getSupportedQueryLanguages();
         } catch (RepositoryException e) {
-            e.printStackTrace();
+            throw new RemoteException(e.getMessage());
         }
-        return null;
     }
 
     @Override
@@ -407,7 +405,6 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         try {
             Node node = (Node) session().getItem(path);
             node.addMixin(mixin);
-            System.out.println("Added mixing to the node: " + path);
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }

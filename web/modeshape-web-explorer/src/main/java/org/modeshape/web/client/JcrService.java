@@ -78,7 +78,7 @@ public interface JcrService extends RemoteService {
      * 
      * @return description of the repository capabilities.
      */
-    public JcrRepositoryDescriptor repositoryInfo();
+    public JcrRepositoryDescriptor repositoryInfo() throws RemoteException;
     
     /**
      * Gets all registered node types.
@@ -93,7 +93,7 @@ public interface JcrService extends RemoteService {
      * 
      * @return language names
      */
-    public String[] supportedQueryLanguages();
+    public String[] supportedQueryLanguages() throws RemoteException;
     
     /**
      * Executes query.
@@ -102,7 +102,7 @@ public interface JcrService extends RemoteService {
      * @param lang query language name
      * @return Query result
      */
-    public ResultSet query(String text, String lang);
+    public ResultSet query(String text, String lang) throws RemoteException;
     
     /**
      * Adds new node.
