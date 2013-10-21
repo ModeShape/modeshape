@@ -173,7 +173,7 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
      * @return the hexadecimal representation of the identifier's SHA-1 hash; never null
      */
     public String getIdentifierHash() {
-        return sha1(getIdentifier());
+        return SecureHash.sha1(getIdentifier());
     }
 
     @Override
@@ -229,24 +229,14 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
     }
 
     public static String keyForSourceName( String name ) {
-        return sha1(name).substring(0, NodeKey.SOURCE_LENGTH);
+        return SecureHash.sha1(name).substring(0, NodeKey.SOURCE_LENGTH);
     }
 
     public static String keyForWorkspaceName( String name ) {
-        return sha1(name).substring(0, NodeKey.WORKSPACE_LENGTH);
+        return SecureHash.sha1(name).substring(0, NodeKey.WORKSPACE_LENGTH);
     }
 
     public static String sourceKey( String key ) {
         return isValidFormat(key) ? key.substring(SOURCE_START_INDEX, SOURCE_END_INDEX) : null;
     }
-
-    private static String sha1( String name ) {
-        try {
-            byte[] sha1 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, name.getBytes());
-            return SecureHash.asHexString(sha1);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SystemFailureException(e);
-        }
-    }
-
 }

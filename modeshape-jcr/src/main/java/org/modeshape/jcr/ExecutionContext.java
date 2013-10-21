@@ -25,7 +25,6 @@ package org.modeshape.jcr;
 
 import java.math.BigDecimal;
 import java.security.AccessController;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,7 +33,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
@@ -96,15 +94,6 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
 
     public static final ExecutionContext DEFAULT_CONTEXT = new ExecutionContext();
 
-    private static String sha1( String name ) {
-        try {
-            byte[] sha1 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, name.getBytes());
-            return SecureHash.asHexString(sha1);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SystemFailureException(e);
-        }
-    }
-
     private final ThreadPoolFactory threadPools;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
@@ -112,7 +101,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
     private final SecurityContext securityContext;
     private final BinaryStore binaryStore;
     /** The unique ID string, which is always generated so that it can be final and not volatile. */
-    private final String id = sha1(UUID.randomUUID().toString()).substring(0, 9);
+    private final String id = SecureHash.sha1(UUID.randomUUID().toString()).substring(0, 9);
     private final String processId;
     private final Map<String, String> data;
 

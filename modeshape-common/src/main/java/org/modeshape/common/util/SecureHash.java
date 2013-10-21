@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 
 /**
@@ -324,6 +325,21 @@ public class SecureHash {
         return hash != null ? StringUtil.getHexString(hash) : null;
     }
 
+    /**
+     * Computes the sha1 value for the given string.
+     *
+     * @param string a non-null string
+     * @return the SHA1 value for the given string.
+     */
+    public static String sha1( String string ) {
+        try {
+            byte[] sha1 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, string.getBytes());
+            return SecureHash.asHexString(sha1);
+        } catch (NoSuchAlgorithmException e) {
+            throw new SystemFailureException(e);
+        }
+    }
+
     public static class HashingInputStream extends InputStream {
         private final MessageDigest digest;
         private final InputStream stream;
@@ -335,11 +351,6 @@ public class SecureHash {
             this.stream = input;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.io.InputStream#read()
-         */
         @Override
         public int read() throws IOException {
             int result = stream.read();
@@ -349,11 +360,6 @@ public class SecureHash {
             return result;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.io.InputStream#read(byte[], int, int)
-         */
         @Override
         public int read( byte[] b,
                          int off,
@@ -366,11 +372,6 @@ public class SecureHash {
             return n;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.io.InputStream#read(byte[])
-         */
         @Override
         public int read( byte[] b ) throws IOException {
             int n = stream.read(b);
@@ -380,11 +381,6 @@ public class SecureHash {
             return n;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.io.InputStream#close()
-         */
         @Override
         public void close() throws IOException {
             stream.close();
