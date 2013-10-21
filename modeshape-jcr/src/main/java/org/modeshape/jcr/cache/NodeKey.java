@@ -24,14 +24,12 @@
 package org.modeshape.jcr.cache;
 
 import java.io.Serializable;
-import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import org.infinispan.schematic.SchematicDb;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * An immutable unique key for a node within the {@link JcrRepository repository}'s {@link SchematicDb database}.
@@ -173,7 +171,7 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
      * @return the hexadecimal representation of the identifier's SHA-1 hash; never null
      */
     public String getIdentifierHash() {
-        return sha1(getIdentifier());
+        return BinaryKey.hexHashFor(getIdentifier());
     }
 
     @Override
@@ -229,24 +227,14 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
     }
 
     public static String keyForSourceName( String name ) {
-        return sha1(name).substring(0, NodeKey.SOURCE_LENGTH);
+        return BinaryKey.hexHashFor(name).substring(0, NodeKey.SOURCE_LENGTH);
     }
 
     public static String keyForWorkspaceName( String name ) {
-        return sha1(name).substring(0, NodeKey.WORKSPACE_LENGTH);
+        return BinaryKey.hexHashFor(name).substring(0, NodeKey.WORKSPACE_LENGTH);
     }
 
     public static String sourceKey( String key ) {
         return isValidFormat(key) ? key.substring(SOURCE_START_INDEX, SOURCE_END_INDEX) : null;
     }
-
-    private static String sha1( String name ) {
-        try {
-            byte[] sha1 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, name.getBytes());
-            return SecureHash.asHexString(sha1);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SystemFailureException(e);
-        }
-    }
-
 }
