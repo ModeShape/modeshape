@@ -16,14 +16,15 @@ import org.modeshape.jcr.value.BinaryValue;
 public class UrlBinaryValue extends ExternalBinaryValue {
     private static final long serialVersionUID = 1L;
 
-    private URL url;
+    private final URL url;
 
     public UrlBinaryValue( String sourceName,
                            URL content,
                            long size,
                            String nameHint,
                            MimeTypeDetector mimeTypeDetector ) {
-        super(new BinaryKey(content.toString()), sourceName, content.toExternalForm(), size, nameHint, mimeTypeDetector);
+        super(new BinaryKey(BinaryKey.hexHashFor(content.toString())), sourceName, content.toExternalForm(), size, nameHint,
+              mimeTypeDetector);
         this.url = content;
     }
 

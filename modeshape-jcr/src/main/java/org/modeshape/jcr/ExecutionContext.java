@@ -25,7 +25,6 @@ package org.modeshape.jcr;
 
 import java.math.BigDecimal;
 import java.security.AccessController;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,18 +33,17 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.ThreadPoolFactory;
 import org.modeshape.common.util.ThreadPools;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.BinaryFactory;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -96,15 +94,6 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
 
     public static final ExecutionContext DEFAULT_CONTEXT = new ExecutionContext();
 
-    private static String sha1( String name ) {
-        try {
-            byte[] sha1 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, name.getBytes());
-            return SecureHash.asHexString(sha1);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SystemFailureException(e);
-        }
-    }
-
     private final ThreadPoolFactory threadPools;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
@@ -112,7 +101,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
     private final SecurityContext securityContext;
     private final BinaryStore binaryStore;
     /** The unique ID string, which is always generated so that it can be final and not volatile. */
-    private final String id = sha1(UUID.randomUUID().toString()).substring(0, 9);
+    private final String id = BinaryKey.hexHashFor(UUID.randomUUID().toString()).substring(0, 9);
     private final String processId;
     private final Map<String, String> data;
 
@@ -154,7 +143,8 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
              context.binaryStore, context.data, context.processId, context.decoder, context.encoder, context.stringFactory,
              context.binaryFactory, context.booleanFactory, context.dateFactory, context.decimalFactory, context.doubleFactory,
              context.longFactory, context.nameFactory, context.pathFactory, context.referenceFactory,
-             context.weakReferenceFactory, context.simpleReferenceFactory, context.uriFactory, context.uuidFactory, context.objectFactory);
+             context.weakReferenceFactory, context.simpleReferenceFactory, context.uriFactory, context.uuidFactory,
+             context.objectFactory);
     }
 
     /**
@@ -183,7 +173,8 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * @param pathFactory the path factory that should be used; if null, a default implementation will be used
      * @param referenceFactory the strong reference factory that should be used; if null, a default implementation will be used
      * @param weakReferenceFactory the weak reference factory that should be used; if null, a default implementation will be used
-     * @param simpleReferenceFactory the simple reference factory that should be used; if null, a default implementation will be used
+     * @param simpleReferenceFactory the simple reference factory that should be used; if null, a default implementation will be
+     *        used
      * @param uriFactory the URI factory that should be used; if null, a default implementation will be used
      * @param uuidFactory the UUID factory that should be used; if null, a default implementation will be used
      * @param objectFactory the object factory that should be used; if null, a default implementation will be used
@@ -670,7 +661,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * Default security context that confers no roles.
      */
     private static class NullSecurityContext implements SecurityContext {
-        
+
         @Override
         public boolean isAnonymous() {
             return true;

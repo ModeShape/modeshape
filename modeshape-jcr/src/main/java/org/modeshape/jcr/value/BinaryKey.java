@@ -39,6 +39,15 @@ public class BinaryKey implements Serializable, Comparable<BinaryKey> {
 
     private static final SecureHash.Algorithm ALGORITHM = SecureHash.Algorithm.SHA_1;
 
+    public static String hexHashFor( String value ) {
+        try {
+            byte[] sha1 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, value.getBytes());
+            return SecureHash.asHexString(sha1);
+        } catch (NoSuchAlgorithmException e) {
+            throw new SystemFailureException(e);
+        }
+    }
+
     public static int maxHexadecimalLength() {
         return ALGORITHM.getHexadecimalStringLength();
     }
