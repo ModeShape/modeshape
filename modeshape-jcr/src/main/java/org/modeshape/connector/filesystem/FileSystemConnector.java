@@ -40,6 +40,7 @@ import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -49,6 +50,7 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.federation.NoExtraPropertiesStorage;
 import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.ConnectorException;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
@@ -191,6 +193,13 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * </ul>
      */
     private String extraPropertiesStorage;
+
+    /**
+     * A boolean which determines whether for external binary values (i.e. {@link UrlBinaryValue}) the SHA1 is computed based
+     * on the content of the file itself or whether it's computed based on the URL string. This is {@code true} by default, but
+     * if the connector needs to deal with very large values it might be worth turning off.
+     */
+    private boolean contentBasedSha1 = true;
 
     private NamespaceRegistry registry;
 
@@ -350,7 +359,28 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      */
     protected ExternalBinaryValue createBinaryValue( File file ) throws IOException {
         URL content = createUrlForFile(file);
-        return new UrlBinaryValue(getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
+        return new UrlBinaryValue(sha1(file), getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
+    }
+
+    /**
+     * Computes the SHA1 for the given file. By default, this method will look at the {@link FileSystemConnector#contentBasedSha1()}
+     * flag and either take the URL of the file (using @see java.util.File#toURI().toURL() and return the SHA1 of the URL string
+     * or return the SHA1 of the entire file content.
+     *
+     * @param file a {@link File} instance; never null
+     * @return the SHA1 of the file.
+     */
+    protected String sha1(File file) {
+        try {
+            if (contentBasedSha1()) {
+                byte[] hash = SecureHash.getHash(SecureHash.Algorithm.SHA_1, file);
+                return StringUtil.getHexString(hash);
+            } else {
+                return SecureHash.sha1(createUrlForFile(file).toString());
+            }
+        } catch (Exception e) {
+            throw new ConnectorException(e);
+        }
     }
 
     /**
@@ -371,6 +401,10 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
     protected File createFileForUrl( URL url ) throws URISyntaxException {
         return new File(url.toURI());
+    }
+
+    protected boolean contentBasedSha1() {
+        return contentBasedSha1;
     }
 
     /**
