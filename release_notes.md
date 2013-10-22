@@ -12,23 +12,15 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release addesses 14 issues, most of which are bug fixes in lots of areas. Several workspace
-clone and merge bugs were fixed, and we've remedied the missing optimization when not using JCR ACLs
-(see MODE-2004). If you're using 3.4 but not using ACLs, please be sure to upgrade to get this optimization.
-The JCR ACL feature is still considered a technology preview. 
-
-NOTE: If after upgrading the ACL feature doesn't seem function correctly, try creating and 
-saving a new ACL. (If this ACL is not needed, you can immediately remove it and re-save.)
-This will ensure that the non-ACL optimization added in 3.5 is disabled and that ACL checks are 
-performed correctly.
-
-This release adds support for monitoring repositories via JMX, and also adds a "simple" reference that is 
-similar to JCR weak references except no back-references are maintained (improving performance 
-for nodes that are referenced by lots of reference properties). Since "simple" references
-are not defined in the JCR specification, you'll need to use the ModeShape-specific API
-to create simple references using the session's value factory.
-
-As with 3.4.0.Final, this release includes a kit that can be installed into EAP 6.1.0.GA.
+This release addesses 54 issues, many of which are bug fixes in lots of areas. The release
+improves even more the file system connector so that very large files (even dozens of GB)
+can be effectively accessed (MODE-2061). It is also now possible for clients to programmatically
+invoke sequencers against transient content, with the output of the sequencers remaining in
+transient state that will be saved when the session is saved (MODE-1467). The ModeShape kit for
+EAP now supports both EAP 6.1.0 and 6.1.1, and now supports EAP's domain mode (tech preview,
+MODE-2026). We also introduced a new Repository Explorer web application that enables using 
+your browser to visually explore the ModeShape content (MODE-1820). This web application is 
+automatically included with the ModeShape kit for EAP and is available for use on other servers.
 
 
 ## Features
@@ -81,6 +73,7 @@ and while the server is running.
 - Use the RESTful API to talk to ModeShape repositories from non-Java and non-local applications
 - Use the CMIS API to talk to ModeShape repositories
 - Use WebDAV to mount ModeShape repositories as file servers
+- Visual repository explorer web application
 
 
 All of the JCR 2.0 features previously supported in 2.x are currently supported:
@@ -190,6 +183,7 @@ ModeShape also has features that go beyond the JCR API:
 - Access through two RESTful Services (the 2.x-compatible API and a new improved API)
 - Access through WebDAV Service
 - Access through CMIS Service
+- Access through visual repository explorer web application
 - Local and remote JDBC drivers for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 - Embedded (in Server or JEE Archive) Deployment
 - JTA support, allowing Sessions to participate in XA and container-managed transactions 
