@@ -94,8 +94,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
         noneProjection = new Projection("mutable-files-none", "target/federation/files-none");
         pagedProjection = new PagedProjection("paged-files", "target/federation/paged-files");
-        largeFilesProjection = new LargeFilesProjection("large-files","target/fedoration/large-files");
-        largeFilesProjectionDefault = new LargeFilesProjection("large-files-default","target/fedoration/large-files-default");
+        largeFilesProjection = new LargeFilesProjection("large-files","target/federation/large-files");
+        largeFilesProjectionDefault = new LargeFilesProjection("large-files-default","target/federation/large-files-default");
 
         projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
             storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection,largeFilesProjection,largeFilesProjectionDefault};

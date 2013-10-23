@@ -50,13 +50,13 @@
         } ,
         "large-files" : {
             "classname" : "org.modeshape.connector.filesystem.LargeFileSystemConnector",
-            "directoryPath" : "target/fedoration/large-files",
+            "directoryPath" : "target/federation/large-files",
             "extraPropertiesStorage" : "none",
             "contentBasedSha1" : "false"
         } ,
         "large-files-default" : {
             "classname" : "org.modeshape.connector.filesystem.LargeFileSystemConnector",
-            "directoryPath" : "target/fedoration/large-files-default",
+            "directoryPath" : "target/federation/large-files-default",
             "extraPropertiesStorage" : "none"
         } ,
         "targetDirectory" : {
