@@ -57,7 +57,7 @@
         "large-files-default" : {
             "classname" : "org.modeshape.connector.filesystem.LargeFileSystemConnector",
             "directoryPath" : "target/fedoration/large-files-default",
-            "extraPropertiesStorage" : "none",
+            "extraPropertiesStorage" : "none"
         } ,
         "targetDirectory" : {
             "classname" : "filesystem",

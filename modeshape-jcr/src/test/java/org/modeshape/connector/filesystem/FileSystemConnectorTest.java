@@ -33,10 +33,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +54,8 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
@@ -216,6 +220,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.testContent(testRoot, "legacy");
         noneProjection.testContent(testRoot, "none");
         pagedProjection.testContent(testRoot, "pagedFiles");
+        largeFilesProjection.testContent(testRoot,"largeFiles");
+        largeFilesProjectionDefault.testContent(testRoot,"largeFilesDefault");
     }
 
     @Test
@@ -696,7 +702,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         }
 
     }
-
+    
     protected class LargeFilesProjection extends Projection {
 
         public LargeFilesProjection( String name,
