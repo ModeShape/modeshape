@@ -69,7 +69,8 @@ public class LargeFileSystemConnector extends FileSystemConnector {
     /**
      * Utility method to create a {@link BinaryValue} object for the given file overriding FileSystemConnector. Subclasses should rarely override this method,
      * since the {@link UrlBinaryValue} will be applicable in most situations, but in this subclass is overriding using {@link FileUrlBinaryValue}
-     * to lazily compute a contentBased Hash when the key is a URI based Hash 
+     * to lazily compute a contentBased Hash when the key is a URI based Hash.  Option contentBasedSha1=false should only be used in "write-once" directories 
+     * as modifying the file will not change stored hash  
      * 
      * @param file the file for which the {@link BinaryValue} is to be created; never null
      * @return the binary value; never null
@@ -81,7 +82,7 @@ public class LargeFileSystemConnector extends FileSystemConnector {
         if (contentBasedSha1()) {
             return new UrlBinaryValue(sha1(file), getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
         } else {
-            return new FileUrlBinaryValue(sha1(file), getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector(),file);
+            return new FileUrlBinaryValue(sha1(file), getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
         }
     }
 }
