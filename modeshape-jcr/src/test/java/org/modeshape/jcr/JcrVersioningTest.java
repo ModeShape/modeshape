@@ -33,6 +33,9 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -896,6 +899,37 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         } catch (ItemNotFoundException e) {
             //expected
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2089" )
+    public void shouldKeepOrderWhenRestoring() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node parent = session.getRootNode().addNode("parent", "jj:page");
+        parent.addNode("child1", "jj:content");
+        parent.addNode("child2", "jj:content");
+        parent.addNode("child3", "jj:content");
+        parent.addNode("child4", "jj:content");
+        session.save();
+        versionManager.checkpoint(parent.getPath());
+
+        parent = session.getNode("/parent");
+        parent.orderBefore("child4", "child3");
+        parent.orderBefore("child3", "child2");
+        parent.orderBefore("child2", "child1");
+        session.save();
+
+        Version version = versionManager.getBaseVersion(parent.getPath());
+        versionManager.restore(version, true);
+
+        parent = session.getNode("/parent");
+        List<String> children = new ArrayList<String>();
+        NodeIterator nodeIterator = parent.getNodes();
+        while (nodeIterator.hasNext()) {
+            children.add(nodeIterator.nextNode().getPath());
+        }
+        assertEquals(Arrays.asList("/parent/child1", "/parent/child2", "/parent/child3", "/parent/child4"), children);
     }
 
     private void assertPropertyIsAbsent( Node node,
