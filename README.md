@@ -47,12 +47,16 @@ BTW, that '-s settings.xml' argument uses the 'settings.xml' file in our codebas
      The JBoss EAP Techpreview repository - is an additional repository which contains the artifacts necessary for building ModeShape's EAP kit.
 
 Normally, during a normal "$ mvn clean install" build, the EAP kit is not built and therefore only the JBoss Maven repository would suffice.
-However, if you are interested in building & contributing to the EAP kit as well, you need to make sure the second Maven repository is active.
+
+However, if you are interested in building & contributing to the EAP kit as well, you need to make sure the second Maven repository is active _and_ you need to download the EAP kit and place it into your local Maven repository where the build can find it. To do the latter, simply go to [JBoss.org|https://www.jboss.org/products/eap.html], download the EAP 6.1.1, then run the following script that is in our codebase:
+
+    $ bin/install-eap.sh path/to/jboss-eap-6.1.0.zip
+
 You can then run the following command (instead of the earlier command) to build all modules, including the EAP kit, using our "integration" profile:
 
     $ mvn clean install -s settings.xml -Pintegration
 
-To build everything, including the EAP kit, our JavaDoc, and our other assemblies, use the "assembly" profile instead:
+To build everything, including the ModeShape kit for EAP, our JavaDoc, and our other assemblies, use the "assembly" profile instead:
 
     $ mvn clean install -s settings.xml -Passembly
 
