@@ -27,6 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.modeshape.jcr.api.JcrConstants.JCR_PRIMARY_TYPE;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ABSTRACT;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ANNOTATIONS;
@@ -65,6 +66,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.jcr.nodetype.NodeType;
 import org.modeshape.sequencer.classfile.ClassFileSequencerLexicon;
 import org.modeshape.sequencer.testdata.MockClass;
 import org.modeshape.sequencer.testdata.MockEnum;
@@ -113,6 +115,7 @@ public abstract class JavaSequencerHelper {
         assertConstructors(classNode);
         assertMethods(classNode);
         assertFields(classNode);
+        assertPackage(classNode);
     }
 
     private void assertClassMetaInfo( Node classNode ) throws RepositoryException {
@@ -246,6 +249,25 @@ public abstract class JavaSequencerHelper {
                     true,
                     false,
                     false);
+    }
+
+    private void assertPackage( final Node classNode ) throws Exception {
+        // org.acme.MySource
+        Node parent = classNode.getParent(); // acme
+        assertHasPackageMixin(parent);
+
+        parent = parent.getParent(); // org
+        assertHasPackageMixin(parent);
+    }
+
+    private void assertHasPackageMixin(final Node node) throws Exception {
+        for (final NodeType mixin : node.getMixinNodeTypes()) {
+            if (ClassFileSequencerLexicon.PACKAGE.equals(mixin.getName())) {
+                return;
+            }
+        }
+
+        fail("Node '" + node.getPath() + "' does not have the java package mixin");
     }
 
     private Map<String, Node> loadNodesByName( Node rootNode ) throws RepositoryException {

@@ -52,6 +52,16 @@ public class ImportMetadata {
         return new ImportMetadata(name, Type.SINGLE);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "import " + getName() + ';';
+    }
+
     public static enum Type {
         ON_DEMAND, SINGLE
     }

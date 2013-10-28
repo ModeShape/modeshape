@@ -34,6 +34,7 @@ import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ENUM_V
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FIELD;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FIELDS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FINAL;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACE;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACES;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD;
@@ -41,6 +42,7 @@ import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD_PARAMETERS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NAME;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NATIVE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PACKAGE;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETER;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETERS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.RETURN_TYPE_CLASS_NAME;
@@ -66,6 +68,7 @@ import org.modeshape.sequencer.classfile.metadata.ClassMetadata;
 import org.modeshape.sequencer.classfile.metadata.EnumMetadata;
 import org.modeshape.sequencer.classfile.metadata.FieldMetadata;
 import org.modeshape.sequencer.classfile.metadata.MethodMetadata;
+import org.modeshape.sequencer.javafile.metadata.ImportMetadata;
 
 public class DefaultClassFileRecorder implements ClassFileRecorder {
 
@@ -85,6 +88,7 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         Node fieldsNode = classNode.addNode(FIELDS, FIELDS);
         writeFieldsNode(fieldsNode, classMetadata.getFields());
 
+        writeImports(classNode, classMetadata.getImports());
     }
 
     private void writeClassMetaInformation( Sequencer.Context context, ClassMetadata classMetadata, Node classNode ) throws RepositoryException {
@@ -123,13 +127,22 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
     }
 
     private Node getClassNode( ClassMetadata classMetadata, Node outputNode ) throws RepositoryException {
-        String actualType = classMetadata.isEnumeration() ? ENUM : CLASS;
+        final String[] packagePath = classMetadata.getClassName().split("\\.");
+        int i = 0;
+
         //create a series of nt:unstructured nodes as the package path
-        for (String packageName : classMetadata.getClassName().split("\\.")) {
-            outputNode = outputNode.addNode(packageName);
+        if (packagePath.length > 1) {
+            for (final int numPkgs = (packagePath.length - 1); i < numPkgs; ++i) {
+                outputNode = outputNode.addNode(packagePath[i]);
+                outputNode.addMixin(PACKAGE);
+            }            
         }
-        outputNode.setPrimaryType(actualType);
-        return outputNode;
+
+        final Node classNode = outputNode.addNode(packagePath[i]);
+        final String actualType = (classMetadata.isEnumeration() ? ENUM : CLASS);
+        classNode.setPrimaryType(actualType);
+
+        return classNode;
     }
 
     private void writeFieldsNode( Node fieldsNode, List<FieldMetadata> fields ) throws RepositoryException {
@@ -242,4 +255,22 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
             }
         }
     }
+
+    private void writeImports( final Node classNode,
+                               final List<ImportMetadata> imports ) throws RepositoryException {
+        assert (classNode != null);
+        assert (imports != null);
+
+        if (!imports.isEmpty()) {
+            final String[] values = new String[imports.size()];
+            int i = 0;
+
+            for (final ImportMetadata imported : imports) {
+                values[i++] = imported.getName();
+            }
+
+            classNode.setProperty(IMPORTS, values);
+        }
+    }
+
 }

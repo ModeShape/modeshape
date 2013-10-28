@@ -120,7 +120,7 @@ public class FieldMetadata implements Comparable<FieldMetadata> {
         if (isStatic()) buff.append("static ");
         if (isTransient()) buff.append("transient ");
 
-        buff.append(Descriptor.toClassName(getTypeName())).append(' ');
+        buff.append(getTypeName()).append(' ');
         buff.append(getName()).append(';');
 
         return buff.toString();

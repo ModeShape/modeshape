@@ -24,6 +24,8 @@
  
 <class='http://www.modeshape.org/sequencer/javaclass/1.0'>
 
+[class:package] mixin
+
 [class:annotationMember]
 - class:name (string) mandatory
 - class:value (string) 
@@ -90,6 +92,7 @@
 - class:final (boolean) mandatory
 - class:strictFp (boolean) mandatory
 - class:interfaces (string) multiple
+- class:imports (string) multiple
 + class:annotations (class:annotations) = class:annotations
 + class:constructors (class:constructors) = class:constructors
 + class:methods (class:methods) = class:methods

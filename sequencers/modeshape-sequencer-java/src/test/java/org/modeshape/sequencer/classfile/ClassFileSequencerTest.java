@@ -23,7 +23,14 @@
  */
 package org.modeshape.sequencer.classfile;
 
+import java.util.ArrayList;
+import java.util.List;
+import static org.hamcrest.collection.IsCollectionContaining.hasItems;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
 import javax.jcr.Node;
+import javax.jcr.Value;
 import static junit.framework.Assert.assertNotNull;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
@@ -38,6 +45,31 @@ import org.modeshape.sequencer.testdata.MockEnum;
  */
 public class ClassFileSequencerTest extends AbstractSequencerTest {
 
+    private void assertClassImports( final Node classNode ) throws Exception {
+        assertThat(classNode.hasProperty(IMPORTS), is(true));
+
+        final Value[] values = classNode.getProperty(IMPORTS).getValues();
+        assertThat(values.length, is(3));
+
+        final List<String> items = new ArrayList<String>(3);
+        items.add(values[0].getString());
+        items.add(values[1].getString());
+        items.add(values[2].getString());
+        assertThat(items, hasItems("java.io.Serializable", "java.util.ArrayList", "java.util.List"));
+    }
+
+    private void assertEnumImports( final Node classNode ) throws Exception {
+        assertThat(classNode.hasProperty(IMPORTS), is(true));
+
+        final Value[] values = classNode.getProperty(IMPORTS).getValues();
+        assertThat(values.length, is(2));
+
+        final List<String> items = new ArrayList<String>(2);
+        items.add(values[0].getString());
+        items.add(values[1].getString());
+        assertThat(items, hasItems("java.util.Random", "java.text.DateFormat"));
+    }
+
     @Test
     public void sequenceEnum() throws Exception {
         String packagePath = MockEnum.class.getName().replaceAll("\\.", "/");
@@ -49,6 +81,7 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         Node enumNode = outputNode.getNode(packagePath.substring(packagePath.indexOf("/") + 1));
         CLASS_FILE_HELPER.assertSequencedMockEnum(enumNode);
+        assertEnumImports(enumNode);
 
         // expected by sequencer in a different location
         String expectedSequencedPathNewLocation = "classes/enum.class";
@@ -56,6 +89,7 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         enumNode = outputNode.getNode(packagePath);
         CLASS_FILE_HELPER.assertSequencedMockEnum(enumNode);
+        assertEnumImports(enumNode);
     }
 
     @Test
@@ -69,6 +103,7 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         Node classNode = outputNode.getNode(packagePath.substring(packagePath.indexOf("/") + 1));
         CLASS_FILE_HELPER.assertSequencedMockClass(classNode);
+        assertClassImports(classNode);
 
         // expected by sequencer in a different location
         String expectedSequencedPathNewLocation = "classes/mockclass.class";
@@ -76,5 +111,7 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         classNode = outputNode.getNode(packagePath);
         CLASS_FILE_HELPER.assertSequencedMockClass(classNode);
+        assertClassImports(classNode);
     }
+
 }
