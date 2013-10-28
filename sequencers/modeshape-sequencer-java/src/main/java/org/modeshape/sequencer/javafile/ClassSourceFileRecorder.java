@@ -34,6 +34,7 @@ import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ENUM_V
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FIELD;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FIELDS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FINAL;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACE;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACES;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD;
@@ -41,6 +42,7 @@ import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD_PARAMETERS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NAME;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NATIVE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PACKAGE;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETER;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETERS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.RETURN_TYPE_CLASS_NAME;
@@ -66,6 +68,7 @@ import org.modeshape.sequencer.javafile.metadata.AbstractMetadata;
 import org.modeshape.sequencer.javafile.metadata.AnnotationMetadata;
 import org.modeshape.sequencer.javafile.metadata.EnumMetadata;
 import org.modeshape.sequencer.javafile.metadata.FieldMetadata;
+import org.modeshape.sequencer.javafile.metadata.ImportMetadata;
 import org.modeshape.sequencer.javafile.metadata.JavaMetadata;
 import org.modeshape.sequencer.javafile.metadata.MethodMetadata;
 import org.modeshape.sequencer.javafile.metadata.TypeMetadata;
@@ -82,17 +85,25 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         for (TypeMetadata typeMetadata : javaMetadata.getTypeMetadata()) {
             Node typeNode = getTypeNode(packageName, typeMetadata, outputNode);
             writeClassMetadata(context, typeNode, typeMetadata);
+            writeImports(typeNode, javaMetadata.getImports());
         }
     }
 
     private Node getTypeNode( String packageName, TypeMetadata typeMetadata, Node outputNode ) throws RepositoryException {
-        String actualType = typeMetadata.getType().equals(TypeMetadata.Type.ENUM) ? ENUM : CLASS;
-        String fullyQualifiedName = packageName + "." + typeMetadata.getName();
-        for (String segment : fullyQualifiedName.split("\\.")) {
-            outputNode = outputNode.addNode(segment);
+        final String[] packagePath = packageName.split("\\.");
+
+        if (packageName.length() > 0) {
+            for (final String pkg : packagePath) {
+                outputNode = outputNode.addNode(pkg);
+                outputNode.addMixin(PACKAGE);
+            }
         }
-        outputNode.setPrimaryType(actualType);
-        return outputNode;
+
+        final Node classNode = outputNode.addNode(typeMetadata.getName());
+        final String actualType = typeMetadata.getType().equals(TypeMetadata.Type.ENUM) ? ENUM : CLASS;
+        classNode.setPrimaryType(actualType);
+
+        return classNode;
     }
 
     private void writeClassMetadata( Sequencer.Context context, Node typeNode, TypeMetadata typeMetadata ) throws RepositoryException {
@@ -294,6 +305,20 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
                 field.setProperty(FINAL, fieldMetadata.hasFinalModifier());
                 writeAnnotationsNode(field, fieldMetadata.getAnnotations());
             }
+        }
+    }
+
+    private void writeImports( final Node typeNode,
+                               final List<ImportMetadata> imports ) throws RepositoryException {
+        if ((imports != null) && !imports.isEmpty()) {
+            final String[] values = new String[imports.size()];
+            int i = 0;
+
+            for (final ImportMetadata importMetadata : imports) {
+                values[i++] = importMetadata.getName();
+            }
+
+            typeNode.setProperty(IMPORTS, values);
         }
     }
 

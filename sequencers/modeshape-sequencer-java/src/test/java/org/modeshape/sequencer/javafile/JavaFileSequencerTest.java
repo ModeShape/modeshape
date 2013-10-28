@@ -23,7 +23,14 @@
  */
 package org.modeshape.sequencer.javafile;
 
+import static org.hamcrest.collection.IsCollectionContaining.hasItems;
+import java.util.ArrayList;
+import java.util.List;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
 import javax.jcr.Node;
+import javax.jcr.Value;
 import static junit.framework.Assert.assertNotNull;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
@@ -39,6 +46,30 @@ import org.modeshape.sequencer.testdata.MockEnum;
  */
 public class JavaFileSequencerTest extends AbstractSequencerTest {
 
+    private void assertClassImports( final Node classNode ) throws Exception {
+        assertThat(classNode.hasProperty(IMPORTS), is(true));
+
+        final Value[] values = classNode.getProperty(IMPORTS).getValues();
+        assertThat(values.length, is(2));
+
+        final List<String> items = new ArrayList<String>(3);
+        items.add(values[0].getString());
+        items.add(values[1].getString());
+        assertThat(items, hasItems("java.io.Serializable", "java.util"));
+    }
+
+    private void assertEnumImports( final Node classNode ) throws Exception {
+        assertThat(classNode.hasProperty(IMPORTS), is(true));
+
+        final Value[] values = classNode.getProperty(IMPORTS).getValues();
+        assertThat(values.length, is(2));
+
+        final List<String> items = new ArrayList<String>(2);
+        items.add(values[0].getString());
+        items.add(values[1].getString());
+        assertThat(items, hasItems("java.util.Random", "java.text"));
+    }
+
     @Test
     public void sequenceEnum() throws Exception {
         String packagePath = MockEnum.class.getName().replaceAll("\\.", "/");
@@ -50,6 +81,7 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         Node enumNode = outputNode.getNode(packagePath);
         JAVA_FILE_HELPER.assertSequencedMockEnum(enumNode);
+        assertEnumImports(enumNode);
     }
 
     @Test
@@ -63,5 +95,7 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         Node javaNode = outputNode.getNode(packagePath);
         JAVA_FILE_HELPER.assertSequencedMockClass(javaNode);
+        assertClassImports(javaNode);
     }
+
 }

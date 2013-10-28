@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.testdata;
 
 import java.io.Serializable;
+import java.util.*;
 
 /**
  * Dummy class, used for testing the sequencing.
@@ -61,6 +62,8 @@ public final class MockClass implements Serializable {
     }
 
     public void doSomething( float p1 ) {
+        List<String> list = new ArrayList<String>();
+        list.add("string");
     }
 
     /**

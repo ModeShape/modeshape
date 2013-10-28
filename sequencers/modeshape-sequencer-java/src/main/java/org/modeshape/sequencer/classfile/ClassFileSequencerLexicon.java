@@ -47,12 +47,14 @@ public class ClassFileSequencerLexicon {
     public static final String FIELD = PREFIX + ":field";
     public static final String FIELDS = PREFIX + ":fields";
     public static final String FINAL = PREFIX + ":final";
+    public static final String IMPORTS = PREFIX + ":imports";
     public static final String INTERFACE = PREFIX + ":interface";
     public static final String INTERFACES = PREFIX + ":interfaces";
     public static final String METHOD = PREFIX + ":method";
     public static final String METHODS = PREFIX + ":methods";
     public static final String NAME = PREFIX + ":name";
     public static final String NATIVE = PREFIX + ":native";
+    public static final String PACKAGE = PREFIX + ":package";
     public static final String PARAMETERS = PREFIX + ":parameters";
     public static final String PARAMETER = PREFIX + ":parameter";
     public static final String RETURN_TYPE_CLASS_NAME = PREFIX + ":returnTypeClassName";
