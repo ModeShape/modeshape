@@ -127,7 +127,9 @@ public abstract class AbstractChildReferences implements ChildReferences {
                     // See if there are any nodes inserted before this node ...
                     ChildInsertions insertions = changes.insertionsBefore(next);
                     if (insertions != null && nextAfterIter != next) { // prevent circular references
-                        nextAfterIter = next;
+                        if (nextAfterIter == null) {
+                            nextAfterIter = next;
+                        }
                         iter = insertions.inserted().iterator();
                         continue;
                     }
