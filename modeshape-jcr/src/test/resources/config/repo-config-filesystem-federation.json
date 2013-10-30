@@ -48,6 +48,17 @@
             "extraPropertiesStorage" : "none",
             "pageSize" : 2
         } ,
+        "large-files" : {
+            "classname" : "org.modeshape.connector.filesystem.LargeFileSystemConnector",
+            "directoryPath" : "target/federation/large-files",
+            "extraPropertiesStorage" : "none",
+            "contentBasedSha1" : "false"
+        } ,
+        "large-files-default" : {
+            "classname" : "org.modeshape.connector.filesystem.LargeFileSystemConnector",
+            "directoryPath" : "target/federation/large-files-default",
+            "extraPropertiesStorage" : "none"
+        } ,
         "targetDirectory" : {
             "classname" : "filesystem",
             "directoryPath" : "target/classes",
