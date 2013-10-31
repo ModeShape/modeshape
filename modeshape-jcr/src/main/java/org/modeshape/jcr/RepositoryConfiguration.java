@@ -2263,6 +2263,16 @@ public class RepositoryConfiguration {
         }
 
         /**
+         * Returns names of all configured external sources.
+         * 
+         * @return a {@link Set} instance or null if there is not any external source.
+         */
+        public Set<String> getExternalSources() {
+            Document externalSources = federation.getDocument(FieldName.EXTERNAL_SOURCES);
+            return externalSources != null ? externalSources.keySet() : null;
+        }
+        
+        /**
          * Returns the [workspaceName, list(projections)] of projections configured for each workspace.
          * 
          * @return a {@link Map} instance, never null.

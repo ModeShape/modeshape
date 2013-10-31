@@ -51,6 +51,7 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.ConfigurationException;
+import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -85,6 +86,7 @@ import org.modeshape.jcr.cache.document.LocalDocumentStore.DocumentOperationResu
 import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
+import org.modeshape.jcr.federation.ExternalDocumentStore;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.txn.Transactions.Transaction;
 import org.modeshape.jcr.value.Name;
@@ -973,6 +975,37 @@ public class RepositoryCache implements Observable {
     }
 
     /**
+     * Creates a new workspace in the repository coupled with external document store.
+     * 
+     * @param name the name of the repository
+     * @param connectors connectors to the external systems.
+     * @return workspace cache for the new workspace.
+     */
+    public WorkspaceCache createExternalWorkspace(String name, Connectors connectors) {
+        this.workspaceNames.add(name);
+        refreshRepositoryMetadata(true);
+
+        Cache<NodeKey, CachedNode> nodeCache = cacheForWorkspace(name);
+        ExecutionContext context = context();
+
+        //the name of the external system is used for source name and workspace name
+        String sourceKey = NodeKey.keyForSourceName(name);
+        String workspaceKey = NodeKey.keyForWorkspaceName(name);
+        
+        //ask external system to determine root identifier.
+        ExternalDocumentStore documentStore = new ExternalDocumentStore(connectors);
+        String rootId = documentStore.getRootId(sourceKey);
+        
+        // Compute the root key for this workspace ...
+        NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootId);
+
+        WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, documentStore, translator, rootKey, nodeCache, changeBus);
+        workspaceCachesByName.put(name, workspaceCache);
+
+        return workspace(name);
+    }
+    
+    /**
      * Permanently destroys the workspace with the supplied name, if the repository is appropriately configured, also unlinking
      * the jcr:system node from the root node . If no such workspace exists in this repository, this method simply returns.
      * Otherwise, this method attempts to destroy the named workspace.
@@ -1059,10 +1092,11 @@ public class RepositoryCache implements Observable {
     public SessionCache createSession( ExecutionContext context,
                                        String workspaceName,
                                        boolean readOnly ) {
-        if (readOnly) {
-            return new ReadOnlySessionCache(context, workspace(workspaceName), sessionContext);
+        WorkspaceCache workspaceCache = workspace(workspaceName);
+        if (readOnly || workspaceCache.isExternal()) {
+            return new ReadOnlySessionCache(context, workspaceCache, sessionContext);
         }
-        return new WritableSessionCache(context, workspace(workspaceName), sessionContext);
+        return new WritableSessionCache(context, workspaceCache, sessionContext);
     }
 
     /**
