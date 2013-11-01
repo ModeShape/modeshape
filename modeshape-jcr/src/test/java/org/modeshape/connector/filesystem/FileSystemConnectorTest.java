@@ -33,10 +33,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +54,8 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
@@ -72,6 +76,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     private Projection legacyProjection;
     private Projection noneProjection;
     private Projection pagedProjection;
+    private Projection largeFilesProjection;
+    private Projection largeFilesProjectionDefault;
     private Projection[] projections;
     private JcrTools tools;
 
@@ -88,9 +94,11 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
         noneProjection = new Projection("mutable-files-none", "target/federation/files-none");
         pagedProjection = new PagedProjection("paged-files", "target/federation/paged-files");
+        largeFilesProjection = new LargeFilesProjection("large-files","target/federation/large-files");
+        largeFilesProjectionDefault = new LargeFilesProjection("large-files-default","target/federation/large-files-default");
 
         projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
-            storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection};
+            storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection,largeFilesProjection,largeFilesProjectionDefault};
 
         // Remove and then make the directory for our federation test ...
         for (Projection projection : projections) {
@@ -112,6 +120,95 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.create(testRoot, "legacy");
         noneProjection.create(testRoot, "none");
         pagedProjection.create(testRoot, "pagedFiles");
+        largeFilesProjection.create(testRoot,"largeFiles");
+        largeFilesProjectionDefault.create(testRoot,"largeFilesDefault");
+    }
+
+    @Test
+    @FixFor( "MODE-2061" )
+    public void largeFilesTest() throws Exception {
+        largeFilesURIBased();
+        largeFilesContentBased();
+    }
+
+    public void largeFilesURIBased() throws Exception {
+        System.out.println("in largeFilesURIBased");
+        String childName = "largeFiles";
+        Session session = (Session)testRoot.getSession();
+        String path = testRoot.getPath() + "/" + childName;
+
+        Node files = session.getNode(path);
+        assertThat(files.getName(), is(childName));
+        assertThat(files.getPrimaryNodeType().getName(), is("nt:folder"));
+        long before = System.currentTimeMillis();
+        Node node1 = session.getNode(path + "/large-file1.png");
+        long after = System.currentTimeMillis();
+        long elapsed = after-before;
+        assertThat(node1.getName(),is("large-file1.png"));
+        assertThat(node1.getPrimaryNodeType().getName(),is("nt:file"));
+        System.out.println("  elapsed getting nt:file:"+elapsed);
+
+        before = System.currentTimeMillis();
+        Node node1Content = node1.getNode("jcr:content");
+        after = System.currentTimeMillis();
+        elapsed = after-before;;
+        assertThat(node1Content.getName(),is("jcr:content"));
+        assertThat(node1Content.getPrimaryNodeType().getName(),is("nt:resource"));
+        System.out.println("  elapsed getting jcr:content:"+elapsed);
+
+        Binary binary = (Binary) node1Content.getProperty("jcr:data").getBinary();
+        before = System.currentTimeMillis();
+        String dsChecksum = binary.getHexHash();
+        after = System.currentTimeMillis();
+        elapsed = after-before;
+        System.out.println("  Hash from Value object: "+dsChecksum);
+        System.out.println("  elapsed getting hash from Value object:"+elapsed);
+
+        before = System.currentTimeMillis();
+        dsChecksum = binary.getHexHash();
+        after = System.currentTimeMillis();
+        elapsed = after-before;
+        System.out.println("  elapsed getting hash from Value object already computed:"+elapsed);        
+    }
+
+    public void largeFilesContentBased() throws Exception {
+        System.out.println("in largeFilesContentBased");
+        String childName = "largeFilesDefault";
+        Session session = (Session)testRoot.getSession();
+        String path = testRoot.getPath() + "/" + childName;
+
+        Node files = session.getNode(path);
+        assertThat(files.getName(), is(childName));
+        assertThat(files.getPrimaryNodeType().getName(), is("nt:folder"));
+        long before = System.currentTimeMillis();
+        Node node1 = session.getNode(path + "/large-file1.png");
+        long after = System.currentTimeMillis();
+        long elapsed = after-before;
+        assertThat(node1.getName(),is("large-file1.png"));
+        assertThat(node1.getPrimaryNodeType().getName(),is("nt:file"));
+        System.out.println("  elapsed getting nt:file:"+elapsed);
+
+        before = System.currentTimeMillis();
+        Node node1Content = node1.getNode("jcr:content");
+        after = System.currentTimeMillis();
+        elapsed = after-before;;
+        assertThat(node1Content.getName(),is("jcr:content"));
+        assertThat(node1Content.getPrimaryNodeType().getName(),is("nt:resource"));
+        System.out.println("  elapsed getting jcr:content:"+elapsed);
+
+        Binary binary = (Binary) node1Content.getProperty("jcr:data").getBinary();
+        before = System.currentTimeMillis();
+        String dsChecksum = binary.getHexHash();
+        after = System.currentTimeMillis();
+        elapsed = after-before;
+        System.out.println("  Hash from Value object: "+dsChecksum);
+        System.out.println("  elapsed getting hash from Value object:"+elapsed);
+
+        before = System.currentTimeMillis();
+        dsChecksum = binary.getHexHash();
+        after = System.currentTimeMillis();
+        elapsed = after-before;
+        System.out.println("  elapsed getting hash from Value object already computed:"+elapsed);        
     }
 
     @Test
@@ -123,6 +220,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.testContent(testRoot, "legacy");
         noneProjection.testContent(testRoot, "none");
         pagedProjection.testContent(testRoot, "pagedFiles");
+        largeFilesProjection.testContent(testRoot,"largeFiles");
+        largeFilesProjectionDefault.testContent(testRoot,"largeFilesDefault");
     }
 
     @Test
@@ -601,6 +700,53 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             File file = new File(directory, path);
             IoUtil.write(getClass().getClassLoader().getResourceAsStream(contentFile), new FileOutputStream(file));
         }
-    }
 
+    }
+    
+    protected class LargeFilesProjection extends Projection {
+
+        public LargeFilesProjection( String name,
+                                     String directoryPath ) {
+            super(name, directoryPath);
+        }
+
+        @Override
+        public void testContent( Node federatedNode,
+                                 String childName ) throws RepositoryException {
+            Session session = (Session)federatedNode.getSession();
+            String path = federatedNode.getPath() + "/" + childName;
+            assertFolder(session, path, "large-file1.png");
+        }
+
+        private void assertFolder( Session session,
+                                   String path,
+                                   String... childrenNames ) throws RepositoryException {
+            Node folderNode = session.getNode(path);
+            assertThat(folderNode.getPrimaryNodeType().getName(), is("nt:folder"));
+            List<String> expectedChildren = new ArrayList<String>(Arrays.asList(childrenNames));
+
+            NodeIterator nodes = folderNode.getNodes();
+            assertEquals(expectedChildren.size(), nodes.getSize());
+            while (nodes.hasNext()) {
+                Node node = nodes.nextNode();
+                String nodeName = node.getName();
+                assertTrue(expectedChildren.contains(nodeName));
+                expectedChildren.remove(nodeName);
+            }
+        }
+
+        @Override
+        public void initialize() throws IOException {
+            if (directory.exists()) FileUtil.delete(directory);
+            directory.mkdirs();
+            // Make some content ...
+            addFile("large-file1.png", "data/large-file1.png");
+        }
+
+        private void addFile( String path,
+                              String contentFile ) throws IOException {
+            File file = new File(directory, path);
+            IoUtil.write(getClass().getClassLoader().getResourceAsStream(contentFile), new FileOutputStream(file));
+        }
+    }
 }
