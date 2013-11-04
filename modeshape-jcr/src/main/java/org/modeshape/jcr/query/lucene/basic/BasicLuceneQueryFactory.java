@@ -716,7 +716,19 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                                boolean includesLower,
                                                boolean includesUpper ) {
         Schemata.Column metadata = getMetadataFor(selectorName, field);
-        PropertyType type = metadata.getRequiredType();
+        PropertyType type = null;
+        if (metadata != null) {
+            type = metadata.getRequiredType();
+        } else {
+            PropertyType lowerType = PropertyType.discoverType(lowerValue);
+            PropertyType upperType = PropertyType.discoverType(upperValue);
+            if (lowerType != upperType) {
+                return new MatchNoneQuery();
+            } else {
+                type = lowerType;
+            }
+        }
+
         switch (type) {
             case DATE:
                 long lowerDate = factories.getLongFactory().create(lowerValue);

@@ -586,15 +586,22 @@ public abstract class JoinComponent extends ProcessingComponent {
             String rightPropertyName = joinCondition.getProperty2Name();
 
             Schemata schemata = context.getSchemata();
+            TypeSystem typeSystem = context.getTypeSystem();
+
             Schemata.Table leftTable = schemata.getTable(leftSelectorName);
             Schemata.Column leftColumn = leftTable.getColumn(leftPropertyName);
+            if (leftColumn == null) {
+                return typeSystem.getDefaultComparator();
+            }
             String leftType = leftColumn.getPropertyTypeName();
 
             Schemata.Table rightTable = schemata.getTable(rightSelectorName);
             Schemata.Column rightColumn = rightTable.getColumn(rightPropertyName);
+            if (rightColumn == null) {
+                return typeSystem.getDefaultComparator();
+            }
             String rightType = rightColumn.getPropertyTypeName();
 
-            TypeSystem typeSystem = context.getTypeSystem();
             if (leftType.equals(rightType)) {
                 TypeFactory<?> typeFactory = typeSystem.getTypeFactory(leftType);
                 if (typeFactory != null) {
