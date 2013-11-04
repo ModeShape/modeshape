@@ -45,6 +45,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -3559,7 +3560,28 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertEquals(expected, actual);
     }
 
+    @FixFor( "MODE-2095" )
+    @Test
+    public void shouldSearchUsingDateRangeQuery() throws Exception {
+        Node testParent = session.getRootNode().addNode("date_parent");
+        Node node1 = testParent.addNode("date_node1");
+        node1.setProperty("now", Calendar.getInstance());
+        Node node2 = testParent.addNode("date_node2");
+        node2.setProperty("now", Calendar.getInstance());
+        session.save();
+
+        try {
+            String queryString = "select * from [nt:unstructured] as node where " +
+                                 "node.now <= CAST('2999-10-21T00:00:00.000' AS DATE) and node.now >= CAST('1999-10-21T00:00:00.000' AS DATE)";
+            assertNodesAreFound(queryString, Query.JCR_SQL2, "/date_parent/date_node1", "/date_parent/date_node2");
+        } finally {
+            testParent.remove();
+            session.save();
+        }
+    }
+
     @FixFor( "MODE-2062" )
+    @Test
     public void fullTextShouldWorkWithBindVar() throws Exception {
         Node n1 = session.getRootNode().addNode("n1");
         n1.setProperty("n1-prop-1", "wow");

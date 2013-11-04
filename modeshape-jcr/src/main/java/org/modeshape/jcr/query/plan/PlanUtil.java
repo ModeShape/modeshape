@@ -1079,40 +1079,6 @@ public class PlanUtil {
         return mapping;
     }
 
-    public static ColumnMapping createMappingForAliased( SelectorName tableAlias,
-                                                         Table table,
-                                                         PlanNode tableSourceNode ) {
-        ColumnMapping mapping = new ColumnMapping(tableAlias);
-
-        // Find the projected columns on the nearest PROJECT ...
-        PlanNode project = tableSourceNode.findAncestor(Type.PROJECT);
-        assert project != null;
-
-        // Get the Columns from the PROJECT in the plan node ...
-        List<Column> projectedColumns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
-
-        for (int i = 0; i != projectedColumns.size(); ++i) {
-            Column projectedColumn = projectedColumns.get(i);
-            Column projectedColumnInTable = projectedColumns.get(i).with(table.getName());
-            org.modeshape.jcr.query.validate.Schemata.Column column = table.getColumn(projectedColumnInTable.getPropertyName());
-            mapping.map(column.getName(), projectedColumnInTable);
-            if (projectedColumn.getColumnName() != null) {
-                // The projected column has an alias, so add a mapping for it, too
-                mapping.map(projectedColumn.getColumnName(), projectedColumnInTable);
-            }
-        }
-        return mapping;
-    }
-
-    public static void setSelectorsOnSubplan( PlanNode subplan,
-                                              Set<SelectorName> selectors ) {
-        subplan.getSelectors().clear();
-        subplan.getSelectors().addAll(selectors);
-        for (PlanNode child : subplan.getChildren()) {
-            setSelectorsOnSubplan(child, selectors);
-        }
-    }
-
     /**
      * Defines how the view columns are mapped (or resolved) into the columns from the source tables.
      */
