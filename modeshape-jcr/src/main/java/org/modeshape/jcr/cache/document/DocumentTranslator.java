@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -801,37 +802,68 @@ public class DocumentTranslator implements DocumentConstants {
                                    Set<NodeKey> removals,
                                    Map<NodeKey, Name> newNames ) {
         List<?> children = document.getArray(CHILDREN);
-        if (children == null) {
-            // a federated document can have an empty children array
-            return 0;
-        }
-        EditableArray newChildren = Schematic.newArray(children.size());
-        for (Object value : children) {
-            ChildReference ref = childReferenceFrom(value);
-            if (ref == null) {
-                continue;
-            }
-            NodeKey childKey = ref.getKey();
-            // Are nodes inserted before this node?
-            Insertions insertions = insertionsByBeforeKey.remove(childKey);
-            if (insertions != null) {
-                for (ChildReference inserted : insertions.inserted()) {
-                    newChildren.add(fromChildReference(inserted));
+        EditableArray newChildren = Schematic.newArray();
+        if (children != null) {
+            //process existing children
+            for (Object value : children) {
+                ChildReference ref = childReferenceFrom(value);
+                if (ref == null) {
+                    continue;
+                }
+                NodeKey childKey = ref.getKey();
+                // Are nodes inserted before this node?
+                Insertions insertions = insertionsByBeforeKey.remove(childKey);
+                if (insertions != null) {
+                    for (ChildReference inserted : insertions.inserted()) {
+                        newChildren.add(fromChildReference(inserted));
+                    }
+                }
+                if (removals.remove(childKey)) {
+                    // The node is removed ...
+                } else {
+                    // The node remains ...
+                    Name newName = newNames.get(childKey);
+                    if (newName != null) {
+                        // But has been renamed ...
+                        ChildReference newRef = ref.with(newName, 1);
+                        value = fromChildReference(newRef);
+                    }
+                    newChildren.add(value);
                 }
             }
-            if (removals.remove(childKey)) {
-                // The node is removed ...
-            } else {
-                // The node remains ...
-                Name newName = newNames.get(childKey);
-                if (newName != null) {
-                    // But has been renamed ...
-                    ChildReference newRef = ref.with(newName, 1);
-                    value = fromChildReference(newRef);
+        }
+
+        if (!insertionsByBeforeKey.isEmpty()) {
+            //there are transient insertions (due to reordering of transient nodes) that have to be inserted in a correct order
+            //if any reorderings involved existing children, they would have already been removed by the previous block
+            //note that these insertions have to be added as child because *they do not appear* in the appended list
+            LinkedList<ChildReference> toBeInsertedInOrder = new LinkedList<ChildReference>();
+            for (Insertions insertion : insertionsByBeforeKey.values()) {
+                //process the remaining insertions-before, which indicate transient & reordered children (reordering removes children
+                //from the appended list
+                for (ChildReference activeReference : insertion.inserted()) {
+                    if (toBeInsertedInOrder.contains(activeReference)) {
+                        //the current reference is already in the list
+                        continue;
+                    }
+                    Insertions insertionsBeforeActive = insertionsByBeforeKey.get(activeReference.getKey());
+                    if (insertionsBeforeActive == null) {
+                        toBeInsertedInOrder.addFirst(activeReference);
+                        continue;
+                    }
+                    for (ChildReference referenceBeforeActive : insertionsBeforeActive.inserted()) {
+                        if (!toBeInsertedInOrder.contains(referenceBeforeActive)) {
+                            toBeInsertedInOrder.add(referenceBeforeActive);
+                        }
+                    }
+                    toBeInsertedInOrder.add(activeReference);
                 }
-                newChildren.add(value);
+            }
+            for (ChildReference inserted : toBeInsertedInOrder) {
+                newChildren.add(fromChildReference(inserted));
             }
         }
+
         document.set(CHILDREN, newChildren);
         return newChildren.size();
     }

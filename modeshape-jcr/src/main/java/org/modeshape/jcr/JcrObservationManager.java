@@ -624,7 +624,11 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                         if (destination == null) {
                             destination = " at the end of the children list";
                         }
-                        sb.append(" from ").append(info.get(ORDER_SRC_KEY)).append(" to ").append(destination);
+                        Object source = info.get(ORDER_SRC_KEY);
+                        if (source != null) {
+                            sb.append(" from ").append(source);
+                        }
+                        sb.append(" to ").append(destination);
                     }
                     sb.append(" by ").append(getUserID());
                     return sb.toString();
@@ -873,7 +877,9 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     } else {
                         info.put(ORDER_DEST_KEY, null);
                     }
-                    info.put(ORDER_SRC_KEY, stringFor(oldPath.getLastSegment()));
+                    if (oldPath != null) {
+                        info.put(ORDER_SRC_KEY, stringFor(oldPath.getLastSegment()));
+                    }
                     events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId,
                                             Collections.unmodifiableMap(info)));
                 }

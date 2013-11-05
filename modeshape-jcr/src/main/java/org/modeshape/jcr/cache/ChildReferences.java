@@ -321,6 +321,14 @@ public interface ChildReferences extends Iterable<ChildReference> {
         int insertionCount();
 
         /**
+         * Get the number of child references that were inserted with the given name.
+         *
+         * @param  name the {@link Name} of a child, never {@code null}
+         * @return the number of inserted child references which have the given name; never negative
+         */
+        int insertionCount( Name name );
+
+        /**
          * Get the number of child references that were renamed.
          * 
          * @return the number of renamed child references; never negative
@@ -381,6 +389,11 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         @Override
         public int insertionCount() {
+            return 0;
+        }
+
+        @Override
+        public int insertionCount( Name name ) {
             return 0;
         }
 
