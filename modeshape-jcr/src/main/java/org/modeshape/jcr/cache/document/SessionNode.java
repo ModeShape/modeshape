@@ -1151,15 +1151,15 @@ public class SessionNode implements MutableCachedNode {
             toBeMoved = appended.remove(key);
         }
 
-        // We need a mutable node in the session for the child, so that we can find changes in the parent ...
-        // cache.mutable(key);
-
         if (toBeMoved == null) {
             // It wasn't appended, so verify it is really a child ...
             toBeMoved = references.getChild(key);
             if (toBeMoved == null) throw new NodeNotFoundException(key);
-            // And mark it as removed ...
-            changedChildren.remove(key);
+            if (changedChildren.inserted(key) == null) {
+                // And mark it as removed only if it doesn't appear as inserted
+                // a node can be transient, not appended but inserted in the case of transient reorderings
+                changedChildren.remove(key);
+            }
         }
 
         if (nextNode == null) {
@@ -1637,6 +1637,12 @@ public class SessionNode implements MutableCachedNode {
         }
 
         @Override
+        public int insertionCount( Name name ) {
+            InsertedChildReferences insertions = this.insertions.get();
+            return insertions == null ? 0 : insertions.size(name);
+        }
+
+        @Override
         public int removalCount() {
             Set<NodeKey> removals = this.removals.get();
             return removals == null ? 0 : removals.size();
@@ -1941,11 +1947,11 @@ public class SessionNode implements MutableCachedNode {
                 AtomicInteger count = this.insertedNames.get(inserted.getName());
                 if (count == null) {
                     this.insertedNames.put(inserted.getName(), new AtomicInteger(1));
+                    boolean added = this.inserted.add(inserted.getKey());
+                    assert added;
                 } else {
                     count.incrementAndGet();
                 }
-                boolean added = this.inserted.add(inserted.getKey());
-                assert added;
             } finally {
                 lock.unlock();
             }
@@ -2022,6 +2028,16 @@ public class SessionNode implements MutableCachedNode {
                 }
             }
             return sb;
+        }
+
+        protected int size( Name name ) {
+            lock.readLock().lock();
+            try {
+                AtomicInteger count = insertedNames.get(name);
+                return count != null ? count.get() : 0;
+            } finally {
+                lock.readLock().unlock();
+            }
         }
     }
 

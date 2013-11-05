@@ -932,6 +932,45 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         assertEquals(Arrays.asList("/parent/child1", "/parent/child2", "/parent/child3", "/parent/child4"), children);
     }
 
+    @Test
+    @FixFor( "MODE-2096" )
+    public void shouldRestoreAfterRemovingAndReaddingNodesWithSameName() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node parent = session.getRootNode().addNode("parent", "jj:page");
+        Node child = parent.addNode("child", "jj:content");
+        child.addNode("descendant", "jj:content");
+        child.addNode("descendant", "jj:content");
+        session.save();
+        versionManager.checkpoint(parent.getPath());
+
+        child = session.getNode("/parent/child");
+        NodeIterator childNodes = child.getNodes();
+        while (childNodes.hasNext()) {
+            childNodes.nextNode().remove();
+        }
+        child.addNode("descendant", "jj:content");
+        child.addNode("descendant", "jj:content");
+        session.save();
+
+        Version version = versionManager.getBaseVersion(parent.getPath());
+        versionManager.restore(version, true);
+
+        parent = session.getNode("/parent");
+        assertEquals(Arrays.asList("/parent/child", "/parent/child/descendant", "/parent/child/descendant[2]"), allChildrenPaths(parent));
+    }
+
+    private List<String> allChildrenPaths( Node root ) throws Exception {
+        List<String> paths = new ArrayList<String>();
+        NodeIterator nodeIterator = root.getNodes();
+        while (nodeIterator.hasNext()) {
+            Node child = nodeIterator.nextNode();
+            paths.add(child.getPath());
+            paths.addAll(allChildrenPaths(child));
+        }
+        return paths;
+    }
+
     private void assertPropertyIsAbsent( Node node,
                                          String propertyName ) throws Exception {
         try {
