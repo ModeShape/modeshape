@@ -1121,28 +1121,35 @@ public class WritableSessionCache extends AbstractSessionCache {
                     for (SessionNode.Insertions insertion : insertionsByBeforeKey.values()) {
                         for (ChildReference insertedRef : insertion.inserted()) {
                             CachedNode insertedNodePersistent = workspaceCache.getNode(insertedRef);
-                            Path nodeOldPath = insertedNodePersistent != null ? workspacePaths.getPath(insertedNodePersistent) : null;
-
-                            CachedNode insertedBeforeNode = workspaceCache.getNode(insertion.insertedBefore());
-                            Path insertedBeforePath = workspacePaths.getPath(insertedBeforeNode);
-
-                            Path nodeNewPath = null;
-                            if (nodeOldPath != null) {
+                            CachedNode insertedNode = getNode(insertedRef.getKey());
+                            Path nodeNewPath = sessionPaths.getPath(insertedNode);
+                            if (insertedNodePersistent != null) {
+                                Path nodeOldPath = workspacePaths.getPath(insertedNodePersistent);
+                                CachedNode insertedBeforeNode = workspaceCache.getNode(insertion.insertedBefore());
+                                Path insertedBeforePath = workspacePaths.getPath(insertedBeforeNode);
                                 boolean isSnsReordering = nodeOldPath.getLastSegment()
                                                                      .getName()
                                                                      .equals(insertedBeforePath.getLastSegment().getName());
-                                nodeNewPath = isSnsReordering ? insertedBeforePath : nodeOldPath;
-                            } else {
-                                // there is no old path, which means the node is new and reordered at the same time (most likely
-                                // due to a version restore)
-                                nodeNewPath = sessionPaths.getPath(changedNodes.get(insertedRef.getKey()));
-                            }
+                                if (isSnsReordering) {
+                                    nodeNewPath =  insertedBeforePath;
+                                }
+                                changes.nodeReordered(insertedRef.getKey(),
+                                                      node.getKey(),
+                                                      nodeNewPath,
+                                                      nodeOldPath,
+                                                      insertedBeforePath);
 
-                            changes.nodeReordered(insertedRef.getKey(),
-                                                  node.getKey(),
-                                                  nodeNewPath,
-                                                  nodeOldPath,
-                                                  insertedBeforePath);
+                            } else {
+                                // if the node is new and reordered at the same time (most likely due to either a version restore
+                                // or explicit reordering of transient nodes) there is no "old path"
+                                CachedNode insertedBeforeNode = getNode(insertion.insertedBefore().getKey());
+                                Path insertedBeforePath = sessionPaths.getPath(insertedBeforeNode);
+                                changes.nodeReordered(insertedRef.getKey(),
+                                                      node.getKey(),
+                                                      nodeNewPath,
+                                                      null,
+                                                      insertedBeforePath);
+                            }
                         }
                     }
                 }

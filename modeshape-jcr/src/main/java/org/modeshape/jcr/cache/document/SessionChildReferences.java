@@ -64,7 +64,9 @@ public class SessionChildReferences extends AbstractChildReferences {
 
     @Override
     public int getChildCount( Name name ) {
-        return persisted.getChildCount(name) + (appended != null ? appended.getChildCount(name) : 0);
+        int appendedChildren = appended != null ? appended.getChildCount(name) : 0;
+        int appendedThenReorderedChildren = changedChildren != null ? changedChildren.insertionCount(name) : 0;
+        return persisted.getChildCount(name) + appendedChildren + appendedThenReorderedChildren;
     }
 
     @Override
@@ -78,6 +80,17 @@ public class SessionChildReferences extends AbstractChildReferences {
             if (appended != null) {
                 // Look in the added ...
                 ref = appended.getChild(name, snsIndex, context);
+                if (ref == null && changedChildren != null && changedChildren.insertionCount() > 0) {
+                    //look in added and then reordered (which don't appear as appended)
+                    Iterator<ChildInsertions> insertionsWithName = changedChildren.insertions(name);
+                    while (insertionsWithName.hasNext()) {
+                        for (ChildReference inserted : insertionsWithName.next().inserted()) {
+                            if (inserted.getSnsIndex() == snsIndex) {
+                                return inserted;
+                            }
+                        }
+                    }
+                }
             }
         }
         return ref;
@@ -117,6 +130,10 @@ public class SessionChildReferences extends AbstractChildReferences {
                         int numSnsInRemoved = (changedChildren != null && changedChildren.getRemovals().contains(key)) ? 1 : 0;
                         ref = ref.with(numSnsInPersisted + ref.getSnsIndex() - numSnsInRemoved);
                     }
+                } else if (changedChildren != null && changedChildren.insertionCount() > 0) {
+                    //it's not in the appended list, so check if there are any transient reordered nodes - appended and
+                    //reordered at the same time - they would not appear in the "appended" list
+                    ref = changedChildren.inserted(key);
                 }
             }
         }

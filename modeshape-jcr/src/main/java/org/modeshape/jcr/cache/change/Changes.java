@@ -110,7 +110,7 @@ public interface Changes {
      * @param key the key for the node; may not be null
      * @param parent the key for the parent of the node; may not be null
      * @param newPath the new path for the node after it has been reordered; may not be null
-     * @param oldPath the old path for the node before it was reordered; may not be null
+     * @param oldPath the old path for the node before it was reordered; may be null in the case of transient reorderings
      * @param reorderedBeforePath the path of the node before which the node was moved; or null if the node was reordered to the
      *        end of the list of children of the parent node
      */
