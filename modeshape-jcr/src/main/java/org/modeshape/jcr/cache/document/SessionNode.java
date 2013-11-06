@@ -1947,11 +1947,11 @@ public class SessionNode implements MutableCachedNode {
                 AtomicInteger count = this.insertedNames.get(inserted.getName());
                 if (count == null) {
                     this.insertedNames.put(inserted.getName(), new AtomicInteger(1));
-                    boolean added = this.inserted.add(inserted.getKey());
-                    assert added;
                 } else {
                     count.incrementAndGet();
                 }
+                boolean added = this.inserted.add(inserted.getKey());
+                assert added;
             } finally {
                 lock.unlock();
             }
