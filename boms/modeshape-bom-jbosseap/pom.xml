@@ -1,25 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-
-    <parent>
-        <groupId>org.modeshape.bom</groupId>
-        <artifactId>modeshape-bom-parent</artifactId>
-        <version>3.7-SNAPSHOT</version>
-        <relativePath>../modeshape-bom-parent/pom.xml</relativePath>
-    </parent>
-
     <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-jbosseap</artifactId>
     <version>3.7-SNAPSHOT</version>
-    <name>ModeShape BOM for usage within AS7</name>
+
+    <name>ModeShape BOM for usage within EAP</name>
 
     <url>http://www.modeshape.org</url>
     <packaging>pom</packaging>
-    <description>ModeShape and AS7 usage Bill of Material (BOM)</description>
-
-    <properties>
-        <!-- Version properties are inherited from parent -->
-    </properties>
+    <description>ModeShape and EAP6 usage Bill of Material (BOM)</description>
 
     <!--
          This section defines the default dependency settings inherited by
@@ -28,59 +19,13 @@
      -->
     <dependencyManagement>
         <dependencies>
-            <!-- All of these are 'provided' since they are already installed in AS7. -->
-            
-            <!-- Java Content Repository API -->
-            <dependency>
-                <groupId>javax.jcr</groupId>
-                <artifactId>jcr</artifactId>
-                <version>${jcr.version}</version>
-                <scope>provided</scope>
-            </dependency>
+            <!-- All dependencies should be 'provided' since they are already installed in EAP. -->
 
             <!-- ModeShape public API -->
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jcr-api</artifactId>
                 <version>${project.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <!-- Transactions (JTA) public API -->
-            <dependency>
-                <groupId>javax.transaction</groupId>
-                <artifactId>jta</artifactId>
-                <version>${javax.jta.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <!-- Servlet public API (for authentication)-->
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>servlet-api</artifactId>
-                <version>${javax.servlet.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <!--
-                AS7-compatible logging modules.
-            -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.api.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss.logging.version}</version>
                 <scope>provided</scope>
             </dependency>
         </dependencies>

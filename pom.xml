@@ -50,10 +50,8 @@
         <module>modeshape-distribution</module>
 
         <!-- Finally the BOMs -->
-        <module>boms/modeshape-bom-parent</module>
-        <module>boms/modeshape-bom-api</module>
-        <module>boms/modeshape-bom-jbosseap</module>
         <module>boms/modeshape-bom-embedded</module>
+        <module>boms/modeshape-bom-jbosseap</module>
         <module>boms/modeshape-bom-remote-client</module>
     </modules>
 	<properties>

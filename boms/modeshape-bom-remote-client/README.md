@@ -11,7 +11,7 @@ Include the following in your POM file:
           <dependency>
             <groupId>org.modeshape.bom</groupId>
             <artifactId>modeshape-bom-remote-client</artifactId>
-            <version>3.0.0.Final</version>
+            <version>${version.modeshape}</version>
             <type>pom</type>
             <scope>import</scope>
           </dependency>
