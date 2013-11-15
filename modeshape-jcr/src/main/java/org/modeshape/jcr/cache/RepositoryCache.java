@@ -33,6 +33,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.jcr.RepositoryException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
@@ -120,6 +121,7 @@ public class RepositoryCache implements Observable {
     private final DocumentStore documentStore;
     private final DocumentTranslator translator;
     private final ConcurrentHashMap<String, WorkspaceCache> workspaceCachesByName;
+    private final ConcurrentHashMap<String, WorkspaceCache> externalWorkspaces;
     private final AtomicLong minimumStringLengthForBinaryStorage = new AtomicLong();
     private final AtomicBoolean accessControlEnabled = new AtomicBoolean(false);
     private final String name;
@@ -160,6 +162,7 @@ public class RepositoryCache implements Observable {
         this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
         this.name = configuration.getName();
         this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
+        this.externalWorkspaces = new ConcurrentHashMap<String, WorkspaceCache>();
         this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
         this.upgrades = upgradeFunctions;
 
@@ -828,6 +831,12 @@ public class RepositoryCache implements Observable {
         }
 
         if (!this.workspaceNames.contains(name) && !this.systemWorkspaceName.equals(name)) {
+            //the name does not refer to a regular workspace but it might refer
+            //to external workspace
+            if (externalWorkspaces.containsKey(name)) {
+                return externalWorkspaces.get(name);
+            }
+            //totaly unknown name
             throw new WorkspaceNotFoundException(name);
         }
 
@@ -981,10 +990,12 @@ public class RepositoryCache implements Observable {
      * @param connectors connectors to the external systems.
      * @return workspace cache for the new workspace.
      */
-    public WorkspaceCache createExternalWorkspace(String name, Connectors connectors) {
-        this.workspaceNames.add(name);
-        refreshRepositoryMetadata(true);
-
+    public WorkspaceCache createExternalWorkspace(String name, Connectors connectors) throws RepositoryException {
+        //external workspace should not overlap with reqular one
+        if (this.workspaceNames.contains(name)) {
+            throw new RepositoryException(JcrI18n.connectorSourceNameInvalid.text(name));
+        }
+        
         Cache<NodeKey, CachedNode> nodeCache = cacheForWorkspace(name);
         ExecutionContext context = context();
 
@@ -996,13 +1007,18 @@ public class RepositoryCache implements Observable {
         ExternalDocumentStore documentStore = new ExternalDocumentStore(connectors);
         String rootId = documentStore.getRootId(sourceKey);
         
+        //the root identifier is important and if external document store does
+        //not expose it we can't create workspace for it
+        if (rootId == null) {
+            throw new RepositoryException(JcrI18n.connectorDoesNotExposeRoot.text(name));
+        }
         // Compute the root key for this workspace ...
         NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootId);
 
         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, documentStore, translator, rootKey, nodeCache, changeBus);
-        workspaceCachesByName.put(name, workspaceCache);
+        externalWorkspaces.put(name, workspaceCache);
 
-        return workspace(name);
+        return workspaceCache;
     }
     
     /**

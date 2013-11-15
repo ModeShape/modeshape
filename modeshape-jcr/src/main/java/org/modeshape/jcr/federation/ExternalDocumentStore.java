@@ -87,12 +87,16 @@ public class ExternalDocumentStore implements DocumentStore {
         this.connectors = connectors;
     }
 
+    /**
+     * Establishes relation between root node key and external root identifier.
+     * 
+     * 
+     * @param sourceKey the root node key.
+     * @return the corresponding root identifier of external content.
+     */
     public String getRootId(String sourceKey) {
         Connector connector = connectors.getConnectorForSourceKey(sourceKey);
-        if (connector != null) {
-            return connector.getDocumentId("/");
-        }
-        return "/";
+        return connector != null ? connector.getDocumentId("/") : null;
     }
     
     protected final DocumentTranslator translator() {

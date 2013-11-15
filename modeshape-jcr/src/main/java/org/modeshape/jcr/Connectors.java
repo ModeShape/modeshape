@@ -128,11 +128,18 @@ public final class Connectors {
         initialized = true;
     }
 
-    private void createExternalWorkspaces() {
+    /**
+     * Creates workspace for the external sources if configured.
+     */
+    private void createExternalWorkspaces() throws RepositoryException {
         Snapshot current = this.snapshot.get();
-        Collection<String> workspaces = current.externalSources();
-        for (String workspaceName : workspaces) {
-            repository.repositoryCache().createExternalWorkspace(workspaceName, this);
+        Collection<String> externalSources = current.externalSources();
+        for (String sourceName : externalSources) {
+            Connector connector = current.getConnectorWithSourceKey(NodeKey.keyForSourceName(sourceName));
+            //check that we need to expose this source as workspace
+            if (connector != null && connector.isExposeAsWorkspace()) {
+                repository.repositoryCache().createExternalWorkspace(sourceName, this);
+            }
         }
     }
     
@@ -738,6 +745,22 @@ public final class Connectors {
             return Collections.unmodifiableList(this.preconfiguredProjections.get(workspaceName));
         }
 
+        /**
+         * Checks preconfigured projections for the given external source.
+         * 
+         * @param sourceName the name of the external source.
+         * @return true if the external source has preconfigured projections.
+         */
+        public boolean hasProjections(String sourceName) {
+            for (List<RepositoryConfiguration.ProjectionConfiguration> list : preconfiguredProjections.values()) {
+                for (RepositoryConfiguration.ProjectionConfiguration cfg : list) {
+                    if (cfg.getSourceName().equals(sourceName)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         /**
          * Get the set of workspace names that contain projections of the supplied connector.
          * 

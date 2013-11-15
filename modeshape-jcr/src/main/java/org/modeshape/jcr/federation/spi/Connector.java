@@ -126,6 +126,11 @@ public abstract class Connector {
     private boolean initialized = false;
 
     /**
+     * Flag indicating that content will be exposed as workspace.
+     */
+    private boolean exposeAsWorkspace = false;
+    
+    /**
      * A document translator that is used within the DocumentReader implementation, but which has no DocumentStore reference and
      * thus is not fully-functional.
      * <p>
@@ -271,6 +276,15 @@ public abstract class Connector {
         return queryable;
     }
 
+    /**
+     * Indicates if content should be exposed as workspace.
+     * 
+     * @return {@code true} if the content will appear as workspace, {@code false} otherwise.
+     */
+    public Boolean isExposeAsWorkspace() {
+        return exposeAsWorkspace;
+    }
+    
     protected ExtraProperties extraPropertiesFor( String id,
                                                   boolean update ) {
         return new ExtraProperties(id, update);
