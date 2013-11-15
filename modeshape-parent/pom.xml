@@ -304,6 +304,7 @@
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
         <tika.version>1.3</tika.version>
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
+        <mapdb.version>0.9.7</mapdb.version>
 
         <!--WebDAV servlet-->
         <jmock.version>2.4.0</jmock.version>
@@ -1194,6 +1195,12 @@
                 <version>${hibernate.search.version}</version>
                 <classifier>jbossas-72-dist</classifier>
                 <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mapdb</groupId>
+                <artifactId>mapdb</artifactId>
+                <version>${mapdb.version}</version>
             </dependency>
 
             <dependency>

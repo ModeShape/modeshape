@@ -33,6 +33,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -514,6 +516,36 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, "config/repo-config-inmemory-local-environment-no-monitoring.json");
+    }
+
+    @Test
+    @FixFor( "MODE-1683" )
+    public void shouldAppendJournalEntriesBetweenRestarts() throws Exception {
+        FileUtil.delete("target/journal/");
+        final List<Integer> recordsOnStartup = new ArrayList<Integer>(2);
+        startRunStop( new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                int records = repository.runningState().journal().allRecords(false).size();
+                assertTrue(records > 0);
+                recordsOnStartup.add(records);
+                return null;
+            }
+        }, "config/repo-config-journaling.json");
+
+        startRunStop( new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                int records = repository.runningState().journal().allRecords(false).size();
+                assertTrue(records > 0);
+                recordsOnStartup.add(records);
+                return null;
+            }
+        }, "config/repo-config-journaling.json");
+
+        int countFirstTime = recordsOnStartup.get(0);
+        int countSecondTime = recordsOnStartup.get(1);
+        assertTrue(countSecondTime > countFirstTime);
     }
 
     @Test

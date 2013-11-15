@@ -122,6 +122,7 @@ import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
+import org.modeshape.jcr.journal.Journal;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.query.QueryIndexing;
@@ -963,6 +964,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final RepositoryConfiguration.IndexRebuildOptions indexRebuildOptions;
         private final List<ScheduledFuture<?>> backgroundProcesses = new ArrayList<ScheduledFuture<?>>();
         private final Problems problems;
+        private final Journal journal;
 
         private Transaction existingUserTransaction;
         private RepositoryCache cache;
@@ -1058,6 +1060,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.persistentRegistry = other.persistentRegistry;
                     this.changeDispatchingQueue = other.changeDispatchingQueue;
                     this.changeBus = other.changeBus;
+                    this.journal = other.journal;
                 } else {
                     // find the Schematic database and Infinispan Cache ...
                     CacheContainer container = config.getContentCacheContainer();
@@ -1117,6 +1120,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Set up the unused binary value listener ...
                     this.cache.register(new BinaryUsageChangeSetListener(binaryStore));
+
+                    // Set up the event journal
+                    RepositoryConfiguration.Journaling journaling = config.getJournaling();
+                    if (journaling.isEnabled()) {
+                        this.journal = new Journal(journaling.location(), journaling.asyncWritesEnabled(), journaling.maxDaysToKeepRecords()).start();
+                        this.cache.register(journal);
+                    } else {
+                        this.journal = null;
+                    }
 
                     // Refresh several of the components information from the repository cache ...
                     this.persistentRegistry.refreshFromSystem();
@@ -1382,6 +1394,22 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                                            TimeUnit.MILLISECONDS));
                 }
 
+                if (journal != null) {
+                    RepositoryConfiguration.Journaling journalingCfg = config.getJournaling();
+                    if (journalingCfg.maxDaysToKeepRecords() > 0) {
+                        threadPoolName = journalingCfg.getThreadPoolName();
+                        long initialTimeInMillis = determineInitialDelay(journalingCfg.getInitialTimeExpression());
+                        assert initialTimeInMillis >= 0;
+                        long intervalInHours = journalingCfg.getIntervalInHours();
+                        long intervalInMillis = TimeUnit.MILLISECONDS.convert(intervalInHours, TimeUnit.HOURS);
+                        ScheduledExecutorService journalingGCService = this.context.getScheduledThreadPool(threadPoolName);
+                        backgroundProcesses.add(journalingGCService.scheduleAtFixedRate(
+                                                                               new JournalingGCTask(JcrRepository.this),
+                                                                               initialTimeInMillis,
+                                                                               intervalInMillis,
+                                                                               TimeUnit.MILLISECONDS));
+                    }
+                }
             } finally {
                 resumeExistingUserTransaction();
             }
@@ -1409,6 +1437,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         final RepositoryCache repositoryCache() {
             return cache;
+        }
+
+        final Journal journal() {
+            return journal;
         }
 
         final QueryParsers queryParsers() {
@@ -1637,6 +1669,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // shutdown the event bus
             if (this.changeBus != null) {
                 this.changeBus.shutdown();
+            }
+
+            // shutdown the journal
+            if (this.journal != null) {
+                this.journal.shutdown();
             }
 
             // Shutdown the query engine ...
@@ -2141,6 +2178,19 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         @Override
         protected void doRun( JcrRepository repository ) {
             repository.runningState().repositoryCache().optimizeChildren(targetCount, tolerance);
+        }
+    }
+
+    protected static class JournalingGCTask extends BackgroundRepositoryTask {
+        protected JournalingGCTask( JcrRepository repository ) {
+            super(repository);
+        }
+
+        @Override
+        protected void doRun( JcrRepository repository ) {
+            Journal journal = repository.runningState().journal();
+            assert journal != null;
+            journal.removeOldRecords();
         }
     }
 }

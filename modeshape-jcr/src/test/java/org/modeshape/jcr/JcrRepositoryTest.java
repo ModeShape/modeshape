@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -73,6 +74,9 @@ import org.modeshape.jcr.api.monitor.History;
 import org.modeshape.jcr.api.monitor.Statistics;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.journal.Journal;
+import org.modeshape.jcr.journal.JournalRecord;
 
 public class JcrRepositoryTest extends AbstractTransactionalTest {
 
@@ -1209,6 +1213,54 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         Problems problems = repository.getStartupProblems();
         assertEquals("Expected 2 startup warnings:" + problems.toString(), 2, problems.warningCount());
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
+    }
+
+    @FixFor( "MODE-1863" )
+    @Test
+    public void shouldStartupWithJournalingEnabled() throws Exception {
+        FileUtil.delete("target/journal");
+        shutdownDefaultRepository();
+        RepositoryConfiguration config = RepositoryConfiguration.read(
+                getClass().getClassLoader().getResourceAsStream("config/repo-config-journaling.json"), "Deprecated config");
+        repository = new JcrRepository(config);
+        repository.start();
+
+        //add some nodes
+        JcrSession session1 = repository.login();
+        int nodeCount = 10;
+        for (int i = 0; i < nodeCount; i++) {
+            Node node = session1.getRootNode().addNode("testNode_" + i);
+            node.setProperty("int_prop", i);
+        }
+        session1.save();
+
+        //edit some nodes
+        for (int i = 0; i < nodeCount / 2; i++) {
+            session1.getNode("/testNode_" + i).setProperty("int_prop2", 2 * i);
+        }
+        session1.save();
+
+        //remove the nodes
+        Set<NodeKey> expectedJournalKeys = new TreeSet<NodeKey>();
+        for (int i = 0; i < nodeCount; i++) {
+            AbstractJcrNode node = session1.getNode("/testNode_" + i);
+            expectedJournalKeys.add(node.key());
+            node.remove();
+        }
+        expectedJournalKeys.add(session1.getRootNode().key());
+        session1.save();
+
+        //give the events a change to reach the journal
+        Thread.sleep(200);
+
+        //check the journal has entries
+        Journal.Records journalRecordsReversed = repository.runningState().journal().allRecords(true);
+
+        assertTrue(journalRecordsReversed.size() > 0);
+        JournalRecord lastRecord = journalRecordsReversed.iterator().next();
+        assertEquals(expectedJournalKeys, new TreeSet<NodeKey>(lastRecord.changedNodes()));
+
+        repository.shutdown();
     }
 
     protected void nodeExists( Session session,
