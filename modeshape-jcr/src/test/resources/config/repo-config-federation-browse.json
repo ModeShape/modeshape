@@ -1,0 +1,27 @@
+{
+    "name" : "Federated repository",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "externalSources" : {
+        "mock-source" : {
+            "classname" : "org.modeshape.connector.DummyConnector",
+            "persistentDataAcrossRestarts" : true,
+            "cacheTtlSeconds" : 1,
+            "exposeAsWorkspace" : true
+        }
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
+    },
+    "query" : {
+        "indexing" : {
+            "rebuildOnStartup" : {
+                "when" : "never"
+            }
+        }
+    }
+}

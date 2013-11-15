@@ -23,7 +23,6 @@
  */
 package org.modeshape.connector.cmis;
 
-import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -51,7 +50,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.api.Workspace;
 
 /**
  * Provide integration testing of the CMIS connector with OpenCMIS InMemory Repository.
@@ -242,7 +240,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertTrue(date != null);
     }
 
-     //@Test
+    // @Test
     public void shouldAccessModificationDatePropertyForFolder() throws Exception {
         Node node = getSession().getNode("/cmis/My_Folder-0-0");
         Calendar date = node.getProperty("jcr:lastModified").getDate();
@@ -312,18 +310,4 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         file.setProperty("StringProp", "modeshape");
         getSession().save();
     }
-    
-    @Test
-    public void shouldBeAbleToMoveExternalNodes() throws Exception {
-        assertNotNull(session.getNode("/cmis/My_Folder-0-0/My_Document-1-0"));
-        ((Workspace) session.getWorkspace()).move("/cmis/My_Folder-0-0/My_Document-1-0", "/cmis/My_Folder-0-0/My_Document-1-X");
-        Node file = session.getNode("/cmis/My_Folder-0-0/My_Document-1-X");
-        assertNotNull(file);
-        assertNotNull(session.getNode("/cmis/My_Folder-0-0"));
-        ((Workspace) session.getWorkspace()).move("/cmis/My_Folder-0-0", "/cmis/My_Folder-0-X");
-        Node folder = session.getNode("/cmis/My_Folder-0-X");
-        assertNotNull(folder);
-        assertEquals("nt:folder", folder.getPrimaryNodeType().getName());
-    }
-    
 }

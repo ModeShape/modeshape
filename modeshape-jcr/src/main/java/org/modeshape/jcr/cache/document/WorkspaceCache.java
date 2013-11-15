@@ -40,6 +40,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.federation.ExternalDocumentStore;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -339,6 +340,15 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return root.getChildReferences(this).size() == 1;
     }
 
+    /**
+     * Tests document store associated with this cache.
+     * 
+     * @return true if underlying document store is external source and false otherwise.
+     */
+    public boolean isExternal() {
+        return this.documentStore instanceof ExternalDocumentStore;        
+    }
+    
     @Override
     public String toString() {
         return workspaceName;

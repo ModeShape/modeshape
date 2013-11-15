@@ -99,10 +99,11 @@ public final class Connectors {
 
     protected Connectors( JcrRepository.RunningState repository,
                           Collection<Component> components,
+                          Set<String> externalSources,
                           Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
         this.repository = repository;
         this.logger = Logger.getLogger(getClass());
-        this.snapshot.set(new Snapshot(components, preconfiguredProjections));
+        this.snapshot.set(new Snapshot(components, externalSources, preconfiguredProjections));
     }
 
     @GuardedBy( "this" )
@@ -114,6 +115,9 @@ public final class Connectors {
 
         // initialize the configured connectors
         initializeConnectors();
+        
+        createExternalWorkspaces();
+        
         // load the projection -> node mappings from the system area
         loadStoredProjections();
         // creates any preconfigured projections
@@ -124,6 +128,21 @@ public final class Connectors {
         initialized = true;
     }
 
+    /**
+     * Creates workspace for the external sources if configured.
+     */
+    private void createExternalWorkspaces() throws RepositoryException {
+        Snapshot current = this.snapshot.get();
+        Collection<String> externalSources = current.externalSources();
+        for (String sourceName : externalSources) {
+            Connector connector = current.getConnectorWithSourceKey(NodeKey.keyForSourceName(sourceName));
+            //check that we need to expose this source as workspace
+            if (connector != null && connector.isExposeAsWorkspace()) {
+                repository.repositoryCache().createExternalWorkspace(sourceName, this);
+            }
+        }
+    }
+    
     private void createPreconfiguredProjections() throws RepositoryException {
         assert !initialized;
         Snapshot current = this.snapshot.get();
@@ -618,9 +637,15 @@ public final class Connectors {
 
         private final List<Connector> unusedConnectors = new LinkedList<Connector>();
 
-        protected Snapshot( Collection<Component> components,
+        /**
+         * A set of external source names.
+         */
+        private final Set<String> externalSources;
+        
+        protected Snapshot( Collection<Component> components, Set<String> externalSources,
                             Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
             this.preconfiguredProjections = preconfiguredProjections;
+            this.externalSources = externalSources;
             this.projections = new HashMap<String, Connectors.Projection>();
             this.sourceKeyToConnectorMap = new HashMap<String, Connector>();
             this.projectedInternalNodeKeys = new HashSet<String>();
@@ -628,6 +653,7 @@ public final class Connectors {
         }
 
         protected Snapshot( Snapshot original ) {
+            this.externalSources = original.externalSources;
             this.projections = new HashMap<String, Connectors.Projection>(original.projections);
             this.sourceKeyToConnectorMap = new HashMap<String, Connector>(original.sourceKeyToConnectorMap);
             this.preconfiguredProjections = new HashMap<String, List<ProjectionConfiguration>>(original.preconfiguredProjections);
@@ -650,6 +676,10 @@ public final class Connectors {
             }
         }
 
+        private Set<String> externalSources() {
+            return externalSources;
+        }
+        
         private String keyFor( Connector connector ) {
             return NodeKey.keyForSourceName(connector.getSourceName());
         }
@@ -715,6 +745,22 @@ public final class Connectors {
             return Collections.unmodifiableList(this.preconfiguredProjections.get(workspaceName));
         }
 
+        /**
+         * Checks preconfigured projections for the given external source.
+         * 
+         * @param sourceName the name of the external source.
+         * @return true if the external source has preconfigured projections.
+         */
+        public boolean hasProjections(String sourceName) {
+            for (List<RepositoryConfiguration.ProjectionConfiguration> list : preconfiguredProjections.values()) {
+                for (RepositoryConfiguration.ProjectionConfiguration cfg : list) {
+                    if (cfg.getSourceName().equals(sourceName)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         /**
          * Get the set of workspace names that contain projections of the supplied connector.
          * 
@@ -893,7 +939,7 @@ public final class Connectors {
          * @return the new snapshot
          */
         protected Snapshot withOnlyProjectionConfigurations() {
-            return new Snapshot(Collections.<Component>emptyList(), this.preconfiguredProjections);
+            return new Snapshot(Collections.<Component>emptyList(), this.externalSources, this.preconfiguredProjections);
         }
 
         /**
