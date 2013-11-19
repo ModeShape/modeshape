@@ -70,7 +70,7 @@ public class RepositoryStatisticsBean implements RepositoryStatisticsMXBean {
             beanName = getObjectName();
             server.unregisterMBean(beanName);
         } catch (InstanceNotFoundException e) {
-            LOGGER.warn(JcrI18n.mBeanAlreadyRegistered, beanName);
+            LOGGER.debug("JMX bean {0} not found", beanName);
         } catch (Exception e) {
             LOGGER.error(e, JcrI18n.cannotUnRegisterMBean, beanName);
         }

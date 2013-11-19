@@ -121,8 +121,11 @@ import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
+import org.modeshape.jcr.clustering.ClusteringService;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
-import org.modeshape.jcr.journal.Journal;
+import org.modeshape.jcr.journal.ChangeJournal;
+import org.modeshape.jcr.journal.ClusteredJournal;
+import org.modeshape.jcr.journal.LocalJournal;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.query.QueryIndexing;
@@ -964,7 +967,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final RepositoryConfiguration.IndexRebuildOptions indexRebuildOptions;
         private final List<ScheduledFuture<?>> backgroundProcesses = new ArrayList<ScheduledFuture<?>>();
         private final Problems problems;
-        private final Journal journal;
+        private final ChangeJournal journal;
+        private final ClusteringService clusteringService;
 
         private Transaction existingUserTransaction;
         private RepositoryCache cache;
@@ -1059,6 +1063,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     other.cache.unregister(other.lockManager);
                     this.persistentRegistry = other.persistentRegistry;
                     this.changeDispatchingQueue = other.changeDispatchingQueue;
+                    this.clusteringService = other.clusteringService;
                     this.changeBus = other.changeBus;
                     this.journal = other.journal;
                 } else {
@@ -1093,12 +1098,19 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.persistentRegistry.setContext(this.context);
                     this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
 
-                    // Create the event bus
+                    // Create clustering service and event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                    this.changeBus = createBus(config.getClustering(),
-                                               this.changeDispatchingQueue,
-                                               systemWorkspaceName(),
-                                               context.getProcessId());
+                    ChangeBus localBus = new RepositoryChangeBus(changeDispatchingQueue, systemWorkspaceName);
+
+                    RepositoryConfiguration.Clustering clustering = config.getClustering();
+                    if (clustering.isEnabled()) {
+                        this.clusteringService = new ClusteringService(context.getProcessId(), clustering);
+                        this.clusteringService.start();
+                        this.changeBus = new ClusteredRepositoryChangeBus(localBus, clusteringService);
+                    } else {
+                        this.clusteringService = null;
+                        this.changeBus = localBus;
+                    }
                     this.changeBus.start();
 
                     // Set up the repository cache ...
@@ -1124,7 +1136,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Set up the event journal
                     RepositoryConfiguration.Journaling journaling = config.getJournaling();
                     if (journaling.isEnabled()) {
-                        this.journal = new Journal(journaling.location(), journaling.asyncWritesEnabled(), journaling.maxDaysToKeepRecords()).start();
+                        LocalJournal localJournal = new LocalJournal(journaling.location(), journaling.asyncWritesEnabled(), journaling.maxDaysToKeepRecords());
+                        this.journal = clustering.isEnabled() ? new ClusteredJournal(localJournal, clusteringService) : localJournal;
+                        this.journal.start();
                         this.cache.register(journal);
                     } else {
                         this.journal = null;
@@ -1439,8 +1453,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return cache;
         }
 
-        final Journal journal() {
+        final ChangeJournal journal() {
             return journal;
+        }
+
+        final ClusteringService clusteringService() {
+            return clusteringService;
         }
 
         final QueryParsers queryParsers() {
@@ -1666,6 +1684,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // Now shutdown the repository caches ...
             this.cache.startShutdown();
 
+            //shutdown the clustering service
+            if (this.clusteringService != null) {
+                this.clusteringService.shutdown();
+            }
+
             // shutdown the event bus
             if (this.changeBus != null) {
                 this.changeBus.shutdown();
@@ -1870,15 +1893,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             } catch (WorkspaceNotFoundException e) {
                 throw new NoSuchWorkspaceException(e.getMessage(), e);
             }
-        }
-
-        protected ChangeBus createBus( RepositoryConfiguration.Clustering clusteringConfiguration,
-                                       ExecutorService executor,
-                                       String systemWorkspaceName,
-                                       String processId ) {
-            RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName);
-            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus,
-                                                                                          processId) : standaloneBus;
         }
 
         void suspendExistingUserTransaction() throws SystemException {
@@ -2188,7 +2202,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         @Override
         protected void doRun( JcrRepository repository ) {
-            Journal journal = repository.runningState().journal();
+            ChangeJournal journal = repository.runningState().journal();
             assert journal != null;
             journal.removeOldRecords();
         }

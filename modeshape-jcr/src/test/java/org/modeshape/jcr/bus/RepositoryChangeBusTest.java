@@ -314,7 +314,7 @@ public class RepositoryChangeBusTest {
         }
 
         public void await() throws InterruptedException {
-            latch.await(250, TimeUnit.MILLISECONDS);
+            latch.await(350, TimeUnit.MILLISECONDS);
         }
 
         public List<TestChangeSet> getObservedChangeSet() {

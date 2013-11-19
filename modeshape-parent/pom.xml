@@ -354,7 +354,8 @@
         <version.jar.plugin>2.4</version.jar.plugin>
         <version.javadoc.plugin>2.9</version.javadoc.plugin>
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
-        <version.failsafe.plugin>2.13</version.failsafe.plugin> 
+        <version.failsafe.plugin>2.13</version.failsafe.plugin>
+        <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
 
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
@@ -814,6 +815,11 @@
                             </pluginExecutions>
                         </lifecycleMappingMetadata>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>gwt-maven-plugin</artifactId>
+                    <version>${version.gwt.maven.plugin}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

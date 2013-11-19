@@ -75,7 +75,7 @@ import org.modeshape.jcr.api.monitor.Statistics;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.journal.Journal;
+import org.modeshape.jcr.journal.LocalJournal;
 import org.modeshape.jcr.journal.JournalRecord;
 
 public class JcrRepositoryTest extends AbstractTransactionalTest {
@@ -1254,7 +1254,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         Thread.sleep(200);
 
         //check the journal has entries
-        Journal.Records journalRecordsReversed = repository.runningState().journal().allRecords(true);
+        LocalJournal.Records journalRecordsReversed = repository.runningState().journal().allRecords(true);
 
         assertTrue(journalRecordsReversed.size() > 0);
         JournalRecord lastRecord = journalRecordsReversed.iterator().next();

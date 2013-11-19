@@ -54,7 +54,7 @@ public class DefaultChannelProvider implements ChannelProvider {
 
         ProtocolStackConfigurator configurator = createConfigurator(channelConfiguration);
         if (configurator == null) {
-            throw new RepositoryException(BusI18n.channelConfigurationError.text(channelConfiguration));
+            throw new RepositoryException(ClusteringI18n.channelConfigurationError.text(channelConfiguration));
         }
 
         return new JChannel(configurator);

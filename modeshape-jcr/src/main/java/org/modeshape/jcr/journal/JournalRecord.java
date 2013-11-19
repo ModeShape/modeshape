@@ -9,7 +9,7 @@ import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 
 /**
- * A record stored by the {@link Journal}
+ * A record stored by the {@link LocalJournal}
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -26,6 +26,10 @@ public class JournalRecord implements Serializable, Comparable<JournalRecord>, I
      * The content of the record.
      */
     private ChangeSet content;
+
+    protected JournalRecord( ChangeSet content ) {
+        this.content = content;
+    }
 
     protected JournalRecord( long createdTimeMillisUTC,
                              ChangeSet content ) {

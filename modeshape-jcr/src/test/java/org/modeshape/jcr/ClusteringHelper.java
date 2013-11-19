@@ -24,7 +24,11 @@
 
 package org.modeshape.jcr;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import org.jgroups.Global;
+import org.modeshape.jcr.clustering.ClusteringService;
+import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -74,5 +78,25 @@ public final class ClusteringHelper {
     public static void removeJGroupsBindings() {
         System.clearProperty(Global.BIND_ADDR);
         System.clearProperty(Global.EXTERNAL_ADDR);
+    }
+
+    /**
+     * Create a mock clustering configuration document.
+     * @param clusterName the name of the cluster
+     * @return a {@link RepositoryConfiguration.Clustering}
+     */
+    public static RepositoryConfiguration.Clustering createClusteringConfiguration(String clusterName) {
+        RepositoryConfiguration.Clustering repositoryConfiguration = mock(RepositoryConfiguration.Clustering.class);
+        when(repositoryConfiguration.isEnabled()).thenReturn(true);
+        when(repositoryConfiguration.getClusterName()).thenReturn(clusterName);
+        when(repositoryConfiguration.getChannelProviderClassName()).thenReturn(DefaultChannelProvider.class.getName());
+        when(repositoryConfiguration.getChannelConfiguration()).thenReturn("config/jgroups-test-config.xml");
+        return repositoryConfiguration;
+    }
+
+    public static ClusteringService startNewClusteringService(String clusterName) throws Exception {
+        ClusteringService result = new ClusteringService("test-cluster-service", ClusteringHelper.createClusteringConfiguration(clusterName));
+        result.start();
+        return result;
     }
 }

@@ -7,7 +7,7 @@
         <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
         <transport clusterName="modeshape-cluster">
             <properties>
-                <property name="configurationFile" value="config/jgroups-test-config.xml"/>
+                <property name="configurationFile" value="jgroups-tcp.xml"/>
             </properties>
         </transport>
     </global>

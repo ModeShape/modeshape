@@ -526,6 +526,11 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop( new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
+                Session session = repository.login();
+                session.getRootNode().addNode("node1");
+                session.save();
+                session.logout();
+                Thread.sleep(100);
                 int records = repository.runningState().journal().allRecords(false).size();
                 assertTrue(records > 0);
                 recordsOnStartup.add(records);
@@ -536,6 +541,11 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop( new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
+                Session session = repository.login();
+                session.getRootNode().addNode("node1");
+                session.save();
+                session.logout();
+                Thread.sleep(100);
                 int records = repository.runningState().journal().allRecords(false).size();
                 assertTrue(records > 0);
                 recordsOnStartup.add(records);
