@@ -646,6 +646,9 @@
                                           cache-container="binary-cache-container"/>
                 </composite-binary-storage>
             </repository>
+            <repository name="journalingRepository" cache-name="sample">
+                <journaling max-days-to-keep-records="15" async-writes="false"/>
+            </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="tcp">
             <stack name="udp">

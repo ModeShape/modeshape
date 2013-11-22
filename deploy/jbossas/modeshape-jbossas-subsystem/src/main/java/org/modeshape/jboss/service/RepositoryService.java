@@ -56,8 +56,8 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.RepositoryStatistics;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.RepositoryStatistics;
 
 /**
  * A <code>RepositoryService</code> instance is the service responsible for initializing a {@link JcrRepository} in the ModeShape
@@ -82,6 +82,8 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<RepositoryStatistics> monitorInjector = new InjectedValue<RepositoryStatistics>();
 
     private RepositoryConfiguration repositoryConfiguration;
+    private String journalPath;
+    private String journalRelativeTo;
 
     public RepositoryService( RepositoryConfiguration repositoryConfiguration ) {
         this.repositoryConfiguration = repositoryConfiguration;
@@ -196,8 +198,20 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
             // Create a new configuration document ...
             EditableDocument config = Schematic.newDocument(repositoryConfiguration.getDocument());
+
             config.setDocument(FieldName.QUERY, queryConfig);
             config.getOrCreateDocument(FieldName.STORAGE).setDocument(FieldName.BINARY_STORAGE, binaryConfig);
+
+            if (config.containsField(FieldName.JOURNALING)) {
+                if (StringUtil.isBlank(this.journalRelativeTo)) {
+                    this.journalRelativeTo = getDataDirectoryPathInjector().getValue();
+                }
+                if (StringUtil.isBlank(this.journalPath)) {
+                    this.journalPath = "journal";
+                }
+                String finalJournalLocation = this.journalRelativeTo + "/" + this.journalPath;
+                config.getDocument(FieldName.JOURNALING).setString(FieldName.JOURNAL_LOCATION, finalJournalLocation);
+            }
 
             if (LOG.isDebugEnabled()) {
                 LOG.debugv("ModeShape configuration for '{0}' repository: {1}", repositoryName, config);
@@ -537,5 +551,23 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     private ModuleLoader moduleLoader() {
         return moduleLoaderInjector.getValue();
+    }
+
+    /**
+     * Sets the path (relative) of the journal.
+     *
+     * @param journalPath a {@link String}, may not be null
+     */
+    public void setJournalPath( String journalPath ) {
+        this.journalPath = journalPath;
+    }
+
+    /**
+     * Sets the base folder of the journal
+     *
+     * @param journalRelativeTo a {@link String}, may not be null
+     */
+    public void setJournalRelativeTo( String journalRelativeTo ) {
+        this.journalRelativeTo = journalRelativeTo;
     }
 }

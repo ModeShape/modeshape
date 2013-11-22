@@ -1251,7 +1251,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         session1.save();
 
         //give the events a change to reach the journal
-        Thread.sleep(200);
+        Thread.sleep(400);
 
         //check the journal has entries
         LocalJournal.Records journalRecordsReversed = repository.runningState().journal().allRecords(true);

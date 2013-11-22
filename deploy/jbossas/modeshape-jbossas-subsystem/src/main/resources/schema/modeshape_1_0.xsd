@@ -100,6 +100,12 @@
                 </xs:annotation>
             </xs:element>
 
+            <xs:element name="journaling" type="journaling" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the journaling mechanism.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
             <xs:choice minOccurs="0" maxOccurs="1">
                 <xs:element name="local-file-index-storage" type="local-file-index-storage">
                     <xs:annotation>
@@ -401,6 +407,52 @@
                 <xs:documentation>The name of the Infinispan cache container in which the workspace caches reside. If not
                     provider,
                     a default configuration file is used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="journaling">
+        <xs:annotation>
+            <xs:documentation>The configuration for the change journal</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="journal-relative-to" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The base directory in which to store journal contents. By default this path is jboss.server.data.dir/modeshape/repositoryName
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="journal-path" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The folder within 'relative-to' where to store the journal contents.
+                    If undefined, the path defaults to 'journal'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-days-to-keep-records" type="xs:integer" use="optional" default="-1">
+            <xs:annotation>
+                <xs:documentation>The maximum number of days records should be kept on disk before removing them.
+                    By default records are kept indefinitely.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="async-writes" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>Whether writes to disk should be done asynchronously or not.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="journal-gc-thread-pool" type="xs:string" use="optional" default="modeshape-journaling-gc">
+            <xs:annotation>
+                <xs:documentation>Name of the thread pool that should be used for removing older journal entries. This
+                   is only useful when 'max-days-to-keep-records' has a positive value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="journal-gc-initial-time" type="garbage-collection-initial-time-type" use="optional"
+                      default="00:00">
+            <xs:annotation>
+                <xs:documentation>The local time that the first garbage collection process should be run.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

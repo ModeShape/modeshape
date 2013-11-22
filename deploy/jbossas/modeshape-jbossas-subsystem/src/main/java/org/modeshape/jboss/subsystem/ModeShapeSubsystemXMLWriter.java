@@ -108,6 +108,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         // Nested elements ...
         writeNodeTypes(writer, repository);
         writeWorkspaces(writer, repository);
+        writeJournaling(writer, repository);
         writeAuthenticators(writer, repository);
         writeIndexing(writer, repository);
         writeIndexStorage(writer, repository);
@@ -182,6 +183,39 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             writer.writeStartElement(Element.INITIAL_CONTENT.getLocalName());
             writer.writeCharacters(repository.get(ModelKeys.DEFAULT_INITIAL_CONTENT).asString());
             writer.writeEndElement();
+        }
+        if (started) {
+            writer.writeEndElement();
+        }
+    }
+
+    private void writeJournaling( XMLExtendedStreamWriter writer,
+                                  ModelNode repository ) throws XMLStreamException {
+        boolean started = false;
+        // Write these model attributes of 'repository' onto the 'journaling' XML element ...
+        if (ModelAttributes.JOURNAL_PATH.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.JOURNALING, started);
+            ModelAttributes.JOURNAL_PATH.marshallAsAttribute(repository, writer);
+        }
+        if (ModelAttributes.JOURNAL_RELATIVE_TO.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.JOURNALING, started);
+            ModelAttributes.JOURNAL_RELATIVE_TO.marshallAsAttribute(repository, writer);
+        }
+        if (ModelAttributes.MAX_DAYS_TO_KEEP_RECORDS.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.JOURNALING, started);
+            ModelAttributes.MAX_DAYS_TO_KEEP_RECORDS.marshallAsAttribute(repository, writer);
+        }
+        if (ModelAttributes.ASYNC_WRITES.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.JOURNALING, started);
+            ModelAttributes.ASYNC_WRITES.marshallAsAttribute(repository, writer);
+        }
+        if (ModelAttributes.JOURNAL_GC_INITIAL_TIME.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.JOURNALING, started);
+            ModelAttributes.JOURNAL_GC_INITIAL_TIME.marshallAsAttribute(repository, writer);
+        }
+        if (ModelAttributes.JOURNAL_GC_THREAD_POOL.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.JOURNALING, started);
+            ModelAttributes.JOURNAL_GC_THREAD_POOL.marshallAsAttribute(repository, writer);
         }
         if (started) {
             writer.writeEndElement();

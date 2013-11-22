@@ -60,6 +60,9 @@ public class PreconfiguredRepositoryIntegrationTest {
     @Resource( mappedName = "java:/jcr/artifacts" )
     private JcrRepository artifactsRepository;
 
+    @Resource( mappedName = "java:/jcr/journalingRepository" )
+    private JcrRepository journalingRepository;
+
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class, "preconfiguredRepository-test.war");
@@ -132,5 +135,20 @@ public class PreconfiguredRepositoryIntegrationTest {
         NodeType[] mixins = filesFolder.getMixinNodeTypes();
         assertEquals(1, mixins.length);
         assertEquals("mode:publishArea", mixins[0].getName());
+        session = artifactsRepository.login("other");
+        session.logout();
+        session = artifactsRepository.login("extra");
+        session.logout();
+    }
+
+    @Test
+    public void shouldEnableJournaling() throws Exception {
+        Session session = journalingRepository.login();
+        session.getRootNode().addNode("testNode");
+        session.save();
+        session.getNode("/testNode").remove();
+        session.save();
+        session.logout();
+        ////TODO author=Horia Chiorean date=11/21/13 description=Once JCR event journaling is in place, validate the entry was stored
     }
 }

@@ -186,6 +186,10 @@ public class AddRepository extends AbstractAddStepHandler {
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
         RepositoryService repositoryService = new RepositoryService(repositoryConfig);
+
+        // Journaling
+        parseJournaling(repositoryService, context, model, configDoc);
+
         ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
         // Add the EngineService's dependencies ...
@@ -488,6 +492,39 @@ public class AddRepository extends AbstractAddStepHandler {
             initialContentDocument.set(FieldName.DEFAULT_INITIAL_CONTENT, model.get(ModelKeys.DEFAULT_INITIAL_CONTENT).asString());
         }
         return workspacesDoc;
+    }
+
+    private void parseJournaling( RepositoryService repositoryService,
+                                  OperationContext context,
+                                  ModelNode model,
+                                  EditableDocument configDoc ) throws OperationFailedException {
+        if (model.hasDefined(ModelKeys.JOURNALING)) {
+            EditableDocument journaling = configDoc.getOrCreateDocument(FieldName.JOURNALING);
+
+            //set it temporarily on the repository service because the final location needs to be resolved later
+            if (model.hasDefined(ModelKeys.JOURNAL_RELATIVE_TO)) {
+                String relativeTo = attribute(context, model, ModelAttributes.JOURNAL_RELATIVE_TO).asString();
+                repositoryService.setJournalRelativeTo(relativeTo);
+            }
+
+            //set it temporarily on the repository service because the final location needs to be resolved later
+            if (model.hasDefined(ModelKeys.JOURNAL_PATH)) {
+                String path = attribute(context, model, ModelAttributes.JOURNAL_PATH).asString();
+                repositoryService.setJournalPath(path);
+            }
+
+            int maxDaysToKeepRecords = attribute(context, model, ModelAttributes.MAX_DAYS_TO_KEEP_RECORDS).asInt();
+            journaling.setNumber(FieldName.MAX_DAYS_TO_KEEP_RECORDS, maxDaysToKeepRecords);
+
+            boolean asyncWrites = attribute(context, model, ModelAttributes.ASYNC_WRITES).asBoolean();
+            journaling.setBoolean(FieldName.ASYNC_WRITES_ENABLED, asyncWrites);
+
+            String gcThreadPool = attribute(context, model, ModelAttributes.JOURNAL_GC_THREAD_POOL).asString();
+            journaling.setString(FieldName.THREAD_POOL, gcThreadPool);
+
+            String gcInitialTime = attribute(context, model, ModelAttributes.JOURNAL_GC_INITIAL_TIME).asString();
+            journaling.setString(FieldName.INITIAL_TIME, gcInitialTime);
+        }
     }
 
     private void parseCustomNodeTypes( ModelNode model,

@@ -75,7 +75,7 @@ public class LocalJournal implements ChangeJournal {
         try {
             File journalFileLocation = new File(journalLocation);
             if (!journalFileLocation.exists()) {
-                assert journalFileLocation.mkdir();
+                assert journalFileLocation.mkdirs();
             }
             DBMaker dbMaker = DBMaker.newAppendFileDB(new File(journalFileLocation, FILE_NAME))
                                      .compressionEnable()
