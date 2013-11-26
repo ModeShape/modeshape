@@ -20,7 +20,7 @@
 <endpoints xmlns="http://java.sun.com/xml/ns/jax-ws/ri/runtime" version="2.0">
 
 	<endpoint name="RepositoryService" wsdl="WEB-INF/wsdl/CMISWS-Service.wsdl"
-		implementation="org.apache.chemistry.opencmis.server.impl.webservices.RepositoryService"
+		implementation="org.apache.chemistry.opencmis.server.impl.webservices.RepositoryService10"
 		service="{http://docs.oasis-open.org/ns/cmis/ws/200908/}RepositoryService"
 		port="{http://docs.oasis-open.org/ns/cmis/ws/200908/}RepositoryServicePort"
 		url-pattern="/services/RepositoryService" enable-mtom="true">
@@ -48,7 +48,7 @@
 	</endpoint>
 
 	<endpoint name="ObjectService" wsdl="WEB-INF/wsdl/CMISWS-Service.wsdl"
-		implementation="org.apache.chemistry.opencmis.server.impl.webservices.ObjectService"
+		implementation="org.apache.chemistry.opencmis.server.impl.webservices.ObjectService10"
 		service="{http://docs.oasis-open.org/ns/cmis/ws/200908/}ObjectService"
 		port="{http://docs.oasis-open.org/ns/cmis/ws/200908/}ObjectServicePort"
 		url-pattern="/services/ObjectService" enable-mtom="true">

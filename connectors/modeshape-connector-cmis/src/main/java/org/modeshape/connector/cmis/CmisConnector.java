@@ -858,12 +858,6 @@ System.out.println("------------- Get document by Id");
     public void importType( ObjectType cmisType,
                             NodeTypeManager typeManager,
                             NamespaceRegistry registry ) throws RepositoryException {
-        // skip base types because we are going to
-        // map base types directly
-        if (cmisType.isBaseType()) {
-            return;
-        }
-
         // TODO: get namespace information and register
         // registry.registerNamespace(cmisType.getLocalNamespace(), cmisType.getLocalNamespace());
 
@@ -876,7 +870,9 @@ System.out.println("------------- Get document by Id");
         type.setMixin(false);
         type.setOrderableChildNodes(true);
         type.setQueryable(true);
-        type.setDeclaredSuperTypeNames(superTypes(cmisType));
+        if (!cmisType.isBaseType()) {
+            type.setDeclaredSuperTypeNames(superTypes(cmisType));
+        }
 
         Map<String, PropertyDefinition<?>> props = cmisType.getPropertyDefinitions();
         Set<String> names = props.keySet();

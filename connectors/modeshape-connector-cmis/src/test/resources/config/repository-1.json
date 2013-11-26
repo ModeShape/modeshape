@@ -19,10 +19,10 @@
             "discoveryService" : "http://localhost:8090/services/DiscoveryService?wsdl",
             "multifilingService" : "http://localhost:8090/services/MultifilingService?wsdl",
             "navigationService" : "http://localhost:8090/services/NavigationService?wsdl",
-            "objectService" : "http://localhost:8090/services/ObjectService?wsdl",
+            "objectService" : "http://localhost:8090/services/ObjectService10?wsdl",
             "policyService" : "http://localhost:8090/services/PolicyService?wsdl",
             "relationshipService" : "http://localhost:8090/services/RelationshipService?wsdl",
-            "repositoryService" : "http://localhost:8090/services/RepositoryService?wsdl",
+            "repositoryService" : "http://localhost:8090/services/RepositoryService10?wsdl",
             "versioningService" : "http://localhost:8090/services/VersioniongService?wsdl",
             "repositoryId" : "A1",
             "projections" : [ "default:/cmis => /" ]
