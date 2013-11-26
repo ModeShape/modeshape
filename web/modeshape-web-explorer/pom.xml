@@ -105,6 +105,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>gwt-maven-plugin</artifactId>
+                <version>2.5.1</version>
                 <executions>
                     <execution>
                         <goals>
@@ -115,7 +116,6 @@
                 </executions>
                 <configuration>
                     <runTarget>org.modeshape.explorer.client.Explorer/Explorer.html</runTarget>
-                    <version>2.5.1</version>
                 </configuration>
             </plugin>            
             <plugin>

@@ -127,4 +127,33 @@
     <session-config>
         <session-timeout>60</session-timeout>
     </session-config>
+    <security-constraint>
+        <display-name>ModeShape CMIS</display-name>
+        <web-resource-collection>
+            <web-resource-name>CMIS</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <!--
+                   A user must be assigned this role to connect to this web application, in addition to needing the READONLY,
+                   READWRITE or ADMIN roles to actually connect to the repository, read or modify the data.
+                   This is not used internally, so another role could be substituted here.
+               -->
+            <role-name>connect</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <!--
+         Any auth-method will work for ModeShape.  BASIC is used this example for simplicity.
+      -->
+    <login-config>
+        <auth-method>BASIC</auth-method>
+    </login-config>
+
+    <!--
+         This must match the role-name in the auth-constraint above.
+      -->
+    <security-role>
+        <role-name>connect</role-name>
+    </security-role>
 </web-app>

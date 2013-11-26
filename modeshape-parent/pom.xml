@@ -311,7 +311,7 @@
         <spring.mock>2.0.7</spring.mock>
 
         <!-- Apache chemistry version -->
-        <chemistry.version>0.9.0-beta-1</chemistry.version>
+        <chemistry.version>0.10.0</chemistry.version>
 
         <!-- GWT version -->
         <gwt.version>2.5.1</gwt.version>
@@ -1328,7 +1328,6 @@
                 <groupId>org.apache.chemistry.opencmis</groupId>
                 <artifactId>chemistry-opencmis-server-bindings</artifactId>
                 <version>${chemistry.version}</version>
-                <classifier>classes</classifier>
             </dependency>
 
             <dependency>

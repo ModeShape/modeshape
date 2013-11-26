@@ -28,8 +28,8 @@ public class ModeShapeCmisClientTest {
         Map<String, String> parameter = new HashMap<String, String>();
 
         // user credentials
-        // parameter.put(SessionParameter.USER, user);
-        // parameter.put(SessionParameter.PASSWORD, passw);
+        parameter.put(SessionParameter.USER, "dnauser");
+        parameter.put(SessionParameter.PASSWORD, "password");
 
         // connection settings
         parameter.put(SessionParameter.BINDING_TYPE, BindingType.WEBSERVICES.value());
@@ -46,15 +46,7 @@ public class ModeShapeCmisClientTest {
         parameter.put(SessionParameter.REPOSITORY_ID, "cmis_repo:default");
 
         // create session
-        session = factory.createSession(parameter, null, new StandardAuthenticationProvider() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public Element getSOAPHeaders( Object portObject ) {
-                // Place headers here
-                return super.getSOAPHeaders(portObject);
-            }
-        }, null);
+        session = factory.createSession(parameter, null, new StandardAuthenticationProvider(), null);
     }
 
     @Test
