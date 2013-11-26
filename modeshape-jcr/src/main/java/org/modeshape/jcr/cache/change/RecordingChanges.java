@@ -51,6 +51,7 @@ public class RecordingChanges implements Changes, ChangeSet {
     private final String processKey;
     private final String repositoryKey;
     private final String workspaceName;
+    private final String journalId;
     private final Queue<Change> events = new ConcurrentLinkedQueue<Change>();
     private Set<NodeKey> nodeKeys = Collections.emptySet();
     private Map<String, String> userData = Collections.emptyMap();
@@ -58,16 +59,20 @@ public class RecordingChanges implements Changes, ChangeSet {
     private DateTime timestamp;
 
     public RecordingChanges( String processKey,
-                             String repositoryKey ) {
-        this(processKey, repositoryKey, null);
+                             String repositoryKey,
+                             String workspaceName ) {
+        this(processKey, repositoryKey, workspaceName, null);
     }
 
     public RecordingChanges( String processKey,
                              String repositoryKey,
-                             String workspaceName ) {
+                             String workspaceName,
+                             String journalId ) {
         this.processKey = processKey;
         this.repositoryKey = repositoryKey;
         this.workspaceName = workspaceName;
+        this.journalId = journalId;
+
         assert this.processKey != null;
         assert this.repositoryKey != null;
     }
@@ -265,6 +270,11 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
+    public String getJournalId() {
+        return journalId;
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Save by '")
@@ -276,8 +286,12 @@ public class RecordingChanges implements Changes, ChangeSet {
           .append(" in repository with key '")
           .append(repositoryKey)
           .append("' and workspace '")
-          .append(workspaceName)
-          .append("'\n");
+          .append(workspaceName);
+
+        if (journalId != null) {
+            sb.append(". Journal id=").append(journalId);
+        }
+        sb.append("'\n");
 
         for (Change change : this) {
             sb.append("  ").append(change).append("\n");

@@ -88,6 +88,13 @@ public class JournalRecord implements Serializable, Comparable<JournalRecord>, I
         return content.changedNodes();
     }
 
+    /**
+     * @see org.modeshape.jcr.cache.change.ChangeSet#getJournalId()
+     */
+    public String getJournalId() {
+        return content.getJournalId();
+    }
+
     @Override
     public Iterator<Change> iterator() {
         return content.iterator();
@@ -125,6 +132,7 @@ public class JournalRecord implements Serializable, Comparable<JournalRecord>, I
     public String toString() {
         final StringBuilder sb = new StringBuilder("JournalRecord {");
         sb.append("createdTime=").append(new Date(createdTimeMillisUTC).toString());
+        sb.append(", journalId=").append(getJournalId());
         sb.append(", processKey=").append(getProcessKey());
         sb.append(", userId=").append(getUserId());
         sb.append(", repositoryKey=").append(getRepositoryKey());

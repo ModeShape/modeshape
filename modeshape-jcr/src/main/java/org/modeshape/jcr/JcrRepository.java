@@ -529,6 +529,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         state.set(State.RESTORING);
     }
 
+    protected final String journalId() {
+        return runningState().journalId();
+    }
+
     protected final void completeRestore() throws ExecutionException, Exception {
         if (getState() == State.RESTORING) {
             logger.debug("Shutting down '{0}' after content has been restored", getName());
@@ -1113,11 +1117,25 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                     this.changeBus.start();
 
+                    // Set up the event journal
+                    RepositoryConfiguration.Journaling journaling = config.getJournaling();
+                    if (journaling.isEnabled()) {
+                        LocalJournal localJournal = new LocalJournal(journaling.location(), journaling.asyncWritesEnabled(), journaling.maxDaysToKeepRecords());
+                        this.journal = clustering.isEnabled() ? new ClusteredJournal(localJournal, clusteringService) : localJournal;
+                        this.journal.start();
+                        this.changeBus.register(journal);
+                    } else {
+                        this.journal = null;
+                    }
+
                     // Set up the repository cache ...
                     QuerySystem query = config.getQuery();
                     boolean indexingClustered = query.queriesEnabled() && query.indexingClustered();
 
-                    final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions, indexingClustered);
+                    final SessionEnvironment sessionEnv = this.journal == null ?
+                                                          new RepositorySessionEnvironment(this.transactions, indexingClustered) :
+                                                          new RepositorySessionEnvironment(this.transactions, indexingClustered,
+                                                                                           this.journal.journalId());
                     CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
                     this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv,
                                                      changeBus, workspaceCacheContainer, Upgrades.STANDARD_UPGRADES);
@@ -1132,17 +1150,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Set up the unused binary value listener ...
                     this.cache.register(new BinaryUsageChangeSetListener(binaryStore));
-
-                    // Set up the event journal
-                    RepositoryConfiguration.Journaling journaling = config.getJournaling();
-                    if (journaling.isEnabled()) {
-                        LocalJournal localJournal = new LocalJournal(journaling.location(), journaling.asyncWritesEnabled(), journaling.maxDaysToKeepRecords());
-                        this.journal = clustering.isEnabled() ? new ClusteredJournal(localJournal, clusteringService) : localJournal;
-                        this.journal.start();
-                        this.cache.register(journal);
-                    } else {
-                        this.journal = null;
-                    }
 
                     // Refresh several of the components information from the repository cache ...
                     this.persistentRegistry.refreshFromSystem();
@@ -1455,6 +1462,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         final ChangeJournal journal() {
             return journal;
+        }
+
+        final String journalId() {
+            return journal != null ? journal.journalId() : null;
         }
 
         final ClusteringService clusteringService() {
@@ -1912,12 +1923,20 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final Transactions transactions;
         private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory;
         private final boolean indexingClustered;
+        private final String journalId;
 
         protected RepositorySessionEnvironment( Transactions transactions,
                                                 boolean indexingClustered ) {
+            this(transactions, indexingClustered, null);
+        }
+
+        protected RepositorySessionEnvironment( Transactions transactions,
+                                                boolean indexingClustered,
+                                                String journalId) {
             this.transactions = transactions;
             this.transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(transactions);
             this.indexingClustered = indexingClustered;
+            this.journalId = journalId;
         }
 
         @Override
@@ -1933,6 +1952,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         @Override
         public boolean indexingClustered() {
             return indexingClustered;
+        }
+
+        @Override
+        public String journalId() {
+            return journalId;
         }
     }
 

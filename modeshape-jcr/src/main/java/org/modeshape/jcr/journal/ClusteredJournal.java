@@ -110,8 +110,8 @@ public class ClusteredJournal implements ChangeJournal {
     }
 
     @Override
-    public Iterable<JournalRecord> recordsFor( String processKey ) {
-        return localJournal.recordsFor(processKey);
+    public Iterable<JournalRecord> recordsFor( String journalId ) {
+        return localJournal.recordsFor(journalId);
     }
 
     @Override
@@ -122,9 +122,9 @@ public class ClusteredJournal implements ChangeJournal {
     }
 
     @Override
-    public Records recordsDelta( String processKey,
+    public Records recordsDelta( String journalId,
                                  boolean descendingOrder ) {
-        return localJournal.recordsDelta(processKey, descendingOrder);
+        return localJournal.recordsDelta(journalId, descendingOrder);
     }
 
     @Override
@@ -135,6 +135,11 @@ public class ClusteredJournal implements ChangeJournal {
     @Override
     public boolean deltaReconciliationCompleted() {
        return deltaReconciliationCompleted.get();
+    }
+
+    @Override
+    public String journalId() {
+        return localJournal.journalId();
     }
 
     protected AtomicInteger expectedNumberOfDeltaResponses() {
@@ -153,10 +158,6 @@ public class ClusteredJournal implements ChangeJournal {
         return localJournal;
     }
 
-    protected String processId() {
-        return clusteringService().processId();
-    }
-
     protected String clusterName() {
         return clusteringService().processId();
     }
@@ -166,11 +167,11 @@ public class ClusteredJournal implements ChangeJournal {
         private static final long serialVersionUID = 1L;
 
         private final transient ClusteredJournal clusteredJournal;
-        private final String processId;
+        private final String journalId;
 
         private DeltaRequest(ClusteredJournal clusteredJournal) {
             this.clusteredJournal = clusteredJournal;
-            this.processId = clusteredJournal.processId();
+            this.journalId = clusteredJournal.journalId();
         }
 
         @Override
@@ -181,14 +182,14 @@ public class ClusteredJournal implements ChangeJournal {
         @Override
         public void consume( DeltaResponse payload ) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Process {0} received delta response from process {1} as part of cluster {2}. Delta size: {3} records.",
-                             processId,
-                             payload.processId,
+                LOGGER.debug("Journal {0} received delta response from journal {1} as part of cluster {2}. Delta size: {3} records.",
+                             journalId,
+                             payload.journalId,
                              clusteredJournal.clusterName(),
                              payload.journalRecords.size());
             }
             if (clusteredJournal.deltaReconciliationCompleted()) {
-                LOGGER.debug("Process {0} has already completed delta reconciliation, ignoring response from {1}", processId, payload.processId);
+                LOGGER.debug("Journal {0} has already completed delta reconciliation, ignoring response from {1}", journalId, payload.journalId);
                 //we've already processed the deltas (from another process), so we aren't interested anymore.
                 return;
             }
@@ -206,8 +207,8 @@ public class ClusteredJournal implements ChangeJournal {
 
         protected void send() {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Sending delta request from process {0} as part of cluster {1}",
-                             processId,
+                LOGGER.debug("Sending delta request from journal {0} as part of cluster {1}",
+                             journalId,
                              clusteredJournal.clusterName());
             }
             clusteredJournal.clusteringService().sendMessage(this, DELTA_REQUEST);
@@ -220,12 +221,12 @@ public class ClusteredJournal implements ChangeJournal {
 
         private final transient ClusteredJournal clusteredJournal;
 
-        private final String processId;
+        private final String journalId;
         private List<JournalRecord> journalRecords;
 
         private DeltaResponse( ClusteredJournal clusteredJournal ) {
             this.clusteredJournal = clusteredJournal;
-            this.processId = clusteredJournal.processId();
+            this.journalId = clusteredJournal.journalId();
         }
 
         @Override
@@ -235,20 +236,20 @@ public class ClusteredJournal implements ChangeJournal {
 
         @Override
         public void consume( DeltaRequest payload ) {
-            if (payload.processId.equals(processId)) {
-                LOGGER.debug("Process {0} discarding delta request from itself", processId);
+            if (payload.journalId.equals(journalId)) {
+                LOGGER.debug("Journal {0} discarding delta request from itself", journalId);
                 //we MUST discard own messages, because JGroups will broadcast these as well
                 return;
             }
-            Records delta = clusteredJournal.recordsDelta(payload.processId, false);
+            Records delta = clusteredJournal.recordsDelta(payload.journalId, false);
             this.journalRecords = new ArrayList<JournalRecord>(delta.size());
             for (JournalRecord record : delta) {
                 this.journalRecords.add(record);
             }
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Process {0} sending delta response to process {1} as part of cluster {2}. Delta size is {3}",
-                             processId,
-                             payload.processId,
+                LOGGER.debug("Journal {0} sending delta response to journal {1} as part of cluster {2}. Delta size is {3}",
+                             journalId,
+                             payload.journalId,
                              clusteredJournal.clusterName(),
                              delta.size());
             }

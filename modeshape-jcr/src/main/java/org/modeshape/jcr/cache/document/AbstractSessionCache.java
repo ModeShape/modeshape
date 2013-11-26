@@ -188,6 +188,10 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
         return rootPath;
     }
 
+    SessionEnvironment sessionContext() {
+        return sessionContext;
+    }
+
     @Override
     public final void addContextData( String key,
                                       String value ) {

@@ -6,15 +6,18 @@ import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.ThreadSafe;
+import org.mapdb.Atomic;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -31,13 +34,14 @@ public class LocalJournal implements ChangeJournal {
 
     private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock(true);
     private static final int DEFAULT_MAX_TIME_TO_KEEP_FILES = -1;
-    private static final String FILE_NAME = "records";
+    private static final String RECORDS_FIELD = "records";
+    private static final String JOURNAL_ID_FIELD = "journalId";
 
     private final String journalLocation;
     private final boolean asyncWritesEnabled;
     private final long maxTimeToKeepEntriesMillis;
-    private final String dbEntryName;
 
+    private String journalId;
     private DB journalDB;
     private NavigableSet<JournalRecord> records;
     private volatile boolean stopped = false;
@@ -58,7 +62,6 @@ public class LocalJournal implements ChangeJournal {
         this.asyncWritesEnabled = asyncWritesEnabled;
         this.maxTimeToKeepEntriesMillis = TimeUnit.DAYS.toMillis(maxDaysToKeepEntries);
         this.stopped = true;
-        this.dbEntryName = FILE_NAME;
     }
 
     protected LocalJournal( String journalLocation ) {
@@ -77,7 +80,7 @@ public class LocalJournal implements ChangeJournal {
             if (!journalFileLocation.exists()) {
                 assert journalFileLocation.mkdirs();
             }
-            DBMaker dbMaker = DBMaker.newAppendFileDB(new File(journalFileLocation, FILE_NAME))
+            DBMaker dbMaker = DBMaker.newAppendFileDB(new File(journalFileLocation, RECORDS_FIELD))
                                      .compressionEnable()
                                      .checksumEnable()
                                      .closeOnJvmShutdown()
@@ -87,7 +90,13 @@ public class LocalJournal implements ChangeJournal {
                 dbMaker.asyncWriteDisable();
             }
             this.journalDB = dbMaker.make();
-            this.records = this.journalDB.createTreeSet(dbEntryName).keepCounter(true).makeOrGet();
+            this.records = this.journalDB.createTreeSet(RECORDS_FIELD).keepCounter(true).makeOrGet();
+            Atomic.String journalAtomic = this.journalDB.getAtomicString(JOURNAL_ID_FIELD);
+            //only write the value the first time
+            if (StringUtil.isBlank(journalAtomic.get())) {
+                journalAtomic.set("journal_" + UUID.randomUUID().toString());
+            }
+            this.journalId = journalAtomic.get();
             this.stopped = false;
         } catch (Exception e) {
             throw new RepositoryException(JcrI18n.cannotStartJournal.text(), e);
@@ -115,9 +124,10 @@ public class LocalJournal implements ChangeJournal {
 
     @Override
     public void notify( ChangeSet changeSet ) {
-        //do not store records from jcr:system because that would wreak havoc for delta calculation. If stored, these changes
-        //would be received in a cluster when a foreign node comes up.
-        if (changeSet.isEmpty() || changeSet.getWorkspaceName().equalsIgnoreCase(RepositoryConfiguration.SYSTEM_WORKSPACE_NAME)) {
+        //do not store records from jcr:system from other journals because that would wreak havoc for delta calculation.
+        //If stored, these changes would be received in a cluster when a foreign node comes up.
+        boolean systemWorkspaceChanges = changeSet.getWorkspaceName().equalsIgnoreCase(RepositoryConfiguration.SYSTEM_WORKSPACE_NAME);
+        if (changeSet.isEmpty() || systemWorkspaceChanges) {
             return;
         }
         addRecords(new JournalRecord(changeSet));
@@ -190,12 +200,12 @@ public class LocalJournal implements ChangeJournal {
     }
 
     @Override
-    public Iterable<JournalRecord> recordsFor( String processKey ) {
+    public Iterable<JournalRecord> recordsFor( String journalId ) {
         if (stopped) {
             return Collections.emptySet();
         }
-        CheckArg.isNotNull("processKey cannot be null", processKey);
-        return filter(records.iterator(), processKey);
+        CheckArg.isNotNull("journalId cannot be null", journalId);
+        return filter(records.iterator(), journalId);
     }
 
     @Override
@@ -212,20 +222,21 @@ public class LocalJournal implements ChangeJournal {
     }
 
     @Override
-    public Records recordsDelta( String processKey,
+    public Records recordsDelta( String journalId,
                                  boolean descendingOrder ) {
-        LOGGER.debug("Computing records delta for {0}", processKey);
+        CheckArg.isNotNull("journalId cannot be null", journalId);
+
+        LOGGER.debug("Journal {0} computing records delta for remote journal {1}", this.journalId, journalId);
         if (stopped) {
             return Records.EMPTY;
         }
-        CheckArg.isNotNull("processKey cannot be null", processKey);
 
         //step1: find the local time when this process was last seen (based on the last change we have from this process)
         long processLastSeenLocalTimeUtcMillis = -1;
         Iterator<JournalRecord> reverseIterator = records.descendingIterator();
         while (reverseIterator.hasNext()) {
             JournalRecord record = reverseIterator.next();
-            if (record.getProcessKey().equals(processKey)) {
+            if (record.getJournalId().equals(journalId)) {
                 processLastSeenLocalTimeUtcMillis = record.getCreatedTimeMillisUTC();
                 break;
             }
@@ -241,8 +252,13 @@ public class LocalJournal implements ChangeJournal {
         return recordsFromSet(subset, descendingOrder);
     }
 
+    @Override
+    public String journalId() {
+        return journalId;
+    }
+
     private Iterable<JournalRecord> filter( final Iterator<JournalRecord> recordsIterator,
-                                            final String processKey ) {
+                                            final String journalId ) {
         return new Iterable<JournalRecord>() {
             private JournalRecord currentRecord = null;
 
@@ -279,7 +295,7 @@ public class LocalJournal implements ChangeJournal {
             private JournalRecord advance() {
                 while (recordsIterator.hasNext()) {
                     JournalRecord record = recordsIterator.next();
-                    if (record.getProcessKey().equals(processKey)) {
+                    if (record.getJournalId().equals(journalId)) {
                         return record;
 
                     }

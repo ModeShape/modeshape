@@ -49,10 +49,10 @@ public class LocalJournalTest {
 
     protected void insertTestRecords() throws InterruptedException {
         //p1 has 4 changesets
-        ChangeSet process1Changes1 = TestChangeSet.create("p1", 5);
-        ChangeSet process1Changes2 = TestChangeSet.create("p1", 1);
-        ChangeSet process1Changes3 = TestChangeSet.create("p1", 1);
-        ChangeSet process1Changes4 = TestChangeSet.create("p1", 1);
+        ChangeSet process1Changes1 = TestChangeSet.create("j1", 5);
+        ChangeSet process1Changes2 = TestChangeSet.create("j1", 1);
+        ChangeSet process1Changes3 = TestChangeSet.create("j1", 1);
+        ChangeSet process1Changes4 = TestChangeSet.create("j1", 1);
         journal().notify(process1Changes1);
         journal().notify(process1Changes2);
         journal().notify(process1Changes3);
@@ -62,17 +62,17 @@ public class LocalJournalTest {
         timestamp1 = System.currentTimeMillis();
 
         //p2 has 2 changesets
-        ChangeSet process2Changes1 = TestChangeSet.create("p2", 1);
-        ChangeSet process2Changes2 = TestChangeSet.create("p2", 1);
+        ChangeSet process2Changes1 = TestChangeSet.create("j2", 1);
+        ChangeSet process2Changes2 = TestChangeSet.create("j2", 1);
         journal().notify(process2Changes1);
         journal().notify(process2Changes2);
         Thread.sleep(10);
         timestamp2 = System.currentTimeMillis();
 
         //p3 has 2 changesets
-        ChangeSet process3Changes1 = TestChangeSet.create("p3", 2);
-        ChangeSet process3Changes2 = TestChangeSet.create("p3", 2);
-        ChangeSet process3Changes3 = TestChangeSet.create("p3", 0);
+        ChangeSet process3Changes1 = TestChangeSet.create("j3", 2);
+        ChangeSet process3Changes2 = TestChangeSet.create("j3", 2);
+        ChangeSet process3Changes3 = TestChangeSet.create("j3", 0);
         journal().notify(process3Changes1);
         journal().notify(process3Changes2);
         journal().notify(process3Changes3);
@@ -83,10 +83,10 @@ public class LocalJournalTest {
 
     @Test
     public void shouldInsertRecords() throws InterruptedException {
-        journal().addRecords(new JournalRecord(TestChangeSet.create("p4", 2)),
-                             new JournalRecord(TestChangeSet.create("p4", 1)),
-                             new JournalRecord(TestChangeSet.create("p4", 3)));
-        Iterable<JournalRecord> records = journal().recordsFor("p4");
+        journal().addRecords(new JournalRecord(TestChangeSet.create("j4", 2)),
+                             new JournalRecord(TestChangeSet.create("j4", 1)),
+                             new JournalRecord(TestChangeSet.create("j4", 3)));
+        Iterable<JournalRecord> records = journal().recordsFor("j4");
         int count = 0;
         Iterator<JournalRecord> iterator = records.iterator();
         while (iterator.hasNext()) {
@@ -98,23 +98,23 @@ public class LocalJournalTest {
     @Test
     public void shouldReturnRecordsForProcess() throws InterruptedException {
         List<JournalRecord> records = new ArrayList<JournalRecord>();
-        for (JournalRecord record : journal().recordsFor("p1")) {
+        for (JournalRecord record : journal().recordsFor("j1")) {
             records.add(record);
-            assertEquals("p1", record.getProcessKey());
+            assertEquals("j1", record.getJournalId());
         }
         assertEquals(4, records.size());
 
         records.clear();
-        for (JournalRecord record : journal().recordsFor("p2")) {
+        for (JournalRecord record : journal().recordsFor("j2")) {
             records.add(record);
-            assertEquals("p2", record.getProcessKey());
+            assertEquals("j2", record.getJournalId());
         }
         assertEquals(2, records.size());
 
         records.clear();
-        for (JournalRecord record : journal().recordsFor("p3")) {
+        for (JournalRecord record : journal().recordsFor("j3")) {
             records.add(record);
-            assertEquals("p3", record.getProcessKey());
+            assertEquals("j3", record.getJournalId());
         }
         assertEquals(2, records.size());
     }
@@ -140,24 +140,24 @@ public class LocalJournalTest {
 
     @Test
     public void shouldComputeJournalDeltas() throws Exception {
-        List<String> processOwners = new ArrayList<String>();
-        for (JournalRecord record : journal().recordsDelta("p2", false)) {
-            processOwners.add(record.getProcessKey());
+        List<String> journalIds = new ArrayList<String>();
+        for (JournalRecord record : journal().recordsDelta("j2", false)) {
+            journalIds.add(record.getJournalId());
         }
-        assertEquals(Arrays.asList("p3", "p3"), processOwners);
+        assertEquals(Arrays.asList("j3", "j3"), journalIds);
 
-        assertFalse(journal().recordsDelta("p3", false).iterator().hasNext());
+        assertFalse(journal().recordsDelta("j3", false).iterator().hasNext());
 
         //add a new entry
-        journal().notify(TestChangeSet.create("p1", 2));
-        processOwners.clear();
-        for (JournalRecord record : journal().recordsDelta("p3", false)) {
-            processOwners.add(record.getProcessKey());
+        journal().notify(TestChangeSet.create("j1", 2));
+        journalIds.clear();
+        for (JournalRecord record : journal().recordsDelta("j3", false)) {
+            journalIds.add(record.getJournalId());
         }
-        assertEquals(Arrays.asList("p1"), processOwners);
+        assertEquals(Arrays.asList("j1"), journalIds);
 
         //a process that "hasn't been seen"
-        assertEquals(9, journal().recordsDelta("p4", false).size());
+        assertEquals(9, journal().recordsDelta("j4", false).size());
     }
 
     @Test
@@ -169,7 +169,7 @@ public class LocalJournalTest {
         //insert 200 entries - this should create multiple files
         int entriesCount = 200;
         for (int i = 0; i < entriesCount; i++) {
-            journal().notify(TestChangeSet.create("p1", entriesCount));
+            journal().notify(TestChangeSet.create("j1", entriesCount));
         }
         //make sure we have at least 3 segments
         int filesCountFirstBatch = journalFolder.list().length;
@@ -182,7 +182,7 @@ public class LocalJournalTest {
 
         //insert another batch of record which should produce additional segments
         for (int i = 0; i < entriesCount; i++) {
-            journal().notify(TestChangeSet.create("p1", entriesCount));
+            journal().notify(TestChangeSet.create("j1", entriesCount));
         }
 
         int filesCountSecondBatch = journalFolder.list().length;
@@ -194,8 +194,17 @@ public class LocalJournalTest {
         assertTrue(filesCountSecondBatch > journalFolder.list().length);
 
         //now make sure we can still add data to the journal
-        journal().notify(TestChangeSet.create("p4", 2));
-        assertTrue(journal().recordsFor("p4").iterator().hasNext());
+        journal().notify(TestChangeSet.create("j4", 2));
+        assertTrue(journal().recordsFor("j4").iterator().hasNext());
+    }
+
+    @Test
+    public void shouldHaveSameJournalIdAfterRestart() throws Exception {
+        ChangeJournal journal = journal();
+        String journalId = journal.journalId();
+        journal.shutdown();
+        journal.start();
+        assertEquals(journalId, journal.journalId());
     }
 
     protected ChangeJournal journal() {
@@ -209,13 +218,13 @@ public class LocalJournalTest {
     static class TestChangeSet implements ChangeSet {
         private List<Change> changes;
         private DateTime timestamp;
-        private String processKey;
+        private String journalId;
 
         private TestChangeSet( List<Change> changes,
-                               String processKey ) {
+                               String journalId ) {
             this.changes = changes;
             this.timestamp = new JodaDateTime();
-            this.processKey = processKey;
+            this.journalId = journalId;
         }
 
         @Override
@@ -245,7 +254,7 @@ public class LocalJournalTest {
 
         @Override
         public String getProcessKey() {
-            return processKey;
+            return null;
         }
 
         @Override
@@ -264,17 +273,22 @@ public class LocalJournalTest {
         }
 
         @Override
+        public String getJournalId() {
+            return journalId;
+        }
+
+        @Override
         public Iterator<Change> iterator() {
             return changes.iterator();
         }
 
-        static ChangeSet create( String processKey,
+        static ChangeSet create( String journalId,
                                  int changesCount ) {
             List<Change> changes = new ArrayList<Change>(changesCount);
             for (int i = 0; i < changesCount; i++) {
                 changes.add(TestChange.newInstance());
             }
-            return new TestChangeSet(changes, processKey);
+            return new TestChangeSet(changes, journalId);
         }
     }
 

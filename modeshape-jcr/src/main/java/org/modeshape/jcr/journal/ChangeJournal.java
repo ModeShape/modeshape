@@ -62,12 +62,12 @@ public interface ChangeJournal extends ChangeSetListener {
     public Records allRecords( boolean descendingOrder );
 
     /**
-     * Returns the records for a given process.
+     * Returns the records for a given journal.
      *
-     * @param processKey a {@link String} the id of a process; must not be {@link null}
+     * @param journalId a {@link String} the id of a journal; must not be {@link null}
      * @return an {@link Iterable<JournalRecord>}, never {@code null}
      */
-    public Iterable<JournalRecord> recordsFor( String processKey );
+    public Iterable<JournalRecord> recordsFor( String journalId );
 
     /**
      * Returns all records which are older than a given timestamp.
@@ -83,14 +83,14 @@ public interface ChangeJournal extends ChangeSetListener {
                                      boolean descendingOrder );
 
     /**
-     * Returns all the records from all the processes this journal has, since last seeing the given process.
+     * Returns all the records from all the processes this journal has, since last seeing the process with the given journal id.
      *
-     * @param processKey a {@link String} the id of a process for which to compute the delta; must not be {@link null}
+     * @param journalId a {@link String} the id of a journal belonging to a process for which to compute the delta; must not be {@link null}
      * @param descendingOrder flag indicating if the records should be returned in ascending order (oldest to newest) or descending
      * order (newest to oldest)
-     * @return a {@link Records} instance; never {@code null}. This will only contain records for other processes than {@code processKey}
+     * @return a {@link Records} instance; never {@code null}. This will only contain records for other processes than {@code journalId}
      */
-    public Records recordsDelta( String processKey,
+    public Records recordsDelta( String journalId,
                                  boolean descendingOrder );
 
     /**
@@ -105,7 +105,14 @@ public interface ChangeJournal extends ChangeSetListener {
      *
      * @return {@code true} if the reconciliation has completed, {@code false} otherwise.
      */
-    boolean deltaReconciliationCompleted();
+    public boolean deltaReconciliationCompleted();
+
+    /**
+     * Returns the id of this change journal.
+     *
+     * @return a {@link String}, never {@code null}
+     */
+    public String journalId();
 
     /**
      * An {@link Iterable<JournalRecord> extension which provides information about the number of entries the underlying collection

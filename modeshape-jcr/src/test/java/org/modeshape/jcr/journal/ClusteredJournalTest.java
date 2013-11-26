@@ -40,9 +40,6 @@ import junit.framework.Assert;
  */
 public class ClusteredJournalTest extends LocalJournalTest {
 
-    private static final String PID1 = "test-journal-process1";
-    private static final String PID2 = "test-journal-process2";
-
     private ClusteredJournal defaultJournal;
     private List<ClusteringService> clusteringServices = new ArrayList<ClusteringService>();
 
@@ -71,66 +68,43 @@ public class ClusteredJournalTest extends LocalJournalTest {
     }
 
     @Test
-    public void shouldReconcileDeltaInClusterWhenProcessesHaventSeenEachOther() throws Exception {
+    public void shouldReconcileDeltaInCluster() throws Exception {
         //shut down the default journal
         after();
 
         //start a journal
-        ClusteredJournal journal1 = startNewJournal(PID1, "target/clustered_journal_1", "journal-cluster-1");
-        // add 1 record to the 1st journal
-        journal1.addRecords(new JournalRecord(TestChangeSet.create(PID1, 1)));
-
-        //start another journal
-        ClusteredJournal journal2 = startNewJournal(PID2, "target/clustered_journal_2", "journal-cluster-1");
-        // add 1 record to the 2nd journal
-        journal2.addRecords(new JournalRecord(TestChangeSet.create(PID2, 1)));
-
-        // shutdown the second journal
-        journal2.clusteringService().shutdown();
-        journal2.shutdown();
-
-        // add 1 record to the 1st journal
-        journal1.addRecords(new JournalRecord(TestChangeSet.create(PID1, 1)));
-
-        // start the 2nd journal back and verify it received the delta from the 1st journal
-        // in this case the delta should be everything the 1st process had because the 1st process
-        // isn't clustered via the event bus with the 2nd process
-        journal2.clusteringService().start();
-        journal2.start();
-        Thread.sleep(300);
-
-        Assert.assertEquals(3, journal2.allRecords(false).size());
-        journal2.shutdown();
-        journal1.shutdown();
-    }
-
-    @Test
-    public void shouldReconcileDeltaInClusterWhenProcessesHaveSeenEachOther() throws Exception {
-        //shut down the default journal
-        after();
-
-        //start a journal
-        ClusteredJournal journal1 = startNewJournal(PID1, "target/clustered_journal_1", "journal-cluster-1");
+        ClusteredJournal journal1 = startNewJournal("test-journal-node-1", "target/clustered_journal_1", "journal-cluster-1");
         // add 2 record to the 1st journal
-        journal1.addRecords(new JournalRecord(TestChangeSet.create(PID1, 1)));
-        journal1.addRecords(new JournalRecord(TestChangeSet.create(PID2, 1)));
+        journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
+        journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
 
         //start another journal
-        ClusteredJournal journal2 = startNewJournal(PID2, "target/clustered_journal_2", "journal-cluster-1");
-        // add 1 record to the 2nd journal
-        journal2.addRecords(new JournalRecord(TestChangeSet.create(PID2, 1)));
+        ClusteredJournal journal2 = startNewJournal("test-journal-node-2", "target/clustered_journal_2", "journal-cluster-1");
+        Thread.sleep(300);
+        //check that the 2nd journal has received all the changes from the 1st (they haven't seen each other yet)
+        Assert.assertEquals(2, journal2.allRecords(false).size());
+
+        // add 1 record to the 2nd journal and also the 1st, to simulate a new distributed changeset
+        JournalRecord recordJ2 = new JournalRecord(TestChangeSet.create(journal2.journalId(), 1));
+        journal2.addRecords(recordJ2);
+        Assert.assertEquals(3, journal2.allRecords(false).size());
+
+        journal1.addRecords(recordJ2);
+        Assert.assertEquals(3, journal1.allRecords(false).size());
 
         // shutdown the second journal
         journal2.clusteringService().shutdown();
         journal2.shutdown();
 
-        // start the 2nd journal back and verify it received a 0 delta from the 1st journal
-        // in this case the delta should be 0 because the 1st process should not have any "new" changes
+        //while the 2nd process is down, add a new record
+        journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
+
+        // start the 2nd journal back and verify it received a 1 delta from the 1st journal
         journal2.clusteringService().start();
         journal2.start();
         Thread.sleep(300);
 
-        Assert.assertEquals(1, journal2.allRecords(false).size());
+        Assert.assertEquals(4, journal2.allRecords(false).size());
         journal2.shutdown();
         journal1.shutdown();
     }

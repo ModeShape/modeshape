@@ -223,6 +223,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         try {
             // Start the first process completely ...
             repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-journaling-config-1.json");
+            Thread.sleep(300);
 
             // Start the second process completely ...
             repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-journaling-config-2.json");
