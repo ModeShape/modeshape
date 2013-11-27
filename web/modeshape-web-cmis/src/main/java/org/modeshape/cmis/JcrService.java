@@ -30,11 +30,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.jcr.Credentials;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
-
+import javax.servlet.http.HttpServletRequest;
 import org.apache.chemistry.opencmis.commons.data.Acl;
 import org.apache.chemistry.opencmis.commons.data.AllowableActions;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
@@ -54,12 +53,15 @@ import org.apache.chemistry.opencmis.commons.enums.IncludeRelationships;
 import org.apache.chemistry.opencmis.commons.enums.UnfileObject;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisInvalidArgumentException;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisPermissionDeniedException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisRuntimeException;
 import org.apache.chemistry.opencmis.commons.impl.server.AbstractCmisService;
 import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.spi.Holder;
 import org.apache.chemistry.opencmis.jcr.JcrRepository;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.ServletCredentials;
+import org.modeshape.web.jcr.WebLogger;
 
 /**
  * JCR service implementation.
@@ -67,6 +69,8 @@ import org.modeshape.common.util.CheckArg;
  * @author kulikov
  */
 public class JcrService extends AbstractCmisService {
+    private final static org.modeshape.jcr.api.Logger LOGGER = WebLogger.getLogger(JcrService.class);
+
     private final Map<String,JcrRepository> jcrRepositories;
     private final Map<String, Session> sessions = new HashMap<String, Session>();
 
@@ -89,15 +93,11 @@ public class JcrService extends AbstractCmisService {
         this.context = context;
     }
 
-    public CallContext getCallContext() {
-        return context;
-    }
-
     //------------------------------------------< repository service >---
 
     @Override
     public RepositoryInfo getRepositoryInfo(String repositoryId, ExtensionsData extension) {
-        System.out.println("-- getting repository info");
+        LOGGER.debug("-- getting repository info");
         RepositoryInfo info = jcrRepository(repositoryId).getRepositoryInfo(login(repositoryId));
         return new RepositoryInfoLocal(repositoryId, info);
     }
@@ -350,7 +350,7 @@ public class JcrService extends AbstractCmisService {
     //------------------------------------------< protected >---
 
     protected Session login(String repositoryId) {
-        System.out.println("--- login: " + repositoryId);
+        LOGGER.debug("--- login: " + repositoryId);
 
         if (context == null) {
             throw new CmisRuntimeException("No user context!");
@@ -358,17 +358,28 @@ public class JcrService extends AbstractCmisService {
 
         Session session = sessions.get(repositoryId);
         if (session == null) {
+            HttpServletRequest request = (HttpServletRequest)context.get(CallContext.HTTP_SERVLET_REQUEST);
+            if (request != null) {
+                //try via http authentication
+                try {
+                    session = jcrRepository(repositoryId).login(new ServletCredentials(request), workspace(repositoryId));
+                    sessions.put(repositoryId, session);
+                    return session;
+                } catch (CmisPermissionDeniedException e) {
+                    LOGGER.debug(e, "Cannot authenticate using http authentication");
+                }
+            }
+            //http authentication didn't work, try std authentication
             String userName = context.getUsername();
             String password = context.getPassword();
-            Credentials credentials = userName == null
-                ? null
-                : new SimpleCredentials(userName, password == null ? "".toCharArray() : password.toCharArray());
+            Credentials credentials = (userName == null) ?
+                null : new SimpleCredentials(userName, password == null ? "".toCharArray() : password.toCharArray());
 
             try {
                 session = jcrRepository(repositoryId).login(credentials, workspace(repositoryId));
                 sessions.put(repositoryId, session);
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
         return session;
@@ -378,9 +389,7 @@ public class JcrService extends AbstractCmisService {
         String name = name(repositoryId);
         JcrRepository repo = jcrRepositories.get(name);
         if (repo == null) {
-            throw new CmisInvalidArgumentException(
-                    "Repository lookup failed for \"" + repositoryId +
-                            "\" (using name \"" + name + "\")");
+            throw new CmisInvalidArgumentException("Repository lookup failed for \"" + repositoryId + "\" (using name \"" + name + "\")");
         }
         return repo;
     }
