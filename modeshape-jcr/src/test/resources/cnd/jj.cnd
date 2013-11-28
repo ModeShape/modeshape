@@ -1,5 +1,8 @@
 <jj='http://jj.com/1.0'>
 
+[jj:context] orderable
+  + * (jj:content) = jj:content sns
+
 [jj:content] > mix:referenceable orderable
   - * (undefined) multiple
   - * (undefined)
@@ -8,3 +11,4 @@
 [jj:page] > mix:versionable orderable
   + * (jj:page) ignore
   + * (jj:content)
+  + _context (jj:context)
