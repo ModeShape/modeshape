@@ -228,40 +228,43 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream inputStream ) throws BinaryStoreException, SystemFailureException {
+    public BinaryValue storeValue(InputStream inputStream) throws BinaryStoreException, SystemFailureException {
         File tmpFile = null;
         try {
             // using tmp file to determine SHA1
             SecureHash.HashingInputStream hashingStream = SecureHash.createHashingStream(SecureHash.Algorithm.SHA_1, inputStream);
             tmpFile = File.createTempFile("ms-ispn-binstore", "hashing");
             IoUtil.write(hashingStream,
-                         new BufferedOutputStream(new FileOutputStream(tmpFile)),
-                         AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
+                    new BufferedOutputStream(new FileOutputStream(tmpFile)),
+                    AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
             final BinaryKey binaryKey = new BinaryKey(hashingStream.getHash());
+
+            // check if binary data already exists
+            final String metadataKey = metadataKeyFrom(binaryKey);
+            Metadata metadata = metadataCache.get(metadataKey);
+            if (metadata != null) {
+                logger.debug("Binary value already exist.");
+                // in case of an unused entry, this entry is from now used
+                if (metadata.isUnused()) {
+                    metadata.markAsUsed();
+                    putMetadata(metadataKey, metadata);
+                }
+                return new StoredBinaryValue(this, binaryKey, metadata.getLength());
+            }
+            logger.debug("Store binary value into chunks.");
+            // store the chunks based referenced to SHA1-key
+            //upload content outside of transaction to prevent problems with
+            //transaction's timeout during uploading large content
+            final String dataKey = dataKeyFrom(binaryKey);
+            final long lastModified = tmpFile.lastModified();
+            final long fileLength = tmpFile.length();
+            int bufferSize = bestBufferSize(fileLength);
+            ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey, chunkSize);
+            IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
+
             Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
             BinaryValue value;
             try {
-                // check if binary data already exists
-                final String metadataKey = metadataKeyFrom(binaryKey);
-                Metadata metadata = metadataCache.get(metadataKey);
-                if (metadata != null) {
-                    logger.debug("Binary value already exist.");
-                    // in case of an unused entry, this entry is from now used
-                    if (metadata.isUnused()) {
-                        metadata.markAsUsed();
-                        putMetadata(metadataKey, metadata);
-                    }
-                    return new StoredBinaryValue(this, binaryKey, metadata.getLength());
-                }
-
-                logger.debug("Store binary value into chunks.");
-                // store the chunks based referenced to SHA1-key
-                final String dataKey = dataKeyFrom(binaryKey);
-                final long lastModified = tmpFile.lastModified();
-                final long fileLength = tmpFile.length();
-                int bufferSize = bestBufferSize(fileLength);
-                ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey, chunkSize);
-                IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
                 // now store metadata
                 metadata = new Metadata(lastModified, fileLength, chunkOutputStream.chunksCount(), chunkSize);
                 putMetadata(metadataKey, metadata);
@@ -282,17 +285,19 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             try {
                 IoUtil.closeQuietly(inputStream);
             } finally {
-                if (tmpFile != null) tmpFile.delete();
+                if (tmpFile != null) {
+                    tmpFile.delete();
+                }
             }
         }
     }
 
     @Override
-    public InputStream getInputStream( BinaryKey binaryKey ) throws BinaryStoreException {
+    public InputStream getInputStream(BinaryKey binaryKey) throws BinaryStoreException {
         Metadata metadata = metadataCache.get(metadataKeyFrom(binaryKey));
         if (metadata == null) {
             throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(binaryKey,
-                                                                                "Infinispan cache " + metadataCache.getName()));
+                    "Infinispan cache " + metadataCache.getName()));
         }
         if (metadata.getLength() == 0) {
             return new ByteArrayInputStream(new byte[0]);
