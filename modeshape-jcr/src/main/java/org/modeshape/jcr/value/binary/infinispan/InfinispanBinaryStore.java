@@ -236,32 +236,36 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             tmpFile = File.createTempFile("ms-ispn-binstore", "hashing");
             IoUtil.write(hashingStream,
                          new BufferedOutputStream(new FileOutputStream(tmpFile)),
-                         AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
+                    AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
             final BinaryKey binaryKey = new BinaryKey(hashingStream.getHash());
+
+            // check if binary data already exists
+            final String metadataKey = metadataKeyFrom(binaryKey);
+            Metadata metadata = metadataCache.get(metadataKey);
+            if (metadata != null) {
+                logger.debug("Binary value already exist.");
+                // in case of an unused entry, this entry is from now used
+                if (metadata.isUnused()) {
+                    metadata.markAsUsed();
+                    putMetadata(metadataKey, metadata);
+                }
+                return new StoredBinaryValue(this, binaryKey, metadata.getLength());
+            }
+
+            logger.debug("Store binary value into chunks.");
+            // store the chunks based referenced to SHA1-key
+            //we do store outside of transaction to prevent problems with
+            //large content and transaction timeouts
+            final String dataKey = dataKeyFrom(binaryKey);
+            final long lastModified = tmpFile.lastModified();
+            final long fileLength = tmpFile.length();
+            int bufferSize = bestBufferSize(fileLength);
+            ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey, chunkSize);
+            IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
+            
             Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
             BinaryValue value;
             try {
-                // check if binary data already exists
-                final String metadataKey = metadataKeyFrom(binaryKey);
-                Metadata metadata = metadataCache.get(metadataKey);
-                if (metadata != null) {
-                    logger.debug("Binary value already exist.");
-                    // in case of an unused entry, this entry is from now used
-                    if (metadata.isUnused()) {
-                        metadata.markAsUsed();
-                        putMetadata(metadataKey, metadata);
-                    }
-                    return new StoredBinaryValue(this, binaryKey, metadata.getLength());
-                }
-
-                logger.debug("Store binary value into chunks.");
-                // store the chunks based referenced to SHA1-key
-                final String dataKey = dataKeyFrom(binaryKey);
-                final long lastModified = tmpFile.lastModified();
-                final long fileLength = tmpFile.length();
-                int bufferSize = bestBufferSize(fileLength);
-                ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey, chunkSize);
-                IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
                 // now store metadata
                 metadata = new Metadata(lastModified, fileLength, chunkOutputStream.chunksCount(), chunkSize);
                 putMetadata(metadataKey, metadata);
