@@ -960,6 +960,29 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         assertEquals(Arrays.asList("/parent/child", "/parent/child/descendant", "/parent/child/descendant[2]"), allChildrenPaths(parent));
     }
 
+    @Test
+    @FixFor( "MODE-2104" )
+    public void shouldRestoreMovedNode() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node parent = session.getRootNode().addNode("parent", "jj:page");
+        parent.addNode("child", "jj:content");
+        session.save();
+
+        versionManager.checkpoint(parent.getPath());
+
+        parent.addNode("_context", "jj:context");
+        // move to a location under a new parent
+        session.move("/parent/child", "/parent/_context/child");
+        session.save();
+
+        // restore
+        versionManager.restore(parent.getPath(), "1.0", true);
+        //the default OPV is COPY, so we expect the restore to have removed _context
+        assertNoNode("/parent/_context");
+        assertNode("/parent/child");
+    }
+
     private List<String> allChildrenPaths( Node root ) throws Exception {
         List<String> paths = new ArrayList<String>();
         NodeIterator nodeIterator = root.getNodes();

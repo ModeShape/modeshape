@@ -1171,8 +1171,8 @@ final class JcrVersionManager implements VersionManager {
             for (ChildReference sourceChild : source.getChildReferences(cache)) {
                 CachedNode child = cache.getNode(sourceChild);
                 Name primaryTypeName = name(child.getPrimaryType(cache));
-                CachedNode resolvedNode = resolveSourceNode(child, checkinTime, cache);
-                CachedNode match = findMatchFor(resolvedNode, cache);
+                CachedNode resolvedFrozenNode = resolveSourceNode(child, checkinTime, cache);
+                CachedNode match = findMatchFor(resolvedFrozenNode, cache);
 
                 if (match != null) {
                     if (JcrNtLexicon.VERSIONED_CHILD.equals(primaryTypeName)) {
@@ -1188,7 +1188,7 @@ final class JcrVersionManager implements VersionManager {
                     inTargetOnly.remove(match.getKey());
                     presentInBoth.put(child.getKey(), match);
                 } else {
-                    inSourceOnly.put(child, resolvedNode);
+                    inSourceOnly.put(child, resolvedFrozenNode);
                 }
             }
 
@@ -1199,8 +1199,10 @@ final class JcrVersionManager implements VersionManager {
                     case OnParentVersionAction.ABORT:
                     case OnParentVersionAction.VERSION:
                     case OnParentVersionAction.COPY:
+                        // The next call *might* remove some children below "child" which are also present on the source, but
+                        // higher in the hierarchy
                         child.doRemove();
-                        // Otherwise we're going to reuse the exisiting node
+                        // Otherwise we're going to reuse the existing node
                         break;
                     case OnParentVersionAction.COMPUTE:
                         // Technically, this should reinitialize the node per its defaults.
@@ -1231,8 +1233,11 @@ final class JcrVersionManager implements VersionManager {
                 Name sourceFrozenPrimaryType = frozenPrimaryType != null ? name(frozenPrimaryType.getFirstValue()) : null;
                 boolean shouldRestore = !versionedChildrenThatShouldNotBeRestored.contains(targetChild);
                 boolean shouldRestoreMixinsAndUuid = false;
-
-                if (targetChild != null) {
+                //a target child might exist but be in REMOVED state, because its parent has been removed (see above)
+                //this can occur when both the version to restore and the current version contain the same child
+                //but on a different level in the hierarchy
+                boolean targetChildExists = targetChild != null && !cache.isDestroyed(targetChild.getKey());
+                if (targetChildExists) {
                     // Reorder if necessary
                     resolvedChild = resolveSourceNode(sourceChild, checkinTime, cache);
                     resolvedPrimaryTypeName = name(resolvedChild.getPrimaryType(cache));
@@ -1245,8 +1250,13 @@ final class JcrVersionManager implements VersionManager {
                         continue;
                     }
                 } else {
-                    // Pull the resolved node
-                    resolvedChild = inSourceOnly.get(sourceChild);
+                    if (targetChild != null) {
+                        // the target child is present, but appears as removed
+                        resolvedChild = resolveSourceNode(sourceChild, checkinTime, cache);
+                    } else {
+                        // Pull the resolved node
+                        resolvedChild = inSourceOnly.get(sourceChild);
+                    }
                     resolvedPrimaryTypeName = name(resolvedChild.getPrimaryType(cache));
 
                     sourceChildNode = session.node(resolvedChild, (Type)null);
