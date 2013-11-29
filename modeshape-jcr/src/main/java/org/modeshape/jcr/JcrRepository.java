@@ -1042,7 +1042,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         this.cache.setLargeStringLength(binaryStorage.getMinimumBinarySizeInBytes());
                         this.context.getBinaryStore().setMinimumBinarySizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
                     }
-                    if (change.workspacesChanged) {
+                    if (change.predefinedWorkspacesChanged) {
                         // Make sure that all the predefined workspaces are available ...
                         for (String workspaceName : config.getPredefinedWorkspaceNames()) {
                             this.cache.createWorkspace(workspaceName);

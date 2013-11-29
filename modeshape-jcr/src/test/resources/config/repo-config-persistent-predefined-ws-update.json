@@ -1,0 +1,15 @@
+{
+    "name": "Persistent repo predefined workspaces",
+    "storage": {
+        "cacheName": "persistentRepository",
+        "cacheConfiguration": "config/infinispan-persistent.xml"
+    },
+    "workspaces": {
+        "predefined" : ["ws1", "ws2"],
+        "default": "default",
+        "allowCreation": true
+    },
+    "query": {
+        "enabled": false
+    }
+}

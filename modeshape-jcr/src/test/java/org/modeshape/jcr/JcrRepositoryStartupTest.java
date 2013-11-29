@@ -32,8 +32,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import java.io.File;
-import java.util.UUID;
+import java.net.URL;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -45,7 +44,9 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
+import org.infinispan.schematic.document.Editor;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
@@ -72,11 +73,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( {"MODE-1526", "MODE-1512", "MODE-1617"} )
     public void shouldKeepPersistentDataAcrossRestart() throws Exception {
-        File contentFolder = new File("target/persistent_repository/store/persistentRepository");
-
-        final boolean testNodeShouldExist = contentFolder.exists() && contentFolder.isDirectory();
-        final String newWs = "newWs_" + UUID.randomUUID().toString();
-        final String newWs1 = "newWs_" + UUID.randomUUID().toString();
+        FileUtil.delete("target/persistent_repository/");
 
         String repositoryConfigFile = "config/repo-config-persistent-cache.json";
 
@@ -84,16 +81,12 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             @Override
             public Void call() throws Exception {
                 Session session = repository.login();
-                if (testNodeShouldExist) {
-                    assertNotNull(session.getNode("/testNode"));
-                } else {
-                    session.getRootNode().addNode("testNode");
-                    session.save();
-                }
+                session.getRootNode().addNode("testNode");
+                session.save();
 
                 // create 2 new workspaces
-                session.getWorkspace().createWorkspace(newWs);
-                session.getWorkspace().createWorkspace(newWs1);
+                session.getWorkspace().createWorkspace("ws1");
+                session.getWorkspace().createWorkspace("ws2");
                 session.logout();
 
                 return null;
@@ -109,13 +102,13 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 session.logout();
 
                 // check the workspaces were persisted
-                Session newWsSession = repository.login(newWs);
+                Session newWsSession = repository.login("ws1");
                 newWsSession.getRootNode().addNode("newWsTestNode");
                 newWsSession.save();
                 newWsSession.logout();
 
-                Session newWs1Session = repository.login(newWs1);
-                newWs1Session.getWorkspace().deleteWorkspace(newWs1);
+                Session newWs1Session = repository.login("ws2");
+                newWs1Session.getWorkspace().deleteWorkspace("ws2");
                 newWs1Session.logout();
 
                 return null;
@@ -125,13 +118,13 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
-                Session newWsSession = repository.login(newWs);
+                Session newWsSession = repository.login("ws1");
                 assertNotNull(newWsSession.getNode("/newWsTestNode"));
                 newWsSession.logout();
 
                 // check a workspace was deleted
                 try {
-                    repository.login(newWs1);
+                    repository.login("ws2");
                     fail("Workspace was not deleted from the repository");
                 } catch (NoSuchWorkspaceException e) {
                     // expected
@@ -521,5 +514,92 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, "config/repo-config-inmemory-local-environment-no-monitoring.json");
+    }
+
+    @Test
+    @FixFor( "MODE-2100" )
+    public void shouldAddPredefinedWorkspacesOnRestartViaConfigUpdate() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+        URL configUrl = getClass().getClassLoader().getResource("config/repo-config-persistent-predefined-ws.json");
+        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session  = repository.login("default");
+                session.logout();
+                session = repository.login("ws1");
+                session.getWorkspace().createWorkspace("ws2");
+                session.logout();
+                session = repository.login("ws2");
+                session.logout();
+                return null;
+            }
+        }, config);
+
+        final Editor editor = config.edit();
+        EditableArray predefinedWs = editor.getDocument(RepositoryConfiguration.FieldName.WORKSPACES).getArray(RepositoryConfiguration.FieldName.PREDEFINED);
+        predefinedWs.add("ws3");
+        predefinedWs.add("ws4");
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                repository.apply(editor.getChanges());
+
+                JcrSession session  = repository.login("default");
+                session.logout();
+                session = repository.login("ws1");
+                session.logout();
+                session = repository.login("ws2");
+                session.logout();
+                session = repository.login("ws3");
+                session.logout();
+                session = repository.login("ws4");
+                session.logout();
+                return null;
+            }
+        }, config);
+    }
+
+    @Test
+    @FixFor( "MODE-2100" )
+    public void shouldAddPredefinedWorkspacesOnRestartViaConfigChange() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session  = repository.login("ws1");
+                session.getWorkspace().createWorkspace("ws3");
+                session.logout();
+                session = repository.login("ws3");
+                session.logout();
+                return null;
+            }
+        }, "config/repo-config-persistent-predefined-ws.json");
+
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login("default");
+                session.logout();
+                session = repository.login("ws1");
+                session.logout();
+                session = repository.login("ws2");
+                session.logout();
+                session = repository.login("ws3");
+                session.logout();
+                return null;
+            }
+        }, "config/repo-config-persistent-predefined-ws-update.json");
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login("ws2");
+                session.logout();
+                return null;
+            }
+        }, "config/repo-config-persistent-predefined-ws.json");
     }
 }

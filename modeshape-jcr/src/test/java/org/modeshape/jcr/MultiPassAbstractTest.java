@@ -42,6 +42,11 @@ public abstract class MultiPassAbstractTest extends AbstractTransactionalTest {
                                  String repositoryConfigFile ) throws Exception {
         URL configUrl = getClass().getClassLoader().getResource(repositoryConfigFile);
         RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
+        startRunStop(operation, config);
+    }
+
+    protected void startRunStop( RepositoryOperation operation,
+                                 RepositoryConfiguration config ) throws Exception {
         JcrRepository repository = null;
 
         try {
