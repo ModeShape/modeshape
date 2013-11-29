@@ -559,15 +559,27 @@ public class RepositoryCache implements Observable {
             this.accessControlEnabled.set(enabled);
 
             Property prop = translator.getProperty(doc, name("workspaces"));
-            final Set<String> workspaceNames = new HashSet<String>();
+            final Set<String> persistedWorkspaceNames = new HashSet<String>();
             ValueFactory<String> strings = context.getValueFactories().getStringFactory();
+            boolean workspaceNotYetPersisted = false;
             for (Object value : prop) {
                 String workspaceName = strings.create(value);
-                workspaceNames.add(workspaceName);
+                persistedWorkspaceNames.add(workspaceName);
             }
-            this.workspaceNames.addAll(workspaceNames);
-            this.workspaceNames.retainAll(workspaceNames);
-            return;
+
+            //detect if there are any new workspaces in the configuration which need persisting
+            for (String configuredWorkspaceName : workspaceNames) {
+                if (!persistedWorkspaceNames.contains(configuredWorkspaceName)) {
+                    workspaceNotYetPersisted = true;
+                    break;
+                }
+            }
+            this.workspaceNames.addAll(persistedWorkspaceNames);
+            if (!workspaceNotYetPersisted) {
+                // only exit if there isn't a new workspace present. Otherwise, the config added a new workspace so we need
+                //to make sure the meta-information is updated.
+                return;
+            }
         }
 
         try {
