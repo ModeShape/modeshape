@@ -23,7 +23,9 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
@@ -36,11 +38,13 @@ public class PropertyChanged extends AbstractPropertyChange {
 
     private final Property oldProperty;
 
-    public PropertyChanged( NodeKey key,
-                            Path nodePath,
-                            Property newProperty,
-                            Property oldProperty ) {
-        super(key, nodePath, newProperty);
+    protected PropertyChanged( NodeKey key,
+                               Name nodePrimaryType,
+                               Set<Name> nodeMixinTypes,
+                               Path nodePath,
+                               Property newProperty,
+                               Property oldProperty ) {
+        super(key, nodePrimaryType, nodeMixinTypes, nodePath, newProperty);
         this.oldProperty = oldProperty;
     }
 

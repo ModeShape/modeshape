@@ -26,13 +26,14 @@ package org.modeshape.jcr.cache.change;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- * 
+ *  Change representing the addition of a node.
  */
 public class NodeAdded extends AbstractNodeChange {
 
@@ -45,8 +46,10 @@ public class NodeAdded extends AbstractNodeChange {
     public NodeAdded( NodeKey key,
                       NodeKey parentKey,
                       Path path,
+                      Name primaryType,
+                      Set<Name> mixinTypes,
                       Map<Name, Property> properties ) {
-        super(key, path);
+        super(key, path, primaryType, mixinTypes);
         this.parentKey = parentKey;
         assert this.parentKey != null;
         if (properties == null || properties.isEmpty()) {

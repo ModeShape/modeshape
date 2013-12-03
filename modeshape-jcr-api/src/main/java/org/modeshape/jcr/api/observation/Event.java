@@ -1,5 +1,8 @@
 package org.modeshape.jcr.api.observation;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
+
 /**
  * Extension of the {@link javax.jcr.observation.Event} interface allowing custom ModeShape events.
  *
@@ -81,4 +84,26 @@ public interface Event extends javax.jcr.observation.Event {
          */
         int ALL = NODE_SEQUENCED | NODE_SEQUENCING_FAILURE;
     }
+
+    /**
+     * If this <code>Event</code> is of type <code>NODE_ADDED</code>, <code>NODE_REMOVED</code> or <code>NODE_MOVED</code>
+     * then this method returns the declared primary node type of the node at (or formerly at) the
+     * path returned by <code>getPath()</code>. If this <code>Event</code> is of type <code>PROPERTY_ADDED</code>, <code>PROPERTY_REMOVED</code> or <code>PROPERTY_CHANGED</code>
+     * then this method returns the declared primary node type of the parent node of the property affected.
+     *
+     * @return a <code>NodeType</code> object.
+     * @throws RepositoryException if an error occurs.
+     */
+    public NodeType getPrimaryNodeType() throws RepositoryException;
+
+    /**
+     * If this <code>Event</code> is of type <code>NODE_ADDED</code>, <code>NODE_REMOVED</code> or <code>NODE_MOVED</code>
+     * then this method returns the declared mixin node types of the node at (or formerly at) the
+     * path returned by <code>getPath()</code>. If this <code>Event</code> is of type <code>PROPERTY_ADDED</code>, <code>PROPERTY_REMOVED</code> or <code>PROPERTY_CHANGED</code>
+     * then this method returns the declared mixin node types of the parent node of the property affected.
+     *
+     * @return an array of <code>NodeType</code> objects.
+     * @throws RepositoryException if an error occurs.
+     */
+    public NodeType[] getMixinNodeTypes() throws RepositoryException;
 }

@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.api.value.DateTime;
@@ -48,6 +49,12 @@ public class RecordingChanges implements Changes, ChangeSet {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * A map used to make sure that Name instances are reused, i.e. the same name instance is used for the same type.
+     * The main purpose of this is to reduce the serialized footprint of the change set.
+     */
+    private static final transient ConcurrentHashMap<Name, Name> NAME_INSTANCES_MAP = new ConcurrentHashMap<Name, Name>();
+
     private final String processKey;
     private final String repositoryKey;
     private final String workspaceName;
@@ -58,12 +65,14 @@ public class RecordingChanges implements Changes, ChangeSet {
     private String userId;
     private DateTime timestamp;
 
-    public RecordingChanges( String processKey,
-                             String repositoryKey,
-                             String workspaceName ) {
-        this(processKey, repositoryKey, workspaceName, null);
-    }
-
+    /**
+     * Creates a new change set.
+     *
+     * @param processKey the UUID of the process which created the change set; may not be null
+     * @param repositoryKey the key of the repository for which the changes set is created; may not be null.
+     * @param workspaceName the name of the workspace in which the changes occurred; may be null.
+     * @param journalId the ID of the journal where this change set will be saved; may be null
+     */
     public RecordingChanges( String processKey,
                              String repositoryKey,
                              String workspaceName,
@@ -96,93 +105,117 @@ public class RecordingChanges implements Changes, ChangeSet {
     public void nodeCreated( NodeKey key,
                              NodeKey parentKey,
                              Path path,
+                             Name primaryType,
+                             Set<Name> mixinTypes,
                              Map<Name, Property> properties ) {
-        events.add(new NodeAdded(key, parentKey, path, properties));
+        events.add(new NodeAdded(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), properties));
     }
 
     @Override
     public void nodeRemoved( NodeKey key,
                              NodeKey parentKey,
-                             Path path ) {
-        events.add(new NodeRemoved(key, parentKey, path));
+                             Path path,
+                             Name primaryType,
+                             Set<Name> mixinTypes ) {
+        events.add(new NodeRemoved(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes)));
     }
 
     @Override
     public void nodeRenamed( NodeKey key,
                              Path newPath,
-                             Segment oldName ) {
-        events.add(new NodeRenamed(key, newPath, oldName));
+                             Segment oldName,
+                             Name primaryType,
+                             Set<Name> mixinTypes ) {
+        events.add(new NodeRenamed(key, newPath, oldName, filterName(primaryType), filterNameSet(mixinTypes)));
     }
 
     @Override
     public void nodeMoved( NodeKey key,
+                           Name primaryType,
+                           Set<Name> mixinTypes,
                            NodeKey newParent,
                            NodeKey oldParent,
                            Path newPath,
                            Path oldPath ) {
-        events.add(new NodeMoved(key, newParent, oldParent, newPath, oldPath));
+        events.add(new NodeMoved(key, filterName(primaryType), filterNameSet(mixinTypes), newParent, oldParent, newPath, oldPath));
     }
 
     @Override
     public void nodeReordered( NodeKey key,
+                               Name primaryType,
+                               Set<Name> mixinTypes,
                                NodeKey parent,
                                Path newPath,
                                Path oldPath,
                                Path reorderedBeforePath ) {
-        events.add(new NodeReordered(key, parent, newPath, oldPath, reorderedBeforePath));
+        events.add(new NodeReordered(key, filterName(primaryType), filterNameSet(mixinTypes), parent, newPath, oldPath, reorderedBeforePath));
     }
 
     @Override
     public void nodeChanged( NodeKey key,
-                             Path path ) {
-        events.add(new NodeChanged(key, path));
+                             Path path,
+                             Name primaryType,
+                             Set<Name> mixinTypes ) {
+        events.add(new NodeChanged(key, path, filterName(primaryType), filterNameSet(mixinTypes)));
     }
 
     @Override
     public void nodeSequenced( NodeKey sequencedNodeKey,
                                Path sequencedNodePath,
+                               Name sequencedNodePrimaryType,
+                               Set<Name> sequencedNodeMixinTypes,
                                NodeKey outputNodeKey,
                                Path outputNodePath,
                                String outputPath,
                                String userId,
                                String selectedPath,
                                String sequencerName ) {
-        events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, outputNodeKey, outputNodePath, outputPath, userId,
+        events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, filterName(sequencedNodePrimaryType),
+                                     filterNameSet(sequencedNodeMixinTypes), outputNodeKey, outputNodePath, outputPath, userId,
                                      selectedPath, sequencerName));
     }
 
     @Override
     public void nodeSequencingFailure( NodeKey sequencedNodeKey,
                                        Path sequencedNodePath,
+                                       Name sequencedNodePrimaryType,
+                                       Set<Name> sequencedNodeMixinTypes,
                                        String outputPath,
                                        String userId,
                                        String selectedPath,
                                        String sequencerName,
                                        Throwable cause ) {
-        events.add(new NodeSequencingFailure(sequencedNodeKey, sequencedNodePath, outputPath, userId, selectedPath,
+        events.add(new NodeSequencingFailure(sequencedNodeKey, sequencedNodePath, filterName(sequencedNodePrimaryType),
+                                             filterNameSet(sequencedNodeMixinTypes), outputPath, userId, selectedPath,
                                              sequencerName, cause));
     }
 
     @Override
     public void propertyAdded( NodeKey key,
+                               Name nodePrimaryType,
+                               Set<Name> nodeMixinTypes,
                                Path nodePath,
                                Property property ) {
-        events.add(new PropertyAdded(key, nodePath, property));
+        events.add(new PropertyAdded(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property));
     }
 
     @Override
     public void propertyRemoved( NodeKey key,
+                                 Name nodePrimaryType,
+                                 Set<Name> nodeMixinTypes,
                                  Path nodePath,
                                  Property property ) {
-        events.add(new PropertyRemoved(key, nodePath, property));
+        events.add(new PropertyRemoved(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property));
     }
 
     @Override
     public void propertyChanged( NodeKey key,
+                                 Name nodePrimaryType,
+                                 Set<Name> nodeMixinTypes,
                                  Path nodePath,
                                  Property newProperty,
                                  Property oldProperty ) {
-        events.add(new PropertyChanged(key, nodePath, newProperty, oldProperty));
+        events.add(new PropertyChanged(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, newProperty, oldProperty));
     }
 
     @Override
@@ -223,12 +256,24 @@ public class RecordingChanges implements Changes, ChangeSet {
         return nodeKeys;
     }
 
+    /**
+     * Sets the list of node keys involved in this change set.
+     *
+     * @param keys a Set<NodeKey>; may not be null
+     */
     public void setChangedNodes( Set<NodeKey> keys ) {
         if (keys != null) {
             this.nodeKeys = Collections.unmodifiableSet(new HashSet<NodeKey>(keys));
         }
     }
 
+    /**
+     * Marks this change set as frozen (aka. closed). This means it should not accept any more changes.
+     *
+     * @param userId the username from the session which originated the changes; may not be null
+     * @param userData a Map which can contains arbitrary information; may be null
+     * @param timestamp a {@link DateTime} at which the changes set was created.
+     */
     public void freeze( String userId,
                         Map<String, String> userData,
                         DateTime timestamp ) {
@@ -296,11 +341,27 @@ public class RecordingChanges implements Changes, ChangeSet {
         for (Change change : this) {
             sb.append("  ").append(change).append("\n");
         }
-        sb.append("changed " + nodeKeys.size() + " nodes:\n");
+        sb.append("changed ").append(nodeKeys.size()).append(" nodes:\n");
         for (NodeKey key : nodeKeys) {
             sb.append("  ").append(key).append("\n");
         }
 
         return sb.toString();
+    }
+
+    private Name filterName(Name input) {
+        if (input == null) {
+            return null;
+        }
+        Name name = NAME_INSTANCES_MAP.putIfAbsent(input, input);
+        return name != null ? name : input;
+    }
+
+    private Set<Name> filterNameSet(Set<Name> input) {
+        Set<Name> result = new HashSet<Name>(input.size());
+        for (Name name : input) {
+            result.add(filterName(name));
+        }
+        return result;
     }
 }

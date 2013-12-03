@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Item;
@@ -52,6 +53,7 @@ import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.change.RecordingChanges;
+import org.modeshape.jcr.value.Name;
 
 final class SequencingRunner implements Runnable {
 
@@ -336,15 +338,18 @@ final class SequencingRunner implements Runnable {
                                                                   outputSession.getRepository().repositoryKey(),
                                                                   outputSession.workspaceName(),
                                                                   outputSession.getRepository().journalId());
+        Name primaryType = sequencedNode.getPrimaryTypeName();
+        Set<Name> mixinTypes = sequencedNode.getMixinTypeNames();
         for (AbstractJcrNode outputNode : outputNodes) {
+
             sequencingChanges.nodeSequenced(sequencedNode.key(),
                                             sequencedNode.path(),
+                                            primaryType,
+                                            mixinTypes,
                                             outputNode.key(),
                                             outputNode.path(),
                                             work.getOutputPath(),
-                                            work.getUserId(),
-                                            work.getSelectedPath(),
-                                            sequencerName);
+                                            work.getUserId(), work.getSelectedPath(), sequencerName);
         }
 
         repository.changeBus().notify(sequencingChanges);
@@ -356,17 +361,19 @@ final class SequencingRunner implements Runnable {
                                              String sequencerName ) throws RepositoryException {
         assert sequencedNode != null;
         assert inputSession != null;
+        Name primaryType = sequencedNode.getPrimaryTypeName();
+        Set<Name> mixinTypes = sequencedNode.getMixinTypeNames();
         RecordingChanges sequencingChanges = new RecordingChanges(inputSession.context().getProcessId(),
                                                                   inputSession.getRepository().repositoryKey(),
                                                                   inputSession.workspaceName(),
                                                                   inputSession.getRepository().journalId());
         sequencingChanges.nodeSequencingFailure(sequencedNode.key(),
                                                 sequencedNode.path(),
+                                                primaryType,
+                                                mixinTypes,
                                                 work.getOutputPath(),
                                                 work.getUserId(),
-                                                work.getSelectedPath(),
-                                                sequencerName,
-                                                cause);
+                                                work.getSelectedPath(), sequencerName, cause);
         repository.changeBus().notify(sequencingChanges);
     }
 

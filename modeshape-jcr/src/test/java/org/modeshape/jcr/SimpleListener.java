@@ -24,18 +24,26 @@
 package org.modeshape.jcr;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.StringUtil;
 
 /**
  * Test implementation of an {@link javax.jcr.observation.EventListener}
  */
 public class SimpleListener implements EventListener {
+
+    private static final Logger LOGGER = Logger.getLogger(SimpleListener.class);
 
     private String errorMessage;
     protected final List<Event> events;
@@ -43,6 +51,8 @@ public class SimpleListener implements EventListener {
     private int eventsProcessed = 0;
     protected final int eventTypes;
     protected final int expectedEventsCount;
+    protected String expectedNodePrimaryType;
+    protected TreeSet<String> expectedNodeMixinTypes;
     protected final CountDownLatch latch;
 
     public SimpleListener( int expectedEventsCount,
@@ -71,6 +81,16 @@ public class SimpleListener implements EventListener {
         return this.expectedEventsCount;
     }
 
+    public SimpleListener withExpectedNodePrimaryType(String nodePrimaryType) {
+        this.expectedNodePrimaryType = nodePrimaryType;
+        return this;
+    }
+
+    public SimpleListener withExpectedNodeMixinTypes(String... mixinTypes) {
+        this.expectedNodeMixinTypes = new TreeSet<String>(Arrays.asList(mixinTypes));
+        return this;
+    }
+
     @Override
     public void onEvent( EventIterator itr ) {
         // this is called each time a "transaction" is committed. Most times this means after a session.save. But there are
@@ -81,7 +101,7 @@ public class SimpleListener implements EventListener {
             // iterator position must be set initially zero
             if (position == 0) {
                 while (itr.hasNext()) {
-                    Event event = itr.nextEvent();
+                    org.modeshape.jcr.api.observation.Event event = (org.modeshape.jcr.api.observation.Event)itr.nextEvent();
                     // System.out.println(event + " from " + this);
 
                     // check iterator position
@@ -94,6 +114,7 @@ public class SimpleListener implements EventListener {
                         String userData = event.getUserData();
                         this.userData.add(userData);
                     } catch (RepositoryException e) {
+                        LOGGER.debug(e, "Listener exception");
                         this.errorMessage = e.getMessage();
                     }
 
@@ -112,6 +133,36 @@ public class SimpleListener implements EventListener {
                     if ((this.eventTypes & eventType) == 0) {
                         this.errorMessage = "Received a wrong event type of " + eventType;
                         break;
+                    }
+
+                    if (!StringUtil.isBlank(expectedNodePrimaryType)) {
+                        try {
+                            String actualNodeType = event.getPrimaryNodeType().getName();
+                            if (!actualNodeType.equalsIgnoreCase(expectedNodePrimaryType)) {
+                                this.errorMessage = "Incorrect node primary type. Expected " + expectedNodePrimaryType + " but received " + actualNodeType;
+                                break;
+                            }
+                        } catch (RepositoryException e) {
+                            LOGGER.debug(e, "Listener exception");
+                            this.errorMessage = e.getMessage();
+                            break;
+                        }
+                    }
+
+                    if (expectedNodeMixinTypes != null) {
+                        try {
+                            Set<String> actualNodeMixins = new TreeSet<String>();
+                            for (NodeType mixin : event.getMixinNodeTypes()) {
+                                actualNodeMixins.add(mixin.getName());
+                            }
+                            if (!expectedNodeMixinTypes.equals(actualNodeMixins))  {
+                                this.errorMessage = "Incorrect node mixins. Expected " + expectedNodeMixinTypes + " but received " + actualNodeMixins;
+                            }
+                        } catch (RepositoryException e) {
+                            LOGGER.debug(e, "Listener exception");
+                            this.errorMessage = e.getMessage();
+                            break;
+                        }
                     }
                 }
             } else {
