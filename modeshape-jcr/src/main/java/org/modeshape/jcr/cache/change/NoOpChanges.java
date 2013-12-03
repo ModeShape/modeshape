@@ -24,6 +24,7 @@
 package org.modeshape.jcr.cache.change;
 
 import java.util.Map;
+import java.util.Set;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.BinaryKey;
@@ -59,11 +60,15 @@ public final class NoOpChanges implements Changes {
     public void nodeCreated( NodeKey key,
                              NodeKey parentKey,
                              Path path,
+                             Name primaryType,
+                             Set<Name> mixinTypes,
                              Map<Name, Property> properties ) {
     }
 
     @Override
     public void nodeMoved( NodeKey key,
+                           Name primaryType,
+                           Set<Name> mixinTypes,
                            NodeKey newParent,
                            NodeKey oldParent,
                            Path newPath,
@@ -72,35 +77,47 @@ public final class NoOpChanges implements Changes {
 
     @Override
     public void nodeChanged( NodeKey key,
-                             Path path ) {
+                             Path path,
+                             Name primaryType,
+                             Set<Name> mixinTypes ) {
     }
 
     @Override
     public void nodeRemoved( NodeKey key,
                              NodeKey parentKey,
-                             Path path ) {
+                             Path path,
+                             Name primaryType,
+                             Set<Name> mixinTypes ) {
     }
 
     @Override
     public void nodeRenamed( NodeKey key,
                              Path path,
-                             Segment oldName ) {
+                             Segment oldName,
+                             Name primaryType,
+                             Set<Name> mixinTypes ) {
     }
 
     @Override
     public void propertyAdded( NodeKey key,
+                               Name nodePrimaryType,
+                               Set<Name> nodeMixinTypes,
                                Path nodePath,
                                Property property ) {
     }
 
     @Override
     public void propertyRemoved( NodeKey key,
+                                 Name nodePrimaryType,
+                                 Set<Name> nodeMixinTypes,
                                  Path nodePath,
                                  Property property ) {
     }
 
     @Override
     public void propertyChanged( NodeKey key,
+                                 Name nodePrimaryType,
+                                 Set<Name> nodeMixinTypes,
                                  Path nodePath,
                                  Property newProperty,
                                  Property oldProperty ) {
@@ -116,6 +133,8 @@ public final class NoOpChanges implements Changes {
 
     @Override
     public void nodeReordered( NodeKey key,
+                               Name primaryType,
+                               Set<Name> mixinTypes,
                                NodeKey parent,
                                Path newPath,
                                Path oldPath,
@@ -125,6 +144,8 @@ public final class NoOpChanges implements Changes {
     @Override
     public void nodeSequenced( NodeKey sequencedNodeKey,
                                Path sequencedNodePath,
+                               Name sequencedNodePrimaryType,
+                               Set<Name> sequencedNodeMixinTypes,
                                NodeKey outputNodeKey,
                                Path outputNodePath,
                                String outputPath,
@@ -136,6 +157,8 @@ public final class NoOpChanges implements Changes {
     @Override
     public void nodeSequencingFailure( NodeKey sequencedNodeKey,
                                        Path sequencedNodePath,
+                                       Name sequencedNodePrimaryType,
+                                       Set<Name> sequencedNodeMixinTypes,
                                        String outputPath,
                                        String userId,
                                        String selectedPath,

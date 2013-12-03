@@ -23,7 +23,12 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
@@ -34,14 +39,29 @@ public abstract class AbstractNodeChange extends Change {
     private static final long serialVersionUID = 1L;
 
     private final NodeKey key;
+
+    /**
+     * An array which will contain both the primary type (on position 0) and the mixin types (on the following positions)
+     */
+    private final Name[] types;
+
     protected final Path path;
 
     protected AbstractNodeChange( NodeKey key,
-                                  Path path ) {
+                                  Path path,
+                                  Name primaryType,
+                                  Set<Name> mixinTypes ) {
         assert key != null;
         assert path != null;
+
         this.key = key;
         this.path = path;
+        int typesCount = (mixinTypes != null ? mixinTypes.size() : 0) + 1;
+        this.types = new Name[typesCount];
+        this.types[0] = primaryType;
+        if (typesCount > 1) {
+            System.arraycopy(mixinTypes.toArray(new Name[0]), 0, types, 1, mixinTypes.size());
+        }
     }
 
     /**
@@ -58,5 +78,26 @@ public abstract class AbstractNodeChange extends Change {
      */
     public NodeKey getKey() {
         return key;
+    }
+
+    /**
+     * Returns the primary type of the node
+     *
+     * @return a {@link Name} instance; never {@code null}
+     */
+    public Name getPrimaryType() {
+        return types[0];
+    }
+
+    /**
+     * Returns the mixins for this node.
+     *
+     * @return a {@link Set(Name)}; never {@code null} but possibly empty.
+     */
+    public Set<Name> getMixinTypes() {
+        if (types.length == 1) {
+            return Collections.emptySet();
+        }
+        return new HashSet<Name>(Arrays.asList(Arrays.copyOfRange(types, 1, types.length)));
     }
 }

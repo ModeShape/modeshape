@@ -23,11 +23,13 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
- * 
+ * Change representing the moving of a node.
  */
 public class NodeMoved extends AbstractNodeChange {
 
@@ -38,11 +40,13 @@ public class NodeMoved extends AbstractNodeChange {
     private final Path oldPath;
 
     public NodeMoved( NodeKey key,
+                      Name primaryType,
+                      Set<Name> mixinTypes,
                       NodeKey oldParent,
                       NodeKey newParent,
                       Path newPath,
                       Path oldPath ) {
-        super(key, newPath);
+        super(key, newPath, primaryType, mixinTypes);
         this.oldParent = oldParent;
         this.newParent = newParent;
         this.oldPath = oldPath;

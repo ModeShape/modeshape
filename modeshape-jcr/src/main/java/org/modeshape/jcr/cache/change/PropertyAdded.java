@@ -23,7 +23,9 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
@@ -34,10 +36,12 @@ public class PropertyAdded extends AbstractPropertyChange {
 
     private static final long serialVersionUID = 1L;
 
-    public PropertyAdded( NodeKey key,
-                          Path nodePath,
-                          Property property ) {
-        super(key, nodePath, property);
+    protected PropertyAdded( NodeKey key,
+                             Name nodePrimaryType,
+                             Set<Name> nodeMixinTypes,
+                             Path nodePath,
+                             Property property ) {
+        super(key, nodePrimaryType, nodeMixinTypes, nodePath, property);
     }
 
     @Override

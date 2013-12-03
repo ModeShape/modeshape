@@ -75,9 +75,9 @@
                 "parent" : "source1works1-cafebabe-cafe-babe-cafe-babecafebabe",
                 "properties" : {
                     "http://www.jcp.org/jcr/1.0" : {
-                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "primaryType" : { "$name" : "{http://www.jcp.org/jcr/nt/1.0}unstructured" },
                         "mixinTypes" : [
-                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                            { "$name" : "{http://www.jcp.org/jcr/mix/1.0}referenceable" }
                         ],
                         "uuid" : "563e9d8b-dd3d-4479-9c53-363d092a336b"
                     },
@@ -101,9 +101,9 @@
                 "parent" : "source1works1-cafebabe-cafe-babe-cafe-babecafebabe",
                 "properties" : {
                     "http://www.jcp.org/jcr/1.0" : {
-                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "primaryType" : { "$name" : "{http://www.jcp.org/jcr/nt/1.0}unstructured" },
                         "mixinTypes" : [
-                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                            { "$name" : "{http://www.jcp.org/jcr/mix/1.0}referenceable" }
                         ],
                         "uuid" : "2ef58009-28ab-4348-8445-b92b629e97e1"
                     },
@@ -150,9 +150,9 @@
                 "parent" : "source1works1-childB",
                 "properties" : {
                     "http://www.jcp.org/jcr/1.0" : {
-                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "primaryType" : { "$name" : "{http://www.jcp.org/jcr/nt/1.0}unstructured" },
                         "mixinTypes" : [
-                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                            { "$name" : "{http://www.jcp.org/jcr/mix/1.0}referenceable" }
                         ],
                         "uuid" : "d1369fe3-19b7-454a-814e-0f89e91fadef"
                     },
@@ -174,9 +174,9 @@
                 "parent" : "source1works1-childB",
                 "properties" : {
                     "http://www.jcp.org/jcr/1.0" : {
-                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "primaryType" : { "$name" : "{http://www.jcp.org/jcr/nt/1.0}unstructured" },
                         "mixinTypes" : [
-                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                            { "$name" : "{http://www.jcp.org/jcr/mix/1.0}referenceable" }
                         ],
                         "uuid" : "c77ee4e7-66a3-4bc2-a889-0e8bb78706eb"
                     },
@@ -224,9 +224,9 @@
                 "parent" : "source1works2-cafebabe-cafe-babe-cafe-babecafebabe",
                 "properties" : {
                     "http://www.jcp.org/jcr/1.0" : {
-                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "primaryType" : { "$name" : "{http://www.jcp.org/jcr/nt/1.0}unstructured" },
                         "mixinTypes" : [
-                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                            { "$name" : "{http://www.jcp.org/jcr/mix/1.0}referenceable" }
                         ],
                         "uuid" : "78beace9-7a88-40eb-a878-aaba8e1fc8fe"
                     },

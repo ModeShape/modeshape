@@ -23,12 +23,14 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
 /**
- * 
+ * Change representing the renaming of a node.
  */
 public class NodeRenamed extends AbstractNodeChange {
 
@@ -38,8 +40,10 @@ public class NodeRenamed extends AbstractNodeChange {
 
     public NodeRenamed( NodeKey key,
                         Path newPath,
-                        Segment oldSegment ) {
-        super(key, newPath);
+                        Segment oldSegment,
+                        Name primaryType,
+                        Set<Name> mixinTypes ) {
+        super(key, newPath, primaryType, mixinTypes);
         this.oldSegment = oldSegment;
         assert !this.oldSegment.equals(newPath.getLastSegment());
     }

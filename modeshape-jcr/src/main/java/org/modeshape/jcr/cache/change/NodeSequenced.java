@@ -1,6 +1,8 @@
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
@@ -17,13 +19,16 @@ public class NodeSequenced extends AbstractSequencingChange {
 
     public NodeSequenced( NodeKey sequencedNodeKey,
                           Path sequencedNodePath,
+                          Name sequencedNodePrimaryType,
+                          Set<Name> sequencedNodeMixinTypes,
                           NodeKey outputNodeKey,
                           Path outputNodePath,
                           String outputPath,
                           String userId,
                           String selectedPath,
                           String sequencerName ) {
-        super(sequencedNodeKey, sequencedNodePath, outputPath, userId, selectedPath, sequencerName);
+        super(sequencedNodeKey, sequencedNodePath, sequencedNodePrimaryType, sequencedNodeMixinTypes, outputPath, userId,
+              selectedPath, sequencerName);
         assert outputNodeKey != null;
         assert outputNodePath != null;
         this.outputNodeKey = outputNodeKey;

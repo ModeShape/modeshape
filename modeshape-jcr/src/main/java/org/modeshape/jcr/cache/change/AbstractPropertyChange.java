@@ -23,7 +23,9 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
@@ -36,17 +38,12 @@ public abstract class AbstractPropertyChange extends AbstractNodeChange {
 
     protected final Property property;
 
-    /**
-     * Creates a new property change event
-     *
-     * @param key the internal identifier of the node on which on which the change occurred
-     * @param nodePath the path of the node of the node on which on which the change occurred
-     * @param property the {@link Property} instance for which the event is fired
-     */
-    public AbstractPropertyChange( NodeKey key,
-                                   Path nodePath,
-                                   Property property ) {
-        super(key, nodePath);
+    protected AbstractPropertyChange( NodeKey key,
+                                      Name nodePrimaryType,
+                                      Set<Name> nodeMixinTypes,
+                                      Path nodePath,
+                                      Property property ) {
+        super(key, nodePath, nodePrimaryType, nodeMixinTypes);
         this.property = property;
     }
 

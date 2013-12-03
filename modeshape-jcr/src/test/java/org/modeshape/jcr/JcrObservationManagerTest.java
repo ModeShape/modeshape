@@ -23,6 +23,16 @@
  */
 package org.modeshape.jcr;
 
+import static junit.framework.Assert.assertNull;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,6 +46,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Workspace;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
@@ -69,16 +80,7 @@ import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.observation.PropertyEvent;
 import org.modeshape.jcr.api.value.DateTime;
-import static junit.framework.Assert.assertNull;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.modeshape.jcr.value.Name;
 
 /**
  * The {@link JcrObservationManager} test class.
@@ -298,7 +300,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
                                               Event.PROPERTY_ADDED,
                                               getRoot().getPath(),
                                               true,
-                                              new String[] {UUID.randomUUID().toString()},
+                                              new String[] { UUID.randomUUID().toString() },
                                               null,
                                               false);
 
@@ -338,10 +340,12 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldReceiveNodeAddedEventWhenRegisteredToReceiveAllEvents() throws Exception {
         // register listener (add + primary type property)
-        SimpleListener listener = addListener(2, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(4, ALL_EVENTS, null, false, null, null, false)
+                .withExpectedNodePrimaryType(UNSTRUCTURED).withExpectedNodeMixinTypes(REF_MIXIN);
 
         // add node
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
+        addedNode.addMixin(REF_MIXIN);
         save();
 
         // event handling
@@ -362,7 +366,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener (add + 3 property events)
-        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false).withExpectedNodePrimaryType(UNSTRUCTURED);
 
         // remove node
         String path = addedNode.getPath();
@@ -383,10 +387,12 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     public void shouldReceivePropertyAddedEventWhenRegisteredToReceiveAllEvents() throws Exception {
         // setup
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
+        node.addMixin(REF_MIXIN);
         save();
 
         // register listener
-        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false)
+                .withExpectedNodePrimaryType(UNSTRUCTURED).withExpectedNodeMixinTypes(REF_MIXIN);
 
         // add the property
         Property prop1 = node.setProperty("prop1", "prop1 content");
@@ -424,7 +430,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false).withExpectedNodePrimaryType(UNSTRUCTURED);
 
         // change the property
         prop1.setValue("prop1 modified content");
@@ -465,7 +471,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false).withExpectedNodePrimaryType(UNSTRUCTURED);
 
         // remove the property
         prop.remove();
@@ -499,7 +505,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     public void shouldReceivePropertyAddedEventWhenRegisteredToReceiveEventsBasedUponNodeTypeName() throws Exception {
         // register listener
         String[] nodeTypeNames = {"mode:root"};
-        SimpleListener listener = addListener(1, ALL_EVENTS, null, true, null, nodeTypeNames, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, true, null, nodeTypeNames, false)
+                .withExpectedNodePrimaryType("mode:root");
 
         // add the property
         this.session.getRootNode().setProperty("fooProp", new String[]{"foo", "bar"});
@@ -590,9 +597,12 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         String id1 = UUID.randomUUID().toString();
         String id2 = UUID.randomUUID().toString();
         String id3 = UUID.randomUUID().toString();
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node1", id1));
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node2", id2));
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node3", id3));
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node1",
+                                                                                 id1, nodeType(JcrNtLexicon.UNSTRUCTURED), null));
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node2", id2,
+                                                                                 nodeType(JcrNtLexicon.UNSTRUCTURED), null));
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node3", id3,
+                                                                                 nodeType(JcrNtLexicon.UNSTRUCTURED), null));
 
         // create iterator
         EventIterator itr = ((JcrObservationManager)getObservationManager()).new JcrEventIterator(events);
@@ -610,6 +620,11 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         } catch (NoSuchElementException e) {
             // success
         }
+    }
+
+
+    private NodeType nodeType(Name name) {
+        return session.repository().nodeTypeManager().getNodeTypes().getNodeType(name);
     }
 
     // ===========================================================================================================================

@@ -27,6 +27,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RangeIterator;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventJournal;
@@ -285,6 +286,19 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         return session.nodeIdentifier(key);
     }
 
+    final NodeType nodeType(Name name) {
+        return session.repository().nodeTypeManager().getNodeTypes().getNodeType(name);
+    }
+
+    final Set<NodeType> nodeTypes(Set<Name> names) {
+        RepositoryNodeTypeManager.NodeTypes nodeTypes = session.repository().nodeTypeManager().getNodeTypes();
+        Set<NodeType> result = new HashSet<NodeType>(names.size());
+        for (Name name : names) {
+            result.add(nodeTypes.getNodeType(name));
+        }
+        return result;
+    }
+
     /**
      * Remove all of the listeners. This is typically called when the {@link JcrSession#logout() session logs out}.
      */
@@ -533,31 +547,41 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         /**
          * A map of extra information for regarding the event
          */
-        private Map<String, ?> info;
+        private final Map<String, ?> info;
 
         /**
-         * @param bundle the event bundle information
-         * @param type the event type
-         * @param path the node path
-         * @param id the node identifier
+         * The primary type of the node.
          */
+        private final NodeType nodePrimaryType;
+
+        /**
+         * The mixin types of the node.
+         */
+        private final NodeType[] nodeMixinTypes;
+
         JcrEvent( JcrEventBundle bundle,
                   int type,
                   String path,
-                  String id ) {
-            this.type = type;
-            this.path = path;
-            this.bundle = bundle;
-            this.id = id;
+                  String id,
+                  NodeType nodePrimaryType,
+                  Set<NodeType> nodeMixinTypes ) {
+            this(bundle, type, path, id, null, nodePrimaryType, nodeMixinTypes);
         }
 
         JcrEvent( JcrEventBundle bundle,
                   int type,
                   String path,
                   String id,
-                  Map<String, ?> info ) {
-            this(bundle, type, path, id);
+                  Map<String, ?> info,
+                  NodeType nodePrimaryType,
+                  Set<NodeType> nodeMixinTypes ) {
+            this.type = type;
+            this.path = path;
+            this.bundle = bundle;
+            this.id = id;
             this.info = info;
+            this.nodePrimaryType = nodePrimaryType;
+            this.nodeMixinTypes = nodeMixinTypes != null ? nodeMixinTypes.toArray(new NodeType[0]) : new NodeType[0];
         }
 
         @Override
@@ -593,6 +617,16 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         @Override
         public Map<String, ?> getInfo() {
             return info != null ? Collections.unmodifiableMap(info) : Collections.<String, String>emptyMap();
+        }
+
+        @Override
+        public NodeType getPrimaryNodeType() throws RepositoryException {
+            return nodePrimaryType;
+        }
+
+        @Override
+        public NodeType[] getMixinNodeTypes() throws RepositoryException {
+            return nodeMixinTypes;
         }
 
         @Override
@@ -664,8 +698,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                           String path,
                           String id,
                           Object currentValue,
-                          Object oldValue ) {
-            super(bundle, type, path, id);
+                          Object oldValue,
+                          NodeType nodePrimaryType,
+                          Set<NodeType> nodeMixinTypes ) {
+            super(bundle, type, path, id, nodePrimaryType, nodeMixinTypes);
             this.currentValue = currentValue;
             this.oldValue = oldValue;
         }
@@ -674,8 +710,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                           int type,
                           String path,
                           String id,
-                          Object currentValue ) {
-            this(bundle, type, path, id, currentValue, null);
+                          Object currentValue,
+                          NodeType nodePrimaryType,
+                          Set<NodeType> nodeMixinTypes ) {
+            this(bundle, type, path, id, currentValue, null, nodePrimaryType, nodeMixinTypes);
         }
 
         @Override
@@ -856,17 +894,19 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             // process event making sure we have the right event type
             Path newPath = nodeChange.getPath();
             String nodeId = nodeIdentifier(nodeChange.getKey());
+            NodeType primaryType = nodeType(nodeChange.getPrimaryType());
+            Set<NodeType> mixinTypes = nodeTypes(nodeChange.getMixinTypes());
 
             // node moved
             if (nodeChange instanceof NodeMoved) {
                 NodeMoved nodeMovedChange = (NodeMoved)nodeChange;
                 Path oldPath = nodeMovedChange.getOldPath();
-                fireNodeMoved(events, bundle, newPath, nodeId, oldPath);
+                fireNodeMoved(events, bundle, newPath, nodeId, oldPath, primaryType, mixinTypes);
 
             } else if (nodeChange instanceof NodeRenamed) {
                 NodeRenamed nodeRenamedChange = (NodeRenamed)nodeChange;
                 Path oldPath = pathFactory().create(newPath.subpath(0, newPath.size() - 1), nodeRenamedChange.getOldSegment());
-                fireNodeMoved(events, bundle, newPath, nodeId, oldPath);
+                fireNodeMoved(events, bundle, newPath, nodeId, oldPath, primaryType, mixinTypes);
 
             } else if (nodeChange instanceof NodeReordered) {
                 NodeReordered nodeReordered = (NodeReordered)nodeChange;
@@ -884,16 +924,16 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                         info.put(ORDER_SRC_KEY, stringFor(oldPath.getLastSegment()));
                     }
                     events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId,
-                                            Collections.unmodifiableMap(info)));
+                                            Collections.unmodifiableMap(info), primaryType, mixinTypes));
                 }
 
-                fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
+                fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath, primaryType, mixinTypes);
             } else if (nodeChange instanceof NodeAdded && eventListenedFor(Event.NODE_ADDED)) {
                 // create event for added node
-                events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId));
+                events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId, primaryType, mixinTypes));
             } else if (nodeChange instanceof NodeRemoved && eventListenedFor(Event.NODE_REMOVED)) {
                 // create event for removed node
-                events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(newPath), nodeId));
+                events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(newPath), nodeId, primaryType, mixinTypes));
             } else if (nodeChange instanceof PropertyChanged && eventListenedFor(Event.PROPERTY_CHANGED)) {
                 // create event for changed property
                 PropertyChanged propertyChanged = (PropertyChanged)nodeChange;
@@ -909,7 +949,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                                                                                                                        .getFirstValue();
 
                 events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_CHANGED, stringFor(propertyPath), nodeId, currentValue,
-                                                oldValue));
+                                                oldValue, primaryType, mixinTypes));
             } else if (nodeChange instanceof PropertyAdded && eventListenedFor(Event.PROPERTY_ADDED)) {
                 PropertyAdded propertyAdded = (PropertyAdded)nodeChange;
                 Name propertyName = propertyAdded.getProperty().getName();
@@ -919,7 +959,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Object currentValue = isMultiValue ? propertyAdded.getProperty().getValuesAsArray() : propertyAdded.getProperty()
                                                                                                                    .getFirstValue();
 
-                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_ADDED, stringFor(propertyPath), nodeId, currentValue));
+                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_ADDED, stringFor(propertyPath), nodeId, currentValue,
+                                                primaryType, mixinTypes));
 
             } else if (nodeChange instanceof PropertyRemoved && eventListenedFor(Event.PROPERTY_REMOVED)) {
                 // create event for removed property
@@ -931,21 +972,23 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Object currentValue = isMultiValue ? propertyRemoved.getProperty().getValuesAsArray() : propertyRemoved.getProperty()
                                                                                                                        .getFirstValue();
 
-                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId, currentValue));
+                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId, currentValue,
+                                                primaryType, mixinTypes));
             } else if (nodeChange instanceof NodeSequenced && eventListenedFor(NODE_SEQUENCED)) {
                 // create event for the sequenced node
                 NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
 
                 Map<String, Object> infoMap = createEventInfoMapForSequencerChange(sequencedChange);
                 events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getOutputNodePath()),
-                                        nodeIdentifier(sequencedChange.getOutputNodeKey()), infoMap));
+                                        nodeIdentifier(sequencedChange.getOutputNodeKey()), infoMap, primaryType, mixinTypes));
             } else if (nodeChange instanceof NodeSequencingFailure && eventListenedFor(NODE_SEQUENCING_FAILURE)) {
                 // create event for the sequencing failure
                 NodeSequencingFailure sequencingFailure = (NodeSequencingFailure)nodeChange;
 
                 Map<String, Object> infoMap = createEventInfoMapForSequencerChange(sequencingFailure);
                 infoMap.put(SEQUENCING_FAILURE_CAUSE, sequencingFailure.getCause());
-                events.add(new JcrEvent(bundle, NODE_SEQUENCING_FAILURE, stringFor(sequencingFailure.getPath()), nodeId, infoMap));
+                events.add(new JcrEvent(bundle, NODE_SEQUENCING_FAILURE, stringFor(sequencingFailure.getPath()), nodeId, infoMap,
+                                        primaryType, mixinTypes));
             }
         }
 
@@ -966,28 +1009,33 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                                     JcrEventBundle bundle,
                                     Path newPath,
                                     String nodeId,
-                                    Path oldPath ) {
+                                    Path oldPath,
+                                    NodeType nodePrimaryType,
+                                    Set<NodeType> nodeMixinTypes ) {
             if (eventListenedFor(Event.NODE_MOVED)) {
                 Map<String, String> info = new HashMap<String, String>();
                 info.put(MOVE_FROM_KEY, stringFor(oldPath));
                 info.put(MOVE_TO_KEY, stringFor(newPath));
 
-                events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(info)));
+                events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(info),
+                                        nodePrimaryType, nodeMixinTypes));
             }
-            fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
+            fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath, nodePrimaryType, nodeMixinTypes);
         }
 
         private void fireExtraEventsForMove( Collection<Event> events,
                                              JcrEventBundle bundle,
                                              Path newPath,
                                              String nodeId,
-                                             Path oldPath ) {
+                                             Path oldPath,
+                                             NodeType nodePrimaryType,
+                                             Set<NodeType> nodeMixinTypes ) {
             // JCR 1.0 expects these methods <i>in addition to</i> the NODE_MOVED event
             if (eventListenedFor(Event.NODE_ADDED)) {
-                events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId));
+                events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId, nodePrimaryType, nodeMixinTypes));
             }
             if (eventListenedFor(Event.NODE_REMOVED)) {
-                events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(oldPath), nodeId));
+                events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(oldPath), nodeId, nodePrimaryType, nodeMixinTypes));
             }
         }
 

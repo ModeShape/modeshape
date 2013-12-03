@@ -23,19 +23,23 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
- * 
+ * Change representing the modification of a node.
  */
 public class NodeChanged extends AbstractNodeChange {
 
     private static final long serialVersionUID = 1L;
 
     public NodeChanged( NodeKey key,
-                        Path path ) {
-        super(key, path);
+                        Path path,
+                        Name primaryType,
+                        Set<Name> mixinTypes ) {
+        super(key, path, primaryType, mixinTypes);
     }
 
     @Override

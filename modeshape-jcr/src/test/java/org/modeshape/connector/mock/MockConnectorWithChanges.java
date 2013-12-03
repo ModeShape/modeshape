@@ -25,10 +25,12 @@ package org.modeshape.connector.mock;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.federation.spi.ConnectorChangeSet;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
@@ -114,7 +116,7 @@ public class MockConnectorWithChanges extends MockConnector {
             writer.addProperty("prop2", "value2");
             newDocs.add(new DocInfo(writer.document(), newId, newPath));
             DocumentReader reader = readDocument(writer.document());
-            changes.nodeCreated(newId, documentId, newPath, reader.getProperties());
+            changes.nodeCreated(newId, documentId, newPath, JcrNtLexicon.UNSTRUCTURED, Collections.<Name>emptySet(), reader.getProperties());
 
             // And some children ...
             for (int i = 0; i != 3; ++i) {
@@ -130,7 +132,7 @@ public class MockConnectorWithChanges extends MockConnector {
                 writer.addChild(childId, childName);
                 newDocs.add(new DocInfo(childWriter.document(), childId, childPath));
                 DocumentReader childReader = readDocument(writer.document());
-                changes.nodeCreated(childId, newId, childPath, childReader.getProperties());
+                changes.nodeCreated(childId, newId, childPath, JcrNtLexicon.UNSTRUCTURED, Collections.<Name>emptySet(), childReader.getProperties());
             }
 
             for (DocInfo info : newDocs) {
@@ -189,7 +191,7 @@ public class MockConnectorWithChanges extends MockConnector {
 
             // Remove the document at '/doc{n}/generate-out/{name}' ...
             removeDocument(oldId);
-            changes.nodeRemoved(oldId, documentId, oldPath);
+            changes.nodeRemoved(oldId, documentId, oldPath, JcrNtLexicon.UNSTRUCTURED, Collections.<Name>emptySet());
 
             // Remove the child documents, but we don't need to fire events for the subnodes of a deleted node ...
             DocumentReader reader = readDocument(oldDoc);

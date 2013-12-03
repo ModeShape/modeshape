@@ -24,7 +24,9 @@
 
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
@@ -43,11 +45,13 @@ public abstract class AbstractSequencingChange extends AbstractNodeChange {
 
     protected AbstractSequencingChange( NodeKey sequencedNodeKey,
                                         Path sequencedNodePath,
+                                        Name sequencedNodePrimaryType,
+                                        Set<Name> sequencedNodeMixinTypes,
                                         String outputPath,
                                         String userId,
                                         String selectedPath,
                                         String sequencerName ) {
-        super(sequencedNodeKey, sequencedNodePath);
+        super(sequencedNodeKey, sequencedNodePath, sequencedNodePrimaryType, sequencedNodeMixinTypes);
         assert outputPath != null;
         assert userId != null;
         assert selectedPath != null;

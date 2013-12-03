@@ -1,6 +1,8 @@
 package org.modeshape.jcr.cache.change;
 
+import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
@@ -17,11 +19,13 @@ public class NodeReordered extends AbstractNodeChange {
     private final Path reorderedBeforePath;
 
     public NodeReordered( NodeKey key,
+                          Name primaryType,
+                          Set<Name> mixinTypes,
                           NodeKey parent,
                           Path newPath,
                           Path oldPath,
                           Path reorderedBeforePath ) {
-        super(key, newPath);
+        super(key, newPath, primaryType, mixinTypes);
         this.oldPath = oldPath;
         this.parent = parent;
         this.reorderedBeforePath = reorderedBeforePath;
