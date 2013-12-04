@@ -983,6 +983,31 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         assertNode("/parent/child");
     }
 
+    @Test
+    @FixFor( "MODE-2096" )
+    public void shouldRestoreToMultipleVersionsWhenEachVersionHasDifferentChild() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        // Add a page node with one child then make a version 1.0
+        Node node = session.getRootNode().addNode("page", "jj:page");
+        node.addNode("child1", "jj:content");
+        session.save();
+        versionManager.checkpoint(node.getPath());
+
+        // add second child then make version 1.1
+        node.addNode("child2", "jj:content");
+        session.save();
+        versionManager.checkpoint(node.getPath());
+        // restore to 1.0
+        versionManager.restore(node.getPath(), "1.0", true);
+        assertNode("/page/child1");
+        assertNoNode("/page/child2");
+        // then restore to 1.1, it will throw the NullPointException
+        versionManager.restore(node.getPath(), "1.1", true);
+        assertNode("/page/child1");
+        assertNode("/page/child2");
+    }
+
     private List<String> allChildrenPaths( Node root ) throws Exception {
         List<String> paths = new ArrayList<String>();
         NodeIterator nodeIterator = root.getNodes();
