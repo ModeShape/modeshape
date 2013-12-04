@@ -1125,13 +1125,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                             Path nodeNewPath = sessionPaths.getPath(insertedNode);
                             if (insertedNodePersistent != null) {
                                 Path nodeOldPath = workspacePaths.getPath(insertedNodePersistent);
+                                Path insertedBeforePath = null;
                                 CachedNode insertedBeforeNode = workspaceCache.getNode(insertion.insertedBefore());
-                                Path insertedBeforePath = workspacePaths.getPath(insertedBeforeNode);
-                                boolean isSnsReordering = nodeOldPath.getLastSegment()
-                                                                     .getName()
-                                                                     .equals(insertedBeforePath.getLastSegment().getName());
-                                if (isSnsReordering) {
-                                    nodeNewPath =  insertedBeforePath;
+                                if (insertedBeforeNode != null) {
+                                    insertedBeforePath = workspacePaths.getPath(insertedBeforeNode);
+                                    boolean isSnsReordering = nodeOldPath.getLastSegment()
+                                                                         .getName()
+                                                                         .equals(insertedBeforePath.getLastSegment().getName());
+                                    if (isSnsReordering) {
+                                        nodeNewPath =  insertedBeforePath;
+                                    }
                                 }
                                 changes.nodeReordered(insertedRef.getKey(),
                                                       node.getKey(),
