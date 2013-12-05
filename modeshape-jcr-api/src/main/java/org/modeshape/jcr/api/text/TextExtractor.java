@@ -25,6 +25,8 @@ package org.modeshape.jcr.api.text;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.Logger;
@@ -34,12 +36,25 @@ import org.modeshape.jcr.api.Logger;
  */
 public abstract class TextExtractor {
 
+    /**
+     * A logger instance
+     */
     private Logger logger;
 
     /**
-     * The name of this text extraction, which can be configured for monitoring purposes
+     * The name of this text extractor, which can be configured for monitoring purposes; set via reflection.
      */
     private String name;
+
+    /**
+     * the MIME types that are explicitly requested to be excluded; set via reflection.
+     */
+    private Set<String> excludedMimeTypes = new HashSet<String>();
+
+    /**
+     * the MIME types that are explicitly requested to be included; set via reflection.
+     */
+    private Set<String> includedMimeTypes = new HashSet<String>();
 
     /**
      * Determine if this extractor is capable of processing content with the supplied MIME type.
@@ -85,6 +100,11 @@ public abstract class TextExtractor {
         }
     }
 
+    /**
+     * Sets a logger instance.
+     *
+     * @param logger a {@link Logger}, never {@code null}
+     */
     public final void setLogger( Logger logger ) {
         if (logger == null) {
             throw new IllegalArgumentException("Logger cannot be null");
@@ -92,14 +112,32 @@ public abstract class TextExtractor {
         this.logger = logger;
     }
 
-    protected final Logger getLogger() {
+    protected final Logger logger() {
         return logger;
     }
 
+    protected Set<String> getExcludedMimeTypes() {
+        return excludedMimeTypes;
+    }
+
+    protected Set<String> getIncludedMimeTypes() {
+        return includedMimeTypes;
+    }
+
+    /**
+     * Returns the text extractor name.
+     *
+     * @return a {@link String}, possibly {@code null}
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the text extractor name.
+     *
+     * @param  name a {@link String}, never {@code null}
+     */
     public void setName( String name ) {
         this.name = name;
     }
@@ -118,6 +156,15 @@ public abstract class TextExtractor {
      */
     public interface Context {
 
+        /**
+         * Determines the mime-type of the given binary value .
+         *
+         * @param name a symbolic name of the binary value (e.g. the name of a file); may be {@code null}
+         * @param binaryValue a {@link Binary} instance which represents the binary data; may not be {@code null}
+         * @return either a valid mime-type or {@code null} if it's not possible to determine the mimetype.
+         * @throws RepositoryException if there are any problems accessing the binary value from the repository.
+         * @throws IOException if there are any problems reading bytes from the binary value.
+         */
         String mimeTypeOf( String name,
                            Binary binaryValue ) throws RepositoryException, IOException;
 

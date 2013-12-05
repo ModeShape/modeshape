@@ -110,10 +110,28 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
         uploadFile("image_file.jpg");
     }
 
+    @Test
+    @FixFor( "MODE-2107" )
+    public void shouldSupportMimeTypeInclusionsAndExclusions() throws Exception {
+        startRepositoryWithConfiguration(getResource("repo-config-exclusions-inclusions.json"));
+
+        uploadFile("text-file.txt");
+        assertExtractedTextHasNotBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick Red Fox Jumps Over the Lazy Brown Dog')");
+
+        uploadFile("modeshape_gs.pdf");
+        assertExtractedTextHasBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
+    }
+
     private void assertExtractedTextHasBeenIndexed( String validationQuery ) throws RepositoryException {
         Query query = jcrSession().getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
         QueryResult result = query.execute();
         assertEquals("Node with text content not found", 1, result.getNodes().getSize());
+    }
+
+    private void assertExtractedTextHasNotBeenIndexed( String validationQuery ) throws RepositoryException {
+        Query query = jcrSession().getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
+        QueryResult result = query.execute();
+        assertEquals("Node with text content was found", 0, result.getNodes().getSize());
     }
 
     private void uploadFile( String filepath ) throws RepositoryException, IOException, InterruptedException {

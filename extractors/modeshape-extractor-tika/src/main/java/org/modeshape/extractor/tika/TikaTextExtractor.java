@@ -25,7 +25,6 @@ package org.modeshape.extractor.tika;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -86,16 +85,20 @@ public class TikaTextExtractor extends TextExtractor {
      * <li>video/*</li>
      * </ul>
      */
-    public static final Set<MediaType> DEFAULT_EXCLUDED_MIME_TYPES = Collections.unmodifiableSet(
+    protected static final Set<MediaType> DEFAULT_EXCLUDED_MIME_TYPES = Collections.unmodifiableSet(
             MediaType.application("x-archive"), MediaType.application("x-bzip"), MediaType.application("x-bzip2"),
             MediaType.application("x-cpio"), MediaType.application("x-gtar"), MediaType.application("x-gzip"),
             MediaType.application("x-tar"), MediaType.application("zip"), MediaType.application("vnd.teiid.vdb"),
             MediaType.image("*"), MediaType.audio("*"), MediaType.video("*"));
 
-    private Set<MediaType> excludedMimeTypes = new HashSet<MediaType>();
-    private Set<String> includedMimeTypes = new HashSet<String>();
-    private Set<String> supportedMediaTypes = new HashSet<String>();
+    private final Set<MediaType> excludedMediaTypes = new HashSet<MediaType>();
+    private final Set<MediaType> includedMediaTypes = new HashSet<MediaType>();
+    private final Set<MediaType> parserSupportedMediaTypes = new HashSet<MediaType>();
 
+    /**
+     * The write limit for the Tika parser, representing the maximum number of characters that should be extracted by the
+     * TIKA parser; set via reflection
+     */
     private Integer writeLimit;
 
     private final Lock initLock = new ReentrantLock();
@@ -105,18 +108,18 @@ public class TikaTextExtractor extends TextExtractor {
      * No-arg constructor is required because this is instantiated by reflection.
      */
     public TikaTextExtractor() {
-        this.excludedMimeTypes.addAll(DEFAULT_EXCLUDED_MIME_TYPES);
+        this.excludedMediaTypes.addAll(DEFAULT_EXCLUDED_MIME_TYPES);
     }
 
     @Override
     public boolean supportsMimeType( String mimeType ) {
         MediaType mediaType = MediaType.parse(mimeType);
         if (mediaType == null) {
-            getLogger().debug("Invalid mime-type:" + mimeType);
+            logger().debug("Invalid mime-type: {0}", mimeType);
             return false;
         }
-
-        for (MediaType excludedMediaType : excludedMimeTypes) {
+        initialize();
+        for (MediaType excludedMediaType : excludedMediaTypes) {
             if (excludedMediaType.equals(mediaType)) {
                 return false;
             }
@@ -124,9 +127,8 @@ public class TikaTextExtractor extends TextExtractor {
                 return false;
             }
         }
-        initialize();
-        return includedMimeTypes.isEmpty() ? supportedMediaTypes.contains(mimeType) : supportedMediaTypes.contains(mimeType)
-                                                                                      && includedMimeTypes.contains(mimeType);
+        return includedMediaTypes.isEmpty() ? parserSupportedMediaTypes.contains(mediaType)
+                                            : parserSupportedMediaTypes.contains(mediaType) && includedMediaTypes.contains(mediaType);
     }
 
     @Override
@@ -197,20 +199,21 @@ public class TikaTextExtractor extends TextExtractor {
      */
     protected DefaultParser initialize() {
         if (parser == null) {
+            initLock.lock();
             try {
-                initLock.lock();
                 if (parser == null) {
                     parser = new DefaultParser(this.getClass().getClassLoader());
                 }
-                LOGGER.debug("Initializing TikaTextExtractor");
+                LOGGER.debug("Initializing Tika Text Extractor");
                 Map<MediaType, Parser> parsers = parser.getParsers();
-                LOGGER.debug("TikaTextExtractor found " + parsers.size() + " parsers");
+                LOGGER.debug("Tika parsers found: {0}",parsers.size());
                 for (MediaType mediaType : parsers.keySet()) {
-                    // Don't use the toString() method, as it may append properties ...
-                    String mimeType = mediaType.getType() + "/" + mediaType.getSubtype();
-                    supportedMediaTypes.add(mimeType);
-                    LOGGER.debug("TikaTextExtractor will support '" + mimeType + "'");
+                    parserSupportedMediaTypes.add(mediaType);
+                    LOGGER.debug("Tika Text Extractor will support the {0} media-type",mediaType);
                 }
+                convertStringMimeTypesToMediaTypes(getExcludedMimeTypes(), excludedMediaTypes);
+                convertStringMimeTypesToMediaTypes(getIncludedMimeTypes(), includedMediaTypes);
+                LOGGER.debug("Initialized {0}", this);
             } finally {
                 initLock.unlock();
             }
@@ -218,106 +221,23 @@ public class TikaTextExtractor extends TextExtractor {
         return parser;
     }
 
-    /**
-     * Get the MIME types that are explicitly requested to be included. This list may not correspond to the MIME types that can be
-     * handled via the available Parser implementations.
-     * 
-     * @return the set of MIME types that are to be included; never null
-     */
-    public Set<String> getIncludedMimeTypes() {
-        return Collections.unmodifiableSet(includedMimeTypes);
-    }
-
-    /**
-     * Set the MIME types that should be included. This method clears all previously-set excluded MIME types.
-     * 
-     * @param includedMimeTypes the whitespace-delimited or comma-separated list of MIME types that are to be included
-     */
-    public void setIncludedMimeTypes( String includedMimeTypes ) {
-        if (includedMimeTypes == null || includedMimeTypes.length() == 0) return;
-        this.includedMimeTypes.clear();
-        for (String mimeType : includedMimeTypes.split("[,\\s]")) {
-            includeMimeType(mimeType);
-        }
-    }
-
-    /**
-     * Sets the mime-types supported by this extractor.
-     *
-     * @param includedMimeTypes a collection of mime-types.
-     */
-    public void setIncludedMimeTypes( Collection<String> includedMimeTypes ) {
-        if (includedMimeTypes != null) {
-            this.includedMimeTypes = new HashSet<String>(includedMimeTypes);
-        }
-    }
-
-    /**
-     * Include the MIME type from extraction.
-     * 
-     * @param mimeType MIME type that should be included
-     */
-    private void includeMimeType( String mimeType ) {
-        if (mimeType == null) return;
-        mimeType = mimeType.trim();
-        if (mimeType.length() != 0) includedMimeTypes.add(mimeType);
-    }
-
-    /**
-     * Set the MIME types that should be excluded.
-     * 
-     * @return the set of MIME types that are to be excluded; never null
-     */
-    public Set<String> getExcludedMimeTypes() {
-        Set<String> result = new HashSet<String>();
-        for (MediaType mediaType : this.excludedMimeTypes) {
-            result.add(mediaType.toString());
-        }
-        return Collections.unmodifiableSet(result);
-    }
-
-    /**
-     * Set the MIME types that should be excluded. This method clears all previously-set excluded MIME types.
-     * 
-     * @param excludedMimeTypes the whitespace-delimited or comma-separated list of MIME types that are to be excluded
-     */
-    public void setExcludedMimeTypes( String excludedMimeTypes ) {
-        if (excludedMimeTypes == null || excludedMimeTypes.length() == 0) return;
-        this.excludedMimeTypes.clear();
-        for (String mimeType : excludedMimeTypes.split("[,\\s]")) {
-            excludeMimeType(mimeType);
-        }
-    }
-
-
-    /**
-     * Sets the mime-types ignored by this extractor
-     *
-     * @param excludedMimeTypes a collection of mime-types.
-     */
-    public void setExcludedMimeTypes( Collection<String> excludedMimeTypes ) {
-        if (excludedMimeTypes != null) {
-            this.excludedMimeTypes.clear();
-            for (String excludedMimeType : excludedMimeTypes) {
-                excludeMimeType(excludedMimeType);
+    private void convertStringMimeTypesToMediaTypes(Set<String> mimeTypes, Set<MediaType> mediaTypes) {
+        for (String mimeTypeEntry : mimeTypes) {
+            //allow each mime type entry to be an array in itself
+            String[] multipleMimeTypes = mimeTypeEntry.split("[,\\s]");
+            for (String mimeType : multipleMimeTypes) {
+                if (StringUtil.isBlank(mimeType)) {
+                    continue;
+                }
+                MediaType mediaType = MediaType.parse(mimeType.trim());
+                if (mediaType == null) {
+                    logger().debug("Invalid media type: {0}", mimeType);
+                    continue;
+                }
+                mediaTypes.add(mediaType);
             }
         }
     }
-
-    /**
-     * Exclude the MIME type from extraction.
-     * 
-     * @param mimeType MIME type that should be excluded
-     */
-    private void excludeMimeType( String mimeType ) {
-        MediaType mediaType = MediaType.parse(mimeType);
-        if (mediaType == null) {
-            getLogger().debug("Invalid media type: {0}", mimeType);
-            return;
-        }
-        excludedMimeTypes.add(mediaType);
-    }
-
 
     /**
      * Sets the write limit for the Tika parser, representing the maximum number of characters that should be extracted by the
@@ -326,7 +246,30 @@ public class TikaTextExtractor extends TextExtractor {
      * @param writeLimit an {@link Integer} which represents the write limit; may be null
      * @see BodyContentHandler#BodyContentHandler(int)
      */
-    public void setWriteLimit( Integer writeLimit ) {
+    protected void setWriteLimit( Integer writeLimit ) {
         this.writeLimit = writeLimit;
+    }
+
+    protected Set<MediaType> getExcludedMediaTypes() {
+        return excludedMediaTypes;
+    }
+
+    protected Set<MediaType> getIncludedMediaTypes() {
+        return includedMediaTypes;
+    }
+
+    protected Set<MediaType> getParserSupportedMediaTypes() {
+        return parserSupportedMediaTypes;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("TikaTextExtractor{");
+        sb.append("excludedMediaTypes=").append(excludedMediaTypes);
+        sb.append(", includedMediaTypes=").append(includedMediaTypes);
+        sb.append(", parserSupportedMediaTypes=").append(parserSupportedMediaTypes);
+        sb.append(", writeLimit=").append(writeLimit != null ? writeLimit : "unlimited");
+        sb.append('}');
+        return sb.toString();
     }
 }

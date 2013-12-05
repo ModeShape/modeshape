@@ -32,6 +32,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
+import java.util.TreeSet;
+import org.apache.tika.mime.MediaType;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -44,6 +47,7 @@ import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.text.TextExtractorOutput;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -63,17 +67,20 @@ public class TikaTextExtractorTest {
     private LinkedList<String> extracted = null;
     private LinkedList<String> expected = null;
 
-
     @Before
     public void beforeEach() {
         extractor = new TikaTextExtractor();
+        extractor.initialize();
         extracted = new LinkedList<String>();
         expected = new LinkedList<String>();
     }
 
     @Test
-    public void shouldIncludedNoMimeTypesByDefault() {
-        assertThat(extractor.getIncludedMimeTypes().isEmpty(), is(true));
+    public void shouldHavePredefinedMimeTypesByDefault() {
+        assertThat(extractor.getIncludedMediaTypes().isEmpty(), is(true));
+        Assert.assertEquals(new TreeSet<MediaType>(TikaTextExtractor.DEFAULT_EXCLUDED_MIME_TYPES),
+                            new TreeSet<MediaType>(extractor.getExcludedMediaTypes()));
+        assertFalse(extractor.getParserSupportedMediaTypes().isEmpty());
     }
 
     @Test
