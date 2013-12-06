@@ -1226,32 +1226,39 @@ final class JcrVersionManager implements VersionManager {
                 CachedNode resolvedChild = null;
                 Name resolvedPrimaryTypeName = null;
 
-                AbstractJcrNode sourceChildNode;
-                AbstractJcrNode targetChildNode;
+                AbstractJcrNode sourceChildNode = null;
+                AbstractJcrNode targetChildNode = null;
 
                 Property frozenPrimaryType = sourceChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache);
                 Name sourceFrozenPrimaryType = frozenPrimaryType != null ? name(frozenPrimaryType.getFirstValue()) : null;
+                boolean isShared = ModeShapeLexicon.SHARE.equals(sourceFrozenPrimaryType);
                 boolean shouldRestore = !versionedChildrenThatShouldNotBeRestored.contains(targetChild);
                 boolean shouldRestoreMixinsAndUuid = false;
-                //a target child might exist but be in REMOVED state, because its parent has been removed (see above)
-                //this can occur when both the version to restore and the current version contain the same child
-                //but on a different level in the hierarchy
-                boolean targetChildExists = targetChild != null && !cache.isDestroyed(targetChild.getKey());
-                if (targetChildExists) {
-                    // Reorder if necessary
+
+                Path targetPath = target.getPath(cache);
+                boolean restoreTargetUnderSamePath = targetChild != null && targetChild.getPath(cache).getParent().isSameAs(targetPath);
+
+                if (targetChild != null) {
                     resolvedChild = resolveSourceNode(sourceChild, checkinTime, cache);
                     resolvedPrimaryTypeName = name(resolvedChild.getPrimaryType(cache));
                     sourceChildNode = session.node(resolvedChild, (Type)null);
                     targetChildNode = session.node(targetChild, (Type)null);
-                    boolean isShared = ModeShapeLexicon.SHARE.equals(sourceFrozenPrimaryType);
-                    if (isShared && !targetChildNode.path().getParent().isSameAs(target.getPath(cache))) {
+
+                    if (isShared && !restoreTargetUnderSamePath) {
                         // This is a shared node that already exists in the workspace ...
                         restoredSharedChild(target, sourceChild, targetChildNode);
                         continue;
                     }
-                } else {
+                }
+
+                if (!restoreTargetUnderSamePath) {
                     if (targetChild != null) {
-                        // the target child is present, but appears as removed
+                        if (!cache.isDestroyed(targetChild.getKey())) {
+                            //the target child exists but is under a different path in the source than the target
+                            //so we need to remove it from its parent in the target to avoid the case when later on, it might be destroyed
+                            MutableCachedNode targetChildParent = cache.mutable(targetChild.getParentKey(cache));
+                            targetChildParent.removeChild(cache, targetChild.getKey());
+                        }
                         resolvedChild = resolveSourceNode(sourceChild, checkinTime, cache);
                     } else {
                         // Pull the resolved node
@@ -1261,8 +1268,6 @@ final class JcrVersionManager implements VersionManager {
 
                     sourceChildNode = session.node(resolvedChild, (Type)null);
                     shouldRestoreMixinsAndUuid = true;
-
-                    boolean isShared = ModeShapeLexicon.SHARE.equals(sourceFrozenPrimaryType);
 
                     Name primaryTypeName = null;
                     NodeKey desiredKey = null;
