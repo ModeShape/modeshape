@@ -1008,6 +1008,54 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         assertNode("/page/child2");
     }
 
+    @Test
+    @FixFor( "MODE-2112" )
+    public void shouldRestoreMovedNode2() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node parent = session.getRootNode().addNode("parent", "jj:page");
+        parent.addNode("_context", "jj:context");
+        parent.addNode("child", "jj:content");
+        session.save();
+
+        versionManager.checkpoint(parent.getPath());
+
+        // move to a location under a new parent
+        session.move("/parent/child", "/parent/_context/child");
+        session.save();
+
+        // restore
+        versionManager.restore(parent.getPath(), "1.0", true);
+        assertNoNode("/parent/_context/child");
+        assertNode("/parent/child");
+    }
+
+    @Test
+    @FixFor( "MODE-2112" )
+    public void shouldRestoreMovedNode3() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node parent = session.getRootNode().addNode("parent", "jj:page");
+        parent.addNode("child1", "jj:content");
+        parent.addNode("_context", "jj:context");
+        parent.addNode("child2", "jj:content");
+        session.save();
+
+        versionManager.checkpoint(parent.getPath());
+
+        // move to a location under a new parent
+        session.move("/parent/child1", "/parent/_context/child1");
+        session.save();
+
+        // restore
+        versionManager.restore(parent.getPath(), "1.0", true);
+        assertNoNode("/parent/_context/child1");
+        assertNoNode("/parent/_context/child2");
+        assertNode("/parent/child1");
+        assertNode("/parent/child2");
+        assertNode("/parent/_context");
+    }
+
     private List<String> allChildrenPaths( Node root ) throws Exception {
         List<String> paths = new ArrayList<String>();
         NodeIterator nodeIterator = root.getNodes();
