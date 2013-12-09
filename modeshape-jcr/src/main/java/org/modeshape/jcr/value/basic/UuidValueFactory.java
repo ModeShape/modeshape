@@ -240,7 +240,7 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
     }
 
     @Override
-    protected UUID[] createEmptyArray( int length ) {
+    public UUID[] createEmptyArray( int length ) {
         return new UUID[length];
     }
 }

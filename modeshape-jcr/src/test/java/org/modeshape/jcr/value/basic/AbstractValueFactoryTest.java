@@ -172,11 +172,8 @@ public class AbstractValueFactoryTest {
             return null;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
-        protected String[] createEmptyArray( int length ) {
+        public String[] createEmptyArray( int length ) {
             return new String[length];
         }
     }

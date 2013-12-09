@@ -23,13 +23,19 @@
  */
 package org.modeshape.jcr;
 
+import java.math.BigDecimal;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.UUID;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFormatException;
@@ -42,19 +48,26 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
+import org.modeshape.jcr.value.basic.UuidReference;
 
 /**
  * An abstract {@link Property JCR Property} implementation.
  */
 @NotThreadSafe
-abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, Comparable<Property> {
+abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modeshape.jcr.api.Property, Comparable<org.modeshape.jcr.api.Property> {
 
     @Immutable
     private final static class CachedDefinition {
@@ -350,12 +363,42 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     }
 
     @Override
-    public int compareTo( Property that ) {
+    public int compareTo( org.modeshape.jcr.api.Property that ) {
         if (that == this) return 0;
         try {
             return this.getName().compareTo(that.getName());
         } catch (RepositoryException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    protected Node valueToNode( Object value ) throws RepositoryException {
+        ValueFactories factories = context().getValueFactories();
+        try {
+            if (value instanceof Reference) {
+                NodeKey key = null;
+                if (value instanceof NodeKeyReference) {
+                    // REFERENCE and WEAKREFERENCE values are node keys ...
+                    key = ((NodeKeyReference)value).getNodeKey();
+                } else if (value instanceof UuidReference) {
+                    // REFERENCE and WEAKREFERENCE values should be node keys, so create a key from the
+                    // supplied UUID and this node's key ...
+                    UUID uuid = ((UuidReference)value).getUuid();
+                    key = getParent().key().withId(uuid.toString());
+                } else {
+                    assert false : "Unknown type of Reference value";
+                }
+                return session().node(key, null);
+            }
+            // STRING, PATH and NAME values will be convertable to a Path object ...
+            Path path = factories.getPathFactory().create(value);
+            return path.isAbsolute() ? session().node(path) : session().node(getParent().node(), path);
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
+        catch (PathNotFoundException pathNotFound) {
+            //expected by the TCK
+            throw new ItemNotFoundException(pathNotFound.getMessage(), pathNotFound);
         }
     }
 
@@ -394,5 +437,47 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         } else {
             sb.append(stringFactory.create(value));
         }
+    }
+
+    @Override
+    public <T> T getAs( Class<T> type,
+                        int index ) throws IndexOutOfBoundsException, ValueFormatException, RepositoryException {
+        checkSession();
+        Object value = property().getValue(index);
+        Object convertedValue = null;
+        try {
+            if (String.class.equals(type)) {
+                convertedValue = context().getValueFactories().getStringFactory().create(value);
+            } else if (Long.class.equals(type)) {
+                convertedValue = context().getValueFactories().getLongFactory().create(value);
+            } else if (Boolean.class.equals(type)) {
+                convertedValue = context().getValueFactories().getBooleanFactory().create(value);
+            } else if (Date.class.equals(type)) {
+                Calendar calendar = context().getValueFactories().getDateFactory().create(value).toCalendar();
+                convertedValue = calendar.getTime();
+            } else if (Calendar.class.equals(type)) {
+                convertedValue = context().getValueFactories().getDateFactory().create(value).toCalendar();
+            } else if (DateTime.class.equals(type)) {
+                convertedValue = context().getValueFactories().getDateFactory().create(value);
+            } else if (Double.class.equals(type)) {
+                convertedValue = context().getValueFactories().getDoubleFactory().create(value);
+            } else if (BigDecimal.class.equals(type)) {
+                convertedValue = context().getValueFactories().getDecimalFactory().create(value);
+            } else if (java.io.InputStream.class.equals(type)) {
+                BinaryValue binary = context().getValueFactories().getBinaryFactory().create(value);
+                convertedValue = new SelfClosingInputStream(binary);
+            } else if (javax.jcr.Binary.class.isAssignableFrom(type)) {
+                convertedValue = context().getValueFactories().getBinaryFactory().create(value);
+            } else if (Node.class.equals(type)) {
+                convertedValue = valueToNode(value);
+            } else if (NodeIterator.class.equals(type)) {
+                convertedValue = new JcrSingleNodeIterator((AbstractJcrNode)getNode());
+            } else {
+                throw new ValueFormatException(JcrI18n.unableToConvertPropertyValueAtIndexToType.text(getPath(), index, type));
+            }
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
+            throw new ValueFormatException(e);
+        }
+        return type.cast(convertedValue);
     }
 }

@@ -86,6 +86,11 @@ public class BasicEmptyProperty extends BasicProperty {
         return SHARED_ITERATOR;
     }
 
+    @Override
+    public Object getValue( int index ) throws IndexOutOfBoundsException {
+        return null;
+    }
+
     protected static class EmptyIterator<T> implements Iterator<T> {
 
         protected EmptyIterator() {

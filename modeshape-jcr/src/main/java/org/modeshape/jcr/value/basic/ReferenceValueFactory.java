@@ -282,7 +282,7 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
     }
 
     @Override
-    protected Reference[] createEmptyArray( int length ) {
+    public Reference[] createEmptyArray( int length ) {
         return new Reference[length];
     }
 

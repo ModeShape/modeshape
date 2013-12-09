@@ -209,7 +209,7 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
     }
 
     @Override
-    protected Long[] createEmptyArray( int length ) {
+    public Long[] createEmptyArray( int length ) {
         return new Long[length];
     }
 

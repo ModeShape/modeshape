@@ -333,7 +333,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     }
 
     @Override
-    protected Name[] createEmptyArray( int length ) {
+    public Name[] createEmptyArray( int length ) {
         return new Name[length];
     }
 }

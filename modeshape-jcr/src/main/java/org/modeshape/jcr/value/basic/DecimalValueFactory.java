@@ -209,7 +209,7 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
     }
 
     @Override
-    protected BigDecimal[] createEmptyArray( int length ) {
+    public BigDecimal[] createEmptyArray( int length ) {
         return new BigDecimal[length];
     }
 

@@ -170,8 +170,11 @@ public final class JcrI18n {
     public static I18n unableToSetSingleValuedPropertyUsingMultipleValues;
     public static I18n invalidMethodForSingleValuedProperty;
     public static I18n invalidMethodForMultiValuedProperty;
+    public static I18n indexOutsidePropertyValuesBoundaries;
     public static I18n unableToRefreshBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
     public static I18n unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+    public static I18n unableToConvertPropertyValueToType;
+    public static I18n unableToConvertPropertyValueAtIndexToType;
     public static I18n allPropertyValuesMustHaveSameType;
     public static I18n cannotRemoveNodeFromClone;
     public static I18n cannotRemoveNodeFromCloneDueToChangesInSession;

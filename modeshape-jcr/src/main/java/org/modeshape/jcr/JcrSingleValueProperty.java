@@ -26,10 +26,11 @@ package org.modeshape.jcr;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
-import java.util.UUID;
+import java.util.Date;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -39,15 +40,11 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
-import org.modeshape.jcr.value.Reference;
-import org.modeshape.jcr.value.ValueFactories;
-import org.modeshape.jcr.value.basic.NodeKeyReference;
-import org.modeshape.jcr.value.basic.UuidReference;
 
 /**
  * ModeShape implementation of a {@link javax.jcr.Property JCR Property} with a single value.
@@ -132,35 +129,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     @Override
     public final Node getNode() throws ItemNotFoundException, ValueFormatException, RepositoryException {
         checkSession();
-        ValueFactories factories = context().getValueFactories();
         Object value = property().getFirstValue();
-        try {
-            if (value instanceof Reference) {
-                NodeKey key = null;
-                if (value instanceof NodeKeyReference) {
-                    // REFERENCE and WEAKREFERENCE values are node keys ...
-                    key = ((NodeKeyReference)value).getNodeKey();
-                } else if (value instanceof UuidReference) {
-                    // REFERENCE and WEAKREFERENCE values should be node keys, so create a key from the
-                    // supplied UUID and this node's key ...
-                    UUID uuid = ((UuidReference)value).getUuid();
-                    key = getParent().key().withId(uuid.toString());
-                } else {
-                    assert false : "Unknown type of Reference value";
-                }
-                return session().node(key, null);
-            }
-            // STRING, PATH and NAME values will be convertable to a Path object ...
-            Path path = factories.getPathFactory().create(value);
-
-            return path.isAbsolute() ? session().node(path) : session().node(getParent().node(), path);
-        } catch (org.modeshape.jcr.value.ValueFormatException e) {
-            throw new ValueFormatException(e.getMessage(), e);
-        }
-        catch (PathNotFoundException pathNotFound) {
-            //expected by the TCK
-            throw new ItemNotFoundException(pathNotFound.getMessage(), pathNotFound);
-        }
+        return valueToNode(value);
     }
 
     @Override
@@ -459,4 +429,11 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
 
+    @Override
+    public <T> T getAs( Class<T> type ) throws ValueFormatException, RepositoryException {
+        if (type.isArray()) {
+            throw new ValueFormatException(JcrI18n.unableToConvertPropertyValueToType.text(getPath(), type.getSimpleName()));
+        }
+        return super.getAs(type, 0);
+    }
 }

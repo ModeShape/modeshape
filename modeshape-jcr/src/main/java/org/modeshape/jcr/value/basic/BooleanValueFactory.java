@@ -216,7 +216,7 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     }
 
     @Override
-    protected Boolean[] createEmptyArray( int length ) {
+    public Boolean[] createEmptyArray( int length ) {
         return new Boolean[length];
     }
 

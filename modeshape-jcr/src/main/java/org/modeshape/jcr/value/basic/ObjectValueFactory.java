@@ -190,7 +190,7 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
     }
 
     @Override
-    protected Object[] createEmptyArray( int length ) {
+    public Object[] createEmptyArray( int length ) {
         return new Object[length];
     }
 }
