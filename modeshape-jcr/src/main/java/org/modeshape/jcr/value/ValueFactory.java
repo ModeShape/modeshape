@@ -518,4 +518,12 @@ public interface ValueFactory<T> {
      * @see Property#getValues()
      */
     Iterable<T> create( Iterable<?> valueIterable ) throws ValueFormatException, IoException;
+
+    /**
+     * Creates an empty array of the given type.
+     *
+     * @param length the length of the array; must be a positive value
+     * @return an empty array of the given length.
+     */
+    T[] createEmptyArray( int length );
 }

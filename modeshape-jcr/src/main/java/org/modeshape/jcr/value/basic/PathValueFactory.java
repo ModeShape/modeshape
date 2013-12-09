@@ -692,7 +692,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     }
 
     @Override
-    protected Path[] createEmptyArray( int length ) {
+    public Path[] createEmptyArray( int length ) {
         return new Path[length];
     }
 

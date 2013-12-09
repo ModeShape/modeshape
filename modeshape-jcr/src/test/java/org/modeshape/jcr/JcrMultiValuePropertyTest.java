@@ -26,11 +26,14 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
+import java.util.TreeSet;
 import javax.jcr.Binary;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
-import javax.jcr.Property;
+import javax.jcr.NodeIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
@@ -51,7 +54,7 @@ import org.modeshape.jcr.value.DateTimeFactory;
  */
 public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
 
-    private Property prop;
+    private org.modeshape.jcr.api.Property prop;
     private byte[][] binaryValue;
     private DateTime[] dateValue;
     private double[] doubleValue;
@@ -271,6 +274,12 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
     }
 
     @Test( expected = ValueFormatException.class )
+    public void shouldNotProvideBooleanConversionForMultiValuedProperty() throws Exception {
+        prop = cars.getProperty("booleanProperty");
+        prop.getAs(Boolean.class);
+    }
+
+    @Test( expected = ValueFormatException.class )
     public void shouldNotProvideDateForMultiValuedProperty() throws Exception {
         prop = cars.getProperty("dateProperty");
         prop.getDate();
@@ -308,13 +317,32 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
     }
 
     @Test
-    public void shouldProvideValues() throws Exception {
+    public void shouldProvideBooleanValues() throws Exception {
         prop = cars.getProperty("booleanProperty");
         Value[] vals = prop.getValues();
         assertThat(vals, notNullValue());
         assertThat(vals.length, is(2));
         assertThat(vals[0].getBoolean(), is(true));
         assertThat(vals[1].getBoolean(), is(false));
+        assertThat(prop.getAs(Boolean[].class), is(new Boolean[]{true, false}));
+        assertThat(prop.getAs(Boolean.class, 0), is(true));
+        assertThat(prop.getAs(Boolean.class, 1), is(false));
+    }
+
+    @Test
+    public void shouldProvideBinaryValues() throws Exception {
+        prop = cars.getProperty("binaryProperty");
+        Value[] vals = prop.getValues();
+        assertThat(vals, notNullValue());
+        assertThat(vals.length, is(2));
+        TreeSet<String> expectedBinaryValues = new TreeSet<String>(Arrays.asList("This is a binary value1", "This is a binary value2"));
+        assertThat(expectedBinaryValues.contains(vals[0].getString()), is(true));
+        assertThat(expectedBinaryValues.contains(vals[1].getString()), is(true));
+        assertThat(expectedBinaryValues.contains(prop.getAs(String.class, 0)), is(true));
+        assertThat(expectedBinaryValues.contains(prop.getAs(String.class, 1)), is(true));
+        assertThat(prop.getAs(org.modeshape.jcr.api.Binary[].class).length, is(2));
+        assertThat(prop.getAs(Binary[].class).length, is(2));
+        assertThat(prop.getAs(InputStream[].class).length, is(2));
     }
 
     @Test( expected = ValueFormatException.class )
@@ -333,6 +361,17 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
             Node node = cars.getSession().getNodeByIdentifier(str);
             assertThat(node, IsIn.isOneOf((Node)altima, (Node)aston));
         }
+
+        Node[] nodes = prop.getAs(Node[].class);
+        for (Node node : nodes) {
+            assertThat(node, IsIn.isOneOf((Node)altima, (Node)aston));
+        }
+        NodeIterator nodeIterator = prop.getAs(NodeIterator.class);
+        while (nodeIterator.hasNext()) {
+            assertThat(nodeIterator.nextNode(), IsIn.isOneOf((Node)altima, (Node)aston));
+        }
+        assertThat(prop.getAs(Node.class, 0), IsIn.isOneOf((Node)altima, (Node)aston));
+        assertThat(prop.getAs(Node.class, 1), IsIn.isOneOf((Node)altima, (Node)aston));
     }
 
     @FixFor( "MODE-1720" )
@@ -346,48 +385,4 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
             assertThat(node, IsIn.isOneOf((Node)altima, (Node)aston));
         }
     }
-
-    // @Test
-    // public void shouldProvideLengths() throws Exception {
-    // long[] lengths = prop.getLengths();
-    // assertThat(lengths, notNullValue());
-    // assertThat(lengths.length, is(1));
-    // assertThat(lengths[0], is(4L));
-    //
-    // Object value = "value";
-    // dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
-    // when(propertyInfo.getProperty()).thenReturn(dnaProperty);
-    // when(definition.getRequiredType()).thenReturn(PropertyType.STRING);
-    // when(definition.isMultiple()).thenReturn(true);
-    // prop = new JcrMultiValueProperty(cache, propertyId);
-    // lengths = prop.getLengths();
-    // assertThat(lengths, notNullValue());
-    // assertThat(lengths.length, is(1));
-    // assertThat(lengths[0], is(5L));
-    //
-    // value = new Object();
-    // long expectedLength = executionContext.getValueFactories().getBinaryFactory().create(value).getSize();
-    // dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
-    // when(propertyInfo.getProperty()).thenReturn(dnaProperty);
-    // when(definition.getRequiredType()).thenReturn(PropertyType.STRING);
-    // when(definition.isMultiple()).thenReturn(true);
-    // prop = new JcrMultiValueProperty(cache, propertyId);
-    // lengths = prop.getLengths();
-    // assertThat(lengths, notNullValue());
-    // assertThat(lengths.length, is(1));
-    // assertThat(lengths[0], is(expectedLength));
-    //
-    // String[] values = new String[] {"value1", "value2", "value 3 is longer"};
-    // dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, (Object[])values);
-    // when(propertyInfo.getProperty()).thenReturn(dnaProperty);
-    // when(definition.getRequiredType()).thenReturn(PropertyType.STRING);
-    // when(definition.isMultiple()).thenReturn(true);
-    // prop = new JcrMultiValueProperty(cache, propertyId);
-    // lengths = prop.getLengths();
-    // assertThat(lengths, notNullValue());
-    // assertThat(lengths.length, is(values.length));
-    // assertThat(lengths[0], is((long)values[0].length()));
-    // assertThat(lengths[1], is((long)values[1].length()));
-    // assertThat(lengths[2], is((long)values[2].length()));
-    // }
 }

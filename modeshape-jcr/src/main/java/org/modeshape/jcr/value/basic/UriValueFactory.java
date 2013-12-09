@@ -242,7 +242,7 @@ public class UriValueFactory extends AbstractValueFactory<URI> implements UriFac
     }
 
     @Override
-    protected URI[] createEmptyArray( int length ) {
+    public URI[] createEmptyArray( int length ) {
         return new URI[length];
     }
 }

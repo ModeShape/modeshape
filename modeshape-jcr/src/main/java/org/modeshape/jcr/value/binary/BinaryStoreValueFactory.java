@@ -58,7 +58,6 @@ import org.modeshape.jcr.value.basic.AbstractValueFactory;
 public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> implements BinaryFactory {
 
     private static final String CHAR_SET_NAME = "UTF-8";
-    private static final BinaryValue[] EMPTY_BINARY_ARRAY = new BinaryValue[] {};
 
     private final BinaryStore store;
     private final ValueFactory<String> stringFactory;
@@ -102,8 +101,8 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
     }
 
     @Override
-    protected BinaryValue[] createEmptyArray( int length ) {
-        return EMPTY_BINARY_ARRAY;
+    public BinaryValue[] createEmptyArray( int length ) {
+        return new BinaryValue[length];
     }
 
     @Override

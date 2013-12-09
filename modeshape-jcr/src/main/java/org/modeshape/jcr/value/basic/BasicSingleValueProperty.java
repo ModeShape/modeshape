@@ -26,6 +26,7 @@ package org.modeshape.jcr.value.basic;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Reference;
 
@@ -95,6 +96,15 @@ public class BasicSingleValueProperty extends BasicProperty {
     @Override
     public Iterator<Object> iterator() {
         return new ValueIterator();
+    }
+
+    @Override
+    public Object getValue( int index ) throws IndexOutOfBoundsException {
+        if (index == 0) {
+            return getFirstValue();
+        } else {
+            throw new IndexOutOfBoundsException(JcrI18n.indexOutsidePropertyValuesBoundaries.text(index, size()));
+        }
     }
 
     protected class ValueIterator implements Iterator<Object> {

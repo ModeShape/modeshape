@@ -33,6 +33,7 @@ import java.util.List;
 import javax.jcr.Binary;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
@@ -49,7 +50,7 @@ import org.modeshape.jcr.value.ValueFactory;
 
 public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
 
-    private Property prop;
+    private org.modeshape.jcr.api.Property prop;
     private byte[] binaryValue;
     private DateTime dateValue;
     private double doubleValue;
@@ -187,6 +188,7 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
     public void shouldProvideBoolean() throws Exception {
         prop = cars.getProperty("booleanProperty");
         assertThat(prop.getBoolean(), is(booleanValue));
+        assertThat(prop.getAs(Boolean.class), is(booleanValue));
         assertThat(prop.getType(), is(PropertyType.BOOLEAN));
         assertThat(prop.getString(), is(stringFactory.create(booleanValue)));
         assertThat(prop.getLength(), is((long)stringFactory.create(booleanValue).length()));
@@ -202,6 +204,7 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
         // assertThat(prop.getString(), is(stringFactory.create(dateValue)));
         assertThat(prop.getType(), is(PropertyType.DATE));
         // assertThat(prop.getLength(), is((long)stringFactory.create(dateValue).length()));
+        assertThat(prop.getAs(DateTime.class), notNullValue());
         checkValue(prop);
     }
 
@@ -209,6 +212,10 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
     public void shouldProvideNode() throws Exception {
         prop = cars.getProperty("referenceProperty");
         assertThat(prop.getNode(), is((Node)altima));
+        assertThat(prop.getAs(Node.class), is((Node)altima));
+        NodeIterator nodeIterator = prop.getAs(NodeIterator.class);
+        assertThat(nodeIterator.getSize(), is(1l));
+        assertThat(nodeIterator.nextNode(), is((Node)altima));
         assertThat(prop.getType(), is(PropertyType.REFERENCE));
         assertThat(prop.getString(), is(altima.getIdentifier()));
         assertThat(prop.getLength(), is((long) altima.getIdentifier().length()));
@@ -219,6 +226,7 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
     public void shouldProvideDouble() throws Exception {
         prop = cars.getProperty("doubleProperty");
         assertThat(prop.getDouble(), is(doubleValue));
+        assertThat(prop.getAs(Double.class), is(doubleValue));
         assertThat(prop.getString(), is(stringFactory.create(doubleValue)));
         assertThat(prop.getType(), is(PropertyType.DOUBLE));
         assertThat(prop.getLength(), is((long)stringFactory.create(doubleValue).length()));
@@ -229,6 +237,7 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
     public void shouldProvideLong() throws Exception {
         prop = cars.getProperty("longProperty");
         assertThat(prop.getLong(), is(longValue));
+        assertThat(prop.getAs(Long.class), is(longValue));
         assertThat(prop.getString(), is(stringFactory.create(longValue)));
         assertThat(prop.getType(), is(PropertyType.LONG));
         assertThat(prop.getLength(), is((long)stringFactory.create(longValue).length()));
@@ -241,6 +250,15 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
         prop = cars.getProperty("binaryProperty");
         assertThat(prop.getType(), is(PropertyType.BINARY));
         InputStream stream = prop.getStream();
+        try {
+            assertThat(stream, notNullValue());
+        } finally {
+            if (stream != null) {
+                stream.close();
+            }
+        }
+
+        stream = prop.getAs(InputStream.class);
         try {
             assertThat(stream, notNullValue());
         } finally {
@@ -266,6 +284,8 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
                 stream.close();
             }
         }
+        assertThat(prop.getAs(Binary.class), notNullValue());
+        assertThat(prop.getAs(org.modeshape.jcr.api.Binary.class), notNullValue());
         assertThat(prop.getString(), is(stringFactory.create(binaryValue)));
         assertThat(prop.getLength(), is((long)binaryValue.length)); // note this value!!
         assertThat(binary.getSize(), is((long)binaryValue.length)); // note this value!!
@@ -276,6 +296,7 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
     public void shouldProvideString() throws Exception {
         prop = cars.getProperty("stringProperty");
         assertThat(prop.getString(), is(stringValue));
+        assertThat(prop.getAs(String.class), is(stringValue));
         assertThat(prop.getType(), is(PropertyType.STRING));
         assertThat(prop.getLength(), is((long)stringValue.length()));
         checkValue(prop);
@@ -286,6 +307,7 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
         prop = cars.getProperty("nameProperty");
         assertThat(prop.getType(), is(PropertyType.NAME));
         assertThat(prop.getString(), is(nameValue));
+        assertThat(prop.getAs(String.class), is(nameValue));
         assertThat(prop.getLength(), is((long)nameValue.length()));
         // Change the namespace registry ...
         session.setNamespacePrefix("acme2", "http://example.com");
@@ -298,6 +320,7 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
         prop = cars.getProperty("pathProperty");
         assertThat(prop.getType(), is(PropertyType.PATH));
         assertThat(prop.getString(), is(pathValue));
+        assertThat(prop.getAs(String.class), is(pathValue));
         // Change the namespace registry ...
         session.setNamespacePrefix("acme2", "http://example.com");
         assertThat(prop.getString(), is("/Cars/Hybrid/Toyota Highlander/acme2:SomethingElse"));

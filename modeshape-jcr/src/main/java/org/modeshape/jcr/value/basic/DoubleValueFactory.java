@@ -216,7 +216,7 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
     }
 
     @Override
-    protected Double[] createEmptyArray( int length ) {
+    public Double[] createEmptyArray( int length ) {
         return new Double[length];
     }
 

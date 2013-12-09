@@ -25,10 +25,13 @@ package org.modeshape.jcr;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import javax.jcr.Binary;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -37,6 +40,10 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.value.BinaryFactory;
+import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
@@ -289,5 +296,88 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     @Override
     public void setValue( Binary value ) throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T getAs( Class<T> type ) throws RepositoryException {
+        if (!(type.isArray() || type.equals(NodeIterator.class))) {
+            throw new ValueFormatException(JcrI18n.unableToConvertPropertyValueToType.text(getPath(), type.getSimpleName()));
+        }
+        Property property = property();
+        try {
+            if (String[].class.equals(type)) {
+                return type.cast(property.getValuesAsArray(context().getValueFactories().getStringFactory()));
+            } else if (Long[].class.equals(type)) {
+                return type.cast(property.getValuesAsArray(context().getValueFactories().getLongFactory()));
+            } else if (Boolean[].class.equals(type)) {
+               return type.cast(property.getValuesAsArray(context().getValueFactories().getBooleanFactory()));
+            } else if (Date[].class.equals(type)) {
+                final DateTimeFactory dateFactory = context().getValueFactories().getDateFactory();
+                Date[] result = property.getValuesAsArray(new Property.ValueTypeTransformer<Date>() {
+                    @Override
+                    public Date transform( Object value ) {
+                        return dateFactory.create(value).toDate();
+                    }
+                }, Date.class);
+                return type.cast(result);
+            } else if (Calendar[].class.equals(type)) {
+                final DateTimeFactory dateFactory = context().getValueFactories().getDateFactory();
+                Calendar[] result = property.getValuesAsArray(new Property.ValueTypeTransformer<Calendar>() {
+                    @Override
+                    public Calendar transform( Object value ) {
+                        return dateFactory.create(value).toCalendar();
+                    }
+                }, Calendar.class);
+                return type.cast(result);
+            } else if (DateTime[].class.equals(type)) {
+                return type.cast(property.getValuesAsArray(context().getValueFactories().getDateFactory()));
+            } else if (Double[].class.equals(type)) {
+                return type.cast(property.getValuesAsArray(context().getValueFactories().getDoubleFactory()));
+            } else if (BigDecimal[].class.equals(type)) {
+                return type.cast(property.getValuesAsArray(context().getValueFactories().getDecimalFactory()));
+            } else if (InputStream[].class.equals(type)) {
+                final BinaryFactory binaryFactory = context().getValueFactories().getBinaryFactory();
+                InputStream[] result = property.getValuesAsArray(new Property.ValueTypeTransformer<InputStream>() {
+                    @Override
+                    public InputStream transform( Object value ) {
+                        BinaryValue binaryValue = binaryFactory.create(value);
+                        return new SelfClosingInputStream(binaryValue);
+                    }
+                }, InputStream.class);
+                return type.cast(result);
+            } else if (Binary[].class.isAssignableFrom(type)) {
+                //this should support both ModeShape and JCR binary types because of arrays covariance
+                return type.cast(property.getValuesAsArray(context().getValueFactories().getBinaryFactory()));
+            } else if (Node[].class.equals(type)) {
+                Node[] nodes = property.getValuesAsArray(new Property.ValueTypeTransformer<Node>() {
+                    @Override
+                    public Node transform( Object value ) {
+                        try {
+                            return valueToNode(value);
+                        } catch (RepositoryException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }, Node.class);
+                return type.cast(nodes);
+            } else if (NodeIterator.class.equals(type)) {
+                Node[] nodes = property.getValuesAsArray(new Property.ValueTypeTransformer<Node>() {
+                    @Override
+                    public Node transform( Object value ) {
+                        try {
+                            return valueToNode(value);
+                        } catch (RepositoryException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }, Node.class);
+                return type.cast(new JcrNodeListIterator(Arrays.asList(nodes).iterator(), nodes.length));
+            } else {
+                throw new ValueFormatException(JcrI18n.unableToConvertPropertyValueToType.text(getPath(), type.getSimpleName()));
+            }
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
+            throw new ValueFormatException(e);
+        }
     }
 }
