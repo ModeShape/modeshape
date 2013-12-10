@@ -273,7 +273,7 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     }
 
     @Override
-    protected DateTime[] createEmptyArray( int length ) {
+    public DateTime[] createEmptyArray( int length ) {
         return new DateTime[length];
     }
 }

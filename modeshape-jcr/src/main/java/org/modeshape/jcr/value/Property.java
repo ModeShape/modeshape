@@ -171,4 +171,50 @@ public interface Property extends Iterable<Object>, Comparable<Property>, Readab
      * @see ValueFactory#create(Object[])
      */
     Object[] getValuesAsArray();
+
+    /**
+     * Returns the value of the property at the given index.
+     *
+     * @param index an {@code int} representing the index at which to retrieve the value. If the value is {@code 0}, this is
+     * equivalent to calling {@link org.modeshape.jcr.value.Property#getFirstValue()}
+     * @return the value of the property at the given index; may be {@code null} if the property is empty.
+     * @throws IndexOutOfBoundsException if the given index is outside the interval of values of the property.
+     */
+    Object getValue(int index) throws IndexOutOfBoundsException;
+
+    /**
+     * Convert the values of this property to whatever type the given value factory is used to create.
+     *
+     * @param valueFactory a {@link org.modeshape.jcr.value.basic.AbstractValueFactory} representing the factory which will
+     * be used to attempt the conversion of each value.
+     * @return the array of values for this property converted (if possible) to given type.
+     * @throws ValueFormatException if the conversion cannot be performed for any value in the array of values.
+     */
+    <T> T[] getValuesAsArray( ValueFactory<T> valueFactory ) throws ValueFormatException;
+
+    /**
+     * Convert the values of this property to the given type, using the specified type transformer.
+     *
+     * @param valueTypeTransformer a {@link ValueTypeTransformer} representing the transformer which will
+     * be used to attempt the conversion of each value.
+     * @param  type a {@link Class} indicating the type to which the transformation is performed; required because of type erasure.
+     * @return the array of values for this property converted (if possible) to given type.
+     * @throws ValueFormatException if the conversion cannot be performed for any value in the array of values.
+     */
+    <T> T[] getValuesAsArray( ValueTypeTransformer<T> valueTypeTransformer,
+                              Class<T> type ) throws ValueFormatException;
+
+    /**
+     * Interface which allows the conversion of a property value to a given type.
+     * @param <T> the generic type
+     */
+    public interface ValueTypeTransformer<T> {
+        /**
+         * Transforms the given value to a specific type.
+         *
+         * @param value the individual value of a property; never {@code null}
+         * @return the value transformed to the given type.
+         */
+        T transform(Object value);
+    }
 }

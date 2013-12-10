@@ -132,8 +132,6 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         return create(value.toString());
     }
 
-    protected abstract T[] createEmptyArray( int length );
-
     @Override
     public T[] create( BigDecimal[] values ) {
         if (values == null) return null;

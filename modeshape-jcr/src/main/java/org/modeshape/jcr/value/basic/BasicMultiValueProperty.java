@@ -116,6 +116,11 @@ public class BasicMultiValueProperty extends BasicProperty {
         return new ReadOnlyIterator(values.iterator());
     }
 
+    @Override
+    public Object getValue( int index ) throws IndexOutOfBoundsException {
+        return values.get(index);
+    }
+
     protected class ReadOnlyIterator implements Iterator<Object> {
 
         private final Iterator<Object> values;

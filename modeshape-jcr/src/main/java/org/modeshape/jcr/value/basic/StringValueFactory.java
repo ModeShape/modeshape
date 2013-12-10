@@ -298,7 +298,7 @@ public final class StringValueFactory extends AbstractValueFactory<String> imple
     }
 
     @Override
-    protected String[] createEmptyArray( int length ) {
+    public String[] createEmptyArray( int length ) {
         return new String[length];
     }
 

@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.value.basic;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Iterator;
 import org.modeshape.common.annotation.Immutable;
@@ -33,6 +34,8 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueComparators;
+import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * An abstract {@link Property} implementation.
@@ -182,5 +185,36 @@ public abstract class BasicProperty implements Property {
             sb.append(Arrays.asList(getValuesAsArray()));
         }
         return sb.toString();
+    }
+
+    @Override
+    public <T> T[] getValuesAsArray( ValueFactory<T> valueFactory ) throws ValueFormatException {
+        int size = size();
+        T[] result = valueFactory.createEmptyArray(size);
+        if (size == 0) {
+            return result;
+        }
+        int idx = 0;
+        Iterator<Object> iterator = iterator();
+        while (iterator.hasNext()) {
+            result[idx++] = valueFactory.create(iterator.next());
+        }
+        return result;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T[] getValuesAsArray( ValueTypeTransformer<T> valueTypeTransformer,
+                                     Class<T> type ) throws ValueFormatException {
+        T[] result = (T[])Array.newInstance(type, size());
+        if (size() == 0) {
+            return result;
+        }
+        int idx = 0;
+        Iterator<Object> iterator = iterator();
+        while (iterator.hasNext()) {
+            result[idx++] = valueTypeTransformer.transform(iterator.next());
+        }
+        return result;
     }
 }
