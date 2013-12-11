@@ -227,28 +227,11 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             Set<NodeKey> srcNodeKeys = nodeKeyCorrespondence.keySet();
             for (NodeKey sourceKey : srcNodeKeys) {
                 AbstractJcrNode srcNode = sourceSession.node(sourceKey, null);
-                NodeKey dstNodeKey = nodeKeyCorrespondence.get(sourceKey);
-                AbstractJcrNode dstNode = copySession.node(dstNodeKey, null);
-
                 if (srcNode.isNodeType(JcrMixLexicon.VERSIONABLE)) {
+                    NodeKey dstNodeKey = nodeKeyCorrespondence.get(sourceKey);
+
                     // For the nodes which were versionable, set the mappings for the original version
                     copySession.setOriginalVersionKey(dstNodeKey, srcNode.getBaseVersion().key());
-                }
-
-                if (dstNode.isNodeType(JcrMixLexicon.REFERENCEABLE) && dstNode.hasProperty(JcrLexicon.UUID)) {
-                    // for referenceable nodes, update the UUID to be be same as the new identifier
-                    JcrValue identifierValue = dstNode.valueFactory().createValue(dstNode.getIdentifier());
-                    dstNode.setProperty(JcrLexicon.UUID, identifierValue, true, true, false, false);
-
-                    // if there are any incoming references within the copied subgraph, they need to point to the new nodes
-                    for (PropertyIterator incomingReferencesIterator = dstNode.getAllReferences(); incomingReferencesIterator.hasNext();) {
-                        Property incomingRef = incomingReferencesIterator.nextProperty();
-                        NodeKey referringNodeKey = ((AbstractJcrNode)incomingRef.getParent()).key();
-                        boolean isReferrerWithinSubgraph = srcNodeKeys.contains(referringNodeKey);
-                        if (isReferrerWithinSubgraph) {
-                            incomingRef.setValue(copySession.node(dstNodeKey, null));
-                        }
-                    }
                 }
             }
 
