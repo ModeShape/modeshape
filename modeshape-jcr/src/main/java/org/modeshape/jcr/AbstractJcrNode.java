@@ -2205,20 +2205,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return propertiesOnOtherNodesReferencingThis(propertyName, PropertyType.WEAKREFERENCE);
     }
 
-    protected PropertyIterator getAllReferences() throws RepositoryException {
-        List<javax.jcr.Property> allReferences = new ArrayList<javax.jcr.Property>();
-
-        for (PropertyIterator strongRefIterator = getReferences(); strongRefIterator.hasNext();) {
-            allReferences.add(strongRefIterator.nextProperty());
-        }
-
-        for (PropertyIterator weakRefIterator = getReferences(); weakRefIterator.hasNext();) {
-            allReferences.add(weakRefIterator.nextProperty());
-        }
-
-        return new JcrPropertyIterator(allReferences);
-    }
-
     /**
      * Find the properties on other nodes that are REFERENCE or WEAKREFERENCE properties (as dictated by the
      * <code>referenceType</code> parameter) to this node.

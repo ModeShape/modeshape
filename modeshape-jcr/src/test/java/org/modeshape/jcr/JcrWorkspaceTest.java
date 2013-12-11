@@ -421,6 +421,36 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertNotEquals(nodeB.getIdentifier(), otherSession.getNode("/B").getIdentifier());
     }
 
+
+    @Test
+    @FixFor( "MODE-2114" )
+    public void copiedReferencesShouldHaveUpdatedUUIDs() throws Exception {
+        tools.registerNodeTypes(session, "cnd/references.cnd");
+
+        Node parent = session.getRootNode().addNode("parent");
+        Node nodeA = parent.addNode("A", "test:node");
+        Node nodeB = parent.addNode("B", "test:node");
+        Node nodeC = parent.addNode("C", "test:node");
+        Node nodeD = parent.addNode("D", "test:node");
+
+        nodeA.setProperty("test:strongReference", session.getValueFactory().createValue(nodeB));
+        nodeA.setProperty("test:weakReference", session.getValueFactory().createValue(nodeC, true));
+        nodeA.setProperty("test:simpleReference", session.getValueFactory().createSimpleReference(nodeD));
+
+        session.save();
+
+        workspace.copy("/parent", "/new_parent");
+
+        AbstractJcrNode otherA = session.getNode("/new_parent/A");
+        AbstractJcrNode otherB = session.getNode("/new_parent/B");
+        AbstractJcrNode otherC = session.getNode("/new_parent/C");
+        AbstractJcrNode otherD = session.getNode("/new_parent/D");
+
+        assertEquals(otherB.getIdentifier(), otherA.getProperty("test:strongReference").getNode().getIdentifier());
+        assertEquals(otherC.getIdentifier(), otherA.getProperty("test:weakReference").getNode().getIdentifier());
+        assertEquals(otherD.getIdentifier(), otherA.getProperty("test:simpleReference").getNode().getIdentifier());
+    }
+
     @SkipLongRunning
     @FixFor( "MODE-2012" )
     @Test
