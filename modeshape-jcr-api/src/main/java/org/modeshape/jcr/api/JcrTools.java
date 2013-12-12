@@ -289,9 +289,7 @@ public class JcrTools {
             throw new RuntimeException(e.getMessage());
         }
 
-        if (debug) {
-            System.out.println("---> Uploading '" + filename + "' into '" + nodePath + "'");
-        }
+        print("---> Uploading '" + filename + "' into '" + nodePath + "'");
 
         // Now use the JCR API to upload the file ...
         final CountDownLatch latch = new CountDownLatch(1);
@@ -513,7 +511,7 @@ public class JcrTools {
 
     /**
      * Load the subgraph below this node, and print it to System.out if printing is enabled.
-     * 
+     *
      * @param node the root of the subgraph
      * @param lead the string that each line should begin with; may be null if there is no such string
      * @param depthOfSubgraph the depth of this subgraph's root node
@@ -554,7 +552,7 @@ public class JcrTools {
         if (referenceable) {
             sb.append(" jcr:uuid=" + node.getIdentifier());
         }
-        System.out.println(sb);
+        print(sb);
 
         List<String> propertyNames = new LinkedList<String>();
         for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
@@ -591,7 +589,7 @@ public class JcrTools {
                     sb.append(getStringValue(value, type));
                 }
             }
-            System.out.println(sb);
+            print(sb);
         }
 
         if (currentDepth < maxDepthOfSubgraph) {
@@ -617,7 +615,7 @@ public class JcrTools {
 
     /**
      * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
-     * 
+     *
      * @param session the session
      * @param jcrSql2 the JCR-SQL2 query
      * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
@@ -638,7 +636,7 @@ public class JcrTools {
 
     /**
      * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
-     * 
+     *
      * @param session the session
      * @param jcrSql2 the JCR-SQL2 query
      * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
@@ -675,9 +673,7 @@ public class JcrTools {
             // We got a different number of results. It could be that we caught the indexer before it was done indexing
             // the changes, so sleep for a bit and try again ...
             try {
-                if (debug) {
-                    print("---> Waiting for query: " + queryExpression + (variables != null ? " using " + variables : ""));
-                }
+                print("---> Waiting for query: " + queryExpression + (variables != null ? " using " + variables : ""));
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e.getMessage());

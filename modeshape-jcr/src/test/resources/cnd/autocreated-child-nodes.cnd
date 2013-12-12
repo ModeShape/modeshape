@@ -1,0 +1,24 @@
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<test='http://www.test.org/jcr/test'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+
+[test:autocreatedFolders] > nt:hierarchyNode
++ folder1 (nt:folder) = nt:folder autocreated mandatory copy
++ folder2 (nt:folder) = nt:folder autocreated mandatory copy
+
+[test:subnodeReferenceable] > nt:hierarchyNode, mix:referenceable
++ * (nt:base) = nt:unstructured copy
+
+[test:autocreatedReferenceableChildren] > nt:hierarchyNode
++ child1 (test:subnodeReferenceable) = test:subnodeReferenceable autocreated mandatory copy
++ child2 (test:subnodeReferenceable) = test:subnodeReferenceable autocreated mandatory copy
