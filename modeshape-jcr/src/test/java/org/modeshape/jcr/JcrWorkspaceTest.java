@@ -421,7 +421,6 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertNotEquals(nodeB.getIdentifier(), otherSession.getNode("/B").getIdentifier());
     }
 
-
     @Test
     @FixFor( "MODE-2114" )
     public void copiedReferencesShouldHaveUpdatedUUIDs() throws Exception {
@@ -449,6 +448,77 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertEquals(otherB.getIdentifier(), otherA.getProperty("test:strongReference").getNode().getIdentifier());
         assertEquals(otherC.getIdentifier(), otherA.getProperty("test:weakReference").getNode().getIdentifier());
         assertEquals(otherD.getIdentifier(), otherA.getProperty("test:simpleReference").getNode().getIdentifier());
+    }
+
+    @Test
+    @FixFor( "MODE-2115" )
+    public void copiedNodesShouldReplaceAutoCreatedChildren() throws Exception {
+        tools.registerNodeTypes(session, "cnd/autocreated-child-nodes.cnd");
+
+        Node parent = session.getRootNode().addNode("parent", "test:autocreatedFolders");
+        session.save();
+
+        long folder1CreatedTs = parent.getNode("folder1").getProperty("jcr:created").getDate().getTimeInMillis();
+        long folder2CreatedTs = parent.getNode("folder2").getProperty("jcr:created").getDate().getTimeInMillis();
+
+        workspace.copy("/parent", "/new_parent");
+
+        AbstractJcrNode newParent = session.getNode("/new_parent");
+        assertEquals(2, newParent.getNodes().getSize());
+        Node folder1Copy = assertNode("/new_parent/folder1", "nt:folder");
+        assertEquals(folder1CreatedTs, folder1Copy.getProperty("jcr:created").getDate().getTimeInMillis());
+        Node folder2Copy = assertNode("/new_parent/folder2", "nt:folder");
+        assertEquals(folder2CreatedTs, folder2Copy.getProperty("jcr:created").getDate().getTimeInMillis());
+    }
+
+    @Test
+    @FixFor( "MODE-2115" )
+    public void copiedNodesShouldReplaceReferenceableAutoCreatedChildren() throws Exception {
+        tools.registerNodeTypes(session, "cnd/autocreated-child-nodes.cnd");
+
+        session.getRootNode().addNode("parent", "test:autocreatedReferenceableChildren");
+        session.save();
+
+        session.getNode("/parent/child1").addNode("child1_1");
+        session.save();
+
+        workspace.copy("/parent", "/new_parent");
+
+        AbstractJcrNode newParent = session.getNode("/new_parent");
+        assertEquals(2, newParent.getNodes().getSize());
+        //validate that the jcr:uuid is the same as the identifier of the node
+        Node child1 = assertNode("/new_parent/child1", "test:subnodeReferenceable");
+        assertEquals(child1.getIdentifier(), child1.getProperty("jcr:uuid").getString());
+
+        Node child2 = assertNode("/new_parent/child2", "test:subnodeReferenceable");
+        assertEquals(child2.getIdentifier(), child2.getProperty("jcr:uuid").getString());
+
+        assertNode("/new_parent/child1/child1_1");
+    }
+
+    @Test
+    @FixFor( "MODE-2115" )
+    public void clonedNodesWithAutoCreatedChildrenShouldPreserveIdentifiers() throws Exception {
+        tools.registerNodeTypes(session, "cnd/autocreated-child-nodes.cnd");
+
+        Node parent = session.getRootNode().addNode("parent", "test:autocreatedFolders");
+        session.save();
+
+        Node folder1 = parent.getNode("folder1");
+        long folder1CreatedTs = folder1.getProperty("jcr:created").getDate().getTimeInMillis();
+        Node folder2 = parent.getNode("folder2");
+        long folder2CreatedTs = folder2.getProperty("jcr:created").getDate().getTimeInMillis();
+
+        otherWorkspace.clone(workspaceName, "/parent", "/parent", true);
+
+        AbstractJcrNode otherParent = otherSession.getNode("/parent");
+        assertEquals(2, otherParent.getNodes().getSize());
+        Node otherFolder1 = otherSession.getNode("/parent/folder1");
+        assertEquals(folder1CreatedTs, otherFolder1.getProperty("jcr:created").getDate().getTimeInMillis());
+        assertEquals(folder1.getIdentifier(), otherFolder1.getIdentifier());
+        Node otherFolder2 = otherSession.getNode("/parent/folder2");
+        assertEquals(folder2.getIdentifier(), otherFolder2.getIdentifier());
+        assertEquals(folder2CreatedTs, otherFolder2.getProperty("jcr:created").getDate().getTimeInMillis());
     }
 
     @SkipLongRunning
