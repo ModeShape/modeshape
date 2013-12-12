@@ -315,6 +315,7 @@
 
         <!-- GWT version -->
         <gwt.version>2.5.1</gwt.version>
+        <gwt.maven.plugin.version>${gwt.version}</gwt.maven.plugin.version>
 
         <!-- Smart GWT version -->
         <smartgwt.version>2.4</smartgwt.version>
