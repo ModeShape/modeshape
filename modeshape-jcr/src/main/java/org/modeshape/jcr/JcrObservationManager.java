@@ -1021,8 +1021,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * @param nodeChange the change being processed
-         * @return <code>true</code> if the {@link JcrSession#checkPermission(String, String)} returns true for a
-         *         {@link ModeShapePermissions#READ} permission on the node from the change
+         * @return <code>true</code> if the {@link JcrSession#checkPermission(org.modeshape.jcr.value.Path, String...)}
+         * returns true for a {@link ModeShapePermissions#READ} permission on the node from the change
          */
         @SuppressWarnings( "synthetic-access" )
         private boolean acceptBasedOnPermission( AbstractNodeChange nodeChange ) {

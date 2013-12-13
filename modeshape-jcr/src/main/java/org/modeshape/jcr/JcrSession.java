@@ -27,10 +27,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1269,10 +1273,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
      *         given workspace within the repository, or false otherwise
      */
-    private final boolean hasPermission( String workspaceName,
-                                         Path path,
-                                         String... actions ) {
-        assert path == null ? true : path.isAbsolute() : "The path (if provided) must be absolute";
+    private boolean hasPermission( String workspaceName,
+                                   Path path,
+                                   String... actions ) {
+        assert path == null || path.isAbsolute() : "The path (if provided) must be absolute";
         SecurityContext sec = context.getSecurityContext();
         final boolean checkAcl = repository.repositoryCache().isAccessControlEnabled();
 
@@ -1329,6 +1333,31 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return hasPermission;
     }
 
+    private boolean hasPermissionOnPath( Path path,
+                                         String... actions ) throws RepositoryException {
+        Connectors connectors = this.repository().runningState().connectors();
+        if (!connectors.hasConnectors() || !connectors.hasReadonlyConnectors()) {
+            //federation is not enabled or there are no readonly connectors
+            return true;
+        }
+        if (connectors.isReadonlyPath(path, this)) {
+            //this is a readonly external path, so we need to see what the actual actions are
+            if (actions.length > ModeShapePermissions.READONLY_EXTERNAL_PATH_PERMISSIONS.size()) {
+                return false;
+            }
+            List<String> actionsList = new ArrayList<String>(Arrays.asList(actions));
+            for (Iterator<String> actionsIterator = actionsList.iterator(); actionsIterator.hasNext();) {
+                String action = actionsIterator.next();
+                if (!ModeShapePermissions.READONLY_EXTERNAL_PATH_PERMISSIONS.contains(action)) {
+                    return false;
+                }
+                actionsIterator.remove();
+            }
+            return actionsList.isEmpty();
+        }
+        return true;
+    }
+
     /**
      * Returns whether the authenticated user has the given role.
      * 
@@ -1339,7 +1368,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      *        workspace.
      * @return true if the user has the role and is logged in; false otherwise
      */
-    final static boolean hasRole( SecurityContext context,
+    static boolean hasRole( SecurityContext context,
                                   String roleName,
                                   String repositoryName,
                                   String workspaceName ) {
@@ -1356,7 +1385,12 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         CheckArg.isNotEmpty(path, "path");
         CheckArg.isNotEmpty(actions, "actions");
         try {
-            this.checkPermission(absolutePathFor(path), actions.split(","));
+            Path absPath = absolutePathFor(path);
+            String[] actionsArray = actions.split(",");
+            checkPermission(absPath, actionsArray);
+            if (!hasPermissionOnPath(absPath, actionsArray)) {
+                throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath.getString(this.namespaces()), actions));
+            }
         } catch (RepositoryException e) {
             throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
         }
@@ -1407,7 +1441,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absPath");
         Path p = absolutePathFor(absPath);
-        return hasPermission(this.workspace().getName(), p, actions.split(","));
+        String[] actionsArray = actions.split(",");
+        String workspaceName = this.workspace().getName();
+        return hasPermission(workspaceName, p, actionsArray) && hasPermissionOnPath(p, actionsArray);
     }
 
     /**

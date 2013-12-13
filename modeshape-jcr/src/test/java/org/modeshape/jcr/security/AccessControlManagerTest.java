@@ -288,7 +288,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         try {
             root.getNode("truks");
             fail("Access list should deny access");
-        } catch (AccessControlException e) {
+        } catch (javax.jcr.security.AccessControlException e) {
         }
     }
 
