@@ -24,8 +24,10 @@
 
 package org.modeshape.connector.mock;
 
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
@@ -40,12 +42,14 @@ import javax.jcr.query.Query;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.ModeShapePermissions;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.api.query.QueryManager;
 import org.modeshape.jcr.federation.spi.ConnectorException;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -802,6 +806,58 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         }
         finally {
             ws1Session.logout();
+        }
+    }
+
+    @Test
+    public void shouldValidatePermissionsForReadonlyProjections() throws Exception {
+        federationManager.createProjection("/testRoot", "mock-source-readonly", MockConnector.DOC1_LOCATION, "fed1");
+        federationManager.createProjection("/testRoot", "mock-source-readonly", MockConnector.DOC2_LOCATION, "fed2");
+
+        assertPermission(true, "/testRoot", ModeShapePermissions.ADD_NODE);
+        assertPermission(true, "/testRoot", ModeShapePermissions.ADD_NODE, ModeShapePermissions.READ);
+        assertPermission(true, "/testRoot", ModeShapePermissions.READ);
+
+        assertPermission(false, "/testRoot/fed1", ModeShapePermissions.ADD_NODE);
+        assertPermission(false, "/testRoot/fed1", ModeShapePermissions.ADD_NODE, ModeShapePermissions.READ);
+        assertPermission(true, "/testRoot/fed1", ModeShapePermissions.READ);
+        assertPermission(true, "/testRoot/fed1", ModeShapePermissions.INDEX_WORKSPACE);
+        assertPermission(true, "/testRoot/fed1", ModeShapePermissions.INDEX_WORKSPACE, ModeShapePermissions.READ);
+
+        assertPermission(false, "/testRoot/fed2", ModeShapePermissions.ADD_NODE);
+        assertPermission(false, "/testRoot/fed2", ModeShapePermissions.ADD_NODE, ModeShapePermissions.READ);
+        assertPermission(true, "/testRoot/fed2", ModeShapePermissions.READ);
+        assertPermission(true, "/testRoot/fed2", ModeShapePermissions.INDEX_WORKSPACE);
+        assertPermission(true, "/testRoot/fed2", ModeShapePermissions.INDEX_WORKSPACE, ModeShapePermissions.READ);
+
+        assertPermission(false, "/testRoot/fed2/federated3", ModeShapePermissions.ADD_NODE);
+        assertPermission(false, "/testRoot/fed2/federated3", ModeShapePermissions.ADD_NODE, ModeShapePermissions.READ);
+        assertPermission(true, "/testRoot/fed2/federated3", ModeShapePermissions.READ);
+        assertPermission(true, "/testRoot/fed2/federated3", ModeShapePermissions.INDEX_WORKSPACE);
+        assertPermission(true, "/testRoot/fed2/federated3", ModeShapePermissions.INDEX_WORKSPACE, ModeShapePermissions.READ);
+    }
+
+    private void assertPermission(boolean shouldHave, String absPath, String...actions) throws RepositoryException {
+        StringBuilder actionsBuilder = new StringBuilder();
+        List<String> actionsList = new ArrayList<String>(Arrays.asList(actions));
+        for (Iterator<String> actionsIterator = actionsList.iterator(); actionsIterator.hasNext();) {
+            actionsBuilder.append(actionsIterator.next());
+            if (actionsIterator.hasNext()) {
+                actionsBuilder.append(",");
+            }
+        }
+        String actionsString = actionsBuilder.toString();
+        if (shouldHave) {
+            assertTrue(session.hasPermission(absPath, actionsString));
+            session.checkPermission(absPath, actionsString);
+        } else {
+            assertFalse(session.hasPermission(absPath, actionsString));
+            try {
+                session.checkPermission(absPath, actionsString);
+                fail("There permissions " + actionsString + " should not be valid on " + absPath);
+            } catch (AccessControlException e) {
+                //expected
+            }
         }
     }
 

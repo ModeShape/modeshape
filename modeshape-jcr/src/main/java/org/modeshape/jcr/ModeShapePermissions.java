@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr;
 
+import java.util.Arrays;
+import java.util.List;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
 
@@ -148,4 +150,5 @@ public interface ModeShapePermissions {
     static final String[] ALL_PERMISSIONS = new String[] {REGISTER_NAMESPACE, REGISTER_TYPE, UNLOCK_ANY, ADD_NODE, SET_PROPERTY,
         REMOVE, READ, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, MONITOR, BACKUP, RESTORE};
 
+    static final List<String> READONLY_EXTERNAL_PATH_PERMISSIONS = Arrays.asList(READ, INDEX_WORKSPACE);
 }

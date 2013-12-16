@@ -241,7 +241,7 @@ public class RepositoryCache implements Observable {
 
         // If we're not doing the initialization of the repository, block for at most 10 minutes while another process does ...
         if (!initializingRepository) {
-            LOGGER.debug("Waiting for another process in the cluster to initialize the repository '{0}'", name);
+            LOGGER.debug("Waiting at most for 10 minutes while verifying the status of the '{0}' repository", name);
             waitUntil(new Callable<Boolean>() {
                 @Override
                 public Boolean call() {
@@ -254,7 +254,7 @@ public class RepositoryCache implements Observable {
 
         // If we're not doing the upgrade, then block for at most 10 minutes while another process does ...
         if (upgradeRequired && !upgradingRepository) {
-            LOGGER.debug("Waiting for another process in the cluster to upgrade the content in existing repository '{0}'", name);
+            LOGGER.debug("Waiting at most for 10 minutes for another process in the cluster to upgrade the content in existing repository '{0}'", name);
             waitUntil(new Callable<Boolean>() {
                 @Override
                 public Boolean call() {

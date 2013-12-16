@@ -52,6 +52,14 @@ public class AllPathsCache {
         this.pathFactory = context.getValueFactories().getPathFactory();
     }
 
+    public AllPathsCache( NodeCache cache,
+                          NodeCache removedCache,
+                          PathFactory pathFactory ) {
+        this.cache = cache;
+        this.removedCache = removedCache;
+        this.pathFactory = pathFactory;
+    }
+
     public NodeCache getCache() {
         return cache;
     }
