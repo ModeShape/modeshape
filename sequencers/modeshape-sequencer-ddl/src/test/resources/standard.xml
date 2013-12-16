@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="start">
+        <char expression="a" destination ="f_kwd" action="collect"/>        
+        <fail action=""/>
+    </state>
+    <state name="f_kwd">
+        <char expression="b" destination ="f_kwd" action="collect"/>        
+        <fail action=""/>
+    </state>
+    <state name="dialect">
+        <char expression="c" destination ="f_kwd" action="collect"/>        
+    </state>
+</lexer>

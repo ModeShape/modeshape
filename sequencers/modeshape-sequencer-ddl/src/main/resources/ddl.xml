@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="wait for command">
+        <char expression="eos" destination="failure" action="fail"/>
+        <!-- ignore white spaces -->
+        <char expression="\s" destination="wait for command" action=""/>
+        <!-- this is first character of the command -->
+        <char expression="\w" destination="command" action="collect"/>
+    </state>
+    
+    <state name="command">
+        <char expression="eos" destination="failure" action="fail"/>
+        <!-- compose command -->
+        <char expression="\w" destination="command" action="collect"/>
+        <!-- this is the end of the token, let's analyse it -->
+        <char expression="\s" destination="command analysis" action="commandAnalysis"/>
+    </state>
+    
+    <state name="command analysis">
+        <char expression="eos" destination="failure" action="fail"/>
+        <!-- CREATE statement -->
+        <char expression="create" destination="create statement" action=""/>
+        <!-- ALTER statement -->
+        <char expression="alter" destination="alter statement" action=""/>
+        <!-- DROP statement -->
+        <char expression="drop" destination="drop statement" action=""/>
+        
+        <!-- unknown statement -->
+        <char expression="\." destination="falure" action=""/>
+    </state>
+    
+    <state name="create statement">
+        <char expression="eos" destination="failure" action="fail"/>
+        <!-- delegate all signals to the dedicated parser -->
+        <char expression="." destination="create statement" action="createStatement"/>
+    </state>
+    
+    <state name="failure"/>
+</lexer>

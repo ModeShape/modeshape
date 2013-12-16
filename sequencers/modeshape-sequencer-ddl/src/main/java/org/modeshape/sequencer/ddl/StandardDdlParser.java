@@ -184,6 +184,11 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                        Object scoreReturnObject ) throws ParsingException {
         CheckArg.isNotNull(ddl, "ddl");
         CheckArg.isNotNull(rootNode, "rootNode");
+        
+        //validate syntax
+        DdlValidator validator = new DdlValidator();
+        validator.validate(ddl);
+
         problems.clear();
         setRootNode(rootNode);
 

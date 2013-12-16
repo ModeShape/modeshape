@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="wait for name">
+        <!-- ignore white spaces -->
+        <char expression="\s" destination="wait for name" action=""/>
+        <!-- this is first character of the command -->
+        <char expression="\w" destination="name" action="collect"/>
+    </state>
+    
+    <state name="name">
+        <!-- compose command -->
+        <char expression="\w" destination="name" action="collect"/>
+        <!-- this is the end of the token, let's analyse it -->
+        <char expression="\s" destination="verify name" action="verifyName"/>
+    </state>
+    
+    <state name="verify name">
+        <!-- CREATE TABLE statement -->
+        <char expression="valid" destination="wait for columns" action=""/>
+    </state>
+    
+    <state name="wait for columns">
+        <char expression="\s" destination="wait for columns" action=""/>
+        <!-- start columns -->
+        <char expression="\(" destination="wait for column" action=""/>
+    </state>
+
+    <state name="wait for column">
+        <char expression="\s" destination="wait for column" action=""/>
+        <!-- start column -->
+        <char expression="\w" destination="column_name" action=""/>
+    </state>
+
+    <state name="column_name">
+        <char expression="\s" destination="wait for type" action="retainColumnName"/>
+        <!-- start columns -->
+        <char expression="\w" destination="column_name" action="collect"/>
+    </state>
+    
+    <state name="wait for type">
+        <char expression="\s" destination="wait for type" action=""/>
+        <!-- start columns -->
+        <char expression="\w" destination="column_type" action="collect"/>
+    </state>
+
+    <state name="column_type">
+        <char expression="\s" destination="wait for column constraint" action="checkColumnType"/>
+        <!-- start columns -->
+        <char expression="\w|\(|\)" destination="column_type" action="collect"/>
+    </state>
+
+    <state name="wait for column constraint">
+        <char expression="\s" destination="wait for column constraint" action=""/>
+        <!-- start columns -->
+        <char expression="\w" destination="column_constraint" action="collect"/>
+    </state>
+
+    <state name="column_constraint">
+        <char expression="\s" destination="wait for column constraint" action="storeColumnConstraint"/>
+        <!-- start columns -->
+        <char expression="\w" destination="column_constraint" action="collect"/>
+        <char expression="\," destination="wait for column" action=""/>
+        <char expression="\)" destination="wait for table constraint" action=""/>
+    </state>
+
+    <state name="wait for table constraint">
+        <char expression="\s" destination="wait for table constraint" action=""/>
+        <!-- start columns -->
+        <char expression="\w" destination="table_constraint" action="collect"/>
+        <char expression="eos" destination="finish" action="checkTableConstraint"/>
+    </state>
+
+    <state name="finish"/>
+                                                                                                                                
+</lexer>

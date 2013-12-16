@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="wait for subject">
+        <!-- ignore white spaces -->
+        <char expression="\s" destination="wait for subject" action=""/>
+        <!-- this is first character of the command -->
+        <char expression="\w" destination="subject" action="collect"/>
+    </state>
+    
+    <state name="subject">
+        <!-- compose command -->
+        <char expression="\w" destination="subject" action="collect"/>
+        <!-- this is the end of the token, let's analyse it -->
+        <char expression="\s" destination="subject analysis" action="subjectAnalysis"/>
+    </state>
+    
+    <state name="subject analysis">
+        <!-- CREATE TABLE statement -->
+        <char expression="table" destination="create table" action=""/>
+        <!-- CREATE VIEW statement -->
+        <char expression="view" destination="create view" action=""/>
+        <!-- CREATE DATABASE statement -->
+        <char expression="database" destination="create database" action=""/>
+        
+        <!-- MODIFICATOR -->
+        <char expression="global" destination="wait for subject" action=""/>
+        <!-- MODIFICATOR -->
+        <char expression="temporary" destination="wait for subject" action=""/>
+        
+        <!-- unknown statement -->
+        <char expression="." destination="falure" action=""/>
+    </state>
+    
+    <state name="create table">
+        <!-- delegate all signals to the dedicated parser -->
+        <char expression="." destination="create table" action="createTableStatement"/>
+    </state>
+</lexer>
