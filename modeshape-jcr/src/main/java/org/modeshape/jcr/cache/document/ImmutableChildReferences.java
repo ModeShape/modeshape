@@ -71,6 +71,7 @@ public class ImmutableChildReferences {
                                           ChildReferencesInfo segmentingInfo,
                                           ChildReferences externalReferences,
                                           WorkspaceCache cache ) {
+        if (segmentingInfo.nextKey == null && externalReferences.isEmpty()) return first;
         Segmented segmentedReferences = new Segmented(cache, first, segmentingInfo);
         return !externalReferences.isEmpty() ? new FederatedReferences(segmentedReferences, externalReferences) : segmentedReferences;
     }
@@ -192,8 +193,15 @@ public class ImmutableChildReferences {
             this.childReferences = LinkedListMultimap.create();
             this.childReferencesByKey = new HashMap<NodeKey, ChildReference>();
             for (ChildReference ref : children) {
+                ChildReference old = this.childReferencesByKey.put(ref.getKey(), ref);
+                if (old != null && old.getName().equals(ref.getName())) {
+                    // We already have this key/name pair, so we don't need to add it again ...
+                    continue;
+                }
+                // We've not seen this NodeKey/Name combination yet, so it is okay. In fact, we should not see any
+                // node key more than once, since that is clearly an unexpected condition (as a child may not appear
+                // more than once in its parent's list of child nodes). See MODE-2120.
                 this.childReferences.put(ref.getName(), ref);
-                this.childReferencesByKey.put(ref.getKey(), ref);
             }
         }
 
@@ -315,7 +323,7 @@ public class ImmutableChildReferences {
                             }
                         }
 
-                        //check if the node was removed only at the end to that insertions before can be processed first
+                        // check if the node was removed only at the end to that insertions before can be processed first
                         if (changes.isRemoved(ref)) {
                             // The node was removed ...
                             return null;
