@@ -183,8 +183,15 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
+            ChildReference old = this.childReferencesByKey.put(reference.getKey(), reference);
+            if (old != null && old.getName().equals(name)) {
+                // We already have this key/name pair, so we don't need to add it again ...
+                return;
+            }
+            // We've not seen this node key yet, so it is okay. In fact, we should not see any
+            // node key more than once, since that is clearly an unexpected condition (as a child
+            // may not appear more than once in its parent's list of child nodes). See MODE-2120.
             this.childReferences.put(reference.getName(), reference);
-            this.childReferencesByKey.put(reference.getKey(), reference);
         } finally {
             lock.unlock();
         }
@@ -196,8 +203,15 @@ public class MutableChildReferences extends AbstractChildReferences {
             lock.lock();
             for (ChildReference reference : references) {
                 reference = reference.with(1);
+                ChildReference old = this.childReferencesByKey.put(reference.getKey(), reference);
+                if (old != null && old.getName().equals(reference.getName())) {
+                    // We already have this key/name pair, so we don't need to add it again ...
+                    continue;
+                }
+                // We've not seen this node key yet, so it is okay. In fact, we should not see any
+                // node key more than once, since that is clearly an unexpected condition (as a child
+                // may not appear more than once in its parent's list of child nodes). See MODE-2120.
                 this.childReferences.put(reference.getName(), reference);
-                this.childReferencesByKey.put(reference.getKey(), reference);
             }
         } finally {
             lock.unlock();
