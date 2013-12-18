@@ -144,7 +144,7 @@ final class CacheContext {
      * @return true if the {@link Delta} implementation contains only differences, or false if it contains the whole document.
      */
     public boolean isDeltaContainingChangesEnabled() {
-        return true;
+        return false;
     }
 
     /**
