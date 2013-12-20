@@ -315,7 +315,7 @@ public class SessionNode implements MutableCachedNode {
      * @return the workspace cache's node, or null if this node is new
      */
     protected CachedNode nodeInWorkspace( AbstractSessionCache session ) {
-        return session.getWorkspace().getNode(key);
+        return isNew() ? null : session.getWorkspace().getNode(key);
     }
 
     @Override
