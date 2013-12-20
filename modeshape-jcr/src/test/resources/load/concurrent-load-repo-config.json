@@ -1,0 +1,41 @@
+{
+    "name" : "config",
+    "jndiName" : "",
+    "transactionMode" : "none",
+    "workspaces" : {
+        "default" : "load",
+        "predefined" : ["load"],
+        "allowCreation" : true,
+        "cacheConfiguration" : "load/concurrent-load-workspace-cache.xml"
+    },
+    "storage" : {
+        "cacheName" : "DATAREPOSITORY",
+        "cacheConfiguration" : "load/concurrent-load-infinispan-cache.xml",
+        "binaryStorage" : {
+            "type" : "file",
+            "directory": "../modeshape-jcr/target/concurrent_load_non_clustered/binary/",
+            "minimumBinarySizeInBytes" : 999
+        }
+    },
+    "security" : {
+        "anonymous" : {
+            "username" : "<anonymous>",
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+    "query":{
+        "enabled":true,     
+        "indexing":{
+            "rebuildOnStartup":{
+                "when":"if_missing"
+            }           
+        },
+        "indexStorage": {
+            "type":"filesystem",
+            "location":"../modeshape-jcr/target/concurrent_load_non_clustered/indexes/",
+            "fileSystemAccessType":"auto"
+        }
+    },
+    "node-types" : ["load/deck-cards-resource.cnd"]
+}

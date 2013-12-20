@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ModeShape (http://www.modeshape.org)
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+ 
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
+    xmlns="urn:infinispan:config:5.2">
+    <global>
+        <asyncListenerExecutor
+            factory="org.infinispan.executors.DefaultExecutorFactory">
+            <properties>
+                <property name="maxThreads" value="5" />
+                <property name="threadNamePrefix" value="AsyncListenerThread" />
+            </properties>
+        </asyncListenerExecutor>
+ 
+        <asyncTransportExecutor
+            factory="org.infinispan.executors.DefaultExecutorFactory">
+            <properties>
+                <property name="maxThreads" value="25" />
+                <property name="threadNamePrefix" value="AsyncSerializationThread" />
+            </properties>
+        </asyncTransportExecutor>
+ 
+        <evictionScheduledExecutor
+            factory="org.infinispan.executors.DefaultScheduledExecutorFactory">
+            <properties>
+                <property name="threadNamePrefix" value="EvictionThread" />
+            </properties>
+        </evictionScheduledExecutor>
+ 
+        <replicationQueueScheduledExecutor
+            factory="org.infinispan.executors.DefaultScheduledExecutorFactory">
+            <properties>
+                <property name="threadNamePrefix" value="ReplicationQueueThread" />
+            </properties>
+        </replicationQueueScheduledExecutor>
+ 
+        <globalJmxStatistics enabled="false" jmxDomain="infinispan" />
+ 
+        <serialization marshallerClass="org.infinispan.marshall.VersionAwareMarshaller"
+            version="1.0" />
+ 
+        <shutdown hookBehavior="DEFAULT" />
+    </global>
+ 
+    <default>
+        <!-- <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="20000"
+            writeSkewCheck="false" concurrencyLevel="500" useLockStriping="false" /> -->
+        <transaction
+            transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
+            cacheStopTimeout="30000" eagerLockSingleNode="false" lockingMode="PESSIMISTIC"
+            syncCommitPhase="false" syncRollbackPhase="false" transactionMode="TRANSACTIONAL"
+            useEagerLocking="true" autoCommit="true" />
+        <loaders passivation="false" shared="false" preload="false">
+            <loader class="org.infinispan.loaders.file.FileCacheStore"
+                    fetchPersistentState="false"
+                    purgeOnStartup="false">
+                <properties>
+                    <property name="location" value="../modeshape-jcr/target/concurrent_load_non_clustered/store"/>
+                </properties>
+            </loader>
+        </loaders>
+        <eviction maxEntries="20" strategy="LIRS" />
+        <locking lockAcquisitionTimeout="20000"/>
+    </default>
+</infinispan>
