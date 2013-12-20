@@ -1,0 +1,58 @@
+<jcr = 'http://www.jcp.org/jcr/1.0'>
+<nt = 'http://www.jcp.org/jcr/nt/1.0'>
+<mix = 'http://www.jcp.org/jcr/mix/1.0'>
+<acme = 'http://www.acme.com'>
+/*
+<tag = 'http://www.acme.com/tag'>
+*/
+
+/*
+[acme:taggable] mixin
+        - tag:eventType (STRING) 
+        - tag:domainType (STRING) 
+        - tag:domainInstanceId (STRING) 
+        - tag:deckType (STRING) 
+        - tag:deckInstanceId (STRING) 
+        - tag:cardType (STRING) 
+        - tag:cardInstanceId (STRING) 
+        - tag:author (STRING) 
+*/
+
+[acme:undefined] abstract
+        - * (UNDEFINED) 
+        - * (UNDEFINED) multiple 
+
+[acme:basic] > acme:undefined, mix:created, mix:lastModified, mix:referenceable abstract
+        + * (acme:basic)
+
+[acme:ResourceClassType] > acme:basic abstract
+
+[acme:ResourceType] > acme:basic abstract
+
+[acme:Hierarchy] > acme:basic 
+        + * (acme:Hierarchy)
+        + * (acme:DomainIdentifier) 
+
+[acme:Domain] > acme:basic 
+        + * (acme:Hierarchy)
+        + * (acme:basic) 
+
+[acme:DomainIdentifier] > acme:basic 
+        - acme:resourceType (STRING) mandatory 
+        + * (acme:basic) 
+
+[acme:DeckClassType] > acme:ResourceClassType 
+        + * (acme:basic) = acme:DeckResourceType 
+
+/*
+[acme:CardClassType] > acme:ResourceClassType 
+        + * (acme:basic) = acme:CardResourceType 
+
+[acme:DeckResourceType] > acme:ResourceType 
+        - acme:resourceType (STRING) mandatory 
+        + * (acme:basic) 
+
+[acme:CardResourceType] > acme:ResourceType, acme:taggable 
+        - acme:resourceType (STRING) mandatory 
+        + * (acme:basic) 
+*/

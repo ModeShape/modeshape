@@ -30,6 +30,7 @@ import org.infinispan.api.BasicCache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.util.concurrent.TimeoutException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
@@ -218,16 +219,23 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
                 }
                 // Create a new node and put into this cache ...
                 CachedNode newNode = new LazyCachedNode(key, doc);
-                Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
-                if (nodesByKey instanceof BasicCache && cacheTtlSeconds != null) {
-                    node = ((BasicCache<NodeKey, CachedNode>)nodesByKey).putIfAbsent(key,
-                                                                                     newNode,
-                                                                                     cacheTtlSeconds.longValue(),
-                                                                                     TimeUnit.SECONDS);
-                } else {
-                    node = nodesByKey.putIfAbsent(key, newNode);
+                try {
+                    Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
+                    if (cacheTtlSeconds != null && nodesByKey instanceof BasicCache) {
+                        node = ((BasicCache<NodeKey, CachedNode>)nodesByKey).putIfAbsent(key,
+                                                                                         newNode,
+                                                                                         cacheTtlSeconds.longValue(),
+                                                                                         TimeUnit.SECONDS);
+                    } else {
+                        node = nodesByKey.putIfAbsent(key, newNode);
+                    }
+                } catch (TimeoutException e) {
+                    node = null;
                 }
-                if (node == null) node = newNode;
+                if (node == null) {
+                    // Either the put timed out or there was no previous entry, so just use our new CachedNode ...
+                    node = newNode;
+                }
             }
         }
         return node;
