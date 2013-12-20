@@ -32,8 +32,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
@@ -51,35 +53,53 @@ import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 
 /**
- * This is an immutable {@link CachedNode} implementation that lazily loads its content. Technically each instance modifies its
- * internal state, but all the state is based upon a single Document that is read-in only once and never changed again. And thus
- * externally each instance appears to be immutable and invariant.
+ * This is a (mostly) immutable {@link CachedNode} implementation that lazily loads its content. Technically each instance
+ * modifies its internal state, but most of the state is based upon a single Document that is read-in only once and never changed
+ * again. And thus externally each instance appears to be immutable and invariant, except anything that has to do with this node's
+ * {@link #getName(NodeCache)} (e.g., {@link #getSegment(NodeCache) segment}, and the {@link #getPath(NodeCache) path} {
+ * {@link #getPath(PathCache) methods}). That's because the name of this node is actually stored on the <em>parent</em> in the
+ * parent's {@link #getChildReferences(NodeCache) child references}, and this node's name, SNS index, and thus the path can all
+ * change even though none of the information stored in this node's document will actually change.
+ * <p>
+ * This class is marked {@link Serializable} so instances can be placed within an Infinispan cache, though this class is never
+ * intended to actually be persisted. Instead, it is kept within ModeShape's {@link WorkspaceCache} that uses a purely in-memory
+ * Infinispan cache containing a configurable number of the most-recently-used {@link CachedNode} instances. As soon as
+ * {@link CachedNode} instances are evicted, they are GCed and no longer used. (Note that they can be easily reconstructed from
+ * the entries stored in the repository's main cache.
+ * </p>
+ * <p>
+ * The {@link WorkspaceCache} that keeps these {@link LazyCachedNode} instances is intended to be a cache of the persisted nodes,
+ * and thus are accessed by all sessions for that workspace. When a persisted node is changed, the corresponding
+ * {@link CachedNode} is purged from the {@link WorkspaceCache}. Therefore, these LazyCachedNode's must be able to be accessed
+ * concurrently from multiple threads; this is the reason why all of the lazily-populated fields are either atomic references or
+ * volatile. (Since all of these lazily-populated members are idempotent, the implementations do this properly without
+ * synchronization or blocking. The exception is the {@link #parentRefToSelf} field, which can change but is done so in an atomic
+ * fashion (see {@link #parentReferenceToSelf(WorkspaceCache)} for details).
+ * </p>
  */
-@Immutable
+@ThreadSafe
 public class LazyCachedNode implements CachedNode, Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    // There are two 'final' fields that are always set during construction. The 'document' is the snapshot of node's state
+    // (except for the node's name or SNS index, which are stored in the parent's document).
     private final NodeKey key;
-    private Document document;
-    private transient Map<Name, Property> properties;
-    private transient NodeKey parent;
-    private transient Set<NodeKey> additionalParents;
-    /**
-     * cached reference of the parent node towards this (child) node
-     */
-    private transient ChildReference parentReferenceToSelf;
+    private final Document document;
 
-    /**
-     * the reference of the parent set when the above reference is set/changed. Needs to be kept in sync to detect stale SNS data
-     * (see MODE-1613 for more information). Also, to avoid memory leaks, this should not be a strong reference.
-     */
-    private transient WeakReference<CachedNode> parentReferenceToSelfParentRef;
-    private transient boolean propertiesFullyLoaded = false;
-    private transient ChildReferences childReferences;
+    // The remaining attributes are all lazily loaded/constructed from the 'document' via the DocumentTranslator methods.\
+    // The WorkspaceCache in which these LazyCachedNodes are kept are accessible
+    private transient final AtomicReference<Map<Name, Property>> properties = new AtomicReference<Map<Name, Property>>();
+    private transient final AtomicReference<ParentReferenceToSelf> parentRefToSelf = new AtomicReference<ParentReferenceToSelf>();
+    private transient volatile NodeKey parent;
+    private transient volatile Set<NodeKey> additionalParents;
+    private transient volatile boolean propertiesFullyLoaded = false;
+    private transient volatile ChildReferences childReferences;
 
     public LazyCachedNode( NodeKey key,
                            Document document ) {
+        assert document != null;
+        assert key != null;
         this.key = key;
         this.document = document;
     }
@@ -96,19 +116,13 @@ public class LazyCachedNode implements CachedNode, Serializable {
      * @throws NodeNotFoundException if this node no longer exists
      */
     protected Document document( WorkspaceCache cache ) {
-        if (document == null) {
-            // Fetch from the cache ...
-            document = cache.documentFor(key);
-            if (document == null) {
-                throw new NodeNotFoundException(key);
-            }
-        }
         return document;
     }
 
     @Override
     public NodeKey getParentKey( NodeCache cache ) {
         if (parent == null) {
+            // This is idempotent, so it's okay if another thread sneaks in here and recalculates the object before we do ...
             WorkspaceCache wsCache = workspaceCache(cache);
             parent = wsCache.translator().getParentKey(document(wsCache), wsCache.getWorkspaceKey(), key.getWorkspaceKey());
         }
@@ -163,7 +177,16 @@ public class LazyCachedNode implements CachedNode, Serializable {
     }
 
     /**
-     * Get the parent node's child reference to this node.
+     * Get the parent node's child reference to this node. This method atomically determines if the {@link #parentRefToSelf}
+     * object is still up-to-date with the parent node's cached representation. If it is not still valid, then it will be
+     * recomputed.
+     * <p>
+     * This method is carefully written to always return an atomically-consistent result without requiring any locking or
+     * synchronization. Generally speaking, at any given moment the cached information is idempotent, so we rely upon that and use
+     * an AtomicReference to ensure that the reference is updated atomically. The method implementation also reads the
+     * AtomicReference only once before deciding what to do; this means that multiple threads can concurrently call this method
+     * and it will always return the correct information.
+     * </p>
      * 
      * @param cache the cache
      * @return the child reference; never null (even for the root node)
@@ -171,54 +194,68 @@ public class LazyCachedNode implements CachedNode, Serializable {
      *         (which can happen if this node is used while in the midst of being (re)moved.
      */
     protected ChildReference parentReferenceToSelf( WorkspaceCache cache ) {
-        if (parentReferenceToSelfParentRef == null || parentReferenceToSelfParentRef.get() == null) {
-            // either we don't have a parent reference at all yet, or it has been reclaimed by the GC so we need to reset
-            // parentRefToSelf
-            parentReferenceToSelf = null;
-        } else if (parentReferenceToSelf != null) {
-            // we have a cached child reference and a parent reference, but we need to check that the reference isn't stale (it
-            // could happen for SNS)
-            CachedNode parentFromCache = parent(cache);
-            CachedNode parentReferenceToSelfParent = parentReferenceToSelfParentRef.get();
-            if (parentReferenceToSelfParent != parentFromCache) {
-                // the parent coming from the ws cache (possibly the "db") is different that what we have cached, so we need to
-                // retrieve it again
-                parentReferenceToSelf = null;
+        CachedNode currentParent = null;
+
+        // If we currently have cached our parent's reference to us (and it is still complete) ...
+        ParentReferenceToSelf prts = parentRefToSelf.get();
+        if (prts != null && prts.isComplete()) {
+            if (prts.isRoot()) {
+                // We are the root node (always), so we can immediately return ...
+                return prts.childReferenceInParent();
             }
+            // Get the current parent to compare with what we've cached ...
+            currentParent = parent(cache);
+            if (currentParent == null && prts.isRoot()) {
+                // We are the root and this never changes. Therefore, our 'parentRefToSelf' is always valid ...
+                return prts.childReferenceInParent();
+            }
+            if (prts.isValid(currentParent)) {
+                // Our cached form still looks okay ...
+                return prts.childReferenceInParent();
+            }
+            // Our cached form is no longer valid so we have to build a new one ...
         }
 
-        if (parentReferenceToSelf == null) {
-            CachedNode parent = parent(cache);
-            if (parent == null) {
-                // This should be the root node ...
-                parentReferenceToSelf = cache.childReferenceForRoot();
-            } else {
-                ChildReferences references = parent.getChildReferences(cache);
-                if (references.supportsGetChildReferenceByKey()) {
-                    parentReferenceToSelf = references.getChild(key);
-                } else {
-                    // Directly look up the ChildReference by going to the cache (and possibly connector) ...
-                    NodeKey parentKey = getParentKey(cache);
-                    parentReferenceToSelf = cache.getChildReference(parentKey, key);
-                }
-                parentReferenceToSelfParentRef = new WeakReference<CachedNode>(parent);
-            }
+        // We have to (re)find our parent's reference to us ...
+        if (currentParent == null) currentParent = parent(cache);
+        if (currentParent == null) {
+            // This is the root node ...
+            parentRefToSelf.compareAndSet(null, new RootParentReferenceToSelf(cache));
+            return parentRefToSelf.get().childReferenceInParent(); // always get the most recent
         }
 
-        if (parentReferenceToSelf == null) {
-            // This node references a parent, but that parent no longer has a child reference to this node. Perhaps this node is
-            // in the midst of being moved or removed. Either way, we don't have much choice but to throw an exception about
-            // us not being found...
-            throw new NodeNotFoundInParentException(key, getParentKey(cache));
+        // The rest of this logic is only for non-root nodes ...
+        assert currentParent != null;
+
+        // Get our parent's child references to find which one points to us ...
+        ChildReferences currentReferences = currentParent.getChildReferences(cache);
+        ChildReference parentRefToMe = null;
+        if (currentReferences.supportsGetChildReferenceByKey()) {
+            // Just using the node key is faster if it is supported by the implementation ...
+            parentRefToMe = currentReferences.getChild(key);
+        } else {
+            // Directly look up the ChildReference by going to the cache (and possibly connector) ...
+            NodeKey parentKey = getParentKey(cache);
+            parentRefToMe = cache.getChildReference(parentKey, key);
         }
-        return parentReferenceToSelf;
+        if (parentRefToMe != null) {
+            // We found a new ChildReference instance from the current parent, so cache it ...
+            parentRefToSelf.set(new NonRootParentReferenceToSelf(currentParent, parentRefToMe));
+            return parentRefToSelf.get().childReferenceInParent(); // always get the most recent
+        }
+        assert parentRefToMe == null;
+        // This node references a parent, but that parent no longer has a child reference to this node. Perhaps this node is
+        // in the midst of being moved or removed. Either way, we don't have much choice but to throw an exception about
+        // us not being found...
+        throw new NodeNotFoundInParentException(key, getParentKey(cache));
     }
 
     protected Map<Name, Property> properties() {
-        if (properties == null) {
-            properties = new ConcurrentHashMap<Name, Property>();
+        if (properties.get() == null) {
+            // Try to create the properties map, but some other thread might have snuck in and done it for us ...
+            properties.compareAndSet(null, new ConcurrentHashMap<Name, Property>());
         }
-        return properties;
+        return properties.get();
     }
 
     @Override
@@ -376,6 +413,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
     @Override
     public ChildReferences getChildReferences( NodeCache cache ) {
         if (childReferences == null) {
+            // This is idempotent, so it's okay if another thread sneaks in here and recalculates the object before we do ...
             WorkspaceCache wsCache = workspaceCache(cache);
             childReferences = wsCache.translator().getChildReferences(wsCache, document(wsCache));
         }
@@ -422,6 +460,142 @@ public class LazyCachedNode implements CachedNode, Serializable {
         if (document != null) sb.append(document);
         else sb.append(" <unloaded>");
         return sb.toString();
+    }
+
+    /**
+     * A single object used to cache the parent's {@link ChildReference} that points to this node and methods that determine
+     * whether this cached information is still valid.
+     * 
+     * @author Randall Hauch (rhauch@redhat.com)
+     */
+    protected static interface ParentReferenceToSelf {
+        /**
+         * Get the cached {@link ChildReference} instance.
+         * 
+         * @return the child reference; never null
+         */
+        ChildReference childReferenceInParent();
+
+        /**
+         * Determine if this object is still complete. Some implementations use weak references that can eventually become nulled
+         * as the target is garbage collected. When that happens, this method should return true.
+         * 
+         * @return true if this object is still complete, or false if any information becomes garbage collected
+         */
+        boolean isComplete();
+
+        /**
+         * Determine if this instance is still valid, given the supplied {@link CachedNode} instance that represents the
+         * most-recently acquired parent node representation.
+         * 
+         * @param recentParent the most recent cached node for the parent
+         * @return true if this object is still valid, or false if the parent's information has changed since this object was
+         *         created
+         */
+        boolean isValid( CachedNode recentParent );
+
+        /**
+         * Get whether this represents the {@link #childReferenceInParent() child reference} pointing to the root node.
+         * 
+         * @return true if the object that owns this is the root node, or false otherwise
+         */
+        boolean isRoot();
+    }
+
+    /**
+     * A {@link ParentReferenceToSelf} implementation used only for the root node. The root node never changes, but it is the only
+     * node that does not have a {@link ChildReference} pointing to it. Since ModeShape keeps all node names within the
+     * {@link ChildReference} instances, this method simply holds onto a special {@link WorkspaceCache#childReferenceForRoot()
+     * ChildReference that contains the root's name}.
+     * <p>
+     * This class is immutable, and it is only used for the root {@link LazyCachedNode} instance (which can indeed change as
+     * properties and children are added/removed/changed.
+     * </p>
+     * 
+     * @author Randall Hauch (rhauch@redhat.com)
+     */
+    @Immutable
+    protected static final class RootParentReferenceToSelf implements ParentReferenceToSelf {
+        private final ChildReference childReferenceInParent;
+
+        protected RootParentReferenceToSelf( WorkspaceCache cache ) {
+            childReferenceInParent = cache.childReferenceForRoot();
+        }
+
+        @Override
+        public boolean isRoot() {
+            return true;
+        }
+
+        @Override
+        public ChildReference childReferenceInParent() {
+            return this.childReferenceInParent;
+        }
+
+        @Override
+        public boolean isComplete() {
+            return true;
+        }
+
+        @Override
+        public boolean isValid( CachedNode recentParent ) {
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return "RootParentReferenceToSelf";
+        }
+    }
+
+    /**
+     * A {@link ParentReferenceToSelf} implementation that caches the {@link ChildReference} from the parent plus the actual
+     * parent (via a weak reference to the {@link CachedNode}.
+     * <p>
+     * This class is immutable, because it is simply discarded when it is out of date; see
+     * {@link LazyCachedNode#parentReferenceToSelf(WorkspaceCache)}).
+     * </p>
+     * 
+     * @author Randall Hauch (rhauch@redhat.com)
+     */
+    @Immutable
+    protected static final class NonRootParentReferenceToSelf implements ParentReferenceToSelf {
+        private final ChildReference childReferenceInParent;
+        private final WeakReference<CachedNode> parent;
+
+        protected NonRootParentReferenceToSelf( CachedNode parent,
+                                                ChildReference childReferenceInParent ) {
+            assert parent != null;
+            assert childReferenceInParent != null;
+            this.childReferenceInParent = childReferenceInParent;
+            this.parent = new WeakReference<CachedNode>(parent);
+        }
+
+        @Override
+        public boolean isRoot() {
+            return false;
+        }
+
+        @Override
+        public ChildReference childReferenceInParent() {
+            return this.childReferenceInParent;
+        }
+
+        @Override
+        public boolean isComplete() {
+            return this.parent.get() != null; // null if this was garbage collected
+        }
+
+        @Override
+        public boolean isValid( CachedNode recentParent ) {
+            CachedNode parent = this.parent.get();
+            return parent == recentParent;
+        }
+
+        @Override
+        public String toString() {
+            return childReferenceInParent.toString() + " in " + parent.get();
+        }
     }
 
 }

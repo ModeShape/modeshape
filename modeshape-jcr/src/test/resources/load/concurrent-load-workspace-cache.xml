@@ -3,7 +3,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
         xmlns="urn:infinispan:config:5.2">
-
+ 
     <global>
         <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
     </global>
@@ -14,22 +14,13 @@
       "{repositoryName}/{workspaceName}".
     -->
     <default>
-
         <!-- Local in-memory caches with no persistence. -->
         <clustering mode="LOCAL"/>
-
+ 
         <!-- No more that 10K entries per cache, with LIRS eviction. -->
-        <eviction maxEntries="10000" strategy="LIRS"/>
-
+        <eviction maxEntries="10" strategy="LIRS"/>
+ 
         <!-- Expire entries after 120 seconds or after 60 seconds of not being used (whichever comes first). -->
-        <expiration lifespan="120000" maxIdle="60000"/>  
-          
-        <!-- Locking nodes in the workspace cache should block for no more than 10 seconds (the ISPN default).
-             If your application has high contenion for the same nodes, and you see TimeoutException in the log
-             then you may consider increasing this value.
-        -->
-        <locking lockAcquisitionTimeout="10000"/>
-          
+        <expiration lifespan="1200" maxIdle="600"/>
     </default>
-    
 </infinispan>

@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -887,14 +888,25 @@ public class DocumentTranslator implements DocumentConstants {
         if (children == null) {
             return new ArrayList<ChildReference>();
         }
-        List<ChildReference> childRefsList = new ArrayList<ChildReference>(children.size());
-        for (Object value : children) {
-            ChildReference ref = childReferenceFrom(value);
-            if (ref != null) {
-                childRefsList.add(ref);
+
+        do {
+            int count = 0;
+            try {
+                // Try getting the child references. If the document is being edited at the same time we
+                // iterate, then we might get a CME. Should that happen, simply retry a few times (max of 10) ...
+                List<ChildReference> childRefsList = new ArrayList<ChildReference>(children.size());
+                for (Object value : children) {
+                    ChildReference ref = childReferenceFrom(value);
+                    if (ref != null) {
+                        childRefsList.add(ref);
+                    }
+                }
+                return childRefsList;
+            } catch (ConcurrentModificationException e) {
+                if (count >= 10) throw e;
+                ++count;
             }
-        }
-        return childRefsList;
+        } while (true);
     }
 
     public ChildReferencesInfo getChildReferencesInfo( Document document ) {
