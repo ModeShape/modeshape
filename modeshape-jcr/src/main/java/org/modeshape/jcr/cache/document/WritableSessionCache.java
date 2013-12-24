@@ -1257,10 +1257,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                                     monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
                                 }
                             } // otherwise the parent was not PERSISTED and there's nothing to do
+                            //for each of the children of the node which has the changed path, we need to update the path
+                            //in the indexes
+                            updateIndexesForAllChildren(node, sessionPaths, workspaceName, monitor);
                         }
-                        //for each of the children of the node which has the changed path, we need to update the path
-                        //in the indexes
-                       updateIndexesForAllChildren(node, sessionPaths, workspaceName, monitor);
                     }
 
                     //writable connectors *may* change their data in-place, so the update operation needs to be called only
