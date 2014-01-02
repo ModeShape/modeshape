@@ -228,6 +228,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
 
         @Override
         public boolean hasNext() {
+            if (last != null) return true; // 'hasNext()' has been called multiple times before 'next()'
             while (super.hasNext()) {
                 last = super.next();
                 if (last.getName().equals(name)) return true;

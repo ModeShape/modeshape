@@ -23,6 +23,16 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,15 +51,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.cache.CachedNode;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class JcrNodeTest extends MultiUseAbstractTest {
 
@@ -358,7 +359,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-1969")
+    @FixFor( "MODE-1969" )
     public void shouldAllowSimpleReferences() throws Exception {
         registerNodeTypes("cnd/simple-references.cnd");
 
@@ -373,8 +374,8 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         org.modeshape.jcr.api.ValueFactory valueFactory = session.getValueFactory();
         Node testNode = rootNode.addNode("test", "test:node");
         testNode.setProperty("test:singleRef", valueFactory.createSimpleReference(a));
-        testNode.setProperty("test:multiRef", new Value[]{valueFactory.createSimpleReference(b),
-                valueFactory.createSimpleReference(c)});
+        testNode.setProperty("test:multiRef",
+                             new Value[] {valueFactory.createSimpleReference(b), valueFactory.createSimpleReference(c)});
         session.save();
 
         Property singleRef = testNode.getProperty("test:singleRef");
@@ -385,8 +386,8 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         assertTrue(multiRef.isMultiple());
         Value[] actualValues = multiRef.getValues();
         assertEquals(2, actualValues.length);
-        assertArrayEquals(new String[] { b.getIdentifier(), c.getIdentifier() },
-                          new String[] { actualValues[0].getString(), actualValues[1].getString() });
+        assertArrayEquals(new String[] {b.getIdentifier(), c.getIdentifier()}, new String[] {actualValues[0].getString(),
+            actualValues[1].getString()});
         assertNoBackReferences(b);
         assertNoBackReferences(c);
 
@@ -400,7 +401,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             testNode.getProperty("test:singleRef").getNode();
             fail("Target node for simple reference property should not be found");
         } catch (javax.jcr.ItemNotFoundException e) {
-            //expected
+            // expected
         }
     }
 
@@ -411,7 +412,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-1969")
+    @FixFor( "MODE-1969" )
     public void shouldNotAllowSimpleReferencesWithoutMixReferenceableMixin() throws Exception {
         registerNodeTypes("cnd/simple-references.cnd");
 
@@ -423,7 +424,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             testNode.setProperty("test:singleRef", valueFactory.createSimpleReference(a));
             fail("Simple references should not be allowed if the target node doesn't have the mix:referenceable mixin");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         } finally {
             a.remove();
             testNode.remove();
@@ -432,7 +433,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-2069")
+    @FixFor( "MODE-2069" )
     public void shouldAllowSearchingForSNSViaRegex() throws Exception {
         JcrRootNode rootNode = session.getRootNode();
         Node child1 = rootNode.addNode("child");
@@ -443,13 +444,13 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             assertEquals(0, rootNode.getNodes("child[2]").getSize());
             assertEquals(0, rootNode.getNodes("*[2]").getSize());
             assertEquals(0, rootNode.getNodes("*[1]|*[2]").getSize());
-            assertEquals(0, rootNode.getNodes(new String[] { "*[2]" }).getSize());
-            assertEquals(0, rootNode.getNodes(new String[] { "*[1]", "*[2]" }).getSize());
+            assertEquals(0, rootNode.getNodes(new String[] {"*[2]"}).getSize());
+            assertEquals(0, rootNode.getNodes(new String[] {"*[1]", "*[2]"}).getSize());
 
-            assertEquals(2, rootNode.getNodes(new String[] { "child", "child" }).getSize());
-            assertEquals(2, rootNode.getNodes(new String[] { "*child"}).getSize());
-            assertEquals(2, rootNode.getNodes(new String[] { "child*"}).getSize());
-            assertEquals(2, rootNode.getNodes(new String[] { "child"}).getSize());
+            assertEquals(2, rootNode.getNodes(new String[] {"child", "child"}).getSize());
+            assertEquals(2, rootNode.getNodes(new String[] {"*child"}).getSize());
+            assertEquals(2, rootNode.getNodes(new String[] {"child*"}).getSize());
+            assertEquals(2, rootNode.getNodes(new String[] {"child"}).getSize());
         } finally {
             child1.remove();
             child2.remove();
@@ -458,7 +459,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-2069")
+    @FixFor( "MODE-2069" )
     public void shouldEscapeSpecialCharactersWhenSearchingNodesViaRegex() throws Exception {
         JcrRootNode rootNode = session.getRootNode();
         Node specialNode = rootNode.addNode("special\t\r\n()\\?!^${}.\"");
@@ -485,7 +486,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             assertEquals(0, rootNode.getNodes("*[*").getSize());
             assertEquals(0, rootNode.getNodes("*]*").getSize());
             assertEquals(0, rootNode.getNodes("*[]*").getSize());
-            assertEquals(1, rootNode.getNodes("*:*").getSize()); //jcr:system
+            assertEquals(1, rootNode.getNodes("*:*").getSize()); // jcr:system
             assertEquals(0, rootNode.getNodes("*/*").getSize());
         } finally {
             specialNode.remove();
@@ -493,7 +494,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-2069")
+    @FixFor( "MODE-2069" )
     public void shouldOnlyTrimLeadingAndTrailingSpacesWhenSearchingViaRegex() throws Exception {
         JcrRootNode rootNode = session.getRootNode();
         Node a = rootNode.addNode(" A ");
@@ -516,6 +517,127 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             b.remove();
             c.remove();
             de.remove();
+            session.save();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2126" )
+    public void shouldAllowIteratorToBeUsedNominally() throws Exception {
+        Node cars = session.getNode("/Cars");
+        NodeIterator iter = cars.getNodes();
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            System.out.println("Child: " + child);
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2126" )
+    public void shouldAllowHasNextToBeCalledMultipleTimesWithoutAdvancing() throws Exception {
+        Node cars = session.getNode("/Cars");
+        NodeIterator iter = cars.getNodes();
+        for (int i = 0; i != 10; ++i) { // there are only 4 children
+            assertThat(iter.hasNext(), is(true));
+        }
+
+        NodeIterator iter2 = cars.getNodes();
+        while (iter2.hasNext()) {
+            Node child2 = iter2.nextNode();
+            Node child1 = iter.nextNode();
+            System.out.println("Child: " + child1);
+            assertThat(child1, is(sameInstance(child2)));
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2126" )
+    public void shouldAllowIteratorOverNamedNodesToBeUsedNominally() throws Exception {
+        Node cars = session.getNode("/Cars");
+        NodeIterator iter = cars.getNodes("Hybrid");
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            System.out.println("Child: " + child);
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2126" )
+    public void shouldAllowHasNextToBeCalledMultipleTimesWithoutAdvancingOnIteratorOverNamedNodes() throws Exception {
+        Node cars = session.getNode("/Cars");
+        NodeIterator iter = cars.getNodes("Hybrid");
+        for (int i = 0; i != 10; ++i) { // there's only 1 with this name
+            assertThat(iter.hasNext(), is(true));
+        }
+
+        NodeIterator iter2 = cars.getNodes("Hybrid");
+        while (iter2.hasNext()) {
+            Node child2 = iter2.nextNode();
+            Node child1 = iter.nextNode();
+            System.out.println("Child: " + child1);
+            assertThat(child1, is(sameInstance(child2)));
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2126" )
+    public void shouldAllowHasNextToBeCalledMultipleTimesWithoutAdvancingOnIteratorOverNamedNodesWithSameNameSiblings()
+        throws Exception {
+        Node parent = session.getRootNode().addNode("parent", "nt:unstructured");
+        try {
+            parent.addNode("child");
+            parent.addNode("child");
+            parent.addNode("child");
+            parent.addNode("child");
+            session.save();
+
+            NodeIterator iter = parent.getNodes("child");
+            for (int i = 0; i != 10; ++i) { // there are 4 with this name, but let's call 'hasNext' 10x
+                assertThat(iter.hasNext(), is(true));
+            }
+
+            NodeIterator iter2 = parent.getNodes("child");
+            while (iter2.hasNext()) {
+                Node child2 = iter2.nextNode();
+                Node child1 = iter.nextNode();
+                System.out.println("Child: " + child1);
+                assertThat(child1, is(sameInstance(child2)));
+            }
+        } finally {
+            parent.remove();
+            session.save();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2126" )
+    public void shouldAllowHasNextToBeCalledMultipleTimesWithoutAdvancingOnIteratorOverNamedTransientNodesWithSameNameSiblings()
+        throws Exception {
+        Node parent = session.getRootNode().addNode("parent", "nt:unstructured");
+        try {
+            parent.addNode("child");
+            parent.addNode("child");
+            parent.addNode("child");
+            // session.save();
+
+            NodeIterator iter = parent.getNodes("child");
+
+            // there are 3 child nodes with this name, but let's call 'hasNext' 5x
+            assertThat(iter.hasNext(), is(true));
+            assertThat(iter.hasNext(), is(true));
+            assertThat(iter.hasNext(), is(true));
+            assertThat(iter.hasNext(), is(true));
+            assertThat(iter.hasNext(), is(true));
+
+            NodeIterator iter2 = parent.getNodes("child");
+            while (iter2.hasNext()) {
+                Node child2 = iter2.nextNode();
+                Node child1 = iter.nextNode();
+                System.out.println("Child: " + child1);
+                assertThat(child1, is(sameInstance(child2)));
+            }
+        } finally {
+            parent.remove();
             session.save();
         }
     }
