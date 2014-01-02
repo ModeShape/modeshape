@@ -24,6 +24,8 @@
 
 package org.modeshape.jcr.api;
 
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFormatException;
 
