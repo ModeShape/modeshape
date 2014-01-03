@@ -30,6 +30,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -108,6 +109,48 @@ public class JcrMetaDataTest extends MultiUseAbstractTest {
     @Test
     public void shouldHaveMetaData() {
         assertThat(metadata, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldImplementGetTables() throws Exception {
+        ResultSet result = metadata.getTables(null, null, null, null);
+        assertThat(result, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldImplementGetColumns() throws Exception {
+        ResultSet result = metadata.getColumns(null, null, null, null);
+        assertThat(result, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldImplementGetProcedures() throws Exception {
+        ResultSet result = metadata.getProcedures(null, null, null);
+        assertThat(result, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldImplementGetImportedKeys() throws Exception {
+        ResultSet result = metadata.getImportedKeys(null, null, null);
+        assertThat(result, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldImplementGetExportedKeys() throws Exception {
+        ResultSet result = metadata.getExportedKeys(null, null, null);
+        assertThat(result, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldImplementGetUniqueIndexes() throws Exception {
+        ResultSet result = metadata.getIndexInfo(null, null, null, true, false);
+        assertThat(result, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldImplementGetNonUniqueIndexes() throws Exception {
+        ResultSet result = metadata.getIndexInfo(null, null, null, false, false);
+        assertThat(result, is(notNullValue()));
     }
 
     /**
