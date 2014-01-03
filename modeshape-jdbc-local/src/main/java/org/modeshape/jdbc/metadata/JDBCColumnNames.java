@@ -32,32 +32,30 @@ package org.modeshape.jdbc.metadata;
 public interface JDBCColumnNames {
 
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getCatalogs method on DatabaseMetaData. These constant values
-     * are be used for the column names used in constructing the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getCatalogs method on DatabaseMetaData.
+     * These constant values are be used for the column names used in constructing the ResultSet obj.
      */
     interface CATALOGS {
-        //  name of the column containing catalog or Virtual database name.
+        // name of the column containing catalog or Virtual database name.
         static final String TABLE_CAT = "TABLE_CAT"; //$NON-NLS-1$
     }
 
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getColumns method on DatabaseMetaData. These constant values
-     * are be used to hardcode the column names used in constructin the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getColumns method on DatabaseMetaData.
+     * These constant values are be used to hardcode the column names used in constructin the ResultSet obj.
      */
     interface COLUMNS {
 
-        //  name of the column containing catalog or Virtual database name.
+        // name of the column containing catalog or Virtual database name.
         static final String TABLE_CAT = "TABLE_CAT"; //$NON-NLS-1$
 
-        //  name of the column containing schema or Virtual database version.
+        // name of the column containing schema or Virtual database version.
         static final String TABLE_SCHEM = "TABLE_SCHEM"; //$NON-NLS-1$
 
-        //  name of the column containing table or group name.
+        // name of the column containing table or group name.
         static final String TABLE_NAME = "TABLE_NAME"; //$NON-NLS-1$
 
-        //  name of the column containing column or element name.
+        // name of the column containing column or element name.
         static final String COLUMN_NAME = "COLUMN_NAME"; //$NON-NLS-1$
 
         /** name of column that contains SQL type from java.sql.Types for column's data type. */
@@ -66,16 +64,16 @@ public interface JDBCColumnNames {
         /** name of column that contains local type name used by the data source. */
         static final String TYPE_NAME = "TYPE_NAME"; //$NON-NLS-1$
 
-        //  name of the column containing column size.
+        // name of the column containing column size.
         static final String COLUMN_SIZE = "COLUMN_SIZE"; //$NON-NLS-1$
 
         /** name of column that is not used will contain nulls */
         static final String BUFFER_LENGTH = "BUFFER_LENGTH"; //$NON-NLS-1$
 
-        //  name of the column containing number of digits to right of decimal
+        // name of the column containing number of digits to right of decimal
         static final String DECIMAL_DIGITS = "DECIMAL_DIGITS"; //$NON-NLS-1$
 
-        //  name of the column containing column's Radix.
+        // name of the column containing column's Radix.
         static final String NUM_PREC_RADIX = "NUM_PREC_RADIX"; //$NON-NLS-1$
 
         /** name of column that has an String value indicating nullablity */
@@ -102,21 +100,21 @@ public interface JDBCColumnNames {
         /** name of column that has an String value indicating nullablity */
         static final String IS_NULLABLE = "IS_NULLABLE"; //$NON-NLS-1$
 
-        /** name of column that is the scope of a reference attribute (null if DATA_TYPE isn't REF)*/ 
+        /** name of column that is the scope of a reference attribute (null if DATA_TYPE isn't REF) */
         static final String SCOPE_CATLOG = "SCOPE_CATLOG"; //$NON-NLS-1$
-        
-        /** name of column that is the scope of a reference attribute (null if the DATA_TYPE isn't REF) */ 
+
+        /** name of column that is the scope of a reference attribute (null if the DATA_TYPE isn't REF) */
         static final String SCOPE_SCHEMA = "SCOPE_SCHEMA"; //$NON-NLS-1$
-        
+
         /** name of column that is the scope of a reference attribure (null if the DATA_TYPE isn't REF) */
         static final String SCOPE_TABLE = "SCOPE_TABLE"; //$NON-NLS-1$
-        
-        /** 
-         * name of column that is source type of a distinct type or user-generated Ref type, SQL type
-         * from java.sql.Types (null if DATA_TYPE isn't DISTINCT or user-generated REF)
-         */ 
+
+        /**
+         * name of column that is source type of a distinct type or user-generated Ref type, SQL type from java.sql.Types (null if
+         * DATA_TYPE isn't DISTINCT or user-generated REF)
+         */
         static final String SOURCE_DATA_TYPE = "SOURCE_DATA_TYPE"; //$NON-NLS-1$
-        
+
         /** name of column that has an String value indicating format */
         static final String FORMAT = "FORMAT"; //$NON-NLS-1$
 
@@ -125,13 +123,11 @@ public interface JDBCColumnNames {
 
         /** name of column that has an String value indicating maximum range */
         static final String MAX_RANGE = "MAX_RANGE"; //$NON-NLS-1$
-     }
-
+    }
 
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getSchemas method on DatabaseMetaData. These constant values
-     * are be used to hardcode the column names used in constructin the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getSchemas method on DatabaseMetaData.
+     * These constant values are be used to hardcode the column names used in constructin the ResultSet obj.
      */
     interface SCHEMAS {
 
@@ -144,10 +140,8 @@ public interface JDBCColumnNames {
     }
 
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getTables and getTableTypes methods on DatabaseMetaData. These
-     * constant values are be used to hardcode the column names used in construction
-     * the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getTables and getTableTypes methods on
+     * DatabaseMetaData. These constant values are be used to hardcode the column names used in construction the ResultSet obj.
      */
     interface TABLES {
 
@@ -171,14 +165,12 @@ public interface JDBCColumnNames {
         static final String SELF_REFERENCING_COL_NAME = "SELF_REFERENCING_COL_NAME"; //$NON-NLS-1$
         static final String REF_GENERATION = "REF_GENERATION"; //$NON-NLS-1$
         static final String ISPHYSICAL = "ISPHYSICAL"; //$NON-NLS-1$
-    
+
     }
 
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getTables and getTableTypes methods on DatabaseMetaData. These
-     * constant values are be used to hardcode the column names used in construction
-     * the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getTables and getTableTypes methods on
+     * DatabaseMetaData. These constant values are be used to hardcode the column names used in construction the ResultSet obj.
      */
     interface TABLE_TYPES {
 
@@ -187,9 +179,8 @@ public interface JDBCColumnNames {
     }
 
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getTypeInfo method on DatabaseMetaData. These constant values
-     * are be used to hard code the column names used in construction of the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getTypeInfo method on DatabaseMetaData.
+     * These constant values are be used to hard code the column names used in construction of the ResultSet obj.
      */
     interface TYPE_INFO {
 
@@ -247,22 +238,21 @@ public interface JDBCColumnNames {
         // constant indiacting column's Radix.
         static final String NUM_PREC_RADIX = "NUM_PREC_RADIX"; //$NON-NLS-1$
     }
-    
+
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getCrossReference, getExportedKeys, and getImportedKeys methods
-     * on DatabaseMetaData. These constant values are be used to hard code the
-     * column names used in construction the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getCrossReference, getExportedKeys, and
+     * getImportedKeys methods on DatabaseMetaData. These constant values are be used to hard code the column names used in
+     * construction the ResultSet obj.
      */
     interface REFERENCE_KEYS {
 
-        //  name of the column containing catalog or Virtual database name for primary key's table.
+        // name of the column containing catalog or Virtual database name for primary key's table.
         static final String PKTABLE_CAT = "PKTABLE_CAT"; //$NON-NLS-1$
 
-        //  name of the column containing schema or Virtual database version for primary key's table.
+        // name of the column containing schema or Virtual database version for primary key's table.
         static final String PKTABLE_SCHEM = "PKTABLE_SCHEM"; //$NON-NLS-1$
 
-        //  name of the column containing table or group name for primary key's table.
+        // name of the column containing table or group name for primary key's table.
         static final String PKTABLE_NAME = "PKTABLE_NAME"; //$NON-NLS-1$
 
         // name of the column containing column or element name of the primary key.
@@ -300,11 +290,9 @@ public interface JDBCColumnNames {
         static final String FKPOSITION = "FKPOSITION"; //$NON-NLS-1$
     }
 
-
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getPrimaryKeys method on DatabaseMetaData. These constant values
-     * are be used to hard code the column names used in construction the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getPrimaryKeys method on DatabaseMetaData.
+     * These constant values are be used to hard code the column names used in construction the ResultSet obj.
      */
     interface PRIMARY_KEYS {
 
@@ -329,9 +317,8 @@ public interface JDBCColumnNames {
     }
 
     /**
-     * This class contains constants representing column names on ResultSet
-     * returned by getIndexInfo method on DatabaseMetaData. These constant values
-     * are be used to hard code the column names used in construction the ResultSet obj.
+     * This class contains constants representing column names on ResultSet returned by getIndexInfo method on DatabaseMetaData.
+     * These constant values are be used to hard code the column names used in construction the ResultSet obj.
      */
     interface INDEX_INFO {
 
@@ -375,6 +362,77 @@ public interface JDBCColumnNames {
         static final String FILTER_CONDITION = "FILTER_CONDITION"; //$NON-NLS-1$
     }
 
-    
+    /**
+     * This class contains constants representing column names on ResultSet returned by getImportedKeys method on
+     * DatabaseMetaData. These constant values are be used to hard code the column names used in construction the ResultSet obj.
+     */
+    interface REFERENCE_KEYS_INFO {
+
+        // name of the column containing tables catalog name on which the primary key is present
+        static final String PK_TABLE_CAT = "PKTABLE_CAT"; //$NON-NLS-1$
+
+        // name of the column containing tables schema name on which the primary key is present
+        static final String PK_TABLE_SCHEM = "PKTABLE_SCHEM"; //$NON-NLS-1$
+
+        // name of the column containing primary key's table or group name.
+        static final String PK_TABLE_NAME = "PKTABLE_NAME"; //$NON-NLS-1$
+
+        // name of the column containing primary key's column name.
+        static final String PK_COLUMN_NAME = "PKCOLUMN_NAME"; //$NON-NLS-1$
+
+        // name of the column containing tables catalog name on which the foreign key is present
+        static final String FK_TABLE_CAT = "FKTABLE_CAT"; //$NON-NLS-1$
+
+        // name of the column containing tables schema name on which the foreign key is present
+        static final String FK_TABLE_SCHEM = "FKTABLE_SCHEM"; //$NON-NLS-1$
+
+        // name of the column containing foreign key's table or group name.
+        static final String FK_TABLE_NAME = "FKTABLE_NAME"; //$NON-NLS-1$
+
+        // name of the column containing foreign key's column name.
+        static final String FK_COLUMN_NAME = "PKCOLUMN_NAME"; //$NON-NLS-1$
+
+        // name of the column containing sequence number within the primary key
+        static final String KEY_SEQ = "KEY_SEQ"; //$NON-NLS-1$
+
+        // name of the column containing the delete rule
+        static final String UPDATE_RULE = "UPDATE_RULE"; //$NON-NLS-1$
+
+        // name of the column containing the delete rule
+        static final String DELETE_RULE = "DELETE_RULE"; //$NON-NLS-1$
+
+        // name of the column containing name of the foreign key.
+        static final String FK_NAME = "FK_NAME"; //$NON-NLS-1$
+
+        // name of the column containing name of the primary key.
+        static final String PK_NAME = "PK_NAME"; //$NON-NLS-1$
+
+        static final String DEFERRABILITY = "DEFERRABILITY"; //$NON-NLS-1$
+    }
+
+    /**
+     * This class contains constants representing column names on ResultSet returned by getProcedures on DatabaseMetaData. These
+     * constant values are be used to hardcode the column names used in construction the ResultSet obj.
+     */
+    interface PROCEDURES {
+
+        // name of the column containing catalog name.
+        static final String PROCEDURE_CAT = "PROCEDURE_CAT"; //$NON-NLS-1$
+
+        // name of the column containing schema name.
+        static final String PROCEDURE_SCHEM = "PROCEDURE_SCHEM"; //$NON-NLS-1$
+
+        // name of the column containing table or group name.
+        static final String PROCEDURE_NAME = "PROCEDURE_NAME"; //$NON-NLS-1$
+
+        static final String RESERVED1 = ""; //$NON-NLS-1$
+        static final String RESERVED2 = ""; //$NON-NLS-1$
+        static final String RESERVED3 = ""; //$NON-NLS-1$
+
+        // name of column containing explanatory notes.
+        static final String REMARKS = "REMARKS"; //$NON-NLS-1$
+        static final String PROCEDURE_TYPE = "PROCEDURE_TYPE"; //$NON-NLS-1$
+        static final String SPECIFIC_NAME = "SPECIFIC_NAME"; //$NON-NLS-1$
+    }
 
 }
