@@ -12,16 +12,12 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release addesses 54 issues, many of which are bug fixes in lots of areas. The release
-improves even more the file system connector so that very large files (even dozens of GB)
-can be effectively accessed (MODE-2061). It is also now possible for clients to programmatically
-invoke sequencers against transient content, with the output of the sequencers remaining in
-transient state that will be saved when the session is saved (MODE-1467). The ModeShape kit for
-EAP now supports both EAP 6.1.0 and 6.1.1, and now supports EAP's domain mode (tech preview,
-MODE-2026). We also introduced a new Repository Explorer web application that enables using 
-your browser to visually explore the ModeShape content (MODE-1820). This web application is 
-automatically included with the ModeShape kit for EAP and is available for use on other servers.
-
+This release addesses 36 issues, including several significant performance improvements.
+We were able to do a fair amount of profiling under load, and identified performance bottlenecks
+in the workspace cache (MODE-2123), in the indexing (MODE-2124), and when creating names (MODE-2124).
+We also identified several areas that were posing a problem when concurently updating the same node
+from many threads (MODE-2120, MODE-2121, MODE-2122). Other fixes improve the stability and
+functionality of our JCR implementation.
 
 ## Features
 
