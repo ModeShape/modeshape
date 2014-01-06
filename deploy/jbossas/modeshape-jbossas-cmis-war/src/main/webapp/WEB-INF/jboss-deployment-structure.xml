@@ -5,5 +5,12 @@
             <module name="org.modeshape.jcr.api" services="import"/>
             <module name="org.modeshape" services="import"/>
         </dependencies>
+        <!--
+            The CMIS endpoints are not compatible with CXF, so we need to disable that when deploying in EAP
+            see https://issues.jboss.org/browse/MODE-2129
+        -->
+        <exclude-subsystems>
+            <subsystem name="webservices"/>
+        </exclude-subsystems>
     </deployment>
 </jboss-deployment-structure>
