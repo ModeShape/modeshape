@@ -365,6 +365,8 @@
         <skipLongRunningTests>true</skipLongRunningTests>
         <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
         <cassandra-cql-driver>1.0.0</cassandra-cql-driver>
+        <cassandra.all.version>1.2.0</cassandra.all.version>
+        <apache.avro.version>1.4.0</apache.avro.version>
     </properties>
 
     <profiles>
@@ -2097,13 +2099,13 @@
             <dependency>
                 <groupId>org.apache.cassandra</groupId>
                 <artifactId>cassandra-all</artifactId>
-                <version>1.2.0</version>
+                <version>${cassandra.all.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
-                <version>1.4.0</version>
+                <version>${apache.avro.version}</version>
                 <scope>test</scope>
             </dependency>
 
