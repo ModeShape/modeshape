@@ -10,14 +10,16 @@ and open the template in the editor.
         <!-- ignore white spaces -->
         <char expression="\s" destination="wait for subject" action=""/>
         <!-- this is first character of the command -->
-        <char expression="\w" destination="subject" action="collect"/>
+        <char expression="[a-z]" destination="subject" action="triggerForSubject"/>
+        <!-- anything else is not correct -->
+        <char expression="." destination="subject" action="failSubject"/>        
     </state>
     
     <state name="subject">
         <!-- compose command -->
-        <char expression="\w" destination="subject" action="collect"/>
+        <char expression="\w" destination="subject" action="readSubject"/>
         <!-- this is the end of the token, let's analyse it -->
-        <char expression="\s" destination="subject analysis" action="subjectAnalysis"/>
+        <char expression="\s" destination="subject analysis" action="testSubject"/>
     </state>
     
     <state name="subject analysis">

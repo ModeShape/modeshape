@@ -41,7 +41,7 @@ public class DdlValidator implements Lexer.ErrorListener {
      * Creates validator with default lexer.
      */
     public DdlValidator() {
-        lexer = new StandardLexer(this);
+        lexer = new StandardLexer();
     }
     
     /**
@@ -61,7 +61,7 @@ public class DdlValidator implements Lexer.ErrorListener {
      */
     public void validate(String ddl) throws ParsingException {
         //reset row and column indexes;
-        row = 0; col = 0;
+        row = 1; col = 0;
         message = null;
         
         //return lexer to initial state
@@ -79,10 +79,18 @@ public class DdlValidator implements Lexer.ErrorListener {
                 col = 0;
                 
                 //signal white spaces
-                lexer.signal(" ");
+                try {
+                    lexer.signal(" ", i, col, row);
+                } catch (IllegalStateException e) {
+                    throw new ParsingException(new Position(i, row, col), e.getMessage());
+                }
             } else {
                 //send character                
-                lexer.signal(ch);
+                try {
+                    lexer.signal(ch, i, col, row);
+                } catch (IllegalStateException e) {
+                    throw new ParsingException(new Position(i, row, col), e.getMessage());
+                }
             }
             
             if (message != null) {
@@ -95,7 +103,7 @@ public class DdlValidator implements Lexer.ErrorListener {
         //we are done with stream so send the 
         //special termination signal
         
-        lexer.signal("eos");        
+        lexer.signal("eos", 0, col, row);        
         
     }
 

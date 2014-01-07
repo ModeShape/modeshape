@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="white space">
+        <!-- ignore white spaces -->
+        <char expression="\s" destination="white space" action=""/>
+        <!-- this is first character of the command -->
+        <char expression="[a-z]" destination="name" action="start"/>
+        <!-- Digits are not allowed as first character -->
+        <char expression="\d" destination="finish" action="fail"/>
+    </state>
+    
+    <state name="name">
+        <!-- compose command -->
+        <char expression="\w" destination="name" action="read"/>
+        <!-- this is the end of the token, let's analyse it -->
+        <char expression="\s" destination="finish" action="notify"/>
+        <!-- end of stream -->
+        <char expression="eos" destination="finish" action="notify"/>        
+        <!-- bad character -->
+        <char expression="." destination="finish" action="fail"/>        
+    </state>
+    
+    <state name="finish"/>
+    
+</lexer>

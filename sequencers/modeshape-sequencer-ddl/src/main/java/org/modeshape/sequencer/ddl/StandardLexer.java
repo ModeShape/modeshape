@@ -23,6 +23,8 @@
  */
 package org.modeshape.sequencer.ddl;
 
+import org.modeshape.common.text.ParsingException;
+import org.modeshape.common.text.Position;
 import org.modeshape.sequencer.ddl.standard.CreateStatement;
 
 /**
@@ -32,13 +34,12 @@ import org.modeshape.sequencer.ddl.standard.CreateStatement;
  */
 public class StandardLexer extends Lexer {
     private Lexer createStatement;
-    
     /**
      * Creates new instance.
      */
-    public StandardLexer(ErrorListener listener) {
-        super(listener, StandardLexer.class.getResourceAsStream("/ddl.xml"));
-        createStatement = new CreateStatement(listener);
+    public StandardLexer() {
+        super(StandardLexer.class.getResourceAsStream("/ddl.xml"));
+        createStatement = new CreateStatement();
     }
     
     @Override
@@ -46,21 +47,27 @@ public class StandardLexer extends Lexer {
         super.setListener(listener);
         createStatement.setListener(listener);
     }
-    
-    /**
-     * Performs analysis of the command token.
-     * 
-     * @param state 
-     */
-    public void commandAnalysis(State state, String c) {
-        String token = token();
-        this.resetReader();
-        System.out.println("command: " + token);
-        signal(token);
+
+    public void triggerForCommand(State state, String c, int i, int col, int row) {
+        text.delete(0, text.length());
+        text.append(c);
+        setPosition(i, col, row);
     }
     
-    public void expectedCommand(State state, String c) {
-        listener().onError("Unexpected token: " + token());
+    public void readCommand(State state, String c, int i, int col, int row) {
+        text.append(c);
+    }
+    
+    public void testCommand(State state, String c, int i, int col, int row) {
+        signal(text.toString(), i, col, row);
+    }
+
+    public void failOnCommand(State state, String c, int i, int col, int row) {
+        throw new ParsingException(position, "Wrong command name: " + text);
+    }
+
+    public void failOnDigit(State state, String c, int i, int col, int row) {
+        throw new ParsingException(new Position(i, row, col), "Digits are not allowed here: " + c);
     }
     
     /**
@@ -69,8 +76,8 @@ public class StandardLexer extends Lexer {
      * @param state
      * @param s 
      */
-    public void createStatement(State state, String s) {
-        createStatement.signal(s);
+    public void createStatement(State state, String s, int i, int col, int row) {
+        createStatement.signal(s, i, col, row);
     }
     
 }

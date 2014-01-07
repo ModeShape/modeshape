@@ -10,14 +10,14 @@ and open the template in the editor.
         <!-- ignore white spaces -->
         <char expression="\s" destination="wait for name" action=""/>
         <!-- this is first character of the command -->
-        <char expression="\w" destination="name" action="collect"/>
+        <char expression="[a-z]" destination="name" action="triggerForName"/>
     </state>
     
     <state name="name">
         <!-- compose command -->
-        <char expression="\w" destination="name" action="collect"/>
+        <char expression="\w" destination="name" action="readTableName/>
         <!-- this is the end of the token, let's analyse it -->
-        <char expression="\s" destination="verify name" action="verifyName"/>
+        <char expression="\s" destination="verify name" action="testTableName"/>
     </state>
     
     <state name="verify name">

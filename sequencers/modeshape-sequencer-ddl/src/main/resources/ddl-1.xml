@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="start">
+        <!-- ignore white spaces -->
+        <char expression="\s" destination="start" action=""/>
+        <!-- this is first character of the command -->
+        <char expression="[a-z]" destination="command" action="resetAndRead"/>
+        <!-- Digits are not allowed as first character -->
+        <char expression=".*" destination="failure" action="failure"/>
+    </state>
+    
+    <state name="command">
+        <!-- compose command -->
+        <char expression="\w" destination="command" action="read"/>
+        <!-- this is the end of the token, let's analyse it -->
+        <char expression="\s" destination="command" action="signal"/>
+        
+        <!-- commands -->
+        <char expression="create" destination="create" action="storeCommand"/>
+        <char expression="alter" destination="alter" action="storeCommand"/>
+        <char expression="drop" destination="drop" action="storeCommand"/>  
+        
+        <!-- -->
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+    
+    <state name="create">            
+        <char expression="\s" destination="create" action=""/>
+        <char expression="[a-z]" destination="create subject" action="resetAndRead"/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="create subject">            
+        <char expression="\w" destination="create subject" action="read"/>
+        <char expression="\s" destination="create subject" action="signal"/>
+
+        <char expression="global" destination="create" action="storeOption"/>
+        <char expression="local" destination="create" action="storeOption"/>
+        <char expression="temporary" destination="create" action="storeOption"/>
+        
+        <char expression="table" destination="table" action=""/>
+                
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+    
+    <state name="table">            
+        <char expression="\s" destination="table" action=""/>
+        <char expression="[a-z]" destination="table-name" action="resetAndRead"/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="table-name">            
+        <char expression="\w" destination="table-name" action="read"/>
+        <char expression="\s" destination="table-element-list" action="storeTableName"/>
+        <char expression="\(" destination="column-definition" action="storeTableName"/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="table-element-list">            
+        <char expression="\s" destination="table-element-list" action=""/>
+        <char expression="\(" destination="column-definition | table-constraint-definition" action=""/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="column-definition | table-constraint-definition">            
+        <char expression="\s" destination="column-definition | table-constraint-definition" action=""/>
+        <char expression="[a-z]" destination="column-name" action="resetAndRead"/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="column-name">            
+        <char expression="\w" destination="column-name" action="read"/>
+        <char expression="\s" destination="data-type-definition" action="storeColumnName"/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="data-type-definition">            
+        <char expression="\s" destination="data-type-definition" action=""/>
+        <char expression="[a-z]" destination="data-type" action="resetAndRead"/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="data-type">            
+        <char expression="\w" destination="data-type" action="read"/>
+        
+        <char expression="\s" destination="data-type" action="recognizeDataType"/>
+        <char expression="\(" destination="data-type" action="recognizeDataType"/>
+        
+
+        <char expression="char" destination="character-string-type-def" action=""/>              
+        <char expression="character" destination="character-string-type-def" action=""/>              
+        <char expression="char" destination="character-string-type-def" action=""/>              
+        <char expression="varchar" destination="character-string-type-def" action=""/>              
+        <char expression="varying" destination="character-string-type-def" action=""/>              
+                
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="character-string-type-def">            
+        <char expression="\s" destination="character-string-type-def" action=""/>
+        <char expression="\w" destination="data-type" action="resetAndRead"/>
+        
+        <char expression="\(" destination="string-length" action="reset"/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="string-length">            
+        <char expression="\s" destination="string-length" action=""/>
+        <char expression="\d" destination="string-length" action="read"/>
+        
+        <char expression="\)" destination="default-definition" action=""/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+    
+    <state name="default-definition">            
+        <char expression="\s" destination="default-definition" action=""/>
+        <char expression="[a-z]" destination="default-keyword" action="resetAndRead"/>
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+
+    <state name="default-keyword">            
+        <char expression="[a-z]" destination="default-keyword" action="read"/>
+        <char expression="\s" destination="default-keyword" action=""/>
+        
+        <char expression="default" destination="default-literal" action=""/>
+        
+        <char expression=".*" destination="failure" action="failure"/>              
+    </state>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+    <state name="failure"/>
+    <state name="finish"/>
+</lexer>

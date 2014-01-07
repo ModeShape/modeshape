@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import org.modeshape.common.text.ParsingException;
+import org.modeshape.common.text.Position;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
@@ -51,6 +53,9 @@ public class Lexer {
     private State state;
     
     private StringBuilder tokenReader = new StringBuilder();
+    protected final StringBuilder text = new StringBuilder();
+    protected Position position;
+    
     private ErrorListener listener;
     
     /**
@@ -58,7 +63,7 @@ public class Lexer {
      * 
      * @param def automata xml descriptor as input stream.
      */
-    public Lexer(ErrorListener listener, InputStream def) {
+    public Lexer(InputStream def) {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         State is = null;
         try {
@@ -88,7 +93,6 @@ public class Lexer {
             ioe.printStackTrace();
         }
         
-        this.listener = listener;
         this.reset();
     }
     
@@ -124,10 +128,23 @@ public class Lexer {
         }
     }
     
-    public final void reset() {
+    /**
+     * Resets this lexer to the initial state.
+     */
+    public void reset() {
         this.state = states.get(0);
         this.resetReader();
     }
+    
+    /**
+     * Tests result of the syntax check procedure.
+     * 
+     * @return true if end states was reached and false otherwise.
+     */
+    public final boolean isCompleted() {
+        return this.state == states.get(states.size() - 1);
+    }
+    
     
     /**
      * Assigns listener.
@@ -168,9 +185,9 @@ public class Lexer {
      * 
      * @param c 
      */
-    public void signal(String c) {
+    public void signal(String c, int i, int col, int row) {
         if (state != null) {
-            state.signal(c);
+            state.signal(c, i, col, row);
         }
     }
     
@@ -180,21 +197,33 @@ public class Lexer {
      * @param statement to parse.
      */
     public void parse(String statement) {
+        reset();
+        int row = 1; int col = 0;
         for (int i = 0; i < statement.length(); i++) {
-            signal(statement.substring(i, i+1));
+            String ch = statement.substring(i, i+1);
+            if (ch.equals("\n")) {
+                ch = " ";
+                row++; col = 0;
+            }
+            signal(ch, i, col, row);
         }
+        signal("eos", 0, col, row);
+    }
+    
+    public final void setPosition(int i, int col, int row) {
+        this.position = new Position(i, row, col);
     }
     
     public void resetReader() {
         tokenReader.delete(0, tokenReader.length());
     }
     
-    public void collect(State state, String s) {
+    public void collect(State state, String s, int col, int row) {
         tokenReader.append(s);
     }
 
     public void fail(State state, String s) {
-        listener().onError("Unpected token: " + token());
+        listener().onError("Unpected token: " + s);
     }
     
     public String token() {
@@ -216,16 +245,19 @@ public class Lexer {
             transitions.add(t);
         }
         
-        protected void signal(String c) {
+        protected void signal(String c, int i, int col, int row) throws ParsingException {
 //            System.out.println("State=" + state.name + ", signal=" + c);
             for (Transition t : transitions) {
                 if (c.toLowerCase().matches(t.name)) {
                     System.out.println("State=" + state.name +",signal=" + c +  ", transition=" + t.name);
                     state = t.destination;
-                    t.process(this, c);
+                    t.process(this, c, i, col, row);
+                    
                     return;
                 }
             }
+            
+            throw new IllegalStateException("Unexpected token: " + c);
         }
         
     }
@@ -244,19 +276,22 @@ public class Lexer {
             this.action = action;
         }
         
-        public void process(State state, String s) {
+        public void process(State state, String s, int i, int col, int row) throws ParsingException {
             if (action == null || action.length() == 0) {
                 return;
             }
             try {
-                Method m = lexer.getClass().getMethod(action, State.class, String.class);
-                m.invoke(lexer, state, s);
+                Method m = lexer.getClass().getMethod(action, State.class, String.class, int.class, int.class, int.class);
+                m.invoke(lexer, state, s, i, col, row);
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException ex) {                
                 ex.printStackTrace();
-            } catch (InvocationTargetException ex) {                
-                ex.printStackTrace();
+            } catch (InvocationTargetException e) {
+                if (e.getCause() instanceof ParsingException) {
+                    throw (ParsingException)e.getCause();
+                }
+                e.printStackTrace();
             }
         }
     }

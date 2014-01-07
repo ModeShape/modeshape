@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="delegate">
+        <char expression="success" destination="success" action="success"/>
+        <!-- delegate everything -->
+        <char expression=".+" destination="delegate" action="delegate"/>
+    </state>
+    
+    <state name="success">
+        <char expression="eos" destination="success" action="success"/>
+    </state>
+</lexer>

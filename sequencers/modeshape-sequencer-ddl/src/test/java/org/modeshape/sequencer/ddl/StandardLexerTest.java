@@ -10,14 +10,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.modeshape.common.text.ParsingException;
 
 /**
  *
  * @author kulikov
  */
 public class StandardLexerTest {
-    private Checker checker = new Checker();
-    private Lexer lexer = new StandardLexer(checker);
+    private Lexer lexer = new StandardLexer();
     
     public StandardLexerTest() {
     }
@@ -38,26 +38,48 @@ public class StandardLexerTest {
     public void tearDown() {
     }
 
+    @Test
+    public void testUnknownCommand() {
+        String DDL = "Bla Bla Bla";
+        try {
+            lexer.parse(DDL);
+            fail("Command unknown");
+        } catch (ParsingException e) {
+            assertEquals(0, e.getPosition().getColumn());
+            assertEquals(1, e.getPosition().getLine());
+            assertEquals("Wrong command name: Bla", e.getMessage());
+        }
+        
+    }
+
+    @Test
+    public void digitAsFirstCharacter_Command() {
+        String DDL = "1REATE";
+        try {
+            lexer.parse(DDL);
+            fail("Command unknown");
+        } catch (ParsingException e) {
+            assertEquals(0, e.getPosition().getColumn());
+            assertEquals(1, e.getPosition().getLine());
+            assertEquals("Digits are not allowed here: 1", e.getMessage());
+        }
+        
+    }
+    
     /**
      * Test of commandAnalysis method, of class StandardLexer.
      */
     @Test
-    public void testNoErrors() {
+    public void testCreateCommand() {
         String DDL = "CREATE GLOBAL TEMPORARY TABLE EQPT_TYPE ( CAT_CODE CHAR(7) NOT NULL);";
-        checker.message = null;
         lexer.parse(DDL);
-        
-        assertTrue(checker.message == null);
     }
 
-    public class Checker implements Lexer.ErrorListener {
-
-        private String message;
-        
-        @Override
-        public void onError(String message) {
-            this.message = message;
-        }
-        
+    
+    @Test
+    public void testCreateStatement() {
+        String DDL = "CREATE GLOBAL TEMPORARY TABLE EQPT_TYPE ( CAT_CODE CHAR(7) NOT NULL);";
+        lexer.parse(DDL);
     }
+    
 }

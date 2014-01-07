@@ -7,32 +7,30 @@ and open the template in the editor.
 
 <lexer>
     <state name="wait for command">
-        <char expression="eos" destination="failure" action="fail"/>
         <!-- ignore white spaces -->
         <char expression="\s" destination="wait for command" action=""/>
         <!-- this is first character of the command -->
-        <char expression="\w" destination="command" action="collect"/>
+        <char expression="[a-z]" destination="command" action="triggerForCommand"/>
+        <!-- Digits are not allowed as first character -->
+        <char expression="\d" destination="failure" action="failOnDigit"/>
     </state>
     
     <state name="command">
-        <char expression="eos" destination="failure" action="fail"/>
         <!-- compose command -->
-        <char expression="\w" destination="command" action="collect"/>
+        <char expression="\w" destination="command" action="readCommand"/>
         <!-- this is the end of the token, let's analyse it -->
-        <char expression="\s" destination="command analysis" action="commandAnalysis"/>
+        <char expression="\s" destination="command analysis" action="testCommand"/>
     </state>
     
     <state name="command analysis">
-        <char expression="eos" destination="failure" action="fail"/>
         <!-- CREATE statement -->
         <char expression="create" destination="create statement" action=""/>
         <!-- ALTER statement -->
         <char expression="alter" destination="alter statement" action=""/>
         <!-- DROP statement -->
         <char expression="drop" destination="drop statement" action=""/>
-        
-        <!-- unknown statement -->
-        <char expression="\." destination="falure" action=""/>
+        <!-- Anything else -->
+        <char expression=".{1,}" destination="failure" action="failOnCommand"/>
     </state>
     
     <state name="create statement">

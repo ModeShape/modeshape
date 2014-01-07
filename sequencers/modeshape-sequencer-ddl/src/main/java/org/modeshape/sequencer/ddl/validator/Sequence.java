@@ -21,47 +21,35 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.ddl;
+package org.modeshape.sequencer.ddl.validator;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.modeshape.common.text.ParsingException;
 
 /**
  *
  * @author kulikov
  */
-public class LexerTest {
+public class Sequence extends Rule {
     
-    public LexerTest() {
-    }
+    private Rule[] rules;
     
-    @BeforeClass
-    public static void setUpClass() {
-    }
-    
-    @AfterClass
-    public static void tearDownClass() {
-    }
-    
-    @Before
-    public void setUp() {
-    }
-    
-    @After
-    public void tearDown() {
+    public Sequence(String lhs, Rule... rules) {
+        super(lhs);
+        this.rules = rules;
     }
 
-    /**
-     * Test of reset method, of class Lexer.
-     */
-    @Test
-    public void testReset() {
-        Lexer lexer = new Lexer(getClass().getResourceAsStream("/standard.xml"));
-        lexer.reset();
-        lexer.parse("abc");
+    public Sequence(Rule... rules) {
+        super("--");
+        this.rules = rules;
     }
+    
+    @Override
+    public int matches(String[] text, int offset) throws ParsingException {
+        for (int i = 0; i < rules.length; i++) {
+            offset = rules[i].validate(text, offset);
+        }
+        return offset;
+    }
+       
+    
 }

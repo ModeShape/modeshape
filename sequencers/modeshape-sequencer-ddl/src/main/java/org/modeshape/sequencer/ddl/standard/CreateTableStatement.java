@@ -30,27 +30,28 @@ import org.modeshape.sequencer.ddl.Lexer;
  * @author kulikov
  */
 public class CreateTableStatement extends Lexer {
-    public CreateTableStatement(ErrorListener listener) {
-        super(listener, CreateTableStatement.class.getResourceAsStream("/create_table_statement.xml"));
+    
+    public CreateTableStatement() {
+        super(CreateTableStatement.class.getResourceAsStream("/create_table_statement.xml"));
     }
     
-    public void verifyName(State state, String s) {
+    public void verifyName(State state, String s, int i, int col, int row) {
         System.out.println("Name=" + token());
         resetReader();
-        signal("valid");
+        signal("valid", i, col, row);
     }
     
-    public void retainColumnName(State state, String s) {
+    public void retainColumnName(State state, String s, int i, int col, int row) {
         System.out.println("Column Name=" + token());
         resetReader();
     }
     
-    public void checkColumnType(State state, String s) {
+    public void checkColumnType(State state, String s, int i, int col, int row) {
         System.out.println("Column Type=" + token());
         resetReader();
     }
 
-    public void storeColumnConstraint(State state, String s) {
+    public void storeColumnConstraint(State state, String s, int i, int col, int row) {
         System.out.println("Column contraint=" + token());
         resetReader();
     }

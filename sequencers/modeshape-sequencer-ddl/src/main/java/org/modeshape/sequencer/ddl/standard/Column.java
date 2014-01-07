@@ -21,47 +21,45 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.ddl;
+package org.modeshape.sequencer.ddl.standard;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.modeshape.sequencer.ddl.Lexer;
 
 /**
  *
  * @author kulikov
  */
-public class LexerTest {
+public class Column extends Lexer {
+    private ColumnName name;
+    private ColumnType type;
+    private Lexer parent;
     
-    public LexerTest() {
-    }
-    
-    @BeforeClass
-    public static void setUpClass() {
-    }
-    
-    @AfterClass
-    public static void tearDownClass() {
-    }
-    
-    @Before
-    public void setUp() {
+    public Column(Lexer parent) {
+        super(Column.class.getResourceAsStream("/column.xml"));
+        name = new ColumnName(this);
+        type = new ColumnType(this);
+        this.parent = parent;
     }
     
-    @After
-    public void tearDown() {
+    public String name() {
+        return name.name();
     }
-
-    /**
-     * Test of reset method, of class Lexer.
-     */
-    @Test
-    public void testReset() {
-        Lexer lexer = new Lexer(getClass().getResourceAsStream("/standard.xml"));
-        lexer.reset();
-        lexer.parse("abc");
+    
+    public String type() {
+        return type.type();
     }
+    
+    public void readName(State state, String s, int i, int col, int row) {
+        name.signal(s, i, col, row);
+    }
+    
+    public void readType(State state, String s, int i, int col, int row) {
+        type.signal(s, i, col, row);
+    }
+    
+    public void notify(State state, String s, int i, int col, int row) {
+        parent.signal("success", i, col, row);
+    }
+    
+    
 }

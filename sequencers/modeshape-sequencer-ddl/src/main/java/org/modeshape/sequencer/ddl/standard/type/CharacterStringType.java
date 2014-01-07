@@ -21,47 +21,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.ddl;
+package org.modeshape.sequencer.ddl.standard.type;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.modeshape.sequencer.ddl.Lexer;
 
 /**
  *
  * @author kulikov
  */
-public class LexerTest {
+public class CharacterStringType extends Lexer {
+    private Lexer parent;
     
-    public LexerTest() {
-    }
-    
-    @BeforeClass
-    public static void setUpClass() {
-    }
-    
-    @AfterClass
-    public static void tearDownClass() {
+    public CharacterStringType(Lexer parent) {
+        super(CharacterStringType.class.getResourceAsStream("/char_string.xml"));
+        this.parent = parent;
     }
     
-    @Before
-    public void setUp() {
-    }
     
-    @After
-    public void tearDown() {
-    }
-
-    /**
-     * Test of reset method, of class Lexer.
-     */
-    @Test
-    public void testReset() {
-        Lexer lexer = new Lexer(getClass().getResourceAsStream("/standard.xml"));
-        lexer.reset();
-        lexer.parse("abc");
-    }
+    
 }

@@ -23,6 +23,7 @@
  */
 package org.modeshape.sequencer.ddl.standard;
 
+import org.modeshape.common.text.Position;
 import org.modeshape.sequencer.ddl.Lexer;
 
 /**
@@ -33,20 +34,27 @@ public class CreateStatement extends Lexer {
     
     private CreateTableStatement createTableStatement;
     
-    public CreateStatement(ErrorListener listener) {
-        super(listener, CreateStatement.class.getResourceAsStream("/create_statement.xml"));
-        createTableStatement = new CreateTableStatement(listener);
+    public CreateStatement() {
+        super(CreateStatement.class.getResourceAsStream("/create_statement.xml"));
+        createTableStatement = new CreateTableStatement();
     }
     
-    public void subjectAnalysis(State state, String s) {
-        String token = token();
-        resetReader();
-        System.out.println(token);
-        signal(token);
+    public void triggerForSubject(State state, String s, int i, int col, int row) {
+        position = new Position(i, row, col);
+        text.delete(0, text.length());
+        text.append(s);
+    }
+
+    public void readSubject(State state, String s, int i, int col, int row) {
+        text.append(s);
     }
     
-    public void createTableStatement(State state, String s) {
-        createTableStatement.signal(s);
+    public void testSubject(State state, String s, int i, int col, int row) {
+        signal(text.toString(), i, col, row);
+    }
+    
+    public void createTableStatement(State state, String s, int i, int col, int row) {
+        createTableStatement.signal(s, i, col, row);
     }
     
 }

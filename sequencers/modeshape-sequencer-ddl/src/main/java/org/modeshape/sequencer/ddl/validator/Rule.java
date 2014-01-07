@@ -21,47 +21,51 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.ddl;
+package org.modeshape.sequencer.ddl.validator;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.modeshape.common.text.ParsingException;
 
 /**
  *
  * @author kulikov
  */
-public class LexerTest {
+public abstract class Rule {
+    private String lhs;
+    private boolean optional;
     
-    public LexerTest() {
+    public Rule(String lhs) {
+        this.lhs = lhs;
     }
     
-    @BeforeClass
-    public static void setUpClass() {
+    public String lhs() {
+        return lhs;
     }
     
-    @AfterClass
-    public static void tearDownClass() {
+    public Rule optional() {
+        this.optional = true;
+        return this;
     }
     
-    @Before
-    public void setUp() {
+    public abstract int matches(String[] text, int offset) throws ParsingException;
+    
+    public int validate(String[] stream, int offset) throws ParsingException {
+        if (optional && offset == stream.length) {
+            return offset;
+        }
+        
+        try {
+            return matches(stream, offset);
+        } catch (ParsingException e) {
+            if (!optional) {
+                throw e;
+            } else {
+                return offset;
+            }
+        }
     }
     
-    @After
-    public void tearDown() {
-    }
-
-    /**
-     * Test of reset method, of class Lexer.
-     */
-    @Test
-    public void testReset() {
-        Lexer lexer = new Lexer(getClass().getResourceAsStream("/standard.xml"));
-        lexer.reset();
-        lexer.parse("abc");
+    @Override
+    public String toString() {
+        return lhs();
     }
 }

@@ -21,22 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.ddl;
+package org.modeshape.sequencer.ddl.standard;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.modeshape.sequencer.ddl.Lexer;
+import org.modeshape.sequencer.ddl.Tester;
 
 /**
  *
  * @author kulikov
  */
-public class LexerTest {
+public class CreateValidatorTest {
     
-    public LexerTest() {
+    private String SQL = "\\s+CREATE\\s+TABLE\\s+\\w+\\s*\\(\\.*\\)";
+    
+    public CreateValidatorTest() {
     }
     
     @BeforeClass
@@ -56,12 +62,14 @@ public class LexerTest {
     }
 
     /**
-     * Test of reset method, of class Lexer.
+     * Test of name method, of class ColumnName.
      */
     @Test
-    public void testReset() {
-        Lexer lexer = new Lexer(getClass().getResourceAsStream("/standard.xml"));
-        lexer.reset();
-        lexer.parse("abc");
+    public void testValidator() {
+        Pattern pattern = Pattern.compile(SQL);
+        Matcher matcher = pattern.matcher("CREATE TABLE TEST (CAT_CODE VARCHAR(20))");
+        
+        System.out.println(matcher.find());
     }
+
 }
