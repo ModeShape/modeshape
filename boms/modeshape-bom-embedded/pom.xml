@@ -49,6 +49,7 @@
     </developers>
 
     <properties>
+        <jcr.version>2.0</jcr.version>
         <infinispan.version>5.2.7.Final</infinispan.version>
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.17.SP2</picketbox.version>
@@ -270,6 +271,14 @@
                 <type>war</type>
             </dependency>
 
+            <!--
+                JCR
+            -->
+            <dependency>
+                <groupId>javax.jcr</groupId>
+                <artifactId>jcr</artifactId>
+                <version>${jcr.version}</version>
+            </dependency>
             <!--
                 Infinispan cachestores
             -->

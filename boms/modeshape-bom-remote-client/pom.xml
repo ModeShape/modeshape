@@ -54,6 +54,7 @@
         <!-- ***************** -->
         <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
+        <jcr.version>2.0</jcr.version>
     </properties>
 
     <!--
@@ -72,6 +73,11 @@
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jdbc</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.jcr</groupId>
+                <artifactId>jcr</artifactId>
+                <version>${jcr.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

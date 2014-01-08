@@ -54,6 +54,9 @@
         <!-- ***************** -->
         <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
+
+        <jcr.version>2.0</jcr.version>
+        <version.org.eap.bom>6.1.0-redhat-1</version.org.eap.bom>
     </properties>
 
     <!--
@@ -71,6 +74,33 @@
                 <artifactId>modeshape-jcr-api</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.jcr</groupId>
+                <artifactId>jcr</artifactId>
+                <version>${jcr.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!--
+                The following imports will bring in 2 EAP boms which contain EAP-specific dependencies and should give clients
+                all the standard (JEE & JBoss spec) dependencies, together with logging.
+            -->
+            <dependency>
+                <groupId>org.jboss.bom.eap</groupId>
+                <artifactId>jboss-javaee-6.0-with-tools</artifactId>
+                <version>${version.org.eap.bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.bom.eap</groupId>
+                <artifactId>jboss-javaee-6.0-with-logging</artifactId>
+                <version>${version.org.eap.bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
