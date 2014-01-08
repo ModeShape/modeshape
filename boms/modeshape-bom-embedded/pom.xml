@@ -63,6 +63,42 @@
         <apache.avro.version>1.4.0</apache.avro.version>
         <tika.version>1.3</tika.version>
 
+        <!--//TODO author=Horia Chiorean date=1/8/14 description=The following version props should not be here-->
+        <jgroups.version>3.2.10.Final</jgroups.version>
+        <jboss.logging.version>3.1.2.GA</jboss.logging.version>
+        <hibernate.search.version>4.3.0.Final</hibernate.search.version>
+        <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
+        <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
+        <slf4j.api.version>1.6.1</slf4j.api.version>
+        <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
+        <log4j.version>1.2.16</log4j.version>
+        <logback.version>0.9.29</logback.version>
+        <lucene.version>3.6.2</lucene.version>
+        <lucene.regex.version>3.0.3</lucene.regex.version>
+        <junit.version>4.10</junit.version>
+        <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
+        <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
+        <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
+        <eclipse.core.expressions.version>3.3.0-v20070606-0010</eclipse.core.expressions.version>
+        <eclipse.core.runtime.version>3.3.100-v20070530</eclipse.core.runtime.version>
+        <eclipse.osgi.version>3.3.0-v20070530</eclipse.osgi.version>
+        <eclipse.core.jobs.version>3.3.0-v20070423</eclipse.core.jobs.version>
+        <eclipse.equinox.registry.version>3.3.0-v20070522</eclipse.equinox.registry.version>
+        <eclipse.equinox.preferences.version>3.2.100-v20070522</eclipse.equinox.preferences.version>
+        <eclipse.core.contenttype.version>3.2.100-v20070319</eclipse.core.contenttype.version>
+        <eclipse.xsd.version>2.2.3</eclipse.xsd.version>
+        <eclipse.emf.common.version>2.4.0</eclipse.emf.common.version>
+        <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
+        <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
+        <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
+        <javaassist.version>3.11.0.GA</javaassist.version>
+        <jaudiotagger.version>2.0.3</jaudiotagger.version>
+        <poi.version>3.10-beta1</poi.version>
+        <jcommander.version>1.5</jcommander.version>
+        <wsdl4j.version>1.6.2</wsdl4j.version>
+        <bson4jackson.version>1.1.2</bson4jackson.version>
+        <javax.jta.version>1.1</javax.jta.version>
+
         <!-- ***************** -->
         <!-- Repository Deployment URLs -->
         <!-- ***************** -->
@@ -269,6 +305,12 @@
                 <artifactId>modeshape-web-explorer-war</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-unit-test</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!--
@@ -553,6 +595,268 @@
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
                 <version>${apache.avro.version}</version>
+            </dependency>
+
+            <!--
+                //TODO author=Horia Chiorean date=1/8/14 description=The following dependencies are only here to be compatible with 3.6.0.Final.
+            -->
+            <!--
+                  Infinispan
+              -->
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>stax2-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!--
+                JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
+                because of ISPN.
+             -->
+            <dependency>
+                <groupId>org.jgroups</groupId>
+                <artifactId>jgroups</artifactId>
+                <version>${jgroups.version}</version>
+            </dependency>
+
+            <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-engine</artifactId>
+                <version>${hibernate.search.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate-search-analyzers</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-infinispan</artifactId>
+                <version>${hibernate.search.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-core-asl</artifactId>
+                <version>${hibernate.search.jackson-core-asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-mapper-asl</artifactId>
+                <version>${hibernate.search.jackson-mapper-asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-regex</artifactId>
+                <version>${lucene.regex.version}</version>
+            </dependency>
+
+            <!-- Recommended JUnit version -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit-dep</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--
+              Compatible logging modules.
+          -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${jboss.logging.version}</version>
+            </dependency>
+
+            <!--
+                Sequencers
+            -->
+
+            <!-- Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)
+                 So we need to specify exact versions, and we can do that in a dependencyManagement section.
+                 Here are the dependencies showing the last combination that we could get working:
+                 +- org.eclipse.equinox:common:jar:3.3.0-v20070426:compile
+                     +- org.eclipse.jdt:core:jar:3.3.0-v_771:compile
+                     |  +- org.eclipse.core:resources:jar:3.3.0-v20070604:compile
+                     |  |  \- org.eclipse.core:expressions:jar:3.3.0-v20070606-0010:compile
+                     |  \- org.eclipse.core:runtime:jar:3.3.100-v20070530:compile
+                     |     +- org.eclipse:osgi:jar:3.3.0-v20070530:compile
+                     |     +- org.eclipse.core:jobs:jar:3.3.0-v20070423:compile
+                     |     +- org.eclipse.equinox:registry:jar:3.3.0-v20070522:compile
+                     |     +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
+                     |     \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
+            -->
+            <!--Java sequencer-->
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>common</artifactId>
+                <version>${eclipse.equinox.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jdt</groupId>
+                <artifactId>core</artifactId>
+                <version>${eclipse.jdt.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>resources</artifactId>
+                <version>${eclipse.core.resources.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>expressions</artifactId>
+                <version>${eclipse.core.expressions.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>runtime</artifactId>
+                <version>${eclipse.core.runtime.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse</groupId>
+                <artifactId>osgi</artifactId>
+                <version>${eclipse.osgi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>jobs</artifactId>
+                <version>${eclipse.core.jobs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>registry</artifactId>
+                <version>${eclipse.equinox.registry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>preferences</artifactId>
+                <version>${eclipse.equinox.preferences.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>contenttype</artifactId>
+                <version>${eclipse.core.contenttype.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>${javaassist.version}</version>
+            </dependency>
+            <!--Mp3 sequencer-->
+            <dependency>
+                <groupId>org</groupId>
+                <artifactId>jaudiotagger</artifactId>
+                <version>${jaudiotagger.version}</version>
+            </dependency>
+            <!--MsOffice sequencer -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-scratchpad</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <!--
+                The following 2 POI dependencies are not used directly, but defined so that we use the same "beta" version
+                across the board (see https://issues.jboss.org/browse/MODE-1934).Tika-parsers brings these 2 transitively in
+             -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml-schemas</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <!--Teiid sequencer-->
+            <dependency>
+                <groupId>com.beust</groupId>
+                <artifactId>jcommander</artifactId>
+                <version>${jcommander.version}</version>
+            </dependency>
+            <!--WSDL sequencer-->
+            <dependency>
+                <groupId>wsdl4j</groupId>
+                <artifactId>wsdl4j</artifactId>
+                <version>${wsdl4j.version}</version>
+            </dependency>
+            <!--XSD sequencer-->
+            <dependency>
+                <groupId>org.eclipse.xsd</groupId>
+                <artifactId>xsd</artifactId>
+                <version>${eclipse.xsd.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>common</artifactId>
+                <version>${eclipse.emf.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore</artifactId>
+                <version>${eclipse.emf.ecore.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore-change</artifactId>
+                <version>${eclipse.emf.ecorechange.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore-xmi</artifactId>
+                <version>${eclipse.emf.ecorexmi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.transaction</groupId>
+                <artifactId>jta</artifactId>
+                <version>${javax.jta.version}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
