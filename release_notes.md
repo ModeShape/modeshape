@@ -12,12 +12,9 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release addesses 36 issues, including several significant performance improvements.
-We were able to do a fair amount of profiling under load, and identified performance bottlenecks
-in the workspace cache (MODE-2123), in the indexing (MODE-2124), and when creating names (MODE-2124).
-We also identified several areas that were posing a problem when concurently updating the same node
-from many threads (MODE-2120, MODE-2121, MODE-2122). Other fixes improve the stability and
-functionality of our JCR implementation.
+This patch release addresses an issue in the BOMs that could have broken application builds
+that have been relying upon default versions of logging and several other third-party dependencies.
+See MODE-2133 for details.
 
 ## Features
 
