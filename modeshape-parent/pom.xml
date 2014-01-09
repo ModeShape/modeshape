@@ -304,6 +304,7 @@
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
         <tika.version>1.3</tika.version>
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
+        <mapdb.version>0.9.7</mapdb.version>
 
         <!--WebDAV servlet-->
         <jmock.version>2.4.0</jmock.version>
@@ -353,7 +354,8 @@
         <version.jar.plugin>2.4</version.jar.plugin>
         <version.javadoc.plugin>2.9</version.javadoc.plugin>
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
-        <version.failsafe.plugin>2.13</version.failsafe.plugin> 
+        <version.failsafe.plugin>2.13</version.failsafe.plugin>
+        <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
 
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
@@ -814,6 +816,11 @@
                         </lifecycleMappingMetadata>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>gwt-maven-plugin</artifactId>
+                    <version>${version.gwt.maven.plugin}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -1194,6 +1201,12 @@
                 <version>${hibernate.search.version}</version>
                 <classifier>jbossas-72-dist</classifier>
                 <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mapdb</groupId>
+                <artifactId>mapdb</artifactId>
+                <version>${mapdb.version}</version>
             </dependency>
 
             <dependency>

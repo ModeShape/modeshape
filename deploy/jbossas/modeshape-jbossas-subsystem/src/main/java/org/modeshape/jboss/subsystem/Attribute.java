@@ -101,7 +101,14 @@ public enum Attribute {
     QUERYABLE("queryable"),
     READONLY("readonly"),
     EXPLODED("exploded"),
-    AUTO_DEPLOY("auto-deploy");
+    MAX_DAYS_TO_KEEP_RECORDS("max-days-to-keep-records"),
+    ASYNC_WRITES("async-writes"),
+    JOURNALING("journaling"),
+    AUTO_DEPLOY("auto-deploy"),
+    JOURNAL_GC_THREAD_POOL("journal-gc-thread-pool"),
+    JOURNAL_GC_INITIAL_TIME("journal-gc-initial-time"),
+    JOURNAL_PATH("journal-path"),
+    JOURNAL_RELATIVE_TO("journal-relative-to");
 
     private final String name;
 

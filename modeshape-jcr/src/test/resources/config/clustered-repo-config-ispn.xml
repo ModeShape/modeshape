@@ -18,10 +18,10 @@
 
     <namedCache name="repo_cache">
         <clustering mode="replication">
-            <stateTransfer fetchInMemoryState="true" timeout="20000" />
+            <stateTransfer fetchInMemoryState="true" timeout="2000" />
             <sync />
         </clustering>
-        <locking isolationLevel="READ_COMMITTED" writeSkewCheck="false" lockAcquisitionTimeout="4000"/>
+        <locking isolationLevel="READ_COMMITTED" writeSkewCheck="false" lockAcquisitionTimeout="1000"/>
         <transaction transactionMode="TRANSACTIONAL" lockingMode="PESSIMISTIC" />
     </namedCache>
 

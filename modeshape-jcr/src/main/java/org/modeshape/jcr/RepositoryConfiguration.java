@@ -511,6 +511,26 @@ public class RepositoryConfiguration {
          * The optional string representing a valid JGroups channel configuration object
          */
         public static final String CHANNEL_CONFIGURATION = "channelConfiguration";
+
+        /**
+         * The name of the journaling schema field.
+         */
+        public static final String JOURNALING = "journaling";
+
+        /**
+         * The location where the journal should be kept
+         */
+        public static final String JOURNAL_LOCATION = "location";
+
+        /**
+         * The maximum number of days journal entries should be stored on disk
+         */
+        public static final String MAX_DAYS_TO_KEEP_RECORDS = "maxDaysToKeepRecords";
+
+        /**
+         * Whether asynchronous writes into the journal should be enabled or not.
+         */
+        public static final String ASYNC_WRITES_ENABLED = "asyncWritesEnabled";
     }
 
     public static class Default {
@@ -569,6 +589,7 @@ public class RepositoryConfiguration {
         public static final String QUERY_THREAD_POOL = "modeshape-indexer";
         public static final String GARBAGE_COLLECTION_POOL = "modeshape-gc";
         public static final String OPTIMIZATION_POOL = "modeshape-opt";
+        public static final String JOURNALING_POOL = "modeshape-journaling-gc";
 
         public static final String INDEXING_ANALYZER = StandardAnalyzer.class.getName();
         public static final String INDEXING_SIMILARITY = DefaultSimilarity.class.getName();
@@ -598,6 +619,11 @@ public class RepositoryConfiguration {
 
         public static final String OPTIMIZATION_INITIAL_TIME = "02:00";
         public static final int OPTIMIZATION_INTERVAL_IN_HOURS = 24;
+
+        public static final String JOURNAL_LOCATION = "modeshape/journal";
+        //by default journal entries are kept indefinitely
+        public static final int MAX_DAYS_TO_KEEP_RECORDS = -1;
+        public static final boolean ASYNC_WRITES_ENABLED = false;
     }
 
     public static final class FieldValue {
@@ -1017,6 +1043,15 @@ public class RepositoryConfiguration {
 
     public Clustering getClustering() {
         return new Clustering(doc.getDocument(FieldName.CLUSTERING));
+    }
+
+    /**
+     * Returns the journaling configuration
+     *
+     * @return a {@link Journaling} instance, never {@code null}
+     */
+    public Journaling getJournaling() {
+        return new Journaling(doc.getDocument(FieldName.JOURNALING));
     }
 
     /**
@@ -2446,6 +2481,78 @@ public class RepositoryConfiguration {
         }
     }
 
+    @Immutable
+    public class Journaling {
+
+        private final Document journalingDoc;
+
+        protected Journaling( Document journalingDoc ) {
+            this.journalingDoc = journalingDoc != null ? journalingDoc : EMPTY;
+        }
+
+        /**
+         * Checks whether clustering is enabled or not, based on a journaling configuration having been provided.
+         *
+         * @return true if journaling is enabled, or false otherwise
+         */
+        public boolean isEnabled() {
+            return this.journalingDoc != EMPTY;
+        }
+
+        /**
+         * The location of the journal
+         *
+         * @return a {@code non-null} String
+         */
+        public String location() {
+            return this.journalingDoc.getString(FieldName.JOURNAL_LOCATION, Default.JOURNAL_LOCATION);
+        }
+
+        /**
+         * The maximum number of days journal entries should be kept on disk
+         *
+         * @return the number of days
+         */
+        public int maxDaysToKeepRecords() {
+            return this.journalingDoc.getInteger(FieldName.MAX_DAYS_TO_KEEP_RECORDS, Default.MAX_DAYS_TO_KEEP_RECORDS);
+        }
+
+        /**
+         * Whether asynchronous writes shoudl be enabled or not.
+         *
+         * @return true if anyschronos writes should be enabled.
+         */
+        public boolean asyncWritesEnabled() {
+            return this.journalingDoc.getBoolean(FieldName.ASYNC_WRITES_ENABLED, Default.ASYNC_WRITES_ENABLED);
+        }
+
+        /**
+         * Get the name of the thread pool that should be used for garbage collection journal entries.
+         *
+         * @return the thread pool name; never null
+         */
+        public String getThreadPoolName() {
+            return journalingDoc.getString(FieldName.THREAD_POOL, Default.JOURNALING_POOL);
+        }
+
+        /**
+         * Get the time that the first GC process should be run.
+         *
+         * @return the initial time; never null
+         */
+        public String getInitialTimeExpression() {
+            return journalingDoc.getString(FieldName.INITIAL_TIME, Default.GARBAGE_COLLECTION_INITIAL_TIME);
+        }
+
+        /**
+         * Get the GC interval in hours.
+         *
+         * @return the interval; never null
+         */
+        public int getIntervalInHours() {
+            return journalingDoc.getInteger(FieldName.INTERVAL_IN_HOURS, Default.GARBAGE_COLLECTION_INTERVAL_IN_HOURS);
+        }
+    }
     protected List<Component> readComponents( Document doc,
                                               String fieldName,
                                               String aliasFieldName,

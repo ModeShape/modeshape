@@ -1339,6 +1339,43 @@
                 "type" : "string",
                 "description" : "A list of cnd files which are accessible on the classpath, from which initial content will be imported"
             }
+        },
+        "journaling" : {
+            "type" : "object",
+            "description" : "The journal configuration which enables ModeShape to store a local journal of all the changes",
+            "properties" : {
+                "location" : {
+                    "type" : "string",
+                    "description" : "The folder where the journal entries are stored by ModeShape",
+                    "default" : "modeshape/journal"
+                },
+                "maxDaysToKeepRecords" : {
+                    "type" : "integer",
+                    "description" : "The maximum number of days a journal entry should be kept on disk before removed. By default, no entries are removed",
+                    "default" : -1
+                },
+                "asyncWritesEnabled" : {
+                    "type" : "boolean",
+                    "description" : "Whether journal entries should be persisted to disk asynchronously or not",
+                    "default" : false
+                },
+                "threadPool" : {
+                    "type" : "string",
+                    "default" : "modeshape-journaling-gc",
+                    "description" : "Name of the thread pool that should be used when cleaning up older journal entries"
+                },
+                "initialTime" : {
+                    "type" : "string",
+                    "default" : "00:00",
+                    "pattern" : "(([0-1][0-9])|([2][0-3])):[0-5][0-9]",
+                    "description" : "The local time that the first journal garbage collection process should be run. Garbage collection may be relatively expensive, as it involves scanning all persisted content, so it's recommended that this be done during off hours if possible. By default, garbage collection is run at midnight (local time) after the repository is started."
+                },
+                "intervalInHours" : {
+                    "type" : "integer",
+                    "default" : "24",
+                    "description" : "The number of hours between journal garbage collection runs. By default the interval is 24 hours (meaning it runs once per day)."
+                }
+            }
         }
     }
 }

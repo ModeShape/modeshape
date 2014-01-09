@@ -159,6 +159,15 @@
             </includes>
         </dependencySet>
 
+        <!-- Module for MapDB (self-contained) -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.eap.modules.location}/org/mapdb/${mapdb.version}</outputDirectory>
+            <includes>
+                <include>org.mapdb:*:jar</include>
+            </includes>
+        </dependencySet>
+
         <!--Connectors-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

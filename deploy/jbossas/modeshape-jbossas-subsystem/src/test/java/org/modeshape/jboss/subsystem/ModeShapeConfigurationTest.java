@@ -128,6 +128,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         parse(readResource("modeshape-webapp-config.xml"));
     }
 
+    @Test
+    public void testOutputPersistenceOfConfigurationWithJournaling() throws Exception {
+        parse(readResource("modeshape-journaling.xml"));
+    }
+
 
     /* // todo replace with dmr format not json
     @Test

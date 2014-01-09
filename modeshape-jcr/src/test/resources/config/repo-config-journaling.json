@@ -1,0 +1,16 @@
+{
+    "name" : "Journaling repository",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "journaling" : {
+        "location" : "target/journal",
+        "maxDaysToKeepRecords" : 15,
+        "asyncWritesEnabled" : false,
+        "threadPool" : "modeshape-journaling-gc",
+        "initialTime" : "04:01",
+        "intervalInHours" : 5
+    }
+}

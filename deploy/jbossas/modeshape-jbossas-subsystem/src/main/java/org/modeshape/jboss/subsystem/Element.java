@@ -57,6 +57,7 @@ public enum Element {
     SLAVE_FILE_INDEX_STORAGE("slave-file-index-storage"),
     WORKSPACE("workspace"),
     WORKSPACES("workspaces"),
+    JOURNALING("journaling"),
     INITIAL_CONTENT("initial-content"),
     NODE_TYPES("node-types"),
     NODE_TYPE("node-type"),

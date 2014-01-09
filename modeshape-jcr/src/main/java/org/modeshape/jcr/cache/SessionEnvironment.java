@@ -32,7 +32,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- * 
+ * Interface which exposes global repository subsystems/configuration to running sessions.
  */
 public interface SessionEnvironment {
 
@@ -56,6 +56,12 @@ public interface SessionEnvironment {
      * @return {@code true} if indexing is configured clustered, {@code false} otherwise
      */
     boolean indexingClustered();
+
+    /**
+     * Returns the id of the repository's {@link org.modeshape.jcr.journal.ChangeJournal}
+     * @return either a {@link String} or {@code null} if no journal is configured.
+     */
+    String journalId();
 
     public static interface Monitor {
         /**

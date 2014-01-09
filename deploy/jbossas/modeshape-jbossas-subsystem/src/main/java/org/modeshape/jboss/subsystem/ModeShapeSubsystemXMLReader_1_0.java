@@ -224,6 +224,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 case WORKSPACES:
                     parseWorkspaces(reader, address, repository);
                     break;
+                case JOURNALING: {
+                    parseJournaling(reader, repository);
+                    break;
+                }
                 case NODE_TYPES:
                     parseNodeTypes(reader, repository);
                     break;
@@ -389,6 +393,44 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 }
             }
         }
+    }
+
+    private void parseJournaling( final XMLExtendedStreamReader reader,
+                                  final ModelNode repository ) throws XMLStreamException {
+        repository.get(ModelAttributes.JOURNALING.getName()).set(true);
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    // Set these as properties on the repository ModelNode ...
+                    case JOURNAL_PATH:
+                        ModelAttributes.JOURNAL_PATH.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case JOURNAL_RELATIVE_TO:
+                        ModelAttributes.JOURNAL_RELATIVE_TO.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case MAX_DAYS_TO_KEEP_RECORDS:
+                        ModelAttributes.MAX_DAYS_TO_KEEP_RECORDS.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case ASYNC_WRITES:
+                        ModelAttributes.ASYNC_WRITES.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case JOURNAL_GC_THREAD_POOL: {
+                        ModelAttributes.JOURNAL_GC_THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    }
+                    case JOURNAL_GC_INITIAL_TIME: {
+                        ModelAttributes.JOURNAL_GC_INITIAL_TIME.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    }
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+        requireNoElements(reader);
     }
 
     private void parseWorkspace( final XMLExtendedStreamReader reader,

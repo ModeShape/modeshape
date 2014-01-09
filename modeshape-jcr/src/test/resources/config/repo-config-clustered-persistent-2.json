@@ -44,6 +44,6 @@
         }
     },
     "clustering" : {
-        "clusterName" : "modeshape-cluster"
+        "clusterName" : "modeshape-event-cluster"
     }
 }

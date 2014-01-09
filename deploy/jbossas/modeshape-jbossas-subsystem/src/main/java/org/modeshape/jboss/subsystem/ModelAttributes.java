@@ -23,6 +23,7 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.modeshape.jboss.subsystem.ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
@@ -717,7 +718,7 @@ public class ModelAttributes {
                                                                                                      ModelType.STRING).setXmlName(Attribute.RELATIVE_TO.getLocalName())
                                                                                                                       .setAllowExpression(true)
                                                                                                                       .setAllowNull(true)
-                                                                                                                      .setDefaultValue(new ModelNode().set("jboss.server.data.dir"))
+                                                                                                                      .setDefaultValue(new ModelNode().set(JBOSS_DATA_DIR_VARIABLE))
                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                       .build();
 
@@ -803,7 +804,7 @@ public class ModelAttributes {
                                                                                                             ModelType.STRING).setXmlName(Attribute.SOURCE_RELATIVE_TO.getLocalName())
                                                                                                                              .setAllowExpression(true)
                                                                                                                              .setAllowNull(true)
-                                                                                                                             .setDefaultValue(new ModelNode().set("jboss.server.data.dir"))
+                                                                                                                             .setDefaultValue(new ModelNode().set(JBOSS_DATA_DIR_VARIABLE))
                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                              .build();
 
@@ -834,6 +835,67 @@ public class ModelAttributes {
                                                                                                                     .setDefaultValue(new ModelNode().set(false))
                                                                                                                     .build();
 
+    public static final SimpleAttributeDefinition JOURNALING = new MappedAttributeDefinitionBuilder(ModelKeys.JOURNALING,
+                                                                                                    ModelType.BOOLEAN)
+            .setXmlName(Attribute.JOURNALING.getLocalName())
+            .setAllowExpression(false)
+            .setAllowNull(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
+    public static final SimpleAttributeDefinition JOURNAL_PATH = new MappedAttributeDefinitionBuilder(ModelKeys.JOURNAL_PATH,
+                                                                                                      ModelType.STRING)
+            .setXmlName(Attribute.JOURNAL_PATH.getLocalName())
+            .setAllowExpression(true)
+            .setAllowNull(true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    public static final SimpleAttributeDefinition JOURNAL_RELATIVE_TO = new MappedAttributeDefinitionBuilder(ModelKeys.JOURNAL_RELATIVE_TO,
+                                                                                                             ModelType.STRING)
+            .setXmlName(Attribute.JOURNAL_RELATIVE_TO.getLocalName())
+            .setAllowExpression(true)
+            .setAllowNull(true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    public static final SimpleAttributeDefinition MAX_DAYS_TO_KEEP_RECORDS = new MappedAttributeDefinitionBuilder(ModelKeys.MAX_DAYS_TO_KEEP_RECORDS,
+                                                                                                                  ModelType.INT)
+            .setXmlName(Attribute.MAX_DAYS_TO_KEEP_RECORDS.getLocalName())
+            .setAllowExpression(false)
+            .setAllowNull(true)
+            .setDefaultValue(new ModelNode(-1))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    public static final SimpleAttributeDefinition ASYNC_WRITES = new MappedAttributeDefinitionBuilder(ModelKeys.ASYNC_WRITES,
+                                                                                                      ModelType.BOOLEAN)
+            .setXmlName(Attribute.ASYNC_WRITES.getLocalName())
+            .setAllowExpression(false)
+            .setAllowNull(true)
+            .setDefaultValue(new ModelNode(false))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    public static final SimpleAttributeDefinition JOURNAL_GC_THREAD_POOL = new MappedAttributeDefinitionBuilder(
+            ModelKeys.JOURNAL_GC_THREAD_POOL,
+            ModelType.STRING).setXmlName(Attribute.JOURNAL_GC_THREAD_POOL.getLocalName())
+                             .setAllowExpression(true)
+                             .setAllowNull(true)
+                             .setDefaultValue(new ModelNode().set("modeshape-journaling-gc"))
+                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                             .build();
+
+    public static final SimpleAttributeDefinition JOURNAL_GC_INITIAL_TIME = new MappedAttributeDefinitionBuilder(
+            ModelKeys.JOURNAL_GC_INITIAL_TIME,
+            ModelType.STRING).setXmlName(Attribute.JOURNAL_GC_INITIAL_TIME.getLocalName())
+                             .setAllowExpression(true)
+                             .setAllowNull(true)
+                             .setDefaultValue(new ModelNode().set("00:00"))
+                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                             .build();
+
+
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
     public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
@@ -847,7 +909,8 @@ public class ModelAttributes {
         REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, CLUSTER_NAME, CLUSTER_STACK, GARBAGE_COLLECTION_THREAD_POOL,
         GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL, DOCUMENT_OPTIMIZATION_THREAD_POOL,
         DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
-        DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE};
+        DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE, JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS, JOURNAL_GC_INITIAL_TIME,
+        JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};
 

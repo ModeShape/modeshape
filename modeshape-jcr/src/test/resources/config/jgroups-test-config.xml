@@ -36,13 +36,13 @@
             oob_thread_pool.queue_max_size="100"
             oob_thread_pool.rejection_policy="Run"/>
 
-    <PING timeout="2000"
+    <PING timeout="100"
           num_initial_members="20"/>
     <MERGE2 max_interval="30000"
             min_interval="10000"/>
     <FD_SOCK/>
     <FD_ALL/>
-    <VERIFY_SUSPECT timeout="1500" />
+    <VERIFY_SUSPECT timeout="100" />
     <BARRIER />
     <pbcast.NAKACK2 xmit_interval="1000"
                     xmit_table_num_rows="100"

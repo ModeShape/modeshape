@@ -334,7 +334,8 @@ final class SequencingRunner implements Runnable {
 
         RecordingChanges sequencingChanges = new RecordingChanges(outputSession.context().getProcessId(),
                                                                   outputSession.getRepository().repositoryKey(),
-                                                                  outputSession.workspaceName());
+                                                                  outputSession.workspaceName(),
+                                                                  outputSession.getRepository().journalId());
         for (AbstractJcrNode outputNode : outputNodes) {
             sequencingChanges.nodeSequenced(sequencedNode.key(),
                                             sequencedNode.path(),
@@ -357,7 +358,8 @@ final class SequencingRunner implements Runnable {
         assert inputSession != null;
         RecordingChanges sequencingChanges = new RecordingChanges(inputSession.context().getProcessId(),
                                                                   inputSession.getRepository().repositoryKey(),
-                                                                  inputSession.workspaceName());
+                                                                  inputSession.workspaceName(),
+                                                                  inputSession.getRepository().journalId());
         sequencingChanges.nodeSequencingFailure(sequencedNode.key(),
                                                 sequencedNode.path(),
                                                 work.getOutputPath(),

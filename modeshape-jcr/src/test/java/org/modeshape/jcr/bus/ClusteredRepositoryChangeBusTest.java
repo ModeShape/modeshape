@@ -25,18 +25,15 @@
 package org.modeshape.jcr.bus;
 
 import static org.hamcrest.core.Is.is;
-import org.junit.AfterClass;
 import static org.junit.Assert.assertThat;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import org.modeshape.jcr.ClusteringHelper;
-import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.modeshape.jcr.ClusteringHelper;
+import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.clustering.ClusteringService;
 
 /**
  * Unit test for {@link ClusteredRepositoryChangeBus}
@@ -45,11 +42,9 @@ import java.util.List;
  */
 public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
 
-    private static final String CLUSTER_NAME = "testcluster-event-bus";
-
     private ClusteredRepositoryChangeBus defaultBus;
-
-    private List<ChangeBus> buses;
+    private List<ChangeBus> buses = new ArrayList<ChangeBus>();
+    private List<ClusteringService> clusteringServices = new ArrayList<ClusteringService>();
     
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -62,14 +57,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
     }
 
     @Override
-    public void beforeEach() {
-        buses = new ArrayList<ChangeBus>();
-    }
-
-    @Override
     protected ChangeBus getChangeBus() throws Exception {
         if (defaultBus == null) {
-            defaultBus = startNewBus(CLUSTER_NAME);
+            defaultBus = startNewBus();
         }
         return defaultBus;
     }
@@ -79,43 +69,21 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         for (ChangeBus bus : buses) {
             bus.shutdown();
         }
+        for (ClusteringService clusteringService : clusteringServices) {
+            clusteringService.shutdown();
+        }
         defaultBus = null;
     }
 
-    @Test( expected = IllegalStateException.class )
-    public void shouldNotAllowSettingClusterNameToNull() throws Exception {
-        startNewBus(null);
-    }
-
     @Test
-    public void shouldAllowSettingClusterNameToBlankString() throws Exception {
-        startNewBus("");
-    }
-
-    @Test
-    public void shouldAllowSettingClusterNameToStringWithAlphaNumericCharacters() throws Exception {
-        startNewBus("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-    }
-
-    @Test
-    public void shouldAllowSettingClusterNameToStringWithAlphaNumericAndPunctuationCharacters() throws Exception {
-        startNewBus("valid.cluster!name@#$%^&*()<>?,./:\"'[]\\{}|_+-=");
-    }
-
-    @Test
-    public void shouldAllowSettingClusterNameToStringWithAlphaNumericAndWhitespaceCharacters() throws Exception {
-        startNewBus("valid cluster name");
-    }
-
-    @Test
-    public void shouldSendChangeSetThroughRealJGroupsCluster() throws Exception {
+    public void shouldSendChangeSetThroughCluster() throws Exception {
         // Create three observers ...
         TestListener listener1 = new TestListener();
         TestListener listener2 = new TestListener();
         TestListener listener3 = new TestListener();
 
         // Create three buses using a real JGroups cluster ...
-        ClusteredRepositoryChangeBus bus1 = startNewBus(CLUSTER_NAME);
+        ClusteredRepositoryChangeBus bus1 = startNewBus();
         bus1.register(listener1);
         // ------------------------------------
         // Send a change from the first bus ...
@@ -144,7 +112,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         // ------------------------------------
         // Create a second bus ...
         // ------------------------------------
-        ClusteredRepositoryChangeBus bus2 = startNewBus(CLUSTER_NAME);
+        ClusteredRepositoryChangeBus bus2 = startNewBus();
         bus2.register(listener2);
 
         // ------------------------------------
@@ -200,7 +168,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         // ------------------------------------
         // Create a third bus ...
         // ------------------------------------
-        ClusteredRepositoryChangeBus bus3 = startNewBus(CLUSTER_NAME);
+        ClusteredRepositoryChangeBus bus3 = startNewBus();
         bus3.register(listener3);
         // ------------------------------------
         // Send a change from the first bus ...
@@ -335,20 +303,16 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
     }
 
-    private ClusteredRepositoryChangeBus startNewBus( String name) throws Exception {
-        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(createClusteringConfiguration(name),
-                                                                            super.createRepositoryChangeBus(), "test-bus-process");
+    private ClusteredRepositoryChangeBus startNewBus() throws Exception {
+        ClusteringService clusteringService = new ClusteringService("test-bus-process",
+                                                                     ClusteringHelper.createClusteringConfiguration("testcluster-event-bus"));
+        clusteringService.start();
+        clusteringServices.add(clusteringService);
+
+        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(super.createRepositoryChangeBus(),
+                                                                            clusteringService);
         bus.start();
         buses.add(bus);
         return bus;
-    }
-    
-    private RepositoryConfiguration.Clustering createClusteringConfiguration(String clusterName) {
-        RepositoryConfiguration.Clustering repositoryConfiguration = mock(RepositoryConfiguration.Clustering.class);
-        when(repositoryConfiguration.isEnabled()).thenReturn(true);
-        when(repositoryConfiguration.getClusterName()).thenReturn(clusterName);
-        when(repositoryConfiguration.getChannelProviderClassName()).thenReturn(DefaultChannelProvider.class.getName());
-        when(repositoryConfiguration.getChannelConfiguration()).thenReturn("config/jgroups-test-config.xml");
-        return repositoryConfiguration;
     }
 }

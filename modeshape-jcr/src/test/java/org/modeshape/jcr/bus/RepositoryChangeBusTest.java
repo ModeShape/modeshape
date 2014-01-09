@@ -266,6 +266,11 @@ public class RepositoryChangeBusTest {
         }
 
         @Override
+        public String getJournalId() {
+            return null;
+        }
+
+        @Override
         public boolean equals( Object o ) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -314,7 +319,7 @@ public class RepositoryChangeBusTest {
         }
 
         public void await() throws InterruptedException {
-            latch.await(250, TimeUnit.MILLISECONDS);
+            latch.await(350, TimeUnit.MILLISECONDS);
         }
 
         public List<TestChangeSet> getObservedChangeSet() {

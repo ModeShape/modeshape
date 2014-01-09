@@ -491,7 +491,8 @@ public final class Connectors {
                 RunningState repository = repository();
                 return new ConnectorChangeSetImpl(Connectors.this, mappings, repository.context().getProcessId(),
                                                   repository.repositoryKey(), repository.changeBus(),
-                                                  repository.context().getValueFactories().getDateFactory());
+                                                  repository.context().getValueFactories().getDateFactory(),
+                                                  repository().journalId());
             }
         };
     }

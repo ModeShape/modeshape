@@ -94,6 +94,11 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
             public boolean indexingClustered() {
                 return false;
             }
+
+            @Override
+            public String journalId() {
+                return null;
+            }
         };
     }
 

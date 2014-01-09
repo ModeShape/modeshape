@@ -419,6 +419,12 @@ public class RepositoryConfigurationTest {
         assertThat(opt.isEnabled(), is(false));
     }
 
+    @Test
+    @FixFor( "MODE-1683" )
+    public void shouldReadJournalingConfiguration() {
+        assertValid("config/repo-config-journaling.json");
+    }
+
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {
         Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(false));

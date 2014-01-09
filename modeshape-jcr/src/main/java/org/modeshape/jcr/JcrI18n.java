@@ -521,6 +521,9 @@ public final class JcrI18n {
     public static I18n upgrade3_6_0CannotUpdateNodeTypes;
     public static I18n upgrade3_6_0CannotUpdateLocks;
 
+    public static I18n cannotStartJournal;
+    public static I18n cannotStopJournal;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

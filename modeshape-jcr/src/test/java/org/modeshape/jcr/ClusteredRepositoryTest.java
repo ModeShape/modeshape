@@ -211,7 +211,53 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             TestingUtil.killRepositories(repository1, repository2);
             FileUtil.delete("target/clustered");
         }
+    }
 
+    @Test
+    @FixFor("MODE-1683")
+    public void shouldClusterJournals() throws Exception {
+        FileUtil.delete("target/journal1");
+        FileUtil.delete("target/journal2");
+        JcrRepository repository1 = null;
+        JcrRepository repository2 = null;
+        try {
+            // Start the first process completely ...
+            repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-journaling-config-1.json");
+            Thread.sleep(300);
+
+            // Start the second process completely ...
+            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-journaling-config-2.json");
+            Thread.sleep(300);
+
+            assertEquals(repository1.runningState().journal().allRecords(false).size(),
+                         repository2.runningState().journal().allRecords(false).size());
+
+            // make 1 change which should be propagated in the cluster
+            Session session1 = repository1.login();
+            session1.getRootNode().addNode("node1");
+            session1.save();
+            Thread.sleep(300);
+
+            assertEquals(repository1.runningState().journal().allRecords(false).size(),
+                         repository2.runningState().journal().allRecords(false).size());
+
+            //shut down the 2nd repo's journal
+            repository2.runningState().journal().shutdown();
+
+            // add another node to repo1 - this should be local to repo1 until repo2 comes up
+            session1.getRootNode().addNode("node1");
+            session1.save();
+            session1.logout();
+            Thread.sleep(300);
+
+            // start the 2nd repo's journal back up and check that it received the additional node from the 1st node.
+            repository2.runningState().journal().start();
+            Thread.sleep(500);
+            assertEquals(repository1.runningState().journal().allRecords(false).size(),
+                         repository2.runningState().journal().allRecords(false).size());
+        } finally {
+            TestingUtil.killRepositories(repository1, repository2);
+        }
     }
 
     /*
