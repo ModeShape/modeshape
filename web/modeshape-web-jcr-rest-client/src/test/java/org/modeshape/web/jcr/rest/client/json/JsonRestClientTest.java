@@ -129,7 +129,7 @@ public final class JsonRestClientTest {
             assertThat(metadata.get("jcr.specification.version"), is((Object)"2.0"));
             assertThat(metadata.get("jcr.repository.name"), is((Object)"ModeShape"));
             assertThat(metadata.get("jcr.repository.vendor.url"), is((Object)"http://www.modeshape.org"));
-            assertThat(metadata.get("jcr.repository.version").toString().startsWith("3."), is(true));
+            assertThat(metadata.get("jcr.repository.version").toString().startsWith("4."), is(true));
             assertThat(metadata.get("option.versioning.supported"), is((Object)"true"));
         }
     }

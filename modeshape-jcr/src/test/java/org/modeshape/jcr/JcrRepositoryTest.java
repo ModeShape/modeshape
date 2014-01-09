@@ -516,7 +516,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is("JBoss, a division of Red Hat"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_URL_DESC), is("http://www.modeshape.org"));
         assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is(notNullValue()));
-        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC).startsWith("3."), is(true));
+        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC).startsWith("4."), is(true));
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("2.0"));
     }
