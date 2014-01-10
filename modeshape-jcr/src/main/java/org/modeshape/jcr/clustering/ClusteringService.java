@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.modeshape.jcr.clustering;
@@ -35,6 +27,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jgroups.Address;
@@ -57,6 +50,11 @@ import org.modeshape.jcr.RepositoryConfiguration;
 public class ClusteringService {
 
     private static final Logger LOGGER = Logger.getLogger(ClusteringService.class);
+
+    /**
+     * An approximation about the maximum delay in local time that we consider acceptable.
+     */
+    private static final long DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS = TimeUnit.MINUTES.toMillis(10);
 
     /**
      * The id of the process which started this service
@@ -87,6 +85,11 @@ public class ClusteringService {
      * The clustering configuration
      */
     private final RepositoryConfiguration.Clustering clusteringConfiguration;
+
+    /**
+     *  The maximum accepted clock delay between cluster members
+     */
+    private final long maxAllowedClockDelayMillis = DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS;
 
     /**
      * The JGroups channel which will be used to send/receive event across the cluster
@@ -235,29 +238,63 @@ public class ClusteringService {
     }
 
     /**
+     * Returns the maximum accepted delay in clock time between cluster members.
+     *
+     * @return the number of milliseconds representing the maximum accepted delay.
+     */
+    public long getMaxAllowedClockDelayMillis() {
+        return maxAllowedClockDelayMillis;
+    }
+
+    /**
      * Sends a message of a given type across a cluster.
      *
+     *
      * @param payload the main body of the message; must not be {@code null}
-     * @param messageType the type of the message.
      * @return {@code true} if the send operation was successful, {@code false} otherwise
      */
-    public boolean sendMessage( Serializable payload,
-                                int messageType )  {
+    public boolean sendMessage( Serializable payload )  {
         if (!isOpen() || !multipleMembersInCluster()) {
             return false;
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Process {0} from cluster {1} sending message {2} of type {3}", processId(), clusterName(), payload, messageType);
+            LOGGER.debug("Process {0} from cluster {1} sending payload {2}", processId(), clusterName(), payload);
         }
         try {
-            byte[] messageData = ClusterMessage.toByteArray(messageType, payload);
+            byte[] messageData = toByteArray(payload);
             Message jgMessage = new Message(null, null, messageData);
             channel.send(jgMessage);
             return true;
         } catch (Exception e) {
             // Something went wrong here
             throw new SystemFailureException(ClusteringI18n.errorSendingMessage.text(clusterName(), processId()), e);
+        }
+    }
+
+    private byte[] toByteArray( Object payload ) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ObjectOutputStream stream = new ObjectOutputStream(output);
+        try {
+            stream.writeObject(payload);
+        } finally {
+            stream.close();
+        }
+        return output.toByteArray();
+    }
+
+    @SuppressWarnings( "unchecked" )
+    private Serializable fromByteArray( byte[] data,
+                                        ClassLoader classLoader ) throws IOException, ClassNotFoundException {
+        if (classLoader == null) {
+            classLoader = ClusteringService.class.getClassLoader();
+        }
+        ObjectInputStreamWithClassLoader input = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(data),
+                                                                                      classLoader);
+        try {
+            return (Serializable)input.readObject();
+        } finally {
+            input.close();
         }
     }
 
@@ -271,18 +308,17 @@ public class ClusteringService {
         @Override
         public void receive( final org.jgroups.Message message ) {
             try {
-                ClusterMessage<? extends Serializable> clusterMessage = ClusterMessage.fromByteArray(message.getBuffer(),
-                                                                                                     getClass().getClassLoader());
+                Serializable payload = fromByteArray(message.getBuffer(), getClass().getClassLoader());
+
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Process {0} from cluster {1} received message {2}", processId(), clusterName(), clusterMessage);
+                    LOGGER.debug("Process {0} from cluster {1} received payload {2}", processId(), clusterName(), payload);
                 }
 
                 for (MessageConsumer<Serializable> consumer : consumers) {
-                    if (consumer.interestedIn(clusterMessage.getType())) {
-                        consumer.consume(clusterMessage.getPayload());
+                    if (consumer.getPayloadType().isAssignableFrom(payload.getClass())) {
+                        consumer.consume(payload);
                     }
                 }
-
             } catch (Exception e) {
                 // Something went wrong here (this should not happen) ...
                 String msg = ClusteringI18n.errorReceivingMessage.text(clusterName(), processId());
@@ -308,64 +344,6 @@ public class ClusteringService {
                              clusterName());
             }
         }
-    }
-
-    private static class ClusterMessage<T extends Serializable> implements Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private final int type;
-        private final T payload;
-
-        private ClusterMessage( int type,
-                                T payload ) {
-            this.type = type;
-            this.payload = payload;
-        }
-
-        int getType() {
-            return type;
-        }
-
-        T getPayload() {
-            return payload;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("ClusterMessage{");
-            sb.append("type=").append(type);
-            sb.append(", payload=").append(payload);
-            sb.append('}');
-            return sb.toString();
-        }
-
-        static <T extends Serializable> byte[] toByteArray( int type,
-                                                            T payload ) throws IOException {
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            ObjectOutputStream stream = new ObjectOutputStream(output);
-            try {
-                stream.writeObject(new ClusterMessage<T>(type, payload));
-            } finally {
-                stream.close();
-            }
-            return output.toByteArray();
-        }
-
-        @SuppressWarnings( "unchecked" )
-        static ClusterMessage<? extends Serializable> fromByteArray( byte[] data,
-                                                                     ClassLoader classLoader ) throws IOException, ClassNotFoundException {
-            if (classLoader == null) {
-                classLoader = ClusterMessage.class.getClassLoader();
-            }
-            ObjectInputStreamWithClassLoader input = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(data),
-                                                                                          classLoader);
-            try {
-                return (ClusterMessage<? extends Serializable>)input.readObject();
-            } finally {
-                input.close();
-            }
-        }
-
     }
 
     private class Listener implements ChannelListener {

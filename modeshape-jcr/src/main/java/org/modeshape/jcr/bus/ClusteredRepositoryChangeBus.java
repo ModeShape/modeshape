@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.modeshape.jcr.bus;
@@ -43,12 +35,7 @@ import org.modeshape.jcr.clustering.MessageConsumer;
  * @author Horia Chiorean
  */
 @ThreadSafe
-public final class ClusteredRepositoryChangeBus implements ChangeBus, MessageConsumer<ChangeSet> {
-
-    /**
-     * The type of a message containing a change set.
-     */
-    public static final int CHANGESET_MESSAGE = 1;
+public final class ClusteredRepositoryChangeBus extends MessageConsumer<ChangeSet> implements ChangeBus {
 
     private static final Logger LOGGER = Logger.getLogger(ClusteredRepositoryChangeBus.class);
 
@@ -70,15 +57,12 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus, MessageCon
      */
     public ClusteredRepositoryChangeBus( ChangeBus delegate,
                                          ClusteringService clusteringService) {
+        super(ChangeSet.class);
+
         CheckArg.isNotNull(delegate, "delegate");
         CheckArg.isNotNull(clusteringService, "clusteringService");
         this.delegate = delegate;
         this.clusteringService = clusteringService;
-    }
-
-    @Override
-    public boolean interestedIn( int messageType ) {
-        return messageType == CHANGESET_MESSAGE;
     }
 
     @Override
@@ -128,7 +112,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus, MessageCon
         // There are multiple participants in the cluster, so send all changes out to JGroups,
         // letting JGroups do the ordering of messages...
         logSendOperation(changeSet);
-        clusteringService.sendMessage(changeSet, CHANGESET_MESSAGE);
+        clusteringService.sendMessage(changeSet);
     }
 
     protected final void logSendOperation( ChangeSet changeSet ) {

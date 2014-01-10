@@ -1,3 +1,19 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.modeshape.jcr.journal;
 
 import java.io.File;
@@ -44,6 +60,7 @@ public class LocalJournal implements ChangeJournal {
     private String journalId;
     private DB journalDB;
     private NavigableSet<JournalRecord> records;
+    private long searchTimeDelta;
     private volatile boolean stopped = false;
 
     /**
@@ -62,6 +79,7 @@ public class LocalJournal implements ChangeJournal {
         this.asyncWritesEnabled = asyncWritesEnabled;
         this.maxTimeToKeepEntriesMillis = TimeUnit.DAYS.toMillis(maxDaysToKeepEntries);
         this.stopped = true;
+        this.searchTimeDelta = TimeUnit.SECONDS.toMillis(1);
     }
 
     protected LocalJournal( String journalLocation ) {
@@ -80,17 +98,22 @@ public class LocalJournal implements ChangeJournal {
             if (!journalFileLocation.exists()) {
                 assert journalFileLocation.mkdirs();
             }
-            DBMaker dbMaker = DBMaker.newAppendFileDB(new File(journalFileLocation, RECORDS_FIELD))
+//            DBMaker dbMaker = DBMaker.newAppendFileDB(new File(journalFileLocation, RECORDS_FIELD))
+//                                     .compressionEnable()
+//                                     .checksumEnable()
+//                                     .closeOnJvmShutdown()
+//                                     .snapshotEnable();
+            DBMaker dbMaker = DBMaker.newFileDB(new File(journalFileLocation, RECORDS_FIELD))
                                      .compressionEnable()
                                      .checksumEnable()
                                      .closeOnJvmShutdown()
-                                     .snapshotEnable()
-                                     .randomAccessFileEnableIfNeeded();
-            if (!asyncWritesEnabled) {
-                dbMaker.asyncWriteDisable();
+                                     .mmapFileEnableIfSupported()
+                                     .snapshotEnable();
+            if (asyncWritesEnabled) {
+                dbMaker.asyncWriteEnable();
             }
             this.journalDB = dbMaker.make();
-            this.records = this.journalDB.createTreeSet(RECORDS_FIELD).keepCounter(true).makeOrGet();
+            this.records = this.journalDB.createTreeSet(RECORDS_FIELD).counterEnable().makeOrGet();
             Atomic.String journalAtomic = this.journalDB.getAtomicString(JOURNAL_ID_FIELD);
             //only write the value the first time
             if (StringUtil.isBlank(journalAtomic.get())) {
@@ -142,8 +165,12 @@ public class LocalJournal implements ChangeJournal {
         try {
             LOGGER.debug("Adding {0} records", records.length);
             for (JournalRecord record : records) {
-                long createTimeMillisUTC = uniqueCreatedTimeMillisUTC();
-                record.withCreatedTimeMillisUTC(createTimeMillisUTC);
+                if (record.getCreatedTimeMillisUTC() < 0) {
+                    //generate a unique timestamp only if there isn't one. In some scenarios (i.e. running in a cluster) we
+                    //always want to keep the original TS
+                    long createTimeMillisUTC = uniqueCreatedTimeMillisUTC();
+                    record.withCreatedTimeMillisUTC(createTimeMillisUTC);
+                }
                 this.records.add(record);
             }
             this.journalDB.commit();
@@ -209,52 +236,42 @@ public class LocalJournal implements ChangeJournal {
     }
 
     @Override
-    public Records recordsOlderThan( long localMillis,
+    public Records recordsNewerThan( long changeSetTimeMillis,
                                      boolean inclusive,
                                      boolean descendingOrder ) {
         if (stopped) {
             return Records.EMPTY;
         }
-        long millisUTC = new JodaDateTime(localMillis).getMillisecondsInUtc();
+        long millisUTC = new JodaDateTime(changeSetTimeMillis).getMillisecondsInUtc();
+        //adjust the millis using a delta so that we are sure we catch everything because we only search using the "created time"
+        //not the "change set" time
+        millisUTC = millisUTC - searchTimeDelta;
+
         JournalRecord bound = JournalRecord.searchBound(millisUTC);
-        NavigableSet<JournalRecord> subset = records.tailSet(bound, inclusive);
-        return recordsFromSet(subset, descendingOrder);
-    }
+        NavigableSet<JournalRecord> subset = records.tailSet(bound, true);
 
-    @Override
-    public Records recordsDelta( String journalId,
-                                 boolean descendingOrder ) {
-        CheckArg.isNotNull("journalId cannot be null", journalId);
-
-        LOGGER.debug("Journal {0} computing records delta for remote journal {1}", this.journalId, journalId);
-        if (stopped) {
-            return Records.EMPTY;
-        }
-
-        //step1: find the local time when this process was last seen (based on the last change we have from this process)
-        long processLastSeenLocalTimeUtcMillis = -1;
-        Iterator<JournalRecord> reverseIterator = records.descendingIterator();
-        while (reverseIterator.hasNext()) {
-            JournalRecord record = reverseIterator.next();
-            if (record.getJournalId().equals(journalId)) {
-                processLastSeenLocalTimeUtcMillis = record.getCreatedTimeMillisUTC();
+        //process each of the records from the result and look at the timestamp of the changeset, so that we're sure we only include
+        //the correct ones (we used a delta to make sure we get everything)
+        JournalRecord startRecord = null;
+        for (JournalRecord record : subset) {
+            long journalChangeTimeMillisUTC = record.getChangeTimeMillisUTC();
+            if (((journalChangeTimeMillisUTC == changeSetTimeMillis) && inclusive)
+                || journalChangeTimeMillisUTC > changeSetTimeMillis) {
+                startRecord = record;
                 break;
             }
         }
-        if (processLastSeenLocalTimeUtcMillis == -1) {
-            //we have never seen this process, so return everything
-            return allRecords(descendingOrder);
-        }
-
-        //step2: find *all* the entries which are greater (in local time) than this last time
-        JournalRecord bound = JournalRecord.searchBound(processLastSeenLocalTimeUtcMillis + 1);
-        NavigableSet<JournalRecord> subset = (NavigableSet<JournalRecord>)records.tailSet(bound);
-        return recordsFromSet(subset, descendingOrder);
+        return startRecord != null ? recordsFromSet(subset.tailSet(startRecord, true), descendingOrder) : Records.EMPTY;
     }
 
     @Override
     public String journalId() {
         return journalId;
+    }
+
+    protected LocalJournal withSearchTimeDelta( final long searchTimeDelta ) {
+        this.searchTimeDelta = searchTimeDelta;
+        return this;
     }
 
     private Iterable<JournalRecord> filter( final Iterator<JournalRecord> recordsIterator,
