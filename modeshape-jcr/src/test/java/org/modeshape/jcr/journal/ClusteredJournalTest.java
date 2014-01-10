@@ -27,6 +27,7 @@ package org.modeshape.jcr.journal;
 import java.util.ArrayList;
 import java.util.List;
 import javax.jcr.RepositoryException;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ClusteringHelper;
@@ -67,6 +68,7 @@ public class ClusteredJournalTest extends LocalJournalTest {
         }
     }
 
+    @Ignore
     @Test
     public void shouldReconcileDeltaInCluster() throws Exception {
         //shut down the default journal
