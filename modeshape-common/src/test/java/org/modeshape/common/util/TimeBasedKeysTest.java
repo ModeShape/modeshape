@@ -30,9 +30,9 @@ import org.junit.Test;
 /**
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public class TimeBasedCounterTest {
+public class TimeBasedKeysTest {
 
-    protected TimeBasedCounter counter = TimeBasedCounter.createCounter();
+    protected TimeBasedKeys counter = TimeBasedKeys.create();
     private boolean print;
 
     @Before
@@ -42,56 +42,56 @@ public class TimeBasedCounterTest {
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor1BitCounter() {
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(1);
+        TimeBasedKeys counter = TimeBasedKeys.create(1);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(1L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor2Bit() {
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(2);
+        TimeBasedKeys counter = TimeBasedKeys.create(2);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(3L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor3Bit() {
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(3);
+        TimeBasedKeys counter = TimeBasedKeys.create(3);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(7L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor4Bit() {
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(4);
+        TimeBasedKeys counter = TimeBasedKeys.create(4);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(15L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor5Bit() {
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(5);
+        TimeBasedKeys counter = TimeBasedKeys.create(5);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(31L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor6Bit() {
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(6);
+        TimeBasedKeys counter = TimeBasedKeys.create(6);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(63L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor7Bit() {
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(7);
+        TimeBasedKeys counter = TimeBasedKeys.create(7);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(127L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor8Bit() {
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(8);
+        TimeBasedKeys counter = TimeBasedKeys.create(8);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(255L, counter.getCounterEndingAt(0L));
     }
@@ -99,34 +99,34 @@ public class TimeBasedCounterTest {
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor16Bit() {
         long maxValue = ((long)Math.pow(2, 16)) - 1;
-        TimeBasedCounter counter = TimeBasedCounter.createCounter(16);
+        TimeBasedKeys counter = TimeBasedKeys.create(16);
         assertEquals(0L, counter.getCounterStartingAt(0L));
         assertEquals(maxValue, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldObtain10MillionCountersThreadSafe() {
-        print(counter.next());
+        print(counter.nextKey());
         for (int i = 0; i != 10000000; ++i) {
-            counter.next();
+            counter.nextKey();
         }
-        print(counter.next());
+        print(counter.nextKey());
     }
 
     @Test
     public void shouldObtain10MillionCountersFromThreadSafeUsingMultipleThreads() {
-        print(counter.next());
+        print(counter.nextKey());
         for (int j = 0; j != 100; ++j) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     for (int i = 0; i != 100000; ++i) {
-                        counter.next();
+                        counter.nextKey();
                     }
                 }
             }).run();
         }
-        print(counter.next());
+        print(counter.nextKey());
     }
 
     protected void print( String str ) {
