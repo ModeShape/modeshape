@@ -1,3 +1,6 @@
+Copyright 2008-2014 ModeShape Project.
+Licensed under the Apache License, Version 2.0.
+
 # The ModeShape project
 
 This is the official Git repository for the ModeShape project.
