@@ -19,6 +19,7 @@ package org.modeshape.jcr.journal;
 import java.util.Collections;
 import java.util.Iterator;
 import javax.jcr.RepositoryException;
+import org.joda.time.DateTime;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
@@ -62,15 +63,22 @@ public interface ChangeJournal extends ChangeSetListener {
     public Iterable<JournalRecord> recordsFor( String journalId );
 
     /**
+     * Returns the last record from the journal.
+     * @return either a {@link org.modeshape.jcr.journal.JournalRecord} instance or {@code null} if the journal is empty.
+     */
+    public JournalRecord lastRecord();
+
+    /**
      * Returns all records that have changesets which are newer than a given timestamp.
      *
-     * @param changeSetTimeMillis the time (in milliseconds) of the changes representing the lower bound.
+     *
+     * @param time the {@link org.joda.time.DateTime} of the changes representing the lower bound.
      * @param inclusive flag indicating whether the timestamp should be used inclusively or exclusively
      * @param descendingOrder flag indicating if the records should be returned in ascending order (oldest to newest) or descending
      * order (newest to oldest)
      * @return a {@link Records} instance; never {@code null}
      */
-    public Records recordsNewerThan( long changeSetTimeMillis,
+    public Records recordsNewerThan( DateTime time,
                                      boolean inclusive,
                                      boolean descendingOrder );
 
@@ -110,6 +118,11 @@ public interface ChangeJournal extends ChangeSetListener {
             public Iterator<JournalRecord> iterator() {
                 return Collections.<JournalRecord>emptySet().iterator();
             }
+
+            @Override
+            public boolean isEmpty() {
+                return true;
+            }
         };
 
         /**
@@ -118,5 +131,12 @@ public interface ChangeJournal extends ChangeSetListener {
          * @return an int
          */
         public int size();
+
+        /**
+         * Returns true if the records set is empty.
+         *
+         * @return {@code true} if there aren't any records.
+         */
+        public boolean isEmpty();
     }
 }

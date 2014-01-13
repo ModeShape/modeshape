@@ -18,6 +18,7 @@ package org.modeshape.jcr.journal;
 
 import java.io.Serializable;
 import java.util.List;
+import org.joda.time.DateTime;
 
 /**
  * Class which contains the messages send in a cluster between members of the cluster when attempting delta reconciliation.
@@ -38,7 +39,7 @@ public abstract class DeltaMessage implements Serializable {
         return journalId;
     }
 
-    static DeltaRequest request(String journalId, long lastChangeSetTimeMillis) {
+    static DeltaRequest request(String journalId, DateTime lastChangeSetTimeMillis) {
         return new DeltaRequest(journalId, lastChangeSetTimeMillis);
     }
 
@@ -53,16 +54,16 @@ public abstract class DeltaMessage implements Serializable {
     protected static class DeltaRequest extends DeltaMessage {
         private static final long serialVersionUID = 1L;
 
-        private final long lastChangeSetTimeMillis;
+        private final DateTime lastChangeSetTime;
 
         public DeltaRequest( String journalId,
-                             long lastChangeSetTimeMillis ) {
+                             DateTime lastChangeSetTime ) {
             super(journalId);
-            this.lastChangeSetTimeMillis = lastChangeSetTimeMillis;
+            this.lastChangeSetTime = lastChangeSetTime;
         }
 
-        protected long getLastChangeSetTimeMillis() {
-            return lastChangeSetTimeMillis;
+        protected DateTime getLastChangeSetTime() {
+            return lastChangeSetTime;
         }
     }
 

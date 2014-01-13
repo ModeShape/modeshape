@@ -94,7 +94,7 @@ public class JournalRecord implements Serializable, Comparable<JournalRecord>, I
      * @return a timestamp
      * @see org.modeshape.jcr.cache.change.ChangeSet#getTimestamp()
      */
-    public long getChangeTimeMillisUTC() {
+    public long getChangeTimeMillis() {
         return content.getTimestamp().getMillisecondsInUtc();
     }
 
@@ -154,7 +154,7 @@ public class JournalRecord implements Serializable, Comparable<JournalRecord>, I
         sb.append(", userId=").append(getUserId());
         sb.append(", repositoryKey=").append(getRepositoryKey());
         sb.append(", workspaceName=").append(getWorkspaceName());
-        sb.append(", changeTime=").append(new Date(getChangeTimeMillisUTC()).toString());
+        sb.append(", changeTime=").append(new Date(getChangeTimeMillis()).toString());
         sb.append('}');
         return sb.toString();
     }

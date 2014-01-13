@@ -16,6 +16,7 @@
 package org.modeshape.jcr.journal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.util.ArrayList;
@@ -44,9 +45,9 @@ public class LocalJournalTest {
 
     protected LocalJournal journal;
 
-    private long timestamp1;
-    private long timestamp2;
-    private long timestamp3;
+    private org.joda.time.DateTime timestamp1;
+    private org.joda.time.DateTime timestamp2;
+    private org.joda.time.DateTime timestamp3;
 
     @Before
     public void before() throws Exception {
@@ -74,7 +75,7 @@ public class LocalJournalTest {
 
         ChangeSet process1Changes4 = TestChangeSet.create("j1", 1);
         journal().notify(process1Changes4);
-        timestamp1 = process1Changes4.getTimestamp().getMilliseconds();
+        timestamp1 = new org.joda.time.DateTime(process1Changes4.getTimestamp().getMilliseconds());
 
         //p2 has 2 changesets
         ChangeSet process2Changes1 = TestChangeSet.create("j2", 1);
@@ -82,7 +83,7 @@ public class LocalJournalTest {
 
         ChangeSet process2Changes2 = TestChangeSet.create("j2", 1);
         journal().notify(process2Changes2);
-        timestamp2 = process2Changes2.getTimestamp().getMilliseconds();
+        timestamp2 = new org.joda.time.DateTime(process2Changes2.getTimestamp().getMilliseconds());
 
         //p3 has 2 changesets
         ChangeSet process3Changes1 = TestChangeSet.create("j3", 2);
@@ -90,14 +91,14 @@ public class LocalJournalTest {
 
         ChangeSet process3Changes2 = TestChangeSet.create("j3", 2);
         journal().notify(process3Changes2);
+        timestamp3 = new org.joda.time.DateTime(process3Changes2.getTimestamp().getMilliseconds());
 
         ChangeSet process3Changes3 = TestChangeSet.create("j3", 0);
         journal().notify(process3Changes3);
-        timestamp3 = process3Changes2.getTimestamp().getMilliseconds();
     }
 
     @Test
-    public void shouldInsertRecordsWithGeneratedTS() throws InterruptedException {
+    public void shouldInsertRecordsWithGeneratedTimestamp() throws InterruptedException {
         journal().addRecords(
                 new JournalRecord(TestChangeSet.create("j4", 2)),
                              new JournalRecord(TestChangeSet.create("j4", 1)),
@@ -109,6 +110,14 @@ public class LocalJournalTest {
             count++;
         }
         assertEquals(3, count);
+    }
+
+    @Test
+    public void shouldReturnLastRecord() throws Exception {
+        JournalRecord lastRecord = journal().lastRecord();
+        assertNotNull(lastRecord);
+        assertEquals("j3", lastRecord.getJournalId());
+        assertEquals(timestamp3.getMillis(), lastRecord.getChangeTimeMillis());
     }
 
     @Test
@@ -143,7 +152,7 @@ public class LocalJournalTest {
     @Test
     public void shouldSearchRecordsBasedOnTimestamp() throws Exception {
         //find records older than -1
-        assertEquals(8, journal().recordsNewerThan(-1, true, false).size());
+        assertEquals(8, journal().recordsNewerThan(new org.joda.time.DateTime(-1), true, false).size());
         //find records older than ts1, inclusive
         assertEquals(5, journal().recordsNewerThan(timestamp1, true, false).size());
         //find records older than ts1, exclusive
@@ -155,7 +164,7 @@ public class LocalJournalTest {
         //find records older than ts3, inclusive
         assertEquals(1, journal().recordsNewerThan(timestamp3, true, false).size());
         //find records older than max, exclusive
-        assertEquals(0, journal().recordsNewerThan(Long.MAX_VALUE, true, false).size());
+        assertEquals(0, journal().recordsNewerThan(new org.joda.time.DateTime(Long.MAX_VALUE), true, false).size());
     }
 
     @Test

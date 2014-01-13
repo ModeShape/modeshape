@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.infinispan.schematic.document.ThreadSafe;
+import org.joda.time.DateTime;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -79,12 +80,6 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
         }
 
         localJournal.start();
-        long lastChangeSetTime = -1;
-        //get all the existing records in reverse order
-        Records allLocalRecords = localJournal.allRecords(true);
-        if (allLocalRecords.size() > 0) {
-            lastChangeSetTime = allLocalRecords.iterator().next().getChangeTimeMillisUTC();
-        }
 
         //make sure this process can always process delta messages
         clusteringService.addConsumer(this);
@@ -96,7 +91,9 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Sending delta request from journal {0} as part of cluster {1}", journalId(), clusterName());
             }
-            clusteringService.sendMessage(DeltaMessage.request(journalId(), lastChangeSetTime));
+            JournalRecord lastRecord = lastRecord();
+            DateTime lastChangeSetTimeMillis = lastRecord != null ? new DateTime(lastRecord.getChangeTimeMillis()) : null;
+            clusteringService.sendMessage(DeltaMessage.request(journalId(), lastChangeSetTimeMillis));
             waitForReconciliationToComplete();
         } else {
             this.deltaReconciliationCompleted.set(true);
@@ -143,10 +140,15 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
     }
 
     @Override
-    public Records recordsNewerThan( long changeSetTimeMillis,
+    public JournalRecord lastRecord() {
+        return localJournal.lastRecord();
+    }
+
+    @Override
+    public Records recordsNewerThan( DateTime time,
                                      boolean inclusive,
                                      boolean descendingOrder ) {
-        return localJournal.recordsNewerThan(changeSetTimeMillis, inclusive, descendingOrder);
+        return localJournal.recordsNewerThan(time, inclusive, descendingOrder);
     }
 
     @Override
@@ -203,7 +205,7 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
             return;
         }
 
-        Records delta = recordsNewerThan(request.getLastChangeSetTimeMillis(), false, false);
+        Records delta = recordsNewerThan(request.getLastChangeSetTime(), false, false);
         List<JournalRecord> deltaList = new ArrayList<JournalRecord>(delta.size());
         for (JournalRecord record : delta) {
             deltaList.add(record);

@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.ThreadSafe;
+import org.joda.time.DateTime;
 import org.mapdb.Atomic;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -37,7 +38,6 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.value.basic.JodaDateTime;
 
 /**
  * An append only journal implementation which stores each {@link ChangeSet} (either local or remove) on the local FS.
@@ -190,13 +190,12 @@ public class LocalJournal implements ChangeJournal {
         return true;
     }
 
-    protected synchronized void removeRecordsOlderThan( long timeMillis ) {
+    protected synchronized void removeRecordsOlderThan( long millisInUtc ) {
         RW_LOCK.writeLock().lock();
         try {
-            if (timeMillis <= 0 || stopped) {
+            if (millisInUtc <= 0 || stopped) {
                 return;
             }
-            long millisInUtc = new JodaDateTime(timeMillis).getMillisecondsInUtc();
             LOGGER.debug("Removing records older than " + millisInUtc);
             SortedSet<JournalRecord> toRemove = this.records.headSet(JournalRecord.searchBound(millisInUtc));
             toRemove.clear();
@@ -212,10 +211,10 @@ public class LocalJournal implements ChangeJournal {
     }
 
     private long uniqueCreatedTimeMillisUTC() {
-        long createTimeMillisUTC = new JodaDateTime().getMillisecondsInUtc();
+        long createTimeMillisUTC = System.currentTimeMillis();
         JournalRecord recordSameTimestamp = JournalRecord.searchBound(createTimeMillisUTC);
         while (records.contains(recordSameTimestamp)) {
-            createTimeMillisUTC = new JodaDateTime().getMillisecondsInUtc();
+            createTimeMillisUTC = System.currentTimeMillis();
             recordSameTimestamp.withCreatedTimeMillisUTC(createTimeMillisUTC);
         }
         return createTimeMillisUTC;
@@ -236,27 +235,31 @@ public class LocalJournal implements ChangeJournal {
     }
 
     @Override
-    public Records recordsNewerThan( long changeSetTimeMillis,
+    public JournalRecord lastRecord() {
+        return this.records == null || this.records.isEmpty() ? null : this.records.last();
+    }
+
+    @Override
+    public Records recordsNewerThan( DateTime time,
                                      boolean inclusive,
                                      boolean descendingOrder ) {
         if (stopped) {
             return Records.EMPTY;
         }
-        long millisUTC = new JodaDateTime(changeSetTimeMillis).getMillisecondsInUtc();
+        long millisUTC = time != null ? time.getMillis() : -1;
         //adjust the millis using a delta so that we are sure we catch everything because we only search using the "created time"
         //not the "change set" time
-        millisUTC = millisUTC - searchTimeDelta;
 
-        JournalRecord bound = JournalRecord.searchBound(millisUTC);
+        JournalRecord bound = JournalRecord.searchBound(millisUTC - searchTimeDelta);
         NavigableSet<JournalRecord> subset = records.tailSet(bound, true);
 
         //process each of the records from the result and look at the timestamp of the changeset, so that we're sure we only include
         //the correct ones (we used a delta to make sure we get everything)
         JournalRecord startRecord = null;
         for (JournalRecord record : subset) {
-            long journalChangeTimeMillisUTC = record.getChangeTimeMillisUTC();
-            if (((journalChangeTimeMillisUTC == changeSetTimeMillis) && inclusive)
-                || journalChangeTimeMillisUTC > changeSetTimeMillis) {
+            long journalChangeTimeMillisUTC = record.getChangeTimeMillis();
+            if (((journalChangeTimeMillisUTC == millisUTC) && inclusive)
+                || journalChangeTimeMillisUTC > millisUTC) {
                 startRecord = record;
                 break;
             }
@@ -349,6 +352,11 @@ public class LocalJournal implements ChangeJournal {
                         throw new UnsupportedOperationException("This iterator is read-only");
                     }
                 };
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return size() == 0;
             }
         };
     }
