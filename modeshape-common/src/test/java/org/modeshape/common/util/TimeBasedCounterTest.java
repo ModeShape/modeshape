@@ -43,65 +43,65 @@ public class TimeBasedCounterTest {
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor1BitCounter() {
         TimeBasedCounter counter = TimeBasedCounter.createCounter(1);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(1L, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(1L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor2Bit() {
         TimeBasedCounter counter = TimeBasedCounter.createCounter(2);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(3L, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(3L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor3Bit() {
         TimeBasedCounter counter = TimeBasedCounter.createCounter(3);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(7L, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(7L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor4Bit() {
         TimeBasedCounter counter = TimeBasedCounter.createCounter(4);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(15L, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(15L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor5Bit() {
         TimeBasedCounter counter = TimeBasedCounter.createCounter(5);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(31L, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(31L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor6Bit() {
         TimeBasedCounter counter = TimeBasedCounter.createCounter(6);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(63L, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(63L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor7Bit() {
         TimeBasedCounter counter = TimeBasedCounter.createCounter(7);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(127L, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(127L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor8Bit() {
         TimeBasedCounter counter = TimeBasedCounter.createCounter(8);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(255L, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(255L, counter.getCounterEndingAt(0L));
     }
 
     @Test
     public void shouldCorrectlyCalculateFirstAndLastCounterFor16Bit() {
         long maxValue = ((long)Math.pow(2, 16)) - 1;
         TimeBasedCounter counter = TimeBasedCounter.createCounter(16);
-        assertEquals(0L, counter.getEarliestCounterForTime(0L));
-        assertEquals(maxValue, counter.getLatestInclusiveCounterForTime(0L));
+        assertEquals(0L, counter.getCounterStartingAt(0L));
+        assertEquals(maxValue, counter.getCounterEndingAt(0L));
     }
 
     @Test

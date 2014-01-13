@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.common.util;
 
@@ -28,40 +20,43 @@ import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * This is a simple unique and (non-monotonically) increasing counter that is based upon the current time in milliseconds. This
- * object will never return two identical values on the local machine. Additionally, the resulting counter can be used to sort
- * based upon time. And, since the resulting counter values are purely a function of the time at which they are {@link #next()
- * created}, one can always obtain the range of counter values for a given time period.
+ * object will never return two identical values on the local machine, yet is safe to be called concurrently from multiple
+ * threads. The resulting counter values can be used as unique keys that are naturally sorted by time.
  * <p>
- * For example, all counter values obtained after January 10, 2014 at 12:12:41.845-06:00 (which has a
- * <code>System.currentTimeMillis()</code> value of {@code 1389377561845}) will be greater than or equal to the following value:
- * 
- * <pre>
- * long timeInMillis = 1389377561845L;
- * long minValue = counter.getEarliestCounterForTime(timeInMillis);
- * </pre>
- * 
- * Meanwhile, all counter values obtained prior to this same instant in time will be less than the following value:
- * 
- * <pre>
- * long greatThanMaxValue = counter.getLatestExclusiveCounterForTime(timeInMillis);
- * </pre>
- * 
- * and less than or equal to the following value:
- * 
- * <pre>
- * long maxValue = counter.getLatestInclusiveCounterForTime(timeInMillis);
- * </pre>
- * 
+ * This works by left-shifting the actual current time in millis by 16 bits, and then using these 16 bits to store a unique
+ * counter value for each millisecond. When a new counter value is needed, the current time is compared to the last time for which
+ * a value was generated. If the times are different, then the counter is reset to 0; otherwise, the counter is advanced.
  * </p>
  * <p>
- * Therefore, for example, to obtain all counter values that might have been generated sometime during 2012, simply use these same
- * methods:
+ * To obtain a unique value, simply call:
  * 
  * <pre>
- * long janFirst2012 = 1325397600; // Jan 1 2012 at 00:00.000 UTC
- * long janFirst2013 = 1357020000; // Jan 1 2013 at 00:00.000 UTC
- * long smallest = counter.getEarliestCounterForTime(janFirst2012);
- * long justLarger = counter.getEarliestCounterForTime(janFirst2013);
+ * long value = counter.next();
+ * </pre>
+ * 
+ * This time-based counter also has the advantage of being able to identify the range of values that were created before or during
+ * a given instant in time. For example, all counter values obtained after January 10, 2014 at 12:12:41.845-06:00 (which has a
+ * <code>System.currentTimeMillis()</code> value of {@code 1389378406}) will be greater than or equal to the following value:
+ * 
+ * <pre>
+ * long timeInMillis = 1389378406L;
+ * long minValue = counter.getCounterStartingAt(timeInMillis);
+ * </pre>
+ * 
+ * Using this and similar methods, one can obtain all counter values that might have been generated, for example, sometime during
+ * 2012:
+ * 
+ * <pre>
+ * long janFirst2012 = 1325397600L; // Jan 1 2012 at 00:00.000 UTC
+ * long janFirst2013 = 1357020000L; // Jan 1 2013 at 00:00.000 UTC
+ * long smallest = counter.getCounterStartingAt(janFirst2012);
+ * long justLarger = counter.getCounterStartingAt(janFirst2013);
+ * </pre>
+ * 
+ * Then all counter values generated during 2012 will satisfy:
+ * 
+ * <pre>
+ * smallest &gt;= value &amp;&amp; value &lt; justLarger
  * </pre>
  * 
  * </p>
@@ -135,40 +130,43 @@ public final class TimeBasedCounter {
             return (timestamp << counterBits) + increment;
         }
         // The counter is surprisingly too high, so try again (repeatedly) until we get to the next millisecond ...
-        assert false;
         return this.next();
     }
 
     /**
-     * Obtain the smallest counter value that is equal to or smaller than all counters generated at or since the given time in
-     * UTC.
+     * Obtain the first (earliest) counter value that would have been generated at the specified UTC time. This counter value is
+     * equal to or smaller than all counter values generated at or since that time.
      * 
-     * @param millis the number of milliseconds (in UTC) past epoch, and the time at which {@link #next()} might have been called
+     * @param millisInUtc the number of milliseconds (in UTC) past epoch, and the time at which {@link #next()} might have been
+     *        called
      * @return a long value that is the earliest possible counter value for the given time
      */
-    public long getEarliestCounterForTime( long millis ) {
-        return (millis << counterBits);
+    public long getCounterStartingAt( long millisInUtc ) {
+        return (millisInUtc << counterBits);
     }
 
     /**
-     * Obtain the largest counter value that is equal to or greater than all counters generated at or before the given time in
-     * UTC.
+     * Obtain the largest (latest) counter value that would have been generated at the specified UTC time. This counter value is
+     * equal to or greater than all counter values generated at or before that time.
      * 
-     * @param millis the number of milliseconds (in UTC) past epoch, and the time at which {@link #next()} might have been called
+     * @param millisInUtc the number of milliseconds (in UTC) past epoch, and the time at which {@link #next()} might have been
+     *        called
      * @return a long value that is the latest possible counter value for the given time
      */
-    public long getLatestInclusiveCounterForTime( long millis ) {
-        return (millis << counterBits) + maximumCounterValue;
+    public long getCounterEndingAt( long millisInUtc ) {
+        return (millisInUtc << counterBits) + maximumCounterValue;
     }
 
     /**
-     * Obtain the largest counter value that is greater than all counters generated at or before the given time in UTC.
+     * Obtain the first (earliest) counter value that would have been generated after the specified UTC time. This counter value
+     * is greater than all counters generated at or before that time.
      * 
-     * @param millis the number of milliseconds (in UTC) past epoch, and the time at which {@link #next()} might have been called
+     * @param millisInUtc the number of milliseconds (in UTC) past epoch, and the time at which {@link #next()} might have been
+     *        called
      * @return a long value that is the latest possible counter value for the given time
      */
-    public long getLatestExclusiveCounterForTime( long millis ) {
-        return (millis + 1) << counterBits;
+    public long getCounterEndingAfter( long millisInUtc ) {
+        return (millisInUtc + 1) << counterBits;
     }
 
     private synchronized int counterFor( long offsetTimestamp ) {
