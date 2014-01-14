@@ -17,11 +17,8 @@
 package org.modeshape.jcr.journal;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.NavigableSet;
-import java.util.NoSuchElementException;
-import java.util.SortedSet;
+import java.util.NavigableMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -30,11 +27,13 @@ import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.ThreadSafe;
 import org.joda.time.DateTime;
 import org.mapdb.Atomic;
+import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.common.util.TimeBasedKeys;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -52,6 +51,14 @@ public class LocalJournal implements ChangeJournal {
     private static final int DEFAULT_MAX_TIME_TO_KEEP_FILES = -1;
     private static final String RECORDS_FIELD = "records";
     private static final String JOURNAL_ID_FIELD = "journalId";
+    private static final TimeBasedKeys TIME_BASED_KEYS = TimeBasedKeys.create();
+
+    /**
+     * When searching records in the local journal, we want to use a small delta to compensate for the fact that there is slight
+     * delay from the point in time when a change set is created (after session.save) to the point when the journal record is added
+     * (notify async).
+     */
+    private static final long DEFAULT_LOCAL_SEARCH_DELTA = TimeUnit.SECONDS.toMillis(1);
 
     private final String journalLocation;
     private final boolean asyncWritesEnabled;
@@ -59,7 +66,10 @@ public class LocalJournal implements ChangeJournal {
 
     private String journalId;
     private DB journalDB;
-    private NavigableSet<JournalRecord> records;
+    /**
+     * The records are a map of {@link org.modeshape.jcr.journal.JournalRecord} instances keyed by a time-based key.
+     */
+    private BTreeMap<Long, JournalRecord> records;
     private long searchTimeDelta;
     private volatile boolean stopped = false;
 
@@ -79,7 +89,7 @@ public class LocalJournal implements ChangeJournal {
         this.asyncWritesEnabled = asyncWritesEnabled;
         this.maxTimeToKeepEntriesMillis = TimeUnit.DAYS.toMillis(maxDaysToKeepEntries);
         this.stopped = true;
-        this.searchTimeDelta = TimeUnit.SECONDS.toMillis(1);
+        this.searchTimeDelta = DEFAULT_LOCAL_SEARCH_DELTA;
     }
 
     protected LocalJournal( String journalLocation ) {
@@ -96,13 +106,18 @@ public class LocalJournal implements ChangeJournal {
         try {
             File journalFileLocation = new File(journalLocation);
             if (!journalFileLocation.exists()) {
-                assert journalFileLocation.mkdirs();
+                boolean folderHierarchyCreated = journalFileLocation.mkdirs();
+                assert folderHierarchyCreated;
             }
-//            DBMaker dbMaker = DBMaker.newAppendFileDB(new File(journalFileLocation, RECORDS_FIELD))
-//                                     .compressionEnable()
-//                                     .checksumEnable()
-//                                     .closeOnJvmShutdown()
-//                                     .snapshotEnable();
+
+            /**
+             * TODO author=Horia Chiorean date=1/14/14 description=The following should be enabled when append only files are available
+            DBMaker dbMaker = DBMaker.newAppendFileDB(new File(journalFileLocation, RECORDS_FIELD))
+                                     .compressionEnable()
+                                     .checksumEnable()
+                                     .closeOnJvmShutdown()
+                                     .snapshotEnable();
+            */
             DBMaker dbMaker = DBMaker.newFileDB(new File(journalFileLocation, RECORDS_FIELD))
                                      .compressionEnable()
                                      .checksumEnable()
@@ -113,7 +128,7 @@ public class LocalJournal implements ChangeJournal {
                 dbMaker.asyncWriteEnable();
             }
             this.journalDB = dbMaker.make();
-            this.records = this.journalDB.createTreeSet(RECORDS_FIELD).counterEnable().makeOrGet();
+            this.records = this.journalDB.createTreeMap(RECORDS_FIELD).counterEnable().makeOrGet();
             Atomic.String journalAtomic = this.journalDB.getAtomicString(JOURNAL_ID_FIELD);
             //only write the value the first time
             if (StringUtil.isBlank(journalAtomic.get())) {
@@ -165,13 +180,14 @@ public class LocalJournal implements ChangeJournal {
         try {
             LOGGER.debug("Adding {0} records", records.length);
             for (JournalRecord record : records) {
-                if (record.getCreatedTimeMillisUTC() < 0) {
+                if (record.getTimeBasedKey() < 0) {
                     //generate a unique timestamp only if there isn't one. In some scenarios (i.e. running in a cluster) we
-                    //always want to keep the original TS
-                    long createTimeMillisUTC = uniqueCreatedTimeMillisUTC();
-                    record.withCreatedTimeMillisUTC(createTimeMillisUTC);
+                    //always want to keep the original TS because otherwise it would be impossible to have a correct order
+                    //and therefore search
+                    long createTimeMillisUTC = TIME_BASED_KEYS.nextKey();
+                    record.withTimeBasedKey(createTimeMillisUTC);
                 }
-                this.records.add(record);
+                this.records.put(record.getTimeBasedKey(), record);
             }
             this.journalDB.commit();
         } finally {
@@ -185,19 +201,15 @@ public class LocalJournal implements ChangeJournal {
         removeRecordsOlderThan(System.currentTimeMillis() - this.maxTimeToKeepEntriesMillis);
     }
 
-    @Override
-    public boolean deltaReconciliationCompleted() {
-        return true;
-    }
-
     protected synchronized void removeRecordsOlderThan( long millisInUtc ) {
         RW_LOCK.writeLock().lock();
         try {
             if (millisInUtc <= 0 || stopped) {
                 return;
             }
-            LOGGER.debug("Removing records older than " + millisInUtc);
-            SortedSet<JournalRecord> toRemove = this.records.headSet(JournalRecord.searchBound(millisInUtc));
+            long searchBound = TIME_BASED_KEYS.getCounterEndingAt(millisInUtc);
+            LOGGER.debug("Removing records older than " + searchBound);
+            NavigableMap<Long, JournalRecord> toRemove = this.records.headMap(searchBound);
             toRemove.clear();
             journalDB.commit();
             journalDB.compact();
@@ -210,61 +222,48 @@ public class LocalJournal implements ChangeJournal {
         return journalLocation;
     }
 
-    private long uniqueCreatedTimeMillisUTC() {
-        long createTimeMillisUTC = System.currentTimeMillis();
-        JournalRecord recordSameTimestamp = JournalRecord.searchBound(createTimeMillisUTC);
-        while (records.contains(recordSameTimestamp)) {
-            createTimeMillisUTC = System.currentTimeMillis();
-            recordSameTimestamp.withCreatedTimeMillisUTC(createTimeMillisUTC);
-        }
-        return createTimeMillisUTC;
-    }
-
     @Override
     public Records allRecords( boolean descendingOrder ) {
-        return recordsFromSet(records, descendingOrder);
-    }
-
-    @Override
-    public Iterable<JournalRecord> recordsFor( String journalId ) {
-        if (stopped) {
-            return Collections.emptySet();
-        }
-        CheckArg.isNotNull("journalId cannot be null", journalId);
-        return filter(records.iterator(), journalId);
+        return recordsFrom(records, descendingOrder);
     }
 
     @Override
     public JournalRecord lastRecord() {
-        return this.records == null || this.records.isEmpty() ? null : this.records.last();
+        return this.records == null || this.records.isEmpty() ? null : this.records.lastEntry().getValue();
     }
 
     @Override
-    public Records recordsNewerThan( DateTime time,
+    public Records recordsNewerThan( DateTime changeSetTime,
                                      boolean inclusive,
                                      boolean descendingOrder ) {
         if (stopped) {
             return Records.EMPTY;
         }
-        long millisUTC = time != null ? time.getMillis() : -1;
-        //adjust the millis using a delta so that we are sure we catch everything because we only search using the "created time"
-        //not the "change set" time
 
-        JournalRecord bound = JournalRecord.searchBound(millisUTC - searchTimeDelta);
-        NavigableSet<JournalRecord> subset = records.tailSet(bound, true);
+        long changeSetMillisUTC = -1;
+        long searchBound = -1;
+        if (changeSetTime != null) {
+            changeSetMillisUTC = changeSetTime.getMillis();
+            //adjust the millis using a delta so that we are sure we catch everything in a cluster which may have differences in
+            //clock time
+            searchBound = TIME_BASED_KEYS.getCounterStartingAt(changeSetMillisUTC - searchTimeDelta);
+        }
+
+        NavigableMap<Long, JournalRecord> subMap = records.tailMap(searchBound, true);
 
         //process each of the records from the result and look at the timestamp of the changeset, so that we're sure we only include
         //the correct ones (we used a delta to make sure we get everything)
-        JournalRecord startRecord = null;
-        for (JournalRecord record : subset) {
-            long journalChangeTimeMillisUTC = record.getChangeTimeMillis();
-            if (((journalChangeTimeMillisUTC == millisUTC) && inclusive)
-                || journalChangeTimeMillisUTC > millisUTC) {
-                startRecord = record;
+        long startKeyInSubMap = -1;
+        for (Long timeBasedKey : subMap.keySet()) {
+            JournalRecord record = subMap.get(timeBasedKey);
+            long recordChangeTimeMillisUTC = record.getChangeTimeMillis();
+            if (((recordChangeTimeMillisUTC == changeSetMillisUTC) && inclusive)
+                || recordChangeTimeMillisUTC > changeSetMillisUTC) {
+                startKeyInSubMap = timeBasedKey;
                 break;
             }
         }
-        return startRecord != null ? recordsFromSet(subset.tailSet(startRecord, true), descendingOrder) : Records.EMPTY;
+        return startKeyInSubMap != -1 ? recordsFrom(subMap.tailMap(startKeyInSubMap, true), descendingOrder) : Records.EMPTY;
     }
 
     @Override
@@ -277,57 +276,8 @@ public class LocalJournal implements ChangeJournal {
         return this;
     }
 
-    private Iterable<JournalRecord> filter( final Iterator<JournalRecord> recordsIterator,
-                                            final String journalId ) {
-        return new Iterable<JournalRecord>() {
-            private JournalRecord currentRecord = null;
-
-            public Iterator<JournalRecord> iterator() {
-                return new Iterator<JournalRecord>() {
-                    @Override
-                    public boolean hasNext() {
-                        currentRecord = advance();
-                        return currentRecord != null;
-                    }
-
-                    @Override
-                    public JournalRecord next() {
-                        if (currentRecord == null) {
-                            currentRecord = advance();
-                            if (currentRecord == null) {
-                                throw new NoSuchElementException();
-                            }
-                            return currentRecord;
-                        } else {
-                            JournalRecord next = currentRecord;
-                            currentRecord = null;
-                            return next;
-                        }
-                    }
-
-                    @Override
-                    public void remove() {
-                        throw new UnsupportedOperationException("Never remove from this iterator");
-                    }
-                };
-            }
-
-            private JournalRecord advance() {
-                while (recordsIterator.hasNext()) {
-                    JournalRecord record = recordsIterator.next();
-                    if (record.getJournalId().equals(journalId)) {
-                        return record;
-
-                    }
-                }
-                return null;
-            }
-        };
-    }
-
-    private static Records recordsFromSet( final NavigableSet<JournalRecord> content,
-                                           boolean descending ) {
-        final Iterator<JournalRecord> originalIterator = !descending ? content.iterator() : content.descendingIterator();
+    private static Records recordsFrom( final NavigableMap<Long, JournalRecord> content, boolean descending ) {
+        final Iterator<Long> iterator = descending ? content.descendingKeySet().iterator() : content.keySet().iterator();
         return new Records() {
             @Override
             public int size() {
@@ -339,12 +289,12 @@ public class LocalJournal implements ChangeJournal {
                 return new Iterator<JournalRecord>() {
                     @Override
                     public boolean hasNext() {
-                        return originalIterator.hasNext();
+                        return iterator.hasNext();
                     }
 
                     @Override
                     public JournalRecord next() {
-                        return originalIterator.next();
+                        return content.get(iterator.next());
                     }
 
                     @Override

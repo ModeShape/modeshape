@@ -25,7 +25,7 @@ import org.joda.time.DateTime;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public abstract class DeltaMessage implements Serializable {
+abstract class DeltaMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -51,7 +51,7 @@ public abstract class DeltaMessage implements Serializable {
         return new DeltaResponse(journalId, records);
     }
 
-    protected static class DeltaRequest extends DeltaMessage {
+    protected final static class DeltaRequest extends DeltaMessage {
         private static final long serialVersionUID = 1L;
 
         private final DateTime lastChangeSetTime;
@@ -67,7 +67,7 @@ public abstract class DeltaMessage implements Serializable {
         }
     }
 
-    protected static class DeltaResponse extends DeltaMessage {
+    protected final static class DeltaResponse extends DeltaMessage {
         private static final long serialVersionUID = 1L;
 
         private final List<JournalRecord> records;
@@ -83,7 +83,7 @@ public abstract class DeltaMessage implements Serializable {
         }
     }
 
-    protected static class DeltaStillReconciling extends DeltaMessage {
+    protected final static class DeltaStillReconciling extends DeltaMessage {
         private static final long serialVersionUID = 1L;
 
         protected DeltaStillReconciling( String journalId ) {

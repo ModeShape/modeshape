@@ -24,9 +24,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -113,7 +112,7 @@ public class ClusteringService {
         this.clusteringConfiguration = clusteringConfiguration;
         assert clusteringConfiguration.isEnabled();
         //make sure the set is thread safe
-        this.consumers = Collections.newSetFromMap(new ConcurrentHashMap<MessageConsumer<Serializable>, Boolean>());
+        this.consumers = new CopyOnWriteArraySet<MessageConsumer<Serializable>>();
     }
 
     /**

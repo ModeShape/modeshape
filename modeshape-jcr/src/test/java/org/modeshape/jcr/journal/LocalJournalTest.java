@@ -98,18 +98,18 @@ public class LocalJournalTest {
     }
 
     @Test
-    public void shouldInsertRecordsWithGeneratedTimestamp() throws InterruptedException {
+    public void shouldReturnAllRecords() throws Exception {
+        assertEquals(8, journal().allRecords(false).size());
+    }
+
+    @Test
+    public void shouldAddRecords() throws InterruptedException {
+        int initialRecordCount = journal().allRecords(false).size();
         journal().addRecords(
                 new JournalRecord(TestChangeSet.create("j4", 2)),
-                             new JournalRecord(TestChangeSet.create("j4", 1)),
-                             new JournalRecord(TestChangeSet.create("j4", 3)));
-        Iterable<JournalRecord> records = journal().recordsFor("j4");
-        int count = 0;
-        Iterator<JournalRecord> iterator = records.iterator();
-        while (iterator.hasNext()) {
-            count++;
-        }
-        assertEquals(3, count);
+                new JournalRecord(TestChangeSet.create("j4", 1)),
+                new JournalRecord(TestChangeSet.create("j4", 3)));        
+        assertEquals(initialRecordCount + 3, journal().allRecords(false).size());
     }
 
     @Test
@@ -118,35 +118,6 @@ public class LocalJournalTest {
         assertNotNull(lastRecord);
         assertEquals("j3", lastRecord.getJournalId());
         assertEquals(timestamp3.getMillis(), lastRecord.getChangeTimeMillis());
-    }
-
-    @Test
-    public void shouldReturnRecordsForProcess() throws InterruptedException {
-        List<JournalRecord> records = new ArrayList<JournalRecord>();
-        for (JournalRecord record : journal().recordsFor("j1")) {
-            records.add(record);
-            assertEquals("j1", record.getJournalId());
-        }
-        assertEquals(4, records.size());
-
-        records.clear();
-        for (JournalRecord record : journal().recordsFor("j2")) {
-            records.add(record);
-            assertEquals("j2", record.getJournalId());
-        }
-        assertEquals(2, records.size());
-
-        records.clear();
-        for (JournalRecord record : journal().recordsFor("j3")) {
-            records.add(record);
-            assertEquals("j3", record.getJournalId());
-        }
-        assertEquals(2, records.size());
-    }
-
-    @Test
-    public void shouldReturnAllRecords() throws Exception {
-        assertEquals(8, journal().allRecords(false).size());
     }
 
     @Test
@@ -171,17 +142,19 @@ public class LocalJournalTest {
     public void shouldRemoveOlderJournalEntries() throws Exception {
         File journalFolder = new File(localJournal().getJournalLocation());
         assertTrue(journalFolder.isDirectory() && journalFolder.canRead());
+        int initialEntriesCount = journal().allRecords(false).size();
 
-        //insert a lot of entries - this should create multiple files
+        //insert some of entries - this should create multiple files
         int entriesCount = 10;
         for (int i = 0; i < entriesCount; i++) {
             journal().notify(TestChangeSet.create("j1", entriesCount));
         }
         //make sure we have at least 3 segments
-        assertEquals(entriesCount + 8, journal().allRecords(false).size());
+        assertEquals(entriesCount + initialEntriesCount, journal().allRecords(false).size());
 
         Thread.sleep(1);
         long currentMillis = System.currentTimeMillis();
+        Thread.sleep(1);
 
         //insert another batch of record which should produce additional segments
         for (int i = 0; i < entriesCount; i++) {
@@ -189,14 +162,15 @@ public class LocalJournalTest {
         }
 
         int sizeAfterSecondBatch = journal().allRecords(false).size();
-        assertEquals(entriesCount * 2 + 8, sizeAfterSecondBatch);
+        assertEquals(entriesCount * 2 + initialEntriesCount, sizeAfterSecondBatch);
 
+        //this should remove all the entries from the first batch + initial entries
         localJournal().removeRecordsOlderThan(currentMillis);
         assertEquals(entriesCount, journal().allRecords(false).size());
 
         //now make sure we can still add data to the journal
         journal().notify(TestChangeSet.create("j4", 2));
-        assertTrue(journal().recordsFor("j4").iterator().hasNext());
+        assertEquals(entriesCount + 1, journal().allRecords(false).size());
     }
 
     @Test

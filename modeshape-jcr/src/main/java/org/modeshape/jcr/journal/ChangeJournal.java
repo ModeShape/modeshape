@@ -55,15 +55,8 @@ public interface ChangeJournal extends ChangeSetListener {
     public Records allRecords( boolean descendingOrder );
 
     /**
-     * Returns the records for a given journal.
-     *
-     * @param journalId a {@link String} the id of a journal; must not be {@link null}
-     * @return an {@link Iterable<JournalRecord>}, never {@code null}
-     */
-    public Iterable<JournalRecord> recordsFor( String journalId );
-
-    /**
      * Returns the last record from the journal.
+     *
      * @return either a {@link org.modeshape.jcr.journal.JournalRecord} instance or {@code null} if the journal is empty.
      */
     public JournalRecord lastRecord();
@@ -71,14 +64,14 @@ public interface ChangeJournal extends ChangeSetListener {
     /**
      * Returns all records that have changesets which are newer than a given timestamp.
      *
-     *
-     * @param time the {@link org.joda.time.DateTime} of the changes representing the lower bound.
+     * @param changeSetTime the {@link org.joda.time.DateTime} of the changes representing the lower bound; may be null indicating that
+     * *all the records* should be returned.
      * @param inclusive flag indicating whether the timestamp should be used inclusively or exclusively
      * @param descendingOrder flag indicating if the records should be returned in ascending order (oldest to newest) or descending
      * order (newest to oldest)
      * @return a {@link Records} instance; never {@code null}
      */
-    public Records recordsNewerThan( DateTime time,
+    public Records recordsNewerThan( DateTime changeSetTime,
                                      boolean inclusive,
                                      boolean descendingOrder );
 
@@ -88,13 +81,6 @@ public interface ChangeJournal extends ChangeSetListener {
      * @param records a {@link JournalRecord} array.
      */
     public void addRecords( JournalRecord... records );
-
-    /**
-     * Checks if the journal has finished reconciling its record with deltas received from journals belonging to other processes.
-     *
-     * @return {@code true} if the reconciliation has completed, {@code false} otherwise.
-     */
-    public boolean deltaReconciliationCompleted();
 
     /**
      * Returns the id of this change journal.

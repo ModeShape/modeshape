@@ -18,8 +18,8 @@ package org.modeshape.jcr.journal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.infinispan.schematic.document.ThreadSafe;
 import org.joda.time.DateTime;
@@ -41,12 +41,13 @@ import org.modeshape.jcr.clustering.MessageConsumer;
 public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements ChangeJournal {
 
     private final static Logger LOGGER  = Logger.getLogger(ClusteredJournal.class);
-    private final static long MAX_TIME_TO_WAIT_FOR_RECONCILIATION = TimeUnit.MINUTES.toMillis(5);
+    private final static int MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION = 5;
 
     private final LocalJournal localJournal;
     private final ClusteringService clusteringService;
-    private final AtomicBoolean deltaReconciliationCompleted;
     private final AtomicInteger expectedNumberOfDeltaResponses;
+
+    private CountDownLatch reconciliationLatch = null;
 
     /**
      * Creates a new clustered journal
@@ -63,7 +64,6 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
 
         this.clusteringService = clusteringService;
         this.localJournal = localJournal.withSearchTimeDelta(clusteringService.getMaxAllowedClockDelayMillis());
-        this.deltaReconciliationCompleted = new AtomicBoolean(false);
         this.expectedNumberOfDeltaResponses = new AtomicInteger(0);
     }
 
@@ -85,9 +85,10 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
         clusteringService.addConsumer(this);
 
         if (clusteringService.multipleMembersInCluster()) {
-            deltaReconciliationCompleted.set(false);
             // we expect to receive delta responses equal to how many members the cluster has
-            this.expectedNumberOfDeltaResponses.compareAndSet(0, clusteringService.membersInCluster() - 1);
+            int numberOfExpectedResponses = clusteringService.membersInCluster() - 1;
+            reconciliationLatch = new CountDownLatch(numberOfExpectedResponses);
+            this.expectedNumberOfDeltaResponses.compareAndSet(0, numberOfExpectedResponses);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Sending delta request from journal {0} as part of cluster {1}", journalId(), clusterName());
             }
@@ -96,26 +97,20 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
             clusteringService.sendMessage(DeltaMessage.request(journalId(), lastChangeSetTimeMillis));
             waitForReconciliationToComplete();
         } else {
-            this.deltaReconciliationCompleted.set(true);
+            this.reconciliationLatch = new CountDownLatch(0);
         }
     }
 
     private void waitForReconciliationToComplete() {
-        long startedAt = System.currentTimeMillis();
-        //wait a predefined amount of time for delta reconciliation to complete
-        while (!deltaReconciliationCompleted() && (System.currentTimeMillis() - startedAt) <= MAX_TIME_TO_WAIT_FOR_RECONCILIATION) {
-            // Otherwise, sleep for a short bit ...
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-                break;
-            }
+        try {
+            reconciliationLatch.await(MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            Thread.interrupted();
         }
 
         if (!deltaReconciliationCompleted()) {
             throw new SystemFailureException(JcrI18n.journalHasNotCompletedReconciliation.text(journalId(), clusterName(),
-                                                                                               MAX_TIME_TO_WAIT_FOR_RECONCILIATION));
+                                                                                               MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION));
         }
     }
 
@@ -135,30 +130,20 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
     }
 
     @Override
-    public Iterable<JournalRecord> recordsFor( String journalId ) {
-        return localJournal.recordsFor(journalId);
-    }
-
-    @Override
     public JournalRecord lastRecord() {
         return localJournal.lastRecord();
     }
 
     @Override
-    public Records recordsNewerThan( DateTime time,
+    public Records recordsNewerThan( DateTime changeSetTime,
                                      boolean inclusive,
                                      boolean descendingOrder ) {
-        return localJournal.recordsNewerThan(time, inclusive, descendingOrder);
+        return localJournal.recordsNewerThan(changeSetTime, inclusive, descendingOrder);
     }
 
     @Override
     public void addRecords( JournalRecord... records ) {
         localJournal.addRecords(records);
-    }
-
-    @Override
-    public boolean deltaReconciliationCompleted() {
-       return deltaReconciliationCompleted.get();
     }
 
     @Override
@@ -177,18 +162,20 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
             return;
         }
         if (message instanceof DeltaMessage.DeltaStillReconciling) {
-            processStillReconciling();
+            processStillReconciling((DeltaMessage.DeltaStillReconciling)message);
         }
     }
 
-    private void processStillReconciling() {
+    private boolean deltaReconciliationCompleted() {
+        return reconciliationLatch.getCount() == 0;
+    }
+
+    private void processStillReconciling( DeltaMessage.DeltaStillReconciling message ) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Journal {0} says it's still reconciling");
+            LOGGER.debug("Journal {0} received response from journal {1}: still reconciling", journalId(), message.getJournalId());
         }
         //we've received a response, but the node from which we've received the response is still reconciling
-        if (expectedNumberOfDeltaResponses().decrementAndGet() == 0) {
-            markDeltaReconciliationAsCompleted();
-        }
+        reconciliationLatch.countDown();
     }
 
     private void processDeltaRequest(DeltaMessage.DeltaRequest request) {
@@ -229,24 +216,12 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
                          clusterName(),
                          records.size());
         }
-        //we've received a response, so decrement the number of responses we're still expecting to get
-        int remainingNumberOfExpectedResponses = expectedNumberOfDeltaResponses().decrementAndGet();
-        if (remainingNumberOfExpectedResponses == 0) {
-            markDeltaReconciliationAsCompleted();
-        }
 
         if (!records.isEmpty()) {
             //make sure that a new timestamp is not generated for those records and whatever comes in the response is used.
             localJournal.addRecords(records.toArray(new JournalRecord[0]));
         }
-    }
-
-    protected AtomicInteger expectedNumberOfDeltaResponses() {
-        return this.expectedNumberOfDeltaResponses;
-    }
-
-    protected void markDeltaReconciliationAsCompleted() {
-        this.deltaReconciliationCompleted.compareAndSet(false, true);
+        reconciliationLatch.countDown();
     }
 
     protected ClusteringService clusteringService() {
