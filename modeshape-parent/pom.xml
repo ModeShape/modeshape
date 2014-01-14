@@ -4,6 +4,7 @@
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>9</version>
+        <relativePath></relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
