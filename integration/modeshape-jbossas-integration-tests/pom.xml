@@ -15,6 +15,10 @@
     <url>http://www.modeshape.org</url>
     <properties>
         <arquillian.suspend>n</arquillian.suspend>
+
+        <!--Force Ipv4 since that's how Arquillian starts EAP -->
+        <preferIpv4>true</preferIpv4>
+        <preferIpv6>false</preferIpv6>
     </properties>
     <dependencyManagement>
         <dependencies>
