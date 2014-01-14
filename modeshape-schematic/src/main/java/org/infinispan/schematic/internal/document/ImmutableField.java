@@ -86,7 +86,7 @@ public class ImmutableField implements Field {
     @Override
     public boolean getValueAsBoolean() {
         Object value = getValue();
-        return (value != null && value instanceof Boolean) ? ((Boolean)value).booleanValue() : null;
+        return (value != null && value instanceof Boolean) ? ((Boolean)value).booleanValue() : false;
     }
 
     @Override

@@ -18,22 +18,23 @@ package org.modeshape.web.shared;
 import java.io.Serializable;
 
 /**
- *
  * @author kulikov
  */
 public class Param implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private String name, value;
 
     public Param() {
     }
 
-    public Param(String name, String value) {
+    public Param( String name,
+                  String value ) {
         this.name = name;
         this.value = value;
     }
 
-    public void setName(String name) {
+    public void setName( String name ) {
         this.name = name;
     }
 
@@ -45,7 +46,7 @@ public class Param implements Serializable {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue( String value ) {
         this.value = value;
     }
 }

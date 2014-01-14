@@ -49,7 +49,7 @@ public class TreeToolbar extends AbstractToolbar {
                             return;
                         }
                         String path = console().navigator.getSelectedPath();
-                        console().jcrService.removeNode(path, new AsyncCallback() {
+                        console().jcrService.removeNode(path, new AsyncCallback<Object>() {
                             @Override
                             public void onFailure(Throwable caught) {
                                 SC.say(caught.getMessage());

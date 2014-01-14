@@ -15,6 +15,10 @@
  */
 package org.modeshape.web.client;
 
+import java.util.Collection;
+import org.modeshape.web.shared.JcrNodeType;
+import org.modeshape.web.shared.JcrRepositoryDescriptor;
+import org.modeshape.web.shared.Param;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.ListGridEditEvent;
 import com.smartgwt.client.types.ListGridFieldType;
@@ -26,27 +30,22 @@ import com.smartgwt.client.widgets.layout.SectionStack;
 import com.smartgwt.client.widgets.layout.SectionStackSection;
 import com.smartgwt.client.widgets.layout.VLayout;
 import com.smartgwt.client.widgets.tab.Tab;
-import java.util.Collection;
-import org.modeshape.web.shared.JcrNodeType;
-import org.modeshape.web.shared.JcrRepositoryDescriptor;
-import org.modeshape.web.shared.Param;
 
 /**
- *
  * @author kulikov
  */
 public class RepositoryPanel extends Tab {
 
-    private final RepositoryInfoPanel repositoryInfo;
+    protected final RepositoryInfoPanel repositoryInfo;
     private final NodeTypesPanel nodeTypes;
-    private Console console;
-    
-    public RepositoryPanel(Console console) {
+    protected Console console;
+
+    public RepositoryPanel( Console console ) {
         super();
         this.console = console;
         setTitle("Repository");
         setIcon("icons/view_thumbnail.png");
-        
+
         repositoryInfo = new RepositoryInfoPanel();
         nodeTypes = new NodeTypesPanel();
 
@@ -57,7 +56,6 @@ public class RepositoryPanel extends Tab {
         section1.setExpanded(true);
         section1.addItem(repositoryInfo);
         stack.addSection(section1);
-
 
         SectionStackSection section2 = new SectionStackSection("Node type management");
         section2.setExpanded(false);
@@ -75,10 +73,10 @@ public class RepositoryPanel extends Tab {
         console.jcrService.repositoryInfo(new RepositoryInfoCallbackHandler());
         nodeTypes.display();
     }
-    
+
     private class RepositoryInfoPanel extends VLayout {
 
-        private ListGrid grid = new ListGrid();
+        protected ListGrid grid = new ListGrid();
 
         public RepositoryInfoPanel() {
             super();
@@ -96,7 +94,7 @@ public class RepositoryPanel extends Tab {
             iconField.setImageURLPrefix("icons/bullet_");
             iconField.setImageURLSuffix(".png");
             iconField.setWidth(20);
-            
+
             ListGridField nameField = new ListGridField("name", "Name");
             nameField.setCanEdit(false);
             nameField.setShowHover(true);
@@ -114,13 +112,12 @@ public class RepositoryPanel extends Tab {
         }
     }
 
-    
     private class NodeTypesPanel extends VLayout {
-        private ListGrid grid = new ListGrid();
+        protected ListGrid grid = new ListGrid();
 
         public NodeTypesPanel() {
             super();
-            
+
             grid.setWidth(500);
             grid.setHeight(224);
             grid.setAlternateRecordStyles(true);
@@ -132,7 +129,7 @@ public class RepositoryPanel extends Tab {
             iconField.setImageURLPrefix("icons/bullet_");
             iconField.setImageURLSuffix(".png");
             iconField.setWidth(20);
-            
+
             ListGridField nameField = new ListGridField("name", "Name");
             nameField.setCanEdit(false);
             nameField.setShowHover(true);
@@ -148,7 +145,7 @@ public class RepositoryPanel extends Tab {
             ListGridField isAbstractField = new ListGridField("isAbstract", "Abstract");
             isAbstractField.setCanEdit(false);
             isAbstractField.setShowHover(true);
-            
+
             grid.setFields(iconField, nameField, isPrimaryField, isMixinField, isAbstractField);
 
             grid.setCanResizeFields(true);
@@ -156,30 +153,29 @@ public class RepositoryPanel extends Tab {
             grid.setHeight100();
 
             addMember(grid);
-            
+
         }
-        
+
         public void display() {
             console.jcrService.nodeTypes(new AsyncCallback<Collection<JcrNodeType>>() {
 
                 @Override
-                public void onFailure(Throwable caught) {
+                public void onFailure( Throwable caught ) {
                     SC.say(caught.getMessage());
                 }
 
-
                 @Override
-                public void onSuccess(Collection<JcrNodeType> types) {
+                public void onSuccess( Collection<JcrNodeType> types ) {
                     ListGridRecord[] data = new ListGridRecord[types.size()];
                     int i = 0;
-                    for (JcrNodeType type: types) {
+                    for (JcrNodeType type : types) {
                         ListGridRecord record = new ListGridRecord();
                         record.setAttribute("icon", "blue");
                         record.setAttribute("name", type.getName());
                         record.setAttribute("isPrimary", type.isPrimary());
                         record.setAttribute("isMixin", type.isMixin());
                         record.setAttribute("isAbstract", type.isAbstract());
-                        data[i++] = record;                        
+                        data[i++] = record;
                     }
                     grid.setData(data);
                 }
@@ -190,12 +186,13 @@ public class RepositoryPanel extends Tab {
     public class RepositoryInfoCallbackHandler implements AsyncCallback<JcrRepositoryDescriptor> {
 
         @Override
-        public void onFailure(Throwable caught) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        public void onFailure( Throwable caught ) {
+            throw new UnsupportedOperationException("Not supported yet."); // To change body of generated methods, choose Tools |
+                                                                           // Templates.
         }
 
         @Override
-        public void onSuccess(JcrRepositoryDescriptor descriptor) {
+        public void onSuccess( JcrRepositoryDescriptor descriptor ) {
             Collection<Param> params = descriptor.info();
             ListGridRecord[] data = new ListGridRecord[params.size()];
             int i = 0;

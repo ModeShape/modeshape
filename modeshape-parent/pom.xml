@@ -4,6 +4,7 @@
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>9</version>
+        <relativePath></relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -222,7 +223,9 @@
         <!--
           Global dependency version information
           -->
-        <modeshape.java.version>1.6</modeshape.java.version>
+        <modeshape.java.version>1.7</modeshape.java.version>
+        <maven.compiler.source>${modeshape.java.version}</maven.compiler.source>
+        <maven.compiler.target>${modeshape.java.version}</maven.compiler.target>
 
         <joda.time.version>1.6.2</joda.time.version>
         <junit.version>4.10</junit.version>
@@ -1087,7 +1090,7 @@
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-webdav-war</artifactId>
                 <version>${project.version}</version>
-           </dependency>
+            </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-webdav</artifactId>
@@ -1108,7 +1111,7 @@
                 <artifactId>modeshape-jdbc</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
+           <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jbossas-subsystem</artifactId>
                 <version>${project.version}</version>
@@ -1119,6 +1122,61 @@
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
+            <!--
+                ModeShape test modules
+            -->
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-common</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-webdav-war</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-webdav</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-webdav-war</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc-local</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <!--
+                Servlet, JAAC, and JCA APIs
+            -->
             <dependency>
                 <groupId>javax.servlet</groupId>
                 <artifactId>servlet-api</artifactId>
@@ -1153,6 +1211,13 @@
                         <artifactId>stax2-api</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${infinispan.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
 
             <!--
@@ -1205,6 +1270,13 @@
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-search-infinispan</artifactId>
                 <version>${hibernate.search.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-infinispan</artifactId>
+                <version>${hibernate.search.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -2010,6 +2082,11 @@
                 <artifactId>jboss-as-model-test</artifactId>
                 <version>${jbossas.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-arquillian-container-managed</artifactId>
+                <version>${jboss-as-arquillian-container-managed.version}</version>
             </dependency>
 
             <dependency>

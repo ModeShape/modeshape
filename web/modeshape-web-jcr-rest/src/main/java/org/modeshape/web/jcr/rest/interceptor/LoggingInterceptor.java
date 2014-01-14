@@ -29,7 +29,7 @@ import org.modeshape.web.jcr.WebLogger;
 
 /**
  * REST Easy {@link PreProcessInterceptor} which will print out various logging information in DEBUG mode.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Provider
@@ -38,6 +38,7 @@ public class LoggingInterceptor implements PreProcessInterceptor {
 
     private static final Logger LOGGER = WebLogger.getLogger(LoggingInterceptor.class);
 
+    @Override
     public ServerResponse preProcess( HttpRequest request,
                                       ResourceMethod method ) throws Failure, WebApplicationException {
         if (LOGGER.isDebugEnabled()) {

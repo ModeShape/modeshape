@@ -28,15 +28,15 @@ import com.smartgwt.client.widgets.form.fields.TextItem;
  */
 public class PathPanel extends DynamicForm {
 
-    private TextItem pathEditor = new TextItem();
+    protected TextItem pathEditor = new TextItem();
     private SubmitItem goButton = new SubmitItem();
 
-    private Console console;
-    
-    public PathPanel(Console console) {
+    protected Console console;
+
+    public PathPanel( Console console ) {
         super();
         this.console = console;
-        
+
         setID("pathPanel");
         setMargin(0);
 
@@ -56,16 +56,16 @@ public class PathPanel extends DynamicForm {
         setItems(pathEditor, goButton);
         addSubmitValuesHandler(new PathChangeHandler());
     }
-    
+
     /**
      * Implements procedure of path selection.
      */
-    private class PathChangeHandler implements SubmitValuesHandler {
+    protected class PathChangeHandler implements SubmitValuesHandler {
 
         @Override
-        public void onSubmitValues(SubmitValuesEvent event) {
+        public void onSubmitValues( SubmitValuesEvent event ) {
             console.navigator.openFolder(pathEditor.getValueAsString());
         }
-        
+
     }
 }

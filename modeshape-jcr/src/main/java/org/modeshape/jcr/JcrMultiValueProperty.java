@@ -299,7 +299,6 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> T getAs( Class<T> type ) throws RepositoryException {
         if (!(type.isArray() || type.equals(NodeIterator.class))) {
             throw new ValueFormatException(JcrI18n.unableToConvertPropertyValueToType.text(getPath(), type.getSimpleName()));

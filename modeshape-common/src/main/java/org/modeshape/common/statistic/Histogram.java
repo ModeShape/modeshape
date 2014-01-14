@@ -59,7 +59,7 @@ public class Histogram<T extends Number> {
     }
 
     public Histogram( MathOperations<T> operations,
-                      T... values ) {
+                      @SuppressWarnings( "unchecked" ) T... values ) {
         this(operations, Arrays.asList(values));
     }
 

@@ -27,7 +27,7 @@ import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
  */
 public class RemoveMixinDialog extends ModalDialog {
     
-    private Console console;
+    protected Console console;
     private ComboBoxItem mixins = new ComboBoxItem("Mixin type");
     
     public RemoveMixinDialog(String title, Console console) {
@@ -51,7 +51,7 @@ public class RemoveMixinDialog extends ModalDialog {
     
     @Override
     public void onConfirm(ClickEvent event) {
-        console.jcrService.removeMixin(console.navigator.getSelectedPath(), mixins.getValueAsString(), new AsyncCallback(){
+        console.jcrService.removeMixin(console.navigator.getSelectedPath(), mixins.getValueAsString(), new AsyncCallback<Object>(){
 
             @Override
             public void onFailure(Throwable caught) {

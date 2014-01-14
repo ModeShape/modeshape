@@ -27,7 +27,7 @@ import com.smartgwt.client.widgets.events.ClickHandler;
  * @author kulikov
  */
 public class AclToolbar extends AbstractToolbar {
-    private AddPrincipalDialog addPrincipalDialog;
+    protected AddPrincipalDialog addPrincipalDialog;
     
     public AclToolbar(Console console) {
         super(console);
@@ -70,7 +70,7 @@ public class AclToolbar extends AbstractToolbar {
                         if (value) {
                             //pick up selected node and entered principal name
                             JcrTreeNode node = console().navigator.getSelectedNode();
-                            console().jcrService.updateAccessList(node.getPath(), node.getAccessList(), new AsyncCallback() {
+                            console().jcrService.updateAccessList(node.getPath(), node.getAccessList(), new AsyncCallback<Object>() {
 
                                 @Override
                                 public void onFailure(Throwable caught) {

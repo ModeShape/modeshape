@@ -436,74 +436,27 @@ public class JcrConnection implements Connection {
         return getRepositoryDelegate().unwrap(iface);
     }
 
-    /**
-     * Sets the given schema name to access. If the driver does not support schemas, it will silently ignore this request. Calling
-     * setSchema has no effect on previously created or prepared Statement objects. It is implementation defined whether a DBMS
-     * prepare operation takes place immediately when the Connection method prepareStatement or prepareCall is invoked. For
-     * maximum portability, setSchema should be called before a Statement is created or prepared.
-     * 
-     * @param schema - the name of a schema in which to work
-     * @throws SQLException - if a database access error occurs or this method is called on a closed connection
-     */
-    // TODO: JDK 1.7 - add @Override and remove JavaDoc
-    public void setSchema( String schema ) throws SQLException {
+    @Override
+    public void setSchema( String schema ) {
     }
 
-    /**
-     * Retrieves this Connection object's current schema name.
-     * 
-     * @return the current schema name or null if there is none
-     * @throws SQLException - if a database access error occurs or this method is called on a closed connection
-     */
-    // TODO: JDK 1.7 - add @Override
-    public String getSchema() throws SQLException {
+    @Override
+    public String getSchema() {
         return null;
     }
 
-    /**
-     * Terminates an open connection.
-     * <p>
-     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
-     * </p>
-     * 
-     * @param executor The {@link Executor} implementation which will be used by <code>abort</code>.
-     */
-    // TODO: JDK 1.7 - add @Override
-    public void abort( Executor executor ) /*throws SQLException*/{
+    @Override
+    public void abort( Executor executor ) {
     }
 
-    /**
-     * This method is not implemented and always throws {@link SQLFeatureNotSupportedException}.
-     * <p>
-     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
-     * </p>
-     * 
-     * @param executor The <code>Executor</code> implementation which will be used by <code>setNetworkTimeout</code>.
-     * @param milliseconds The time in milliseconds to wait for the database operation to complete. If the JDBC driver does not
-     *        support milliseconds, the JDBC driver will round the value up to the nearest second. If the timeout period expires
-     *        before the operation completes, a SQLException will be thrown. A value of 0 indicates that there is not timeout for
-     *        database operations.
-     * @throws SQLException
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support this method
-     */
-    // TODO: JDK 1.7 - add @Override
+    @Override
     public void setNetworkTimeout( Executor executor,
                                    int milliseconds ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * This method is not implemented and always throws {@link SQLFeatureNotSupportedException}.
-     * <p>
-     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
-     * </p>
-     * 
-     * @return the timeout
-     * @throws SQLException
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support this method
-     */
-    // TODO: JDK 1.7 - add @Override
+    @Override
     public int getNetworkTimeout() throws SQLException {
-        return 0;
+        throw new SQLFeatureNotSupportedException();
     }
 }

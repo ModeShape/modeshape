@@ -60,6 +60,7 @@ public abstract class AbstractNodeChange extends Change {
         this.types = new Name[typesCount];
         this.types[0] = primaryType;
         if (typesCount > 1) {
+            assert mixinTypes != null;
             System.arraycopy(mixinTypes.toArray(new Name[0]), 0, types, 1, mixinTypes.size());
         }
     }
@@ -82,7 +83,7 @@ public abstract class AbstractNodeChange extends Change {
 
     /**
      * Returns the primary type of the node
-     *
+     * 
      * @return a {@link Name} instance; never {@code null}
      */
     public Name getPrimaryType() {
@@ -91,8 +92,8 @@ public abstract class AbstractNodeChange extends Change {
 
     /**
      * Returns the mixins for this node.
-     *
-     * @return a {@link Set(Name)}; never {@code null} but possibly empty.
+     * 
+     * @return a {@link Set}; never {@code null} but possibly empty.
      */
     public Set<Name> getMixinTypes() {
         if (types.length == 1) {

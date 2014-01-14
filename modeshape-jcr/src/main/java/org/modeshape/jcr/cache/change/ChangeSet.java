@@ -35,28 +35,28 @@ public interface ChangeSet extends Iterable<Change>, Serializable {
 
     /**
      * Checks if this set has any changes.
-     *
+     * 
      * @return {@code true} if there are any changes in this set.
      */
     public boolean isEmpty();
 
     /**
      * Returns the ID (username) of the user which performed the changes.
-     *
+     * 
      * @return a {@link String} representing the username; may be {@code null} in the case of changes performed "by the system.
      */
     public String getUserId();
 
     /**
      * Returns a set of (key,value) pairs which may contain additional user information.
-     *
+     * 
      * @return a {@link Map} of additional information; never {@code null} but possibly empty.
      */
     public Map<String, String> getUserData();
 
     /**
      * Returns the time at which the change set was created.
-     *
+     * 
      * @return a {@code DateTime} instance; never {@code null}
      */
     public DateTime getTimestamp();
@@ -84,14 +84,14 @@ public interface ChangeSet extends Iterable<Change>, Serializable {
 
     /**
      * Returns the set of keys for the nodes which has been changed.
-     *
-     * @return a {@link Set<NodeKey>} instance; never {@code null}
+     * 
+     * @return the set of changed node keys; never {@code null}
      */
     public Set<NodeKey> changedNodes();
 
     /**
      * Returns the identifier of the local {@link org.modeshape.jcr.journal.ChangeJournal} instance.
-     *
+     * 
      * @return either a non-null {@link String} if journaling is enabled, or {@code null} if journaling isn't enabled.
      */
     public String getJournalId();

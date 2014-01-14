@@ -911,7 +911,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return globs.toArray(new String[globs.size()]);
     }
 
-    protected static List<?> createPatternsFor( String... namePatterns ) throws RepositoryException {
+    protected static List<?> createPatternsFor( String... namePatterns ) {
         List<Object> patterns = new LinkedList<Object>();
         for (String stringPattern : namePatterns) {
             int length = stringPattern.length();

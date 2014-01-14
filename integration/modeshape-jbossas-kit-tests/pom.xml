@@ -77,7 +77,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${httpclient.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -95,7 +94,6 @@
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-arquillian-container-managed</artifactId>
-            <version>${jboss-as-arquillian-container-managed.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -130,7 +128,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>${version.dependency.plugin}</version>
                 <executions>
                     <execution>
                         <id>unpack</id>

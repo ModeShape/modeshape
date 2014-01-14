@@ -28,7 +28,7 @@ import org.modeshape.jcr.ClusteringHelper;
 
 /**
  * Unit test for {@link ClusteringService}
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ClusteringServiceTest {
@@ -91,10 +91,10 @@ public class ClusteringServiceTest {
             service1.sendMessage("hello_1");
             service2.sendMessage("hello_2");
 
-            //we need a delay to make sure the messages arrive
+            // we need a delay to make sure the messages arrive
             Thread.sleep(200);
 
-            String[] expectedPayloads = new String[]{"hello_1", "hello_2"};
+            String[] expectedPayloads = new String[] {"hello_1", "hello_2"};
             assertArrayEquals(expectedPayloads, consumer1.getPayloads().toArray(new String[0]));
             assertArrayEquals(expectedPayloads, consumer2.getPayloads().toArray(new String[0]));
         } finally {
@@ -107,10 +107,10 @@ public class ClusteringServiceTest {
         this.clusteringService = startNewClusteringService(name);
     }
 
-    private class TestConsumer extends MessageConsumer<String> {
+    protected class TestConsumer extends MessageConsumer<String> {
         private Set<String> payloads = new TreeSet<String>();
 
-        private TestConsumer() {
+        protected TestConsumer() {
             super(String.class);
         }
 
@@ -119,7 +119,7 @@ public class ClusteringServiceTest {
             payloads.add(payload);
         }
 
-        private Set<String> getPayloads() {
+        protected Set<String> getPayloads() {
             return payloads;
         }
     }

@@ -36,7 +36,6 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <version>${log4j.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -49,7 +48,6 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
             <type>test-jar</type>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

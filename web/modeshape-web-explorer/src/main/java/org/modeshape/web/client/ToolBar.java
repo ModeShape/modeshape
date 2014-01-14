@@ -56,7 +56,7 @@ public class ToolBar extends HLayout {
                             return;
                         }
                         String path = ToolBar.this.console.navigator.getSelectedPath();
-                        ToolBar.this.console.jcrService.removeNode(path, new AsyncCallback() {
+                        ToolBar.this.console.jcrService.removeNode(path, new AsyncCallback<Object>() {
                             @Override
                             public void onFailure( Throwable caught ) {
                                 SC.say(caught.getMessage());

@@ -15,7 +15,6 @@
  */
 package org.modeshape.web.client;
 
-import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Window;
@@ -30,23 +29,22 @@ import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.layout.VStack;
 
 /**
- *
  * @author kulikov
  */
 public class LoginDialog extends DynamicForm {
 
-    private Window window = new Window();
-    private TextItem jndiName = new TextItem();
-    private TextItem userName = new TextItem();
-    private TextItem workspace = new TextItem();
-    private PasswordItem password = new PasswordItem();
+    protected Window window = new Window();
+    protected TextItem jndiName = new TextItem();
+    protected TextItem userName = new TextItem();
+    protected TextItem workspace = new TextItem();
+    protected PasswordItem password = new PasswordItem();
 
-    private Console console;
-    
-    public LoginDialog(Console console) {
+    protected Console console;
+
+    public LoginDialog( Console console ) {
         super();
         this.console = console;
-        
+
         setID("loginDialog");
         setNumCols(2);
         setPadding(25);
@@ -90,17 +88,16 @@ public class LoginDialog extends DynamicForm {
 
         okButton.setStartRow(false);
         okButton.setEndRow(true);
-        
+
         this.addSubmitValuesHandler(new LoginHandler());
-        
+
         StaticTextItem description = new StaticTextItem();
         description.setTitle("");
         description.setValue("Specify either repository name or jndi name");
         description.setStartRow(true);
         description.setEndRow(true);
-        
-        setItems(spacerItem1, description, jndiName, workspace, spacerItem1, userName,
-                password,  spacerItem2, okButton);
+
+        setItems(spacerItem1, description, jndiName, workspace, spacerItem1, userName, password, spacerItem2, okButton);
 
         vStack.setTop(30);
         vStack.addMember(this);
@@ -119,14 +116,14 @@ public class LoginDialog extends DynamicForm {
         userName.focusInItem();
     }
 
-    public void setJndiName(String name) {
+    public void setJndiName( String name ) {
         this.jndiName.setValue(name);
     }
-    
-    public void setWorkspace(String name) {
+
+    public void setWorkspace( String name ) {
         this.workspace.setValue(name);
     }
-    
+
     public void showDialog() {
         window.show();
     }
@@ -134,31 +131,30 @@ public class LoginDialog extends DynamicForm {
     public void hideDialog() {
         window.hide();
     }
-    
-    private class LoginHandler implements SubmitValuesHandler {
+
+    protected class LoginHandler implements SubmitValuesHandler {
         @Override
-        public void onSubmitValues(SubmitValuesEvent event) {
-            console.jcrService.login(
-                    jndiName.getValueAsString(), 
-                    userName.getValueAsString(), 
-                    password.getValueAsString(),
-                    workspace.getValueAsString(), 
-                    new LoginCallback());
-        }        
+        public void onSubmitValues( SubmitValuesEvent event ) {
+            console.jcrService.login(jndiName.getValueAsString(),
+                                     userName.getValueAsString(),
+                                     password.getValueAsString(),
+                                     workspace.getValueAsString(),
+                                     new LoginCallback());
+        }
     }
-    
-    private class LoginCallback implements AsyncCallback {
+
+    protected class LoginCallback implements AsyncCallback<Object> {
 
         @Override
-        public void onFailure(Throwable caught) {
+        public void onFailure( Throwable caught ) {
             SC.say(caught.getMessage());
         }
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess( Object result ) {
             LoginDialog.this.hideDialog();
             console.showMainForm(jndiName.getValueAsString(), workspace.getValueAsString());
         }
-        
+
     }
 }

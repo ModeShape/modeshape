@@ -23,49 +23,49 @@ import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 
 /**
- *
  * @author kulikov
  */
-public class AddPropertyDialog extends ModalDialog{
-    
+public class AddPropertyDialog extends ModalDialog {
+
     private Console console;
     private ComboBoxItem name = new ComboBoxItem("Property name");
     private TextItem value = new TextItem("Value");
-    
-    public AddPropertyDialog(String title, Console console) {
+
+    public AddPropertyDialog( String title,
+                              Console console ) {
         super(title, 400, 200);
         StaticTextItem description = new StaticTextItem();
         description.setValue("Select property name and specify value");
         description.setTitle("");
         description.setStartRow(true);
         description.setEndRow(true);
-        
+
         setControls(description, name, value);
         this.console = console;
     }
-    
+
     @Override
     public void showModal() {
         JcrTreeNode node = console.navigator.getSelectedNode();
         if (node != null) {
             name.setValueMap(node.getPropertyDefs());
-        } 
+        }
         super.showModal();
     }
-        
+
     @Override
-    public void onConfirm(ClickEvent event) {
+    public void onConfirm( ClickEvent event ) {
         String path = console.navigator.getSelectedPath();
-        console.jcrService.setProperty(path, name.getValueAsString(), value.getValueAsString(), new AsyncCallback() {
+        console.jcrService.setProperty(path, name.getValueAsString(), value.getValueAsString(), new AsyncCallback<Object>() {
             @Override
-            public void onFailure(Throwable caught) {
+            public void onFailure( Throwable caught ) {
                 SC.say(caught.getMessage());
             }
 
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess( Object result ) {
             }
         });
     }
-    
+
 }

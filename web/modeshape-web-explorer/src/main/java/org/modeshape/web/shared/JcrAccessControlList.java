@@ -28,13 +28,15 @@ import com.smartgwt.client.widgets.grid.ListGridRecord;
  */
 public class JcrAccessControlList implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private static JcrPermission[] PERMISSIONS = new JcrPermission[] {JcrPermission.ALL, JcrPermission.LIFECYCLE_MANAGEMENT,
         JcrPermission.LOCK_MANAGEMENT, JcrPermission.NODE_TYPE_MANAGEMENT, JcrPermission.RETENTION_MANAGEMENT,
         JcrPermission.VERSION_MANAGEMENT, JcrPermission.READ_ACCESS_CONTROL, JcrPermission.MODIFY_ACCESS_CONTROL,
         JcrPermission.READ, JcrPermission.WRITE, JcrPermission.ADD_CHILD_NODES, JcrPermission.MODIFY_PROPERTIES,
         JcrPermission.REMOVE_CHILD_NODES};
 
-    private ArrayList<JcrPolicy> entries = new ArrayList();
+    private ArrayList<JcrPolicy> entries = new ArrayList<JcrPolicy>();
     private boolean isModified = false;
 
     public static JcrAccessControlList defaultInstance() {

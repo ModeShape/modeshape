@@ -27,13 +27,14 @@ import com.smartgwt.client.widgets.form.fields.StaticTextItem;
  */
 public class AddMixinDialog extends ModalDialog {
 
-    private ComboBoxItem name = new ComboBoxItem();
-    private Console console;
+    protected ComboBoxItem name = new ComboBoxItem();
+    protected Console console;
 
-    public AddMixinDialog(String title, Console console) {
+    public AddMixinDialog( String title,
+                           Console console ) {
         super(title, 450, 150);
         this.console = console;
-        
+
         name.setName("name");
         name.setTitle("Mixin");
         name.setDefaultValue("");
@@ -48,7 +49,7 @@ public class AddMixinDialog extends ModalDialog {
         description.setTitle("");
         description.setStartRow(true);
         description.setEndRow(true);
-        
+
         setControls(description, name);
         name.focusInItem();
     }
@@ -57,29 +58,30 @@ public class AddMixinDialog extends ModalDialog {
     public void showModal() {
         console.jcrService.getMixinTypes(false, new AsyncCallback<String[]>() {
             @Override
-            public void onFailure(Throwable caught) {
+            public void onFailure( Throwable caught ) {
                 SC.say(caught.getMessage());
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
-            public void onSuccess(String[] result) {
+            public void onSuccess( String[] result ) {
                 name.setValueMap(result);
                 AddMixinDialog.super.showModal();
             }
         });
     }
-    
+
     @Override
-    public void onConfirm(com.smartgwt.client.widgets.form.fields.events.ClickEvent event) {
+    public void onConfirm( com.smartgwt.client.widgets.form.fields.events.ClickEvent event ) {
         String path = AddMixinDialog.this.console.navigator.getSelectedPath();
-        AddMixinDialog.this.console.jcrService.addMixin(path, name.getValueAsString(), new AsyncCallback() {
+        AddMixinDialog.this.console.jcrService.addMixin(path, name.getValueAsString(), new AsyncCallback<Object>() {
             @Override
-            public void onFailure(Throwable caught) {
+            public void onFailure( Throwable caught ) {
                 SC.say(caught.getMessage());
             }
 
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess( Object result ) {
                 AddMixinDialog.this.console.navigator.selectNode();
             }
         });

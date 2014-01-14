@@ -92,18 +92,13 @@ class JcrStatement implements Statement {
         return fetchDirection;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#setFetchDirection(int)
-     */
     @Override
     public void setFetchDirection( int direction ) throws SQLException {
         notClosed();
         if (direction != ResultSet.FETCH_FORWARD && direction != ResultSet.FETCH_REVERSE && direction != ResultSet.FETCH_UNKNOWN) {
             throw new SQLException(JdbcLocalI18n.invalidArgument.text(direction, "" + ResultSet.FETCH_FORWARD + ", "
-                                                                            + ResultSet.FETCH_REVERSE + ", "
-                                                                            + ResultSet.FETCH_UNKNOWN));
+                                                                                 + ResultSet.FETCH_REVERSE + ", "
+                                                                                 + ResultSet.FETCH_UNKNOWN));
         }
         fetchDirection = direction;
     }
@@ -122,11 +117,6 @@ class JcrStatement implements Statement {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#setMaxFieldSize(int)
-     */
     @Override
     public void setMaxFieldSize( int max ) throws SQLException {
         notClosed();
@@ -136,11 +126,6 @@ class JcrStatement implements Statement {
         // ignored otherwise
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getMaxRows()
-     */
     @Override
     public int getMaxRows() throws SQLException {
         notClosed();
@@ -150,11 +135,6 @@ class JcrStatement implements Statement {
         return (rowLimit == -1 ? 0 : rowLimit);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#setMaxRows(int)
-     */
     @Override
     public void setMaxRows( int max ) throws SQLException {
         notClosed();
@@ -178,11 +158,6 @@ class JcrStatement implements Statement {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#setQueryTimeout(int)
-     */
     @Override
     public void setQueryTimeout( int seconds ) throws SQLException {
         notClosed();
@@ -192,44 +167,24 @@ class JcrStatement implements Statement {
         // Otherwise ignore
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#isPoolable()
-     */
     @Override
     public boolean isPoolable() throws SQLException {
         notClosed();
         return poolable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#setPoolable(boolean)
-     */
     @Override
     public void setPoolable( boolean poolable ) throws SQLException {
         notClosed();
         this.poolable = poolable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getConnection()
-     */
     @Override
     public Connection getConnection() throws SQLException {
         notClosed();
         return connection;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#cancel()
-     */
     @Override
     public void cancel() throws SQLException {
         notClosed();
@@ -237,48 +192,28 @@ class JcrStatement implements Statement {
         // Unable to cancel a JCR query ...
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#clearWarnings()
-     */
     @Override
     public void clearWarnings() throws SQLException {
         notClosed();
         warning = null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getWarnings()
-     */
     @Override
     public SQLWarning getWarnings() throws SQLException {
         notClosed();
         return warning;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#isClosed()
-     */
     @Override
     public boolean isClosed() {
         return closed || connection.isClosed();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#close()
-     */
     @Override
     public void close() {
         if (!closed) {
-        	closed = true;
-        	connection.getRepositoryDelegate().closeStatement();            
+            closed = true;
+            connection.getRepositoryDelegate().closeStatement();
         }
     }
 
@@ -293,11 +228,7 @@ class JcrStatement implements Statement {
     // ----------------------------------------------------------------------------------------------------------------
     // Updates
     // ----------------------------------------------------------------------------------------------------------------
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#executeUpdate(java.lang.String)
-     */
+
     @Override
     public int executeUpdate( String sql ) throws SQLException {
         notClosed();
@@ -305,11 +236,6 @@ class JcrStatement implements Statement {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#executeUpdate(java.lang.String, int)
-     */
     @Override
     public int executeUpdate( String sql,
                               int autoGeneratedKeys ) throws SQLException {
@@ -318,11 +244,6 @@ class JcrStatement implements Statement {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#executeUpdate(java.lang.String, int[])
-     */
     @Override
     public int executeUpdate( String sql,
                               int[] columnIndexes ) throws SQLException {
@@ -331,11 +252,6 @@ class JcrStatement implements Statement {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#executeUpdate(java.lang.String, java.lang.String[])
-     */
     @Override
     public int executeUpdate( String sql,
                               String[] columnNames ) throws SQLException {
@@ -344,55 +260,30 @@ class JcrStatement implements Statement {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#setCursorName(java.lang.String)
-     */
     @Override
     public void setCursorName( String name ) throws SQLException {
         notClosed();
         noUpdates();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getUpdateCount()
-     */
     @Override
     public int getUpdateCount() throws SQLException {
         notClosed();
         return -1;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#addBatch(java.lang.String)
-     */
     @Override
     public void addBatch( String sql ) throws SQLException {
         notClosed();
         noUpdates();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#clearBatch()
-     */
     @Override
     public void clearBatch() throws SQLException {
         notClosed();
         noUpdates();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#executeBatch()
-     */
     @Override
     public int[] executeBatch() throws SQLException {
         notClosed();
@@ -404,11 +295,6 @@ class JcrStatement implements Statement {
     // Queries
     // ----------------------------------------------------------------------------------------------------------------
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#execute(java.lang.String)
-     */
     @Override
     public boolean execute( String sql ) throws SQLException {
         notClosed();
@@ -431,52 +317,30 @@ class JcrStatement implements Statement {
         return this.connection.getRepositoryDelegate();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#execute(java.lang.String, int)
-     */
     @Override
     public boolean execute( String sql,
                             int autoGeneratedKeys ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();    }
+        throw new SQLFeatureNotSupportedException();
+    }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#execute(java.lang.String, int[])
-     */
     @Override
     public boolean execute( String sql,
                             int[] columnIndexes ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();    }
+        throw new SQLFeatureNotSupportedException();
+    }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#execute(java.lang.String, java.lang.String[])
-     */
     @Override
     public boolean execute( String sql,
                             String[] columnNames ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();    }
+        throw new SQLFeatureNotSupportedException();
+    }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#executeQuery(java.lang.String)
-     */
     @Override
     public ResultSet executeQuery( String sql ) throws SQLException {
         execute(sql);
         return getResultSet();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getGeneratedKeys()
-     */
     @Override
     public ResultSet getGeneratedKeys() /*throws SQLException*/{
         // TODO: if and when ModeShape supports providing key information
@@ -484,140 +348,79 @@ class JcrStatement implements Statement {
         return new JcrResultSet();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getMoreResults()
-     */
     @Override
     public boolean getMoreResults() throws SQLException {
         notClosed();
         return moreResults > 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getMoreResults(int)
-     */
     @Override
     public boolean getMoreResults( int current ) throws SQLException {
         notClosed();
         if (current != CLOSE_ALL_RESULTS && current != CLOSE_CURRENT_RESULT && current != KEEP_CURRENT_RESULT) {
-            throw new SQLException(JdbcLocalI18n.invalidArgument.text(current, "" + CLOSE_ALL_RESULTS + ", " + CLOSE_CURRENT_RESULT
-                                                                          + ", " + KEEP_CURRENT_RESULT));
+            throw new SQLException(JdbcLocalI18n.invalidArgument.text(current, "" + CLOSE_ALL_RESULTS + ", "
+                                                                               + CLOSE_CURRENT_RESULT + ", "
+                                                                               + KEEP_CURRENT_RESULT));
         }
         if (KEEP_CURRENT_RESULT != current) {
             // Close (by nulling) the results ...
-//            jcrResults = null;
+            // jcrResults = null;
             results = null;
         }
         if (moreResults > 0) --moreResults;
         return moreResults > 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getResultSet()
-     */
     @Override
     public ResultSet getResultSet() throws SQLException {
         notClosed();
         return results; // may be null
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getResultSetConcurrency()
-     */
     @Override
     public int getResultSetConcurrency() throws SQLException {
         notClosed();
         return ResultSet.CONCUR_READ_ONLY;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getResultSetHoldability()
-     */
     @Override
     public int getResultSetHoldability() throws SQLException {
         notClosed();
         return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getResultSetType()
-     */
     @Override
     public int getResultSetType() throws SQLException {
         notClosed();
         return ResultSet.TYPE_SCROLL_INSENSITIVE;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#setEscapeProcessing(boolean)
-     */
     @Override
     public void setEscapeProcessing( boolean enable ) throws SQLException {
         notClosed();
         // Ignore for now
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
-     */
     @Override
     public boolean isWrapperFor( Class<?> iface ) /*throws SQLException*/{
         return iface.isInstance(this);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#unwrap(java.lang.Class)
-     */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
         if (!isWrapperFor(iface)) {
-            throw new SQLException(JdbcLocalI18n.classDoesNotImplementInterface.text(Statement.class.getSimpleName(), iface.getName()));
+            throw new SQLException(JdbcLocalI18n.classDoesNotImplementInterface.text(Statement.class.getSimpleName(),
+                                                                                     iface.getName()));
         }
-
         return iface.cast(this);
     }
 
-    /**
-     * This method does nothing.
-     * <p>
-     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
-     * </p>
-     * 
-     * @throws SQLException
-     */
-    // TODO: JDK 1.7 - add @Override and remove JavaDoc
-    public void closeOnCompletion() throws SQLException {
+    @Override
+    public void closeOnCompletion() {
     }
 
-    /**
-     * This method always returns <code>true</code>
-     * <p>
-     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
-     * </p>
-     * 
-     * @return true
-     * @throws SQLException
-     */
-    // TODO: JDK 1.7 - add @Override and remove JavaDoc
-    public boolean isCloseOnCompletion() throws SQLException {
+    @Override
+    public boolean isCloseOnCompletion() {
         return true;
     }
 }

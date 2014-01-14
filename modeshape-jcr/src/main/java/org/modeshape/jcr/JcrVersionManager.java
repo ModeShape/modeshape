@@ -1236,7 +1236,8 @@ final class JcrVersionManager implements VersionManager {
                 boolean shouldRestoreMixinsAndUuid = false;
 
                 Path targetPath = target.getPath(cache);
-                boolean restoreTargetUnderSamePath = targetChild != null && targetChild.getPath(cache).getParent().isSameAs(targetPath);
+                boolean restoreTargetUnderSamePath = targetChild != null
+                                                     && targetChild.getPath(cache).getParent().isSameAs(targetPath);
 
                 if (targetChild != null) {
                     resolvedChild = resolveSourceNode(sourceChild, checkinTime, cache);
@@ -1254,8 +1255,9 @@ final class JcrVersionManager implements VersionManager {
                 if (!restoreTargetUnderSamePath) {
                     if (targetChild != null) {
                         if (!cache.isDestroyed(targetChild.getKey())) {
-                            //the target child exists but is under a different path in the source than the target
-                            //so we need to remove it from its parent in the target to avoid the case when later on, it might be destroyed
+                            // the target child exists but is under a different path in the source than the target
+                            // so we need to remove it from its parent in the target to avoid the case when later on, it might be
+                            // destroyed
                             MutableCachedNode targetChildParent = cache.mutable(targetChild.getParentKey(cache));
                             targetChildParent.removeChild(cache, targetChild.getKey());
                         }
@@ -1305,6 +1307,7 @@ final class JcrVersionManager implements VersionManager {
                 }
 
                 if (shouldRestore) {
+                    assert targetChild != null;
                     MutableCachedNode mutableTarget = targetChild instanceof MutableCachedNode ? (MutableCachedNode)targetChild : cache.mutable(targetChild.getKey());
                     // Have to do this first, as the properties below only exist for mix:versionable nodes
                     if (shouldRestoreMixinsAndUuid) {
@@ -1326,6 +1329,7 @@ final class JcrVersionManager implements VersionManager {
                     restoreNode(sourceChildNode, targetChildNode, checkinTime);
                 }
 
+                assert targetChildNode != null;
                 if (prevChildKey != null) target.reorderChild(cache, targetChildNode.key(), prevChildKey);
                 prevChildKey = targetChildNode.key();
             }
@@ -1636,7 +1640,7 @@ final class JcrVersionManager implements VersionManager {
                 }
             }
 
-            //we weren't able to find a version with a "before" timestamp, so check for one with the same timestamp
+            // we weren't able to find a version with a "before" timestamp, so check for one with the same timestamp
             if (versionSameDateTime != null) {
                 return ((JcrVersionNode)versionSameDateTime).getFrozenNode();
             }
@@ -1767,7 +1771,7 @@ final class JcrVersionManager implements VersionManager {
             Set<AbstractJcrNode> sourceNodesPresentInBoth = new LinkedHashSet<AbstractJcrNode>();
 
             for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
-                AbstractJcrNode targetChild = (AbstractJcrNode) iter.nextNode();
+                AbstractJcrNode targetChild = (AbstractJcrNode)iter.nextNode();
                 try {
                     Path srcPath = targetChild.correspondingNodePath(sourceWorkspaceName);
                     AbstractJcrNode sourceChild = sourceSession.node(srcPath);
@@ -1780,7 +1784,7 @@ final class JcrVersionManager implements VersionManager {
                 }
             }
             for (NodeIterator iter = sourceNode.getNodes(); iter.hasNext();) {
-                AbstractJcrNode sourceChild = (AbstractJcrNode) iter.nextNode();
+                AbstractJcrNode sourceChild = (AbstractJcrNode)iter.nextNode();
                 if (!sourceNodesPresentInBoth.contains(sourceChild)) {
                     sourceOnly.add(sourceChild);
                 }
@@ -1793,7 +1797,11 @@ final class JcrVersionManager implements VersionManager {
 
             // D' set in algorithm above
             for (AbstractJcrNode node : sourceOnly) {
-                workspace().internalClone(sourceWorkspaceName, node.getPath(), targetNode.getPath() + "/" + node.getName(), false, true);
+                workspace().internalClone(sourceWorkspaceName,
+                                          node.getPath(),
+                                          targetNode.getPath() + "/" + node.getName(),
+                                          false,
+                                          true);
             }
 
             // C set in algorithm above

@@ -71,7 +71,7 @@ public class BasicSingleValueProperty extends BasicProperty {
     public boolean isReference() {
         Object firstValue = getFirstValue();
         if (firstValue instanceof NodeKeyReference) {
-            //simple references are not recognized as legitimate references
+            // simple references are not recognized as legitimate references
             return !((NodeKeyReference)firstValue).isSimple();
         }
         return firstValue instanceof Reference;
@@ -80,7 +80,7 @@ public class BasicSingleValueProperty extends BasicProperty {
     @Override
     public boolean isSimpleReference() {
         Object firstValue = getFirstValue();
-        return firstValue instanceof  Reference && ((Reference) firstValue).isSimple();
+        return firstValue instanceof Reference && ((Reference)firstValue).isSimple();
     }
 
     @Override
@@ -102,9 +102,8 @@ public class BasicSingleValueProperty extends BasicProperty {
     public Object getValue( int index ) throws IndexOutOfBoundsException {
         if (index == 0) {
             return getFirstValue();
-        } else {
-            throw new IndexOutOfBoundsException(JcrI18n.indexOutsidePropertyValuesBoundaries.text(index, size()));
         }
+        throw new IndexOutOfBoundsException(JcrI18n.indexOutsidePropertyValuesBoundaries.text(index, size()));
     }
 
     protected class ValueIterator implements Iterator<Object> {

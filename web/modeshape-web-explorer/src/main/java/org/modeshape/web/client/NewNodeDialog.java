@@ -29,9 +29,9 @@ import com.smartgwt.client.widgets.form.fields.TextItem;
 public class NewNodeDialog extends ModalDialog {
 
     private TextItem name = new TextItem();
-    private ComboBoxItem primaryType = new ComboBoxItem();
+    protected ComboBoxItem primaryType = new ComboBoxItem();
 
-    private Console console;
+    protected Console console;
 
     public NewNodeDialog( String title,
                           Console console ) {
@@ -72,6 +72,7 @@ public class NewNodeDialog extends ModalDialog {
                 SC.say(caught.getMessage());
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public void onSuccess( String[] result ) {
                 primaryType.setValueMap(result);
@@ -86,7 +87,7 @@ public class NewNodeDialog extends ModalDialog {
         NewNodeDialog.this.console.jcrService.addNode(path,
                                                       name.getValueAsString(),
                                                       primaryType.getValueAsString(),
-                                                      new AsyncCallback() {
+                                                      new AsyncCallback<Object>() {
 
                                                           @Override
                                                           public void onFailure( Throwable caught ) {

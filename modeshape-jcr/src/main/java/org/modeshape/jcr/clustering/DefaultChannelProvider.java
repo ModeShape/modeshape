@@ -33,7 +33,6 @@ import org.jgroups.conf.ProtocolStackConfigurator;
 import org.jgroups.conf.XmlConfigurator;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.bus.BusI18n;
 
 /**
  * A standard {@link ChannelProvider} implementation which creates a default {@link JChannel} instance using the provided configuration.

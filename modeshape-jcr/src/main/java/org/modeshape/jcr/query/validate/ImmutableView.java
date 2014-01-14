@@ -54,7 +54,7 @@ class ImmutableView extends ImmutableTable implements View {
                              Iterable<Column> columns,
                              boolean extraColumns,
                              QueryCommand definition,
-                             Iterable<Column>... keyColumns ) {
+                             @SuppressWarnings( "unchecked" ) Iterable<Column>... keyColumns ) {
         super(name, columns, extraColumns, keyColumns);
         this.definition = definition;
     }
