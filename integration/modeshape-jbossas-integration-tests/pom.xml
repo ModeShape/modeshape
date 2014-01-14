@@ -117,7 +117,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -125,7 +124,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -136,48 +134,41 @@
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-arquillian-container-managed</artifactId>
-            <version>${jboss-as-arquillian-container-managed.version}</version>
         </dependency>
 
         <!--Needed by the JDBC remote driver tets -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc-local</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc-local</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <!--Needed by the webdav tests -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-webdav-war</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr-webdav-war</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -185,7 +176,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -225,7 +215,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>${version.dependency.plugin}</version>
                 <executions>
                     <execution>
                         <id>unpack</id>
@@ -264,7 +253,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>${version.resources.plugin}</version>
                 <executions>
                     <execution>
                         <id>overwrite-modules</id>
