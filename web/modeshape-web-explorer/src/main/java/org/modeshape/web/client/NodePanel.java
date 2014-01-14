@@ -53,10 +53,10 @@ public class NodePanel extends Tab {
     private PropertiesPanel properties;
     private AccessControlPanel accessControl;
 
-    private JcrTreeNode node;
+    protected JcrTreeNode node;
 
-    private String path;
-    private Console console;
+    protected String path;
+    protected Console console;
 
     public NodePanel( Console console ) {
         super();
@@ -211,7 +211,7 @@ public class NodePanel extends Tab {
                 public void onCellSaved( CellSavedEvent event ) {
                     String name = event.getRecord().getAttribute("name");
                     String value = (String)event.getNewValue();
-                    console.jcrService.setProperty(path, name, value, new AsyncCallback() {
+                    console.jcrService.setProperty(path, name, value, new AsyncCallback<Object>() {
                         @Override
                         public void onFailure( Throwable caught ) {
                             SC.say(caught.getMessage());
@@ -263,20 +263,13 @@ public class NodePanel extends Tab {
         public void refresh() {
             // grid.setData(propertiesListGridRecords);
         }
-
-        private ListGridFieldType typeOf( JcrProperty property ) {
-            if (property.getType().equals("Boolean")) {
-                return ListGridFieldType.BOOLEAN;
-            }
-            return ListGridFieldType.TEXT;
-        }
     }
 
     private class AccessControlPanel extends VLayout {
         private HLayout principalPanel = new HLayout();
         private ComboBoxItem principalCombo = new ComboBoxItem();
         private ListGrid grid = new ListGrid();
-        private JcrAccessControlList acl;
+        protected JcrAccessControlList acl;
 
         public AccessControlPanel() {
             super();
@@ -391,13 +384,13 @@ public class NodePanel extends Tab {
         /**
          * Displays permissions for the current node and current principal
          */
-        private void displayPermissions() {
+        protected void displayPermissions() {
             String principal = (String)principalCombo.getValue();
             grid.setData(acl.test(principal));
             grid.show();
         }
 
-        private void displayPermissions( String principal ) {
+        protected void displayPermissions( String principal ) {
             grid.setData(acl.test(principal));
             grid.show();
         }

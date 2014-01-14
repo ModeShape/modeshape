@@ -120,6 +120,7 @@ public class ReplaceViews implements OptimizerRule {
                                 List<Column> projectedColumns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
                                 // There may be columns that don't appear in the source, so make sure they are there ...
                                 viewPlan = PlanUtil.addMissingProjectColumns(context, viewProjectNode, projectedColumns);
+                                assert viewPlan != null;
                             }
                         }
                     }

@@ -107,7 +107,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @return the pseudo columns
      * @throws SQLException
      */
-    // TODO: JDK 1.7 - add @Override and remove JavaDoc
+    @Override
     public ResultSet getPseudoColumns( String catalog,
                                        String schemaPattern,
                                        String tableNamePattern,
@@ -124,78 +124,43 @@ public class JcrMetaData implements DatabaseMetaData {
      * @return true
      * @throws SQLException
      */
-    // TODO: JDK 1.7 - add @Override and remove JavaDoc
+    @Override
     public boolean generatedKeyAlwaysReturned() throws SQLException {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDriverMajorVersion()
-     */
     @Override
     public int getDriverMajorVersion() {
         return connection.driverInfo().getMajorVersion();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDriverMinorVersion()
-     */
     @Override
     public int getDriverMinorVersion() {
         return connection.driverInfo().getMinorVersion();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDriverName()
-     */
     @Override
     public String getDriverName() {
         return connection.driverInfo().getName();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDriverVersion()
-     */
     @Override
     public String getDriverVersion() {
         return connection.driverInfo().getVersion();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDatabaseMajorVersion()
-     */
     @Override
     public int getDatabaseMajorVersion() {
         String[] parts = getDatabaseProductVersion().split("[.-]");
         return parts.length > 0 && parts[0] != null ? Integer.parseInt(parts[0]) : 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDatabaseMinorVersion()
-     */
     @Override
     public int getDatabaseMinorVersion() {
         String[] parts = getDatabaseProductVersion().split("[.-]");
         return parts.length > 1 && parts[1] != null ? Integer.parseInt(parts[1]) : 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDatabaseProductName()
-     */
     @Override
     public String getDatabaseProductName() {
         return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_NAME_DESC);
@@ -205,131 +170,66 @@ public class JcrMetaData implements DatabaseMetaData {
         return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_VENDOR_URL_DESC);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDatabaseProductVersion()
-     */
     @Override
     public String getDatabaseProductVersion() {
         return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_VERSION_DESC);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getJDBCMajorVersion()
-     */
     @Override
     public int getJDBCMajorVersion() {
         return 2;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getJDBCMinorVersion()
-     */
     @Override
     public int getJDBCMinorVersion() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getConnection()
-     */
     @Override
     public Connection getConnection() {
         return connection;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#isReadOnly()
-     */
     @Override
     public boolean isReadOnly() {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#allProceduresAreCallable()
-     */
     @Override
     public boolean allProceduresAreCallable() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#allTablesAreSelectable()
-     */
     @Override
     public boolean allTablesAreSelectable() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#autoCommitFailureClosesAllResultSets()
-     */
     @Override
     public boolean autoCommitFailureClosesAllResultSets() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#dataDefinitionCausesTransactionCommit()
-     */
     @Override
     public boolean dataDefinitionCausesTransactionCommit() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#dataDefinitionIgnoredInTransactions()
-     */
     @Override
     public boolean dataDefinitionIgnoredInTransactions() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#deletesAreDetected(int)
-     */
     @Override
     public boolean deletesAreDetected( int type ) {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#doesMaxRowSizeIncludeBlobs()
-     */
     @Override
     public boolean doesMaxRowSizeIncludeBlobs() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getAttributes(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getAttributes( String catalog,
                                     String schemaPattern,
@@ -338,11 +238,6 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getBestRowIdentifier(java.lang.String, java.lang.String, java.lang.String, int, boolean)
-     */
     @Override
     public ResultSet getBestRowIdentifier( String catalog,
                                            String schema,
@@ -352,11 +247,6 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getCatalogSeparator()
-     */
     @Override
     public String getCatalogSeparator() {
         return null;
@@ -416,21 +306,11 @@ public class JcrMetaData implements DatabaseMetaData {
         return new JcrResultSet(stmt, queryresult, resultSetMetaData);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getClientInfoProperties()
-     */
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getColumnPrivileges(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getColumnPrivileges( String catalog,
                                           String schema,
@@ -439,11 +319,6 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getColumns(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getColumns( String catalog,
@@ -695,12 +570,6 @@ public class JcrMetaData implements DatabaseMetaData {
         return currentRow;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getCrossReference(java.lang.String, java.lang.String, java.lang.String, java.lang.String,
-     *      java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getCrossReference( String parentCatalog,
                                         String parentSchema,
@@ -711,11 +580,6 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getDefaultTransactionIsolation()
-     */
     @Override
     public int getDefaultTransactionIsolation() {
         return Connection.TRANSACTION_NONE;
@@ -737,21 +601,11 @@ public class JcrMetaData implements DatabaseMetaData {
         return getImportedKeys(catalog, schema, table); // empty, but same resultsetmetadata
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getExtraNameCharacters()
-     */
     @Override
     public String getExtraNameCharacters() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getFunctionColumns(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getFunctionColumns( String catalog,
                                          String schemaPattern,
@@ -760,11 +614,6 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getFunctions(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getFunctions( String catalog,
                                    String schemaPattern,
@@ -893,11 +742,6 @@ public class JcrMetaData implements DatabaseMetaData {
         return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getIndexInfo(java.lang.String, java.lang.String, java.lang.String, boolean, boolean)
-     */
     @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getIndexInfo( String catalog,
@@ -1225,71 +1069,36 @@ public class JcrMetaData implements DatabaseMetaData {
         return JcrMetaData.NO_LIMIT; // none
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getMaxStatementLength()
-     */
     @Override
     public int getMaxStatementLength() {
         return 0; // no limit
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getMaxStatements()
-     */
     @Override
     public int getMaxStatements() {
         return 0; // no limit
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getMaxTableNameLength()
-     */
     @Override
     public int getMaxTableNameLength() {
         return 0; // no limit
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getMaxTablesInSelect()
-     */
     @Override
     public int getMaxTablesInSelect() {
         return 0; // not known (technically there is no limit, but there would be a practical limit)
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getMaxUserNameLength()
-     */
     @Override
     public int getMaxUserNameLength() {
         return 0; // no limit
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getNumericFunctions()
-     */
     @Override
     public String getNumericFunctions() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getPrimaryKeys(java.lang.String, java.lang.String, java.lang.String)
-     */
     @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getPrimaryKeys( String catalog,
@@ -1362,11 +1171,6 @@ public class JcrMetaData implements DatabaseMetaData {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getProcedureColumns(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getProcedureColumns( String catalog,
                                           String schemaPattern,
@@ -1375,21 +1179,11 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getProcedureTerm()
-     */
     @Override
     public String getProcedureTerm() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getProcedures(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getProcedures( String catalog,
                                     String schemaPattern,
@@ -1459,61 +1253,31 @@ public class JcrMetaData implements DatabaseMetaData {
         return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getResultSetHoldability()
-     */
     @Override
     public int getResultSetHoldability() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getRowIdLifetime()
-     */
     @Override
     public RowIdLifetime getRowIdLifetime() {
         return RowIdLifetime.ROWID_UNSUPPORTED;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSQLKeywords()
-     */
     @Override
     public String getSQLKeywords() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSQLStateType()
-     */
     @Override
     public int getSQLStateType() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSchemaTerm()
-     */
     @Override
     public String getSchemaTerm() {
         return " ";
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSchemas()
-     */
     @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getSchemas() throws SQLException {
@@ -1543,42 +1307,22 @@ public class JcrMetaData implements DatabaseMetaData {
         return rs;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSchemas(java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getSchemas( String catalog,
                                  String schemaPattern ) throws SQLException {
         return getSchemas();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSearchStringEscape()
-     */
     @Override
     public String getSearchStringEscape() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getStringFunctions()
-     */
     @Override
     public String getStringFunctions() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSuperTables(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getSuperTables( String catalog,
                                      String schemaPattern,
@@ -1586,11 +1330,6 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSuperTypes(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getSuperTypes( String catalog,
                                     String schemaPattern,
@@ -1598,21 +1337,11 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getSystemFunctions()
-     */
     @Override
     public String getSystemFunctions() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getTablePrivileges(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getTablePrivileges( String catalog,
                                          String schemaPattern,
@@ -1620,11 +1349,6 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getTableTypes()
-     */
     @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getTableTypes() throws SQLException {
@@ -1655,11 +1379,6 @@ public class JcrMetaData implements DatabaseMetaData {
         return new JcrResultSet(stmt, queryresult, resultSetMetaData);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getTables(java.lang.String, java.lang.String, java.lang.String, java.lang.String[])
-     */
     @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getTables( String catalog,
@@ -1783,11 +1502,6 @@ public class JcrMetaData implements DatabaseMetaData {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getTimeDateFunctions()
-     */
     @Override
     public String getTimeDateFunctions() {
         return null;
@@ -1950,11 +1664,6 @@ public class JcrMetaData implements DatabaseMetaData {
         return row;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getTypeInfo()
-     */
     @Override
     public ResultSet getTypeInfo() throws SQLException {
         @SuppressWarnings( "unchecked" )
@@ -2080,11 +1789,6 @@ public class JcrMetaData implements DatabaseMetaData {
         return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getUDTs(java.lang.String, java.lang.String, java.lang.String, int[])
-     */
     @Override
     public ResultSet getUDTs( String catalog,
                               String schemaPattern,
@@ -2107,21 +1811,11 @@ public class JcrMetaData implements DatabaseMetaData {
         return connection.info().getEffectiveUrl();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getUserName()
-     */
     @Override
     public String getUserName() {
         return connection.info().getUsername();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#getVersionColumns(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public ResultSet getVersionColumns( String catalog,
                                         String schema,
@@ -2129,41 +1823,21 @@ public class JcrMetaData implements DatabaseMetaData {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#insertsAreDetected(int)
-     */
     @Override
     public boolean insertsAreDetected( int type ) {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#isCatalogAtStart()
-     */
     @Override
     public boolean isCatalogAtStart() {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#locatorsUpdateCopy()
-     */
     @Override
     public boolean locatorsUpdateCopy() {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#nullPlusNonNullIsNull()
-     */
     @Override
     public boolean nullPlusNonNullIsNull() {
         return false;
@@ -2225,857 +1899,437 @@ public class JcrMetaData implements DatabaseMetaData {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#othersDeletesAreVisible(int)
-     */
     @Override
     public boolean othersDeletesAreVisible( int type ) {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#othersInsertsAreVisible(int)
-     */
     @Override
     public boolean othersInsertsAreVisible( int type ) {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#othersUpdatesAreVisible(int)
-     */
     @Override
     public boolean othersUpdatesAreVisible( int type ) {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#ownDeletesAreVisible(int)
-     */
     @Override
     public boolean ownDeletesAreVisible( int type ) {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#ownInsertsAreVisible(int)
-     */
     @Override
     public boolean ownInsertsAreVisible( int type ) {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#ownUpdatesAreVisible(int)
-     */
     @Override
     public boolean ownUpdatesAreVisible( int type ) {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#storesLowerCaseIdentifiers()
-     */
     @Override
     public boolean storesLowerCaseIdentifiers() {
         return false; // JCR node types are case-sensitive
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#storesLowerCaseQuotedIdentifiers()
-     */
     @Override
     public boolean storesLowerCaseQuotedIdentifiers() {
         return false; // JCR node types are case-sensitive
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#storesMixedCaseIdentifiers()
-     */
     @Override
     public boolean storesMixedCaseIdentifiers() {
         return false; // JCR node types are case-sensitive
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#storesMixedCaseQuotedIdentifiers()
-     */
     @Override
     public boolean storesMixedCaseQuotedIdentifiers() {
         return false; // JCR node types are case-sensitive
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#storesUpperCaseIdentifiers()
-     */
     @Override
     public boolean storesUpperCaseIdentifiers() {
         return false; // JCR node types are case-sensitive
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#storesUpperCaseQuotedIdentifiers()
-     */
     @Override
     public boolean storesUpperCaseQuotedIdentifiers() {
         return false; // JCR node types are case-sensitive
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsANSI92EntryLevelSQL()
-     */
     @Override
     public boolean supportsANSI92EntryLevelSQL() {
         return false; // JCR-SQL2 is not entry-level ANSI92 SQL
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsANSI92FullSQL()
-     */
     @Override
     public boolean supportsANSI92FullSQL() {
         return false; // JCR-SQL2 is not full ANSI92 SQL
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsANSI92IntermediateSQL()
-     */
     @Override
     public boolean supportsANSI92IntermediateSQL() {
         return false; // JCR-SQL2 is not intermediate ANSI92 SQL
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsAlterTableWithAddColumn()
-     */
     @Override
     public boolean supportsAlterTableWithAddColumn() {
         // Not in JCR-SQL2
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsAlterTableWithDropColumn()
-     */
     @Override
     public boolean supportsAlterTableWithDropColumn() {
         // Not in JCR-SQL2
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsBatchUpdates()
-     */
     @Override
     public boolean supportsBatchUpdates() {
         // Not in JCR-SQL2
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsCatalogsInDataManipulation()
-     */
     @Override
     public boolean supportsCatalogsInDataManipulation() {
         // Not in JCR-SQL2
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsCatalogsInIndexDefinitions()
-     */
     @Override
     public boolean supportsCatalogsInIndexDefinitions() {
         // No such thing in JCR-SQL2
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsCatalogsInPrivilegeDefinitions()
-     */
     @Override
     public boolean supportsCatalogsInPrivilegeDefinitions() {
         // No defining privileges in JCR 1.0 or 2.0 or JCR-SQL2
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsCatalogsInProcedureCalls()
-     */
     @Override
     public boolean supportsCatalogsInProcedureCalls() {
         // No such thing in JCR-SQL2
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsCatalogsInTableDefinitions()
-     */
     @Override
     public boolean supportsCatalogsInTableDefinitions() {
         // No defining tables in JCR 1.0 or 2.0 or JCR-SQL2
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsColumnAliasing()
-     */
     @Override
     public boolean supportsColumnAliasing() {
         // JCR-SQL2 does support aliases on column names (section 6.7.39)
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsConvert()
-     */
     @Override
     public boolean supportsConvert() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsConvert(int, int)
-     */
     @Override
     public boolean supportsConvert( int fromType,
                                     int toType ) {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsCoreSQLGrammar()
-     */
     @Override
     public boolean supportsCoreSQLGrammar() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsCorrelatedSubqueries()
-     */
     @Override
     public boolean supportsCorrelatedSubqueries() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsDataDefinitionAndDataManipulationTransactions()
-     */
     @Override
     public boolean supportsDataDefinitionAndDataManipulationTransactions() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsDataManipulationTransactionsOnly()
-     */
     @Override
     public boolean supportsDataManipulationTransactionsOnly() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsDifferentTableCorrelationNames()
-     */
     @Override
     public boolean supportsDifferentTableCorrelationNames() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsExpressionsInOrderBy()
-     */
     @Override
     public boolean supportsExpressionsInOrderBy() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsExtendedSQLGrammar()
-     */
     @Override
     public boolean supportsExtendedSQLGrammar() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsFullOuterJoins()
-     */
     @Override
     public boolean supportsFullOuterJoins() {
         // JCR-SQL2 does not support FULL OUTER JOIN ...
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsGetGeneratedKeys()
-     */
     @Override
     public boolean supportsGetGeneratedKeys() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsGroupBy()
-     */
     @Override
     public boolean supportsGroupBy() {
         return false; // not in JCR-SQL2;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsGroupByBeyondSelect()
-     */
     @Override
     public boolean supportsGroupByBeyondSelect() {
         return false; // not in JCR-SQL2;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsGroupByUnrelated()
-     */
     @Override
     public boolean supportsGroupByUnrelated() {
         return false; // not in JCR-SQL2;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsIntegrityEnhancementFacility()
-     */
     @Override
     public boolean supportsIntegrityEnhancementFacility() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsLikeEscapeClause()
-     */
     @Override
     public boolean supportsLikeEscapeClause() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsLimitedOuterJoins()
-     */
     @Override
     public boolean supportsLimitedOuterJoins() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsMinimumSQLGrammar()
-     */
     @Override
     public boolean supportsMinimumSQLGrammar() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsMixedCaseIdentifiers()
-     */
     @Override
     public boolean supportsMixedCaseIdentifiers() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsMixedCaseQuotedIdentifiers()
-     */
     @Override
     public boolean supportsMixedCaseQuotedIdentifiers() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsMultipleOpenResults()
-     */
     @Override
     public boolean supportsMultipleOpenResults() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsMultipleResultSets()
-     */
     @Override
     public boolean supportsMultipleResultSets() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsMultipleTransactions()
-     */
     @Override
     public boolean supportsMultipleTransactions() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsNamedParameters()
-     */
     @Override
     public boolean supportsNamedParameters() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsNonNullableColumns()
-     */
     @Override
     public boolean supportsNonNullableColumns() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsOpenCursorsAcrossCommit()
-     */
     @Override
     public boolean supportsOpenCursorsAcrossCommit() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsOpenCursorsAcrossRollback()
-     */
     @Override
     public boolean supportsOpenCursorsAcrossRollback() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsOpenStatementsAcrossCommit()
-     */
     @Override
     public boolean supportsOpenStatementsAcrossCommit() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsOpenStatementsAcrossRollback()
-     */
     @Override
     public boolean supportsOpenStatementsAcrossRollback() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsOrderByUnrelated()
-     */
     @Override
     public boolean supportsOrderByUnrelated() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsOuterJoins()
-     */
     @Override
     public boolean supportsOuterJoins() {
         return true; // JCR-SQL2
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsPositionedDelete()
-     */
     @Override
     public boolean supportsPositionedDelete() {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsPositionedUpdate()
-     */
     @Override
     public boolean supportsPositionedUpdate() {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsResultSetConcurrency(int, int)
-     */
     @Override
     public boolean supportsResultSetConcurrency( int type,
                                                  int concurrency ) {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsResultSetHoldability(int)
-     */
     @Override
     public boolean supportsResultSetHoldability( int holdability ) {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsResultSetType(int)
-     */
     @Override
     public boolean supportsResultSetType( int type ) {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSavepoints()
-     */
     @Override
     public boolean supportsSavepoints() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSchemasInDataManipulation()
-     */
     @Override
     public boolean supportsSchemasInDataManipulation() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSchemasInIndexDefinitions()
-     */
     @Override
     public boolean supportsSchemasInIndexDefinitions() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSchemasInPrivilegeDefinitions()
-     */
     @Override
     public boolean supportsSchemasInPrivilegeDefinitions() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSchemasInProcedureCalls()
-     */
     @Override
     public boolean supportsSchemasInProcedureCalls() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSchemasInTableDefinitions()
-     */
     @Override
     public boolean supportsSchemasInTableDefinitions() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSelectForUpdate()
-     */
     @Override
     public boolean supportsSelectForUpdate() {
         return false; // read-only
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsStatementPooling()
-     */
     @Override
     public boolean supportsStatementPooling() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsStoredFunctionsUsingCallSyntax()
-     */
     @Override
     public boolean supportsStoredFunctionsUsingCallSyntax() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsStoredProcedures()
-     */
     @Override
     public boolean supportsStoredProcedures() {
         return false; // nope
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSubqueriesInComparisons()
-     */
     @Override
     public boolean supportsSubqueriesInComparisons() {
         return false; // no subqueries in JCR-SQL2
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSubqueriesInExists()
-     */
     @Override
     public boolean supportsSubqueriesInExists() {
         return false; // no subqueries in JCR-SQL2
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSubqueriesInIns()
-     */
     @Override
     public boolean supportsSubqueriesInIns() {
         return false; // no subqueries in JCR-SQL2
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsSubqueriesInQuantifieds()
-     */
     @Override
     public boolean supportsSubqueriesInQuantifieds() {
         return false; // no subqueries in JCR-SQL2
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsTableCorrelationNames()
-     */
     @Override
     public boolean supportsTableCorrelationNames() {
         // JCR-SQL2 does support table aliases that can be used as prefixes for column names
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsTransactionIsolationLevel(int)
-     */
     @Override
     public boolean supportsTransactionIsolationLevel( int level ) {
         return level == Connection.TRANSACTION_READ_COMMITTED;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsTransactions()
-     */
     @Override
     public boolean supportsTransactions() {
         // Generally, JCR does support transactions ...
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsUnion()
-     */
     @Override
     public boolean supportsUnion() {
         // JCR-SQL2 does not support UNION ...
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#supportsUnionAll()
-     */
     @Override
     public boolean supportsUnionAll() {
         // JCR-SQL2 does not support UNION ALL ...
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#updatesAreDetected(int)
-     */
     @Override
     public boolean updatesAreDetected( int type ) {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#usesLocalFilePerTable()
-     */
     @Override
     public boolean usesLocalFilePerTable() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.DatabaseMetaData#usesLocalFiles()
-     */
     @Override
     public boolean usesLocalFiles() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
-     */
     @Override
     public boolean isWrapperFor( Class<?> iface ) {
         return iface.isInstance(this);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#unwrap(java.lang.Class)
-     */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
         if (!isWrapperFor(iface)) {
@@ -3301,131 +2555,66 @@ public class JcrMetaData implements DatabaseMetaData {
                  queryOrderable, null, null, OnParentVersionAction.COPY, null);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.PropertyDefinition#getAvailableQueryOperators()
-         */
         @Override
         public String[] getAvailableQueryOperators() {
             return queryOps;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.PropertyDefinition#getDefaultValues()
-         */
         @Override
         public Value[] getDefaultValues() {
             return defaultValues;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.PropertyDefinition#getRequiredType()
-         */
         @Override
         public int getRequiredType() {
             return requiredType;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.PropertyDefinition#getValueConstraints()
-         */
         @Override
         public String[] getValueConstraints() {
             return constraints;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.PropertyDefinition#isFullTextSearchable()
-         */
         @Override
         public boolean isFullTextSearchable() {
             return isFullTextSearchable;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.PropertyDefinition#isMultiple()
-         */
         @Override
         public boolean isMultiple() {
             return isMultiple;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.PropertyDefinition#isQueryOrderable()
-         */
         @Override
         public boolean isQueryOrderable() {
             return isQueryOrderable;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.ItemDefinition#getDeclaringNodeType()
-         */
         @Override
         public NodeType getDeclaringNodeType() {
             return declaringNodeType;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.ItemDefinition#getName()
-         */
         @Override
         public String getName() {
             return name;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.ItemDefinition#getOnParentVersion()
-         */
         @Override
         public int getOnParentVersion() {
             return onParentVersioning;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.ItemDefinition#isAutoCreated()
-         */
         @Override
         public boolean isAutoCreated() {
             return isAutoCreated;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.ItemDefinition#isMandatory()
-         */
         @Override
         public boolean isMandatory() {
             return isMandatory;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.ItemDefinition#isProtected()
-         */
         @Override
         public boolean isProtected() {
             return isProtected;

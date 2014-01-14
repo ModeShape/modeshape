@@ -24,10 +24,8 @@
 package org.modeshape.jcr.cache;
 
 import java.io.Serializable;
-import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import org.infinispan.schematic.SchematicDb;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.StringUtil;

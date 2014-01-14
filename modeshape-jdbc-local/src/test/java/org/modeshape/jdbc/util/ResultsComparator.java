@@ -94,10 +94,6 @@ public class ResultsComparator {
     public static void printResults( ResultSet results,
                                      boolean compareColumns ) {
         assertNotNull(results);
-        if (results == null) {
-            System.out.println("ResultSet is null"); //$NON-NLS-1$
-            return;
-        }
         try {
             BufferedReader in = new BufferedReader(new ResultSetReader(results, DELIMITER, compareColumns));
             String line = in.readLine();

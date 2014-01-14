@@ -41,11 +41,11 @@ import com.smartgwt.client.widgets.tree.events.FolderClickHandler;
  */
 public class Navigator extends Label {
 
-    private Tree jcrTree = new Tree();
-    private TreeGrid jcrTreeGrid = new TreeGrid();
+    protected Tree jcrTree = new Tree();
+    protected TreeGrid jcrTreeGrid = new TreeGrid();
     // private HLayout layout = new HLayout();
-    private TreeNode ROOT = new TreeNode();
-    private Console console;
+    protected TreeNode ROOT = new TreeNode();
+    protected Console console;
 
     // static {
     // ROOT.setTitle("root");
@@ -188,7 +188,7 @@ public class Navigator extends Label {
         return node;
     }
 
-    private class NodeLoader implements CellClickHandler {
+    protected class NodeLoader implements CellClickHandler {
 
         @Override
         public void onCellClick( CellClickEvent event ) {
@@ -196,7 +196,7 @@ public class Navigator extends Label {
         }
     }
 
-    private class FolderClickHandlerImpl implements FolderClickHandler {
+    protected class FolderClickHandlerImpl implements FolderClickHandler {
 
         @Override
         public void onFolderClick( FolderClickEvent event ) {
@@ -206,7 +206,7 @@ public class Navigator extends Label {
     /**
      * Call back handler for the method jcrService.getRootNode().
      */
-    private class RootAccessorHandler implements AsyncCallback<JcrNode> {
+    protected class RootAccessorHandler implements AsyncCallback<JcrNode> {
 
         @Override
         public void onFailure( Throwable caught ) {
@@ -229,7 +229,7 @@ public class Navigator extends Label {
         }
     }
 
-    private class ChildrenHandler implements AsyncCallback<List<JcrNode>> {
+    protected class ChildrenHandler implements AsyncCallback<List<JcrNode>> {
 
         @Override
         public void onFailure( Throwable caught ) {

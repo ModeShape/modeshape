@@ -76,7 +76,6 @@ import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
 import org.modeshape.jcr.query.validate.ImmutableColumn;
 import org.modeshape.jcr.query.validate.Schemata;
-import org.modeshape.jcr.query.validate.Schemata.Table;
 import org.modeshape.jcr.query.validate.Schemata.View;
 
 /**
@@ -811,15 +810,15 @@ public class PlanUtil {
                     SelectorName newSelectorName = mapping.getSingleMappedSelectorName();
                     if (newSelectorName != null) {
                         node.addSelector(newSelectorName);
-                        return new FullTextSearch(newSelectorName, search.getPropertyName(),
-                                search.fullTextSearchExpression(), search.getFullTextSearchExpression());
+                        return new FullTextSearch(newSelectorName, search.getPropertyName(), search.fullTextSearchExpression(),
+                                                  search.getFullTextSearchExpression());
                     }
                 }
                 return search;
             }
             node.addSelector(sourceColumn.selectorName());
             return new FullTextSearch(sourceColumn.selectorName(), sourceColumn.getPropertyName(),
-                    search.fullTextSearchExpression(), search.getFullTextSearchExpression());
+                                      search.fullTextSearchExpression(), search.getFullTextSearchExpression());
         }
         if (constraint instanceof SetCriteria) {
             SetCriteria set = (SetCriteria)constraint;
@@ -1174,8 +1173,8 @@ public class PlanUtil {
             if (lhs == comparison.getOperand1()) return comparison;
             return new Comparison(lhs, comparison.operator(), comparison.getOperand2());
         }
-        if(constraint instanceof Relike) {
-            Relike relike = (Relike) constraint;
+        if (constraint instanceof Relike) {
+            Relike relike = (Relike)constraint;
             StaticOperand op1 = relike.getOperand1();
             PropertyValue op2 = relike.getOperand2();
             PropertyValue newOp2 = replaceAliasesWithProperties(context, op2, propertyByAlias);
@@ -1315,12 +1314,12 @@ public class PlanUtil {
             if (rhs == newRhs) return comparison;
             return new Comparison(lhs, comparison.operator(), newRhs);
         }
-        if( constraint instanceof Relike) {
+        if (constraint instanceof Relike) {
             Relike relike = (Relike)constraint;
-            StaticOperand op1 = relike.getOperand1(); 
-            PropertyValue op2 = relike.getOperand2();            
+            StaticOperand op1 = relike.getOperand1();
+            PropertyValue op2 = relike.getOperand2();
             StaticOperand newOp1 = replaceSubqueriesWithBindVariables(context, op1, subqueriesByVariableName);
-            if(op1 == newOp1) return relike;
+            if (op1 == newOp1) return relike;
             return new Relike(op1, op2);
         }
         if (constraint instanceof SetCriteria) {

@@ -337,7 +337,6 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
                 }
             }
         };
-        @SuppressWarnings( "unchecked" )
         List<Callable<String>> tasks = Arrays.asList(readingTask, readingTask, readingTask);
         List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         for (Future<String> future : futures) {

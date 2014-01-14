@@ -150,7 +150,7 @@ public abstract class AbstractMultimapTest {
     }
 
     protected <K, V> void assertEntries( Multimap<K, V> multimap,
-                                         Map.Entry<K, V>... entries ) {
+                                         @SuppressWarnings( "unchecked" ) Map.Entry<K, V>... entries ) {
         assertEntries(multimap, Arrays.asList(entries));
     }
 
@@ -168,7 +168,7 @@ public abstract class AbstractMultimapTest {
     }
 
     protected <K, V> void assertKeys( Multimap<K, V> multimap,
-                                      K... keys ) {
+                                      @SuppressWarnings( "unchecked" ) K... keys ) {
         assertKeys(multimap, Arrays.asList(keys));
     }
 
@@ -194,7 +194,7 @@ public abstract class AbstractMultimapTest {
 
     protected <K, V> void assertValues( Multimap<K, V> multimap,
                                         K key,
-                                        V... values ) {
+                                        @SuppressWarnings( "unchecked" ) V... values ) {
         Collection<V> expectedValues = null;
         if (valuesAllowDuplicates()) {
             expectedValues = Arrays.asList(values);

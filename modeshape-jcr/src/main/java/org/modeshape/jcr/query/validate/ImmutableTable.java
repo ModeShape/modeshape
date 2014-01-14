@@ -58,7 +58,7 @@ class ImmutableTable implements Table {
     protected ImmutableTable( SelectorName name,
                               Iterable<Column> columns,
                               boolean extraColumns,
-                              Iterable<Column>... keyColumns ) {
+                              @SuppressWarnings( "unchecked" ) Iterable<Column>... keyColumns ) {
         this.name = name;
         // Define the columns ...
         List<Column> columnList = new ArrayList<Column>();

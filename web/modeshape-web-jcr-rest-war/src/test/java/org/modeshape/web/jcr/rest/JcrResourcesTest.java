@@ -249,9 +249,9 @@ public class JcrResourcesTest {
     @Test
     @FixFor( "MODE-1950" )
     public void shouldConvertValueTypesFromJSONPrimitives() throws Exception {
-        //note that
+        // note that
         doPost(differentPropertyTypesRequest(), itemsUrl(TEST_NODE)).isCreated()
-                .isJSONObjectLikeFile(differentPropertyTypesResponse());
+                                                                    .isJSONObjectLikeFile(differentPropertyTypesResponse());
     }
 
     protected String differentPropertyTypesResponse() {
@@ -568,7 +568,7 @@ public class JcrResourcesTest {
         return getClass().getClassLoader().getResourceAsStream(file);
     }
 
-    protected JSONObject readJson(String file) throws Exception {
+    protected JSONObject readJson( String file ) throws Exception {
         String fileContent = IoUtil.read(fileStream(file));
         return new JSONObject(fileContent);
     }

@@ -222,7 +222,9 @@
         <!--
           Global dependency version information
           -->
-        <modeshape.java.version>1.6</modeshape.java.version>
+        <modeshape.java.version>1.7</modeshape.java.version>
+        <maven.compiler.source>${modeshape.java.version}</maven.compiler.source>
+        <maven.compiler.target>${modeshape.java.version}</maven.compiler.target>
 
         <joda.time.version>1.6.2</joda.time.version>
         <junit.version>4.10</junit.version>

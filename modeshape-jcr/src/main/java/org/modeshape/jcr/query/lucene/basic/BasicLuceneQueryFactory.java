@@ -724,9 +724,8 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
             PropertyType upperType = PropertyType.discoverType(upperValue);
             if (lowerType != upperType) {
                 return new MatchNoneQuery();
-            } else {
-                type = lowerType;
             }
+            type = lowerType;
         }
 
         switch (type) {

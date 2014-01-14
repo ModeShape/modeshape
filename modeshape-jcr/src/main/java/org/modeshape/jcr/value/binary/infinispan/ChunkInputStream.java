@@ -110,7 +110,7 @@ class ChunkInputStream extends InputStream {
     }
 
     @Override
-    public final long skip( long n ) throws IOException {
+    public final long skip( long n ) {
         if (n <= 0 || indexInBuffer == -1 || totalSize == 0) {
             return 0;
         }
@@ -118,7 +118,7 @@ class ChunkInputStream extends InputStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         endOfStream();
     }
 
@@ -156,11 +156,10 @@ class ChunkInputStream extends InputStream {
             //move the pointer in this chunk
             indexInBuffer = leftToReadAfterSkip;
             return n;
-        } else {
-            //we jumped to a valid chunk, but it doesn't have enough data
-            endOfStream();
-            return availableInBuffer + bytesAvailableToSkip;
         }
+        //we jumped to a valid chunk, but it doesn't have enough data
+        endOfStream();
+        return availableInBuffer + bytesAvailableToSkip;
     }
 
     private void fillBufferWithNextChunk() {

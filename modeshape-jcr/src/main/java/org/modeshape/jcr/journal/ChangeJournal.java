@@ -18,21 +18,20 @@ package org.modeshape.jcr.journal;
 
 import java.util.Collections;
 import java.util.Iterator;
-import javax.jcr.RepositoryException;
 import org.joda.time.DateTime;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
  * An entity which records all changes which occur in a repository via {@code ChangeSet} instances.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface ChangeJournal extends ChangeSetListener {
 
     /**
      * Starts this journal instance.
-     *
-     * @throws RepositoryException if anything fails during start
+     * 
+     * @throws Exception if anything fails during start
      */
     public void start() throws Exception;
 
@@ -48,7 +47,7 @@ public interface ChangeJournal extends ChangeSetListener {
 
     /**
      * Returns all the records this journal holds
-     *
+     * 
      * @param descendingOrder flag which indicates whether the entries
      * @return a {@link Records} instance
      */
@@ -56,19 +55,19 @@ public interface ChangeJournal extends ChangeSetListener {
 
     /**
      * Returns the last record from the journal.
-     *
+     * 
      * @return either a {@link org.modeshape.jcr.journal.JournalRecord} instance or {@code null} if the journal is empty.
      */
     public JournalRecord lastRecord();
 
     /**
      * Returns all records that have changesets which are newer than a given timestamp.
-     *
-     * @param changeSetTime the {@link org.joda.time.DateTime} of the changes representing the lower bound; may be null indicating that
-     * *all the records* should be returned.
+     * 
+     * @param changeSetTime the {@link org.joda.time.DateTime} of the changes representing the lower bound; may be null indicating
+     *        that *all the records* should be returned.
      * @param inclusive flag indicating whether the timestamp should be used inclusively or exclusively
-     * @param descendingOrder flag indicating if the records should be returned in ascending order (oldest to newest) or descending
-     * order (newest to oldest)
+     * @param descendingOrder flag indicating if the records should be returned in ascending order (oldest to newest) or
+     *        descending order (newest to oldest)
      * @return a {@link Records} instance; never {@code null}
      */
     public Records recordsNewerThan( DateTime changeSetTime,
@@ -77,21 +76,20 @@ public interface ChangeJournal extends ChangeSetListener {
 
     /**
      * Adds one or more journal records to a journal.
-     *
+     * 
      * @param records a {@link JournalRecord} array.
      */
     public void addRecords( JournalRecord... records );
 
     /**
      * Returns the id of this change journal.
-     *
+     * 
      * @return a {@link String}, never {@code null}
      */
     public String journalId();
 
     /**
-     * An {@link Iterable<JournalRecord> extension which provides information about the number of entries the underlying collection
-     * holds.
+     * An {@link Iterable} extension which provides information about the number of entries the underlying collection holds.
      */
     public interface Records extends Iterable<JournalRecord> {
         public static final Records EMPTY = new Records() {
@@ -113,14 +111,14 @@ public interface ChangeJournal extends ChangeSetListener {
 
         /**
          * Returns the number of records.
-         *
+         * 
          * @return an int
          */
         public int size();
 
         /**
          * Returns true if the records set is empty.
-         *
+         * 
          * @return {@code true} if there aren't any records.
          */
         public boolean isEmpty();

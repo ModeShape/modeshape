@@ -42,13 +42,13 @@ import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * ModeShape service which handles sending/receiving messages in a cluster via JGroups
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @ThreadSafe
-public class ClusteringService {
+public final class ClusteringService {
 
-    private static final Logger LOGGER = Logger.getLogger(ClusteringService.class);
+    protected static final Logger LOGGER = Logger.getLogger(ClusteringService.class);
 
     /**
      * An approximation about the maximum delay in local time that we consider acceptable.
@@ -73,12 +73,12 @@ public class ClusteringService {
     /**
      * Flag that dictates whether this service has connected to the cluster.
      */
-    private final AtomicBoolean isOpen = new AtomicBoolean(false);
+    protected final AtomicBoolean isOpen = new AtomicBoolean(false);
 
     /**
      * The numbers of members in the cluster
      */
-    private final AtomicInteger membersInCluster = new AtomicInteger(1);
+    protected final AtomicInteger membersInCluster = new AtomicInteger(1);
 
     /**
      * The clustering configuration
@@ -86,7 +86,7 @@ public class ClusteringService {
     private final RepositoryConfiguration.Clustering clusteringConfiguration;
 
     /**
-     *  The maximum accepted clock delay between cluster members
+     * The maximum accepted clock delay between cluster members
      */
     private final long maxAllowedClockDelayMillis = DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS;
 
@@ -98,11 +98,11 @@ public class ClusteringService {
     /**
      * A list of message consumers which register themselves with this service.
      */
-    private Set<MessageConsumer<Serializable>> consumers;
+    protected Set<MessageConsumer<Serializable>> consumers;
 
     /**
      * Creates a new service
-     *
+     * 
      * @param clusteringConfiguration the clustering configuration
      * @param processId the id of the process which started this bus
      */
@@ -111,13 +111,13 @@ public class ClusteringService {
         this.processId = processId;
         this.clusteringConfiguration = clusteringConfiguration;
         assert clusteringConfiguration.isEnabled();
-        //make sure the set is thread safe
+        // make sure the set is thread safe
         this.consumers = new CopyOnWriteArraySet<MessageConsumer<Serializable>>();
     }
 
     /**
      * Starts the clustering service.
-     *
+     * 
      * @throws Exception if anything unexpected fails
      */
     public synchronized void start() throws Exception {
@@ -155,15 +155,15 @@ public class ClusteringService {
         Class<?> lookupClass = Class.forName(lookupClassName);
         if (!ChannelProvider.class.isAssignableFrom(lookupClass)) {
             throw new IllegalArgumentException(
-                    "Invalid channel lookup class configured. Expected a subclass of org.modeshape.jcr.clustering.ChannelProvider. Actual class:"
-                    + lookupClass);
+                                               "Invalid channel lookup class configured. Expected a subclass of org.modeshape.jcr.clustering.ChannelProvider. Actual class:"
+                                               + lookupClass);
         }
         return ((ChannelProvider)lookupClass.newInstance()).getChannel(clusteringConfiguration);
     }
 
     /**
      * Adds a new message consumer to this service.
-     *
+     * 
      * @param consumer a {@link MessageConsumer} instance.
      */
     @SuppressWarnings( "unchecked" )
@@ -193,7 +193,7 @@ public class ClusteringService {
 
     /**
      * Checks if this instance is open or not (open means the JGroups channel has been connected).
-     *
+     * 
      * @return {@code true} if the service is open, {@code false} otherwise.
      */
     public boolean isOpen() {
@@ -202,7 +202,7 @@ public class ClusteringService {
 
     /**
      * Checks if the cluster has multiple members.
-     *
+     * 
      * @return {@code true} if the cluster has multiple members, {@code false} otherwise.
      */
     public boolean multipleMembersInCluster() {
@@ -211,7 +211,7 @@ public class ClusteringService {
 
     /**
      * Returns the number of members in the cluster.
-     *
+     * 
      * @return the number of active members
      */
     public int membersInCluster() {
@@ -220,7 +220,7 @@ public class ClusteringService {
 
     /**
      * Returns the name of the cluster which has been configured for this service.
-     *
+     * 
      * @return a {@code String} the name of the cluster; never {@code null}
      */
     public String clusterName() {
@@ -229,7 +229,7 @@ public class ClusteringService {
 
     /**
      * Returns the id of the process which started this service.
-     *
+     * 
      * @return a {@code String} the id of the process; never {@code null}
      */
     public String processId() {
@@ -238,7 +238,7 @@ public class ClusteringService {
 
     /**
      * Returns the maximum accepted delay in clock time between cluster members.
-     *
+     * 
      * @return the number of milliseconds representing the maximum accepted delay.
      */
     public long getMaxAllowedClockDelayMillis() {
@@ -247,12 +247,11 @@ public class ClusteringService {
 
     /**
      * Sends a message of a given type across a cluster.
-     *
-     *
+     * 
      * @param payload the main body of the message; must not be {@code null}
      * @return {@code true} if the send operation was successful, {@code false} otherwise
      */
-    public boolean sendMessage( Serializable payload )  {
+    public boolean sendMessage( Serializable payload ) {
         if (!isOpen() || !multipleMembersInCluster()) {
             return false;
         }
@@ -282,14 +281,12 @@ public class ClusteringService {
         return output.toByteArray();
     }
 
-    @SuppressWarnings( "unchecked" )
-    private Serializable fromByteArray( byte[] data,
-                                        ClassLoader classLoader ) throws IOException, ClassNotFoundException {
+    protected Serializable fromByteArray( byte[] data,
+                                          ClassLoader classLoader ) throws IOException, ClassNotFoundException {
         if (classLoader == null) {
             classLoader = ClusteringService.class.getClassLoader();
         }
-        ObjectInputStreamWithClassLoader input = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(data),
-                                                                                      classLoader);
+        ObjectInputStreamWithClassLoader input = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(data), classLoader);
         try {
             return (Serializable)input.readObject();
         } finally {
@@ -332,20 +329,21 @@ public class ClusteringService {
 
         @Override
         public void viewAccepted( View newView ) {
-            LOGGER.trace("Members of '{0}' cluster have changed: {1}, total count: {2}", clusterName(), newView, newView.getMembers().size());
+            LOGGER.trace("Members of '{0}' cluster have changed: {1}, total count: {2}",
+                         clusterName(),
+                         newView,
+                         newView.getMembers().size());
             membersInCluster.set(newView.getMembers().size());
             if (membersInCluster.get() > 1) {
-                LOGGER.debug(
-                        "There are now multiple members of cluster '{0}'; changes will be propagated throughout the cluster",
-                        clusterName());
-            } else if (membersInCluster.get() == 1) {
-                LOGGER.debug("There is only one member of cluster '{0}'; changes will be propagated locally only",
+                LOGGER.debug("There are now multiple members of cluster '{0}'; changes will be propagated throughout the cluster",
                              clusterName());
+            } else if (membersInCluster.get() == 1) {
+                LOGGER.debug("There is only one member of cluster '{0}'; changes will be propagated locally only", clusterName());
             }
         }
     }
 
-    private class Listener implements ChannelListener {
+    protected class Listener implements ChannelListener {
         @Override
         public void channelClosed( Channel channel ) {
             isOpen.set(false);

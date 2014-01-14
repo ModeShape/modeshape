@@ -286,11 +286,11 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         return session.nodeIdentifier(key);
     }
 
-    final NodeType nodeType(Name name) {
+    final NodeType nodeType( Name name ) {
         return session.repository().nodeTypeManager().getNodeTypes().getNodeType(name);
     }
 
-    final Set<NodeType> nodeTypes(Set<Name> names) {
+    final Set<NodeType> nodeTypes( Set<Name> names ) {
         RepositoryNodeTypeManager.NodeTypes nodeTypes = session.repository().nodeTypeManager().getNodeTypes();
         Set<NodeType> result = new HashSet<NodeType>(names.size());
         for (Name name : names) {
@@ -620,12 +620,12 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
 
         @Override
-        public NodeType getPrimaryNodeType() throws RepositoryException {
+        public NodeType getPrimaryNodeType() {
             return nodePrimaryType;
         }
 
         @Override
-        public NodeType[] getMixinNodeTypes() throws RepositoryException {
+        public NodeType[] getMixinNodeTypes() {
             return nodeMixinTypes;
         }
 
@@ -1040,8 +1040,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
 
         private boolean shouldReject( AbstractNodeChange nodeChange ) {
-            return !acceptBasedOnUuid(nodeChange)  || !acceptBasedOnPath(nodeChange) || !acceptBasedOnPermission(nodeChange)
-                   || !acceptIfLockChange(nodeChange)|| !acceptBasedOnNodeTypeName(nodeChange);
+            return !acceptBasedOnUuid(nodeChange) || !acceptBasedOnPath(nodeChange) || !acceptBasedOnPermission(nodeChange)
+                   || !acceptIfLockChange(nodeChange) || !acceptBasedOnNodeTypeName(nodeChange);
         }
 
         /**
@@ -1072,8 +1072,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * @param nodeChange the change being processed
-         * @return <code>true</code> if the {@link JcrSession#checkPermission(org.modeshape.jcr.value.Path, String...)}
-         * returns true for a {@link ModeShapePermissions#READ} permission on the node from the change
+         * @return <code>true</code> if the {@link JcrSession#checkPermission(org.modeshape.jcr.value.Path, String...)} returns
+         *         true for a {@link ModeShapePermissions#READ} permission on the node from the change
          */
         @SuppressWarnings( "synthetic-access" )
         private boolean acceptBasedOnPermission( AbstractNodeChange nodeChange ) {
@@ -1126,11 +1126,13 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                         mixinStrings[i++] = stringFor(mixinName);
                     }
                     primaryTypeName = stringFor(parentNode.getPrimaryTypeName());
-                    return getNodeTypeManager().isDerivedFrom(this.nodeTypeNames,
-                                                              primaryTypeName,
-                                                              mixinStrings);
+                    return getNodeTypeManager().isDerivedFrom(this.nodeTypeNames, primaryTypeName, mixinStrings);
                 } catch (RepositoryException e) {
-                    logger.error(e, JcrI18n.cannotPerformNodeTypeCheck, primaryTypeName, Arrays.toString(mixinStrings), this.nodeTypeNames);
+                    logger.error(e,
+                                 JcrI18n.cannotPerformNodeTypeCheck,
+                                 primaryTypeName,
+                                 Arrays.toString(mixinStrings),
+                                 this.nodeTypeNames);
                     return false;
                 }
             }

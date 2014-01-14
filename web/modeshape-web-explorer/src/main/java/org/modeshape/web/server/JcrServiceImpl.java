@@ -179,7 +179,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      * @throws RepositoryException
      */
     private String[] propertyDefs( Node node ) throws RepositoryException {
-        ArrayList<String> list = new ArrayList();
+        ArrayList<String> list = new ArrayList<String>();
 
         NodeType primaryType = node.getPrimaryNodeType();
         PropertyDefinition[] defs = primaryType.getPropertyDefinitions();
@@ -214,9 +214,10 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      */
     private String[] mixins( Node node ) throws RepositoryException {
         NodeType[] mixins = node.getMixinNodeTypes();
-        int len = mixins != null ? mixins.length : 0;
+        if (mixins == null || mixins.length == 0) return new String[0];
+        int len = mixins.length;
         String[] res = new String[len];
-        for (int i = 0; i < res.length; i++) {
+        for (int i = 0; i < len; i++) {
             res[i] = mixins[i].getName();
         }
         return res;
@@ -277,7 +278,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      * @throws RepositoryException
      */
     private Collection<JcrProperty> getProperties( Node node ) throws RepositoryException {
-        ArrayList<JcrProperty> list = new ArrayList();
+        ArrayList<JcrProperty> list = new ArrayList<JcrProperty>();
         PropertyIterator it = node.getProperties();
         while (it.hasNext()) {
             Property p = it.nextProperty();
@@ -349,7 +350,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             QueryResult qr = q.execute();
 
             rs.setColumnNames(qr.getColumnNames());
-            ArrayList<String[]> rows = new ArrayList();
+            ArrayList<String[]> rows = new ArrayList<String[]>();
             RowIterator it = qr.getRows();
             while (it.hasNext()) {
                 Row row = it.nextRow();
@@ -581,7 +582,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public String[] getPrimaryTypes( boolean allowAbstract ) throws RemoteException {
-        ArrayList<String> list = new ArrayList();
+        ArrayList<String> list = new ArrayList<String>();
         try {
             NodeTypeManager mgr = session().getWorkspace().getNodeTypeManager();
             NodeTypeIterator it = mgr.getPrimaryNodeTypes();
@@ -601,7 +602,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public String[] getMixinTypes( boolean allowAbstract ) throws RemoteException {
-        ArrayList<String> list = new ArrayList();
+        ArrayList<String> list = new ArrayList<String>();
         try {
             NodeTypeManager mgr = session().getWorkspace().getNodeTypeManager();
             NodeTypeIterator it = mgr.getMixinNodeTypes();
@@ -679,7 +680,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public Collection<JcrNodeType> nodeTypes() throws RemoteException {
-        ArrayList<JcrNodeType> list = new ArrayList();
+        ArrayList<JcrNodeType> list = new ArrayList<JcrNodeType>();
         try {
             NodeTypeManager mgr = session().getWorkspace().getNodeTypeManager();
 

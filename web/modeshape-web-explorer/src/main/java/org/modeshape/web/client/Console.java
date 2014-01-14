@@ -37,17 +37,11 @@ import com.smartgwt.client.widgets.tab.TabSet;
 public class Console implements EntryPoint {
 
     /**
-     * The message displayed to the user when the server cannot be reached or returns an error.
-     */
-    private static final String SERVER_ERROR = "An error occurred while "
-                                               + "attempting to contact the server. Please check your network "
-                                               + "connection and try again.";
-    /**
      * Create a remote service proxy to talk to the server-side Greeting service.
      */
     protected final JcrServiceAsync jcrService = GWT.create(JcrService.class);
 
-    private final VLayout mainForm = new VLayout();
+    protected final VLayout mainForm = new VLayout();
     protected final NodePanel nodePanel = new NodePanel(this);
     private final RepositoryPanel repositoryPanel = new RepositoryPanel(this);
     private final QueryPanel queryPanel = new QueryPanel(this);
@@ -139,7 +133,7 @@ public class Console implements EntryPoint {
 
             @Override
             public void onClick( ClickEvent event ) {
-                jcrService.save(new AsyncCallback() {
+                jcrService.save(new AsyncCallback<Object>() {
 
                     @Override
                     public void onFailure( Throwable caught ) {

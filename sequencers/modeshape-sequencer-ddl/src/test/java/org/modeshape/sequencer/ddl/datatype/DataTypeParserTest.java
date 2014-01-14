@@ -539,7 +539,6 @@ public class DataTypeParserTest implements DdlConstants {
         // INVALID Scale Integer
         content = typeString + " (5  A)";
         tokens = getTokens(content);
-        dType = null;
         try {
             dType = parser.parse(tokens);
         } catch (ParsingException e) {
@@ -590,7 +589,7 @@ public class DataTypeParserTest implements DdlConstants {
         // INVALID Scale Integer
         content = typeString + " (5  A)";
         tokens = getTokens(content);
-        dType = null;
+        assert dType == null;
         try {
             dType = parser.parse(tokens);
         } catch (ParsingException e) {
@@ -641,7 +640,7 @@ public class DataTypeParserTest implements DdlConstants {
         // INVALID Scale Integer
         content = typeString + " (5  A)";
         tokens = getTokens(content);
-        dType = null;
+        assert dType == null;
         try {
             dType = parser.parse(tokens);
         } catch (ParsingException e) {

@@ -15,7 +15,6 @@
  */
 package org.modeshape.web.shared;
 
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.grid.ListGridRecord;
 import java.util.Collection;
 

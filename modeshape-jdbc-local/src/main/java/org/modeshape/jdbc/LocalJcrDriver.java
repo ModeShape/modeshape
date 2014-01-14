@@ -198,21 +198,11 @@ public class LocalJcrDriver implements java.sql.Driver {
         return repositoryDelegate.createConnection(getDriverInfo());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Driver#getMajorVersion()
-     */
     @Override
     public int getMajorVersion() {
         return getDriverInfo().getMajorVersion();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Driver#getMinorVersion()
-     */
     @Override
     public int getMinorVersion() {
         return getDriverInfo().getMinorVersion();
@@ -230,11 +220,6 @@ public class LocalJcrDriver implements java.sql.Driver {
         return getDriverInfo().getVersion();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Driver#jdbcCompliant()
-     */
     @Override
     public boolean jdbcCompliant() {
         return false;
@@ -253,7 +238,7 @@ public class LocalJcrDriver implements java.sql.Driver {
      * @return the parent logger
      * @throws SQLFeatureNotSupportedException
      */
-    // TODO: JDK 1.7 - add @Override and remove JavaDoc
+    @Override
     public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
         throw new SQLFeatureNotSupportedException();
     }

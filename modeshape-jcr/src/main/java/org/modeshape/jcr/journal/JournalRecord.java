@@ -26,7 +26,7 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 
 /**
  * A record stored by the {@link LocalJournal}
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class JournalRecord implements Serializable, Iterable<Change> {
@@ -61,6 +61,9 @@ public final class JournalRecord implements Serializable, Iterable<Change> {
     }
 
     /**
+     * Get the key of the process in which the changes were made.
+     * 
+     * @return the process key; never null
      * @see org.modeshape.jcr.cache.change.ChangeSet#getProcessKey()
      */
     public String getProcessKey() {
@@ -68,6 +71,9 @@ public final class JournalRecord implements Serializable, Iterable<Change> {
     }
 
     /**
+     * Get the key of the repository in which the changes were made.
+     * 
+     * @return the repository key; never null
      * @see org.modeshape.jcr.cache.change.ChangeSet#getRepositoryKey()
      */
     public String getRepositoryKey() {
@@ -75,6 +81,9 @@ public final class JournalRecord implements Serializable, Iterable<Change> {
     }
 
     /**
+     * Returns the ID (username) of the user which performed the changes.
+     * 
+     * @return a {@link String} representing the username; may be {@code null} in the case of changes performed "by the system.
      * @see org.modeshape.jcr.cache.change.ChangeSet#getUserId()
      */
     public String getUserId() {
@@ -82,6 +91,9 @@ public final class JournalRecord implements Serializable, Iterable<Change> {
     }
 
     /**
+     * Get the name of the workspace in which the changes were made.
+     * 
+     * @return the workspace name; may be null only when workspaces are added or removed
      * @see org.modeshape.jcr.cache.change.ChangeSet#getWorkspaceName()
      */
     public String getWorkspaceName() {
@@ -90,6 +102,7 @@ public final class JournalRecord implements Serializable, Iterable<Change> {
 
     /**
      * Returns the time of the changeset, in UTC millis.
+     * 
      * @return a timestamp
      * @see org.modeshape.jcr.cache.change.ChangeSet#getTimestamp()
      */
@@ -98,6 +111,9 @@ public final class JournalRecord implements Serializable, Iterable<Change> {
     }
 
     /**
+     * Returns the set of keys for the nodes which has been changed.
+     * 
+     * @return the set of changed node keys; never {@code null}
      * @see org.modeshape.jcr.cache.change.ChangeSet#changedNodes()
      */
     public Set<NodeKey> changedNodes() {
@@ -105,6 +121,9 @@ public final class JournalRecord implements Serializable, Iterable<Change> {
     }
 
     /**
+     * Returns the identifier of the local {@link org.modeshape.jcr.journal.ChangeJournal} instance.
+     * 
+     * @return either a non-null {@link String} if journaling is enabled, or {@code null} if journaling isn't enabled.
      * @see org.modeshape.jcr.cache.change.ChangeSet#getJournalId()
      */
     public String getJournalId() {

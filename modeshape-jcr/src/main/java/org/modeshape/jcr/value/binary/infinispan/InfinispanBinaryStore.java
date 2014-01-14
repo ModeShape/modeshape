@@ -71,7 +71,7 @@ import org.modeshape.jcr.value.binary.StoredBinaryValue;
  * A {@link org.modeshape.jcr.value.binary.BinaryStore} implementation that uses Infinispan for persisting binary values.
  */
 @ThreadSafe
-public class InfinispanBinaryStore extends AbstractBinaryStore {
+public final class InfinispanBinaryStore extends AbstractBinaryStore {
 
     public static final int DEFAULT_CHUNK_SIZE = 1024 * 1024 * 1; // 1 MB
 
@@ -85,7 +85,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     private static final int RETRY_COUNT = 5;
 
-    private Cache<String, Metadata> metadataCache;
+    protected Cache<String, Metadata> metadataCache;
     private LockFactory lockFactory;
     private CacheContainer cacheContainer;
     private boolean dedicatedCacheContainer;
@@ -97,7 +97,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     /**
      * Creates a new instance.
-     *
+     * 
      * @param cacheContainer cache container which used for cache management
      * @param dedicatedCacheContainer true if the cache container should be started/stopped when store is start or stopped
      * @param metadataCacheName name of the cache used for metadata
@@ -112,7 +112,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     /**
      * Creates a new instance.
-     *
+     * 
      * @param cacheContainer cache container which used for cache management
      * @param dedicatedCacheContainer true if the cache container should be started/stopped when store is start or stopped
      * @param metadataCacheName name of the cache used for metadata
@@ -123,7 +123,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                                   boolean dedicatedCacheContainer,
                                   String metadataCacheName,
                                   String blobCacheName,
-                                  int chunkSize) {
+                                  int chunkSize ) {
         this.cacheContainer = cacheContainer;
         this.dedicatedCacheContainer = dedicatedCacheContainer;
         this.metadataCacheName = metadataCacheName;
@@ -236,7 +236,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             tmpFile = File.createTempFile("ms-ispn-binstore", "hashing");
             IoUtil.write(hashingStream,
                          new BufferedOutputStream(new FileOutputStream(tmpFile)),
-                    AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
+                         AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
             final BinaryKey binaryKey = new BinaryKey(hashingStream.getHash());
 
             // check if binary data already exists
@@ -254,15 +254,15 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
             logger.debug("Store binary value into chunks.");
             // store the chunks based referenced to SHA1-key
-            //we do store outside of transaction to prevent problems with
-            //large content and transaction timeouts
+            // we do store outside of transaction to prevent problems with
+            // large content and transaction timeouts
             final String dataKey = dataKeyFrom(binaryKey);
             final long lastModified = tmpFile.lastModified();
             final long fileLength = tmpFile.length();
             int bufferSize = bestBufferSize(fileLength);
             ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey, chunkSize);
             IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
-            
+
             Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
             BinaryValue value;
             try {
@@ -556,7 +556,6 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         Set<BinaryKey> allBinaryKeys = new HashSet<BinaryKey>();
 
         try {
-            @SuppressWarnings( "unchecked" )
             final List<Cache<String, ? extends Serializable>> caches = Arrays.asList(metadataCache, blobCache);
 
             for (Cache<String, ?> c : caches) {

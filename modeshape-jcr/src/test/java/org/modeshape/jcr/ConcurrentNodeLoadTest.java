@@ -61,7 +61,7 @@ public class ConcurrentNodeLoadTest extends AbstractTransactionalTest {
 
     private RepositoryConfiguration config;
     private ModeShapeEngine engine;
-    private JcrRepository repository;
+    protected JcrRepository repository;
     private Session session;
     private boolean print;
 

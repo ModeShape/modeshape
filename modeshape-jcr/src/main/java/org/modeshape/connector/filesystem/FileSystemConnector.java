@@ -375,9 +375,8 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             if (contentBasedSha1()) {
                 byte[] hash = SecureHash.getHash(SecureHash.Algorithm.SHA_1, file);
                 return StringUtil.getHexString(hash);
-            } else {
-                return SecureHash.sha1(createUrlForFile(file).toString());
             }
+            return SecureHash.sha1(createUrlForFile(file).toString());
         } catch (Exception e) {
             throw new ConnectorException(e);
         }
