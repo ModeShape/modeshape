@@ -647,6 +647,7 @@
                 </composite-binary-storage>
             </repository>
             <repository name="journalingRepository" cache-name="sample">
+                <indexing rebuild-upon-startup="never"/>
                 <journaling max-days-to-keep-records="15" async-writes="false"/>
             </repository>
         </subsystem>

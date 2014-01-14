@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr;
 
@@ -1234,11 +1226,17 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         }
         session1.save();
 
+        //give the events a change to reach the journal
+        Thread.sleep(300);
+
         //edit some nodes
         for (int i = 0; i < nodeCount / 2; i++) {
             session1.getNode("/testNode_" + i).setProperty("int_prop2", 2 * i);
         }
         session1.save();
+
+        //give the events a change to reach the journal
+        Thread.sleep(300);
 
         //remove the nodes
         Set<NodeKey> expectedJournalKeys = new TreeSet<NodeKey>();
@@ -1251,7 +1249,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         session1.save();
 
         //give the events a change to reach the journal
-        Thread.sleep(400);
+        Thread.sleep(300);
 
         //check the journal has entries
         LocalJournal.Records journalRecordsReversed = repository.runningState().journal().allRecords(true);

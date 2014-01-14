@@ -1,3 +1,19 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.modeshape.jcr.journal;
 
 import java.io.Serializable;
@@ -13,35 +29,35 @@ import org.modeshape.jcr.cache.change.ChangeSet;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class JournalRecord implements Serializable, Comparable<JournalRecord>, Iterable<Change> {
+public final class JournalRecord implements Serializable, Iterable<Change> {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * The time in UTC millis when this record was created.
+     * The time based key for this journal record.
      */
-    private long createdTimeMillisUTC;
+    private long timeBasedKey;
 
     /**
      * The content of the record.
      */
-    private ChangeSet content;
+    private final ChangeSet content;
 
     protected JournalRecord( ChangeSet content ) {
         this.content = content;
+        this.timeBasedKey = -1;
     }
 
-    protected JournalRecord( long createdTimeMillisUTC,
-                             ChangeSet content ) {
-        this.createdTimeMillisUTC = createdTimeMillisUTC;
-        this.content = content;
+    protected JournalRecord withTimeBasedKey( final long timeBasedKey ) {
+        this.timeBasedKey = timeBasedKey;
+        return this;
     }
 
     /**
      * @return the time when this record was created
      */
-    public long getCreatedTimeMillisUTC() {
-        return createdTimeMillisUTC;
+    public long getTimeBasedKey() {
+        return timeBasedKey;
     }
 
     /**
@@ -77,7 +93,7 @@ public class JournalRecord implements Serializable, Comparable<JournalRecord>, I
      * @return a timestamp
      * @see org.modeshape.jcr.cache.change.ChangeSet#getTimestamp()
      */
-    public long getChangeTimeMillisUTC() {
+    public long getChangeTimeMillis() {
         return content.getTimestamp().getMillisecondsInUtc();
     }
 
@@ -111,51 +127,26 @@ public class JournalRecord implements Serializable, Comparable<JournalRecord>, I
 
         JournalRecord record = (JournalRecord)o;
 
-        if (createdTimeMillisUTC != record.createdTimeMillisUTC) {
-            return false;
-        }
+        return content.getUUID().equals(record.content.getUUID());
 
-        if (content != null ? !content.equals(record.content) : record.content != null) {
-            return false;
-        }
-        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = (int)(createdTimeMillisUTC ^ (createdTimeMillisUTC >>> 32));
-        result = 31 * result + (content != null ? content.hashCode() : 0);
-        return result;
+        return content.getUUID().hashCode();
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("JournalRecord {");
-        sb.append("createdTime=").append(new Date(createdTimeMillisUTC).toString());
+        sb.append("timeBasedKey=").append(new Date(timeBasedKey).toString());
         sb.append(", journalId=").append(getJournalId());
         sb.append(", processKey=").append(getProcessKey());
         sb.append(", userId=").append(getUserId());
         sb.append(", repositoryKey=").append(getRepositoryKey());
         sb.append(", workspaceName=").append(getWorkspaceName());
-        sb.append(", changeTime=").append(new Date(getChangeTimeMillisUTC()).toString());
+        sb.append(", content=").append(content.toString());
         sb.append('}');
         return sb.toString();
-    }
-
-    @Override
-    public int compareTo( JournalRecord o ) {
-        if (o == null) {
-            return 1;
-        }
-        return Long.valueOf(createdTimeMillisUTC).compareTo(o.createdTimeMillisUTC);
-    }
-
-    protected JournalRecord withCreatedTimeMillisUTC( final long createdTimeMillisUTC ) {
-        this.createdTimeMillisUTC = createdTimeMillisUTC;
-        return this;
-    }
-
-    protected static JournalRecord searchBound(long createdTimeMillisUTC) {
-        return new JournalRecord(createdTimeMillisUTC, null);
     }
 }

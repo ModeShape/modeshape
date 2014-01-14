@@ -133,6 +133,7 @@ public class PreconfiguredRepositoryIntegrationTest {
     }
 
     @Test
+    @FixFor( "MODE-1683" )
     public void shouldEnableJournaling() throws Exception {
         Session session = journalingRepository.login();
         session.getRootNode().addNode("testNode");

@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.modeshape.jcr.journal;
@@ -27,6 +19,7 @@ package org.modeshape.jcr.journal;
 import java.util.Collections;
 import java.util.Iterator;
 import javax.jcr.RepositoryException;
+import org.joda.time.DateTime;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
@@ -62,36 +55,25 @@ public interface ChangeJournal extends ChangeSetListener {
     public Records allRecords( boolean descendingOrder );
 
     /**
-     * Returns the records for a given journal.
+     * Returns the last record from the journal.
      *
-     * @param journalId a {@link String} the id of a journal; must not be {@link null}
-     * @return an {@link Iterable<JournalRecord>}, never {@code null}
+     * @return either a {@link org.modeshape.jcr.journal.JournalRecord} instance or {@code null} if the journal is empty.
      */
-    public Iterable<JournalRecord> recordsFor( String journalId );
+    public JournalRecord lastRecord();
 
     /**
-     * Returns all records which are older than a given timestamp.
+     * Returns all records that have changesets which are newer than a given timestamp.
      *
-     * @param localMillis a timestamp in local milliseconds.
+     * @param changeSetTime the {@link org.joda.time.DateTime} of the changes representing the lower bound; may be null indicating that
+     * *all the records* should be returned.
      * @param inclusive flag indicating whether the timestamp should be used inclusively or exclusively
      * @param descendingOrder flag indicating if the records should be returned in ascending order (oldest to newest) or descending
      * order (newest to oldest)
      * @return a {@link Records} instance; never {@code null}
      */
-    public Records recordsOlderThan( long localMillis,
+    public Records recordsNewerThan( DateTime changeSetTime,
                                      boolean inclusive,
                                      boolean descendingOrder );
-
-    /**
-     * Returns all the records from all the processes this journal has, since last seeing the process with the given journal id.
-     *
-     * @param journalId a {@link String} the id of a journal belonging to a process for which to compute the delta; must not be {@link null}
-     * @param descendingOrder flag indicating if the records should be returned in ascending order (oldest to newest) or descending
-     * order (newest to oldest)
-     * @return a {@link Records} instance; never {@code null}. This will only contain records for other processes than {@code journalId}
-     */
-    public Records recordsDelta( String journalId,
-                                 boolean descendingOrder );
 
     /**
      * Adds one or more journal records to a journal.
@@ -99,13 +81,6 @@ public interface ChangeJournal extends ChangeSetListener {
      * @param records a {@link JournalRecord} array.
      */
     public void addRecords( JournalRecord... records );
-
-    /**
-     * Checks if the journal has finished reconciling its record with deltas received from journals belonging to other processes.
-     *
-     * @return {@code true} if the reconciliation has completed, {@code false} otherwise.
-     */
-    public boolean deltaReconciliationCompleted();
 
     /**
      * Returns the id of this change journal.
@@ -129,13 +104,25 @@ public interface ChangeJournal extends ChangeSetListener {
             public Iterator<JournalRecord> iterator() {
                 return Collections.<JournalRecord>emptySet().iterator();
             }
+
+            @Override
+            public boolean isEmpty() {
+                return true;
+            }
         };
 
         /**
-         * Returns the number of items this iterable has.
+         * Returns the number of records.
          *
          * @return an int
          */
         public int size();
+
+        /**
+         * Returns true if the records set is empty.
+         *
+         * @return {@code true} if there aren't any records.
+         */
+        public boolean isEmpty();
     }
 }
