@@ -216,8 +216,8 @@
         <dataSource.retryLimit>0</dataSource.retryLimit>
 
         <!--By default, we use whatever the underlying machine supports. However, certain sub-modules may change this -->
-        <preferIpv4>true</preferIpv4>
-        <preferIpv6>false</preferIpv6>
+        <preferIpv4>false</preferIpv4>
+        <preferIpv6>true</preferIpv6>
         <debug.argline/>
         <!--
           Global dependency version information
@@ -378,7 +378,7 @@
               Clustering-related profiles
               ###################################################################
 
-              To use, specify "-DpreferIpv6" on the Maven command line,
+              To use, specify "-DpreferIpv6" or "-DpreferIpv4" on the Maven command line,
               depending upon your environment's network configuration.
           -->
         <profile>
@@ -391,6 +391,18 @@
             <properties>
                 <preferIpv4>false</preferIpv4>
                 <preferIpv6>true</preferIpv6>
+            </properties>
+        </profile>
+        <profile>
+            <id>preferIpv4</id>
+            <activation>
+                <property>
+                    <name>preferIpv4</name>
+                </property>
+            </activation>
+            <properties>
+                <preferIpv4>true</preferIpv4>
+                <preferIpv6>false</preferIpv6>
             </properties>
         </profile>
 
