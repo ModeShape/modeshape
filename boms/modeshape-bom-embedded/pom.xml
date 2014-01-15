@@ -57,10 +57,7 @@
         <jbossjta.version>4.16.6.Final</jbossjta.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <embedmongo.version>1.28</embedmongo.version>
-        <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
-        <cassandra-cql-driver>1.0.0</cassandra-cql-driver>
-        <cassandra.all.version>1.2.0</cassandra.all.version>
-        <apache.avro.version>1.4.0</apache.avro.version>
+        <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>
         <tika.version>1.3</tika.version>
 
         <!--//TODO author=Horia Chiorean date=1/8/14 description=The following version props should not be here-->
@@ -575,28 +572,11 @@
 
             <!-- Cassandra binary storage -->
             <dependency>
-                <groupId>org.apache-extras.cassandra-jdbc</groupId>
-                <artifactId>cassandra-jdbc</artifactId>
-                <version>${cassandra-jdbc-driver}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
                 <groupId>com.datastax.cassandra</groupId>
                 <artifactId>cassandra-driver-core</artifactId>
                 <version>${cassandra-cql-driver}</version>
                 <scope>provided</scope>
             </dependency>
-            <dependency>
-                <groupId>org.apache.cassandra</groupId>
-                <artifactId>cassandra-all</artifactId>
-                <version>${cassandra.all.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro</artifactId>
-                <version>${apache.avro.version}</version>
-            </dependency>
-
             <!--
                 //TODO author=Horia Chiorean date=1/8/14 description=The following dependencies are only here to be compatible with 3.6.0.Final.
             -->

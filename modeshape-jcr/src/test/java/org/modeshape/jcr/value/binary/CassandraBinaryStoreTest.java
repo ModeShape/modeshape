@@ -36,11 +36,8 @@ import org.apache.cassandra.service.EmbeddedCassandraService;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.modeshape.common.junit.SkipOnOS;
-import org.modeshape.common.junit.SkipTestRule;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -51,11 +48,7 @@ import org.modeshape.jcr.value.BinaryValue;
  * 
  * @author kulikov
  */
-@SkipOnOS( value = SkipOnOS.WINDOWS, description = "java.nio does not support IPV6 in JDK6 on Windows" )
 public class CassandraBinaryStoreTest {
-
-    @Rule
-    public TestRule skipTestRule = new SkipTestRule();
 
     private static Exception exceptionDuringCassandraStart;
 
@@ -64,13 +57,9 @@ public class CassandraBinaryStoreTest {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
+        FileUtil.delete("target/cassandra");
         try {
-            Boolean ipV4 = Boolean.parseBoolean(System.getProperty("java.net.preferIPv4Stack"));
-            if (ipV4) {
-                System.setProperty("cassandra.config", "cassandra/cassandra.yaml");
-            } else {
-                System.setProperty("cassandra.config", "cassandra/cassandra_ipv6.yaml");
-            }
+            System.setProperty("cassandra.config", "cassandra/cassandra.yaml");
             EmbeddedCassandraService cassandra = new EmbeddedCassandraService();
             cassandra.start();
         } catch (Exception e) {
