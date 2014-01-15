@@ -59,8 +59,6 @@
         <embedmongo.version>1.28</embedmongo.version>
         <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
         <cassandra-cql-driver>1.0.0</cassandra-cql-driver>
-        <cassandra.all.version>1.2.0</cassandra.all.version>
-        <apache.avro.version>1.4.0</apache.avro.version>
         <tika.version>1.3</tika.version>
 
         <!--//TODO author=Horia Chiorean date=1/8/14 description=The following version props should not be here-->
@@ -585,16 +583,6 @@
                 <artifactId>cassandra-driver-core</artifactId>
                 <version>${cassandra-cql-driver}</version>
                 <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.cassandra</groupId>
-                <artifactId>cassandra-all</artifactId>
-                <version>${cassandra.all.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro</artifactId>
-                <version>${apache.avro.version}</version>
             </dependency>
 
             <!--
