@@ -23,7 +23,7 @@ import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Bson;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
+import org.infinispan.commons.util.Util;
 
 public class ArrayExternalizer extends SchematicExternalizer<Array> {
 

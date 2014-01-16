@@ -15,7 +15,7 @@
  */
 package org.infinispan.schematic.document;
 
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * A {@link Bson.Type#JAVASCRIPT_WITH_SCOPE JavaScript code with scope} value for use within a {@link Document BSON Object}.

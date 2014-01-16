@@ -35,8 +35,8 @@ import org.infinispan.schematic.SchematicEntry.FieldName;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.JsonSchema;
-import org.infinispan.util.concurrent.FutureListener;
-import org.infinispan.util.concurrent.NotifyingFuture;
+import org.infinispan.commons.util.concurrent.FutureListener;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 
 public class CacheSchematicDb implements SchematicDb {
 

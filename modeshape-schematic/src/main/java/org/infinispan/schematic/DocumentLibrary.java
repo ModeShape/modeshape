@@ -16,7 +16,7 @@
 package org.infinispan.schematic;
 
 import org.infinispan.schematic.document.Document;
-import org.infinispan.util.concurrent.NotifyingFuture;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 
 /**
  * A library of JSON documents.

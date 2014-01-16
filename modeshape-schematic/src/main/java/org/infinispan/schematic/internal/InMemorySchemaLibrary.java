@@ -24,7 +24,7 @@ import org.infinispan.schematic.internal.schema.DocumentTransformer;
 import org.infinispan.schematic.internal.schema.SchemaDocument;
 import org.infinispan.schematic.internal.schema.SchemaDocumentCache;
 import org.infinispan.schematic.internal.schema.ValidationResult;
-import org.infinispan.util.concurrent.NotifyingFuture;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 
 public class InMemorySchemaLibrary implements SchemaLibrary, Lifecycle {
 

@@ -48,7 +48,7 @@ import org.infinispan.schematic.document.NotThreadSafe;
 import org.infinispan.schematic.document.Null;
 import org.infinispan.schematic.document.ParsingException;
 import org.infinispan.schematic.document.ThreadSafe;
-import org.infinispan.util.Base64;
+import org.infinispan.commons.util.Base64;
 
 /**
  * A class that reads the <a href="http://www.json.org/">JSON</a> data format and constructs an in-memory <a

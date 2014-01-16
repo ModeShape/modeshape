@@ -24,7 +24,7 @@ import org.infinispan.Cache;
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
 import org.infinispan.context.FlagContainer;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
@@ -38,9 +38,9 @@ import org.infinispan.schematic.internal.document.BasicDocument;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.document.Paths;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+import org.infinispan.commons.util.Util;
+import org.infinispan.commons.logging.Log;
+import org.infinispan.commons.logging.LogFactory;
 
 /**
  * The primary implementation of {@link SchematicEntry}.
@@ -340,7 +340,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     }
 
     /**
-     * The {@link org.infinispan.marshall.Externalizer Externalizer} for {@link SchematicEntryLiteral} instances.
+     * The {@link org.infinispan.commons.marshall.Externalizer Externalizer} for {@link SchematicEntryLiteral} instances.
      */
     public static final class Externalizer extends SchematicExternalizer<SchematicEntryLiteral> {
         private static final long serialVersionUID = 1L;

@@ -21,7 +21,7 @@ import java.io.ObjectOutput;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
 import org.infinispan.schematic.document.Array.Entry;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.HashCode;
@@ -29,7 +29,7 @@ import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
+import org.infinispan.commons.util.Util;
 
 /**
  * An atomic array add operation for SchematicValueDelta.

@@ -20,6 +20,12 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
         </dependency>
+        
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-commons</artifactId>
+            <version>${infinispan.version}</version>
+        </dependency>
 
         <!--  Used in tests -->
         <dependency>
@@ -29,10 +35,30 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-cachestore-bdbje</artifactId>
-        </dependency>
+<!--         <dependency> -->
+<!--             <groupId>org.infinispan</groupId> -->
+<!--             <artifactId>infinispan-cachestore-bdbje</artifactId> -->
+<!--             <version>${infinispan-cachestore-bdbje.version}</version> -->
+<!--         </dependency> -->
+
+	<!-- while waiting for infinispan-cachestore-bdbje to catch up, 
+	use a cachestore that is already up to 6.0.1.Final: -->
+
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.infinispan</groupId> -->
+<!-- 			<artifactId>infinispan-cachestore-rest</artifactId> -->
+<!-- 			<version>6.0.1.Final</version> -->
+<!-- 		</dependency> -->
+		            
+		
+		
+		
+
+
+
+
+
+
         
         <dependency>
             <groupId>org.jboss.logging</groupId>

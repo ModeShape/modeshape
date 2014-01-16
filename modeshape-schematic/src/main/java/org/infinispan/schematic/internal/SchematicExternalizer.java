@@ -16,25 +16,25 @@
 package org.infinispan.schematic.internal;
 
 import java.util.Set;
-import org.infinispan.marshall.AdvancedExternalizer;
-import org.infinispan.marshall.Externalizer;
+import org.infinispan.commons.marshall.AdvancedExternalizer;
+import org.infinispan.commons.marshall.Externalizer;
 
 /**
- * An abstract base class for all Schematic {@link org.infinispan.marshall.Externalizer Externalizer} implementations.
+ * An abstract base class for all Schematic {@link org.infinispan.commons.marshall.Externalizer Externalizer} implementations.
  * <p>
  * There are two primary advantages of implementing {@link AdvancedExternalizer} versus implementing
- * {@link org.infinispan.marshall.Externalizer}:
+ * {@link org.infinispan.commons.marshall.Externalizer}:
  * <ol>
  * <li>The class to be externalized must be modified with a {@code @SerializeWith} annotation. Since {@link SchematicEntryLiteral}
  * is our class, this is possible.</li>
  * <li>The generated payloads (shipped between Infinispan processes) are slightly smaller, since it includes only the
  * {@link AdvancedExternalizer}'s {@link #getId() identifier} instead of the class information and/or the serialized
- * {@link org.infinispan.marshall.Externalizer}. But for this to work, the advanced externalizers need to be registered with the
+ * {@link org.infinispan.commons.marshall.Externalizer}. But for this to work, the advanced externalizers need to be registered with the
  * cache container at startup.</li>
  * </ol>
  * Unfortunately, Infinispan in AS7.1 does not allow defining {@link AdvancedExternalizer} classes for the cache container, and
  * thus they cannot be used (see <a href="https://issues.jboss.org/browse/MODE-1524">MODE-1524</a> for details). Therefore, we
- * have to rely only upon implementing {@link org.infinispan.marshall.Externalizer}.
+ * have to rely only upon implementing {@link org.infinispan.commons.marshall.Externalizer}.
  * </p>
  * <p>
  * This abstract class was created so that the Schematic externalizers can easily extend it, but so that we can encapsulate in
@@ -44,7 +44,7 @@ import org.infinispan.marshall.Externalizer;
  * 
  * @param <T> the type of class
  */
-public abstract class SchematicExternalizer<T> implements org.infinispan.marshall.Externalizer<T>
+public abstract class SchematicExternalizer<T> implements org.infinispan.commons.marshall.Externalizer<T>
 /*implements AdvancedExternalizer<T>*/{
 
     private static final long serialVersionUID = 1L;

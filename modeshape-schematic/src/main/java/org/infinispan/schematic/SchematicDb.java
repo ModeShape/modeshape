@@ -22,7 +22,7 @@ import org.infinispan.lifecycle.Lifecycle;
 import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.util.concurrent.NotifyingFuture;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 
 /**
  * A store for JSON documents and other binary content, plus a library of JSON Schema documents used to describe and validate the
