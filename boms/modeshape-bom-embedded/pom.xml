@@ -72,7 +72,7 @@
         <logback.version>0.9.29</logback.version>
         <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
-        <junit.version>4.10</junit.version>
+        <junit.version>4.11</junit.version>
         <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
         <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
         <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
@@ -653,16 +653,10 @@
                 <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit-dep</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
 
             <!--
               Compatible logging modules.
-          -->
+            -->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>

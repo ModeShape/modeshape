@@ -151,7 +151,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         List<BinaryKey> keys = new ArrayList<BinaryKey>();
         keys.add(IN_MEMORY_KEY);
         getBinaryStore().markAsUnused(keys);
-        Thread.sleep(1000);
+        Thread.sleep(100);
         // now remove and test if still there
         getBinaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
 

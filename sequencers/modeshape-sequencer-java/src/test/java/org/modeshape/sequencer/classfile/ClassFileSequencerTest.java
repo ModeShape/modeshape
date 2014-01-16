@@ -25,8 +25,8 @@ package org.modeshape.sequencer.classfile;
 
 import java.util.ArrayList;
 import java.util.List;
-import static org.hamcrest.collection.IsCollectionContaining.hasItems;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsCollectionContaining.hasItems;
 import static org.junit.Assert.assertThat;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
 import javax.jcr.Node;
