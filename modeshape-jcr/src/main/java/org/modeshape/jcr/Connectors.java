@@ -46,7 +46,7 @@ import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.util.ReflectionUtil;
+import org.infinispan.commons.util.ReflectionUtil;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.Immutable;

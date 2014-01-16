@@ -25,7 +25,7 @@ package org.modeshape.jcr.store;
 
 import java.io.File;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.loaders.jdbc.configuration.JdbcBinaryCacheStoreConfigurationBuilder;
+//import org.infinispan.loaders.jdbc.configuration.JdbcBinaryCacheStoreConfigurationBuilder;
 import org.junit.Ignore;
 import org.modeshape.common.util.FileUtil;
 
@@ -48,22 +48,22 @@ public class JdbcBinaryCacheStoreTest extends InMemoryTest {
 
     @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        JdbcBinaryCacheStoreConfigurationBuilder builder = new JdbcBinaryCacheStoreConfigurationBuilder(
-                                                                                                        configurationBuilder.loaders());
-        builder.purgeOnStartup(true);
-        builder.table()
-               .createOnStart(true)
-               .dropOnExit(false)
-               .idColumnName("ID_COLUMN")
-               .idColumnType("VARCHAR(255)")
-               .timestampColumnName("TIMESTAMP_COLUMN")
-               .timestampColumnType("BIGINT")
-               .dataColumnName("DATA_COLUMN")
-               .dataColumnType("BINARY")
-               .connectionPool()
-               .connectionUrl(dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1")
-               .driverClass(dataSourceConfig.getDriverClassName())
-               .username(dataSourceConfig.getUsername());
-        configurationBuilder.loaders().addStore(builder);
+//        JdbcBinaryCacheStoreConfigurationBuilder builder = new JdbcBinaryCacheStoreConfigurationBuilder(
+//                                                                                                        configurationBuilder.loaders());
+//        builder.purgeOnStartup(true);
+//        builder.table()
+//               .createOnStart(true)
+//               .dropOnExit(false)
+//               .idColumnName("ID_COLUMN")
+//               .idColumnType("VARCHAR(255)")
+//               .timestampColumnName("TIMESTAMP_COLUMN")
+//               .timestampColumnType("BIGINT")
+//               .dataColumnName("DATA_COLUMN")
+//               .dataColumnType("BINARY")
+//               .connectionPool()
+//               .connectionUrl(dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1")
+//               .driverClass(dataSourceConfig.getDriverClassName())
+//               .username(dataSourceConfig.getUsername());
+//        configurationBuilder.loaders().addStore(builder);
     }
 }

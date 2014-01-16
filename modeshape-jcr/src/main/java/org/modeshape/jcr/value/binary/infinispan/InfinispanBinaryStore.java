@@ -47,9 +47,19 @@ import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.infinispan.distexec.mapreduce.Reducer;
-import org.infinispan.loaders.CacheLoader;
-import org.infinispan.loaders.CacheLoaderException;
-import org.infinispan.loaders.CacheLoaderManager;
+
+////////////////////
+//import org.infinispan.loaders.CacheLoader;
+//import org.infinispan.loaders.CacheLoaderException;
+//import org.infinispan.loaders.CacheLoaderManager;
+import org.infinispan.configuration.cache.PersistenceConfiguration;
+import org.infinispan.persistence.spi.CacheLoader;
+import org.infinispan.persistence.spi.PersistenceException;
+import org.infinispan.persistence.manager.PersistenceManager;
+///////////////////
+
+
+
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
@@ -343,18 +353,33 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
         // determine type of cache store
         CacheLoader cacheLoader = null;
         boolean cacheLoaderShared = false;
-        CacheLoaderManager cacheLoaderManager = metadataCache.getAdvancedCache()
+        
+        
+        //////////////// hxp work zone
+        PersistenceManager persistenceManager = metadataCache.getAdvancedCache()
                                                              .getComponentRegistry()
-                                                             .getComponent(CacheLoaderManager.class);
-        if (cacheLoaderManager != null) {
-            cacheLoader = cacheLoaderManager.getCacheLoader();
-            cacheLoaderShared = cacheLoaderManager.isShared();
+                                                             .getComponent(PersistenceManager.class);
+        if (persistenceManager != null) {
+//HXP: *MUST* bring 3 commented-out areas back in!
+//            cacheLoader = persistenceManager.getCacheLoader(); 
+            
+            // replace Object in the following when we determine what class is stored
+            Set<Object> storeSet = (persistenceManager.getStores(Object.class));
+            Iterator<Object> storeIterator = storeSet.iterator();
+            while(storeIterator.hasNext()){
+//            	cacheLoaderShared = storeIterator.next().isShared();
+            	break; // we only need 1? or if there are multiple, what logic is appropriate here?
+            }
         }
 
         if (!metadataCache.getCacheManager().isCoordinator() && cacheLoaderShared) {
             // in this case an other node will care...
             return;
         }
+        //////////////////////////////////////
+        
+        
+        
 
         long minimumAgeInMS = unit.toMillis(minimumAge);
         Set<Object> processedKeys = new HashSet<Object>();
@@ -394,24 +419,24 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
         }
         if (metadataCache.getCacheManager().isCoordinator() && cacheLoader != null) {
             // process cache loader content
-            try {
-                for (Object key : new ArrayList<Object>(cacheLoader.loadAllKeys(processedKeys))) {
-                    if (!(key instanceof String)) continue;
-                    if (!isMetadataKey((String)key)) continue;
-                    Metadata metadata = metadataCache.get(key);
-                    if (isValueUnused(metadata, minimumAgeInMS)) {
-                        InfinispanBinaryStore.Lock lock = lockFactory.writeLock((String)key);
-                        try {
-                            removeUnusedBinaryValue(metadataCache, blobCache, (String)key);
-                        } finally {
-                            lock.unlock();
-                        }
-                    }
-                }
-            } catch (CacheLoaderException cle) {
-                logger.debug("Error during cleanup of cache loader", cle);
-                throw new BinaryStoreException(JcrI18n.errorDuringGarbageCollection.text(cle.getMessage()));
-            }
+//            try {
+//                for (Object key : new ArrayList<Object>(cacheLoader.loadAllKeys(processedKeys))) {
+//                    if (!(key instanceof String)) continue;
+//                    if (!isMetadataKey((String)key)) continue;
+//                    Metadata metadata = metadataCache.get(key);
+//                    if (isValueUnused(metadata, minimumAgeInMS)) {
+//                        InfinispanBinaryStore.Lock lock = lockFactory.writeLock((String)key);
+//                        try {
+//                            removeUnusedBinaryValue(metadataCache, blobCache, (String)key);
+//                        } finally {
+//                            lock.unlock();
+//                        }
+//                    }
+//                }
+//            } catch (PersistenceException cle) {
+//                logger.debug("Error during cleanup of cache loader", cle);
+//                throw new BinaryStoreException(JcrI18n.errorDuringGarbageCollection.text(cle.getMessage()));
+//            }
         }
 
     }
@@ -570,7 +595,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
                 }
 
             }
-        } catch (CacheLoaderException ex) {
+        } catch (PersistenceException ex) {
             throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
         } catch (InterruptedException ex) {
             throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));

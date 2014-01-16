@@ -110,6 +110,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-commons</artifactId>
+            <version>${infinispan.version}</version>
+        </dependency>
 
         <!--  Used in tests -->
         <dependency>
@@ -127,10 +133,13 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-bdbje</artifactId>
+            <version>${infinispan-cachestore-bdbje.version}</version>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-jdbm</artifactId>
+<!--             <version>${infinispan-cachestore-jdbm.version}</version> -->
+            <version>6.0.0.Alpha1</version>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>

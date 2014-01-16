@@ -62,14 +62,14 @@ public class InfinispanUtilTest {
         File dir = new File(System.getProperty("java.io.tmpdir"), "InfinispanLocalBinaryStoreWithPersistenceTest");
         if (dir.exists()) FileUtil.delete(dir);
         dir.mkdirs();
-        configurationBuilder.loaders().shared(true);
-        configurationBuilder.loaders().addFileCacheStore().purgeOnStartup(true).location(dir.getAbsolutePath());
+//hxp        configurationBuilder.loaders().shared(true);
+//hxp        configurationBuilder.loaders().addFileCacheStore().purgeOnStartup(true).location(dir.getAbsolutePath());
 
         configurationBuilder.clustering().cacheMode(CacheMode.LOCAL);
         LOCAL_STORE = configurationBuilder.build();
         configurationBuilder.clustering().cacheMode(CacheMode.DIST_SYNC);
         DIST_STORE = configurationBuilder.build();
-        configurationBuilder.loaders().shared(false);
+//hxp        configurationBuilder.loaders().shared(false);
         DIST_STORE_UNSHARED = configurationBuilder.build();
 
         // define caches

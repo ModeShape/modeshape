@@ -25,7 +25,7 @@ package org.modeshape.jcr.store;
 
 import java.io.File;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.loaders.bdbje.configuration.BdbjeCacheStoreConfigurationBuilder;
+//import org.infinispan.loaders.bdbje.configuration.BdbjeCacheStoreConfigurationBuilder;
 import org.modeshape.common.util.FileUtil;
 
 public class BerkleyDbCacheStoreTest extends InMemoryTest {
@@ -39,10 +39,10 @@ public class BerkleyDbCacheStoreTest extends InMemoryTest {
 
     @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        configurationBuilder.loaders()
-                            .addStore(BdbjeCacheStoreConfigurationBuilder.class)
-                            .location(dbDir.getAbsolutePath())
-                            .purgeOnStartup(true);
+//        configurationBuilder.loaders()
+//                            .addStore(BdbjeCacheStoreConfigurationBuilder.class)
+//                            .location(dbDir.getAbsolutePath())
+//                            .purgeOnStartup(true);
     }
 
 }
