@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="white space">
+        <!-- ignore white spaces -->
+        <char expression="\s" destination="white space" action=""/>
+        <!-- this is first character of the command -->
+        <char expression="[a-z]" destination="type_name" action="start"/>
+        <!-- Digits are not allowed as first character -->
+        <char expression="\d" destination="finish" action="fail"/>
+    </state>
+
+    <state name="type_name">
+        <!-- compose command -->
+        <char expression="\w" destination="type_name" action="readType"/>
+        <!-- this is the end of the token, let's analyse it -->
+        <char expression="\s" destination="type_test" action="testType"/>
+        <char expression="\(" destination="type_test" action="testType"/>
+        <!-- end of stream -->
+        <char expression="eos" destination="finish" action="notify"/>        
+        <!-- bad character -->
+        <char expression="." destination="finish" action="fail"/>        
+    </state>
+    
+    <state name="type_test">
+        <!-- compose command -->
+        <char expression="char" destination="waiting type size" action=""/>
+        <char expression="character" destination="waiting type size" action=""/>
+        <char expression="varchar" destination="type_varchar" action=""/>
+        
+        <char expression="integer" destination="finish" action="notify"/>
+        <char expression="int" destination="finish" action="notify"/>
+        <char expression="smallint" destination="finish" action="notify"/>
+        
+        <char expression="decimal" destination="type_varchar" action=""/>
+        <char expression="dec" destination="type_varchar" action=""/>
+        <char expression="numeric" destination="type_varchar" action=""/>
+        <char expression="float" destination="type_varchar" action=""/>
+        
+        <char expression="real" destination="finish" action="notify"/>
+        
+        <char expression="double" destination="type_double" action=""/>
+        
+        <char expression="date" destination="finish" action="notify"/>
+        <char expression="time" destination="finish" action="notify"/>
+        
+        <char expression="boolean" destination="finish" action="notify"/>
+        <char expression="blob" destination="finish" action="notify"/>
+    </state>
+                        
+    <state name="waiting type size">
+        <char expression="\s" destination="waiting type size" action=""/>
+        <!-- this is first character of the command -->
+        <char expression="\(" destination="type_size" action=""/>
+        <!-- Digits are not allowed as first character -->
+        <char expression=".*" destination="finish" action="failOnTypeSize"/>
+    </state>
+
+    <state name="type_size">
+        <char expression="\s" destination="type_size" action=""/>
+        <!-- this is first character of the command -->
+        <char expression="\)" destination="finish" action="notify"/>
+        <!-- Digits are not allowed as first character -->
+        <char expression="\d" destination="type_size" action=""/>
+        <char expression=".*" destination="finish" action="failOnTypeSize"/>
+    </state>
+        
+    <state name="finish">
+        <char expression="eos" destination="finish" action=""/>
+    </state>
+    
+</lexer>

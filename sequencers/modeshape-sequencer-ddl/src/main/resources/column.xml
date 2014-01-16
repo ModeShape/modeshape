@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<lexer>
+    <state name="white space">
+        <!-- ignore white spaces -->
+        <char expression="\s" destination="white space" action=""/>
+        <char expression=".*" destination="column_name" action="readName"/>
+    </state>
+    
+    <state name="column_name">
+        <!-- this is the end of the token, let's analyse it -->
+        <char expression="success" destination="column_type" action=""/>
+        <!-- compose command -->
+        <char expression=".*" destination="column_name" action="readName"/>
+    </state>
+
+    <state name="column_type">
+        <!-- this is the end of the token, let's analyse it -->
+        <char expression="success" destination="finish" action="notify"/>
+        <!-- compose command -->
+        <char expression=".*" destination="column_type" action="readType"/>
+    </state>
+        
+    <state name="finish"/>
+    
+</lexer>
