@@ -132,6 +132,7 @@ public final class JcrI18n {
     public static I18n unableToUnregisterReservedNamespacePrefix;
     public static I18n unableToUnregisterReservedNamespaceUri;
     public static I18n unableToUnregisterPrefixForNamespaceThatIsNotRegistered;
+    public static I18n unableToUnregisterPrefixForNamespaceUsedByNodeType;
 
     public static I18n errorWhileInitializingTheNamespaceRegistry;
     public static I18n errorCleaningUpLocks;

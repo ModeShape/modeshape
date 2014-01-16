@@ -38,6 +38,7 @@ import javax.xml.XMLConstants;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.xml.XmlCharacters;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
 import org.modeshape.jcr.value.Path;
@@ -317,14 +318,39 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
             throw new NamespaceException(JcrI18n.unableToUnregisterReservedNamespaceUri.text(prefix, uri));
         }
 
-        // Signal the local node type manager ...
-        session.workspace().nodeTypeManager().signalNamespaceChanges();
+        // Do not allow to unregister a namespace which is used by a node type
+        checkURINotInUse(uri);
+
+        boolean global = false;
+        switch (behavior) {
+            case WORKSPACE: {
+                global = true;
+                break;
+            }
+            case SESSION: {
+                break;
+            }
+            default: {
+                //should never happen
+                assert false;
+            }
+        }
 
         // Now we're sure the prefix is valid and is actually used in a mapping ...
         try {
             registry.unregister(uri);
+            session.signalNamespaceChanges(global);
         } catch (RuntimeException e) {
             throw new RepositoryException(e.getMessage(), e.getCause());
+        }
+    }
+
+    private void checkURINotInUse( String uri ) throws RepositoryException {
+        RepositoryNodeTypeManager.NodeTypes nodeTypes = session.nodeTypes();
+        for (Name nodeTypeName : nodeTypes.getAllNodeTypeNames()) {
+            if (nodeTypeName.getNamespaceUri().equals(uri)) {
+                throw new NamespaceException(JcrI18n.unableToUnregisterPrefixForNamespaceUsedByNodeType.text(uri, nodeTypeName));
+            }
         }
     }
 
@@ -346,7 +372,7 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
                 // --------------------------------------
                 // JSR-283 Session remapping behavior ...
                 // --------------------------------------
-
+                break;
             case WORKSPACE:
                 // --------------------------------------------------
                 // JSR-170 & JSR-283 Workspace namespace registry ...
@@ -373,11 +399,6 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return registry.toString();
