@@ -80,7 +80,9 @@ import org.modeshape.sequencer.javafile.metadata.TypeMetadata;
 public class ClassSourceFileRecorder implements SourceFileRecorder {
 
     @Override
-    public void record( Sequencer.Context context, Node outputNode, JavaMetadata javaMetadata ) throws RepositoryException {
+    public void record( Sequencer.Context context,
+                        Node outputNode,
+                        JavaMetadata javaMetadata ) throws RepositoryException {
         String packageName = javaMetadata.getPackageMetadata().getName();
         for (TypeMetadata typeMetadata : javaMetadata.getTypeMetadata()) {
             Node typeNode = getTypeNode(packageName, typeMetadata, outputNode);
@@ -89,7 +91,9 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         }
     }
 
-    private Node getTypeNode( String packageName, TypeMetadata typeMetadata, Node outputNode ) throws RepositoryException {
+    private Node getTypeNode( String packageName,
+                              TypeMetadata typeMetadata,
+                              Node outputNode ) throws RepositoryException {
         final String[] packagePath = packageName.split("\\.");
 
         if (packageName.length() > 0) {
@@ -106,7 +110,9 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         return classNode;
     }
 
-    private void writeClassMetadata( Sequencer.Context context, Node typeNode, TypeMetadata typeMetadata ) throws RepositoryException {
+    private void writeClassMetadata( Sequencer.Context context,
+                                     Node typeNode,
+                                     TypeMetadata typeMetadata ) throws RepositoryException {
         setTypeMetaInformation(context, typeNode, typeMetadata);
 
         List<MethodMetadata> methods = new ArrayList<MethodMetadata>();
@@ -132,7 +138,9 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         writeAnnotationsNode(typeNode, typeMetadata.getAnnotations());
     }
 
-    private void setTypeMetaInformation( Sequencer.Context context, Node typeNode, TypeMetadata typeMetadata ) throws RepositoryException {
+    private void setTypeMetaInformation( Sequencer.Context context,
+                                         Node typeNode,
+                                         TypeMetadata typeMetadata ) throws RepositoryException {
         /*
         - class:name (string) mandatory 
         - class:superTypeName (string) 
@@ -161,7 +169,7 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         typeNode.setProperty(FINAL, typeMetadata.hasFinalModifier());
         typeNode.setProperty(STRICT_FP, typeMetadata.hasStrictFPModifier());
         typeNode.setProperty(INTERFACES, typeMetadata.getInterfaceNames().toArray(new String[0]));
-        
+
         if (typeMetadata instanceof EnumMetadata) {
             typeNode.setProperty(ENUM_VALUES, ((EnumMetadata)typeMetadata).getValues().toArray(new String[0]));
         }
@@ -181,7 +189,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         return Visibility.PACKAGE;
     }
 
-    private void writeAnnotationsNode( Node rootNode, List<AnnotationMetadata> annotations ) throws RepositoryException {
+    private void writeAnnotationsNode( Node rootNode,
+                                       List<AnnotationMetadata> annotations ) throws RepositoryException {
 
         /*
         [class:annotationMember]
@@ -217,7 +226,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         }
     }
 
-    private void writeFieldsNode( Node fields, List<FieldMetadata> fieldsMetadata ) throws RepositoryException {
+    private void writeFieldsNode( Node fields,
+                                  List<FieldMetadata> fieldsMetadata ) throws RepositoryException {
 
         /*
             [class:field]
@@ -247,7 +257,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         }
     }
 
-    private void writeMethods( Node rootNode, List<MethodMetadata> methods ) throws RepositoryException {
+    private void writeMethods( Node rootNode,
+                               List<MethodMetadata> methods ) throws RepositoryException {
 
         /*
             [class:method]

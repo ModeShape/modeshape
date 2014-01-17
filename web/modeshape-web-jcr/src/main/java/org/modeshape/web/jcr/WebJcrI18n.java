@@ -21,7 +21,7 @@ import org.modeshape.common.i18n.I18n;
 
 /**
  * The internationalized string constants for the <code>org.modeshape.web.jcr*</code> packages.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Immutable
@@ -31,10 +31,14 @@ public class WebJcrI18n {
     public static I18n repositoryNotFound;
     public static I18n cannotLoadRepositoryNames;
 
+    private WebJcrI18n() {
+    }
+
     static {
         try {
             I18n.initialize(WebJcrI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

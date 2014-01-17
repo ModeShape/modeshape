@@ -73,7 +73,9 @@ import org.modeshape.sequencer.javafile.metadata.ImportMetadata;
 public class DefaultClassFileRecorder implements ClassFileRecorder {
 
     @Override
-    public void recordClass( Sequencer.Context context, Node outputNode, ClassMetadata classMetadata ) throws RepositoryException {
+    public void recordClass( Sequencer.Context context,
+                             Node outputNode,
+                             ClassMetadata classMetadata ) throws RepositoryException {
 
         Node classNode = getClassNode(classMetadata, outputNode);
 
@@ -91,7 +93,9 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         writeImports(classNode, classMetadata.getImports());
     }
 
-    private void writeClassMetaInformation( Sequencer.Context context, ClassMetadata classMetadata, Node classNode ) throws RepositoryException {
+    private void writeClassMetaInformation( Sequencer.Context context,
+                                            ClassMetadata classMetadata,
+                                            Node classNode ) throws RepositoryException {
         /*
         - class:name (string) mandatory
         - class:superClassName (string)
@@ -126,16 +130,17 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         }
     }
 
-    private Node getClassNode( ClassMetadata classMetadata, Node outputNode ) throws RepositoryException {
+    private Node getClassNode( ClassMetadata classMetadata,
+                               Node outputNode ) throws RepositoryException {
         final String[] packagePath = classMetadata.getClassName().split("\\.");
         int i = 0;
 
-        //create a series of nt:unstructured nodes as the package path
+        // create a series of nt:unstructured nodes as the package path
         if (packagePath.length > 1) {
             for (final int numPkgs = (packagePath.length - 1); i < numPkgs; ++i) {
                 outputNode = outputNode.addNode(packagePath[i]);
                 outputNode.addMixin(PACKAGE);
-            }            
+            }
         }
 
         final Node classNode = outputNode.addNode(packagePath[i]);
@@ -145,7 +150,8 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         return classNode;
     }
 
-    private void writeFieldsNode( Node fieldsNode, List<FieldMetadata> fields ) throws RepositoryException {
+    private void writeFieldsNode( Node fieldsNode,
+                                  List<FieldMetadata> fields ) throws RepositoryException {
 
         /*
             [class:field]
@@ -173,7 +179,8 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         }
     }
 
-    private void writeMethods( Node rootNode, List<MethodMetadata> methods ) throws RepositoryException {
+    private void writeMethods( Node rootNode,
+                               List<MethodMetadata> methods ) throws RepositoryException {
 
         /*
             [class:method]
@@ -224,7 +231,8 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         }
     }
 
-    private void writeAnnotationsNode( Node rootNode, List<AnnotationMetadata> annotations ) throws RepositoryException {
+    private void writeAnnotationsNode( Node rootNode,
+                                       List<AnnotationMetadata> annotations ) throws RepositoryException {
 
         /*
         [class:annotationMember]

@@ -120,7 +120,6 @@ abstract class StatementParser implements DdlConstants {
             whitespaceCount = (prevIndent + prevValue.length() - currIndent);
         }
 
-
         if ((lfCount == 0) && (whitespaceCount == 0)) {
             return "";
         }
@@ -191,12 +190,12 @@ abstract class StatementParser implements DdlConstants {
                 id = ('{' + uri + '}' + tokens.consume());
             }
         } else {
-            int index =  id.indexOf(':');
-    
+            int index = id.indexOf(':');
+
             if (index != -1) {
                 final String prefix = id.substring(0, index);
                 String uri = this.teiidDdlParser.getNamespaceUri(prefix);
-    
+
                 // assume colon is part of the name if URI is not found
                 if (!StringUtil.isBlank(uri)) {
                     // namespace found
@@ -295,11 +294,10 @@ abstract class StatementParser implements DdlConstants {
 
         return id;
     }
-    
+
     /**
-     * 
      * @param rootNode the top level {@link AstNode}; may not be null
      */
-	abstract void postProcess(AstNode rootNode);
+    abstract void postProcess( AstNode rootNode );
 
 }

@@ -24,10 +24,10 @@
 
 package org.modeshape.sequencer.xsd;
 
-import javax.jcr.Node;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import javax.jcr.Node;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;

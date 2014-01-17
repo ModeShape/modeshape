@@ -37,7 +37,8 @@ public class MethodMetadata extends AbstractMetadata {
 
     private List<FieldMetadata> parameters = new ArrayList<FieldMetadata>();
 
-    private MethodMetadata( String name, Type type ) {
+    private MethodMetadata( String name,
+                            Type type ) {
         this.name = name;
         this.type = type;
     }
@@ -121,6 +122,7 @@ public class MethodMetadata extends AbstractMetadata {
     }
 
     public static enum Type {
-        CONSTRUCTOR, METHOD_TYPE_MEMBER
+        CONSTRUCTOR,
+        METHOD_TYPE_MEMBER
     }
 }

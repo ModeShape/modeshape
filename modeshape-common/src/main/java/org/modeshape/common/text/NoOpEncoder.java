@@ -30,17 +30,11 @@ public class NoOpEncoder implements TextEncoder, TextDecoder {
         return INSTANCE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String encode( String text ) {
         return text;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String decode( String encodedText ) {
         return encodedText;

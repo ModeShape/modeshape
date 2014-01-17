@@ -19,9 +19,6 @@ import java.util.LinkedList;
 import java.util.List;
 import org.modeshape.common.annotation.Immutable;
 
-/**
- * 
- */
 public class SampleSqlParser {
 
     public List<Statement> parse( String ddl ) {
@@ -77,7 +74,7 @@ public class SampleSqlParser {
     }
 
     @Immutable
-    public static abstract class Statement {
+    public abstract static class Statement {
     }
 
     @Immutable

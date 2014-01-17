@@ -52,7 +52,7 @@ import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 
 /**
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Oracle dialects are parsed.
- *
+ * 
  * @author Horia Chiorean
  */
 public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
@@ -66,7 +66,7 @@ public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
 
         Node createOrReplDirNode = statementsNode.getNode("CREATE OR REPLACE DIRECTORY");
         assertNotNull(createOrReplDirNode);
-        verifyBaseProperties(createOrReplDirNode, NT_UNSTRUCTURED, "164", "1", "3886", 0);
+        verifyBaseProperties(createOrReplDirNode, NT_UNSTRUCTURED, "164", "1", "3937", 0);
         verifyMixinType(createOrReplDirNode, TYPE_CREATE_DIRECTORY_STATEMENT);
 
         Node countriesNode = statementsNode.getNode("countries");
@@ -145,9 +145,9 @@ public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyPrimaryType(statementsNode, NT_UNSTRUCTURED);
         verifyProperty(statementsNode, PARSER_ID, "ORACLE");
         assertThat(statementsNode.getNodes().getSize(), is(3L));
-        
+
         final NodeIterator itr = statementsNode.getNodes();
-        
+
         while (itr.hasNext()) {
             verifyMixinType(itr.nextNode(), StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT);
         }
@@ -167,7 +167,7 @@ public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
             findNode(tableNode, "COL#C", StandardDdlLexicon.TYPE_COLUMN_DEFINITION);
         }
 
-        findNode(statementsNode, "IDX$A", OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT);        
+        findNode(statementsNode, "IDX$A", OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT);
     }
 
 }

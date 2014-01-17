@@ -37,7 +37,6 @@ import java.util.Collections;
 import java.util.List;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
@@ -248,9 +247,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * This method first attempts to find a single-valued property definition with the supplied property name and
      * {@link Value#getType() value's property type} in the primary type, skipping any property definitions that are protected.
-     * The property definition is returned if it has a matching type (or has an {@link PropertyType#UNDEFINED undefined property
-     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} . Otherwise,
-     * the process continues with each of the mixin types, in the order they are named.
+     * The property definition is returned if it has a matching type (or has an {@link javax.jcr.PropertyType#UNDEFINED undefined
+     * property type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} .
+     * Otherwise, the process continues with each of the mixin types, in the order they are named.
      * </p>
      * <p>
      * If no matching property definition could be found (and <code>checkMultiValuedDefinitions</code> parameter is
@@ -325,9 +324,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * This method first attempts to find a single-valued property definition with the supplied property name and
      * {@link Value#getType() value's property type} in the primary type, skipping any property definitions that are protected.
-     * The property definition is returned if it has a matching type (or has an {@link PropertyType#UNDEFINED undefined property
-     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} . Otherwise,
-     * the process continues with each of the mixin types, in the order they are named.
+     * The property definition is returned if it has a matching type (or has an {@link javax.jcr.PropertyType#UNDEFINED undefined
+     * property type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} .
+     * Otherwise, the process continues with each of the mixin types, in the order they are named.
      * </p>
      * <p>
      * If no matching property definition could be found (and <code>checkMultiValuedDefinitions</code> parameter is

@@ -36,20 +36,11 @@ public class DdlParserProblem extends ParsingException implements DdlConstants.P
     private int level = OK;
     private String unusedSource;
 
-    /**
-     * @param position
-     */
     public DdlParserProblem( Position position ) {
         super(position);
 
     }
 
-    /**
-     * @param level
-     * @param position
-     * @param message
-     * @param cause
-     */
     public DdlParserProblem( int level,
                              Position position,
                              String message,
@@ -58,11 +49,6 @@ public class DdlParserProblem extends ParsingException implements DdlConstants.P
         this.level = level;
     }
 
-    /**
-     * @param level
-     * @param position
-     * @param message
-     */
     public DdlParserProblem( int level,
                              Position position,
                              String message ) {
@@ -77,9 +63,6 @@ public class DdlParserProblem extends ParsingException implements DdlConstants.P
         return this.unusedSource;
     }
 
-    /**
-     * @param unusedSource
-     */
     public void setUnusedSource( String unusedSource ) {
         if (unusedSource == null) {
             unusedSource = "";
@@ -104,9 +87,6 @@ public class DdlParserProblem extends ParsingException implements DdlConstants.P
         this.unusedSource = this.unusedSource + value;
     }
 
-    /**
-     * @return level
-     */
     public int getLevel() {
         return level;
     }
@@ -118,11 +98,6 @@ public class DdlParserProblem extends ParsingException implements DdlConstants.P
         this.level = level;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Throwable#toString()
-     */
     @Override
     public String toString() {
         if (this.level == WARNING) {

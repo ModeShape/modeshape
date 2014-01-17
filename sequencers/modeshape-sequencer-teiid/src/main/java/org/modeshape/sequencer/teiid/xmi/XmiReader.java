@@ -23,12 +23,6 @@
  */
 package org.modeshape.sequencer.teiid.xmi;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
-import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.StringUtil;
-import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -36,6 +30,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 
 /**
  * A XMI file reader.

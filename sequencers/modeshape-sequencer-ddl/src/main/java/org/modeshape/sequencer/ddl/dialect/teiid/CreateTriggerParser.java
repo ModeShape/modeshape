@@ -162,9 +162,9 @@ final class CreateTriggerParser extends StatementParser {
 
         throw new TeiidDdlParsingException(tokens, "Unparsable create trigger statement");
     }
-    
-	@Override
-	protected void postProcess(AstNode rootNode) {
-		
-	}
+
+    @Override
+    protected void postProcess( AstNode rootNode ) {
+
+    }
 }

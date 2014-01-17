@@ -126,7 +126,7 @@ public class ClassMetadata {
         String pkg = null;
         boolean clazzHasPackage = false;
 
-        if (clazzName.lastIndexOf(".") != -1 ) {
+        if (clazzName.lastIndexOf(".") != -1) {
             pkg = clazzName.substring(0, (clazzName.lastIndexOf(".") + 1));
             clazzHasPackage = true;
         }
@@ -155,7 +155,7 @@ public class ClassMetadata {
 
             // don't add import if reference is from java.lang package
             if (refClassName.startsWith(JAVA_LANG_PKG)) {
-                continue; 
+                continue;
             }
 
             // don't add import if reference is from same package

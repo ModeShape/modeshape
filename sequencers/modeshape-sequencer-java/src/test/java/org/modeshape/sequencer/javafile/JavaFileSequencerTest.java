@@ -23,21 +23,20 @@
  */
 package org.modeshape.sequencer.javafile;
 
-import java.util.ArrayList;
-import java.util.List;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.modeshape.sequencer.JavaSequencerHelper.JAVA_FILE_HELPER;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.Value;
-import static junit.framework.Assert.assertNotNull;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import static org.modeshape.sequencer.JavaSequencerHelper.JAVA_FILE_HELPER;
 import org.modeshape.sequencer.testdata.MockClass;
 import org.modeshape.sequencer.testdata.MockEnum;
-
 
 /**
  * Unit test for {@link JavaFileSequencer}
@@ -50,12 +49,13 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
         assertThat(classNode.hasProperty(IMPORTS), is(true));
 
         final Value[] values = classNode.getProperty(IMPORTS).getValues();
-        assertThat(values.length, is(2));
+        assertThat(values.length, is(3));
 
         final List<String> items = new ArrayList<String>(3);
         items.add(values[0].getString());
         items.add(values[1].getString());
-        assertThat(items, hasItems("java.io.Serializable", "java.util"));
+        items.add(values[2].getString());
+        assertThat(items, hasItems("java.io.Serializable", "java.util.ArrayList", "java.util.List"));
     }
 
     private void assertEnumImports( final Node classNode ) throws Exception {
@@ -67,7 +67,7 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
         final List<String> items = new ArrayList<String>(2);
         items.add(values[0].getString());
         items.add(values[1].getString());
-        assertThat(items, hasItems("java.util.Random", "java.text"));
+        assertThat(items, hasItems("java.util.Random", "java.text.DateFormat"));
     }
 
     @Test
@@ -75,7 +75,7 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
         String packagePath = MockEnum.class.getName().replaceAll("\\.", "/");
         createNodeWithContentFromFile("enum.java", packagePath + ".java");
 
-        //expected by sequencer in a different location
+        // expected by sequencer in a different location
         String expectedOutputPath = "java/enum.java";
         Node outputNode = getOutputNode(rootNode, expectedOutputPath);
         assertNotNull(outputNode);
@@ -89,7 +89,7 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
         String packagePath = MockClass.class.getName().replaceAll("\\.", "/");
         createNodeWithContentFromFile("mockclass.java", packagePath + ".java");
 
-        //expected by sequencer in a different location
+        // expected by sequencer in a different location
         String expectedOutputPath = "java/mockclass.java";
         Node outputNode = getOutputNode(rootNode, expectedOutputPath);
         assertNotNull(outputNode);

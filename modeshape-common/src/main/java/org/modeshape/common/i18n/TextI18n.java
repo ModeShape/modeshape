@@ -15,15 +15,15 @@
  */
 package org.modeshape.common.i18n;
 
-import org.modeshape.common.util.StringUtil;
 import java.util.Locale;
+import org.modeshape.common.util.StringUtil;
 
 /**
- * A pass-through implementation of {@link org.modeshape.common.i18n.I18nResource} which uses an underlying text as the real value, ignoring any
- * kind of internationalization.
+ * A pass-through implementation of {@link org.modeshape.common.i18n.I18nResource} which uses an underlying text as the real
+ * value, ignoring any kind of internationalization.
  */
 public final class TextI18n implements I18nResource {
-    private final static String BLANK = "";
+    private static final String BLANK = "";
 
     private final String text;
 

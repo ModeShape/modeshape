@@ -46,10 +46,14 @@ public final class DdlSequencerI18n {
     public static I18n ddlNotScoredByParsers;
     public static I18n unknownParser;
 
+    private DdlSequencerI18n() {
+    }
+
     static {
         try {
             I18n.initialize(DdlSequencerI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 2 LINES
             System.err.println(err);
         }
     }

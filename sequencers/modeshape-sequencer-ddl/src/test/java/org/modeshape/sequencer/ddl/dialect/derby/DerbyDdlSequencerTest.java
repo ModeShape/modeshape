@@ -71,19 +71,19 @@ public class DerbyDdlSequencerTest extends AbstractDdlSequencerTest {
 
         Node indexNode = statementsNode.getNode("IXSALE");
         assertNotNull(indexNode);
-        verifyBaseProperties(indexNode, NT_UNSTRUCTURED, "87", "1", "2886", 1);
+        verifyBaseProperties(indexNode, NT_UNSTRUCTURED, "87", "1", "2931", 1);
         verifyMixinType(indexNode, TYPE_CREATE_INDEX_STATEMENT);
         findNode(indexNode, "SALES", TYPE_INDEX_COLUMN_REFERENCE);
 
         Node schemaNode = statementsNode.getNode("FLIGHTS");
         assertNotNull(schemaNode);
-        verifyBaseProperties(schemaNode, NT_UNSTRUCTURED, "98", "1", "3218", 0);
+        verifyBaseProperties(schemaNode, NT_UNSTRUCTURED, "98", "1", "3263", 0);
         verifyMixinType(schemaNode, TYPE_CREATE_SCHEMA_STATEMENT);
         verifyExpression(schemaNode, "CREATE SCHEMA FLIGHTS AUTHORIZATION anita;");
 
         Node unknownNode_1 = statementsNode.getNode("some_procedure_name");
         assertNotNull(unknownNode_1);
-        verifyBaseProperties(unknownNode_1, NT_UNSTRUCTURED, "172", "1", "5438", 0);
+        verifyBaseProperties(unknownNode_1, NT_UNSTRUCTURED, "172", "1", "5513", 0);
         verifyMixinType(unknownNode_1, TYPE_DROP_PROCEDURE_STATEMENT);
         verifyExpression(unknownNode_1, "DROP PROCEDURE some_procedure_name;");
         Node alterTableNode = statementsNode.getNode("SAMP.DEPARTMENT");

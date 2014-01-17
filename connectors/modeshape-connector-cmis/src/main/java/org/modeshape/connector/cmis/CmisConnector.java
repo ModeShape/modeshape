@@ -230,7 +230,6 @@ public class CmisConnector extends Connector {
 
     @Override
     public Collection<String> getDocumentPathsById( String id ) {
-System.out.println("------------- Get document by Id");        
         CmisObject obj = session.getObject(id);
         // check that object exist
         if (obj instanceof Folder) {
@@ -477,7 +476,7 @@ System.out.println("------------- Get document by Id");
                 // modifing cmis:folders and cmis:documents
                 cmisObject = session.getObject(objectId.getIdentifier());
                 changes = delta.getPropertyChanges();
-                
+
                 Document props = delta.getDocument().getDocument("properties");
 
                 // checking that object exists
@@ -547,17 +546,17 @@ System.out.println("------------- Get document by Id");
                 if (!updateProperties.isEmpty()) {
                     cmisObject.updateProperties(updateProperties);
                 }
-                
+
                 ChildrenChanges childrenChanges = delta.getChildrenChanges();
                 Map<String, Name> renamed = childrenChanges.getRenamed();
-                
+
                 for (String key : renamed.keySet()) {
                     CmisObject object = session.getObject(key);
                     if (object == null) continue;
-                    
+
                     Map<String, Object> newName = new HashMap<String, Object>();
                     newName.put("cmis:name", renamed.get(key).getLocalName());
-                    
+
                     object.updateProperties(newName);
                 }
                 break;

@@ -15,63 +15,61 @@
  */
 package org.modeshape.common.text;
 
-import static org.junit.Assert.assertThat;
-
 import static org.hamcrest.core.Is.is;
-
+import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
-
 public class PositionTest {
-	
-	private int combinedIndex(int firstIndex, int secondIndex) {
-		Position first = new Position(firstIndex, 1, 0);
-		Position second = new Position(secondIndex, 1, 0);
-		
-		int firstPlusSecond = first.add(second).getIndexInContent();
-		int secondPlusFirst = second.add(first).getIndexInContent();
-		
-		assertThat(firstPlusSecond, is(secondPlusFirst));
-		
-		return firstPlusSecond;
-	}
-	
-	@Test
-	public void shouldAddNoContentPositionToValidPosition() {
-		// -1 to >=0
-		assertThat(combinedIndex(-1, 0), is(0));
-		assertThat(combinedIndex(-1, 1), is(1));
-		assertThat(combinedIndex(-1, 10), is(10));
-	}
-	
-	@Test
-	public void shouldAddValidPositionToNoContentPosition() {
-		// >= 0 to -1
-		assertThat(combinedIndex(0, -1), is(0));
-		assertThat(combinedIndex(1, -1), is(1));
-		assertThat(combinedIndex(10, -1), is(10));
-	}
-	
-	@Test
-	public void shouldAddValidPositionToValidPosition() {
-		// positive to positive
-		assertThat(combinedIndex(1, 1), is(2));
-		assertThat(combinedIndex(10, 1), is(11));
-		assertThat(combinedIndex(1, 10), is(11));
-		assertThat(combinedIndex(10, 10), is(20));
-	}
-	
-	@Test
-	public void shouldAddStartingPositionToStartingPosition() {
-		// 0 to 0
-		assertThat(combinedIndex(0, 0), is(0));
-	}
-	
-	@Test
-	public void shouldAddNoContentPositionToNoContentPosition() {
-		// -1 to -1
-		assertThat(combinedIndex(-1, -1), is(-1));
-		assertThat(combinedIndex(-10, -1), is(-1));
-		assertThat(combinedIndex(-1, -10), is(-1));
-	}
+
+    private int combinedIndex( int firstIndex,
+                               int secondIndex ) {
+        Position first = new Position(firstIndex, 1, 0);
+        Position second = new Position(secondIndex, 1, 0);
+
+        int firstPlusSecond = first.add(second).getIndexInContent();
+        int secondPlusFirst = second.add(first).getIndexInContent();
+
+        assertThat(firstPlusSecond, is(secondPlusFirst));
+
+        return firstPlusSecond;
+    }
+
+    @Test
+    public void shouldAddNoContentPositionToValidPosition() {
+        // -1 to >=0
+        assertThat(combinedIndex(-1, 0), is(0));
+        assertThat(combinedIndex(-1, 1), is(1));
+        assertThat(combinedIndex(-1, 10), is(10));
+    }
+
+    @Test
+    public void shouldAddValidPositionToNoContentPosition() {
+        // >= 0 to -1
+        assertThat(combinedIndex(0, -1), is(0));
+        assertThat(combinedIndex(1, -1), is(1));
+        assertThat(combinedIndex(10, -1), is(10));
+    }
+
+    @Test
+    public void shouldAddValidPositionToValidPosition() {
+        // positive to positive
+        assertThat(combinedIndex(1, 1), is(2));
+        assertThat(combinedIndex(10, 1), is(11));
+        assertThat(combinedIndex(1, 10), is(11));
+        assertThat(combinedIndex(10, 10), is(20));
+    }
+
+    @Test
+    public void shouldAddStartingPositionToStartingPosition() {
+        // 0 to 0
+        assertThat(combinedIndex(0, 0), is(0));
+    }
+
+    @Test
+    public void shouldAddNoContentPositionToNoContentPosition() {
+        // -1 to -1
+        assertThat(combinedIndex(-1, -1), is(-1));
+        assertThat(combinedIndex(-10, -1), is(-1));
+        assertThat(combinedIndex(-1, -10), is(-1));
+    }
 }

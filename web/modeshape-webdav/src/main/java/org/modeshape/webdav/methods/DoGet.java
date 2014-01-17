@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
@@ -143,12 +142,14 @@ public class DoGet extends DoHead {
                     childrenTemp.append("<td>");
                     childrenTemp.append("<a href=\"");
 
+                    // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                     StringBuffer childURL = req.getRequestURL();
                     if (!(childURL.charAt(childURL.length() - 1) == '/')) {
                         childURL.append("/");
                     }
 
-                    //we need to URL encode the child, but just the special chars, UTF-8 encoding is done at the end of this method
+                    // we need to URL encode the child, but just the special chars, UTF-8 encoding is done at the end of this
+                    // method
                     childURL.append(URL_ENCODER.encode(child));
 
                     StoredObject obj = store.getStoredObject(transaction, path + "/" + child);
@@ -206,12 +207,12 @@ public class DoGet extends DoHead {
      */
     protected String getCSS() {
         // The default styles to use
-        String retVal = "body {\n" + "	font-family: Arial, Helvetica, sans-serif;\n" + "}\n" + "h1 {\n" + "	font-size: 1.5em;\n"
-                        + "}\n" + "th {\n" + "	background-color: #9DACBF;\n" + "}\n" + "table {\n"
-                        + "	border-top-style: solid;\n" + "	border-right-style: solid;\n" + "	border-bottom-style: solid;\n"
-                        + "	border-left-style: solid;\n" + "}\n" + "td {\n" + "	margin: 0px;\n" + "	padding-top: 2px;\n"
-                        + "	padding-right: 5px;\n" + "	padding-bottom: 2px;\n" + "	padding-left: 5px;\n" + "}\n" + "tr.even {\n"
-                        + "	background-color: #CCCCCC;\n" + "}\n" + "tr.odd {\n" + "	background-color: #FFFFFF;\n" + "}\n" + "";
+        String retVal = "body {\n" + "    font-family: Arial, Helvetica, sans-serif;\n" + "}\n" + "h1 {\n" + "    font-size: 1.5em;\n"
+                        + "}\n" + "th {\n" + "    background-color: #9DACBF;\n" + "}\n" + "table {\n"
+                        + "    border-top-style: solid;\n" + "    border-right-style: solid;\n" + "    border-bottom-style: solid;\n"
+                        + "    border-left-style: solid;\n" + "}\n" + "td {\n" + "    margin: 0px;\n" + "    padding-top: 2px;\n"
+                        + "    padding-right: 5px;\n" + "    padding-bottom: 2px;\n" + "    padding-left: 5px;\n" + "}\n" + "tr.even {\n"
+                        + "    background-color: #CCCCCC;\n" + "}\n" + "tr.odd {\n" + "    background-color: #FFFFFF;\n" + "}\n" + "";
         try {
             // Try loading one via class loader and use that one instead
             ClassLoader cl = getClass().getClassLoader();
@@ -271,6 +272,6 @@ public class DoGet extends DoHead {
      * @return DateFormat used to display creation and modification dates
      */
     protected DateFormat getDateTimeFormat( Locale browserLocale ) {
-        return SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.MEDIUM, browserLocale);
+        return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, browserLocale);
     }
 }

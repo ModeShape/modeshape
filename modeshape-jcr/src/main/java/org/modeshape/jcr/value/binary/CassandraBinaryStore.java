@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.compress.utils.IOUtils;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -50,6 +51,8 @@ import com.datastax.driver.core.exceptions.InvalidQueryException;
  * @author kulikov
  */
 public class CassandraBinaryStore extends AbstractBinaryStore {
+
+    private static final Logger LOGGER = Logger.getLogger(CassandraBinaryStore.class);
 
     private static final boolean ALIVE = true;
     private static final boolean UNUSED = false;
@@ -237,9 +240,9 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     public void start() {
         cluster = Cluster.builder().addContactPoint(address).build();
         Metadata metadata = cluster.getMetadata();
-        System.out.printf("Connected to cluster: %s\n", metadata.getClusterName());
+        LOGGER.debug("Connected to cluster: {0}", metadata.getClusterName());
         for (Host host : metadata.getAllHosts()) {
-            System.out.printf("Datacenter: %s; Host: %s; Rack: %s\n", host.getDatacenter(), host.getAddress(), host.getRack());
+            LOGGER.debug("Datacenter: {0}; Host: {1}; Rack: {2}", host.getDatacenter(), host.getAddress(), host.getRack());
         }
 
         session = cluster.connect();

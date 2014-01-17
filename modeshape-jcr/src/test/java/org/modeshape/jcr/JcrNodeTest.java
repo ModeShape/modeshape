@@ -528,7 +528,8 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         NodeIterator iter = cars.getNodes();
         while (iter.hasNext()) {
             Node child = iter.nextNode();
-            //System.out.println("Child: " + child);
+            assertNotNull(child);
+            // System.out.println("Child: " + child);
         }
     }
 
@@ -545,7 +546,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         while (iter2.hasNext()) {
             Node child2 = iter2.nextNode();
             Node child1 = iter.nextNode();
-            //System.out.println("Child: " + child1);
+            // System.out.println("Child: " + child1);
             assertThat(child1, is(sameInstance(child2)));
         }
     }
@@ -557,7 +558,8 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         NodeIterator iter = cars.getNodes("Hybrid");
         while (iter.hasNext()) {
             Node child = iter.nextNode();
-            //System.out.println("Child: " + child);
+            assertNotNull(child);
+            // System.out.println("Child: " + child);
         }
     }
 
@@ -574,7 +576,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         while (iter2.hasNext()) {
             Node child2 = iter2.nextNode();
             Node child1 = iter.nextNode();
-            //System.out.println("Child: " + child1);
+            // System.out.println("Child: " + child1);
             assertThat(child1, is(sameInstance(child2)));
         }
     }
@@ -600,7 +602,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             while (iter2.hasNext()) {
                 Node child2 = iter2.nextNode();
                 Node child1 = iter.nextNode();
-                //System.out.println("Child: " + child1);
+                // System.out.println("Child: " + child1);
                 assertThat(child1, is(sameInstance(child2)));
             }
         } finally {
@@ -633,7 +635,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             while (iter2.hasNext()) {
                 Node child2 = iter2.nextNode();
                 Node child1 = iter.nextNode();
-                //System.out.println("Child: " + child1);
+                // System.out.println("Child: " + child1);
                 assertThat(child1, is(sameInstance(child2)));
             }
         } finally {

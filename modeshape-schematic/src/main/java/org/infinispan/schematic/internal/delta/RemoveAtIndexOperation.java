@@ -79,6 +79,11 @@ public class RemoveAtIndexOperation extends ArrayOperation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj instanceof RemoveAtIndexOperation) {
             RemoveAtIndexOperation other = (RemoveAtIndexOperation)obj;

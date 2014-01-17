@@ -497,6 +497,7 @@ public class Inflector {
                                                      int groupNumberToUppercase ) {
         Pattern underscoreAndDotPattern = Pattern.compile(regex);
         Matcher matcher = underscoreAndDotPattern.matcher(input);
+        // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
             matcher.appendReplacement(sb, matcher.group(groupNumberToUppercase).toUpperCase());

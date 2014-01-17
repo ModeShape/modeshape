@@ -23,12 +23,17 @@
  */
 package org.modeshape.sequencer.mp3;
 
+import static org.junit.Assert.assertEquals;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.ALBUM;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.AUTHOR;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.COMMENT;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.METADATA_NODE;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.TITLE;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.YEAR;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import static junit.framework.Assert.assertEquals;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.*;
 
 /**
  * Unit test for {@link Mp3MetadataSequencer}

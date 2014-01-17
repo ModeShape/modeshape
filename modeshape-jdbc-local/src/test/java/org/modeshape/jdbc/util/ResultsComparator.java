@@ -69,7 +69,7 @@ public class ResultsComparator {
 
     protected String read( BufferedReader r,
                            boolean casesensitive ) throws IOException {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         String s = null;
         try {
             while ((s = r.readLine()) != null) {

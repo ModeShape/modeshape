@@ -44,21 +44,11 @@ public class HashMultimap<K, V> extends AbstractMultimap<K, V> {
         super(new HashMap<K, Collection<V>>());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractMultimap#createCollection()
-     */
     @Override
     protected Collection<V> createCollection() {
         return new HashSet<V>();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractMultimap#createUnmodifiableEmptyCollection()
-     */
     @Override
     protected Collection<V> createUnmodifiableEmptyCollection() {
         return Collections.emptyList();

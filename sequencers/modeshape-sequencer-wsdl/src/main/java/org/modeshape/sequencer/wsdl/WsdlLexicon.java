@@ -24,8 +24,8 @@
 
 package org.modeshape.sequencer.wsdl;
 
-import org.modeshape.common.annotation.Immutable;
 import static org.modeshape.sequencer.wsdl.WsdlLexicon.Namespace.PREFIX;
+import org.modeshape.common.annotation.Immutable;
 
 
 /**

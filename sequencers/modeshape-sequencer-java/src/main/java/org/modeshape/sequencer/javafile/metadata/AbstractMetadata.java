@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * Base class for the other type metadata used when retrieving information from the JDT compiler.
- *
+ * 
  * @author Horia Chiorean
  */
 public abstract class AbstractMetadata {
@@ -52,7 +52,6 @@ public abstract class AbstractMetadata {
     private List<ModifierMetadata> modifiers = new ArrayList<ModifierMetadata>();
     private List<AnnotationMetadata> annotations = new LinkedList<AnnotationMetadata>();
 
-
     public List<AnnotationMetadata> getAnnotations() {
         return annotations;
     }
@@ -72,7 +71,7 @@ public abstract class AbstractMetadata {
     public boolean hasStaticModifier() {
         return hasModifierNamed(STATIC);
     }
-    
+
     public boolean hasFinalModifier() {
         return hasModifierNamed(FINAL);
     }
@@ -115,7 +114,7 @@ public abstract class AbstractMetadata {
 
     /**
      * Checks if a modifier with the given name is found among this method's identifiers.
-     *
+     * 
      * @param modifierName the name of the modifier to check for
      * @return true if the type has a modifier of that name, otherwise false
      */

@@ -33,11 +33,15 @@ public final class JcaI18n {
     public static I18n unableToStopEngineWithinTimeLimit;
     public static I18n interruptedWhileStoppingJcaAdapter;
     public static I18n errorWhileStoppingJcaAdapter;
-    
+
+    private JcaI18n() {
+    }
+
     static {
         try {
             I18n.initialize(JcaI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

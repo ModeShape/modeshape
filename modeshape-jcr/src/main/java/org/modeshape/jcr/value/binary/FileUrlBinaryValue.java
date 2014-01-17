@@ -35,15 +35,15 @@ public class FileUrlBinaryValue extends UrlBinaryValue {
     private URL content;
 
     public FileUrlBinaryValue( String sha1,
-                           String sourceName,
-                           URL content,
-                           long size,
-                           String nameHint,
-                           MimeTypeDetector mimeTypeDetector) {
+                               String sourceName,
+                               URL content,
+                               long size,
+                               String nameHint,
+                               MimeTypeDetector mimeTypeDetector ) {
         super(sha1, sourceName, content, size, nameHint, mimeTypeDetector);
-        this.content = content;    
+        this.content = content;
     }
-    
+
     @Override
     public byte[] getHash() {
         return generateHash().toBytes();
@@ -53,10 +53,10 @@ public class FileUrlBinaryValue extends UrlBinaryValue {
     public String getHexHash() {
         return generateHash().toString();
     }
-    
+
     private synchronized BinaryKey generateHash() {
-        if (this.hash==null) {
-            try { 
+        if (this.hash == null) {
+            try {
                 byte[] hashBytes = SecureHash.getHash(SecureHash.Algorithm.SHA_1, convertURLtoFile(this.content));
                 this.hash = new BinaryKey(hashBytes);
             } catch (Exception e) {
@@ -66,11 +66,11 @@ public class FileUrlBinaryValue extends UrlBinaryValue {
         return this.hash;
     }
 
-    private File convertURLtoFile(URL url) {
+    private File convertURLtoFile( URL url ) {
         File f;
         try {
             f = new File(url.toURI());
-        } catch(URISyntaxException e) {
+        } catch (URISyntaxException e) {
             f = new File(url.getPath());
         }
         return f;

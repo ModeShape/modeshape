@@ -226,6 +226,7 @@
         <modeshape.java.version>1.7</modeshape.java.version>
         <maven.compiler.source>${modeshape.java.version}</maven.compiler.source>
         <maven.compiler.target>${modeshape.java.version}</maven.compiler.target>
+        <checkstyle.version>5.6</checkstyle.version>
 
         <joda.time.version>1.6.2</joda.time.version>
         <junit.version>4.11</junit.version>
@@ -359,6 +360,7 @@
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
         <version.failsafe.plugin>2.13</version.failsafe.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
+        <version.checkstyle.maven.plugin>2.10</version.checkstyle.maven.plugin>
 
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
@@ -947,6 +949,35 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${version.checkstyle.maven.plugin}</version><!--$NO-MVN-MAN-VER$-->
+                <dependencies>
+                    <dependency>
+                        <groupId>org.modeshape</groupId>
+                        <artifactId>modeshape-checkstyle</artifactId>
+                        <version>${project.version}</version>
+                     </dependency>
+                </dependencies>
+                <configuration>
+                   <configLocation>checkstyle.xml</configLocation>
+                   <consoleOutput>true</consoleOutput>
+                   <failsOnError>true</failsOnError>
+                   <linkXRef>false</linkXRef>
+                   <violationSeverity>error</violationSeverity>
+                   <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+                <executions>
+                   <execution>
+                      <id>check-style</id>
+                      <phase>verify</phase>
+                      <goals>
+                         <goal>checkstyle</goal>
+                      </goals>
+                   </execution>
+                </executions>
+             </plugin>
         </plugins>
     </build>
 

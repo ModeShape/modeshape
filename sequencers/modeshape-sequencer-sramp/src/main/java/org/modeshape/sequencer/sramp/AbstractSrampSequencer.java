@@ -23,11 +23,11 @@
  */
 package org.modeshape.sequencer.sramp;
 
+import java.io.IOException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import java.io.IOException;
 
 /**
  * Base class for sequencers which are based on the S-RAMP specification.

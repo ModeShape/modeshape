@@ -28,17 +28,11 @@ public class SimpleNamespaceContext implements NamespaceContext {
 
     private final Map<String, String> prefixToNamespace = new HashMap<String, String>();
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getNamespaceURI( String prefix ) {
         return this.prefixToNamespace.get(prefix);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getPrefix( String namespaceURI ) {
         for (Map.Entry<String, String> entry : this.prefixToNamespace.entrySet()) {
@@ -53,9 +47,6 @@ public class SimpleNamespaceContext implements NamespaceContext {
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Iterator<String> getPrefixes( String namespaceURI ) {
         return this.prefixToNamespace.keySet().iterator();

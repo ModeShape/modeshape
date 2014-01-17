@@ -192,7 +192,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
             registerMixin(mixinName, "nt:unstructured");
             fail("Should not allow registration of mixin that inherits non-mixin");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
     }
 
@@ -205,11 +205,12 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
             registerMixin("test:mixinChild", "test:mixinParent", "nt:base");
             fail("Should not allow registration of mixin that inherits non-mixin");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
     }
 
-    private void registerMixin( String name, String...declaredSuperTypes ) throws RepositoryException {
+    private void registerMixin( String name,
+                                String... declaredSuperTypes ) throws RepositoryException {
         NodeTypeTemplate nodeTypeTemplate = nodeTypeMgr.createNodeTypeTemplate();
         nodeTypeTemplate.setMixin(true);
         nodeTypeTemplate.setName(name);

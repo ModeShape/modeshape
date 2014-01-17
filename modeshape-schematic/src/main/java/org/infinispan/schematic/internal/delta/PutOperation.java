@@ -84,6 +84,11 @@ public class PutOperation extends Operation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj instanceof PutOperation) {
             PutOperation other = (PutOperation)obj;

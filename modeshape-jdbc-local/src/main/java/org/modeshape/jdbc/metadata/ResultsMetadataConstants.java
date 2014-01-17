@@ -16,14 +16,12 @@
 package org.modeshape.jdbc.metadata;
 
 /**
- * This constants in this class indicate the column positions of different
- * columns in queries against metadata. These constants are
- * used in JcrResultsMetaData object to obtain column specific
- * metadata information.
+ * This constants in this class indicate the column positions of different columns in queries against metadata. These constants
+ * are used in JcrResultsMetaData object to obtain column specific metadata information.
  */
 
 public interface ResultsMetadataConstants {
-    
+
     // constant indicating the position of catalog .
     public static final Integer CATALOG = new Integer(0);
     // constant indicating the position of schema .
@@ -58,9 +56,9 @@ public interface ResultsMetadataConstants {
     public static final Integer CURRENCY = new Integer(16);
     // constant indicating the display size for a column
     public static final Integer DISPLAY_SIZE = new Integer(17);
-    
+
     /**
-     * These types are associated with a DataType or an Element needing the indication of null types. 
+     * These types are associated with a DataType or an Element needing the indication of null types.
      */
     public static final class NULL_TYPES {
         public static final Integer NOT_NULL = new Integer(1);
@@ -69,7 +67,7 @@ public interface ResultsMetadataConstants {
     }
 
     /**
-     * These types are associated with the Element having valid search types. 
+     * These types are associated with the Element having valid search types.
      */
     public static final class SEARCH_TYPES {
         public static final Integer SEARCHABLE = new Integer(1);
@@ -77,9 +75,9 @@ public interface ResultsMetadataConstants {
         public static final Integer LIKE_ONLY = new Integer(3);
         public static final Integer UNSEARCHABLE = new Integer(4);
     }
-    
+
     public static final class TABLE_TYPES {
-    	public static final String VIEW = "VIEW";
+        public static final String VIEW = "VIEW";
     }
 
 }

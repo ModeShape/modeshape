@@ -16,14 +16,14 @@
 
 package org.modeshape.webdav.fromcatalina;
 
-import javax.servlet.http.Cookie;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Map;
+import javax.servlet.http.Cookie;
 
 /**
  * General purpose request parsing and encoding utility methods.
- *
+ * 
  * @author Craig R. McClanahan
  * @author Tim Tye
  */
@@ -31,15 +31,14 @@ import java.util.Map;
 public final class RequestUtil {
 
     /**
-     * Encode a cookie as per RFC 2109. The resulting string can be used as the
-     * value for a <code>Set-Cookie</code> header.
-     *
+     * Encode a cookie as per RFC 2109. The resulting string can be used as the value for a <code>Set-Cookie</code> header.
+     * 
      * @param cookie The cookie to encode.
      * @return A string following RFC 2109.
      */
     public static String encodeCookie( Cookie cookie ) {
 
-        StringBuffer buf = new StringBuffer(cookie.getName());
+        StringBuilder buf = new StringBuilder(cookie.getName());
         buf.append("=");
         buf.append(cookie.getValue());
 
@@ -86,10 +85,9 @@ public final class RequestUtil {
     }
 
     /**
-     * Filter the specified message string for characters that are sensitive in
-     * HTML. This avoids potential attacks caused by including JavaScript codes
-     * in the request URL that is often reported in error messages.
-     *
+     * Filter the specified message string for characters that are sensitive in HTML. This avoids potential attacks caused by
+     * including JavaScript codes in the request URL that is often reported in error messages.
+     * 
      * @param message The message string to be filtered
      * @return the filtered message
      */
@@ -101,7 +99,7 @@ public final class RequestUtil {
 
         char content[] = new char[message.length()];
         message.getChars(0, message.length(), content, 0);
-        StringBuffer result = new StringBuffer(content.length + 50);
+        StringBuilder result = new StringBuilder(content.length + 50);
         for (int i = 0; i < content.length; i++) {
             switch (content[i]) {
                 case '<':
@@ -125,11 +123,10 @@ public final class RequestUtil {
     }
 
     /**
-     * Normalize a relative URI path that may have relative values ("/./",
-     * "/../", and so on ) it it. <strong>WARNING</strong> - This method is
-     * useful only for normalizing application-generated paths. It does not try
-     * to perform security checks for malicious input.
-     *
+     * Normalize a relative URI path that may have relative values ("/./", "/../", and so on ) it it. <strong>WARNING</strong> -
+     * This method is useful only for normalizing application-generated paths. It does not try to perform security checks for
+     * malicious input.
+     * 
      * @param path Relative path to be normalized
      * @return the normalized path
      */
@@ -188,10 +185,9 @@ public final class RequestUtil {
     }
 
     /**
-     * Parse the character encoding from the specified content type header. If
-     * the content type is null, or there is no explicit character encoding,
-     * <code>null</code> is returned.
-     *
+     * Parse the character encoding from the specified content type header. If the content type is null, or there is no explicit
+     * character encoding, <code>null</code> is returned.
+     * 
      * @param contentType a content type header
      * @return the character encoding
      */
@@ -219,7 +215,7 @@ public final class RequestUtil {
 
     /**
      * Parse a cookie header into an array of cookies according to RFC 2109.
-     *
+     * 
      * @param header Value of an HTTP "Cookie" header
      * @return the cookies
      */
@@ -260,16 +256,13 @@ public final class RequestUtil {
     }
 
     /**
-     * Append request parameters from the specified String to the specified Map.
-     * It is presumed that the specified Map is not accessed from any other
-     * thread, so no synchronization is performed.
+     * Append request parameters from the specified String to the specified Map. It is presumed that the specified Map is not
+     * accessed from any other thread, so no synchronization is performed.
      * <p>
-     * <strong>IMPLEMENTATION NOTE</strong>: URL decoding is performed
-     * individually on the parsed name and value elements, rather than on the
-     * entire query string ahead of time, to properly deal with the case where
-     * the name or value includes an encoded "=" or "&" character that would
-     * otherwise be interpreted as a delimiter.
-     *
+     * <strong>IMPLEMENTATION NOTE</strong>: URL decoding is performed individually on the parsed name and value elements, rather
+     * than on the entire query string ahead of time, to properly deal with the case where the name or value includes an encoded
+     * "=" or "&" character that would otherwise be interpreted as a delimiter.
+     * 
      * @param map Map that accumulates the resulting parameters
      * @param data Input string containing request parameters
      * @param encoding
@@ -300,14 +293,12 @@ public final class RequestUtil {
     }
 
     /**
-     * Decode and return the specified URL-encoded String. When the byte array
-     * is converted to a string, the system default character encoding is
-     * used... This may be different than some other servers.
-     *
+     * Decode and return the specified URL-encoded String. When the byte array is converted to a string, the system default
+     * character encoding is used... This may be different than some other servers.
+     * 
      * @param str The url-encoded string
      * @return the decoded URL
-     * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal
-     * number
+     * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal number
      */
     public static String URLDecode( String str ) {
 
@@ -317,12 +308,11 @@ public final class RequestUtil {
 
     /**
      * Decode and return the specified URL-encoded String.
-     *
+     * 
      * @param str The url-encoded string
      * @param enc The encoding to use; if null, the default encoding is used
      * @return the decoded URL
-     * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal
-     * number
+     * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal number
      */
     public static String URLDecode( String str,
                                     String enc ) {
@@ -350,11 +340,10 @@ public final class RequestUtil {
 
     /**
      * Decode and return the specified URL-encoded byte array.
-     *
+     * 
      * @param bytes The url-encoded byte array
      * @return the decoded URL
-     * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal
-     * number
+     * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal number
      */
     public static String URLDecode( byte[] bytes ) {
         return URLDecode(bytes, null);
@@ -362,12 +351,11 @@ public final class RequestUtil {
 
     /**
      * Decode and return the specified URL-encoded byte array.
-     *
+     * 
      * @param bytes The url-encoded byte array
      * @param enc The encoding to use; if null, the default encoding is used
      * @return the decoded URL
-     * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal
-     * number
+     * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal number
      */
     public static String URLDecode( byte[] bytes,
                                     String enc ) {
@@ -401,7 +389,7 @@ public final class RequestUtil {
 
     /**
      * Convert a byte character value to hexidecimal digit value.
-     *
+     * 
      * @param b the character value byte
      * @return the hexadecimal digit value
      */
@@ -419,9 +407,8 @@ public final class RequestUtil {
     }
 
     /**
-     * Put name and value pair in map. When name already exist, add value to
-     * array of values.
-     *
+     * Put name and value pair in map. When name already exist, add value to array of values.
+     * 
      * @param map The map to populate
      * @param name The parameter name
      * @param value The parameter value
@@ -443,17 +430,14 @@ public final class RequestUtil {
     }
 
     /**
-     * Append request parameters from the specified String to the specified Map.
-     * It is presumed that the specified Map is not accessed from any other
-     * thread, so no synchronization is performed.
+     * Append request parameters from the specified String to the specified Map. It is presumed that the specified Map is not
+     * accessed from any other thread, so no synchronization is performed.
      * <p>
-     * <strong>IMPLEMENTATION NOTE</strong>: URL decoding is performed
-     * individually on the parsed name and value elements, rather than on the
-     * entire query string ahead of time, to properly deal with the case where
-     * the name or value includes an encoded "=" or "&" character that would
-     * otherwise be interpreted as a delimiter. NOTE: byte array data is
-     * modified by this method. Caller beware.
-     *
+     * <strong>IMPLEMENTATION NOTE</strong>: URL decoding is performed individually on the parsed name and value elements, rather
+     * than on the entire query string ahead of time, to properly deal with the case where the name or value includes an encoded
+     * "=" or "&" character that would otherwise be interpreted as a delimiter. NOTE: byte array data is modified by this method.
+     * Caller beware.
+     * 
      * @param map Map that accumulates the resulting parameters
      * @param data Input string containing request parameters
      * @param encoding Encoding to use for converting hex

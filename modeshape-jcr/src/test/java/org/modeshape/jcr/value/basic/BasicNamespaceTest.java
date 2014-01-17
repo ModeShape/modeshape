@@ -25,7 +25,6 @@ package org.modeshape.jcr.value.basic;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import org.modeshape.jcr.value.basic.BasicNamespace;
 import org.junit.Before;
 import org.junit.Test;
 

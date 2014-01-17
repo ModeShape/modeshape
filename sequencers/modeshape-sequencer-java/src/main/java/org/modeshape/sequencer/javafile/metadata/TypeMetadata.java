@@ -42,11 +42,12 @@ public class TypeMetadata extends AbstractMetadata {
 
     /** All superinterfaces of a top level type */
     private final List<String> interfaceNames = new ArrayList<String>();
-    
+
     /** The type of metadata */
     private Type type;
 
-    protected TypeMetadata( String name, Type type ) {
+    protected TypeMetadata( String name,
+                            Type type ) {
         this.name = name;
         this.type = type;
     }
@@ -85,19 +86,21 @@ public class TypeMetadata extends AbstractMetadata {
         this.superTypeName = superTypeName;
     }
 
-    public static TypeMetadata classType(String name) {
+    public static TypeMetadata classType( String name ) {
         return new TypeMetadata(name, Type.CLASS);
     }
-    
-    public static EnumMetadata enumType(String name) {
+
+    public static EnumMetadata enumType( String name ) {
         return new EnumMetadata(name);
     }
 
-    public static TypeMetadata interfaceType(String name) {
+    public static TypeMetadata interfaceType( String name ) {
         return new TypeMetadata(name, Type.INTERFACE);
     }
 
     public static enum Type {
-        CLASS, ENUM, INTERFACE
+        CLASS,
+        ENUM,
+        INTERFACE
     }
 }

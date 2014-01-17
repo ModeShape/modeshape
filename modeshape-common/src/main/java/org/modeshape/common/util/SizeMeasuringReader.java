@@ -32,11 +32,6 @@ public class SizeMeasuringReader extends Reader {
         this.size = size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.Reader#read(char[], int, int)
-     */
     @Override
     public int read( char[] cbuf,
                      int off,
@@ -49,11 +44,6 @@ public class SizeMeasuringReader extends Reader {
         return n;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.Reader#read()
-     */
     @Override
     public int read() throws IOException {
         int result = stream.read();
@@ -63,41 +53,21 @@ public class SizeMeasuringReader extends Reader {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.Reader#mark(int)
-     */
     @Override
     public synchronized void mark( int readlimit ) throws IOException {
         stream.mark(readlimit);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.Reader#markSupported()
-     */
     @Override
     public boolean markSupported() {
         return stream.markSupported();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.Reader#reset()
-     */
     @Override
     public synchronized void reset() throws IOException {
         stream.reset();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.Reader#close()
-     */
     @Override
     public void close() throws IOException {
         stream.close();

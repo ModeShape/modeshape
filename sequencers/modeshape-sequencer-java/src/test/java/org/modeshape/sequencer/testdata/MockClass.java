@@ -24,7 +24,8 @@
 package org.modeshape.sequencer.testdata;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Dummy class, used for testing the sequencing.

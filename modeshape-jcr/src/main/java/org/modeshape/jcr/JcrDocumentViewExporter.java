@@ -24,7 +24,6 @@
 package org.modeshape.jcr;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.Collections;
@@ -55,7 +54,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * 1.0 specification.
  * 
  * @see JcrSession#exportDocumentView(String, ContentHandler, boolean, boolean)
- * @see JcrSession#exportDocumentView(String, OutputStream, boolean, boolean)
+ * @see JcrSession#exportDocumentView(String, java.io.OutputStream, boolean, boolean)
  */
 @NotThreadSafe
 class JcrDocumentViewExporter extends AbstractJcrExporter {
@@ -283,13 +282,11 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         assert xmlCharacters != null;
 
         if (xmlCharacters.getDefinition().isMultiple()) {
-            StringBuffer buff = new StringBuffer();
-
+            StringBuilder bf = new StringBuilder();
             for (Value value : xmlCharacters.getValues()) {
-                buff.append(value.getString());
+                bf.append(value.getString());
             }
-
-            return buff.toString();
+            return bf.toString();
         }
 
         return xmlCharacters.getValue().getString();

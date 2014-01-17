@@ -29,19 +29,23 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import org.junit.After;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
-import org.modeshape.common.util.HashCode;
-import org.modeshape.sequencer.classfile.ClassFileSequencer;
-import org.modeshape.sequencer.testdata.MockEnum;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.After;
+import org.junit.Test;
+import org.modeshape.common.util.HashCode;
+import org.modeshape.sequencer.classfile.ClassFileSequencer;
+import org.modeshape.sequencer.testdata.MockEnum;
 
 public class ClassFileMetadataReaderTest {
 
@@ -73,7 +77,6 @@ public class ClassFileMetadataReaderTest {
         compareMetadataToClass(ClassFileSequencer.class);
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldReadEnum() throws Exception {
         String resourceName = "/" + MockEnum.class.getName().replace('.', '/') + ".class";
@@ -319,7 +322,7 @@ public class ClassFileMetadataReaderTest {
 
         private MethodKey( MethodMetadata method ) {
             this.name = method.getName();
-            this.parameters = new ArrayList<String>(); 
+            this.parameters = new ArrayList<String>();
             for (String paramName : method.getParameters()) {
                 parameters.add(paramName.replaceAll("\\$", "."));
             }

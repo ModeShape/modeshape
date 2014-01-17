@@ -25,9 +25,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.query.QueryResult;
 import org.modeshape.jdbc.delegate.RepositoryDelegate;
 
-/**
- * 
- */
 class JcrStatement implements Statement {
 
     private final JcrConnection connection;
@@ -81,11 +78,6 @@ class JcrStatement implements Statement {
         notClosed();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Statement#getFetchDirection()
-     */
     @Override
     public int getFetchDirection() throws SQLException {
         notClosed();

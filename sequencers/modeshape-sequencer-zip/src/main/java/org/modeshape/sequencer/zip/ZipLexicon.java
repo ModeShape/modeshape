@@ -24,8 +24,8 @@
 
 package org.modeshape.sequencer.zip;
 
-import org.modeshape.common.annotation.Immutable;
 import static org.modeshape.sequencer.zip.ZipLexicon.Namespace.PREFIX;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A lexicon of names used within the zip sequencer.

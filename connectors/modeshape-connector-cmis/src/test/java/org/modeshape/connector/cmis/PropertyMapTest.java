@@ -15,12 +15,14 @@
  */
 package org.modeshape.connector.cmis;
 
-import org.junit.*;
-import org.modeshape.connector.cmis.Properties;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
- *
  * @author kulikov
  */
 public class PropertyMapTest {

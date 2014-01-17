@@ -23,13 +23,8 @@
  */
 package org.modeshape.sequencer.xml;
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import org.junit.Test;
-import org.modeshape.common.FixFor;
 import static org.modeshape.jcr.api.JcrConstants.JCR_PRIMARY_TYPE;
 import static org.modeshape.sequencer.xml.DtdLexicon.ENTITY;
 import static org.modeshape.sequencer.xml.DtdLexicon.NAME;
@@ -42,6 +37,11 @@ import static org.modeshape.sequencer.xml.XmlLexicon.ELEMENT_CONTENT;
 import static org.modeshape.sequencer.xml.XmlLexicon.PROCESSING_INSTRUCTION;
 import static org.modeshape.sequencer.xml.XmlLexicon.PROCESSING_INSTRUCTION_CONTENT;
 import static org.modeshape.sequencer.xml.XmlLexicon.TARGET;
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 
 /**

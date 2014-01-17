@@ -1,8 +1,13 @@
 package org.modeshape.webdav;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.jmock.Mockery;
 import org.junit.After;
 import org.junit.Before;
@@ -11,11 +16,6 @@ import org.modeshape.webdav.locking.IResourceLocks;
 import org.modeshape.webdav.locking.LockedObject;
 import org.modeshape.webdav.locking.ResourceLocks;
 import org.springframework.mock.web.DelegatingServletInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Date;
 
 public abstract class AbstractWebDAVTest extends Assert {
 
@@ -24,12 +24,21 @@ public abstract class AbstractWebDAVTest extends Assert {
     protected static final int TEMP_TIMEOUT = 10;
     protected static final boolean TEMPORARY = true;
 
-    protected static final byte[] RESOURCE_CONTENT = new byte[] { '<', 'h', 'e', 'l', 'l', 'o', '/', '>' };
+    protected static final byte[] RESOURCE_CONTENT = new byte[] {'<', 'h', 'e', 'l', 'l', 'o', '/', '>'};
     protected static final long RESOURCE_LENGTH = RESOURCE_CONTENT.length;
 
-    private static final String EXCLUSIVE_LOCK_REQUEST = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" + "<D:lockinfo xmlns:D='DAV:'>" + "<D:lockscope><D:exclusive/></D:lockscope>" + "<D:locktype><D:write/></D:locktype>" + "<D:owner><D:href>I'am the Lock Owner</D:href></D:owner>" + "</D:lockinfo>";
+    private static final String EXCLUSIVE_LOCK_REQUEST = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+                                                         + "<D:lockinfo xmlns:D='DAV:'>"
+                                                         + "<D:lockscope><D:exclusive/></D:lockscope>"
+                                                         + "<D:locktype><D:write/></D:locktype>"
+                                                         + "<D:owner><D:href>I'am the Lock Owner</D:href></D:owner>"
+                                                         + "</D:lockinfo>";
 
-    private static final String SHARED_LOCK_REQUEST = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" + "<D:lockinfo xmlns:D='DAV:'>" + "<D:lockscope><D:shared/></D:lockscope>" + "<D:locktype><D:write/></D:locktype>" + "<D:owner><D:href>I'am the Lock Owner</D:href></D:owner>" + "</D:lockinfo>";
+    private static final String SHARED_LOCK_REQUEST = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+                                                      + "<D:lockinfo xmlns:D='DAV:'>" + "<D:lockscope><D:shared/></D:lockscope>"
+                                                      + "<D:locktype><D:write/></D:locktype>"
+                                                      + "<D:owner><D:href>I'am the Lock Owner</D:href></D:owner>"
+                                                      + "</D:lockinfo>";
 
     protected static final String TMP_FOLDER = "/tmp/tests";
     protected static final String SOURCE_COLLECTION_PATH = TMP_FOLDER + "/sourceFolder";

@@ -80,6 +80,11 @@ public class RemoveValueOperation extends ArrayOperation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj instanceof RemoveValueOperation) {
             RemoveValueOperation other = (RemoveValueOperation)obj;

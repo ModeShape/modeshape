@@ -173,21 +173,11 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData {
         return typeInfo != null ? typeInfo.getRepresentationClass().getName() : String.class.getName();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
-     */
     @Override
     public boolean isWrapperFor( Class<?> iface ) {
         return iface.isInstance(this);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#unwrap(java.lang.Class)
-     */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
         if (iface.isInstance(this)) {

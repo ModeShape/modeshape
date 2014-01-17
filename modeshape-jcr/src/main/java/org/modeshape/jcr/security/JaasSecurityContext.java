@@ -212,12 +212,15 @@ public class JaasSecurityContext implements SecurityContext {
                     TextOutputCallback toc = (TextOutputCallback)callbacks[i];
                     switch (toc.getMessageType()) {
                         case TextOutputCallback.INFORMATION:
+                            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                             System.out.println(toc.getMessage());
                             break;
                         case TextOutputCallback.ERROR:
+                            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                             System.out.println("ERROR: " + toc.getMessage());
                             break;
                         case TextOutputCallback.WARNING:
+                            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                             System.out.println("WARNING: " + toc.getMessage());
                             break;
                         default:
@@ -231,6 +234,7 @@ public class JaasSecurityContext implements SecurityContext {
 
                     if (LOG_TO_CONSOLE) {
                         // ignore the provided defaultName
+                        // CHECKSTYLE IGNORE check FOR NEXT 2 LINES
                         System.out.print(nc.getPrompt());
                         System.out.flush();
                     }
@@ -243,6 +247,7 @@ public class JaasSecurityContext implements SecurityContext {
                     // prompt the user for sensitive information
                     PasswordCallback pc = (PasswordCallback)callbacks[i];
                     if (LOG_TO_CONSOLE) {
+                        // CHECKSTYLE IGNORE check FOR NEXT 2 LINES
                         System.out.print(pc.getPrompt());
                         System.out.flush();
                     }

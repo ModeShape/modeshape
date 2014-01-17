@@ -190,7 +190,17 @@ public abstract class JavaSequencerHelper {
         method = methodsIterator.nextNode();
         assertMethod(method, "setField", "void", "public", false, false, false, false, false, false, new ArrayList<String>());
         method = methodsIterator.nextNode();
-        assertMethod(method, "setField", "void", "public", false, false, false, false, false, false, Arrays.asList(getExpectedTypeName(Boolean.class)));
+        assertMethod(method,
+                     "setField",
+                     "void",
+                     "public",
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     Arrays.asList(getExpectedTypeName(Boolean.class)));
         method = methodsIterator.nextNode();
         assertMethod(method, "voidMethod", "void", "package", false, false, false, false, false, true, new ArrayList<String>());
         assertNodeHasAnnotation(method, Deprecated.class);
@@ -260,7 +270,7 @@ public abstract class JavaSequencerHelper {
         assertHasPackageMixin(parent);
     }
 
-    private void assertHasPackageMixin(final Node node) throws Exception {
+    private void assertHasPackageMixin( final Node node ) throws Exception {
         for (final NodeType mixin : node.getMixinNodeTypes()) {
             if (ClassFileSequencerLexicon.PACKAGE.equals(mixin.getName())) {
                 return;

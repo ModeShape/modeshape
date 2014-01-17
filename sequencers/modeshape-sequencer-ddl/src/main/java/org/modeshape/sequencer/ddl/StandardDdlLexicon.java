@@ -42,22 +42,22 @@ public class StandardDdlLexicon {
      *
      * SQL-92 Spec
      *
-     * 		CREATE SCHEMA
-     *		CREATE DOMAIN
-     * 		CREATE [ { GLOBAL | LOCAL } TEMPORARY ] TABLE
-     *		CREATE VIEW
-     *		CREATE ASSERTION
-     *		CREATE CHARACTER SET
-     *		CREATE COLLATION
-     *		CREATE TRANSLATION
+     *         CREATE SCHEMA
+     *        CREATE DOMAIN
+     *         CREATE [ { GLOBAL | LOCAL } TEMPORARY ] TABLE
+     *        CREATE VIEW
+     *        CREATE ASSERTION
+     *        CREATE CHARACTER SET
+     *        CREATE COLLATION
+     *        CREATE TRANSLATION
      *
-     *		ALTER TABLE
+     *        ALTER TABLE
      */
 
     public static final String TYPE_MISSING_TERMINATOR = PREFIX + ":missingTerminator";
     public static final String TYPE_UNKNOWN_STATEMENT = PREFIX + ":unknownStatement";
 
-    public static final String TYPE_OPERATION = PREFIX +  ":operation";
+    public static final String TYPE_OPERATION = PREFIX + ":operation";
     public static final String TYPE_OPERAND = PREFIX + ":operand";
     public static final String TYPE_STATEMENT = PREFIX + ":statement";
 
@@ -145,7 +145,7 @@ public class StandardDdlLexicon {
 
     public static final String OPTION = PREFIX + ":option";
     public static final String TYPE = PREFIX + ":type";
-    public static final String NEW_NAME = PREFIX +":newName";
+    public static final String NEW_NAME = PREFIX + ":newName";
     public static final String SQL = PREFIX + ":sql";
     public static final String TEMPORARY = PREFIX + ":temporary";
     public static final String ON_COMMIT_VALUE = PREFIX + ":onCommitValue";
@@ -182,7 +182,6 @@ public class StandardDdlLexicon {
 
     public static final String SOURCE_CHARACTER_SET_NAME = PREFIX + ":sourceCharacterSetName";
     public static final String TARGET_CHARACTER_SET_NAME = PREFIX + ":targetCharacterSetName";
-
 
     public static final String DROP_OPTION = PREFIX + ":dropOption";
     public static final String COLUMN_ATTRIBUTE = PREFIX + ":columnAttribute";

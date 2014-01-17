@@ -19,6 +19,7 @@
         <!-- Order is important -->
 
         <!-- First these -->
+        <module>checkstyle</module>
         <module>modeshape-parent</module>
         <module>modeshape-assembly-descriptors</module>
         <!-- Order is important -->

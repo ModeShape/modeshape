@@ -28,8 +28,8 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.hasItem;
-import static org.junit.matchers.JUnitMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -148,8 +148,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(3));
 
         { // e1 primary key
-            assertThat(tableNode.childrenWithName(TeiidDdlLexicon.PRIMARY_KEY).size(), is(1));
-            final Object temp = tableNode.childrenWithName(TeiidDdlLexicon.PRIMARY_KEY).get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+            assertThat(tableNode.childrenWithName(DdlConstants.PRIMARY_KEY).size(), is(1));
+            final Object temp = tableNode.childrenWithName(DdlConstants.PRIMARY_KEY).get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
             assertThat(temp, is(instanceOf(List.class)));
 
             @SuppressWarnings( "unchecked" )
@@ -159,7 +159,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         }
 
         { // e2, e3 unique constraints
-            final List<AstNode> uniques = tableNode.childrenWithName(TeiidDdlLexicon.UNIQUE);
+            final List<AstNode> uniques = tableNode.childrenWithName(DdlConstants.UNIQUE);
             assertThat(uniques.size(), is(2));
 
             final Object temp1 = uniques.get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
@@ -595,7 +595,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(tableNode.getName(), is("G1"));
         assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
-        assertThat(tableNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1").size(), is(1)); // make sure primary key still created
+        assertThat(tableNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1").size(), is(1)); // make sure primary key
+                                                                                                          // still created
     }
 
     @Test

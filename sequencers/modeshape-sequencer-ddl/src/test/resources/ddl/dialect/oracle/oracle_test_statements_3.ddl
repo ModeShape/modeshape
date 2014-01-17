@@ -3,29 +3,29 @@
 --
 
 CREATE OR REPLACE PACKAGE emp_mgmt AS 
-	FUNCTION hire (last_name VARCHAR2, job_id VARCHAR2, 
-	   manager_id NUMBER, salary NUMBER, 
-	   commission_pct NUMBER, department_id NUMBER) 
-	   RETURN NUMBER; 
-	FUNCTION create_dept(department_id NUMBER, location_id NUMBER) 
-	   RETURN NUMBER; 
-	PROCEDURE remove_emp(employee_id NUMBER); 
-	PROCEDURE remove_dept(department_id NUMBER); 
-	PROCEDURE increase_sal(employee_id NUMBER, salary_incr NUMBER); 
-	PROCEDURE increase_comm(employee_id NUMBER, comm_incr NUMBER); 
-	no_comm EXCEPTION; 
-	no_sal EXCEPTION; 
-	END emp_mgmt;
+    FUNCTION hire (last_name VARCHAR2, job_id VARCHAR2, 
+       manager_id NUMBER, salary NUMBER, 
+       commission_pct NUMBER, department_id NUMBER) 
+       RETURN NUMBER; 
+    FUNCTION create_dept(department_id NUMBER, location_id NUMBER) 
+       RETURN NUMBER; 
+    PROCEDURE remove_emp(employee_id NUMBER); 
+    PROCEDURE remove_dept(department_id NUMBER); 
+    PROCEDURE increase_sal(employee_id NUMBER, salary_incr NUMBER); 
+    PROCEDURE increase_comm(employee_id NUMBER, comm_incr NUMBER); 
+    no_comm EXCEPTION; 
+    no_sal EXCEPTION; 
+    END emp_mgmt;
 /
 
 CREATE PFILE = 'my_init.ora' FROM SPFILE = 's_params.ora';
 
 CREATE PROCEDURE remove_emp (employee_id NUMBER) AS tot_emps NUMBER;
-	BEGIN
-	   DELETE FROM employees
-	   WHERE employees.employee_id = remove_emp.employee_id;
-	tot_emps := tot_emps - 1;
-	END;
+    BEGIN
+       DELETE FROM employees
+       WHERE employees.employee_id = remove_emp.employee_id;
+    tot_emps := tot_emps - 1;
+    END;
 /
 
 CREATE PROCEDURE find_root
@@ -64,10 +64,10 @@ CREATE SCHEMA AUTHORIZATION oe
    GRANT select ON new_product_view TO hr; 
 
 CREATE SEQUENCE customers_seq
-	START WITH     1000
-	INCREMENT BY   1
-	NOCACHE
-	NOCYCLE;
+    START WITH     1000
+    INCREMENT BY   1
+    NOCACHE
+    NOCYCLE;
 
 -- 10 Statements so far
 
@@ -103,27 +103,27 @@ CREATE TRIGGER hr.salary_check
    
 CREATE OR REPLACE TRIGGER order_info_insert
    INSTEAD OF INSERT ON order_info
-	DECLARE
-	  duplicate_info EXCEPTION;
-	  PRAGMA EXCEPTION_INIT (duplicate_info, -00001);
-	BEGIN
-	  INSERT INTO customers
-	    (customer_id, cust_last_name, cust_first_name) 
-	  VALUES (
-	  :new.customer_id, 
-	  :new.cust_last_name,
-	  :new.cust_first_name);
-	INSERT INTO orders (order_id, order_date, customer_id)
-	VALUES (
-	  :new.order_id,
-	  :new.order_date,
-	  :new.customer_id);
-	EXCEPTION
-	  WHEN duplicate_info THEN
-	    RAISE_APPLICATION_ERROR (
-	      num=> -20107,
-	      msg=> 'Duplicate customer or order ID');
-	END order_info_insert;
+    DECLARE
+      duplicate_info EXCEPTION;
+      PRAGMA EXCEPTION_INIT (duplicate_info, -00001);
+    BEGIN
+      INSERT INTO customers
+        (customer_id, cust_last_name, cust_first_name) 
+      VALUES (
+      :new.customer_id, 
+      :new.cust_last_name,
+      :new.cust_first_name);
+    INSERT INTO orders (order_id, order_date, customer_id)
+    VALUES (
+      :new.order_id,
+      :new.order_date,
+      :new.customer_id);
+    EXCEPTION
+      WHEN duplicate_info THEN
+        RAISE_APPLICATION_ERROR (
+          num=> -20107,
+          msg=> 'Duplicate customer or order ID');
+    END order_info_insert;
 /
 
 CREATE OR REPLACE TRIGGER drop_trigger 
@@ -146,34 +146,34 @@ CREATE TYPE employee_t UNDER person_t
 CREATE TYPE part_time_emp_t UNDER employee_t (num_hrs NUMBER);
 
 CREATE OR REPLACE TYPE long_address_t
-	UNDER address_t
-	EXTERNAL NAME 'Examples.LongAddress' LANGUAGE JAVA 
-	USING SQLData(
-	    street2_attr VARCHAR(250) EXTERNAL NAME 'street2',
-	    country_attr VARCHAR (200) EXTERNAL NAME 'country',
-	    address_code_attr VARCHAR (50) EXTERNAL NAME 'addrCode',    
-	    STATIC FUNCTION create_address RETURN long_address_t 
-	      EXTERNAL NAME 'create() return Examples.LongAddress',
-	    STATIC FUNCTION  construct (street VARCHAR, city VARCHAR, 
-	        state VARCHAR, country VARCHAR, addrs_cd VARCHAR) 
-	      RETURN long_address_t 
-	      EXTERNAL NAME 
-	        'create(java.lang.String, java.lang.String,
-	        java.lang.String, java.lang.String, java.lang.String) 
-	          return Examples.LongAddress',
-	    STATIC FUNCTION construct RETURN long_address_t
-	      EXTERNAL NAME 'Examples.LongAddress() 
-	        return Examples.LongAddress',
-	    STATIC FUNCTION create_longaddress (
-	      street VARCHAR, city VARCHAR, state VARCHAR, country VARCHAR, 
-	      addrs_cd VARCHAR) return long_address_t
-	      EXTERNAL NAME 
-	        'Examples.LongAddress (java.lang.String, java.lang.String,
-	         java.lang.String, java.lang.String, java.lang.String)
-	           return Examples.LongAddress',
-	    MEMBER FUNCTION get_country RETURN VARCHAR
-	      EXTERNAL NAME 'country_with_code () return java.lang.String'
-	  );
+    UNDER address_t
+    EXTERNAL NAME 'Examples.LongAddress' LANGUAGE JAVA 
+    USING SQLData(
+        street2_attr VARCHAR(250) EXTERNAL NAME 'street2',
+        country_attr VARCHAR (200) EXTERNAL NAME 'country',
+        address_code_attr VARCHAR (50) EXTERNAL NAME 'addrCode',    
+        STATIC FUNCTION create_address RETURN long_address_t 
+          EXTERNAL NAME 'create() return Examples.LongAddress',
+        STATIC FUNCTION  construct (street VARCHAR, city VARCHAR, 
+            state VARCHAR, country VARCHAR, addrs_cd VARCHAR) 
+          RETURN long_address_t 
+          EXTERNAL NAME 
+            'create(java.lang.String, java.lang.String,
+            java.lang.String, java.lang.String, java.lang.String) 
+              return Examples.LongAddress',
+        STATIC FUNCTION construct RETURN long_address_t
+          EXTERNAL NAME 'Examples.LongAddress() 
+            return Examples.LongAddress',
+        STATIC FUNCTION create_longaddress (
+          street VARCHAR, city VARCHAR, state VARCHAR, country VARCHAR, 
+          addrs_cd VARCHAR) return long_address_t
+          EXTERNAL NAME 
+            'Examples.LongAddress (java.lang.String, java.lang.String,
+             java.lang.String, java.lang.String, java.lang.String)
+               return Examples.LongAddress',
+        MEMBER FUNCTION get_country RETURN VARCHAR
+          EXTERNAL NAME 'country_with_code () return java.lang.String'
+      );
 
 CREATE USER ops$external_user
    IDENTIFIED EXTERNALLY

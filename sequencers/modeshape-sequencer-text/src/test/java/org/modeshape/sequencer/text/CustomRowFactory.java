@@ -23,9 +23,10 @@
  */
 package org.modeshape.sequencer.text;
 
+import static org.modeshape.sequencer.text.TextSequencerLexicon.DATA;
+import static org.modeshape.sequencer.text.TextSequencerLexicon.ROW;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import static org.modeshape.sequencer.text.TextSequencerLexicon.*;
 
 /**
  * Test implementation of the {@link RowFactory} interface.

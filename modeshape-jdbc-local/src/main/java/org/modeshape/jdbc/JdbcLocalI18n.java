@@ -98,10 +98,14 @@ public final class JdbcLocalI18n {
      */
     public static I18n configurationFileNotSpecified;
 
+    private JdbcLocalI18n() {
+    }
+
     static {
         try {
             I18n.initialize(JdbcLocalI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

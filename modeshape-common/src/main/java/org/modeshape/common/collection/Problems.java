@@ -435,13 +435,6 @@ public interface Problems extends Iterable<Problem>, Serializable {
      */
     int problemCount();
 
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see java.lang.Iterable#iterator()
-     */
     @Override
     Iterator<Problem> iterator();
 

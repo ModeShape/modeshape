@@ -140,21 +140,11 @@ public class LocalJcrDriver implements java.sql.Driver {
         this.contextFactory = namingContextFactory;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Driver#acceptsURL(java.lang.String)
-     */
     @Override
     public boolean acceptsURL( String url ) {
         return delegateFactory.acceptUrl(url);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Driver#getPropertyInfo(java.lang.String, java.util.Properties)
-     */
     @Override
     public DriverPropertyInfo[] getPropertyInfo( String url,
                                                  Properties info ) throws SQLException {

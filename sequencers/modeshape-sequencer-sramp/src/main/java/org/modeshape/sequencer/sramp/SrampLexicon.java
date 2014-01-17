@@ -23,8 +23,8 @@
  */
 package org.modeshape.sequencer.sramp;
 
-import org.modeshape.common.annotation.Immutable;
 import static org.modeshape.sequencer.sramp.SrampLexicon.Namespace.PREFIX;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A lexicon of S-RAMP names used within the XSD sequencer.

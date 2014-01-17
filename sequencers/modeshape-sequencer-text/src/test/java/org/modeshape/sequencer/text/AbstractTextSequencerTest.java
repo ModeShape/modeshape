@@ -23,19 +23,19 @@
  */
 package org.modeshape.sequencer.text;
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.nodetype.NodeType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
-import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 import static org.modeshape.sequencer.text.TextSequencerLexicon.COLUMN;
 import static org.modeshape.sequencer.text.TextSequencerLexicon.DATA;
 import static org.modeshape.sequencer.text.TextSequencerLexicon.ROW;
 import java.util.ArrayList;
 import java.util.List;
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
+import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
 /**
  * Base test class for the implementations for {@link AbstractTextSequencer}

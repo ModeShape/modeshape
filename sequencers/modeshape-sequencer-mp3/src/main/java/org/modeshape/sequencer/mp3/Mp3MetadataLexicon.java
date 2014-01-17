@@ -23,8 +23,8 @@
  */
 package org.modeshape.sequencer.mp3;
 
-import org.modeshape.common.annotation.Immutable;
 import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.Namespace.PREFIX;
+import org.modeshape.common.annotation.Immutable;
 
 
 /**

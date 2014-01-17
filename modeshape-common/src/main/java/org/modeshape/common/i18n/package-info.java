@@ -107,4 +107,3 @@
  * </p>
  */
 package org.modeshape.common.i18n;
-

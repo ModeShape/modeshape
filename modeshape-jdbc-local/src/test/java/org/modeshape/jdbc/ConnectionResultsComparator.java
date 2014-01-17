@@ -160,7 +160,7 @@ public class ConnectionResultsComparator extends ResultsComparator {
 
         this.internalStatement = createStatement();
         if (internalStatement instanceof JcrStatement) {
-            ((JcrStatement) this.internalStatement).setJcrSqlLanguage(jcrSQL);
+            ((JcrStatement)this.internalStatement).setJcrSqlLanguage(jcrSQL);
         }
         result = this.internalStatement.execute(sql);
         assertTrue(result);

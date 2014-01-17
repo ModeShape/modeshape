@@ -26,7 +26,6 @@ package org.modeshape.jcr.value.basic;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.modeshape.common.text.StringMatcher.startsWith;
-import org.modeshape.jcr.value.basic.JodaDateTime;
 import org.junit.Before;
 import org.junit.Test;
 

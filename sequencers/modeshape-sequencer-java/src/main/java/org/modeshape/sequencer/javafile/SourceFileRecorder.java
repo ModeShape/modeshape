@@ -36,8 +36,8 @@ import org.modeshape.sequencer.javafile.metadata.JavaMetadata;
  * Implementations of this class must provide a public, no-argument constructor.
  * </p>
  * <p>
- * To use, supply the implementation class name to a {@link JavaFileSequencer} object.
- * Each instance will be reused for multiple {@link JavaFileSequencer#execute(javax.jcr.Property, javax.jcr.Node, org.modeshape.jcr.api.sequencer.Sequencer.Context)}
+ * To use, supply the implementation class name to a {@link JavaFileSequencer} object. Each instance will be reused for multiple
+ * {@link JavaFileSequencer#execute(javax.jcr.Property, javax.jcr.Node, org.modeshape.jcr.api.sequencer.Sequencer.Context)}
  * sequence calls , so implementations of this interface <b>must</b> be thread-safe.
  * </p>
  */
@@ -52,5 +52,7 @@ public interface SourceFileRecorder {
      * @param javaMetadata the metadata for the Java source file
      * @throws javax.jcr.RepositoryException if anything fails during the sequencing process
      */
-    void record( Sequencer.Context context, Node outputNode, JavaMetadata javaMetadata ) throws RepositoryException;
+    void record( Sequencer.Context context,
+                 Node outputNode,
+                 JavaMetadata javaMetadata ) throws RepositoryException;
 }

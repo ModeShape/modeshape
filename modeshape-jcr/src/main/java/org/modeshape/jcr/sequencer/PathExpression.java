@@ -273,6 +273,7 @@ public class PathExpression implements Serializable {
     protected String removeUnusedPredicates( String expression ) {
         assert expression != null;
         java.util.regex.Matcher matcher = UNUSABLE_PREDICATE_PATTERN.matcher(expression);
+        // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
         StringBuffer sb = new StringBuffer();
         if (matcher.find()) {
             do {
@@ -299,6 +300,7 @@ public class PathExpression implements Serializable {
     protected String removeAllPredicatesExceptIndexes( String expression ) {
         assert expression != null;
         java.util.regex.Matcher matcher = NON_INDEX_PREDICATE_PATTERN.matcher(expression);
+        // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
         StringBuffer sb = new StringBuffer();
         if (matcher.find()) {
             do {
@@ -352,6 +354,7 @@ public class PathExpression implements Serializable {
 
         // Replace all '[n,m,o,p]' type sequences with '[(n|m|o|p)]'
         java.util.regex.Matcher matcher = SEQUENCE_PATTERN.matcher(expression);
+        // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
         StringBuffer sb = new StringBuffer();
         boolean result = matcher.find();
         if (result) {

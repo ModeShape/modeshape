@@ -75,7 +75,7 @@ public class XMLHelper {
         return propertiesWithValues;
     }
 
-    private static Object nodeValue(Node node) {
+    private static Object nodeValue( Node node ) {
         NodeList childList = node.getChildNodes();
         if (childList.getLength() == 0) {
             return "";

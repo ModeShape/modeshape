@@ -86,7 +86,7 @@ public class LocalSession {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("Session:");
+        StringBuilder sb = new StringBuilder("Session:");
         sb.append(session.toString());
         return sb.toString();
     }

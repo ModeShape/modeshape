@@ -17,9 +17,6 @@ package org.modeshape.jdbc;
 
 import java.sql.RowId;
 
-/**
- * 
- */
 public class JcrRowId implements RowId {
 
     private final String path;
@@ -34,11 +31,6 @@ public class JcrRowId implements RowId {
         return path;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.RowId#getBytes()
-     */
     @Override
     public byte[] getBytes() {
         return bytes;

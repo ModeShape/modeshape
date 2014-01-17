@@ -23,16 +23,15 @@ import javax.jcr.ValueFormatException;
  *
  */
 public interface Transform {
-	
-	/**
-	 * This method transforms a value of the source type into a value
-	 * of the target type.
-	 * @param value Incoming value of source type
-	 * @return Outgoing value of target type
-	 * @throws ValueFormatException if value is an incorrect input type
-	 * @throws RepositoryException if unable to obtain value from repository
-	 * the transformation fails
-	 */
-	Object transform(Value value) throws ValueFormatException, RepositoryException;
+
+    /**
+     * This method transforms a value of the source type into a value of the target type.
+     * 
+     * @param value Incoming value of source type
+     * @return Outgoing value of target type
+     * @throws ValueFormatException if value is an incorrect input type
+     * @throws RepositoryException if unable to obtain value from repository the transformation fails
+     */
+    Object transform( Value value ) throws ValueFormatException, RepositoryException;
 
 }

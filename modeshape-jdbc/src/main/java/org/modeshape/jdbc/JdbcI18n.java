@@ -32,10 +32,14 @@ public final class JdbcI18n {
      */
     public static I18n driverErrorRegistering;
 
+    private JdbcI18n() {
+    }
+
     static {
         try {
             I18n.initialize(JdbcI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

@@ -376,6 +376,11 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (this == obj) {
             return true;

@@ -23,6 +23,10 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
 import javax.jcr.NamespaceRegistry;
 import javax.xml.stream.XMLStreamReader;
 import org.modeshape.common.logging.Logger;
@@ -35,10 +39,6 @@ import org.modeshape.sequencer.teiid.xmi.XmiAttribute;
 import org.modeshape.sequencer.teiid.xmi.XmiBasePart;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
 import org.modeshape.sequencer.teiid.xmi.XmiReader;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
 
 /**
  * Reader of XMI relational models to support the CND definitions.

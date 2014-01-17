@@ -25,8 +25,8 @@ package org.modeshape.sequencer.mp3;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
 import java.io.InputStream;
+import org.junit.Test;
 
 /**
  * Unit test for {@link Mp3Metadata}

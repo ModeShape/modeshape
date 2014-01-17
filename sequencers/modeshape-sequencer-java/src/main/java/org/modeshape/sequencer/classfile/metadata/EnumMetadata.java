@@ -57,7 +57,7 @@ public class EnumMetadata extends ClassMetadata {
         this.values = Collections.unmodifiableList(values);
 
     }
-    
+
     public List<String> getValues() {
         return values;
     }

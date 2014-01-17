@@ -20,4 +20,3 @@
  * messages.
  */
 package org.modeshape.common.collection;
-

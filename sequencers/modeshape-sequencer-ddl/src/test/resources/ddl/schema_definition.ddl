@@ -98,10 +98,10 @@ CREATE DOMAIN domain_name_5 AS INTEGER DEFAULT (25)
     CONSTRAINT constraint_name;
     
 CREATE DOMAIN us_postal_code AS TEXT
-	CHECK(
-	   VALUE ~ '^\\d{5}$'
-	OR VALUE ~ '^\\d{5}-\\d{4}$'
-	);
+    CHECK(
+       VALUE ~ '^\\d{5}$'
+    OR VALUE ~ '^\\d{5}-\\d{4}$'
+    );
 
 -- ==================================================================
 --      ASSERTION DEFINITION

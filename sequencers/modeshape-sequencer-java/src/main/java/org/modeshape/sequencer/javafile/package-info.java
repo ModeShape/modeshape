@@ -26,4 +26,3 @@
  */
 
 package org.modeshape.sequencer.javafile;
-

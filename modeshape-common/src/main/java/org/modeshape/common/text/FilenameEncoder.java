@@ -62,9 +62,6 @@ public class FilenameEncoder extends UrlEncoder {
         SAFE_WITH_SLASH_CHARACTERS.set('/');
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String encode( String text ) {
         if (text == null) return null;
@@ -73,6 +70,8 @@ public class FilenameEncoder extends UrlEncoder {
     }
 
     /**
+     * Set whether this encoder should use slash encoding.
+     * 
      * @param slashEncoded Sets slashEncoded to the specified value.
      * @return this object, for method chaining
      */

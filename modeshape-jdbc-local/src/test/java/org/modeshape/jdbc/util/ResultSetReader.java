@@ -104,7 +104,7 @@ public class ResultSetReader extends StringLineReader {
         if (source.next()) {
             rowCount++;
 
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             // Walk through column values in this row
             for (int col = 1; col <= columnCount; col++) {
                 // this does not work when database metadata is being queried
@@ -166,7 +166,7 @@ public class ResultSetReader extends StringLineReader {
     public static String resultSetMetaDataToString( ResultSetMetaData metadata,
                                                     String delimiter ) throws SQLException {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int columnCount = metadata.getColumnCount();
 
         for (int col = 1; col <= columnCount; col++) {
@@ -185,8 +185,7 @@ public class ResultSetReader extends StringLineReader {
             }
 
             sb.append(colName).append("[") //$NON-NLS-1$
-              .append(colTypeName)
-              .append("]"); //$NON-NLS-1$
+            .append(colTypeName).append("]"); //$NON-NLS-1$
             if (col != columnCount) {
                 sb.append(delimiter);
             }

@@ -21,7 +21,7 @@ import org.modeshape.jcr.value.basic.BasicName;
 
 /**
  * Lexicon of names used by CMIS connector.
- *
+ * 
  * @author kulikov
  */
 @Immutable
@@ -30,6 +30,7 @@ public class CmisLexicon {
         public static final String URI = "http://www.modeshape.org/cmis/1.0";
         public static final String PREFIX = "cmis";
     }
+
     public static final Name REPOSITORY = new BasicName(Namespace.URI, "repository");
     public static final Name VENDOR_NAME = new BasicName(Namespace.URI, "vendorName");
     public static final Name PRODUCT_NAME = new BasicName(Namespace.URI, "productName");

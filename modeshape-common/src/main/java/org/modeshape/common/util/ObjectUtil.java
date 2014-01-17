@@ -43,4 +43,7 @@ public class ObjectUtil {
         if (reference2 == null) return 1;
         return reference1.compareTo(reference2);
     }
+
+    private ObjectUtil() {
+    }
 }

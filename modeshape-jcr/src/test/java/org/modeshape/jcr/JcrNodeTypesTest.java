@@ -24,8 +24,8 @@
 
 package org.modeshape.jcr;
 
-import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -54,8 +54,7 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldRegisterValidNodeTypesOnly() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader()
-                                                   .getResourceAsStream("config/repo-config-invalid-node-types.json"));
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-invalid-node-types.json"));
 
         validateNodesWithCustomTypes();
     }
@@ -193,8 +192,8 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
     }
 
     private void assertLocalNameAndNamespace( NodeType nodeType,
-                                                String expectedLocalName,
-                                                String namespacePrefix ) throws RepositoryException {
+                                              String expectedLocalName,
+                                              String namespacePrefix ) throws RepositoryException {
         Namespaced nsed = (Namespaced)nodeType;
         assertThat(nsed.getLocalName(), is(expectedLocalName));
         assertThat(nsed.getNamespaceURI(), is(session.getNamespaceURI(namespacePrefix)));

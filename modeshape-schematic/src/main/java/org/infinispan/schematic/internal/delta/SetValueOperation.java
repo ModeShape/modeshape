@@ -85,6 +85,11 @@ public class SetValueOperation extends ArrayOperation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj instanceof SetValueOperation) {
             SetValueOperation other = (SetValueOperation)obj;

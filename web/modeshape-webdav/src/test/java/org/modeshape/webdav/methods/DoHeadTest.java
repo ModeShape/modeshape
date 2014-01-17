@@ -15,18 +15,18 @@ public class DoHeadTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue("/index.html"));
 
                 StoredObject indexSo = null;
 
-                one(mockStore).getStoredObject(mockTransaction, "/index.html");
+                oneOf(mockStore).getStoredObject(mockTransaction, "/index.html");
                 will(returnValue(indexSo));
 
-                one(mockRes).setStatus(WebdavStatus.SC_NOT_FOUND);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_NOT_FOUND);
             }
         });
 
@@ -41,28 +41,28 @@ public class DoHeadTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue("/index.html"));
 
                 StoredObject indexSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, "/index.html");
+                oneOf(mockStore).getStoredObject(mockTransaction, "/index.html");
                 will(returnValue(indexSo));
 
-                one(mockReq).getHeader("If-None-Match");
+                oneOf(mockReq).getHeader("If-None-Match");
                 will(returnValue(null));
 
-                one(mockRes).setDateHeader("last-modified", indexSo.getLastModified().getTime());
+                oneOf(mockRes).setDateHeader("last-modified", indexSo.getLastModified().getTime());
 
-                one(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
+                oneOf(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
 
-                one(mockMimeTyper).getMimeType(mockTransaction, "/index.html");
+                oneOf(mockMimeTyper).getMimeType(mockTransaction, "/index.html");
                 will(returnValue("text/foo"));
 
-                one(mockRes).setContentType("text/foo");
+                oneOf(mockRes).setContentType("text/foo");
             }
         });
 
@@ -77,23 +77,23 @@ public class DoHeadTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue("/foo/"));
 
                 StoredObject fooSo = initFolderStoredObject();
 
-                one(mockStore).getStoredObject(mockTransaction, "/foo/");
+                oneOf(mockStore).getStoredObject(mockTransaction, "/foo/");
                 will(returnValue(fooSo));
 
-                one(mockReq).getRequestURI();
+                oneOf(mockReq).getRequestURI();
                 will(returnValue("/foo/"));
 
-                one(mockRes).encodeRedirectURL("/foo//indexFile");
+                oneOf(mockRes).encodeRedirectURL("/foo//indexFile");
 
-                one(mockRes).sendRedirect("");
+                oneOf(mockRes).sendRedirect("");
             }
         });
 

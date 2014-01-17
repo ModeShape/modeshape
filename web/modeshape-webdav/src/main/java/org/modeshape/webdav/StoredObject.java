@@ -30,7 +30,7 @@ public class StoredObject {
 
     /**
      * Determines whether the StoredObject is a folder or a resource
-     *
+     * 
      * @return true if the StoredObject is a collection
      */
     public boolean isFolder() {
@@ -39,7 +39,7 @@ public class StoredObject {
 
     /**
      * Determines whether the StoredObject is a folder or a resource
-     *
+     * 
      * @return true if the StoredObject is a resource
      */
     public boolean isResource() {
@@ -48,7 +48,7 @@ public class StoredObject {
 
     /**
      * Sets a new StoredObject as a collection or resource
-     *
+     * 
      * @param f true - collection ; false - resource
      */
     public void setFolder( boolean f ) {
@@ -57,7 +57,7 @@ public class StoredObject {
 
     /**
      * Gets the date of the last modification
-     *
+     * 
      * @return last modification Date
      */
     public Date getLastModified() {
@@ -66,7 +66,7 @@ public class StoredObject {
 
     /**
      * Sets the date of the last modification
-     *
+     * 
      * @param d date of the last modification
      */
     public void setLastModified( Date d ) {
@@ -75,7 +75,7 @@ public class StoredObject {
 
     /**
      * Gets the date of the creation
-     *
+     * 
      * @return creation Date
      */
     public Date getCreationDate() {
@@ -84,7 +84,7 @@ public class StoredObject {
 
     /**
      * Sets the date of the creation
-     *
+     * 
      * @param c date of the creation
      */
     public void setCreationDate( Date c ) {
@@ -93,7 +93,7 @@ public class StoredObject {
 
     /**
      * Gets the length of the resource content
-     *
+     * 
      * @return length of the resource content
      */
     public long getResourceLength() {
@@ -102,7 +102,7 @@ public class StoredObject {
 
     /**
      * Sets the length of the resource content
-     *
+     * 
      * @param l the length of the resource content
      */
     public void setResourceLength( long l ) {
@@ -111,7 +111,7 @@ public class StoredObject {
 
     /**
      * Gets the state of the resource
-     *
+     * 
      * @return true if the resource is in lock-null state
      */
     public boolean isNullResource() {
@@ -120,7 +120,7 @@ public class StoredObject {
 
     /**
      * Sets a StoredObject as a lock-null resource
-     *
+     * 
      * @param f true to set the resource as lock-null resource
      */
     public void setNullResource( boolean f ) {
@@ -134,11 +134,9 @@ public class StoredObject {
     }
 
     /**
-     * Retrieve the mime type from the store object.
-     * Can also return NULL if the store does not handle
-     * mime type stuff.
-     * In that case the mime type is determined by the servletcontext
-     *
+     * Retrieve the mime type from the store object. Can also return NULL if the store does not handle mime type stuff. In that
+     * case the mime type is determined by the servletcontext
+     * 
      * @return the mimeType
      */
     public String getMimeType() {
@@ -147,7 +145,7 @@ public class StoredObject {
 
     /**
      * Set the mime type of this object
-     *
+     * 
      * @param mimeType the mimeType to set
      */
     public void setMimeType( String mimeType ) {

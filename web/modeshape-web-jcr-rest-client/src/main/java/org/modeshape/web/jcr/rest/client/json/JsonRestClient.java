@@ -912,6 +912,7 @@ public final class JsonRestClient implements IRestClient {
     public static void main( String[] args ) {
 
         if (args == null || args.length == 0 || args[0].equals(HELP_PARM)) {
+            // CHECKSTYLE IGNORE check FOR NEXT 12 LINES
             System.out.println("Running the ModeShape Rest Client");
             System.out.println("	required arguments are:");
             System.out.println("  	 	" + SERVER_PARM);
@@ -1041,6 +1042,7 @@ public final class JsonRestClient implements IRestClient {
 
     private static boolean checkStatus( Status status ) {
         if (status.isError()) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(status.getMessage());
             status.getException().printStackTrace(System.err);
             return false;

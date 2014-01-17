@@ -46,12 +46,11 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
     }
 
     /**
-     * Returns a  {@link ConnectionInfo} object which represents the information of a specific connection, from a
-     * given url format and some {@link Properties}
-     *
-     * @param url  a {@code non-null} string which represents a jdbc url
+     * Returns a {@link ConnectionInfo} object which represents the information of a specific connection, from a given url format
+     * and some {@link Properties}
+     * 
+     * @param url a {@code non-null} string which represents a jdbc url
      * @param info a {@code non-null} {@link Properties} instance which may contain extra information needed by the connection
-     *
      * @return {@link ConnectionInfo} instance, never {@code null}
      */
     abstract ConnectionInfo createConnectionInfo( final String url,
@@ -73,39 +72,19 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
         return connInfo;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jdbc.delegate.RepositoryDelegate#closeStatement()
-     */
     @Override
     public void closeStatement() {
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Connection#commit()
-     */
     @SuppressWarnings( "unused" )
     @Override
     public void commit() throws RepositoryException {
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Connection#close()
-     */
     @Override
     public void close() {
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Connection#rollback()
-     */
     @SuppressWarnings( "unused" )
     @Override
     public void rollback() throws RepositoryException {
@@ -145,21 +124,11 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
         this.repositoryNames = repositoryNames;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
-     */
     @Override
     public boolean isWrapperFor( Class<?> iface ) {
         return iface.isInstance(this);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#unwrap(java.lang.Class)
-     */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
         if (!isWrapperFor(iface)) {

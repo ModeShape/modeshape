@@ -20,7 +20,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,9 +28,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.TimeZone;
-
 import javax.jcr.query.QueryResult;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,13 +56,13 @@ public class JcrResultSetTest {
 
         result = TestUtil.createQueryResult();
         resultSet = new JcrResultSet(statement, result, null);
-        
+
         Calendar londonTime = new GregorianCalendar();
         londonTime.clear();
         londonTime.setTimeZone(TimeZone.getTimeZone(TestUtil.TIME_ZONE));
-        
-        TimestampWithTimezone.resetCalendar(TimeZone.getTimeZone(TestUtil.TIME_ZONE)); //$NON-NLS-1$ 
- 
+
+        TimestampWithTimezone.resetCalendar(TimeZone.getTimeZone(TestUtil.TIME_ZONE));
+
     }
 
     @After
@@ -188,9 +185,10 @@ public class JcrResultSetTest {
 
         }
     }
-    
+
     /**
      * MODE-1007
+     * 
      * @throws SQLException
      */
     @Test
@@ -198,10 +196,10 @@ public class JcrResultSetTest {
         int col = 8;
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            assertThat(resultSet.getLong(TestUtil.COLUMN_NAMES[col]), is(  new Long(0).longValue()));
+            assertThat(resultSet.getLong(TestUtil.COLUMN_NAMES[col]), is(new Long(0).longValue()));
 
         }
-    }    
+    }
 
     @Test
     public void shouldCallGetLongUsingColumnName() throws SQLException {
@@ -277,28 +275,28 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            
+
             java.sql.Date r = resultSet.getDate(col + 1);
 
-            // the result date should match the date coming from the souce, no change should occur 
-            // somewhere based on calendar or timezone           
+            // the result date should match the date coming from the souce, no change should occur
+            // somewhere based on calendar or timezone
 
-           assertThat(r.toString(), is(TestUtil.USE_DATE_FOR_SOURCE));
+            assertThat(r.toString(), is(TestUtil.USE_DATE_FOR_SOURCE));
         }
     }
 
     @Test
     public void shouldCallGetDateUsingColumnNameAndCalendar() throws SQLException {
-    	
-    	Calendar localTime = new GregorianCalendar();
-    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
+
+        Calendar localTime = new GregorianCalendar();
+        localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
 
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            
+
             java.sql.Date resultDate = resultSet.getDate(col + 1, localTime);
-            
+
             assertThat(resultDate.toString(), is(TestUtil.EXPECTED_DATE_FOR_TARGET));
         }
 
@@ -309,28 +307,28 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            
+
             java.sql.Date r = resultSet.getDate(col + 1);
 
-          // the result date should match the date coming from the souce, no change should occur 
-          // somewhere based on calendar or timezone           
+            // the result date should match the date coming from the souce, no change should occur
+            // somewhere based on calendar or timezone
 
             assertThat(r.toString(), is(TestUtil.USE_DATE_FOR_SOURCE));
         }
     }
 
     @Test
-    public void shouldCallGetDateUsingColmnIndexAndCalendar() throws SQLException {  
-    	    	
-    	Calendar localTime = new GregorianCalendar();
-    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
+    public void shouldCallGetDateUsingColmnIndexAndCalendar() throws SQLException {
+
+        Calendar localTime = new GregorianCalendar();
+        localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
 
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
 
             java.sql.Date resultDate = resultSet.getDate(col + 1, localTime);
-            
+
             assertThat(resultDate.toString(), is(TestUtil.EXPECTED_DATE_FOR_TARGET));
         }
     }
@@ -340,30 +338,29 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            
+
             java.sql.Time r = resultSet.getTime(col + 1);
 
-            // the result date should match the date coming from the souce, no change should occur 
-            // somewhere based on calendar or timezone           
+            // the result date should match the date coming from the souce, no change should occur
+            // somewhere based on calendar or timezone
 
-           assertThat(r.toString(), is(TestUtil.USE_TIME_FOR_SOURCE));
+            assertThat(r.toString(), is(TestUtil.USE_TIME_FOR_SOURCE));
         }
     }
 
     @Test
     public void shouldCallGetTimeUsingColumnNameAndCalendar() throws SQLException {
-    	Calendar localTime = new GregorianCalendar();
-    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
-    	
-    	String EXPECTED_TIME_FOR_TARGET = "08:39:10";
+        Calendar localTime = new GregorianCalendar();
+        localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
 
+        String EXPECTED_TIME_FOR_TARGET = "08:39:10";
 
-    	int col = getColumnTypeLoc(TestUtil.DATE);
+        int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
             java.sql.Time resultTime = resultSet.getTime(TestUtil.COLUMN_NAMES[col], localTime);
             assertThat(resultTime.toString(), is(EXPECTED_TIME_FOR_TARGET));
-  
+
         }
     }
 
@@ -372,31 +369,30 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            
+
             java.sql.Time r = resultSet.getTime(col + 1);
 
-            // the result date should match the date coming from the souce, no change should occur 
-            // somewhere based on calendar or timezone           
+            // the result date should match the date coming from the souce, no change should occur
+            // somewhere based on calendar or timezone
 
-           assertThat(r.toString(), is(TestUtil.USE_TIME_FOR_SOURCE));
- 
+            assertThat(r.toString(), is(TestUtil.USE_TIME_FOR_SOURCE));
+
         }
     }
 
     @Test
     public void shouldCallGetTimeUsingColmnIndexAndCalendar() throws SQLException {
-    	Calendar localTime = new GregorianCalendar();
-    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
-    	
-    	String EXPECTED_TIME_FOR_TARGET = "08:39:10";
+        Calendar localTime = new GregorianCalendar();
+        localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
 
+        String EXPECTED_TIME_FOR_TARGET = "08:39:10";
 
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
 
             java.sql.Time resultTime = resultSet.getTime(col + 1, localTime);
-            
+
             assertThat(resultTime.toString(), is(EXPECTED_TIME_FOR_TARGET));
         }
     }
@@ -406,29 +402,29 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            
+
             java.sql.Timestamp r = resultSet.getTimestamp(col + 1);
 
-            // the result date should match the date coming from the souce, no change should occur 
-            // somewhere based on calendar or timezone           
+            // the result date should match the date coming from the souce, no change should occur
+            // somewhere based on calendar or timezone
 
-           assertThat(r.toString(), is(TestUtil.USE_TIMESTAMP_FOR_SOURCE));
+            assertThat(r.toString(), is(TestUtil.USE_TIMESTAMP_FOR_SOURCE));
 
         }
     }
 
     @Test
     public void shouldCallGetTimeStampUsingColumnNameAndCalendar() throws SQLException {
-    	Calendar localTime = new GregorianCalendar();
-    	localTime.clear();
-    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
+        Calendar localTime = new GregorianCalendar();
+        localTime.clear();
+        localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
 
-    	int col = getColumnTypeLoc(TestUtil.DATE);
+        int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
             java.sql.Timestamp resultTimestamp = resultSet.getTimestamp(TestUtil.COLUMN_NAMES[col], localTime);
-            
-            assertThat(resultTimestamp.toString(), is( TestUtil.EXPECTED_TIMESTAMP_FOR_TARGET));
+
+            assertThat(resultTimestamp.toString(), is(TestUtil.EXPECTED_TIMESTAMP_FOR_TARGET));
         }
     }
 
@@ -437,29 +433,29 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            
+
             java.sql.Timestamp r = resultSet.getTimestamp(col + 1);
 
-            // the result date should match the date coming from the souce, no change should occur 
-            // somewhere based on calendar or timezone           
+            // the result date should match the date coming from the souce, no change should occur
+            // somewhere based on calendar or timezone
 
-           assertThat(r.toString(), is(TestUtil.USE_TIMESTAMP_FOR_SOURCE));
+            assertThat(r.toString(), is(TestUtil.USE_TIMESTAMP_FOR_SOURCE));
 
         }
     }
 
     @Test
     public void shouldCallGetTimeStampUsingColmnIndexAndCalendar() throws SQLException {
-    	Calendar localTime = new GregorianCalendar();
-    	localTime.clear();
-    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
+        Calendar localTime = new GregorianCalendar();
+        localTime.clear();
+        localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
 
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
 
             java.sql.Timestamp resultTime = resultSet.getTimestamp(col + 1, localTime);
-            
+
             assertThat(resultTime.toString(), is(TestUtil.EXPECTED_TIMESTAMP_FOR_TARGET));
         }
     }
@@ -1063,7 +1059,7 @@ public class JcrResultSetTest {
      */
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetObjectIdxMap() throws SQLException {
-        resultSet.getObject(1, (Map<String,Class<?>>)null);
+        resultSet.getObject(1, (Map<String, Class<?>>)null);
     }
 
     /**
@@ -1071,7 +1067,7 @@ public class JcrResultSetTest {
      */
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetObjectColNameMap() throws SQLException {
-        resultSet.getObject("colname", (Map<String,Class<?>>)null);
+        resultSet.getObject("colname", (Map<String, Class<?>>)null);
     }
 
     /**

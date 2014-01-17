@@ -518,10 +518,14 @@ public final class JcrI18n {
     public static I18n cannotStopJournal;
     public static I18n journalHasNotCompletedReconciliation;
 
+    private JcrI18n() {
+    }
+
     static {
         try {
             I18n.initialize(JcrI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

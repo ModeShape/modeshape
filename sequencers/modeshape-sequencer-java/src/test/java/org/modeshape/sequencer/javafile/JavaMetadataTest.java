@@ -23,24 +23,39 @@
  */
 package org.modeshape.sequencer.javafile;
 
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.CompilationUnit;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import org.junit.After;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
-import static org.modeshape.sequencer.javafile.metadata.AbstractMetadata.*;
-import org.modeshape.sequencer.javafile.metadata.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.modeshape.sequencer.javafile.metadata.AbstractMetadata.PRIVATE;
+import static org.modeshape.sequencer.javafile.metadata.AbstractMetadata.PUBLIC;
+import static org.modeshape.sequencer.javafile.metadata.AbstractMetadata.STATIC;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.List;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.sequencer.javafile.metadata.AnnotationMetadata;
+import org.modeshape.sequencer.javafile.metadata.FieldMetadata;
+import org.modeshape.sequencer.javafile.metadata.ImportMetadata;
+import org.modeshape.sequencer.javafile.metadata.JavaMetadata;
+import org.modeshape.sequencer.javafile.metadata.MethodMetadata;
+import org.modeshape.sequencer.javafile.metadata.ModifierMetadata;
+import org.modeshape.sequencer.javafile.metadata.PackageMetadata;
+import org.modeshape.sequencer.javafile.metadata.TypeMetadata;
+import org.modeshape.sequencer.javafile.metadata.Variable;
 
 /**
  * Unit test for {@link JavaMetadata}
- *
+ * 
  * @author Serge Pagop
  * @author Horia Chiorean
  */
@@ -54,9 +69,11 @@ public class JavaMetadataTest {
         File source = new File(getClass().getClassLoader().getResource("org/acme/MySource.java").toURI());
         stream = new FileInputStream(source);
         javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null);
-        rootNode = CompilationUnitParser.runJLS3Conversion(
-                JavaMetadataUtil.getJavaSourceFromTheInputStream(new FileInputStream(source),
-                                                                 source.length(), null), true);
+        rootNode = CompilationUnitParser.runJLS3Conversion(JavaMetadataUtil.getJavaSourceFromTheInputStream(new FileInputStream(
+                                                                                                                                source),
+                                                                                                            source.length(),
+                                                                                                            null),
+                                                           true);
     }
 
     @After
@@ -154,14 +171,24 @@ public class JavaMetadataTest {
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"j"});
 
         methodMetadata = methods.get(6);
-        assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "void", "doSomething", 3);
+        assertMethodMetadata(methodMetadata,
+                             MethodMetadata.Type.METHOD_TYPE_MEMBER,
+                             new String[] {PUBLIC},
+                             "void",
+                             "doSomething",
+                             3);
         parameters = methodMetadata.getParameters();
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"p1"});
         assertFieldMetadata(parameters.get(1), FieldMetadata.Type.PRIMITIVE, new String[0], "double", new String[] {"p2"});
         assertFieldMetadata(parameters.get(2), FieldMetadata.Type.SIMPLE, new String[0], "Object", new String[] {"o"});
 
         methodMetadata = methods.get(7);
-        assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "void", "doSomething", 4);
+        assertMethodMetadata(methodMetadata,
+                             MethodMetadata.Type.METHOD_TYPE_MEMBER,
+                             new String[] {PUBLIC},
+                             "void",
+                             "doSomething",
+                             4);
         parameters = methodMetadata.getParameters();
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"p1"});
         assertFieldMetadata(parameters.get(1), FieldMetadata.Type.PRIMITIVE, new String[0], "double", new String[] {"p2"});
@@ -169,13 +196,23 @@ public class JavaMetadataTest {
         assertFieldMetadata(parameters.get(3), FieldMetadata.Type.SIMPLE, new String[0], "Object", new String[] {"o"});
 
         methodMetadata = methods.get(8);
-        assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PRIVATE}, "double", "doSomething2", 2);
+        assertMethodMetadata(methodMetadata,
+                             MethodMetadata.Type.METHOD_TYPE_MEMBER,
+                             new String[] {PRIVATE},
+                             "double",
+                             "doSomething2",
+                             2);
         parameters = methodMetadata.getParameters();
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.ARRAY, new String[0], "Object", new String[] {"oa"});
         assertFieldMetadata(parameters.get(1), FieldMetadata.Type.ARRAY, new String[0], "int", new String[] {"ia"});
 
         methodMetadata = methods.get(9);
-        assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "Object", "doSomething3", 0);
+        assertMethodMetadata(methodMetadata,
+                             MethodMetadata.Type.METHOD_TYPE_MEMBER,
+                             new String[] {PUBLIC},
+                             "Object",
+                             "doSomething3",
+                             0);
     }
 
     private void assertClassFields( TypeMetadata typeMetadata ) {
@@ -183,7 +220,11 @@ public class JavaMetadataTest {
         List<FieldMetadata> fields = typeMetadata.getFields();
         assertEquals(8, fields.size());
         assertFieldMetadata(fields.get(0), FieldMetadata.Type.PRIMITIVE, new String[] {PRIVATE}, "int", new String[] {"i", "j"});
-        assertFieldMetadata(fields.get(1), FieldMetadata.Type.PRIMITIVE, new String[] {PRIVATE, STATIC}, "double", new String[] {"a"});
+        assertFieldMetadata(fields.get(1),
+                            FieldMetadata.Type.PRIMITIVE,
+                            new String[] {PRIVATE, STATIC},
+                            "double",
+                            new String[] {"a"});
         assertFieldMetadata(fields.get(2), FieldMetadata.Type.PARAMETRIZED, new String[] {PRIVATE}, "List", new String[] {"l"});
         assertFieldMetadata(fields.get(3), FieldMetadata.Type.PARAMETRIZED, new String[] {PRIVATE}, "A", new String[] {"o"});
         assertFieldMetadata(fields.get(4), FieldMetadata.Type.SIMPLE, new String[] {PRIVATE}, "X", new String[] {"x"});
@@ -212,8 +253,11 @@ public class JavaMetadataTest {
         assertThat(typeMetadata.getModifiers().get(0).getName(), is(PUBLIC));
     }
 
-    private void assertFieldMetadata( FieldMetadata fieldMetadata, FieldMetadata.Type expectedMetaType, String[] expectedModifiers,
-                                      String expectedTypeName, String[] expectedVariables ) {
+    private void assertFieldMetadata( FieldMetadata fieldMetadata,
+                                      FieldMetadata.Type expectedMetaType,
+                                      String[] expectedModifiers,
+                                      String expectedTypeName,
+                                      String[] expectedVariables ) {
         assertEquals(expectedMetaType, fieldMetadata.getMetadataType());
         assertEquals(expectedTypeName, fieldMetadata.getType());
 
@@ -230,8 +274,12 @@ public class JavaMetadataTest {
         }
     }
 
-    private void assertMethodMetadata( MethodMetadata methodMetadata, MethodMetadata.Type expectedMetaType, String[] expectedModifiers,
-                                       String returnType, String name, int expectedParamCount ) {
+    private void assertMethodMetadata( MethodMetadata methodMetadata,
+                                       MethodMetadata.Type expectedMetaType,
+                                       String[] expectedModifiers,
+                                       String returnType,
+                                       String name,
+                                       int expectedParamCount ) {
         assertEquals(expectedMetaType, methodMetadata.getType());
         if (returnType != null) {
             assertEquals(returnType, methodMetadata.getReturnType().getType());

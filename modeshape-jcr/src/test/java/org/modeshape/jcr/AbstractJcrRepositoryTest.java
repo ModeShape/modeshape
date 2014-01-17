@@ -355,13 +355,13 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
     }
 
     private static String getRandomString( int length ) {
-        StringBuffer buff = new StringBuffer(length);
+        StringBuilder sb = new StringBuilder(length);
 
         for (int i = 0; i < length; i++) {
-            buff.append((char)((Math.random() * 26) + 'a'));
+            sb.append((char)((Math.random() * 26) + 'a'));
         }
 
-        return buff.toString();
+        return sb.toString();
     }
 
     private static int createChildren( Node parent,
@@ -512,7 +512,8 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         assertChildrenInclude(null, parentNode, minimalChildNamesWithSns);
     }
 
-    protected void assertHasMixins(Node node, String...mixinNodeTypes) throws RepositoryException {
+    protected void assertHasMixins( Node node,
+                                    String... mixinNodeTypes ) throws RepositoryException {
         List<String> mixins = new ArrayList<String>();
         for (NodeType nodeType : node.getMixinNodeTypes()) {
             mixins.add(nodeType.getName());

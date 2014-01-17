@@ -23,6 +23,12 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Value;
@@ -42,12 +48,6 @@ import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedProperty;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedReference;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Writes the JCR node structure for a model.

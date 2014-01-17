@@ -26,7 +26,7 @@ package org.modeshape.sequencer.ddl;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
@@ -241,11 +241,14 @@ public class DdlParsersTest extends DdlParserTestHelper {
         final DdlParsers ddlParsers = new DdlParsers(myParsers);
 
         final String ddl = getFileContent(DDL_TEST_FILE_PATH + "dialect/oracle/oracle_test_statements_3.ddl");
-        final List<ParsingResult> results = ddlParsers.parseUsing(ddl, myParsers.get(0).getId(), myParsers.get(1).getId(), (String[])null);
+        final List<ParsingResult> results = ddlParsers.parseUsing(ddl,
+                                                                  myParsers.get(0).getId(),
+                                                                  myParsers.get(1).getId(),
+                                                                  (String[])null);
         assertThat(results.size(), is(myParsers.size()));
     }
 
-    @Test(expected = ParsingException.class)
+    @Test( expected = ParsingException.class )
     public void shouldNotAllowInvalidParserId() {
         printTest("shouldNotAllowInvalidParserId()");
 

@@ -45,21 +45,11 @@ public class LinkedHashMultimap<K, V> extends AbstractMultimap<K, V> {
         super(new LinkedHashMap<K, Collection<V>>());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractMultimap#createCollection()
-     */
     @Override
     protected Collection<V> createCollection() {
         return new LinkedHashSet<V>();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractMultimap#createUnmodifiableEmptyCollection()
-     */
     @Override
     protected Collection<V> createUnmodifiableEmptyCollection() {
         return Collections.emptyList();

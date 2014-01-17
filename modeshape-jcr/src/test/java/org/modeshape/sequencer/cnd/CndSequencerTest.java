@@ -23,9 +23,9 @@
  */
 package org.modeshape.sequencer.cnd;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.modeshape.sequencer.cnd.CndSequencerLexicon.AUTO_CREATED;
 import static org.modeshape.sequencer.cnd.CndSequencerLexicon.CHILD_NODE_DEFINITION;
 import static org.modeshape.sequencer.cnd.CndSequencerLexicon.DEFAULT_PRIMARY_TYPE;
@@ -85,10 +85,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
     private void verifyEmbeddedImageNode( Node imagesNode ) throws Exception {
         Node embeddedImageNode = getOutputNode(imagesNode, "image:embeddedImage");
         assertNotNull(embeddedImageNode);
-        new NodeDefinitionVerifier().name("image:embeddedImage")
-                                    .nodeTypeName("image:embeddedImage")
-                                    .mixin(true)
-                                    .verifyNode(embeddedImageNode);
+        new NodeDefinitionVerifier().name("image:embeddedImage").nodeTypeName("image:embeddedImage").mixin(true).verifyNode(embeddedImageNode);
         NodeIterator nodesIterator = embeddedImageNode.getNodes();
         Node propertyDefinition = nodesIterator.nextNode();
         new PropertyDefinitionVerifier().name("image:width").mandatory(false).requiredType("long").verify(propertyDefinition);
@@ -98,44 +95,30 @@ public class CndSequencerTest extends AbstractSequencerTest {
     private void verifyImageMetadataNode( Node imagesNode ) throws Exception {
         Node imageMetadataNode = getOutputNode(imagesNode, "image:metadata");
         assertNotNull(imageMetadataNode);
-        new NodeDefinitionVerifier().name("image:metadata")
-                                    .superTypes("nt:unstructured", "mix:mimeType")
-                                    .nodeTypeName("image:metadata")
-                                    .verifyNode(imageMetadataNode);
+        new NodeDefinitionVerifier().name("image:metadata").superTypes("nt:unstructured", "mix:mimeType").nodeTypeName("image:metadata").verifyNode(imageMetadataNode);
 
         NodeIterator nodesIterator = imageMetadataNode.getNodes();
         Node propertyDefinition = nodesIterator.nextNode();
-        new PropertyDefinitionVerifier().name("image:formatName")
-                                        .mandatory(true)
-                                        .requiredType("string")
-                                        .valueConstraints("JPEG",
-                                                          "GIF",
-                                                          "PNG",
-                                                          "BMP",
-                                                          "PCX",
-                                                          "IFF",
-                                                          "RAS",
-                                                          "PBM",
-                                                          "PGM",
-                                                          "PPM",
-                                                          "PSD")
-                                        .verify(propertyDefinition);
+        new PropertyDefinitionVerifier().name("image:formatName").mandatory(true).requiredType("string").valueConstraints("JPEG",
+                                                                                                                          "GIF",
+                                                                                                                          "PNG",
+                                                                                                                          "BMP",
+                                                                                                                          "PCX",
+                                                                                                                          "IFF",
+                                                                                                                          "RAS",
+                                                                                                                          "PBM",
+                                                                                                                          "PGM",
+                                                                                                                          "PPM",
+                                                                                                                          "PSD").verify(propertyDefinition);
 
         propertyDefinition = nodesIterator.nextNode();
         new PropertyDefinitionVerifier().name("image:width").mandatory(false).requiredType("long").verify(propertyDefinition);
 
         propertyDefinition = nodesIterator.nextNode();
-        new PropertyDefinitionVerifier().name("image:progressive")
-                                        .mandatory(false)
-                                        .requiredType("boolean")
-                                        .verify(propertyDefinition);
+        new PropertyDefinitionVerifier().name("image:progressive").mandatory(false).requiredType("boolean").verify(propertyDefinition);
 
         Node childNodeDefinition = nodesIterator.nextNode();
-        new NodeDefinitionVerifier().name("image:subImage")
-                                    .sameNameSiblings(true)
-                                    .requiredPrimaryTypes("image:embeddedImage")
-                                    .defaultPrimaryType("image:embeddedImage")
-                                    .verifyChildNode(childNodeDefinition);
+        new NodeDefinitionVerifier().name("image:subImage").sameNameSiblings(true).requiredPrimaryTypes("image:embeddedImage").defaultPrimaryType("image:embeddedImage").verifyChildNode(childNodeDefinition);
 
         assertFalse(nodesIterator.hasNext());
     }
@@ -255,9 +238,8 @@ public class CndSequencerTest extends AbstractSequencerTest {
         }
 
         void verifyNode( Node nodeDefinition ) throws Exception {
-            assertEquals(NODE_TYPE.toLowerCase(), nodeDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE)
-                                                                .getString()
-                                                                .toLowerCase());
+            assertEquals(NODE_TYPE.toLowerCase(),
+                         nodeDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE).getString().toLowerCase());
             assertEquals(mixin, nodeDefinition.getProperty(IS_MIXIN).getBoolean());
             assertEquals(isAbstract, nodeDefinition.getProperty(IS_ABSTRACT).getBoolean());
             assertEquals(isQueryable, nodeDefinition.getProperty(IS_QUERYABLE).getBoolean());
@@ -268,9 +250,8 @@ public class CndSequencerTest extends AbstractSequencerTest {
         }
 
         void verifyChildNode( Node childNodeDefinition ) throws Exception {
-            assertEquals(CHILD_NODE_DEFINITION.toLowerCase(), childNodeDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE)
-                                                                                 .getString()
-                                                                                 .toLowerCase());
+            assertEquals(CHILD_NODE_DEFINITION.toLowerCase(),
+                         childNodeDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE).getString().toLowerCase());
             assertNotNull(name);
             assertEquals(name, childNodeDefinition.getProperty(NAME).getString().toLowerCase());
             assertEquals(autoCreated, childNodeDefinition.getProperty(AUTO_CREATED).getBoolean());
@@ -280,8 +261,8 @@ public class CndSequencerTest extends AbstractSequencerTest {
             assertEquals(isProtected, childNodeDefinition.getProperty(PROTECTED).getBoolean());
             assertNotNull(defaultPrimaryType);
             assertEquals(defaultPrimaryType, childNodeDefinition.getProperty(DEFAULT_PRIMARY_TYPE).getString().toLowerCase());
-            assertEquals(requiredPrimaryTypes, sortedValuesToLowerCase(childNodeDefinition.getProperty(REQUIRED_PRIMARY_TYPES)
-                                                                                          .getValues()));
+            assertEquals(requiredPrimaryTypes,
+                         sortedValuesToLowerCase(childNodeDefinition.getProperty(REQUIRED_PRIMARY_TYPES).getValues()));
             assertEquals(sameNameSiblings, childNodeDefinition.getProperty(SAME_NAME_SIBLINGS).getBoolean());
             assertEquals(sameNameSiblings, childNodeDefinition.getProperty(SAME_NAME_SIBLINGS).getBoolean());
         }
@@ -367,9 +348,8 @@ public class CndSequencerTest extends AbstractSequencerTest {
         }
 
         void verify( Node propertyDefinition ) throws Exception {
-            assertEquals(PROPERTY_DEFINITION.toLowerCase(), propertyDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE)
-                                                                              .getString()
-                                                                              .toLowerCase());
+            assertEquals(PROPERTY_DEFINITION.toLowerCase(),
+                         propertyDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE).getString().toLowerCase());
 
             assertNotNull(name);
             assertEquals(name, propertyDefinition.getProperty(NAME).getString().toLowerCase());

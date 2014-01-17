@@ -32,11 +32,6 @@ public class SizeMeasuringInputStream extends InputStream {
         this.size = size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#read()
-     */
     @Override
     public int read() throws IOException {
         int result = stream.read();
@@ -46,11 +41,6 @@ public class SizeMeasuringInputStream extends InputStream {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#read(byte[], int, int)
-     */
     @Override
     public int read( byte[] b,
                      int off,
@@ -63,11 +53,6 @@ public class SizeMeasuringInputStream extends InputStream {
         return n;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#read(byte[])
-     */
     @Override
     public int read( byte[] b ) throws IOException {
         int n = stream.read(b);
@@ -77,51 +62,26 @@ public class SizeMeasuringInputStream extends InputStream {
         return n;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#mark(int)
-     */
     @Override
     public synchronized void mark( int readlimit ) {
         stream.mark(readlimit);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#markSupported()
-     */
     @Override
     public boolean markSupported() {
         return stream.markSupported();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#available()
-     */
     @Override
     public int available() throws IOException {
         return stream.available();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#reset()
-     */
     @Override
     public synchronized void reset() throws IOException {
         stream.reset();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#close()
-     */
     @Override
     public void close() throws IOException {
         stream.close();

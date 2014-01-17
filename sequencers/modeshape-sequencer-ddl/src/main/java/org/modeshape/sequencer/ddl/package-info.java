@@ -61,4 +61,3 @@
  */
 
 package org.modeshape.sequencer.ddl;
-

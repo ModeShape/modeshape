@@ -15,13 +15,12 @@
  */
 package org.modeshape.jdbc;
 
-
 /**
  * Specialized implementation for ModeShape-specific features.
  */
 public class ModeShapeMetaData extends JcrMetaData {
 
-    public ModeShapeMetaData( JcrConnection connection) {
+    public ModeShapeMetaData( JcrConnection connection ) {
         super(connection);
     }
 

@@ -23,8 +23,8 @@
  */
 package org.modeshape.sequencer.xsd;
 
-import org.modeshape.common.annotation.Immutable;
 import static org.modeshape.sequencer.xsd.XsdLexicon.Namespace.PREFIX;
+import org.modeshape.common.annotation.Immutable;
 
 
 /**
