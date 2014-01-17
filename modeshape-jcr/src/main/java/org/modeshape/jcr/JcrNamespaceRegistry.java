@@ -233,13 +233,19 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
             throw new NamespaceException(JcrI18n.unableToRegisterNamespaceWithInvalidPrefix.text(prefix, uri));
         }
 
+        String existingPrefixForURI = registry.getPrefixForNamespaceUri(uri, false);
+        if (prefix.equals(existingPrefixForURI)) {
+            //this is a no-op because we're trying to register the URI under the same prefix
+            return;
+        }
+
         boolean global = false;
         switch (behavior) {
             case SESSION:
                 // --------------------------------------
                 // JSR-283 Session remapping behavior ...
                 // --------------------------------------
-                // Section 4.3.3 (of the Draft specification):
+                // Section 5.11:
                 // "All local mappings already present in the Session that include either the specified prefix
                 // or the specified uri are removed and the new mapping is added."
                 String existingUriForPrefix = registry.getNamespaceForPrefix(prefix);
@@ -249,23 +255,11 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
                 registry.unregister(uri);
 
                 break;
-
             case WORKSPACE:
                 // --------------------------------------------------
                 // JSR-170 & JSR-283 Workspace namespace registry ...
                 // --------------------------------------------------
                 global = true;
-
-                try {
-                    session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
-                } catch (AccessControlException ace) {
-                    throw new AccessDeniedException(ace);
-                }
-
-                // Check the zero-length prefix and zero-length URI ...
-                if (DEFAULT_NAMESPACE_PREFIX.equals(prefix) || DEFAULT_NAMESPACE_URI.equals(uri)) {
-                    throw new NamespaceException(JcrI18n.unableToChangeTheDefaultNamespace.text());
-                }
                 // Check whether the prefix or URI are reserved (case-sensitive) ...
                 if (STANDARD_BUILT_IN_PREFIXES.contains(prefix)) {
                     throw new NamespaceException(JcrI18n.unableToRegisterReservedNamespacePrefix.text(prefix, uri));
@@ -273,17 +267,28 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
                 if (STANDARD_BUILT_IN_URIS.contains(uri)) {
                     throw new NamespaceException(JcrI18n.unableToRegisterReservedNamespaceUri.text(prefix, uri));
                 }
+
+                try {
+                    session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
+                } catch (AccessControlException ace) {
+                    throw new AccessDeniedException(ace);
+                }
+
+                if (existingPrefixForURI != null) {
+                    //the uri is already mapped under a different prefix so check that it's not in use
+                    checkURINotInUse(uri);
+                }
+                registry.unregister(uri);
                 break;
             default:
                 assert false; // should never happen
         }
 
-        // Signal the local node type manager ...
-        session.signalNamespaceChanges(global);
-
         // Now we're sure the prefix and URI are valid and okay for a custom mapping ...
         try {
             registry.register(prefix, uri);
+            // Signal the local node type manager ...
+            session.signalNamespaceChanges(global);
         } catch (RuntimeException e) {
             throw new RepositoryException(e.getMessage(), e.getCause());
         }
