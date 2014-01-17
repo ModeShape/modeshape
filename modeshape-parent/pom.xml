@@ -250,9 +250,14 @@
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
 
-        <infinispan.version>5.2.7.Final</infinispan.version>
+        <!-- <infinispan.version>5.2.7.Final</infinispan.version> -->
+        <infinispan.version>6.0.1.Final</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.2.10.Final</jgroups.version>
+        <!-- <jgroups.version>3.2.10.Final</jgroups.version> -->
+        <jgroups.version>3.4.1.Final</jgroups.version>
+        <infinispan-cachestore-bdbje.version>6.0.0.Alpha1</infinispan-cachestore-bdbje.version>
+        <infinispan-cachestore-jbdm.version>6.0.0.Alpha1</infinispan-cachestore-jbdm.version>
+        
         <c3p0.version>0.9.1.2</c3p0.version>
         <jboss.logging.version>3.1.2.GA</jboss.logging.version>
 
@@ -1229,12 +1234,12 @@
                 <artifactId>jgroups</artifactId>
                 <version>${jgroups.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-bdbje</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
+			<dependency>
+				<groupId>org.infinispan</groupId>
+				<artifactId>infinispan-cachestore-bdbje</artifactId>
+				<version>${infinispan-cachestore-bdbje.version}</version>
+				<scope>test</scope>
+			</dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-jdbm</artifactId>
@@ -1319,6 +1324,28 @@
                 <artifactId>lucene-regex</artifactId>
                 <version>${lucene.regex.version}</version>
             </dependency>
+            
+            
+			<!-- HXP VERY EXPERIMENTAL, to fix: java.lang.NoClassDefFoundError: org/infinispan/lucene/ChunkCacheKey$Externalizer -->
+			<dependency>
+				<groupId>org.infinispan</groupId>
+				<artifactId>infinispan-lucene-directory</artifactId>
+				<version>${infinispan.version}</version>
+			</dependency>
+
+			<!-- HXP VERY EXPERIMENTAL, to fix: java.lang.NoClassDefFoundError: org/infinispan/configuration/cache/CacheStoreConfigurationBuilder -->
+			<dependency>
+				<groupId>org.infinispan</groupId>
+				<artifactId>infinispan-custom52x-store</artifactId>
+				<version>${infinispan.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.infinispan</groupId>
+				<artifactId>infinispan-adaptor52x</artifactId>
+				<version>${infinispan.version}</version>
+			</dependency>            
+            
+            
             <dependency>
                 <groupId>javax.jms</groupId>
                 <artifactId>jms-api</artifactId>
