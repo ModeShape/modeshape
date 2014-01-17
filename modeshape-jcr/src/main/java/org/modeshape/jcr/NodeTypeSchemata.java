@@ -467,7 +467,7 @@ public class NodeTypeSchemata implements Schemata {
     }
 
     /**
-     * Get a schemata instance that works with the suppplied session and that uses the session-specific namespace mappings. Note
+     * Get a schemata instance that works with the supplied session and that uses the session-specific namespace mappings. Note
      * that the resulting instance does not change as the session's namespace mappings are changed, so when that happens the
      * JcrSession must call this method again to obtain a new schemata.
      * 
