@@ -64,7 +64,7 @@ public class IsIteratorContaining<T> extends TypeSafeMatcher<Iterator<T>> {
 
     @Factory
     public static <T> Matcher<Iterator<T>> hasItems( @SuppressWarnings( "unchecked" ) Matcher<? extends T>... elementMatchers ) {
-        Collection<Matcher<? extends Iterator<T>>> all = new ArrayList<Matcher<? extends Iterator<T>>>(elementMatchers.length);
+        Collection<Matcher<? super Iterator<T>>> all = new ArrayList<>(elementMatchers.length);
         for (Matcher<? extends T> elementMatcher : elementMatchers) {
             all.add(hasItem(elementMatcher));
         }
@@ -73,11 +73,10 @@ public class IsIteratorContaining<T> extends TypeSafeMatcher<Iterator<T>> {
 
     @Factory
     public static <T> Matcher<Iterator<T>> hasItems( @SuppressWarnings( "unchecked" ) T... elements ) {
-        Collection<Matcher<? extends Iterator<T>>> all = new ArrayList<Matcher<? extends Iterator<T>>>(elements.length);
+        Collection<Matcher<? super Iterator<T>>> all = new ArrayList<>(elements.length);
         for (T element : elements) {
             all.add(hasItem(element));
         }
         return allOf(all);
     }
-
 }

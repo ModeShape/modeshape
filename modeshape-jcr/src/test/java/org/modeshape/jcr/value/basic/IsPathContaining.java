@@ -73,8 +73,7 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
 
     @Factory
     public static Matcher<Iterable<Segment>> hasSegments( @SuppressWarnings( "unchecked" ) Matcher<Path.Segment>... elementMatchers ) {
-        Collection<Matcher<? extends Iterable<Path.Segment>>> all = new ArrayList<Matcher<? extends Iterable<Path.Segment>>>(
-                                                                                                                             elementMatchers.length);
+        Collection<Matcher<? super Iterable<Path.Segment>>> all = new ArrayList<>(elementMatchers.length);
 
         for (Matcher<Path.Segment> elementMatcher : elementMatchers) {
             Matcher<Iterable<Path.Segment>> itemMatcher = hasSegment(elementMatcher);
@@ -86,8 +85,7 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
 
     @Factory
     public static Matcher<Iterable<Segment>> hasSegments( Segment... elements ) {
-        Collection<Matcher<? extends Iterable<Segment>>> all = new ArrayList<Matcher<? extends Iterable<Segment>>>(
-                                                                                                                   elements.length);
+        Collection<Matcher<? super Iterable<Segment>>> all = new ArrayList<>(elements.length);
         for (Segment element : elements) {
             all.add(hasSegment(element));
         }
@@ -104,8 +102,7 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
     @Factory
     public static Matcher<Iterable<Segment>> hasSegments( PathFactory pathFactory,
                                                           String... segments ) {
-        Collection<Matcher<? extends Iterable<Segment>>> all = new ArrayList<Matcher<? extends Iterable<Segment>>>(
-                                                                                                                   segments.length);
+        Collection<Matcher<? super Iterable<Segment>>> all = new ArrayList<>(segments.length);
         for (String element : segments) {
             all.add(hasSegment(pathFactory, element));
         }

@@ -409,8 +409,8 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         Version version1 = checkin(originalPath);
         assertThat(version1, is(notNullValue()));
         Node baseVersion = findBaseVersion(originalPath);
-        System.out.println("original     => " + original);
-        System.out.println("baseVersion  => " + baseVersion);
+        //System.out.println("original     => " + original);
+        //System.out.println("baseVersion  => " + baseVersion);
 
         // Make the original a shareable node ...
         checkout(originalPath);
@@ -420,19 +420,19 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         Version version2 = checkin(originalPath);
         assertThat(version2, is(notNullValue()));
         Node baseVersion2 = findBaseVersion(original2);
-        System.out.println("original2    => " + original2);
-        System.out.println("baseVersion2 => " + baseVersion2);
+        //System.out.println("original2    => " + original2);
+        //System.out.println("baseVersion2 => " + baseVersion2);
 
         // Now create the share ...
         Node sharedNode = makeShare(originalPath, sharedPath);
         assertSharedSetIs(original2, originalPath, sharedPath);
         assertSharedSetIs(sharedNode, originalPath, sharedPath);
-        System.out.println("sharedNode => " + sharedNode);
+        //System.out.println("sharedNode => " + sharedNode);
 
         // Now copy a subgraph that contains the shared area ...
         session.getWorkspace().copy("/NewArea", "/OtherNewArea");
         Node baseVersion3 = findBaseVersion(originalPath);
-        System.out.println("baseVersion3 => " + baseVersion3);
+        //System.out.println("baseVersion3 => " + baseVersion3);
     }
 
     protected void createExportableContent() throws RepositoryException {

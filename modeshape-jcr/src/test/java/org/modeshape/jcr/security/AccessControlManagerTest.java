@@ -63,6 +63,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         registerNodeTypes("cars.cnd");
         importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
 
+        setPolicy("/", Privilege.JCR_ALL);
         setPolicy("/Cars/Luxury/Cadillac DTS", Privilege.JCR_READ, Privilege.JCR_WRITE, Privilege.JCR_MODIFY_ACCESS_CONTROL);
         setPolicy("/Cars/Luxury/", Privilege.JCR_READ, Privilege.JCR_MODIFY_ACCESS_CONTROL);
         setPolicy("/Cars/Sports/", Privilege.JCR_READ, Privilege.JCR_WRITE, Privilege.JCR_MODIFY_ACCESS_CONTROL);
@@ -93,7 +94,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     @Test
     public void shouldObtainAccessControlManager() throws Exception {
         assertTrue(acm != null);
-        Matcher<AccessControlManager> m = IsNull.notNullValue();
+        Matcher<AccessControlManager> m = IsNull.notNullValue(AccessControlManager.class);
         m.matches(session.getAccessControlManager());
     }
 
