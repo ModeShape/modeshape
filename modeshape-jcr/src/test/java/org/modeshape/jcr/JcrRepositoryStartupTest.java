@@ -42,6 +42,8 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.infinispan.schematic.document.EditableArray;
@@ -601,5 +603,54 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, "config/repo-config-persistent-predefined-ws.json");
+    }
+
+    @Test
+    @FixFor( "MODE-2142" )
+    public void shouldAllowChangingNamespacePrefixesInSession() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+
+        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
+
+        final String prefix = "admb";
+        final String uri = "http://www.admb.be/modeshape/admb/1.0";
+        final String nodeTypeName = prefix + ":test";
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+
+                NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+
+                // First create a namespace for the nodeType which is going to be added
+                session.getWorkspace().getNamespaceRegistry().registerNamespace(prefix, uri);
+
+                // Start creating a nodeTypeTemplate, keep it basic.
+                NodeTypeTemplate nodeTypeTemplate = nodeTypeManager.createNodeTypeTemplate();
+                nodeTypeTemplate.setName(nodeTypeName);
+                nodeTypeManager.registerNodeType(nodeTypeTemplate, false);
+
+                session.getRootNode().addNode("testNode", nodeTypeName);
+                session.save();
+
+                Node node = session.getNode("/testNode");
+                assertEquals(nodeTypeName, node.getPrimaryNodeType().getName());
+                session.setNamespacePrefix("newPrefix", uri);
+                assertEquals("newPrefix:test", node.getPrimaryNodeType().getName());
+
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                Node node = session.getNode("/testNode");
+                assertEquals(nodeTypeName, node.getPrimaryNodeType().getName());
+                return null;
+            }
+        }, repositoryConfigFile);
     }
 }

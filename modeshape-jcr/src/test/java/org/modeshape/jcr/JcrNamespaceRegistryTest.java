@@ -29,7 +29,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
-import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
@@ -37,6 +36,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 
+/**
+ * Unit test for {@link javax.jcr.NamespaceRegistry}
+ */
 public class JcrNamespaceRegistryTest extends MultiUseAbstractTest {
 
     private NamespaceRegistry registry;
@@ -343,5 +345,36 @@ public class JcrNamespaceRegistryTest extends MultiUseAbstractTest {
         nodeTypeManager.unregisterNodeType(nodeTypeName);
         registry.unregisterNamespace(prefix);
         assertThatNamespacePrefixIsNotRegistered(prefix);
+    }
+
+    @Test
+    @FixFor( "MODE-2142" )
+    public void shouldNotAllowChangingThePrefixOfUsedNamespaces() throws Exception {
+        String prefix = "admb";
+        String uri = "http://www.admb.be/modeshape/admb/1.0";
+
+        NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+
+        // First create a namespace for the nodeType which is going to be added
+        registry.registerNamespace(prefix, uri);
+        assertThatNamespaceIsRegistered(prefix, uri);
+
+        // Start creating a nodeTypeTemplate, keep it basic.
+        NodeTypeTemplate nodeTypeTemplate = nodeTypeManager.createNodeTypeTemplate();
+        String nodeTypeName = prefix + ":test";
+        nodeTypeTemplate.setName(nodeTypeName);
+        nodeTypeManager.registerNodeType(nodeTypeTemplate, false);
+
+        try {
+            registry.registerNamespace("newPrefix", uri);
+            fail("Should not allow changing the prefix of a namespace used by a node type");
+        } catch (NamespaceException e) {
+            //expected
+        }
+        nodeTypeManager.unregisterNodeType(nodeTypeName);
+
+        registry.registerNamespace("newPrefix", uri);
+        assertThatNamespacePrefixIsNotRegistered(prefix);
+        assertThatNamespaceIsRegistered("newPrefix", uri);
     }
 }
