@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class EnumMetadata extends TypeMetadata {
 
-    public EnumMetadata(String name) {
+    public EnumMetadata( String name ) {
         super(name, Type.ENUM);
     }
 
@@ -39,6 +39,5 @@ public class EnumMetadata extends TypeMetadata {
 
     public List<String> getValues() {
         return values;
-    }  
+    }
 }
-

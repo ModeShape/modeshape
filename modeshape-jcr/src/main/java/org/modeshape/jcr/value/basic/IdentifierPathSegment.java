@@ -47,6 +47,11 @@ public class IdentifierPathSegment extends BasicPathSegment {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
         if (obj instanceof Path.Segment) {

@@ -26,11 +26,9 @@ package org.modeshape.sequencer.ddl;
 import org.modeshape.common.AbstractI18nTest;
 
 /**
- * 
  * @author Barry LaFond
- *
  */
-public class DdlSequencerI18nTest  extends AbstractI18nTest {
+public class DdlSequencerI18nTest extends AbstractI18nTest {
 
     public DdlSequencerI18nTest() {
         super(DdlSequencerI18nTest.class);

@@ -33,7 +33,7 @@ public final class ClassUtil {
     private static void addObjectString( Object object,
                                          int includeInheritedFieldDepth,
                                          Class<?> clazz,
-                                         StringBuffer text ) {
+                                         StringBuilder text ) {
 
         // Add class's name
         text.append(nonPackageQualifiedName(clazz));
@@ -84,16 +84,13 @@ public final class ClassUtil {
     }
 
     private static boolean addSeparator( boolean separatorNeeded,
-                                         StringBuffer text ) {
+                                         StringBuilder text ) {
         if (separatorNeeded) {
             text.append(", ");
         }
         return true;
     }
 
-    /**
-     * @param object
-     */
     public static void makeAccessible( final AccessibleObject object ) {
         if (!object.isAccessible()) {
             if (System.getSecurityManager() == null) {
@@ -143,7 +140,7 @@ public final class ClassUtil {
      */
     public static String toString( Object object,
                                    int includeInheritedFieldDepth ) {
-        StringBuffer text = new StringBuffer();
+        StringBuilder text = new StringBuilder();
         addObjectString(object, includeInheritedFieldDepth, object.getClass(), text);
         return text.toString();
     }

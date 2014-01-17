@@ -12,16 +12,16 @@ CREATE TABLE PEOPLE
     (PERSON_ID INT NOT NULL CONSTRAINT PEOPLE_PK PRIMARY KEY, PERSON VARCHAR(26));
 
 CREATE SCHEMA schema_name_1
-	CREATE TABLE table_name_15 (
-	    column_name_1 VARCHAR(255) 
-	        REFERENCES ref_table_name (ref_column_name_1) 
-	        ON UPDATE NO ACTION )
-	CREATE VIEW SAMP.V1 (COL_SUM, COL_DIFF)
-	    AS SELECT COMM + BONUS, COMM - BONUS
-	       FROM SAMP.EMPLOYEE
-	CREATE TABLE table_name26 (
-	    column_name_1 VARCHAR(255),
-	    UNIQUE (ref_column_name_1));
+    CREATE TABLE table_name_15 (
+        column_name_1 VARCHAR(255) 
+            REFERENCES ref_table_name (ref_column_name_1) 
+            ON UPDATE NO ACTION )
+    CREATE VIEW SAMP.V1 (COL_SUM, COL_DIFF)
+        AS SELECT COMM + BONUS, COMM - BONUS
+           FROM SAMP.EMPLOYEE
+    CREATE TABLE table_name26 (
+        column_name_1 VARCHAR(255),
+        UNIQUE (ref_column_name_1));
       
 CREATE TABLE table_name29 (
     column_name_1 VARCHAR(255),

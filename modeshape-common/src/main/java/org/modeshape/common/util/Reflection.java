@@ -272,7 +272,7 @@ public class Reflection {
             int numParams = m.getParameterTypes().length;
             if (numParams != 0) continue;
             String name = m.getName();
-            if (name.equals("getClass")) continue;
+            if ("getClass()".equals(name)) continue;
             if (m.getReturnType() == Void.TYPE) continue;
             if (name.startsWith("get") || name.startsWith("is") || name.startsWith("are")) {
                 result.add(m);
@@ -923,6 +923,7 @@ public class Reflection {
         String[] propertyNames = findGetterPropertyNames();
         List<Property> results = new ArrayList<Property>(propertyNames.length);
         for (String propertyName : propertyNames) {
+            if ("class".equals(propertyName)) continue;
             Property prop = getProperty(target, propertyName);
             results.add(prop);
         }
@@ -947,6 +948,7 @@ public class Reflection {
         String[] propertyNames = findGetterPropertyNames();
         Map<String, Property> results = new HashMap<String, Property>();
         for (String propertyName : propertyNames) {
+            if ("class".equals(propertyName)) continue;
             Property prop = getProperty(target, propertyName);
             results.put(prop.getName(), prop);
         }

@@ -23,19 +23,32 @@
  */
 package org.modeshape.sequencer.ddl.dialect.postgres;
 
-import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
 import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.COMMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLE_STATEMENT_POSTGRES;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_RULE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_FUNCTION_PARAMETER;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RENAME_COLUMN;
+import javax.jcr.Node;
+import org.junit.Test;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
 
 /**
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Postgres dialects are parsed.
- *
+ * 
  * @author Horia Chiorean
  */
 public class PostgresDdlSequencerTest extends AbstractDdlSequencerTest {
@@ -47,7 +60,7 @@ public class PostgresDdlSequencerTest extends AbstractDdlSequencerTest {
 
         Node node = findNode(statementsNode, "increment", TYPE_CREATE_FUNCTION_STATEMENT);
         verifyProperty(node, DDL_START_LINE_NUMBER, 214);
-        verifyProperty(node, DDL_START_CHAR_INDEX, 7604);
+        verifyProperty(node, DDL_START_CHAR_INDEX, 7616);
 
         // COMMENT ON FUNCTION my_function (timestamp) IS ’Returns Roman Numeral’;
         node = findNode(statementsNode, "my_function", TYPE_COMMENT_ON_STATEMENT);
@@ -66,9 +79,9 @@ public class PostgresDdlSequencerTest extends AbstractDdlSequencerTest {
         assertNotNull(parameter_1);
         verifyProperty(parameter_1, DATATYPE_NAME, "int");
     }
-    
+
     @Test
-    public void shouldSequenceStatementsWithDoubleQuotes() throws Exception {    
+    public void shouldSequenceStatementsWithDoubleQuotes() throws Exception {
         Node statementsNode = sequenceDdl("ddl/d_quoted_statements.ddl");
         assertThat(statementsNode.getNodes().getSize(), is(3l));
 

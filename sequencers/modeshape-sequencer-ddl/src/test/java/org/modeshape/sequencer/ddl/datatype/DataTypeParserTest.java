@@ -49,7 +49,7 @@ public class DataTypeParserTest implements DdlConstants {
     }
 
     private String getDataTypeString( String[] input ) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < input.length; i++) {
             if (i > 0) {
@@ -63,6 +63,7 @@ public class DataTypeParserTest implements DdlConstants {
 
     private void printTest( String value ) {
         if (printTest) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.out.println("TEST:  " + value);
         }
     }
@@ -246,13 +247,13 @@ public class DataTypeParserTest implements DdlConstants {
      * ==========================================================================================================================
      * 
      * 
-    	<national character string type> ::=
-    	      NATIONAL CHARACTER [ <left paren> <length> <right paren> ]
-    	    | NATIONAL CHAR [ <left paren> <length> <right paren> ]
-    	    | NCHAR [ <left paren> <length> <right paren> ]
-    	    | NATIONAL CHARACTER VARYING <left paren> <length> <right paren>
-    	    | NATIONAL CHAR VARYING <left paren> <length> <right paren>
-    	    | NCHAR VARYING <left paren> <length> <right paren>
+        <national character string type> ::=
+              NATIONAL CHARACTER [ <left paren> <length> <right paren> ]
+            | NATIONAL CHAR [ <left paren> <length> <right paren> ]
+            | NCHAR [ <left paren> <length> <right paren> ]
+            | NATIONAL CHARACTER VARYING <left paren> <length> <right paren>
+            | NATIONAL CHAR VARYING <left paren> <length> <right paren>
+            | NCHAR VARYING <left paren> <length> <right paren>
 
      * 
      * 
@@ -363,9 +364,9 @@ public class DataTypeParserTest implements DdlConstants {
      * NATIONAL CHARACTER STRING TYPE
      * ==========================================================================================================================
      * 
-    	<bit string type> ::=
-    	      BIT [ <left paren> <length> <right paren> ]
-    	    | BIT VARYING <left paren> <length> <right paren>
+        <bit string type> ::=
+              BIT [ <left paren> <length> <right paren> ]
+            | BIT VARYING <left paren> <length> <right paren>
      *
      */
 
@@ -427,13 +428,13 @@ public class DataTypeParserTest implements DdlConstants {
     /* ===========================================================================================================================
      * EXACT NUMERIC TYPE
      * ==========================================================================================================================
-    	<exact numeric type> ::=
-    	      NUMERIC [ <left paren> <precision> [ <comma> <scale> ] <right paren> ]
-    	    | DECIMAL [ <left paren> <precision> [ <comma> <scale> ] <right paren> ]
-    	    | DEC [ <left paren> <precision> [ <comma> <scale> ] <right paren> ]
-    	    | INTEGER
-    	    | INT
-    	    | SMALLINT
+        <exact numeric type> ::=
+              NUMERIC [ <left paren> <precision> [ <comma> <scale> ] <right paren> ]
+            | DECIMAL [ <left paren> <precision> [ <comma> <scale> ] <right paren> ]
+            | DEC [ <left paren> <precision> [ <comma> <scale> ] <right paren> ]
+            | INTEGER
+            | INT
+            | SMALLINT
      * 
      */
 
@@ -653,10 +654,10 @@ public class DataTypeParserTest implements DdlConstants {
      * APPROXIMATE NUMERIC TYPE
      * ==========================================================================================================================
      * 
-    	<approximate numeric type> ::=
-    	      FLOAT [ <left paren> <precision> <right paren> ]
-    	    | REAL
-    	    | DOUBLE PRECISION
+        <approximate numeric type> ::=
+              FLOAT [ <left paren> <precision> <right paren> ]
+            | REAL
+            | DOUBLE PRECISION
      */
 
     @Test
@@ -724,12 +725,12 @@ public class DataTypeParserTest implements DdlConstants {
      * APPROXIMATE NUMERIC TYPE
      * ==========================================================================================================================
      * 
-    	<datetime type> ::=
-    	      DATE
-    	    | TIME [ <left paren> <time precision> <right paren> ] [ WITH TIME ZONE ]
-    	    | TIMESTAMP [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
-    	    
-    	    NOTE:  time precision & timestamp precision is an integer from 0 to 9
+        <datetime type> ::=
+              DATE
+            | TIME [ <left paren> <time precision> <right paren> ] [ WITH TIME ZONE ]
+            | TIMESTAMP [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
+            
+            NOTE:  time precision & timestamp precision is an integer from 0 to 9
      */
 
     @Test

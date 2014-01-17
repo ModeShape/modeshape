@@ -28,7 +28,7 @@ import org.modeshape.common.i18n.I18n;
 
 /**
  * Class which holds i18n messages for {@link ClusteringService}
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ClusteringI18n {
@@ -38,10 +38,14 @@ public class ClusteringI18n {
     public static I18n memberOfClusterIsSuspect;
     public static I18n channelConfigurationError;
 
+    private ClusteringI18n() {
+    }
+
     static {
         try {
             I18n.initialize(ClusteringI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

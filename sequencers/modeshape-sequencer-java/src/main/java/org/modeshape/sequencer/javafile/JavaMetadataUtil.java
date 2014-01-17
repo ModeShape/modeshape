@@ -71,10 +71,10 @@ public class JavaMetadataUtil {
         CheckArg.isNotNull(name, "name");
         return name.getFullyQualifiedName();
     }
-    
-    public static String expressionString(Expression expression) {
-        if (expression instanceof StringLiteral){
-            return ((StringLiteral) expression).getLiteralValue();           
+
+    public static String expressionString( Expression expression ) {
+        if (expression instanceof StringLiteral) {
+            return ((StringLiteral)expression).getLiteralValue();
         }
         return expression.toString();
     }

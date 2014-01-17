@@ -18,7 +18,6 @@ package org.modeshape.web.jcr.rest.client.http;
 import static org.modeshape.web.jcr.rest.client.RestClientI18n.unknownHttpRequestMethodMsg;
 import java.net.URL;
 import javax.ws.rs.core.MediaType;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -77,9 +76,9 @@ public final class HttpClientConnection {
     public HttpClientConnection( Server server,
                                  URL url,
                                  RequestMethod method ) throws Exception {
-    	assert server != null;
-    	assert url != null;
-    	assert method != null;
+        assert server != null;
+        assert url != null;
+        assert method != null;
 
         this.httpClient = new DefaultHttpClient();
         this.httpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort()),
@@ -98,7 +97,7 @@ public final class HttpClientConnection {
             throw new RuntimeException(unknownHttpRequestMethodMsg.text(method));
         }
 
-        //set the accepts header to application/json
+        // set the accepts header to application/json
         this.request.setHeader("Accept", MediaType.APPLICATION_JSON);
 
         // set request URI
@@ -149,7 +148,7 @@ public final class HttpClientConnection {
      * @throws Exception if there is a problem writing to the connection
      */
     public void write( byte[] bytes ) throws Exception {
-    	assert bytes != null;
+        assert bytes != null;
 
         ByteArrayEntity entity = new ByteArrayEntity(bytes);
         if (contentType == null) {

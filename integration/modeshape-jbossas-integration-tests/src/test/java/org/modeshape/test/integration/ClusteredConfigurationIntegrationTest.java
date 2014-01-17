@@ -34,8 +34,8 @@ import org.junit.runner.RunWith;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**

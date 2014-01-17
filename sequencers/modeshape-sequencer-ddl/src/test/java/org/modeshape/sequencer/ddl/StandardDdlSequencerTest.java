@@ -23,21 +23,42 @@
 */
 package org.modeshape.sequencer.ddl;
 
-import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
-import static org.modeshape.jcr.api.JcrConstants.*;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlParser;
+import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_SCALE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CONSTRAINT_ATTRIBUTE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_ASSERTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_FK_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_REFERENCE;
 import java.util.ArrayList;
 import java.util.List;
+import javax.jcr.Node;
+import org.junit.Test;
+import org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlParser;
 
 /**
  * Unit test for the behaviour of the ddl sequencer, when standard ddl files are sequenced
- *
+ * 
  * @author Horia Chiorean
  */
 public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
@@ -70,8 +91,7 @@ public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
         assertNotNull(winnersNode);
         verifyBaseProperties(winnersNode, NT_UNSTRUCTURED, "3", "5", "113", 0);
         verifyMixinType(winnersNode, TYPE_CREATE_VIEW_STATEMENT);
-        verifyExpression(winnersNode,
-                         "CREATE VIEW winners AS SELECT title, release FROM films WHERE producerName IS NOT NULL;");
+        verifyExpression(winnersNode, "CREATE VIEW winners AS SELECT title, release FROM films WHERE producerName IS NOT NULL;");
 
         // Check Column Properties
         Node titleNode = filmsNode.getNode("title");
@@ -97,7 +117,7 @@ public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
         // NEXTID NUMERIC
         // );
         String targetExpression = "CREATE TABLE IDTABLE\n" + "(\n" + "  IDCONTEXT  VARCHAR(20) NOT NULL PRIMARY KEY,\n"
-                + "  NEXTID     NUMERIC\n" + ");";
+                                  + "  NEXTID     NUMERIC\n" + ");";
 
         Node statementsNode = sequenceDdl("ddl/create_table.ddl");
         assertThat(statementsNode.getNodes().getSize(), is(1l));
@@ -140,7 +160,6 @@ public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyPrimaryType(idcontectRefNode, NT_UNSTRUCTURED);
         verifyMixinType(idcontectRefNode, TYPE_COLUMN_REFERENCE);
     }
-
 
     @Test
     public void shouldGenerateNodeTypesForCreateTables() throws Exception {
@@ -324,7 +343,7 @@ public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
     public void shouldCreateDdlParserInstancesForAllValidBuiltInGrammarsAndInstantiableParser() {
         DdlSequencer sequencer = new DdlSequencer();
         String[] grammars = new String[] {new OracleDdlParser().getId(), new StandardDdlParser().getId(),
-                ArgleDdlParser.class.getName()};
+            ArgleDdlParser.class.getName()};
         sequencer.setGrammars(grammars);
         assertThat(sequencer.getGrammars(), is(grammars));
         List<DdlParser> parsers = sequencer.getParserList();

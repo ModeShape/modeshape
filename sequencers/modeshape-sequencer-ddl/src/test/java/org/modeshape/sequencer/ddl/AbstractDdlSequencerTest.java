@@ -23,50 +23,70 @@
  */
 package org.modeshape.sequencer.ddl;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.modeshape.jcr.api.JcrConstants.JCR_MIXIN_TYPES;
+import static org.modeshape.jcr.api.JcrConstants.JCR_PRIMARY_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.STATEMENTS_CONTAINER;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
-import static org.modeshape.jcr.api.JcrConstants.JCR_MIXIN_TYPES;
-import static org.modeshape.jcr.api.JcrConstants.JCR_PRIMARY_TYPE;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import java.util.*;
 
 /**
  * Base class for all the {@link DdlSequencer} tests.
- *
+ * 
  * @author Horia Chiorean
  */
 public abstract class AbstractDdlSequencerTest extends AbstractSequencerTest {
 
-    protected void verifyProperty( Node node, String propertyName, String expectedValue ) throws RepositoryException {
+    protected void verifyProperty( Node node,
+                                   String propertyName,
+                                   String expectedValue ) throws RepositoryException {
         Property property = node.getProperty(propertyName);
         Value value = property.isMultiple() ? property.getValues()[0] : property.getValue();
         assertEquals(expectedValue, value.getString());
     }
 
-    protected void verifyProperty( Node node, String propertyName, long expectedValue ) throws RepositoryException {
+    protected void verifyProperty( Node node,
+                                   String propertyName,
+                                   long expectedValue ) throws RepositoryException {
         Property property = node.getProperty(propertyName);
         Value value = property.isMultiple() ? property.getValues()[0] : property.getValue();
         assertEquals(expectedValue, value.getLong());
     }
 
-    protected boolean verifyHasProperty( Node node, String propNameStr ) throws RepositoryException {
+    protected boolean verifyHasProperty( Node node,
+                                         String propNameStr ) throws RepositoryException {
         return node.hasProperty(propNameStr);
     }
 
-    protected void verifyPrimaryType( Node node, String expectedValue ) throws RepositoryException {
+    protected void verifyPrimaryType( Node node,
+                                      String expectedValue ) throws RepositoryException {
         verifyProperty(node, JCR_PRIMARY_TYPE, expectedValue);
     }
 
-    protected void verifyMixinType( Node node, String expectedValue ) throws RepositoryException {
+    protected void verifyMixinType( Node node,
+                                    String expectedValue ) throws RepositoryException {
         verifyProperty(node, JCR_MIXIN_TYPES, expectedValue);
     }
-    
-    protected void verifyMixinTypes( Node node, String... expectedValues ) throws RepositoryException {
+
+    protected void verifyMixinTypes( Node node,
+                                     String... expectedValues ) throws RepositoryException {
         Value[] values = node.getProperty(JCR_MIXIN_TYPES).getValues();
         Set<String> valuesSet = new TreeSet<String>();
         for (Value value : values) {
@@ -80,11 +100,17 @@ public abstract class AbstractDdlSequencerTest extends AbstractSequencerTest {
         assertTrue(expectedValuesList.isEmpty());
     }
 
-    protected void verifyExpression( Node node, String expectedValue ) throws RepositoryException {
+    protected void verifyExpression( Node node,
+                                     String expectedValue ) throws RepositoryException {
         verifyProperty(node, DDL_EXPRESSION, expectedValue);
     }
 
-    protected void verifyBaseProperties( Node node, String primaryType, String lineNum, String colNum, String charIndex, long numChildren ) throws RepositoryException {
+    protected void verifyBaseProperties( Node node,
+                                         String primaryType,
+                                         String lineNum,
+                                         String colNum,
+                                         String charIndex,
+                                         long numChildren ) throws RepositoryException {
         verifyPrimaryType(node, primaryType);
         verifyProperty(node, DDL_START_LINE_NUMBER, lineNum);
         verifyProperty(node, DDL_START_COLUMN_NUMBER, colNum);
@@ -92,7 +118,9 @@ public abstract class AbstractDdlSequencerTest extends AbstractSequencerTest {
         assertThat(node.getNodes().getSize(), is(numChildren));
     }
 
-    protected Node findNode( Node parent, String nodePath, String... mixinTypes ) throws Exception {
+    protected Node findNode( Node parent,
+                             String nodePath,
+                             String... mixinTypes ) throws Exception {
         Node child = parent.getNode(nodePath);
         assertNotNull(child);
         verifyMixinTypes(child, mixinTypes);
@@ -100,7 +128,7 @@ public abstract class AbstractDdlSequencerTest extends AbstractSequencerTest {
     }
 
     protected Node sequenceDdl( String ddlFile,
-                                final int waitTimeSeconds) throws Exception {
+                                final int waitTimeSeconds ) throws Exception {
         String fileName = ddlFile.substring(ddlFile.lastIndexOf("/") + 1);
         createNodeWithContentFromFile(fileName, ddlFile);
         Node outputNode = getOutputNode(rootNode, "ddl/" + fileName, waitTimeSeconds);

@@ -21,4 +21,3 @@
  * objects.
  */
 package org.modeshape.common.naming;
-

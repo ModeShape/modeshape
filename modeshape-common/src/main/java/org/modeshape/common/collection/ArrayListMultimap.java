@@ -45,31 +45,16 @@ public class ArrayListMultimap<K, V> extends AbstractMultimap<K, V> implements L
         super(new HashMap<K, Collection<V>>());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractMultimap#createCollection()
-     */
     @Override
     protected Collection<V> createCollection() {
         return new ArrayList<V>();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractMultimap#createUnmodifiableEmptyCollection()
-     */
     @Override
     protected Collection<V> createUnmodifiableEmptyCollection() {
         return Collections.emptyList();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractMultimap#get(java.lang.Object)
-     */
     @Override
     public List<V> get( K key ) {
         return (List<V>)super.get(key);

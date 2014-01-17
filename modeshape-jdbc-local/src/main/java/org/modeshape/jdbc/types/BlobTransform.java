@@ -18,38 +18,28 @@ package org.modeshape.jdbc.types;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-
 import org.modeshape.jdbc.JcrBlob;
 import org.modeshape.jdbc.Transform;
 
-/**
- *
- */
-public class BlobTransform  implements Transform {
+public class BlobTransform implements Transform {
 
+    @SuppressWarnings( "unused" )
+    @Override
+    public Object transform( Value value ) throws ValueFormatException, RepositoryException {
+        return new BlobTransfom(value, 0L);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 * @throws RepositoryException 
-	 * @throws ValueFormatException 
-	 *
-	 * @see org.modeshape.jdbc.Transform#transform(javax.jcr.Value)
-	 */
-	@Override
-	public Object transform(Value value) throws ValueFormatException, RepositoryException {
-		return new BlobTransfom(value, 0L);
-	}
-	
-	class BlobTransfom extends JcrBlob {
+    class BlobTransfom extends JcrBlob {
 
-		/**
-		 * @param value
-		 * @param length
-		 */
-		protected BlobTransfom(Value value, long length) {
-			super(value, length);
-			
-		}		
-	}
+        /**
+         * @param value
+         * @param length
+         */
+        protected BlobTransfom( Value value,
+                                long length ) {
+            super(value, length);
+
+        }
+    }
 
 }

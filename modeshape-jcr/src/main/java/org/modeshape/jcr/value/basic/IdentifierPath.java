@@ -273,4 +273,8 @@ public class IdentifierPath extends AbstractPath {
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

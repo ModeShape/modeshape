@@ -23,7 +23,6 @@
  */
 package org.modeshape.sequencer.ddl.dialect.oracle;
 
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_OPTION;
@@ -38,11 +37,122 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMEN
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_REFERENCE;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.*;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.AUTHID_VALUE;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.BITMAP_INDEX;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.IN_OUT_NO_COPY;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_CLUSTER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_DIMENSION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_DISKGROUP_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_INDEXTYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_JAVA_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_MATERIALIZED_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_OPERATOR_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_OUTLINE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_PACKAGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_PROFILE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_RESOURCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_ROLLBACK_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_SESSION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_SYSTEM_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_TYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_USER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ANALYZE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ASSOCIATE_STATISTICS_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_AUDIT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_BACKSLASH_TERMINATOR;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_COMMIT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_BITMAP_JOIN_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_CLUSTER_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_CLUSTER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_CONTEXT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_CONTROLFILE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_DIMENSION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_DIRECTORY_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_DISKGROUP_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_INDEXTYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_JAVA_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_LIBRARY_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_MATERIALIZED_VIEW_LOG_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_MATERIALIZED_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_OPERATOR_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_OUTLINE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_PACKAGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_PFILE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_PROFILE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_ROLLBACK_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_SPFILE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_SYNONYM_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_TYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_USER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DISASSOCIATE_STATISTICS_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_CLUSTER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_CONTEXT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_DIMENSION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_DIRECTORY_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_DISKGROUP_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_INDEXTYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_JAVA_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_LIBRARY_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_MATERIALIZED_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_OPERATOR_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_OUTLINE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_PACKAGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_PROFILE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_ROLLBACK_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_SYNONYM_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_TYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_DROP_USER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_EXPLAIN_PLAN_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_FLASHBACK_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_FUNCTION_PARAMETER;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_LOCK_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_MERGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_NOAUDIT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_PURGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_RENAME_COLUMN;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_RENAME_CONSTRAINT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_RENAME_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_REVOKE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ROLLBACK_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_SAVEPOINT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_SET_CONSTRAINTS_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_SET_CONSTRAINT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_SET_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_SET_TRANSACTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_TRUNCATE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.UNIQUE_INDEX;
 import java.util.ArrayList;
 import java.util.List;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
+import org.modeshape.common.text.TokenStream;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.sequencer.ddl.DdlParserProblem;
 import org.modeshape.sequencer.ddl.DdlSequencerI18n;
@@ -76,19 +186,20 @@ public class OracleDdlParser extends StandardDdlParser
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.sequencer.ddl.StandardDdlParser#areNextTokensCreateTableOptions(org.modeshape.sequencer.ddl.DdlTokenStream)
      */
     @Override
     protected boolean areNextTokensCreateTableOptions( final DdlTokenStream tokens ) throws ParsingException {
-        // current token can't be a terminator or the next n-tokens can't be a statement  
+        // current token can't be a terminator or the next n-tokens can't be a statement
         return (tokens.hasNext() && !isTerminator(tokens) && (tokens.computeNextStatementStartKeywordCount() == 0));
     }
 
     /**
      * {@inheritDoc}
-     *
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseNextCreateTableOption(org.modeshape.sequencer.ddl.DdlTokenStream, org.modeshape.sequencer.ddl.node.AstNode)
+     * 
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseNextCreateTableOption(org.modeshape.sequencer.ddl.DdlTokenStream,
+     *      org.modeshape.sequencer.ddl.node.AstNode)
      */
     @Override
     protected void parseNextCreateTableOption( final DdlTokenStream tokens,
@@ -107,7 +218,7 @@ public class OracleDdlParser extends StandardDdlParser
                 processed = true;
             }
         }
-        
+
         if (!processed) {
             final AstNode tableOption = nodeFactory().node("option", tableNode, TYPE_STATEMENT_OPTION);
             tableOption.setProperty(VALUE, tableProperty);
@@ -222,7 +333,7 @@ public class OracleDdlParser extends StandardDdlParser
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.sequencer.ddl.StandardDdlParser#consumeIdentifier(org.modeshape.sequencer.ddl.DdlTokenStream)
      */
     @Override
@@ -248,7 +359,7 @@ public class OracleDdlParser extends StandardDdlParser
 
         return id;
     }
-    
+
     private boolean matchesComplexNode( AstNode node ) {
         assert node != null;
 
@@ -924,7 +1035,7 @@ public class OracleDdlParser extends StandardDdlParser
         assert tokens != null;
         assert parentNode != null;
 
-        if (tokens.matches("ALTER", "TABLE", DdlTokenStream.ANY_VALUE, "ADD")) {
+        if (tokens.matches("ALTER", "TABLE", TokenStream.ANY_VALUE, "ADD")) {
 
             // ALTER TABLE
             // ADD ( {column_definition | virtual_column_definition
@@ -972,7 +1083,7 @@ public class OracleDdlParser extends StandardDdlParser
             markEndOfStatement(tokens, alterTableNode);
 
             return alterTableNode;
-        } else if (tokens.matches("ALTER", "TABLE", DdlTokenStream.ANY_VALUE, "DROP")) {
+        } else if (tokens.matches("ALTER", "TABLE", TokenStream.ANY_VALUE, "DROP")) {
             markStartOfStatement(tokens);
 
             tokens.consume(ALTER, TABLE);
@@ -1013,7 +1124,7 @@ public class OracleDdlParser extends StandardDdlParser
             markEndOfStatement(tokens, alterTableNode);
 
             return alterTableNode;
-        } else if (tokens.matches("ALTER", "TABLE", DdlTokenStream.ANY_VALUE, "RENAME")) {
+        } else if (tokens.matches("ALTER", "TABLE", TokenStream.ANY_VALUE, "RENAME")) {
 
             // ALTER TABLE customers RENAME TO my_customers;
             // ALTER TABLE customers RENAME CONSTRAINT cust_fname_nn TO cust_firstname_nn;
@@ -1054,7 +1165,7 @@ public class OracleDdlParser extends StandardDdlParser
             markEndOfStatement(tokens, alterTableNode);
 
             return alterTableNode;
-        } else if (tokens.matches("ALTER", "TABLE", DdlTokenStream.ANY_VALUE, "MODIFY")) {
+        } else if (tokens.matches("ALTER", "TABLE", TokenStream.ANY_VALUE, "MODIFY")) {
 
         }
 
@@ -1285,8 +1396,8 @@ public class OracleDdlParser extends StandardDdlParser
     }
 
     /**
-     * If the index type is a bitmap-join the columns are from the dimension tables which are defined in the FROM clause. All other
-     * index types the columns are from the table the index in on.
+     * If the index type is a bitmap-join the columns are from the dimension tables which are defined in the FROM clause. All
+     * other index types the columns are from the table the index in on.
      * <p>
      * <code>
      * column-expression == left-paren column-name [ASC | DESC] | constant | function [, column-name [ASC | DESC] | constant | function ]* right-paren
@@ -1361,7 +1472,7 @@ public class OracleDdlParser extends StandardDdlParser
                         } else {
                             // this should not be possible but check none the less
                             for (final AstNode node : nodes) {
-                                if (node.hasMixin(OracleDdlLexicon.TYPE_CREATE_TABLE_STATEMENT)) {
+                                if (node.hasMixin(StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT)) {
                                     tableNodes = new ArrayList<AstNode>(1);
                                     tableNodes.add(node);
                                     break;
@@ -1371,7 +1482,7 @@ public class OracleDdlParser extends StandardDdlParser
                     }
                 } else {
                     // must be bitmap-join
-                    tableNodes = indexNode.getChildren(OracleDdlLexicon.TYPE_TABLE_REFERENCE);
+                    tableNodes = indexNode.getChildren(StandardDdlLexicon.TYPE_TABLE_REFERENCE);
                 }
 
                 if ((tableNodes != null) && !tableNodes.isEmpty()) {
@@ -1383,7 +1494,7 @@ public class OracleDdlParser extends StandardDdlParser
                         final boolean asc = (ascIndex != -1);
                         final int descIndex = possibleColumn.toUpperCase().indexOf(" DESC");
                         boolean desc = (descIndex != -1);
-    
+
                         // adjust column name if there is ordering
                         if (asc) {
                             possibleColumn = possibleColumn.substring(0, ascIndex);
@@ -1403,30 +1514,32 @@ public class OracleDdlParser extends StandardDdlParser
                             } else {
                                 // only one table reference. need to find column.
                                 final AstNode tableNode = tableNodes.get(0);
-                                final List<AstNode> columnNodes = tableNode.getChildren(OracleDdlLexicon.TYPE_COLUMN_DEFINITION);
+                                final List<AstNode> columnNodes = tableNode.getChildren(StandardDdlLexicon.TYPE_COLUMN_DEFINITION);
 
                                 if (!columnNodes.isEmpty()) {
                                     // find column
                                     for (final AstNode colNode : columnNodes) {
                                         if (colNode.getName().toUpperCase().equals(possibleColumn.toUpperCase())) {
-                                            final AstNode colRef = nodeFactory().node(possibleColumn, indexNode, TYPE_COLUMN_REFERENCE);
-                                            
+                                            final AstNode colRef = nodeFactory().node(possibleColumn,
+                                                                                      indexNode,
+                                                                                      TYPE_COLUMN_REFERENCE);
+
                                             if (asc || desc) {
                                                 colRef.addMixin(OracleDdlLexicon.TYPE_INDEX_ORDERABLE);
-                
+
                                                 if (asc) {
                                                     colRef.setProperty(OracleDdlLexicon.INDEX_ORDER, "ASC");
                                                 } else {
                                                     colRef.setProperty(OracleDdlLexicon.INDEX_ORDER, "DESC");
                                                 }
                                             }
-                
+
                                             processed = true;
                                             break;
                                         }
                                     }
                                 }
-                                
+
                                 if (!processed) {
                                     if (asc) {
                                         functions.add(possibleColumn + SPACE + "ASC");
@@ -1444,17 +1557,17 @@ public class OracleDdlParser extends StandardDdlParser
                             for (final AstNode dimensionTableNode : tableNodes) {
                                 if (possibleColumn.toUpperCase().startsWith(dimensionTableNode.getName().toUpperCase() + PERIOD)) {
                                     final AstNode colRef = nodeFactory().node(possibleColumn, indexNode, TYPE_COLUMN_REFERENCE);
-                                    
+
                                     if (asc || desc) {
                                         colRef.addMixin(OracleDdlLexicon.TYPE_INDEX_ORDERABLE);
-        
+
                                         if (asc) {
                                             colRef.setProperty(OracleDdlLexicon.INDEX_ORDER, "ASC");
                                         } else {
                                             colRef.setProperty(OracleDdlLexicon.INDEX_ORDER, "DESC");
                                         }
                                     }
-        
+
                                     processed = true;
                                     break;
                                 }
@@ -1488,7 +1601,7 @@ public class OracleDdlParser extends StandardDdlParser
 
         tokens.consume(R_PAREN); // must have closing paren
     }
-    
+
     /**
      * Parses DDL CREATE INDEX
      * <p>
@@ -1632,16 +1745,16 @@ public class OracleDdlParser extends StandardDdlParser
         // %
 
         /*
-        	commentCommand
-        		:	'COMMENT' 'ON' 
-        		  ( 'TABLE' tableName 
-        		  | 'VIEW' tableName
-        		  | 'INDEX' indexName
-        		  | 'COLUMN' columnName 
-        		  | 'PROCEDURE' procedureId
-        		  | 'MATERIALIZED'? 'VIEW' tableName 
-        		  ) 'IS' ('NULL' | (CharLiteral)+) commandEnd? //CharLiteral (',' unicodeCharLiteral)*) commandEnd?
-        		;
+            commentCommand
+                :    'COMMENT' 'ON' 
+                  ( 'TABLE' tableName 
+                  | 'VIEW' tableName
+                  | 'INDEX' indexName
+                  | 'COLUMN' columnName 
+                  | 'PROCEDURE' procedureId
+                  | 'MATERIALIZED'? 'VIEW' tableName 
+                  ) 'IS' ('NULL' | (CharLiteral)+) commandEnd? //CharLiteral (',' unicodeCharLiteral)*) commandEnd?
+                ;
          */
         tokens.consume("COMMENT"); // consumes 'COMMENT' 'ON'
         tokens.consume("ON");
@@ -1834,7 +1947,7 @@ public class OracleDdlParser extends StandardDdlParser
 
         localTokens.start();
 
-        StringBuffer unusedTokensSB = new StringBuffer();
+        StringBuilder unusedTokensSB = new StringBuilder();
 
         do {
             if (isColumnDefinitionStart(localTokens)) {
@@ -1897,7 +2010,7 @@ public class OracleDdlParser extends StandardDdlParser
      */
     private String parseUntilFwdSlash( DdlTokenStream tokens,
                                        boolean stopAtStatementStart ) throws ParsingException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (stopAtStatementStart) {
             while (tokens.hasNext()
 

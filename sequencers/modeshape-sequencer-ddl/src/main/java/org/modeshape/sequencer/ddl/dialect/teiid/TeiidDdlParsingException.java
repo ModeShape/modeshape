@@ -45,7 +45,7 @@ public class TeiidDdlParsingException extends ParsingException {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see java.lang.Throwable#getLocalizedMessage()
      */
     @Override
@@ -54,8 +54,8 @@ public class TeiidDdlParsingException extends ParsingException {
 
         if (getPosition() == Position.EMPTY_CONTENT_POSITION) {
             return msg + " (tokens are empty)";
-        }    
-            
+        }
+
         return msg + " (position = " + getPosition();
     }
 

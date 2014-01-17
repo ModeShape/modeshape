@@ -28,6 +28,9 @@ public class MockI18n {
         }
     }
 
+    private MockI18n() {
+    }
+
     public static I18n noPlaceholders;
     public static I18n passthrough;
 }

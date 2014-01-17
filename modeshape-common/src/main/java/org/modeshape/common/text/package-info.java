@@ -22,4 +22,3 @@
  * making it very easy to create very straightforward parsers.
  */
 package org.modeshape.common.text;
-

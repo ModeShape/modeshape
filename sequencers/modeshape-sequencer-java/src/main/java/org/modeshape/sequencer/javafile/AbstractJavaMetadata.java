@@ -23,13 +23,46 @@
  */
 package org.modeshape.sequencer.javafile;
 
-import org.eclipse.jdt.core.dom.*;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.sequencer.javafile.metadata.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
+import org.eclipse.jdt.core.dom.ArrayType;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.EnumConstantDeclaration;
+import org.eclipse.jdt.core.dom.EnumDeclaration;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IExtendedModifier;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.MarkerAnnotation;
+import org.eclipse.jdt.core.dom.MemberValuePair;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.PrimitiveType;
+import org.eclipse.jdt.core.dom.SimpleType;
+import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.sequencer.javafile.metadata.AnnotationMetadata;
+import org.modeshape.sequencer.javafile.metadata.EnumMetadata;
+import org.modeshape.sequencer.javafile.metadata.FieldMetadata;
+import org.modeshape.sequencer.javafile.metadata.ImportMetadata;
+import org.modeshape.sequencer.javafile.metadata.MethodMetadata;
+import org.modeshape.sequencer.javafile.metadata.ModifierMetadata;
+import org.modeshape.sequencer.javafile.metadata.PackageMetadata;
+import org.modeshape.sequencer.javafile.metadata.TypeMetadata;
+import org.modeshape.sequencer.javafile.metadata.Variable;
 
 /**
  * Abstract definition of a <code>JavaMetadata<code>. This class exposes some useful methods, that can
@@ -77,7 +110,7 @@ public abstract class AbstractJavaMetadata {
             packageMetadata = new PackageMetadata(JavaMetadataUtil.getName(unit.getPackage().getName()));
             if (!annotations.isEmpty()) {
                 for (Object object : annotations) {
-                    packageMetadata.getAnnotations().add(createAnnotationMetadataFor((Annotation) object));
+                    packageMetadata.getAnnotations().add(createAnnotationMetadataFor((Annotation)object));
                 }
             }
         }
@@ -85,7 +118,7 @@ public abstract class AbstractJavaMetadata {
     }
 
     @SuppressWarnings( "unchecked" )
-    protected AnnotationMetadata createAnnotationMetadataFor(Annotation annotation) {
+    protected AnnotationMetadata createAnnotationMetadataFor( Annotation annotation ) {
         if (annotation instanceof NormalAnnotation) {
             NormalAnnotation normalAnnotation = (NormalAnnotation)annotation;
 
@@ -129,7 +162,7 @@ public abstract class AbstractJavaMetadata {
                 TypeDeclaration typeDeclaration = (TypeDeclaration)abstractTypeDeclaration;
                 if (typeDeclaration.isInterface()) {
                     // is an interface top level type
-                    TypeMetadata interfaceMetadata =  TypeMetadata.interfaceType(JavaMetadataUtil.getName(typeDeclaration.getName()));
+                    TypeMetadata interfaceMetadata = TypeMetadata.interfaceType(JavaMetadataUtil.getName(typeDeclaration.getName()));
 
                     // detect the interfaces, if any
                     for (Type superInterfaceType : (List<Type>)typeDeclaration.superInterfaceTypes()) {
@@ -182,9 +215,9 @@ public abstract class AbstractJavaMetadata {
                 for (EnumConstantDeclaration enumValue : enumValues) {
                     enumMetadata.getValues().add(enumValue.getName().getIdentifier());
                 }
-                
+
                 // Enums don't have superclasses
-                
+
                 // detect the interfaces, if any
                 for (Type superInterfaceType : (List<Type>)enumDeclaration.superInterfaceTypes()) {
                     enumMetadata.getInterfaceNames().add(getTypeName(superInterfaceType));
@@ -199,12 +232,11 @@ public abstract class AbstractJavaMetadata {
                 for (BodyDeclaration bodyDecl : bodyDecls) {
                     if (bodyDecl instanceof FieldDeclaration) {
                         // fields of the class top level type
-                        FieldMetadata fieldMetadata = getFieldMetadataFrom((FieldDeclaration) bodyDecl);
+                        FieldMetadata fieldMetadata = getFieldMetadataFrom((FieldDeclaration)bodyDecl);
                         enumMetadata.getFields().add(fieldMetadata);
-                    }
-                    else if (bodyDecl instanceof MethodDeclaration){
+                    } else if (bodyDecl instanceof MethodDeclaration) {
                         // methods of the class top level type
-                        MethodMetadata methodMetadata = getMethodMetadataFrom((MethodDeclaration) bodyDecl);
+                        MethodMetadata methodMetadata = getMethodMetadataFrom((MethodDeclaration)bodyDecl);
                         enumMetadata.getMethods().add(methodMetadata);
                     }
                 }
@@ -223,15 +255,16 @@ public abstract class AbstractJavaMetadata {
 
     /**
      * Process modifiers of {@link TypeDeclaration}.
-     *
+     * 
      * @param typeDeclaration - the type declaration.
      * @param classMetadata - class meta data.
      */
     @SuppressWarnings( "unchecked" )
-    protected void processModifiersOfTypeDeclaration( AbstractTypeDeclaration typeDeclaration, TypeMetadata classMetadata ) {
+    protected void processModifiersOfTypeDeclaration( AbstractTypeDeclaration typeDeclaration,
+                                                      TypeMetadata classMetadata ) {
         List<IExtendedModifier> modifiers = typeDeclaration.modifiers();
 
-        for (IExtendedModifier extendedModifier : modifiers) {           
+        for (IExtendedModifier extendedModifier : modifiers) {
             if (extendedModifier.isAnnotation()) {
                 if (extendedModifier instanceof MarkerAnnotation) {
                     MarkerAnnotation marker = (MarkerAnnotation)extendedModifier;
@@ -291,7 +324,7 @@ public abstract class AbstractJavaMetadata {
         if (type.isPrimitiveType()) {
             methodMetadata.setReturnType(FieldMetadata.primitiveType(((PrimitiveType)type).getPrimitiveTypeCode().toString()));
         }
-        if (type.isSimpleType()) {            
+        if (type.isSimpleType()) {
             methodMetadata.setReturnType(FieldMetadata.simpleType(JavaMetadataUtil.getName(((SimpleType)type).getName())));
         }
     }
@@ -307,13 +340,13 @@ public abstract class AbstractJavaMetadata {
                                                          MethodMetadata methodMetadata ) {
         for (SingleVariableDeclaration singleVariableDeclaration : (List<SingleVariableDeclaration>)methodDeclaration.parameters()) {
             Type type = singleVariableDeclaration.getType();
-            
+
             if (type.isPrimitiveType()) {
-                FieldMetadata primitiveFieldMetadata = processVariableDeclaration(singleVariableDeclaration,                                                                                                                   type);
+                FieldMetadata primitiveFieldMetadata = processVariableDeclaration(singleVariableDeclaration, type);
                 methodMetadata.getParameters().add(primitiveFieldMetadata);
             }
             if (type.isParameterizedType()) {
-                FieldMetadata parameterizedTypeFieldMetadata = processVariableDeclaration(singleVariableDeclaration,                                                                                                                                           type);
+                FieldMetadata parameterizedTypeFieldMetadata = processVariableDeclaration(singleVariableDeclaration, type);
                 methodMetadata.getParameters().add(parameterizedTypeFieldMetadata);
             }
             if (type.isQualifiedType()) {
@@ -342,7 +375,8 @@ public abstract class AbstractJavaMetadata {
      * @return a field meta data.
      */
     @SuppressWarnings( "unchecked" )
-    private FieldMetadata processVariableDeclaration( SingleVariableDeclaration singleVariableDeclaration, Type type ) {
+    private FieldMetadata processVariableDeclaration( SingleVariableDeclaration singleVariableDeclaration,
+                                                      Type type ) {
 
         Variable variable;
         if (type.isPrimitiveType()) {
@@ -350,7 +384,7 @@ public abstract class AbstractJavaMetadata {
             variable = new Variable();
             variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
             primitiveFieldMetadata.setName(variable.getName());
-            
+
             primitiveFieldMetadata.getVariables().add(variable);
             for (IExtendedModifier extendedModifier : (List<IExtendedModifier>)singleVariableDeclaration.modifiers()) {
                 if (extendedModifier.isAnnotation()) {
@@ -548,7 +582,8 @@ public abstract class AbstractJavaMetadata {
      * @param fieldDeclaration - the field declaration instance.
      * @param arrayTypeFieldMetadata - the meta data.
      */
-    private void processModifiersAndVariablesOfFieldDeclaration( FieldDeclaration fieldDeclaration, FieldMetadata arrayTypeFieldMetadata ) {
+    private void processModifiersAndVariablesOfFieldDeclaration( FieldDeclaration fieldDeclaration,
+                                                                 FieldMetadata arrayTypeFieldMetadata ) {
         processModifiersOfFieldDeclaration(fieldDeclaration, arrayTypeFieldMetadata);
         processVariablesOfVariableDeclarationFragment(fieldDeclaration, arrayTypeFieldMetadata);
     }
@@ -627,9 +662,9 @@ public abstract class AbstractJavaMetadata {
         List<IExtendedModifier> extendedModifiers = fieldDeclaration.modifiers();
         for (IExtendedModifier extendedModifier : extendedModifiers) {
             if (extendedModifier.isAnnotation()) {
-                Annotation annotation = (Annotation) extendedModifier;
+                Annotation annotation = (Annotation)extendedModifier;
                 fieldMetadata.getAnnotations().add(createAnnotationMetadataFor(annotation));
-                
+
             } else {
                 Modifier modifier = (Modifier)extendedModifier;
                 ModifierMetadata modifierMetadata = new ModifierMetadata(modifier.getKeyword().toString());
@@ -651,7 +686,7 @@ public abstract class AbstractJavaMetadata {
         List<IExtendedModifier> extendedModifiers = methodDeclaration.modifiers();
         for (IExtendedModifier extendedModifier : extendedModifiers) {
             if (extendedModifier.isAnnotation()) {
-                Annotation annotation = (Annotation) extendedModifier;
+                Annotation annotation = (Annotation)extendedModifier;
                 methodMetadata.getAnnotations().add(createAnnotationMetadataFor(annotation));
             } else {
                 Modifier modifier = (Modifier)extendedModifier;

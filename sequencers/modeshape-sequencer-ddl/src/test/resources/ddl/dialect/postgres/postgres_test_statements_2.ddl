@@ -172,10 +172,10 @@ CREATE DATABASE music ENCODING 'LATIN1' TEMPLATE template0;
 --{ NOT NULL | NULL | CHECK (expression) }
 
 CREATE DOMAIN us_postal_code AS TEXT
-	CHECK(
-	   VALUE ~ '^\\d{5}$'
-	OR VALUE ~ '^\\d{5}-\\d{4}$'
-	);
+    CHECK(
+       VALUE ~ '^\\d{5}$'
+    OR VALUE ~ '^\\d{5}-\\d{4}$'
+    );
 
 --CREATE FOREIGN DATA WRAPPER name
 --    [ VALIDATOR valfunction | NO VALIDATOR ]

@@ -16,6 +16,7 @@
 package org.modeshape.jdbc;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -192,7 +193,7 @@ public class JcrStatementTest {
 
     @Test
     public void shouldReturnDefaultForGeneratedKeys() {
-        assertThat(stmt.getGeneratedKeys(), is(ResultSet.class));
+        assertThat(stmt.getGeneratedKeys(), instanceOf(ResultSet.class));
     }
 
     @Test

@@ -37,8 +37,8 @@ import org.modeshape.sequencer.classfile.metadata.ClassMetadata;
  * </p>
  * <p>
  * To use, supply the implementation class name to a {@link ClassFileSequencer} object. Each instance will be reused for multiple
- * {@link ClassFileSequencer#execute(javax.jcr.Property, javax.jcr.Node, org.modeshape.jcr.api.sequencer.Sequencer.Context) sequence calls}, so
- * implementations of this interface <b>must</b> be thread-safe.
+ * {@link ClassFileSequencer#execute(javax.jcr.Property, javax.jcr.Node, org.modeshape.jcr.api.sequencer.Sequencer.Context)
+ * sequence calls}, so implementations of this interface <b>must</b> be thread-safe.
  * </p>
  */
 @ThreadSafe
@@ -46,12 +46,14 @@ public interface ClassFileRecorder {
 
     /**
      * Records a row using the provided {@link Node} node.
-     *
+     * 
      * @param context the {@link org.modeshape.jcr.api.sequencer.Sequencer.Context}
-     * @param outputNode the node to which the new content should be sequenced.
-     * This may either be new or existent {@link org.modeshape.jcr.api.sequencer.Sequencer#execute}
+     * @param outputNode the node to which the new content should be sequenced. This may either be new or existent
+     *        {@link org.modeshape.jcr.api.sequencer.Sequencer#execute}
      * @param classMetadata the metadata for the class file
      * @throws javax.jcr.RepositoryException if anything fails during the recording process
      */
-    void recordClass( Sequencer.Context context, Node outputNode, ClassMetadata classMetadata ) throws RepositoryException;
+    void recordClass( Sequencer.Context context,
+                      Node outputNode,
+                      ClassMetadata classMetadata ) throws RepositoryException;
 }

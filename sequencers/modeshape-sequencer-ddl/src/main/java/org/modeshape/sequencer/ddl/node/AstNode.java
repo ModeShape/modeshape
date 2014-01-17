@@ -79,7 +79,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
      * @param mixin the mixin being added (cannot be <code>null</code> or empty)
      * @return <code>true</code> if mixin was added
      */
-    public boolean addMixin(final String mixin) {
+    public boolean addMixin( final String mixin ) {
         CheckArg.isNotEmpty(mixin, "mixin");
         final List<String> mixins = getMixins();
 

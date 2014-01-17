@@ -86,17 +86,14 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
     protected final Map<K, Entry<K, V>> firstEntryWithKey;
     protected final Map<K, Entry<K, V>> lastEntryWithKey;
 
+    private transient Map<K, Collection<V>> mapView;
+
     protected LinkedListMultimap() {
         this.firstEntryWithKey = new HashMap<K, Entry<K, V>>();
         this.lastEntryWithKey = new HashMap<K, Entry<K, V>>();
         this.numberOfEntriesForKey = new HashMap<K, AtomicInteger>();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#clear()
-     */
     @Override
     public void clear() {
         length = 0;
@@ -104,41 +101,21 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         lastEntryWithKey.clear();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#size()
-     */
     @Override
     public int size() {
         return length;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#isEmpty()
-     */
     @Override
     public boolean isEmpty() {
         return length == 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#containsKey(java.lang.Object)
-     */
     @Override
     public boolean containsKey( K key ) {
         return firstEntryWithKey.containsKey(key);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#containsEntry(java.lang.Object, java.lang.Object)
-     */
     @Override
     public boolean containsEntry( Object key,
                                   Object value ) {
@@ -150,11 +127,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#containsValue(java.lang.Object)
-     */
     @Override
     public boolean containsValue( Object value ) {
         EntryIterator entries = new EntryIterator();
@@ -164,29 +136,14 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.ListMultimap#get(java.lang.Object)
-     */
     @Override
     public List<V> get( final K key ) {
         return new AbstractSequentialList<V>() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see java.util.AbstractCollection#size()
-             */
             @Override
             public int size() {
                 return currentCountFor(key);
             }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see java.util.AbstractSequentialList#listIterator(int)
-             */
             @Override
             public ListIterator<V> listIterator( int index ) {
                 return new ValueIterator(key, index);
@@ -194,11 +151,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         };
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#put(java.lang.Object, java.lang.Object)
-     */
     @Override
     public boolean put( K key,
                         V value ) {
@@ -206,11 +158,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#remove(java.lang.Object, java.lang.Object)
-     */
     @Override
     public boolean remove( K key,
                            V value ) {
@@ -225,11 +172,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#removeAll(java.lang.Object)
-     */
     @Override
     public Collection<V> removeAll( K key ) {
         // Find the entries with the value ...
@@ -242,60 +184,30 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#entries()
-     */
     @Override
     public Collection<Map.Entry<K, V>> entries() {
         return new AbstractCollection<Map.Entry<K, V>>() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see java.util.AbstractCollection#size()
-             */
             @Override
             public int size() {
                 return length;
             }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see java.util.AbstractCollection#iterator()
-             */
             @Override
             public Iterator<Map.Entry<K, V>> iterator() {
                 return new Iterator<Map.Entry<K, V>>() {
                     private final EntryIterator iter = new EntryIterator();
 
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see java.util.Iterator#hasNext()
-                     */
                     @Override
                     public boolean hasNext() {
                         return iter.hasNext();
                     }
 
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see java.util.Iterator#next()
-                     */
                     @Override
                     public Map.Entry<K, V> next() {
                         Entry<K, V> next = iter.next();
                         return new ImmutableMapEntry<K, V>(next.key, next.value);
                     }
 
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see java.util.Iterator#remove()
-                     */
                     @Override
                     public void remove() {
                         iter.remove();
@@ -305,29 +217,14 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         };
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#keySet()
-     */
     @Override
     public Set<K> keySet() {
         return new AbstractSet<K>() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see java.util.AbstractCollection#size()
-             */
             @Override
             public int size() {
                 return numberOfEntriesForKey.size();
             }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see java.util.AbstractCollection#iterator()
-             */
             @Override
             public Iterator<K> iterator() {
                 return new KeyIterator();
@@ -335,60 +232,30 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         };
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#values()
-     */
     @Override
     public Collection<V> values() {
         return new AbstractCollection<V>() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see java.util.AbstractCollection#size()
-             */
             @Override
             public int size() {
                 return length;
             }
 
-            /**
-             * {@inheritDoc}
-             * 
-             * @see java.util.AbstractCollection#iterator()
-             */
             @Override
             public Iterator<V> iterator() {
                 return new Iterator<V>() {
                     private final EntryIterator iter = new EntryIterator();
 
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see java.util.Iterator#hasNext()
-                     */
                     @Override
                     public boolean hasNext() {
                         return iter.hasNext();
                     }
 
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see java.util.Iterator#next()
-                     */
                     @Override
                     public V next() {
                         Entry<K, V> next = iter.next();
                         return next.value;
                     }
 
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see java.util.Iterator#remove()
-                     */
                     @Override
                     public void remove() {
                         iter.remove();
@@ -398,13 +265,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         };
     }
 
-    private transient Map<K, Collection<V>> mapView;
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Multimap#asMap()
-     */
     @Override
     public Map<K, Collection<V>> asMap() {
         if (mapView == null) mapView = new MapView();
@@ -415,11 +275,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
 
         private Set<Map.Entry<K, Collection<V>>> entries;
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.AbstractMap#entrySet()
-         */
         @Override
         public Set<Map.Entry<K, Collection<V>>> entrySet() {
             if (entries == null) entries = new MapEntries();
@@ -428,50 +283,25 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
     }
 
     protected class MapEntries extends AbstractSet<Map.Entry<K, Collection<V>>> {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.AbstractCollection#size()
-         */
         @Override
         public int size() {
             return length;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.AbstractCollection#iterator()
-         */
         @Override
         public Iterator<Map.Entry<K, Collection<V>>> iterator() {
             return new Iterator<Map.Entry<K, Collection<V>>>() {
                 private KeyIterator iter = new KeyIterator();
 
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see java.util.Iterator#hasNext()
-                 */
                 @Override
                 public boolean hasNext() {
                     return iter.hasNext();
                 }
 
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see java.util.Iterator#next()
-                 */
                 @Override
                 public Map.Entry<K, Collection<V>> next() {
                     final K nextKey = iter.next();
                     return new ImmutableMapEntry<K, Collection<V>>(nextKey, null) {
-                        /**
-                         * {@inheritDoc}
-                         * 
-                         * @see org.modeshape.common.collection.ImmutableMapEntry#getValue()
-                         */
                         @Override
                         public Collection<V> getValue() {
                             return get(nextKey);
@@ -479,11 +309,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
                     };
                 }
 
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see java.util.Iterator#remove()
-                 */
                 @Override
                 public void remove() {
                     iter.remove();
@@ -492,21 +317,11 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         return asMap().hashCode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -517,11 +332,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return asMap().toString();
@@ -672,21 +482,11 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
             nextEntry = first;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#hasNext()
-         */
         @Override
         public boolean hasNext() {
             return nextEntry != null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#next()
-         */
         @Override
         public Entry<K, V> next() {
             isValid(nextEntry);
@@ -695,11 +495,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
             return currentEntry;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#remove()
-         */
         @Override
         public void remove() {
             if (currentEntry == null) throw new IllegalStateException();
@@ -742,21 +537,11 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#hasNext()
-         */
         @Override
         public boolean hasNext() {
             return next != null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#next()
-         */
         @Override
         public V next() {
             isValid(next);
@@ -767,31 +552,16 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
             return current.value;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.ListIterator#nextIndex()
-         */
         @Override
         public int nextIndex() {
             return nextIndex;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.ListIterator#hasPrevious()
-         */
         @Override
         public boolean hasPrevious() {
             return previous != null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.ListIterator#previous()
-         */
         @Override
         public V previous() {
             isValid(previous);
@@ -802,21 +572,11 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
             return current.value;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.ListIterator#previousIndex()
-         */
         @Override
         public int previousIndex() {
             return nextIndex - 1;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#remove()
-         */
         @Override
         public void remove() {
             if (current == null) throw new IllegalStateException();
@@ -831,11 +591,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
             current = null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.ListIterator#add(java.lang.Object)
-         */
         @Override
         public void add( V value ) {
             if (next == null) {
@@ -847,11 +602,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
             current = null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.ListIterator#set(java.lang.Object)
-         */
         @Override
         public void set( V value ) {
             if (current == null) throw new IllegalStateException();
@@ -864,21 +614,11 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         private Entry<K, V> next = firstEntry;
         private Entry<K, V> current = null;
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#hasNext()
-         */
         @Override
         public boolean hasNext() {
             return next != null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#next()
-         */
         @Override
         public K next() {
             if (next == null) throw new NoSuchElementException();
@@ -890,11 +630,6 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
             return current.key;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#remove()
-         */
         @Override
         public void remove() {
             if (current == null) throw new NoSuchElementException();

@@ -203,16 +203,16 @@ ALTER OPERATOR FAMILY integer_ops USING btree DROP
   FUNCTION 1 (int2, int4) ;
 
 --ALTER ROLE name [ [ WITH ] option [ ... ] ]
---	where option can be:
---	      SUPERUSER | NOSUPERUSER
---	    | CREATEDB | NOCREATEDB
---	    | CREATEROLE | NOCREATEROLE
---	    | CREATEUSER | NOCREATEUSER
---	    | INHERIT | NOINHERIT
---	    | LOGIN | NOLOGIN
---	    | CONNECTION LIMIT connlimit
---	    | [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'password '
---	    | VALID UNTIL 'timestamp'
+--    where option can be:
+--          SUPERUSER | NOSUPERUSER
+--        | CREATEDB | NOCREATEDB
+--        | CREATEROLE | NOCREATEROLE
+--        | CREATEUSER | NOCREATEUSER
+--        | INHERIT | NOINHERIT
+--        | LOGIN | NOLOGIN
+--        | CONNECTION LIMIT connlimit
+--        | [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'password '
+--        | VALID UNTIL 'timestamp'
 --
 --ALTER ROLE name RENAME TO newname
 --ALTER ROLE name      SET configuration_parameter { TO | = } { value | DEFAULT }

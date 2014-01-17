@@ -23,7 +23,7 @@
  */
 package org.modeshape.sequencer.text;
 
-import static org.modeshape.sequencer.text.TextSequencerLexicon.Namespace.*;
+import static org.modeshape.sequencer.text.TextSequencerLexicon.Namespace.PREFIX;
 
 /**
  * The namespace and property names used within a {@link AbstractTextSequencer} to store internal information.

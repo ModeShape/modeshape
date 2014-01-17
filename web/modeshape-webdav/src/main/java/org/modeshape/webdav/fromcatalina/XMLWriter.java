@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * XMLWriter helper class.
- *
+ * 
  * @author <a href="mailto:remm@apache.org">Remy Maucherat</a>
  */
 public class XMLWriter {
@@ -50,7 +50,7 @@ public class XMLWriter {
     /**
      * Buffer.
      */
-    protected StringBuffer buffer = new StringBuffer();
+    protected StringBuilder buffer = new StringBuilder();
 
     /**
      * Writer.
@@ -83,7 +83,7 @@ public class XMLWriter {
 
     /**
      * Retrieve generated XML.
-     *
+     * 
      * @return String containing the generated XML
      */
     @Override
@@ -93,7 +93,7 @@ public class XMLWriter {
 
     /**
      * Write property to the XML.
-     *
+     * 
      * @param name Property name
      * @param value Property value
      */
@@ -106,7 +106,7 @@ public class XMLWriter {
 
     /**
      * Write property to the XML.
-     *
+     * 
      * @param name Property name
      */
     public void writeProperty( String name ) {
@@ -115,16 +115,16 @@ public class XMLWriter {
 
     /**
      * Write an element.
-     *
+     * 
      * @param name Element name
      * @param type Element type
      */
     public void writeElement( String name,
                               int type ) {
-        StringBuffer nsdecl = new StringBuffer();
+        StringBuilder nsdecl = new StringBuilder();
 
         if (isRootElement) {
-            for (Iterator<String> iter = namespaces.keySet().iterator(); iter.hasNext(); ) {
+            for (Iterator<String> iter = namespaces.keySet().iterator(); iter.hasNext();) {
                 String fullName = iter.next();
                 String abbrev = namespaces.get(fullName);
                 nsdecl.append(" xmlns:").append(abbrev).append("=\"").append(fullName).append("\"");
@@ -137,7 +137,7 @@ public class XMLWriter {
             // lookup prefix for namespace
             String fullns = name.substring(0, pos);
             String prefix = namespaces.get(fullns);
-            //check if instead of a full URI, the prefix is used
+            // check if instead of a full URI, the prefix is used
             if (prefix == null && namespaces.containsValue(fullns)) {
                 prefix = fullns;
             }
@@ -169,7 +169,7 @@ public class XMLWriter {
 
     /**
      * Write text.
-     *
+     * 
      * @param text Text to append
      */
     public void writeText( String text ) {
@@ -178,7 +178,7 @@ public class XMLWriter {
 
     /**
      * Write data.
-     *
+     * 
      * @param data Data to append
      */
     public void writeData( String data ) {
@@ -194,13 +194,14 @@ public class XMLWriter {
 
     /**
      * Send data and reinitializes buffer.
+     * 
      * @throws IOException
      */
     public void sendData() throws IOException {
         if (writer != null) {
             writer.write(buffer.toString());
             writer.flush();
-            buffer = new StringBuffer();
+            buffer = new StringBuilder();
         }
     }
 

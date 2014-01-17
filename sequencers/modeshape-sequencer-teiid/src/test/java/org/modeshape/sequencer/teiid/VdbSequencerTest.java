@@ -23,6 +23,10 @@
 */
 package org.modeshape.sequencer.teiid;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
@@ -35,10 +39,6 @@ import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  *

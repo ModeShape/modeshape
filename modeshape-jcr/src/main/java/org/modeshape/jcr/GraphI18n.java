@@ -256,10 +256,15 @@ public final class GraphI18n {
     public static I18n poolMaximumFailedAttemptsBeforeErrorDescription;
     public static I18n poolMaximumFailedAttemptsBeforeErrorLabel;
     public static I18n poolMaximumFailedAttemptsBeforeErrorCategory;
+
+    private GraphI18n() {
+    }
+
     static {
         try {
             I18n.initialize(GraphI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

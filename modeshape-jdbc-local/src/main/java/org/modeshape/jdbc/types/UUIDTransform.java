@@ -16,29 +16,16 @@
 package org.modeshape.jdbc.types;
 
 import java.util.UUID;
-
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-
 import org.modeshape.jdbc.Transform;
 
-/**
- *
- */
-public class UUIDTransform  implements Transform {
+public class UUIDTransform implements Transform {
 
-
-	/**
-	 * {@inheritDoc}
-	 * @throws RepositoryException 
-	 * @throws ValueFormatException 
-	 *
-	 * @see org.modeshape.jdbc.Transform#transform(javax.jcr.Value)
-	 */
-	@Override
-	public Object transform(Value value) throws ValueFormatException, RepositoryException {
-		 return UUID.fromString(value.getString());
-	}
+    @Override
+    public Object transform( Value value ) throws ValueFormatException, RepositoryException {
+        return UUID.fromString(value.getString());
+    }
 
 }

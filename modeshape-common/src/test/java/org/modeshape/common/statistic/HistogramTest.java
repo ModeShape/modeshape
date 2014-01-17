@@ -23,12 +23,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import org.junit.Test;
 import org.modeshape.common.i18n.MockI18n;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.math.FloatOperations;
 import org.modeshape.common.math.MathOperations;
 import org.modeshape.common.text.Inflector;
-import org.modeshape.common.logging.Logger;
-import org.junit.Test;
 
 public class HistogramTest {
 
@@ -61,6 +61,7 @@ public class HistogramTest {
 
     public <T extends Number> void assertBucketValueCount( Histogram<T> histogram,
                                                            long... values ) {
+        // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
         List<Histogram<T>.Bucket> buckets = histogram.getBuckets();
         // Check the number of buckets ...
         assertEquals("The number of buckets didn't match expected number", values.length, buckets.size());
@@ -158,8 +159,10 @@ public class HistogramTest {
     public void shouldCorrectlyPlace1000RandomFloatValues() {
         Histogram<Float> gram = createRandomHistogram(10.0f, 100.0f, 1000, new FloatOperations());
         // gram.setDesiredRange(0.0f,100.0f);
-        HistogramTest.writeHistogramToLog(this.logger, gram, 0, "Histogram of 1000 random float values in "
-                                                                + gram.getBucketCount() + " buckets: ");
+        HistogramTest.writeHistogramToLog(this.logger,
+                                          gram,
+                                          0,
+                                          "Histogram of 1000 random float values in " + gram.getBucketCount() + " buckets: ");
     }
 
     @Test

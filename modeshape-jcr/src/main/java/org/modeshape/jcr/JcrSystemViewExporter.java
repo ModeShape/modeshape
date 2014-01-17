@@ -25,7 +25,6 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 import javax.jcr.Binary;
@@ -52,7 +51,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * specification.
  * 
  * @see JcrSession#exportSystemView(String, ContentHandler, boolean, boolean)
- * @see JcrSession#exportSystemView(String, OutputStream, boolean, boolean)
+ * @see JcrSession#exportSystemView(String, java.io.OutputStream, boolean, boolean)
  */
 @NotThreadSafe
 class JcrSystemViewExporter extends AbstractJcrExporter {

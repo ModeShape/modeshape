@@ -25,7 +25,7 @@ import org.modeshape.jcr.federation.spi.DocumentWriter;
 
 /**
  * Class which converts table metadata to connector documents.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class TableRetriever extends AbstractMetadataRetriever {
@@ -45,13 +45,13 @@ public class TableRetriever extends AbstractMetadataRetriever {
     protected Document getDocumentById( String id,
                                         DocumentWriter writer,
                                         Connection connection ) {
-        //the request is for a named table
+        // the request is for a named table
         String tableId = tableIdFrom(id, TABLE_ID_PATTERN);
         if (tableId != null) {
             return createDocumentForTable(id, writer, connection, tableId);
         }
 
-        //the request is for the foreign keys of a table
+        // the request is for the foreign keys of a table
         tableId = tableIdFrom(id, FKS_ID_PATTERN);
         if (tableId != null) {
             return createDocumentForFks(id, writer, connection, tableId);
@@ -79,12 +79,10 @@ public class TableRetriever extends AbstractMetadataRetriever {
         }
         writer.setParent(documentId(DatabaseRetriever.ID, catalogId, schemaId, tableId, false));
 
-        List<ForeignKeyMetadata> fks = connector.getMetadataCollector().getForeignKeys(connection, catalog, schema, tableId,
-                                                                                       null);
+        List<ForeignKeyMetadata> fks = connector.getMetadataCollector().getForeignKeys(connection, catalog, schema, tableId, null);
         for (ForeignKeyMetadata fk : fks) {
             String foreignKeyColumnName = fk.getForeignKeyColumnName();
-            String fkId = ForeignKeyRetriever.documentId(DatabaseRetriever.ID, catalogId, schemaId, tableId,
-                                                         foreignKeyColumnName);
+            String fkId = ForeignKeyRetriever.documentId(DatabaseRetriever.ID, catalogId, schemaId, tableId, foreignKeyColumnName);
             writer.addChild(fkId, foreignKeyColumnName);
         }
 
@@ -154,13 +152,11 @@ public class TableRetriever extends AbstractMetadataRetriever {
         return matcher.matches() ? matcher.group(2) : null;
     }
 
-
     @Override
     protected String idFrom( String path ) {
         Matcher tableMatcher = TABLE_PATH_PATTERN.matcher(path);
-        if (tableMatcher.matches() &&
-                !SchemaRetriever.PROCEDURES_PATH_PATTERN.matcher(path).matches() &&
-                !SchemaRetriever.TABLES_PATH_PATTERN.matcher(path).matches()) {
+        if (tableMatcher.matches() && !SchemaRetriever.PROCEDURES_PATH_PATTERN.matcher(path).matches()
+            && !SchemaRetriever.TABLES_PATH_PATTERN.matcher(path).matches()) {
             String tableName = tableMatcher.group(4);
             return documentId(tableMatcher.group(1), tableMatcher.group(2), tableMatcher.group(3), tableName, false);
         }
@@ -174,8 +170,7 @@ public class TableRetriever extends AbstractMetadataRetriever {
 
     @Override
     protected boolean canHandle( String id ) {
-        return TABLE_ID_PATTERN.matcher(id).matches() ||
-                FKS_ID_PATTERN.matcher(id).matches();
+        return TABLE_ID_PATTERN.matcher(id).matches() || FKS_ID_PATTERN.matcher(id).matches();
     }
 
     static String documentId( String databaseId,
@@ -186,8 +181,7 @@ public class TableRetriever extends AbstractMetadataRetriever {
         String baseId = generateId(databaseId, catalogId, schemaId, TABLE_PREFIX, tableId);
         if (onlyFks) {
             return generateId(baseId, FKS_CONTAINER);
-        } else {
-            return baseId;
         }
+        return baseId;
     }
 }

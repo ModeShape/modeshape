@@ -80,6 +80,11 @@ public class ClearOperation extends ArrayOperation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj instanceof ClearOperation) {
             ClearOperation that = (ClearOperation)obj;

@@ -23,24 +23,22 @@
  */
 package org.modeshape.sequencer.ddl.dialect.derby;
 
-import org.modeshape.sequencer.ddl.DdlConstants;
-import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import java.util.Arrays;
 import java.util.List;
+import org.modeshape.sequencer.ddl.DdlConstants;
+import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 
 /**
  * @author blafond
  */
 public interface DerbyDdlConstants extends DdlConstants {
-    public static final String[] CUSTOM_KEYWORDS = {
-            "TRIGGER", "SYNOMYM", "LOCK", "ISOLATION", "SQLID", INDEX, "RENAME", "DECLARE", "RESTART", "LOCKSIZE",
-            "INCREMENT", "GENERATED", "ALWAYS", "BIGINT", "CLOB", "BLOB", "EXCLUSIVE", "REFERENCING"
-    };
+    public static final String[] CUSTOM_KEYWORDS = {"TRIGGER", "SYNOMYM", "LOCK", "ISOLATION", "SQLID", INDEX, "RENAME",
+        "DECLARE", "RESTART", "LOCKSIZE", "INCREMENT", "GENERATED", "ALWAYS", "BIGINT", "CLOB", "BLOB", "EXCLUSIVE",
+        "REFERENCING"};
 
     interface DerbyStatementStartPhrases {
 
-        static final String[][] ALTER_PHRASES = {
-        };
+        static final String[][] ALTER_PHRASES = {};
 
         static final String[] STMT_CREATE_FUNCTION = {CREATE, "FUNCTION"};
         static final String[] STMT_CREATE_INDEX = {CREATE, "INDEX"};
@@ -50,10 +48,8 @@ public interface DerbyDdlConstants extends DdlConstants {
         static final String[] STMT_CREATE_SYNONYM = {CREATE, "SYNONYM"};
         static final String[] STMT_CREATE_TRIGGER = {CREATE, "TRIGGER"};
 
-        static final String[][] CREATE_PHRASES = {
-                STMT_CREATE_FUNCTION, STMT_CREATE_INDEX, STMT_CREATE_UNIQUE_INDEX, STMT_CREATE_PROCEDURE,
-                STMT_CREATE_ROLE, STMT_CREATE_SYNONYM, STMT_CREATE_TRIGGER
-        };
+        static final String[][] CREATE_PHRASES = {STMT_CREATE_FUNCTION, STMT_CREATE_INDEX, STMT_CREATE_UNIQUE_INDEX,
+            STMT_CREATE_PROCEDURE, STMT_CREATE_ROLE, STMT_CREATE_SYNONYM, STMT_CREATE_TRIGGER};
 
         static final String[] STMT_DECLARE_GLOBAL_TEMP_TABLE = {"DECLARE", "GLOBAL", "TEMPORARY", "TABLE"};
         static final String[] STMT_DROP_FUNCTION = {DROP, "FUNCTION"};
@@ -63,14 +59,12 @@ public interface DerbyDdlConstants extends DdlConstants {
         static final String[] STMT_DROP_SYNONYM = {DROP, "SYNONYM"};
         static final String[] STMT_DROP_TRIGGER = {DROP, "TRIGGER"};
 
-        static final String[][] DROP_PHRASES = {
-                STMT_DROP_FUNCTION, STMT_DROP_INDEX, STMT_DROP_PROCEDURE, STMT_DROP_ROLE, STMT_DROP_SYNONYM, STMT_DROP_TRIGGER
-        };
+        static final String[][] DROP_PHRASES = {STMT_DROP_FUNCTION, STMT_DROP_INDEX, STMT_DROP_PROCEDURE, STMT_DROP_ROLE,
+            STMT_DROP_SYNONYM, STMT_DROP_TRIGGER};
 
         static final String[] STMT_LOCK_TABLE = {"LOCK", TABLE};
         static final String[] STMT_RENAME_TABLE = {"RENAME", TABLE};
         static final String[] STMT_RENAME_INDEX = {"RENAME", INDEX};
-
 
         static final String[] STMT_SET_ISOLATION = {SET, "ISOLATION"};
         static final String[] STMT_SET_CURRENT_ISOLATION = {SET, "CURRENT", "ISOLATION"};
@@ -79,22 +73,16 @@ public interface DerbyDdlConstants extends DdlConstants {
         static final String[] STMT_SET_CURRENT_SCHEMA = {SET, "CURRENT", SCHEMA};
         static final String[] STMT_SET_CURRENT_SQLID = {SET, "CURRENT", "SQLID"};
 
-        static final String[][] SET_PHRASES = {
-                STMT_SET_ISOLATION, STMT_SET_CURRENT_ISOLATION, STMT_SET_ROLE, STMT_SET_SCHEMA, STMT_SET_CURRENT_SCHEMA,
-                STMT_SET_CURRENT_SQLID
-        };
+        static final String[][] SET_PHRASES = {STMT_SET_ISOLATION, STMT_SET_CURRENT_ISOLATION, STMT_SET_ROLE, STMT_SET_SCHEMA,
+            STMT_SET_CURRENT_SCHEMA, STMT_SET_CURRENT_SQLID};
 
         static final String[][] MISC_PHRASES = {STMT_LOCK_TABLE, STMT_RENAME_TABLE, STMT_RENAME_INDEX,
-                STMT_DECLARE_GLOBAL_TEMP_TABLE
-        };
+            STMT_DECLARE_GLOBAL_TEMP_TABLE};
 
         // COULD NOT FIND ACTUAL REFERENCE... assuming the following....
 
-        public final static String[] VALID_SCHEMA_CHILD_STMTS = {
-                StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT,
-                StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT,
-                StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT
-        };
+        public final static String[] VALID_SCHEMA_CHILD_STMTS = {StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT,
+            StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT, StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT};
     }
 
     interface DerbyDataTypes {
@@ -109,12 +97,23 @@ public interface DerbyDdlConstants extends DdlConstants {
         static final String[] DTYPE_BLOB = {"BLOB"}; // BLOB [ ( length [{K |M |G }] ) ]
         static final String[] DTYPE_BINARY_LARGE_OBJECT = {"BINARY", "LARGE", "OBJECT"}; // [ ( length [{K |M |G }] ) ]
 
-        static final List<String[]> CUSTOM_DATATYPE_START_PHRASES =
-                Arrays.asList(DTYPE_BIGINT, DTYPE_LONG_VARCHAR, DTYPE_LONG_VARCHAR_FBD, DTYPE_DOUBLE, DTYPE_XML,
-                              DTYPE_CLOB, DTYPE_CHARACTER_LARGE_OBJECT, DTYPE_BLOB, DTYPE_BINARY_LARGE_OBJECT);
+        static final List<String[]> CUSTOM_DATATYPE_START_PHRASES = Arrays.asList(DTYPE_BIGINT,
+                                                                                  DTYPE_LONG_VARCHAR,
+                                                                                  DTYPE_LONG_VARCHAR_FBD,
+                                                                                  DTYPE_DOUBLE,
+                                                                                  DTYPE_XML,
+                                                                                  DTYPE_CLOB,
+                                                                                  DTYPE_CHARACTER_LARGE_OBJECT,
+                                                                                  DTYPE_BLOB,
+                                                                                  DTYPE_BINARY_LARGE_OBJECT);
 
-        static final List<String> CUSTOM_DATATYPE_START_WORDS =
-                Arrays.asList("BIGINT", "LONG", "DOUBLE",
-                              "XML", "CLOB", "CHARACTER", "BLOB", "BINARY");
+        static final List<String> CUSTOM_DATATYPE_START_WORDS = Arrays.asList("BIGINT",
+                                                                              "LONG",
+                                                                              "DOUBLE",
+                                                                              "XML",
+                                                                              "CLOB",
+                                                                              "CHARACTER",
+                                                                              "BLOB",
+                                                                              "BINARY");
     }
 }

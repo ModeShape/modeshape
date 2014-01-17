@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.hasItems;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;

@@ -58,7 +58,7 @@ public class ExcelMetadataReader {
             HSSFSheet worksheet = wb.getSheetAt(sheetInd);
             int lastRowNum = worksheet.getLastRowNum();
 
-            StringBuffer buff = new StringBuffer();
+            StringBuilder buff = new StringBuilder();
             for (int rowNum = worksheet.getFirstRowNum(); rowNum <= lastRowNum; rowNum++) {
                 HSSFRow row = worksheet.getRow(rowNum);
 

@@ -29,7 +29,7 @@ import java.util.Map;
 
 /**
  * Abstract class for annotations.
- *
+ * 
  * @author Horia Chiorean
  */
 public class AnnotationMetadata {
@@ -38,10 +38,12 @@ public class AnnotationMetadata {
     private Map<String, String> memberValues = new HashMap<String, String>();
     private Type type;
 
-    private AnnotationMetadata( Type type, String annotationClassName, Map<String, String>  memberValues ) {
+    private AnnotationMetadata( Type type,
+                                String annotationClassName,
+                                Map<String, String> memberValues ) {
         this.type = type;
         this.annotationClassName = annotationClassName;
-        this.memberValues = (memberValues != null) ? memberValues : Collections.<String,String>emptyMap();
+        this.memberValues = (memberValues != null) ? memberValues : Collections.<String, String>emptyMap();
     }
 
     public String getName() {
@@ -56,21 +58,25 @@ public class AnnotationMetadata {
         return type;
     }
 
-    public static AnnotationMetadata markerAnnotation(String annotationClassName) {
+    public static AnnotationMetadata markerAnnotation( String annotationClassName ) {
         return new AnnotationMetadata(Type.MARKER, annotationClassName, null);
     }
 
-    public static AnnotationMetadata normalAnnotation(String annotationClassName, Map<String, String> memberValues) {
+    public static AnnotationMetadata normalAnnotation( String annotationClassName,
+                                                       Map<String, String> memberValues ) {
         return new AnnotationMetadata(Type.NORMAL, annotationClassName, memberValues);
     }
 
-    public static AnnotationMetadata singleMemberAnnotation(String annotationClassName, String value) {
+    public static AnnotationMetadata singleMemberAnnotation( String annotationClassName,
+                                                             String value ) {
         Map<String, String> memberValues = new HashMap<String, String>(1);
         memberValues.put(null, value);
         return new AnnotationMetadata(Type.SINGLE_MEMBER, annotationClassName, memberValues);
     }
 
     public static enum Type {
-        MARKER, NORMAL, SINGLE_MEMBER
+        MARKER,
+        NORMAL,
+        SINGLE_MEMBER
     }
 }

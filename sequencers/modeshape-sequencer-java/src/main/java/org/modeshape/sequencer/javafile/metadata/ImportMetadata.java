@@ -28,10 +28,11 @@ package org.modeshape.sequencer.javafile.metadata;
  */
 public class ImportMetadata {
 
-    private Type type;    
+    private Type type;
     private String name;
 
-    private ImportMetadata( String name, Type type ) {
+    private ImportMetadata( String name,
+                            Type type ) {
         this.name = name;
         this.type = type;
     }
@@ -44,17 +45,17 @@ public class ImportMetadata {
         return type;
     }
 
-    public static ImportMetadata onDemand(String name) {
+    public static ImportMetadata onDemand( String name ) {
         return new ImportMetadata(name, Type.ON_DEMAND);
     }
 
-    public static ImportMetadata single(String name) {
+    public static ImportMetadata single( String name ) {
         return new ImportMetadata(name, Type.SINGLE);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
@@ -63,6 +64,7 @@ public class ImportMetadata {
     }
 
     public static enum Type {
-        ON_DEMAND, SINGLE
+        ON_DEMAND,
+        SINGLE
     }
 }

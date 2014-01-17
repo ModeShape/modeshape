@@ -23,6 +23,10 @@
  */
 package org.modeshape.sequencer.wsdl;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.Node;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.SizeMeasuringInputStream;
@@ -30,10 +34,6 @@ import org.modeshape.common.util.SizeMeasuringReader;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.sramp.AbstractResolvingReader;
 import org.xml.sax.InputSource;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A class that can parse WSDL definitions and derive a node structure from the content.

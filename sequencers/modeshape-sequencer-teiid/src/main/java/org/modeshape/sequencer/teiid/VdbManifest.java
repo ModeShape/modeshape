@@ -23,6 +23,13 @@
  */
 package org.modeshape.sequencer.teiid;
 
+import java.io.InputStream;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -33,13 +40,6 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.sequencer.Sequencer.Context;
 import org.modeshape.sequencer.teiid.VdbDataRole.Permission;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
-import java.io.InputStream;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * The POJO for the vdb.xml file.

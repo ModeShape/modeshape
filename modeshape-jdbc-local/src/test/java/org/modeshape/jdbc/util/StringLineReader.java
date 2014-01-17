@@ -19,12 +19,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.sql.SQLException;
 
-
-/** 
- * Base class for any type of Reader, where data can be read as line by line.
- * The derived classes just need to extend this class and implement the "nextLine()"
- * method to get the full "Reader" functionality.
- * 
+/**
+ * Base class for any type of Reader, where data can be read as line by line. The derived classes just need to extend this class
+ * and implement the "nextLine()" method to get the full "Reader" functionality.
  */
 public abstract class StringLineReader extends Reader {
 
@@ -34,58 +31,61 @@ public abstract class StringLineReader extends Reader {
     int currentLineIndex = 0;
 
     boolean closed = false;
-    
-    /** 
+
+    /**
      * @see java.io.Reader#close()
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings( "unused" )
     @Override
     public void close() throws IOException {
         closed = true;
     }
 
-    /** 
+    /**
      * @see java.io.Reader#read(char[], int, int)
      */
     @Override
-    public int read(char[] cbuf, int off, int len) throws IOException {
+    public int read( char[] cbuf,
+                     int off,
+                     int len ) throws IOException {
         if (closed) {
             throw new IllegalStateException("Reader already closed"); //$NON-NLS-1$
         }
 
-        int srcoff = currentLineIndex;        
-        if (currentLine == null || (currentLine != null && (currentLine.length()-currentLineIndex) <= 0)) {            
+        int srcoff = currentLineIndex;
+        if (currentLine == null || (currentLine != null && (currentLine.length() - currentLineIndex) <= 0)) {
             try {
-				currentLine = nextLine();
-			} catch (SQLException e) {
-				throw new IOException(e.getLocalizedMessage(), e);
-			}
-            currentLineIndex = 0; 
+                currentLine = nextLine();
+            } catch (SQLException e) {
+                throw new IOException(e.getLocalizedMessage(), e);
+            }
+            currentLineIndex = 0;
             srcoff = currentLineIndex;
         }
-         
+
         // If we have data available then send it.
         if (currentLine != null) {
             // If requested more than one line limit length to one line
-            if (len > (currentLine.length()-currentLineIndex)) {
-                len = (currentLine.length()-currentLineIndex);
+            if (len > (currentLine.length() - currentLineIndex)) {
+                len = (currentLine.length() - currentLineIndex);
             }
-                                
+
             // Copy the contents to destination.
             System.arraycopy(currentLine.toCharArray(), srcoff, cbuf, off, len);
-            
-            // Now move the current index further 
-            currentLineIndex = currentLineIndex+len;
+
+            // Now move the current index further
+            currentLineIndex = currentLineIndex + len;
             return len;
         }
         return -1;
     }
 
     /**
-     * Get the next line of data from the data source. 
+     * Get the next line of data from the data source.
+     * 
      * @return String
      * @throws IOException
-     * @throws SQLException 
+     * @throws SQLException
      */
-    abstract protected String nextLine() throws IOException, SQLException; 
+    abstract protected String nextLine() throws IOException, SQLException;
 }

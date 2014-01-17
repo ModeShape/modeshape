@@ -138,7 +138,7 @@ public class JcrResultSetMetaDataTest {
     public void shouldReturnActualTypeForColumnTypeWhenResultIsExtendedJcrQueryResult() {
         for (int i = 0; i != columnNames.length; ++i) {
             JcrType expectedType = JcrType.typeInfo(typeNames[i]);
-            
+
             assertThat(extMetadata.getColumnTypeName(i + 1), is(expectedType.getJdbcTypeName()));
             assertThat(extMetadata.getColumnType(i + 1), is(expectedType.getJdbcType()));
             assertThat(extMetadata.getColumnClassName(i + 1), is(expectedType.getRepresentationClass().getName()));

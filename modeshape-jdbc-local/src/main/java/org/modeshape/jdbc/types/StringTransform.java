@@ -18,25 +18,13 @@ package org.modeshape.jdbc.types;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-
 import org.modeshape.jdbc.Transform;
 
-/**
- *
- */
-public class StringTransform  implements Transform {
+public class StringTransform implements Transform {
 
-
-	/**
-	 * {@inheritDoc}
-	 * @throws RepositoryException 
-	 * @throws ValueFormatException 
-	 *
-	 * @see org.modeshape.jdbc.Transform#transform(javax.jcr.Value)
-	 */
-	@Override
-	public Object transform(Value value) throws ValueFormatException, RepositoryException {
-		 return value.getString();
-	}
+    @Override
+    public Object transform( Value value ) throws ValueFormatException, RepositoryException {
+        return value.getString();
+    }
 
 }

@@ -38,10 +38,14 @@ public final class CndI18n {
     public static I18n multipleKeywordNotValidInJcr2CndFormat;
     public static I18n vendorBlockWasNotClosed;
 
+    private CndI18n() {
+    }
+
     static {
         try {
             I18n.initialize(CndI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

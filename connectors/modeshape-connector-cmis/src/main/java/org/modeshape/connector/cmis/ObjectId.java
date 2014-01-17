@@ -16,25 +16,22 @@
 package org.modeshape.connector.cmis;
 
 /**
- * Implements unique identifier of the object in the JCR domain.
- *
- * This identifier carries unique object identifier and how this object should be
- * reflected. 
+ * Implements unique identifier of the object in the JCR domain. This identifier carries unique object identifier and how this
+ * object should be reflected. The implementation of the connector suppose conversation between cmis folders and documents into
+ * jcr folders and files. It means that some of the properties like binary content of the cmis document will be represented as
+ * node rather then just property. Thus to perform such reflection we need to introduce key mappings which establishes relations
+ * between cmis objects and jcr nodes. This class suppose to use the original unique identifier of the cmis object and adds suffix
+ * corresponding to the object's type.
  * 
- * The implementation of the connector suppose conversation between cmis folders 
- * and documents into jcr folders and files. It means that some of the properties 
- * like binary content of the cmis document will be represented as node rather 
- * then just property. Thus to perform such reflection we need to introduce key 
- * mappings which establishes relations between cmis objects and jcr nodes.
- * 
- * This class suppose to use the original unique identifier of the cmis object and 
- * adds suffix corresponding to the object's type.
- *
  * @author kulikov
  */
 public class ObjectId {
-    //this are object types we can outline
-    public enum Type {REPOSITORY_INFO, CONTENT, OBJECT}
+    // this are object types we can outline
+    public enum Type {
+        REPOSITORY_INFO,
+        CONTENT,
+        OBJECT
+    }
 
     private Type type;
     private String id;
@@ -56,14 +53,15 @@ public class ObjectId {
     public String getIdentifier() {
         return id;
     }
-    
+
     /**
      * Constructs new unique object identifier in the JCR domain.
      * 
-     * @param type type of the object 
+     * @param type type of the object
      * @param id unique identifier of the object in cmis domain.
      */
-    protected ObjectId(Type type, String id) {
+    protected ObjectId( Type type,
+                        String id ) {
         this.type = type;
         this.id = id;
     }
@@ -74,7 +72,7 @@ public class ObjectId {
      * @param uuid the textual representation of this object.
      * @return object instance.
      */
-    public static ObjectId valueOf(String uuid) {
+    public static ObjectId valueOf( String uuid ) {
         int p = uuid.indexOf("/");
         if (p < 0) {
             return new ObjectId(Type.OBJECT, uuid);
@@ -90,11 +88,11 @@ public class ObjectId {
      * 
      * @param type the object type
      * @param id object identifier in cmis domain.
-     * 
      * @return text view of this identifier.
      */
-    public static String toString(Type type, String id) {
-        return type == Type.OBJECT? id : id + "/" + type.toString();
+    public static String toString( Type type,
+                                   String id ) {
+        return type == Type.OBJECT ? id : id + "/" + type.toString();
     }
-    
+
 }

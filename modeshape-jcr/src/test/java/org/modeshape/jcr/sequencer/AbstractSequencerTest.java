@@ -23,9 +23,9 @@
  */
 package org.modeshape.jcr.sequencer;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;

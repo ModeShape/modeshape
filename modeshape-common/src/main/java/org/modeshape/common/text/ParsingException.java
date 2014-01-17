@@ -53,9 +53,6 @@ public class ParsingException extends RuntimeException {
         this.position = position;
     }
 
-    /**
-     * @return position
-     */
     public Position getPosition() {
         return position;
     }

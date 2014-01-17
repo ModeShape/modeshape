@@ -67,7 +67,9 @@ final class OptionNamespaceParser extends StatementParser {
             if (tokens.canConsume(TeiidReservedWord.AS.toDdl())) {
                 final String alias = parseIdentifier(tokens);
                 addNamespaceAlias(alias, uri);
-                final AstNode optionNamespaceNode = getNodeFactory().node(alias, parentNode, TeiidDdlLexicon.OptionNamespace.STATEMENT);
+                final AstNode optionNamespaceNode = getNodeFactory().node(alias,
+                                                                          parentNode,
+                                                                          TeiidDdlLexicon.OptionNamespace.STATEMENT);
                 optionNamespaceNode.setProperty(TeiidDdlLexicon.OptionNamespace.URI, uri);
                 return optionNamespaceNode;
             }
@@ -75,9 +77,9 @@ final class OptionNamespaceParser extends StatementParser {
 
         throw new TeiidDdlParsingException(tokens, "Unparsable option namespace statement");
     }
-    
-	@Override
-	protected void postProcess(AstNode rootNode) {
-		
-	}
+
+    @Override
+    protected void postProcess( AstNode rootNode ) {
+
+    }
 }

@@ -103,7 +103,7 @@ public class DataType {
 
     @Override
     public String toString() {
-        StringBuffer result = new StringBuffer(100);
+        StringBuilder result = new StringBuilder(100);
         result.append("DataType()").append(" ").append(name);
 
         return result.toString();

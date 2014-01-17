@@ -62,7 +62,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     protected static final Map<String, Operator> OPERATORS_BY_JCR_NAME;
 
     static {
-        Map<String, Operator> map = new HashMap<String, Operator>();
+        Map<String, Operator> map = new HashMap<>();
         map.put(QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO, Operator.EQUAL_TO);
         map.put(QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN, Operator.GREATER_THAN);
         map.put(QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, Operator.GREATER_THAN_OR_EQUAL_TO);
@@ -332,7 +332,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 checker = createChecker(context, requiredType, valueConstraints);
                 this.checker = checker;
             }
-            assert checker instanceof RangeConstraintChecker<?>;
+            assert checker instanceof RangeConstraintChecker;
             RangeConstraintChecker<?> rangeChecker = (RangeConstraintChecker<?>)checker;
             return rangeChecker.getMinimum(); // may still be null
         }
@@ -355,7 +355,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 checker = createChecker(context, requiredType, valueConstraints);
                 this.checker = checker;
             }
-            assert checker instanceof RangeConstraintChecker<?>;
+            assert checker instanceof RangeConstraintChecker;
             RangeConstraintChecker<?> rangeChecker = (RangeConstraintChecker<?>)checker;
             return rangeChecker.getMaximum(); // may still be null
         }

@@ -83,6 +83,11 @@ public class PutIfAbsentOperation extends Operation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj instanceof PutIfAbsentOperation) {
             PutIfAbsentOperation other = (PutIfAbsentOperation)obj;

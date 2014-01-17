@@ -319,7 +319,7 @@ public class SecureHash {
 
     /**
      * Computes the sha1 value for the given string.
-     *
+     * 
      * @param string a non-null string
      * @return the SHA1 value for the given string.
      */
@@ -491,5 +491,8 @@ public class SecureHash {
         public String getHashAsHexString() {
             return SecureHash.asHexString(hash);
         }
+    }
+
+    private SecureHash() {
     }
 }

@@ -53,21 +53,11 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
         return connection.info().getRepositoryName();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#getColumnClassName(int)
-     */
     @Override
     public String getColumnClassName( int column ) {
         return getJcrType(column).getRepresentationClass().getName();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#getColumnCount()
-     */
     @Override
     public int getColumnCount() throws SQLException {
         try {
@@ -91,11 +81,6 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
         return getJcrType(column).getNominalDisplaySize();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#getColumnLabel(int)
-     */
     @Override
     public String getColumnLabel( int column ) throws SQLException {
         try {
@@ -105,31 +90,16 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#getColumnName(int)
-     */
     @Override
     public String getColumnName( int column ) throws SQLException {
         return getColumnLabel(column);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#getColumnType(int)
-     */
     @Override
     public int getColumnType( int column ) {
         return getJcrType(column).getJdbcType();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#getColumnTypeName(int)
-     */
     @Override
     public String getColumnTypeName( int column ) {
         return getJcrType(column).getJdbcTypeName();
@@ -179,11 +149,6 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
         return connection.info().getWorkspaceName();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#getTableName(int)
-     */
     @Override
     public String getTableName( int column ) throws SQLException {
         try {
@@ -206,11 +171,6 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#isCaseSensitive(int)
-     */
     @Override
     public boolean isCaseSensitive( int column ) {
         return getJcrType(column).isCaseSensitive();
@@ -242,11 +202,6 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.ResultSetMetaData#isNullable(int)
-     */
     @Override
     public int isNullable( int column ) throws SQLException {
         if (nullable == null) {
@@ -350,21 +305,11 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
-     */
     @Override
     public boolean isWrapperFor( Class<?> iface ) /*throws SQLException*/{
         return iface.isInstance(results);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Wrapper#unwrap(java.lang.Class)
-     */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
         if (iface.isInstance(results)) {

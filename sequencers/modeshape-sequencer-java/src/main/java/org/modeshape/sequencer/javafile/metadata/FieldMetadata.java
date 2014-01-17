@@ -33,15 +33,15 @@ public class FieldMetadata extends AbstractMetadata {
 
     /** The type of the metadata */
     private Type metadataType;
-    
+
     /** The type of the field */
     private String type;
 
     /** The variables */
     private List<Variable> variables = new ArrayList<Variable>();
 
-
-    private FieldMetadata( String type, Type metadataType ) {
+    private FieldMetadata( String type,
+                           Type metadataType ) {
         this.type = type;
         this.metadataType = metadataType;
     }
@@ -58,31 +58,36 @@ public class FieldMetadata extends AbstractMetadata {
         return metadataType;
     }
 
-    public static FieldMetadata primitiveType(String type) {
+    public static FieldMetadata primitiveType( String type ) {
         return new FieldMetadata(type, Type.PRIMITIVE);
     }
 
-    public static FieldMetadata simpleType(String type) {
+    public static FieldMetadata simpleType( String type ) {
         return new FieldMetadata(type, Type.SIMPLE);
     }
 
-    public static FieldMetadata arrayType(String type) {
+    public static FieldMetadata arrayType( String type ) {
         return new FieldMetadata(type, Type.ARRAY);
     }
 
-    public static FieldMetadata qualifiedType(String type) {
+    public static FieldMetadata qualifiedType( String type ) {
         return new FieldMetadata(type, Type.QUALIFIED);
     }
 
-    public static FieldMetadata parametrizedType(String type) {
+    public static FieldMetadata parametrizedType( String type ) {
         return new FieldMetadata(type, Type.PARAMETRIZED);
     }
 
-    public static FieldMetadata wildcardType(String type) {
+    public static FieldMetadata wildcardType( String type ) {
         return new FieldMetadata(type, Type.WILDCARD);
     }
-  
+
     public static enum Type {
-        PRIMITIVE, SIMPLE, ARRAY, QUALIFIED, PARAMETRIZED, WILDCARD
+        PRIMITIVE,
+        SIMPLE,
+        ARRAY,
+        QUALIFIED,
+        PARAMETRIZED,
+        WILDCARD
     }
 }

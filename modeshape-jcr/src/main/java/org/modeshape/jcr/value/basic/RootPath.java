@@ -272,4 +272,9 @@ public class RootPath extends AbstractPath {
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        return 1;
+    }
+
 }

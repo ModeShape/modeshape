@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import org.infinispan.schematic.SchemaLibrary;
 import org.infinispan.schematic.SchemaLibrary.MismatchedTypeProblem;
 import org.infinispan.schematic.SchemaLibrary.Problem;
 import org.infinispan.schematic.SchemaLibrary.Results;
@@ -88,9 +87,7 @@ public class DocumentTransformer {
 
         if (value == null || value.trim().length() == 0) return value;
 
-        StringBuffer sb = null;
-
-        sb = new StringBuffer(value);
+        StringBuilder sb = new StringBuilder(value);
 
         // Get the index of the first constant, if any
         int startName = sb.indexOf(CURLY_PREFIX);
@@ -270,8 +267,8 @@ public class DocumentTransformer {
      * </p>
      * 
      * @param original the original document that contains fields with mismatched values; may not be null
-     * @param results the results of the {@link SchemaLibrary#validate(Document, String) JSON Schema validation} and which
-     *        contains the {@link MismatchedTypeProblem type mismatch errors}
+     * @param results the results of the {@link org.infinispan.schematic.SchemaLibrary#validate(Document, String) JSON Schema
+     *        validation} and which contains the {@link MismatchedTypeProblem type mismatch errors}
      * @return the document with all of the conversions made the its fields and the fields of nested documents, or the original
      *         document if there are no conversions to be made; never null
      */

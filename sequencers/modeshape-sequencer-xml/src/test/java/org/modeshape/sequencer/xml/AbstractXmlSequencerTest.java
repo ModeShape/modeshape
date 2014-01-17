@@ -23,11 +23,11 @@
  */
 package org.modeshape.sequencer.xml;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
 /**

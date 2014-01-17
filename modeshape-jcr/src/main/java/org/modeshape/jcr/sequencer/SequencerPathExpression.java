@@ -189,6 +189,7 @@ public class SequencerPathExpression implements Serializable {
                 outputPath = wsPath.path;
                 if (!DEFAULT_OUTPUT_EXPRESSION.equals(outputPath)) {
                     java.util.regex.Matcher replacementMatcher = REPLACEMENT_VARIABLE_PATTERN.matcher(outputPath);
+                    // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                     StringBuffer sb = new StringBuffer();
                     if (replacementMatcher.find()) {
                         do {

@@ -23,6 +23,8 @@ import org.modeshape.jcr.federation.spi.ConnectorException;
  */
 public class JdbcMetadataException extends ConnectorException {
 
+    private static final long serialVersionUID = 1L;
+
     public JdbcMetadataException( I18n i18nText,
                                   Object... arguments ) {
         super(i18nText, arguments);

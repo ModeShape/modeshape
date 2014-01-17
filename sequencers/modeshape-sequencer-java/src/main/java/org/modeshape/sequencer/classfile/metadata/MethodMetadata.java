@@ -62,7 +62,7 @@ public class MethodMetadata implements Comparable<MethodMetadata> {
 
         List<String> parameters = new ArrayList<String>();
         Descriptor.Iterator iter = new Descriptor.Iterator(parameterString);
-        
+
         assert iter.hasNext();
         int startPos = iter.next();
 
@@ -185,7 +185,7 @@ public class MethodMetadata implements Comparable<MethodMetadata> {
     public String getId() {
         StringBuilder buff = new StringBuilder();
         buff.append(method.getName()).append('(');
-        
+
         boolean first = false;
         for (String parameter : parameters) {
             if (first) {
@@ -197,7 +197,7 @@ public class MethodMetadata implements Comparable<MethodMetadata> {
         }
 
         buff.append(')');
-        
+
         return buff.toString();
     }
 
@@ -232,7 +232,7 @@ public class MethodMetadata implements Comparable<MethodMetadata> {
         }
 
         buff.append(' ');
-        
+
         buff.append(");");
 
         return buff.toString();

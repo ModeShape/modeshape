@@ -29,7 +29,7 @@ import org.modeshape.common.i18n.I18n;
  * The internationalized string constants for the <code>org.modeshape.sequencer.teiid*</code> packages.
  */
 public final class TeiidI18n {
-    public static I18n  uuidNotValid;
+    public static I18n uuidNotValid;
 
     public static I18n modelSequencerTaskName;
     public static I18n vdbSequencerTaskName;
@@ -60,10 +60,14 @@ public final class TeiidI18n {
 
     public static I18n errorReadingMedMetaclassMappings;
 
+    private TeiidI18n() {
+    }
+
     static {
         try {
             I18n.initialize(TeiidI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

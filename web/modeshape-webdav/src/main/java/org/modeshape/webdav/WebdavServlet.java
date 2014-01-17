@@ -16,17 +16,15 @@
 
 package org.modeshape.webdav;
 
-import javax.servlet.ServletException;
-import org.modeshape.webdav.exceptions.WebdavException;
 import java.io.File;
 import java.lang.reflect.Constructor;
+import javax.servlet.ServletException;
+import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
- * Servlet which provides support for WebDAV level 2.
- *
- * the original class is org.apache.catalina.servlets.WebdavServlet by Remy
+ * Servlet which provides support for WebDAV level 2. the original class is org.apache.catalina.servlets.WebdavServlet by Remy
  * Maucherat, which was heavily changed
- *
+ * 
  * @author Remy Maucherat
  */
 
@@ -48,8 +46,8 @@ public class WebdavServlet extends WebDavServletBean {
 
         IWebdavStore webdavStore = constructStore(clazzName, root);
 
-        boolean lazyFolderCreationOnPut = getInitParameter("lazyFolderCreationOnPut") != null && getInitParameter(
-                "lazyFolderCreationOnPut").equals("1");
+        boolean lazyFolderCreationOnPut = getInitParameter("lazyFolderCreationOnPut") != null
+                                          && getInitParameter("lazyFolderCreationOnPut").equals("1");
 
         String dftIndexFile = getInitParameter("default-index-file");
         String insteadOf404 = getInitParameter("instead-of-404");
@@ -68,7 +66,7 @@ public class WebdavServlet extends WebDavServletBean {
         IWebdavStore webdavStore;
         try {
             Class<?> clazz = WebdavServlet.class.getClassLoader().loadClass(clazzName);
-            Constructor<?> ctor = clazz.getConstructor(new Class[] { File.class });
+            Constructor<?> ctor = clazz.getConstructor(new Class[] {File.class});
             webdavStore = (IWebdavStore)ctor.newInstance(root);
         } catch (Exception e) {
             throw new RuntimeException("some problem making store component", e);
@@ -92,8 +90,8 @@ public class WebdavServlet extends WebDavServletBean {
             if (ix != -1) {
                 rootPath = file.substring(0, ix).replace('/', File.separatorChar);
             } else {
-                throw new WebdavException(
-                        "Could not determine root of war file. Can't extract from path '" + file + "' for this web container");
+                throw new WebdavException("Could not determine root of war file. Can't extract from path '" + file
+                                          + "' for this web container");
             }
         }
         return new File(rootPath);

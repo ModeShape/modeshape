@@ -26,7 +26,7 @@ package org.modeshape.jcr.value.basic;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.containsString;
+import static org.hamcrest.CoreMatchers.containsString;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.text.Jsr283Encoder;

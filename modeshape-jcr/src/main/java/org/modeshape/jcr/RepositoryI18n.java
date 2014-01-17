@@ -125,13 +125,17 @@ public final class RepositoryI18n {
     public static I18n warningsWhileStarting;
     public static I18n errorVerifyingConfiguration;
 
-    //MimeTypes
+    // MimeTypes
     public static I18n unableToLoadMimeTypeDetector;
+
+    private RepositoryI18n() {
+    }
 
     static {
         try {
             I18n.initialize(RepositoryI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 2 LINES
             System.err.println(err);
         }
     }

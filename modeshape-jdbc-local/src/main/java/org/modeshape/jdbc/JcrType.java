@@ -64,18 +64,40 @@ public final class JcrType {
     static {
         Map<String, JcrType> types = new HashMap<String, JcrType>();
         register(types, PropertyType.BINARY, Types.BLOB, "BLOB", JcrBlob.class, 30, Integer.MAX_VALUE, new BlobTransform()); // assumed
-        register(types, PropertyType.BOOLEAN, Types.BOOLEAN, "BOOLEAN", Boolean.class, 5, 1, new BooleanTransform()); // 'true' or 'false'
+        register(types, PropertyType.BOOLEAN, Types.BOOLEAN, "BOOLEAN", Boolean.class, 5, 1, new BooleanTransform()); // 'true' or
+                                                                                                                      // 'false'
         register(types, PropertyType.DATE, Types.TIMESTAMP, "TIMESTAMP", Timestamp.class, 30, 10, new DateTransform()); // yyyy-MM-dd'T'HH:mm:ss.SSS+HH:mm
-        register(types, PropertyType.DOUBLE, Types.DOUBLE, "DOUBLE" ,Double.class, 20, 20, new DoubleTransform()); // assumed
+        register(types, PropertyType.DOUBLE, Types.DOUBLE, "DOUBLE", Double.class, 20, 20, new DoubleTransform()); // assumed
         register(types, PropertyType.DECIMAL, Types.DECIMAL, "BIGDECIMAL", BigDecimal.class, 20, 20, new DecimalTransform()); // assumed
         register(types, PropertyType.LONG, Types.BIGINT, "LONG", Long.class, 20, 19, new LongTransform()); // assumed
         register(types, PropertyType.NAME, Types.VARCHAR, "STRING", String.class, 20, Integer.MAX_VALUE, new StringTransform()); // assumed
         register(types, PropertyType.PATH, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
-        register(types, PropertyType.REFERENCE, Types.VARCHAR, "STRING", UUID.class, UUID_LENGTH, UUID_LENGTH, new UUIDTransform());
-        register(types, PropertyType.WEAKREFERENCE, Types.VARCHAR, "STRING", UUID.class, UUID_LENGTH, UUID_LENGTH, new UUIDTransform());
+        register(types,
+                 PropertyType.REFERENCE,
+                 Types.VARCHAR,
+                 "STRING",
+                 UUID.class,
+                 UUID_LENGTH,
+                 UUID_LENGTH,
+                 new UUIDTransform());
+        register(types,
+                 PropertyType.WEAKREFERENCE,
+                 Types.VARCHAR,
+                 "STRING",
+                 UUID.class,
+                 UUID_LENGTH,
+                 UUID_LENGTH,
+                 new UUIDTransform());
         register(types, PropertyType.URI, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
         register(types, PropertyType.STRING, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
-        register(types, PropertyType.UNDEFINED, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // same
+        register(types,
+                 PropertyType.UNDEFINED,
+                 Types.VARCHAR,
+                 "STRING",
+                 String.class,
+                 50,
+                 Integer.MAX_VALUE,
+                 new StringTransform()); // same
         // as
         // string
         TYPE_INFO = Collections.unmodifiableMap(types);
@@ -149,7 +171,7 @@ public final class JcrType {
     public int getJdbcType() {
         return jdbcType;
     }
-    
+
     /**
      * Get the native type name associated with the JDBC {@link Types} value.
      * 
@@ -258,7 +280,7 @@ public final class JcrType {
     public static JcrType typeInfo( int jcrType ) {
         return typeInfo(PropertyType.nameFromValue(jcrType));
     }
-    
+
     public static String jdbcType( String jcrTypeName ) {
         JcrType t = typeInfo(jcrTypeName);
         return t.getJdbcTypeName();

@@ -25,7 +25,6 @@ package org.modeshape.sequencer.ddl.dialect.mysql;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import org.junit.Ignore;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
@@ -34,6 +33,7 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
 import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
@@ -81,7 +81,7 @@ public class MySqlDdlParserTest extends DdlParserTestHelper {
     public void shouldParseCreateTableWithMySqlDataTypes() {
         printTest("shouldParseAlterTableAlterColumnDefaultRealNumber()");
         String content = "CREATE TABLE CS_EXT_FILES  (\n" + "     FILE_NAME        VARCHAR(255),\n"
-                         + "     FILE_CONTENTS    LONGBLOB,\n" + "     CONFIG_CONTENTS	LONGTEXT);";
+                         + "     FILE_CONTENTS    LONGBLOB,\n" + "     CONFIG_CONTENTS    LONGTEXT);";
 
         assertScoreAndParse(content, null, 1);
         assertThat(rootNode.getChild(0).getChildCount(), is(3));
@@ -109,7 +109,7 @@ public class MySqlDdlParserTest extends DdlParserTestHelper {
         assertThat(insertIntos.size(), is(1));
     }
 
-    @Ignore("MySql support not fully implemented yet")
+    @Ignore( "MySql support not fully implemented yet" )
     @Test
     public void shouldParseMySqlTestStatements() {
         printTest("shouldParseMySqlTestStatements()");

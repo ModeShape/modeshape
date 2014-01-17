@@ -23,7 +23,7 @@
  */
 package org.modeshape.sequencer.testdata;
 
-import java.text.*;
+import java.text.DateFormat;
 import java.util.Random;
 
 /**

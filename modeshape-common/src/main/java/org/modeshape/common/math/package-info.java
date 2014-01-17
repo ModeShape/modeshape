@@ -19,4 +19,3 @@
  * This is useful for generic classes that must work with one of the {@link java.lang.Number} subclasses.
  */
 package org.modeshape.common.math;
-

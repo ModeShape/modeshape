@@ -29,10 +29,14 @@ public final class GitI18n {
     public static I18n commitWithSingleParent;
     public static I18n cannotReadCommit;
 
+    private GitI18n() {
+    }
+
     static {
         try {
             I18n.initialize(GitI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

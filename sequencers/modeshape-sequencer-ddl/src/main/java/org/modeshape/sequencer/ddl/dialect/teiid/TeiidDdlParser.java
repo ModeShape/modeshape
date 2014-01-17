@@ -162,14 +162,13 @@ public final class TeiidDdlParser extends StandardDdlParser implements TeiidDdlC
      * 
      * @see org.modeshape.sequencer.ddl.DdlParser#postProcess(org.modeshape.sequencer.ddl.node.AstNode)
      */
-	@Override
-	public void postProcess(AstNode rootNode) {
-		super.postProcess(rootNode);
-		
-        for (final StatementParser parser : this.parsers) {
-        	parser.postProcess(rootNode);
-        }
-	}
+    @Override
+    public void postProcess( AstNode rootNode ) {
+        super.postProcess(rootNode);
 
-    
+        for (final StatementParser parser : this.parsers) {
+            parser.postProcess(rootNode);
+        }
+    }
+
 }
