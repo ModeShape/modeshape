@@ -1,3 +1,18 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
@@ -82,8 +97,7 @@ public class NodeTypeAssertion {
                 String ntName = childNodeTemplate.getName() == null ? JcrNodeType.RESIDUAL_ITEM_NAME : childNodeTemplate.getName();
                 if (nd.getName().equals(ntName) && nd.allowsSameNameSiblings() == childNodeTemplate.allowsSameNameSiblings()) {
                     boolean onlyBaseTypeRequired = nd.getRequiredPrimaryTypes().length == 0
-                                                   || (nd.getRequiredPrimaryTypes().length == 1 && nd.getRequiredPrimaryTypes()[0].getName()
-                                                                                                                                  .equals("nt:base"));
+                                                   || (nd.getRequiredPrimaryTypes().length == 1 && nd.getRequiredPrimaryTypes()[0].getName().equals("nt:base"));
                     boolean onlyHasBase = childNodeTemplate.getRequiredPrimaryTypeNames().length == 0
                                           || (childNodeTemplate.getRequiredPrimaryTypeNames().length == 1 && childNodeTemplate.getRequiredPrimaryTypeNames()[0].equals("nt:base"));
 

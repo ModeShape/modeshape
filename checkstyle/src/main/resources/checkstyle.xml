@@ -8,16 +8,16 @@
     <module name="FileTabCharacter" />
 
     <!-- Checks the header of Java files -->
-    <!--
     <module name="org.modeshape.checkstyle.Header">
-        <!- The header file is loaded by location, not classpath ->
-        <property name="headerFile" value="src/main/resources/modeshape.header"/>
-        <!-property name="fileExtensions" value="java,cnd"/->
+        <!-- The header file is loaded by location, not classpath -->
+        <property name="headerFile" value="modeshape.header"/>
+        <!--property name="fileExtensions" value="java,cnd"/-->
         <property name="fileExtensions" value="java"/>
-        <!- Exclude the JCIP classes that keep their own copyright and header ->
-        <property name="excludedClasses" value="org.modeshape.common.annotation.GuardedBy, org.modeshape.common.annotation.ThreadSafe, org.modeshape.common.annotation.NotThreadSafe, org.modeshape.common.annotation.Immutable"/>
+        <!-- Exclude the JCIP classes that keep their own copyright and header -->
+        <property name="excludedClasses" value="org.modeshape.common.annotation.GuardedBy, org.modeshape.common.annotation.ThreadSafe, org.modeshape.common.annotation.NotThreadSafe, org.modeshape.common.annotation.Immutable, org.modeshape.web.jcr.webdav.ModeShapeWebdavServlet"/>
+        <!-- Exclude the WebDAV library that has an Apache copyright in the header, though still ASL 2.0 -->
+        <property name="excludedFilesRegex" value="org/modeshape/webdav/.*"/>
     </module>
-    -->
 
     <module name="TreeWalker">
         <property name="cacheFile" value="${checkstyle.cache.file}" />

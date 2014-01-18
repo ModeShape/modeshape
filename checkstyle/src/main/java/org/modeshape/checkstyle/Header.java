@@ -31,12 +31,10 @@ import java.util.regex.Pattern;
  */
 public class Header extends com.puppycrawl.tools.checkstyle.checks.header.HeaderCheck {
 
-    private boolean initialized = false;
-    private String excludedClasses;
     private Set<String> excludedFileSet;
     private String excludedFilesRegex;
     private Pattern excludedFilesPattern;
-    private final String workingDirPath = new File(".").getAbsoluteFile().getAbsolutePath();
+    private final String workingDirPath = new File(".").getAbsoluteFile().getParentFile().getAbsolutePath();
     private final int workingDirPathLength = workingDirPath.length();
 
     public Header() {
@@ -44,10 +42,19 @@ public class Header extends com.puppycrawl.tools.checkstyle.checks.header.Header
 
     public void setExcludedFilesRegex( String excludedFilePattern ) {
         this.excludedFilesRegex = excludedFilePattern;
+        this.excludedFilesPattern = Pattern.compile(this.excludedFilesRegex);
     }
 
     public void setExcludedClasses( String excludedClasses ) {
-        this.excludedClasses = excludedClasses;
+        this.excludedFileSet = new HashSet<>();
+        if (excludedClasses != null) {
+            for (String classname : excludedClasses.split(",")) {
+                if (classname != null && classname.trim().length() != 0) {
+                    String path = classname.trim().replace('.', '/') + ".java"; // change package names to filenames ...
+                    this.excludedFileSet.add(path.trim());
+                }
+            }
+        }
     }
 
     @Override
@@ -75,24 +82,10 @@ public class Header extends com.puppycrawl.tools.checkstyle.checks.header.Header
     }
 
     protected boolean isExcluded( File file ) {
-        if (!initialized) {
-            if (excludedFilesRegex != null) {
-                excludedFilesPattern = Pattern.compile(excludedFilesRegex);
-            }
-            excludedFileSet = new HashSet<>();
-            if (excludedClasses != null) {
-                for (String classname : excludedClasses.split(",")) {
-                    if (classname != null && classname.trim().length() != 0) {
-                        String path = classname.trim().replace('.', '/') + ".java"; // change package names to filenames ...
-                        excludedFileSet.add(path.trim());
-                    }
-                }
-            }
-        }
-
         // See whether this file is excluded ...
         String filename = file.getAbsolutePath();
         if (filename.startsWith(workingDirPath)) filename = filename.substring(workingDirPathLength);
+        filename = filename.replaceAll(".*/src/(main|test)/(java|resources)/", "");
 
         // First try one of the explicit class names ...
         for (String excludedFileName : excludedFileSet) {

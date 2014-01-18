@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.modeshape.jcr.bus;
 
 import org.modeshape.common.annotation.ThreadSafe;
@@ -25,13 +24,14 @@ import org.modeshape.jcr.clustering.ClusteringService;
 import org.modeshape.jcr.clustering.MessageConsumer;
 
 /**
- * Implementation of a {@link ChangeBus} which can run in a cluster, via {@link ClusteringService}. This bus wraps around another bus, to which it
- * delegates all "local" processing of events.
+ * Implementation of a {@link ChangeBus} which can run in a cluster, via {@link ClusteringService}. This bus wraps around another
+ * bus, to which it delegates all "local" processing of events.
  * <p>
- * It is important that the order of the {@link org.modeshape.jcr.cache.change.ChangeSet} instances are maintained across the cluster, and JGroups will do
- * this for us as long as we push all local changes into the channel and receive all local/remote changes from the channel.
+ * It is important that the order of the {@link org.modeshape.jcr.cache.change.ChangeSet} instances are maintained across the
+ * cluster, and JGroups will do this for us as long as we push all local changes into the channel and receive all local/remote
+ * changes from the channel.
  * </p>
- *
+ * 
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -51,12 +51,12 @@ public final class ClusteredRepositoryChangeBus extends MessageConsumer<ChangeSe
 
     /**
      * Creates a new clustered repository bus
-     *
+     * 
      * @param delegate the local bus to which changes will be delegated
      * @param clusteringService the object which will handle sending/receiving information in the cluster.
      */
     public ClusteredRepositoryChangeBus( ChangeBus delegate,
-                                         ClusteringService clusteringService) {
+                                         ClusteringService clusteringService ) {
         super(ChangeSet.class);
 
         CheckArg.isNotNull(delegate, "delegate");
@@ -76,14 +76,14 @@ public final class ClusteredRepositoryChangeBus extends MessageConsumer<ChangeSe
     @Override
     public synchronized void start() throws Exception {
         // make sure the clustering service is open
-        if (!clusteringService.isOpen())  {
+        if (!clusteringService.isOpen()) {
             throw new IllegalStateException("The clustering service has not been started");
         }
 
         // start the delegate
         delegate.start();
 
-        //register with the clustering service
+        // register with the clustering service
         clusteringService.addConsumer(this);
     }
 

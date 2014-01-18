@@ -1,5 +1,28 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.jboss.subsystem;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -21,20 +44,12 @@ import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.junit.Assert.fail;
 
 @SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
@@ -78,7 +93,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         parse(readResource("modeshape-composite-binary-storage-config.xml"));
     }
 
-    @Test(expected = XMLStreamException.class)
+    @Test( expected = XMLStreamException.class )
     public void shouldRejectInvalidCompositeBinaryStoreConfiguration() throws Exception {
         parse(readResource("modeshape-invalid-composite-binary-storage.xml"));
     }
@@ -132,7 +147,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testOutputPersistenceOfConfigurationWithJournaling() throws Exception {
         parse(readResource("modeshape-journaling.xml"));
     }
-
 
     /* // todo replace with dmr format not json
     @Test

@@ -1,3 +1,18 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.jboss.subsystem;
 
 import java.util.List;
@@ -25,7 +40,7 @@ public class AddCompositeBinaryStorage extends AbstractAddBinaryStorage {
     protected void writeBinaryStorageConfiguration( String repositoryName,
                                                     OperationContext context,
                                                     ModelNode model,
-                                                    EditableDocument binaries ) /*throws OperationFailedException*/ {
+                                                    EditableDocument binaries ) /*throws OperationFailedException*/{
         binaries.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_COMPOSITE);
     }
 
@@ -42,22 +57,18 @@ public class AddCompositeBinaryStorage extends AbstractAddBinaryStorage {
 
         List<ModelNode> nestedStores = ModelAttributes.NESTED_STORES.resolveModelAttribute(context, model).asList();
 
-        //parse the nested store names and add a dependency on each of those services
+        // parse the nested store names and add a dependency on each of those services
         for (ModelNode nestedStore : nestedStores) {
             String nestedStoreName = nestedStore.asString();
-            ServiceName nestedServiceName = ModeShapeServiceNames.binaryStorageNestedServiceName(repositoryName,
-                                                                                                 nestedStoreName);
+            ServiceName nestedServiceName = ModeShapeServiceNames.binaryStorageNestedServiceName(repositoryName, nestedStoreName);
             if (!StringUtil.isBlank(nestedStoreName)) {
-                builder.addDependency(nestedServiceName,
-                                      BinaryStorage.class,
-                                      service.nestedStoreConfiguration(nestedStoreName));
+                builder.addDependency(nestedServiceName, BinaryStorage.class, service.nestedStoreConfiguration(nestedStoreName));
             }
         }
 
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
     }
-
 
     @Override
     protected void populateModel( ModelNode operation,
