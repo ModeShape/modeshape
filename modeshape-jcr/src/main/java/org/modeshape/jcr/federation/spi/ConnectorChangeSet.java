@@ -1,3 +1,18 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.jcr.federation.spi;
 
 import java.util.Map;
@@ -41,7 +56,7 @@ public interface ConnectorChangeSet {
 
     /**
      * Signal that a new node resource was created.
-     *
+     * 
      * @param docId the connector's identifier for the new node; may not be null
      * @param parentDocId the connector's identifier for the parent of the new node; may not be null
      * @param path the path to the new node; may not be null
@@ -59,7 +74,7 @@ public interface ConnectorChangeSet {
     /**
      * Signal that a node resource (and all descendants) was removed. Note that it is not common to fire an event for all nodes
      * below a node that is also deleted within the same change set.
-     *
+     * 
      * @param docId the connector's identifier for the removed node; may not be null
      * @param parentDocId the connector's identifier for the parent of the removed node; may not be null
      * @param path the path to the removed node; may not be null
@@ -74,7 +89,7 @@ public interface ConnectorChangeSet {
 
     /**
      * Signal that a node resource (and all descendants) was moved from one parent to another.
-     *
+     * 
      * @param docId the connector's identifier for the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
@@ -93,14 +108,14 @@ public interface ConnectorChangeSet {
 
     /**
      * Signal that a node resource (and all descendants) was placed into a new location within the same parent.
-     *
+     * 
      * @param docId the connector's identifier for the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
      * @param parentDocId the connector's identifier for the parent of the node; may not be null
      * @param newPath the new path for the node after it has been reordered; may not be null
      * @param oldNameSegment the name segment (i.e., the name and if applicable the SNS index) for the node before it was
-*        reordered; may not be null
+     *        reordered; may not be null
      * @param reorderedBeforeNameSegment the name segment of the node (in the same parent) before which the node was moved; or
      */
     void nodeReordered( String docId,
@@ -113,7 +128,7 @@ public interface ConnectorChangeSet {
 
     /**
      * Signal that a property was added to a node resource.
-     *
+     * 
      * @param docId the connector's identifier for the node; may not be null
      * @param nodePrimaryType the primary type of the node; may not be null
      * @param nodeMixinTypes the mixin types of the node; may not be null
@@ -128,7 +143,7 @@ public interface ConnectorChangeSet {
 
     /**
      * Signal that a property was removed from a node resource.
-     *
+     * 
      * @param docId the connector's identifier for the node; may not be null
      * @param nodePrimaryType the primary type of the node; may not be null
      * @param nodeMixinTypes the mixin types of the node; may not be null
@@ -143,7 +158,7 @@ public interface ConnectorChangeSet {
 
     /**
      * Signal that a property resource was changed on a node resource.
-     *
+     * 
      * @param docId the connector's identifier for the node; may not be null
      * @param nodePrimaryType the primary type of the node; may not be null
      * @param nodeMixinTypes the mixin types of the node; may not be null
