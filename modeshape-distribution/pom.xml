@@ -370,6 +370,14 @@
                     <type>zip</type>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-jca</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+
                 <!--The client artifact is produced during the assembly profile, by the modeshape-jdbc profile -->
                 <dependency>
                     <groupId>org.modeshape</groupId>

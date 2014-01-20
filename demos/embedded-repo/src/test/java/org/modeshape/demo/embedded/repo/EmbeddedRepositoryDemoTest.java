@@ -25,10 +25,9 @@
 package org.modeshape.demo.embedded.repo;
 
 import org.junit.Test;
-import org.modeshape.demo.embedded.repo.EmbeddedRepositoryDemo;
 
 public class EmbeddedRepositoryDemoTest {
-	
+
     @Test
     public void shouldRunApplication() throws Exception {
         String[] argv = new String[]{};

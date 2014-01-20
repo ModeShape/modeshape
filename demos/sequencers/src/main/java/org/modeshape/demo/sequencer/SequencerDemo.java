@@ -3,7 +3,6 @@ package org.modeshape.demo.sequencer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -89,14 +88,11 @@ public class SequencerDemo {
             Node textFile = findNodeAndWait(session, "/text/fixedWidthFile.txt", 10, TimeUnit.SECONDS);
             if (print) tools.printSubgraph(textFile);
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (RepositoryException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             if (session != null) session.logout();
+            //CHECKSTYLE:OFF
             System.out.println("Shutting down engine ...");
             try {
                 engine.shutdown().get();
@@ -104,6 +100,7 @@ public class SequencerDemo {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            //CHECKSTYLE:ON
         }
     }
 

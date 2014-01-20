@@ -57,8 +57,7 @@ public class ConnectorTestCase extends AbstractTransactionalTest {
         ja.addClasses(JcrResourceAdapter.class, JcrManagedConnectionFactory.class, JcrManagedConnection.class);
         ja.addAsResource("my-repository-config.json");
         raa.addAsLibrary(ja);
-
-        raa.addAsManifestResource("META-INF/ironjacamar.xml", "ironjacamar.xml");
+        raa.addAsManifestResource("ironjacamar.xml", "ironjacamar.xml");
         raa.addAsResource("my-repository-config.json");
         return raa;
     }
