@@ -93,7 +93,7 @@
             <!--
                JCA adaptor
              -->
-            <directory>../modeshape-jca/target</directory>
+            <directory>../modeshape-jca-rar/target</directory>
             <includes>
                 <include>*.rar</include>
             </includes>

@@ -45,9 +45,11 @@ public class EmbeddedRepositoryDemo {
             // Verify the configuration for the repository ...
             Problems problems = config.validate();
             if (problems.hasErrors()) {
+                //CHECKSTYLE:OFF
                 System.err.println("Problems starting the engine.");
                 System.err.println(problems);
                 System.exit(-1);
+                //CHECKSTYLE:ON
             }
 
             // Deploy the repository ...
@@ -71,11 +73,16 @@ public class EmbeddedRepositoryDemo {
             Node root = session.getRootNode();
             assert root != null;
 
+            //CHECKSTYLE:OFF
             System.out.println("Found the root node in the \"" + session.getWorkspace().getName() + "\" workspace");
+            //CHECKSTYLE:ON
         } catch (RepositoryException e) {
             e.printStackTrace();
         } finally {
-            if (session != null) session.logout();
+            if (session != null) {
+                session.logout();
+            }
+            //CHECKSTYLE:OFF
             System.out.println("Shutting down engine ...");
             try {
                 engine.shutdown().get();
@@ -83,7 +90,7 @@ public class EmbeddedRepositoryDemo {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            //CHECKSTYLE:ON
         }
-
     }
 }

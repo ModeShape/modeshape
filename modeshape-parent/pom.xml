@@ -1138,6 +1138,11 @@
                 <artifactId>modeshape-jdbc</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jca</artifactId>
+                <version>${project.version}</version>
+            </dependency>
            <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jbossas-subsystem</artifactId>
