@@ -83,7 +83,7 @@ public class Header extends com.puppycrawl.tools.checkstyle.checks.header.Header
 
     protected boolean isExcluded( File file ) {
         // See whether this file is excluded ...
-        String filename = file.getAbsolutePath();
+        String filename = file.getAbsolutePath().replace(File.separator, "/");
         if (filename.startsWith(workingDirPath)) filename = filename.substring(workingDirPathLength);
         filename = filename.replaceAll(".*/src/(main|test)/(java|resources)/", "");
 
