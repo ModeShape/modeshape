@@ -23,7 +23,7 @@ import org.infinispan.batch.AutoBatchSupport;
 import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.context.Flag;
 import org.infinispan.context.FlagContainer;
-import org.infinispan.marshall.MarshalledValue;
+import org.infinispan.marshall.core.MarshalledValue;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
@@ -36,8 +36,8 @@ import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.document.ObservableDocumentEditor;
 import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.TransactionTable;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+import org.infinispan.commons.logging.Log;
+import org.infinispan.commons.logging.LogFactory;
 
 /**
  * A layer of indirection around an {@link SchematicEntryLiteral} to provide consistency and isolation for concurrent readers

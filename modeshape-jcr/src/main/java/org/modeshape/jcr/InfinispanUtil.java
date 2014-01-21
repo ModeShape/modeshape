@@ -26,13 +26,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
 import org.infinispan.Cache;
+
 import org.infinispan.distexec.DefaultExecutorService;
 import org.infinispan.distexec.DistributedCallable;
 import org.infinispan.distexec.DistributedExecutorService;
-import org.infinispan.loaders.CacheLoader;
-import org.infinispan.loaders.CacheLoaderException;
-import org.infinispan.loaders.CacheLoaderManager;
+
+////////////////////
+import org.infinispan.configuration.cache.PersistenceConfiguration;
+import org.infinispan.persistence.spi.CacheLoader;
+import org.infinispan.persistence.spi.PersistenceException;
+import org.infinispan.persistence.manager.PersistenceManager;
+///////////////////
+
 import org.modeshape.common.logging.Logger;
 
 /**
@@ -42,9 +49,9 @@ public class InfinispanUtil {
 
     protected static final Logger LOGGER = Logger.getLogger(InfinispanUtil.class);
 
-    private InfinispanUtil() {
-        // prevent instantiation ...
-    }
+    //private InfinispanUtil() {
+        // prevent instantiation ... // bad idea; apps may want to do Distributed Execution
+    //}
 
     public static enum Location {
         /** In all processes */
@@ -74,7 +81,9 @@ public class InfinispanUtil {
         if (location == null) location = Location.LOCALLY;
 
         DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
-        boolean shared = cache.getCacheConfiguration().loaders().shared();
+        // hxp  -- migrating loaders().shared() 
+        PersistenceConfiguration persistenceConfiguration = cache.getCacheConfiguration().persistence();
+        boolean shared = persistenceConfiguration.stores().get(0).shared(); // hxp -- do we have to deal with more than one store?
         T result = null;
         if (!shared) {
             // store is not shared so every node must return key list of the store
@@ -135,7 +144,7 @@ public class InfinispanUtil {
      * @throws ExecutionException if there is an error while getting all keys
      */
     public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache )
-        throws CacheLoaderException, InterruptedException, ExecutionException {
+        throws PersistenceException, InterruptedException, ExecutionException {
         LOGGER.debug("getAllKeys of {0}", cache.getName());
 
         GetAllKeys<K, V> task = new GetAllKeys<K, V>();
@@ -241,19 +250,20 @@ public class InfinispanUtil {
         @Override
         @SuppressWarnings( "unchecked" )
         public Set<K> call() throws Exception {
-            CacheLoaderManager cacheLoaderManager = cache.getAdvancedCache()
+        	PersistenceManager persistenceManager = cache.getAdvancedCache()
                                                          .getComponentRegistry()
-                                                         .getComponent(CacheLoaderManager.class);
-            if (cacheLoaderManager == null) {
+                                                         .getComponent(PersistenceManager.class);
+            if (persistenceManager == null) {
                 return cache.keySet();
             }
-            CacheLoader cacheLoader = cacheLoaderManager.getCacheLoader();
-            if (cacheLoader == null) {
-                return cache.keySet();
-            }
+//HXP: *MUST* bring 2 commented-out areas back in!
+//            CacheLoader cacheLoader = persistenceManager.getCacheLoader();
+//            if (cacheLoader == null) {
+//                return cache.keySet();
+//            }
             // load only these keys, which are not already in memory
             Set<K> cacheKeys = new HashSet<K>(cache.keySet());
-            cacheKeys.addAll((Set<K>)cacheLoader.loadAllKeys((Set<Object>)cacheKeys));
+//            cacheKeys.addAll((Set<K>)cacheLoader.loadAllKeys((Set<Object>)cacheKeys));
             return cacheKeys;
         }
     }

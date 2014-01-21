@@ -27,18 +27,18 @@
         <module>modeshape-common</module>
         <module>modeshape-schematic</module>
         <module>modeshape-jcr</module>
-        <module>modeshape-unit-test</module>
+<!--        <module>modeshape-unit-test</module> -->
         <module>sequencers</module>
         <module>extractors</module>
 
         <!--Connectors-->
-        <module>connectors</module>
+<!--         <module>connectors</module> -->
         <!--
           The REST client needs the JDBC driver
         -->
         <module>web</module>
         <module>modeshape-jdbc-local</module>
-        <module>modeshape-jdbc</module>
+<!--         <module>modeshape-jdbc</module> -->
         <!-- 
           JCA Resource adapter
     	-->
@@ -47,7 +47,7 @@
         <!--
           The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
         -->
-        <module>deploy/jbossas</module>
+<!--         <module>deploy/jbossas</module> -->
         <module>modeshape-distribution</module>
 
         <!-- Finally the BOMs -->

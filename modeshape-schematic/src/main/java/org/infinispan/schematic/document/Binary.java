@@ -20,11 +20,11 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.Set;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Base64;
-import org.infinispan.util.Util;
+import org.infinispan.commons.util.Base64;
+import org.infinispan.commons.util.Util;
 
 /**
  * A {@link Bson.Type#BINARY binary} value for use within a {@link Document BSON Object}.

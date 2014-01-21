@@ -28,9 +28,9 @@ import java.util.Set;
 import org.infinispan.Cache;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.marshall.AbstractExternalizer;
-import org.infinispan.marshall.AdvancedExternalizer;
-import org.infinispan.marshall.Externalizer;
+import org.infinispan.commons.marshall.AbstractExternalizer;
+import org.infinispan.commons.marshall.AdvancedExternalizer;
+import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Changes;
@@ -69,7 +69,7 @@ import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.document.ObservableDocumentEditor;
 import org.infinispan.schematic.internal.document.Paths;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
+import org.infinispan.commons.util.Util;
 
 public class Schematic extends DocumentFactory {
 

@@ -25,8 +25,8 @@ import org.infinispan.context.Flag;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionTable;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+import org.infinispan.commons.logging.Log;
+import org.infinispan.commons.logging.LogFactory;
 
 /**
  * Encapsulation of some runtime and configuration-related information for a particular advanced cache.
@@ -54,7 +54,7 @@ final class CacheContext {
         flags.add(Flag.SKIP_REMOTE_LOOKUP);
         flags.add(Flag.DELTA_WRITE);
         LOGGER.debug("Deltas will be used to serializing changes to documents in '" + cache.getName() + "'.");
-        LOGGER.debug("Passivation? " + config.loaders().passivation());
+        //LOGGER.debug("Passivation? " + config.loaders().passivation()); // hxp 20140112 -- Configuration api no longer provides classLoader() or loaders()
         LOGGER.debug("Eviction? " + config.eviction().strategy());
         LOGGER.debug("Clustering mode? " + config.clustering().cacheMode());
 

@@ -34,8 +34,8 @@ public class InfinispanLocalBinaryStoreWithPersistenceTest extends AbstractInfin
         File dir = new File(System.getProperty("java.io.tmpdir"), "InfinispanLocalBinaryStoreWithPersistenceTest");
         if (dir.exists()) FileUtil.delete(dir);
         dir.mkdirs();
-        configurationBuilder.loaders().shared(false);
-        configurationBuilder.loaders().addFileCacheStore().purgeOnStartup(true).location(dir.getAbsolutePath());
+//hxp        configurationBuilder.loaders().shared(false);
+//hxp        configurationBuilder.loaders().addFileCacheStore().purgeOnStartup(true).location(dir.getAbsolutePath());
 
         // Create the configurations for the two different caches ...
         Configuration blobConfiguration = configurationBuilder.build();

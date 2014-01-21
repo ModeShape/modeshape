@@ -20,10 +20,10 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.Set;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
+import org.infinispan.commons.util.Util;
 
 /**
  * A {@link Bson.Type#SYMBOL symbol} value for use within a {@link Document BSON Object}.

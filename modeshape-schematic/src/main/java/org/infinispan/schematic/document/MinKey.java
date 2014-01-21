@@ -18,10 +18,10 @@ package org.infinispan.schematic.document;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
+import org.infinispan.commons.util.Util;
 
 @Immutable
 @SerializeWith( MinKey.Externalizer.class )
