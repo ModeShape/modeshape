@@ -24,10 +24,14 @@ public class TikaI18n {
     public static I18n warnCannotDetectMimeType;
     public static I18n warnNoClassDefFound;
 
+    private TikaI18n() {
+    }
+
     static {
         try {
             I18n.initialize(TikaI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

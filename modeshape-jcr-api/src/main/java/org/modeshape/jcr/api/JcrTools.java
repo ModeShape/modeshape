@@ -305,9 +305,13 @@ public class JcrTools {
                 }
             }
         };
-        session.getWorkspace()
-               .getObservationManager()
-               .addEventListener(listener, Event.NODE_ADDED, parentPath, true, null, null, false);
+        session.getWorkspace().getObservationManager().addEventListener(listener,
+                                                                        Event.NODE_ADDED,
+                                                                        parentPath,
+                                                                        true,
+                                                                        null,
+                                                                        null,
+                                                                        false);
         uploadFile(session, nodePath, url);
 
         // Save the session ...
@@ -465,6 +469,8 @@ public class JcrTools {
 
     public void print( Object msg ) {
         if (debug && msg != null) {
+            // We print to System.out rather than to the log ... it is for developer-level debugging
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.out.println(msg.toString());
         }
     }
@@ -503,7 +509,7 @@ public class JcrTools {
 
     /**
      * Load the subgraph below this node, and print it to System.out if printing is enabled.
-     *
+     * 
      * @param node the root of the subgraph
      * @param lead the string that each line should begin with; may be null if there is no such string
      * @param depthOfSubgraph the depth of this subgraph's root node
@@ -607,7 +613,7 @@ public class JcrTools {
 
     /**
      * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
-     *
+     * 
      * @param session the session
      * @param jcrSql2 the JCR-SQL2 query
      * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
@@ -628,7 +634,7 @@ public class JcrTools {
 
     /**
      * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
-     *
+     * 
      * @param session the session
      * @param jcrSql2 the JCR-SQL2 query
      * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
@@ -725,6 +731,8 @@ public class JcrTools {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(pathToCndResourceFile);
         if (stream == null) {
             String msg = "\"" + pathToCndResourceFile + "\" does not reference an existing file";
+            // We expressly print to System.err rather than to the log ...
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(msg);
             throw new IllegalArgumentException(msg);
         }
@@ -795,6 +803,8 @@ public class JcrTools {
             InputStream stream = testClass.getClassLoader().getResourceAsStream(pathToResourceFile);
             if (stream == null) {
                 String msg = "\"" + pathToResourceFile + "\" does not reference an existing file";
+                // We expressly print to System.err rather than to the log ...
+                // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                 System.err.println(msg);
                 throw new IllegalArgumentException(msg);
             }

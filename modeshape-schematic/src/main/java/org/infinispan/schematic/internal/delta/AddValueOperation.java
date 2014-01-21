@@ -102,6 +102,11 @@ public class AddValueOperation extends ArrayOperation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj instanceof AddValueOperation) {
             AddValueOperation other = (AddValueOperation)obj;

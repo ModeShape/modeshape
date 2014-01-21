@@ -1,30 +1,21 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.Collections;
@@ -55,7 +46,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * 1.0 specification.
  * 
  * @see JcrSession#exportDocumentView(String, ContentHandler, boolean, boolean)
- * @see JcrSession#exportDocumentView(String, OutputStream, boolean, boolean)
+ * @see JcrSession#exportDocumentView(String, java.io.OutputStream, boolean, boolean)
  */
 @NotThreadSafe
 class JcrDocumentViewExporter extends AbstractJcrExporter {
@@ -283,13 +274,11 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         assert xmlCharacters != null;
 
         if (xmlCharacters.getDefinition().isMultiple()) {
-            StringBuffer buff = new StringBuffer();
-
+            StringBuilder bf = new StringBuilder();
             for (Value value : xmlCharacters.getValues()) {
-                buff.append(value.getString());
+                bf.append(value.getString());
             }
-
-            return buff.toString();
+            return bf.toString();
         }
 
         return xmlCharacters.getValue().getString();

@@ -15,29 +15,24 @@
  */
 package org.modeshape.webdav.fromcatalina;
 
-import org.modeshape.common.i18n.TextI18n;
-import org.modeshape.common.logging.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.BitSet;
+import org.modeshape.common.i18n.TextI18n;
+import org.modeshape.common.logging.Logger;
 
 /**
- * This class is very similar to the java.net.URLEncoder class.
- *
- * Unfortunately, with java.net.URLEncoder there is no way to specify to the
- * java.net.URLEncoder which characters should NOT be encoded.
- *
- * This code was moved from DefaultServlet.java
- *
+ * This class is very similar to the java.net.URLEncoder class. Unfortunately, with java.net.URLEncoder there is no way to specify
+ * to the java.net.URLEncoder which characters should NOT be encoded. This code was moved from DefaultServlet.java
+ * 
  * @author Craig R. McClanahan
  * @author Remy Maucherat
  */
 public class URLEncoder {
     private static Logger LOG = Logger.getLogger(URLEncoder.class);
 
-
-    protected static final char[] HEXADECIMAL = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    protected static final char[] HEXADECIMAL = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     // Array containing the safe characters set.
     protected BitSet safeCharacters = new BitSet(256);
@@ -61,11 +56,10 @@ public class URLEncoder {
         safeCharacters.set(c);
     }
 
-    @SuppressWarnings( "cast" )
     public String encode( String path ) {
         int maxBytesPerChar = 10;
         // int caseDiff = ('a' - 'A');
-        StringBuffer rewrittenPath = new StringBuffer(path.length());
+        StringBuilder rewrittenPath = new StringBuilder(path.length());
         ByteArrayOutputStream buf = new ByteArrayOutputStream(maxBytesPerChar);
         OutputStreamWriter writer = null;
         try {
@@ -76,7 +70,7 @@ public class URLEncoder {
         }
 
         for (int i = 0; i < path.length(); i++) {
-            int c = (int)path.charAt(i);
+            int c = path.charAt(i);
             if (safeCharacters.get(c)) {
                 rewrittenPath.append((char)c);
             } else {
@@ -93,8 +87,8 @@ public class URLEncoder {
                     // Converting each byte in the buffer
                     byte toEncode = ba[j];
                     rewrittenPath.append('%');
-                    int low = (int)(toEncode & 0x0f);
-                    int high = (int)((toEncode & 0xf0) >> 4);
+                    int low = toEncode & 0x0f;
+                    int high = (toEncode & 0xf0) >> 4;
                     rewrittenPath.append(HEXADECIMAL[high]);
                     rewrittenPath.append(HEXADECIMAL[low]);
                 }

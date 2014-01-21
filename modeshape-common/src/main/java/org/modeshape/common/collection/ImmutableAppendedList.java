@@ -55,21 +55,11 @@ public class ImmutableAppendedList<T> implements List<T> {
         this.size = parent.size() + 1;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#contains(java.lang.Object)
-     */
     @Override
     public boolean contains( Object o ) {
         return element == o || (element != null && element.equals(o)) || parent.contains(o);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#containsAll(java.util.Collection)
-     */
     @Override
     public boolean containsAll( Collection<?> c ) {
         Iterator<?> e = c.iterator();
@@ -79,22 +69,12 @@ public class ImmutableAppendedList<T> implements List<T> {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#get(int)
-     */
     @Override
     public T get( int index ) {
         if (index == (size - 1)) return element;
         return parent.get(index);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#indexOf(java.lang.Object)
-     */
     @Override
     public int indexOf( Object o ) {
         int index = parent.indexOf(o);
@@ -104,21 +84,11 @@ public class ImmutableAppendedList<T> implements List<T> {
         return -1;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#isEmpty()
-     */
     @Override
     public boolean isEmpty() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#iterator()
-     */
     @Override
     @SuppressWarnings( "synthetic-access" )
     public Iterator<T> iterator() {
@@ -146,32 +116,17 @@ public class ImmutableAppendedList<T> implements List<T> {
         };
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#lastIndexOf(java.lang.Object)
-     */
     @Override
     public int lastIndexOf( Object o ) {
         if (element == o || (element != null && element.equals(o))) return size - 1;
         return parent.lastIndexOf(o);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#listIterator()
-     */
     @Override
     public ListIterator<T> listIterator() {
         return listIterator(0);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#listIterator(int)
-     */
     @Override
     @SuppressWarnings( "synthetic-access" )
     public ListIterator<T> listIterator( final int index ) {
@@ -239,21 +194,11 @@ public class ImmutableAppendedList<T> implements List<T> {
         };
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#size()
-     */
     @Override
     public int size() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#subList(int, int)
-     */
     @Override
     public List<T> subList( int fromIndex,
                             int toIndex ) {
@@ -276,11 +221,6 @@ public class ImmutableAppendedList<T> implements List<T> {
         return new ImmutableAppendedList<T>(sublist, element);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#toArray()
-     */
     @Override
     public Object[] toArray() {
         Object[] result = new Object[size];
@@ -292,11 +232,6 @@ public class ImmutableAppendedList<T> implements List<T> {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#toArray(T[])
-     */
     @Override
     @SuppressWarnings( "unchecked" )
     public <X> X[] toArray( X[] a ) {
@@ -306,11 +241,6 @@ public class ImmutableAppendedList<T> implements List<T> {
         return a;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         if (hc == 0) {
@@ -323,11 +253,6 @@ public class ImmutableAppendedList<T> implements List<T> {
         return hc;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -351,130 +276,75 @@ public class ImmutableAppendedList<T> implements List<T> {
         return super.equals(obj);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
-        StringBuffer buf = new StringBuffer();
-        buf.append("[");
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
 
         Iterator<T> i = iterator();
         boolean hasNext = i.hasNext();
         while (hasNext) {
             T o = i.next();
-            buf.append(o == this ? "(this Collection)" : String.valueOf(o));
+            sb.append(o == this ? "(this Collection)" : String.valueOf(o));
             hasNext = i.hasNext();
-            if (hasNext) buf.append(", ");
+            if (hasNext) sb.append(", ");
         }
 
-        buf.append("]");
-        return buf.toString();
+        sb.append("]");
+        return sb.toString();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Methods that modify are not supported
     // ----------------------------------------------------------------------------------------------------------------
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#add(int, Object)
-     */
     @Override
     public void add( int index,
                      T element ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#add(Object)
-     */
     @Override
     public boolean add( T o ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#addAll(java.util.Collection)
-     */
     @Override
     public boolean addAll( Collection<? extends T> c ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#addAll(int, java.util.Collection)
-     */
     @Override
     public boolean addAll( int index,
                            Collection<? extends T> c ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#clear()
-     */
     @Override
     public void clear() {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#remove(java.lang.Object)
-     */
     @Override
     public boolean remove( Object o ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#remove(int)
-     */
     @Override
     public T remove( int index ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#removeAll(java.util.Collection)
-     */
     @Override
     public boolean removeAll( Collection<?> c ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#retainAll(java.util.Collection)
-     */
     @Override
     public boolean retainAll( Collection<?> c ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.List#set(int, java.lang.Object)
-     */
     @Override
     public T set( int index,
                   T element ) {

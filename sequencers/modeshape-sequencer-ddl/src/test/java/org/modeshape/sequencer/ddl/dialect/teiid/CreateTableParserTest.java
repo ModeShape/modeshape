@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl.dialect.teiid;
 
@@ -28,8 +20,8 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.hasItem;
-import static org.junit.matchers.JUnitMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -148,8 +140,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(3));
 
         { // e1 primary key
-            assertThat(tableNode.childrenWithName(TeiidDdlLexicon.PRIMARY_KEY).size(), is(1));
-            final Object temp = tableNode.childrenWithName(TeiidDdlLexicon.PRIMARY_KEY).get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+            assertThat(tableNode.childrenWithName(DdlConstants.PRIMARY_KEY).size(), is(1));
+            final Object temp = tableNode.childrenWithName(DdlConstants.PRIMARY_KEY).get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
             assertThat(temp, is(instanceOf(List.class)));
 
             @SuppressWarnings( "unchecked" )
@@ -159,7 +151,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         }
 
         { // e2, e3 unique constraints
-            final List<AstNode> uniques = tableNode.childrenWithName(TeiidDdlLexicon.UNIQUE);
+            final List<AstNode> uniques = tableNode.childrenWithName(DdlConstants.UNIQUE);
             assertThat(uniques.size(), is(2));
 
             final Object temp1 = uniques.get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
@@ -595,7 +587,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(tableNode.getName(), is("G1"));
         assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
-        assertThat(tableNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1").size(), is(1)); // make sure primary key still created
+        assertThat(tableNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1").size(), is(1)); // make sure primary key
+                                                                                                          // still created
     }
 
     @Test

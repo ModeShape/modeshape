@@ -68,6 +68,7 @@ public class HtmlBodyWriter extends TextBodyWriter {
     private String replaceSpaces( String jsonString ) {
         Pattern pattern = Pattern.compile("(\\s*)");
         Matcher matcher = pattern.matcher(jsonString);
+        // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
         StringBuffer buffer = new StringBuffer();
         while (matcher.find()) {
             String spaces = matcher.group(1);

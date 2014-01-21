@@ -35,10 +35,14 @@ public final class WebdavI18n {
     public static I18n cannotCreateWorkspaceInRepository;
     public static I18n cannotGetRepositorySession;
 
+    private WebdavI18n() {
+    }
+
     static {
         try {
             I18n.initialize(WebdavI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

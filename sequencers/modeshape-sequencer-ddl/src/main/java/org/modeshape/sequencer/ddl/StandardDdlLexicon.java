@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl;
 
@@ -42,22 +34,22 @@ public class StandardDdlLexicon {
      *
      * SQL-92 Spec
      *
-     * 		CREATE SCHEMA
-     *		CREATE DOMAIN
-     * 		CREATE [ { GLOBAL | LOCAL } TEMPORARY ] TABLE
-     *		CREATE VIEW
-     *		CREATE ASSERTION
-     *		CREATE CHARACTER SET
-     *		CREATE COLLATION
-     *		CREATE TRANSLATION
+     *         CREATE SCHEMA
+     *        CREATE DOMAIN
+     *         CREATE [ { GLOBAL | LOCAL } TEMPORARY ] TABLE
+     *        CREATE VIEW
+     *        CREATE ASSERTION
+     *        CREATE CHARACTER SET
+     *        CREATE COLLATION
+     *        CREATE TRANSLATION
      *
-     *		ALTER TABLE
+     *        ALTER TABLE
      */
 
     public static final String TYPE_MISSING_TERMINATOR = PREFIX + ":missingTerminator";
     public static final String TYPE_UNKNOWN_STATEMENT = PREFIX + ":unknownStatement";
 
-    public static final String TYPE_OPERATION = PREFIX +  ":operation";
+    public static final String TYPE_OPERATION = PREFIX + ":operation";
     public static final String TYPE_OPERAND = PREFIX + ":operand";
     public static final String TYPE_STATEMENT = PREFIX + ":statement";
 
@@ -145,7 +137,7 @@ public class StandardDdlLexicon {
 
     public static final String OPTION = PREFIX + ":option";
     public static final String TYPE = PREFIX + ":type";
-    public static final String NEW_NAME = PREFIX +":newName";
+    public static final String NEW_NAME = PREFIX + ":newName";
     public static final String SQL = PREFIX + ":sql";
     public static final String TEMPORARY = PREFIX + ":temporary";
     public static final String ON_COMMIT_VALUE = PREFIX + ":onCommitValue";
@@ -182,7 +174,6 @@ public class StandardDdlLexicon {
 
     public static final String SOURCE_CHARACTER_SET_NAME = PREFIX + ":sourceCharacterSetName";
     public static final String TARGET_CHARACTER_SET_NAME = PREFIX + ":targetCharacterSetName";
-
 
     public static final String DROP_OPTION = PREFIX + ":dropOption";
     public static final String COLUMN_ATTRIBUTE = PREFIX + ":columnAttribute";

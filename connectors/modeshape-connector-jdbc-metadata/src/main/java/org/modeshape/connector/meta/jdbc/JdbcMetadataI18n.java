@@ -28,10 +28,14 @@ public final class JdbcMetadataI18n {
     public static I18n errorFindingDataSourceInJndi;
     public static I18n driverClassNameAndUrlAreRequired;
 
+    private JdbcMetadataI18n() {
+    }
+
     static {
         try {
             I18n.initialize(JdbcMetadataI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

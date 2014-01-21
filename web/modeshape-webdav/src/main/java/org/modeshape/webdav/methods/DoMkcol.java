@@ -68,7 +68,6 @@ public class DoMkcol extends AbstractMethod {
 
         String tempLockOwner = "doMkcol" + System.currentTimeMillis() + req.toString();
 
-
         StoredObject parentSo, so = null;
         try {
             if (!resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
@@ -79,7 +78,7 @@ public class DoMkcol extends AbstractMethod {
             parentSo = store.getStoredObject(transaction, parentPath);
             if (parentSo == null) {
                 // parent not exists
-                LOG.debug("Parent not exists for "+path);
+                LOG.debug("Parent not exists for " + path);
                 resp.sendError(WebdavStatus.SC_CONFLICT);
                 return;
             }
@@ -142,10 +141,10 @@ public class DoMkcol extends AbstractMethod {
                 resp.sendError(WebdavStatus.SC_FORBIDDEN);
             }
         } catch (AccessDeniedException e) {
-            LOG.debug(e, "Access denied for "+path);
+            LOG.debug(e, "Access denied for " + path);
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
         } catch (WebdavException e) {
-            LOG.debug(e, "Error for "+path);
+            LOG.debug(e, "Error for " + path);
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);

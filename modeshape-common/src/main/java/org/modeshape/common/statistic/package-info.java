@@ -18,4 +18,3 @@
  * A set of utilities for working with statistics, including a {@link org.modeshape.common.statistic.Stopwatch} and {@link org.modeshape.common.statistic.Histogram}s.
  */
 package org.modeshape.common.statistic;
-

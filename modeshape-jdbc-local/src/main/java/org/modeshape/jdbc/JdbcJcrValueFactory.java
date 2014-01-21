@@ -15,22 +15,22 @@
  */
 package org.modeshape.jdbc;
 
-import javax.jcr.Binary;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
+import javax.jcr.Binary;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
 
 /**
- * A factory class which creates {@link javax.jcr.Value} instances from arbitrary objects (avoiding the dependency on the
- * real {@link javax.jcr.ValueFactory} implementations from other modules).
- *
+ * A factory class which creates {@link javax.jcr.Value} instances from arbitrary objects (avoiding the dependency on the real
+ * {@link javax.jcr.ValueFactory} implementations from other modules).
+ * 
  * @author Horia Chiorean
  */
 public final class JdbcJcrValueFactory {
@@ -38,7 +38,7 @@ public final class JdbcJcrValueFactory {
     private JdbcJcrValueFactory() {
     }
 
-    public static Value createValue(Object value) {
+    public static Value createValue( Object value ) {
         return value == null ? null : new JdbcJcrValue(value);
     }
 
@@ -85,18 +85,13 @@ public final class JdbcJcrValueFactory {
             throw new ValueFormatException("Value not a Long");
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @see javax.jcr.Value#getBinary()
-         */
         @Override
         public Binary getBinary() throws RepositoryException {
             if (value instanceof Binary) {
                 return ((Binary)value);
             }
             if (value instanceof byte[]) {
-                final byte[] bytes = (byte[]) value;
+                final byte[] bytes = (byte[])value;
                 return new Binary() {
                     @Override
                     public void dispose() {
@@ -136,7 +131,7 @@ public final class JdbcJcrValueFactory {
                                 try {
                                     stream.close();
                                 } catch (Exception e) {
-                                    //ignore
+                                    // ignore
                                 }
                             }
                         }

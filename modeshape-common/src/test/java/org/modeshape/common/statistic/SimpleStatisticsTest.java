@@ -19,10 +19,9 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 import org.modeshape.common.math.FloatOperations;
 import org.modeshape.common.math.IntegerOperations;
-import org.modeshape.common.statistic.SimpleStatistics;
-import org.junit.Test;
 
 public class SimpleStatisticsTest {
 

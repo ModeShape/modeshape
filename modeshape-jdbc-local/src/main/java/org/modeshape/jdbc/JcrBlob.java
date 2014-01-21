@@ -48,11 +48,6 @@ public class JcrBlob implements Blob {
         assert this.value != null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#free()
-     */
     @Override
     public void free() throws SQLException {
         try {
@@ -64,11 +59,6 @@ public class JcrBlob implements Blob {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#getBinaryStream()
-     */
     @Override
     public InputStream getBinaryStream() throws SQLException {
         try {
@@ -78,22 +68,12 @@ public class JcrBlob implements Blob {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#getBinaryStream(long, long)
-     */
     @Override
     public InputStream getBinaryStream( long pos,
                                         long length ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#getBytes(long, int)
-     */
     @Override
     public byte[] getBytes( long pos,
                             int length ) throws SQLException {
@@ -126,64 +106,34 @@ public class JcrBlob implements Blob {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#length()
-     */
     @Override
     public long length() {
         return length;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#position(byte[], long)
-     */
     @Override
     public long position( byte[] pattern,
                           long start ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#position(java.sql.Blob, long)
-     */
     @Override
     public long position( Blob pattern,
                           long start ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#setBinaryStream(long)
-     */
     @Override
     public OutputStream setBinaryStream( long pos ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#setBytes(long, byte[])
-     */
     @Override
     public int setBytes( long pos,
                          byte[] bytes ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#setBytes(long, byte[], int, int)
-     */
     @Override
     public int setBytes( long pos,
                          byte[] bytes,
@@ -192,11 +142,6 @@ public class JcrBlob implements Blob {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Blob#truncate(long)
-     */
     @Override
     public void truncate( long len ) throws SQLException {
         throw new SQLFeatureNotSupportedException();

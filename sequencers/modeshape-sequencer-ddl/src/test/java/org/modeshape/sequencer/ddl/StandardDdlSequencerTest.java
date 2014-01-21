@@ -1,43 +1,56 @@
 /*
-* ModeShape (http://www.modeshape.org)
-* See the COPYRIGHT.txt file distributed with this work for information
-* regarding copyright ownership.  Some portions may be licensed
-* to Red Hat, Inc. under one or more contributor license agreements.
-* See the AUTHORS.txt file in the distribution for a full listing of
-* individual contributors.
-*
-* ModeShape is free software. Unless otherwise indicated, all code in ModeShape
-* is licensed to you under the terms of the GNU Lesser General Public License as
-* published by the Free Software Foundation; either version 2.1 of
-* the License, or (at your option) any later version.
-*
-* ModeShape is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this software; if not, write to the Free
-* Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-* 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-*/
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.sequencer.ddl;
 
-import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
-import static org.modeshape.jcr.api.JcrConstants.*;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlParser;
+import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_SCALE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CONSTRAINT_ATTRIBUTE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_ASSERTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_FK_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_REFERENCE;
 import java.util.ArrayList;
 import java.util.List;
+import javax.jcr.Node;
+import org.junit.Test;
+import org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlParser;
 
 /**
  * Unit test for the behaviour of the ddl sequencer, when standard ddl files are sequenced
- *
+ * 
  * @author Horia Chiorean
  */
 public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
@@ -70,8 +83,7 @@ public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
         assertNotNull(winnersNode);
         verifyBaseProperties(winnersNode, NT_UNSTRUCTURED, "3", "5", "113", 0);
         verifyMixinType(winnersNode, TYPE_CREATE_VIEW_STATEMENT);
-        verifyExpression(winnersNode,
-                         "CREATE VIEW winners AS SELECT title, release FROM films WHERE producerName IS NOT NULL;");
+        verifyExpression(winnersNode, "CREATE VIEW winners AS SELECT title, release FROM films WHERE producerName IS NOT NULL;");
 
         // Check Column Properties
         Node titleNode = filmsNode.getNode("title");
@@ -97,7 +109,7 @@ public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
         // NEXTID NUMERIC
         // );
         String targetExpression = "CREATE TABLE IDTABLE\n" + "(\n" + "  IDCONTEXT  VARCHAR(20) NOT NULL PRIMARY KEY,\n"
-                + "  NEXTID     NUMERIC\n" + ");";
+                                  + "  NEXTID     NUMERIC\n" + ");";
 
         Node statementsNode = sequenceDdl("ddl/create_table.ddl");
         assertThat(statementsNode.getNodes().getSize(), is(1l));
@@ -140,7 +152,6 @@ public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyPrimaryType(idcontectRefNode, NT_UNSTRUCTURED);
         verifyMixinType(idcontectRefNode, TYPE_COLUMN_REFERENCE);
     }
-
 
     @Test
     public void shouldGenerateNodeTypesForCreateTables() throws Exception {
@@ -324,7 +335,7 @@ public class StandardDdlSequencerTest extends AbstractDdlSequencerTest {
     public void shouldCreateDdlParserInstancesForAllValidBuiltInGrammarsAndInstantiableParser() {
         DdlSequencer sequencer = new DdlSequencer();
         String[] grammars = new String[] {new OracleDdlParser().getId(), new StandardDdlParser().getId(),
-                ArgleDdlParser.class.getName()};
+            ArgleDdlParser.class.getName()};
         sequencer.setGrammars(grammars);
         assertThat(sequencer.getGrammars(), is(grammars));
         List<DdlParser> parsers = sequencer.getParserList();

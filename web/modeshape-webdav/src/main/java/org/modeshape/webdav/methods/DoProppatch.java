@@ -228,13 +228,15 @@ public class DoProppatch extends AbstractMethod {
         }
     }
 
-    private String statusForProperty(String propertyName, Map<String, String> response) {
-        if (response == null || response.isEmpty()){
+    private String statusForProperty( String propertyName,
+                                      Map<String, String> response ) {
+        if (response == null || response.isEmpty()) {
             return "HTTP/1.1 " + WebdavStatus.SC_OK + " " + WebdavStatus.getStatusText(WebdavStatus.SC_OK);
         } else if (response.containsKey(propertyName)) {
             return "HTTP/1.1 " + WebdavStatus.SC_BAD_REQUEST + " " + WebdavStatus.getStatusText(WebdavStatus.SC_BAD_REQUEST);
         } else {
-            return "HTTP/1.1 " + WebdavStatus.SC_FAILED_DEPENDENCY + " " + WebdavStatus.getStatusText(WebdavStatus.SC_FAILED_DEPENDENCY);
+            return "HTTP/1.1 " + WebdavStatus.SC_FAILED_DEPENDENCY + " "
+                   + WebdavStatus.getStatusText(WebdavStatus.SC_FAILED_DEPENDENCY);
         }
     }
 }

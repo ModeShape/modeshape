@@ -76,16 +76,10 @@ public class Problem {
         this.throwable = throwable;
     }
 
-    /**
-     * @return code
-     */
     public int getCode() {
         return this.code;
     }
 
-    /**
-     * @return location
-     */
     public String getLocation() {
         return this.location;
     }
@@ -99,9 +93,6 @@ public class Problem {
         return this.message.text(this.parameters);
     }
 
-    /**
-     * @return message
-     */
     public I18n getMessage() {
         return this.message;
     }
@@ -110,16 +101,10 @@ public class Problem {
         return this.parameters;
     }
 
-    /**
-     * @return resource
-     */
     public String getResource() {
         return this.resource;
     }
 
-    /**
-     * @return status
-     */
     public Status getStatus() {
         return this.status;
     }

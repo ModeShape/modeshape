@@ -90,23 +90,23 @@ CREATE CLUSTER cust_orders (customer_id NUMBER(6))
 CREATE CONTEXT hr_context USING emp_mgmt;
 
 CREATE CONTROLFILE REUSE DATABASE "demo" NORESETLOGS NOARCHIVELOG
-	    MAXLOGFILES 32
-	    MAXLOGMEMBERS 2
-	    MAXDATAFILES 32
-	    MAXINSTANCES 1
-	    MAXLOGHISTORY 449
-	LOGFILE
-	  GROUP 1 '/path/oracle/dbs/t_log1.f'  SIZE 500K,
-	  GROUP 2 '/path/oracle/dbs/t_log2.f'  SIZE 500K
-	# STANDBY LOGFILE
-	DATAFILE
-	  '/path/oracle/dbs/t_db1.f',
-	  '/path/oracle/dbs/dbu19i.dbf',
-	  '/path/oracle/dbs/tbs_11.f',
-	  '/path/oracle/dbs/smundo.dbf',
-	  '/path/oracle/dbs/demo.dbf'
-	CHARACTER SET WE8DEC
-	;
+        MAXLOGFILES 32
+        MAXLOGMEMBERS 2
+        MAXDATAFILES 32
+        MAXINSTANCES 1
+        MAXLOGHISTORY 449
+    LOGFILE
+      GROUP 1 '/path/oracle/dbs/t_log1.f'  SIZE 500K,
+      GROUP 2 '/path/oracle/dbs/t_log2.f'  SIZE 500K
+    # STANDBY LOGFILE
+    DATAFILE
+      '/path/oracle/dbs/t_db1.f',
+      '/path/oracle/dbs/dbu19i.dbf',
+      '/path/oracle/dbs/tbs_11.f',
+      '/path/oracle/dbs/smundo.dbf',
+      '/path/oracle/dbs/demo.dbf'
+    CHARACTER SET WE8DEC
+    ;
 
 CREATE DATABASE sample
    CONTROLFILE REUSE 
@@ -172,9 +172,9 @@ CREATE FUNCTION SecondMax (input NUMBER) RETURN NUMBER
 
 CREATE OR REPLACE FUNCTION text_length(a CLOB) 
    RETURN NUMBER DETERMINISTIC IS
-	BEGIN 
-	  RETURN DBMS_LOB.GETLENGTH(a);
-	END;
+    BEGIN 
+      RETURN DBMS_LOB.GETLENGTH(a);
+    END;
 /
 
 CREATE INDEXTYPE position_indextype

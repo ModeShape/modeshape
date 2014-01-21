@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl.dialect.teiid;
 
@@ -120,7 +112,6 @@ abstract class StatementParser implements DdlConstants {
             whitespaceCount = (prevIndent + prevValue.length() - currIndent);
         }
 
-
         if ((lfCount == 0) && (whitespaceCount == 0)) {
             return "";
         }
@@ -191,12 +182,12 @@ abstract class StatementParser implements DdlConstants {
                 id = ('{' + uri + '}' + tokens.consume());
             }
         } else {
-            int index =  id.indexOf(':');
-    
+            int index = id.indexOf(':');
+
             if (index != -1) {
                 final String prefix = id.substring(0, index);
                 String uri = this.teiidDdlParser.getNamespaceUri(prefix);
-    
+
                 // assume colon is part of the name if URI is not found
                 if (!StringUtil.isBlank(uri)) {
                     // namespace found
@@ -295,11 +286,10 @@ abstract class StatementParser implements DdlConstants {
 
         return id;
     }
-    
+
     /**
-     * 
      * @param rootNode the top level {@link AstNode}; may not be null
      */
-	abstract void postProcess(AstNode rootNode);
+    abstract void postProcess( AstNode rootNode );
 
 }

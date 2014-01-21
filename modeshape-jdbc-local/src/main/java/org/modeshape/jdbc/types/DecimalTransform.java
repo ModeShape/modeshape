@@ -20,18 +20,8 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import org.modeshape.jdbc.Transform;
 
-/**
- *
- */
 public class DecimalTransform implements Transform {
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws RepositoryException
-     * @throws ValueFormatException
-     * @see org.modeshape.jdbc.Transform#transform(javax.jcr.Value)
-     */
     @Override
     public Object transform( Value value ) throws ValueFormatException, RepositoryException {
         return value.getDecimal();

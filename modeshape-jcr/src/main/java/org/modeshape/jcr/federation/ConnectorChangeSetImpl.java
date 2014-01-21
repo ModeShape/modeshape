@@ -1,3 +1,18 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.jcr.federation;
 
 import java.util.Collection;
@@ -143,7 +158,10 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
             }
             // There are only old locations, so treat as NODE_REMOVED.
             for (WorkspaceAndPath wsAndOldPath : oldWsAndPaths) {
-                changesFor(wsAndOldPath.getWorkspaceName()).nodeRemoved(key, oldParentKey, wsAndOldPath.getPath(), primaryType,
+                changesFor(wsAndOldPath.getWorkspaceName()).nodeRemoved(key,
+                                                                        oldParentKey,
+                                                                        wsAndOldPath.getPath(),
+                                                                        primaryType,
                                                                         mixinTypes);
             }
             return;
@@ -152,8 +170,12 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
             // Note that we do not know the properties ...
             Map<Name, Property> properties = Collections.emptyMap();
             for (WorkspaceAndPath wsAndNewPath : newWsAndPaths) {
-                changesFor(wsAndNewPath.getWorkspaceName()).nodeCreated(key, newParentKey, wsAndNewPath.getPath(), primaryType,
-                                                                        mixinTypes, properties);
+                changesFor(wsAndNewPath.getWorkspaceName()).nodeCreated(key,
+                                                                        newParentKey,
+                                                                        wsAndNewPath.getPath(),
+                                                                        primaryType,
+                                                                        mixinTypes,
+                                                                        properties);
             }
             return;
         }
@@ -179,13 +201,20 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                 return;
             }
             // The workspace names don't match, so treat the old as a NODE_REMOVED ...
-            changesFor(oldWsAndPath.getWorkspaceName()).nodeRemoved(key, oldParentKey, oldWsAndPath.getPath(), primaryType,
+            changesFor(oldWsAndPath.getWorkspaceName()).nodeRemoved(key,
+                                                                    oldParentKey,
+                                                                    oldWsAndPath.getPath(),
+                                                                    primaryType,
                                                                     mixinTypes);
             // And the new as NODE_CREATED (in a separate workspace) ...
             // Note that we do not know the properties ...
             Map<Name, Property> properties = Collections.emptyMap();
-            changesFor(newWsAndPath.getWorkspaceName()).nodeCreated(key, newParentKey, newWsAndPath.getPath(), primaryType,
-                                                                    mixinTypes, properties);
+            changesFor(newWsAndPath.getWorkspaceName()).nodeCreated(key,
+                                                                    newParentKey,
+                                                                    newWsAndPath.getPath(),
+                                                                    primaryType,
+                                                                    mixinTypes,
+                                                                    properties);
             return;
         }
 
@@ -220,7 +249,12 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                 // so treat it as a NODE_CREATED in the new workspace.
                 // Note that we do not know the properties ...
                 Map<Name, Property> properties = Collections.emptyMap();
-                changesFor(wsAndNewPath).nodeCreated(key, newParentKey, wsAndNewPath.getPath(), primaryType, mixinTypes, properties);
+                changesFor(wsAndNewPath).nodeCreated(key,
+                                                     newParentKey,
+                                                     wsAndNewPath.getPath(),
+                                                     primaryType,
+                                                     mixinTypes,
+                                                     properties);
             }
         }
 
@@ -248,7 +282,12 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                                                                                                   pathFactory.createSegment(reorderedBeforeNameSegment));
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(newExternalPath)) {
-            changesFor(wsAndPath).nodeReordered(key, primaryType, mixinTypes, parentKey, wsAndPath.getPath(), oldExternalPath,
+            changesFor(wsAndPath).nodeReordered(key,
+                                                primaryType,
+                                                mixinTypes,
+                                                parentKey,
+                                                wsAndPath.getPath(),
+                                                oldExternalPath,
                                                 reorderedBeforePath);
         }
     }
@@ -292,7 +331,12 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
         Path externalPath = pathMappings.getPathFactory().create(nodePath);
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(externalPath)) {
-            changesFor(wsAndPath).propertyChanged(key, nodePrimaryType, nodeMixinTypes, wsAndPath.getPath(), newProperty, oldProperty);
+            changesFor(wsAndPath).propertyChanged(key,
+                                                  nodePrimaryType,
+                                                  nodeMixinTypes,
+                                                  wsAndPath.getPath(),
+                                                  newProperty,
+                                                  oldProperty);
         }
     }
 

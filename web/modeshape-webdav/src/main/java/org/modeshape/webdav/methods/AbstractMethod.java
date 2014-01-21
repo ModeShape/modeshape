@@ -166,7 +166,6 @@ public abstract class AbstractMethod implements IMethodExecutor {
         return result;
     }
 
-
     /**
      * creates the parent path from the given path by removing the last '/' and everything after that
      * 

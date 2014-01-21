@@ -1,40 +1,81 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl.dialect.derby;
 
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.*;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.ALL_PRIVILEGES;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.COLUMN_ATTRIBUTE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_LENGTH;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.SQL;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_SIMPLE_PROPERTY;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.IS_TABLE_TYPE;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.ORDER;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.PARAMETER_STYLE;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.ROLE_NAME;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TABLE_NAME;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_SYNONYM_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DECLARE_GLOBAL_TEMPORARY_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_SYNONYM_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_FUNCTION_PARAMETER;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_GRANT_ON_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_GRANT_ON_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_GRANT_ROLES_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_INDEX_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_LOCK_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_RENAME_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_RENAME_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.UNIQUE_INDEX;
 import java.util.ArrayList;
 import java.util.List;
 import org.modeshape.common.text.ParsingException;
-
+import org.modeshape.common.text.TokenStream;
 import org.modeshape.sequencer.ddl.DdlParserProblem;
 import org.modeshape.sequencer.ddl.DdlSequencerI18n;
 import org.modeshape.sequencer.ddl.DdlTokenStream;
+import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.StandardDdlParser;
-import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
@@ -381,16 +422,16 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         return functionNode;
     }
 
-  /**
+    /**
      * Parses DDL CREATE ROLE statement
-     *
+     * 
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed CREATE ROLE statement node
      * @throws ParsingException
      */
     protected AstNode parseCreateRole( DdlTokenStream tokens,
-                                            AstNode parentNode ) throws ParsingException {
+                                       AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
 
@@ -737,7 +778,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
                     }
 
                 } else if (tokens.canConsume("INCREMENT")) {
-                    tokens.consume("BY", DdlTokenStream.ANY_VALUE);
+                    tokens.consume("BY", TokenStream.ANY_VALUE);
                 }
                 if (tokens.matches("DEFAULT")) {
                     parseDefaultClause(tokens, columnNode);
@@ -745,7 +786,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
             } else if (tokens.canConsume("WITH")) {
                 parseDefaultClause(tokens, columnNode);
             } else {
-                tokens.canConsume("RESTART", "WITH", DdlTokenStream.ANY_VALUE);
+                tokens.canConsume("RESTART", "WITH", TokenStream.ANY_VALUE);
                 tokens.canConsume("DROP", "DEFAULT");
 
                 if (tokens.canConsume("NOT", "NULL")) {
@@ -809,7 +850,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         // Now clauses and constraints can be defined in any order, so we need to keep parsing until we get to a comma
         // Now clauses and constraints can be defined in any order, so we need to keep parsing until we get to a comma
-        StringBuffer unusedTokensSB = new StringBuffer();
+        StringBuilder unusedTokensSB = new StringBuilder();
 
         while (tokens.hasNext() && !tokens.matches(COMMA)) {
             boolean parsedDefaultClause = parseDefaultClause(tokens, columnNode);
@@ -852,7 +893,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         localTokens.start();
 
-        StringBuffer unusedTokensSB = new StringBuffer();
+        StringBuilder unusedTokensSB = new StringBuilder();
 
         do {
             if (isColumnDefinitionStart(localTokens)) {
@@ -880,7 +921,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         //
         // [ GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY [ ( START WITH IntegerConstant [ ,INCREMENT BY IntegerConstant] ) ] ] ]
         if (tokens.canConsume("GENERATED")) {
-            StringBuffer sb = new StringBuffer("GENERATED");
+            StringBuilder sb = new StringBuilder("GENERATED");
 
             if (tokens.canConsume("ALWAYS")) {
                 sb.append(SPACE).append("ALWAYS");
@@ -1144,7 +1185,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
             // { OLD_TABLE | NEW_TABLE } [ AS ] Identifier [ { OLD_TABLE | NEW_TABLE } [AS] Identifier ]
             // }
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             if (tokens.matchesAnyOf("OLD", "NEW")) {
                 if (tokens.canConsume("OLD")) {
                     sb.append("OLD");

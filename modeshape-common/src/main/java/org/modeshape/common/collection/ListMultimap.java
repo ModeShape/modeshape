@@ -40,15 +40,4 @@ public interface ListMultimap<K, V> extends Multimap<K, V> {
      */
     @Override
     List<V> get( K key );
-
-    // /**
-    // * Return a collection of all values in this multimap. Changes to the returned collection will update the underlying
-    // multimap,
-    // * and vice versa.
-    // *
-    // * @return the collection of values, which may include the same value multiple times if it occurs in multiple mappings;
-    // never
-    // * null but possibly empty
-    // */
-    // Collection<V> values();
 }

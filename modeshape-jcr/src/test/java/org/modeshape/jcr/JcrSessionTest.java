@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr;
 
@@ -1118,12 +1110,14 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         Node a = session.getNode("/a");
         a.setProperty("stringProperty1", "value");
         session.save();
+        Thread.sleep(200);
 
         queryAndExpectResults("select * from [nt:unstructured] as node where node.stringProperty='value'", 2);
         queryAndExpectResults("select * from [nt:unstructured] as node where node.stringProperty1='value'", 1);
 
         a.setProperty("stringProperty", "value1");
         session.save();
+        Thread.sleep(200);
 
         queryAndExpectResults("select * from [nt:unstructured] as node where node.stringProperty='value'", 1);
         queryAndExpectResults("select * from [nt:unstructured] as node where node.stringProperty1='value'", 1);
@@ -1139,6 +1133,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         session.save();
         // rename /a/b to /a/d
         session.getWorkspace().move("/a/b", "/a/d");
+        Thread.sleep(200);
 
         queryForAbsentLocalName("b");
         queryForExistingLocaLName("d", "/a/d");
@@ -1155,7 +1150,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         session.save();
         // move /a to /w/q
         session.getWorkspace().move("/a", "/w/x");
-
+        Thread.sleep(200);
         queryForAbsentLocalName("a");
         queryForExistingLocaLName("x", "/w/x");
         queryForExistingLocaLName("b", "/w/x/b");
@@ -1172,11 +1167,13 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         contentNode.setProperty("jcr:data", session().getValueFactory().createBinary("test".getBytes()));
 
         session().save();
+        Thread.sleep(200);
 
         queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder/%'", 1);
 
         folder.getSession().move(folder.getPath(), "/folder_1");
         folder.getSession().save();
+        Thread.sleep(200);
 
         queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder_1/%'", 1);
     }
@@ -1194,6 +1191,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         rootNode.addNode("folderA");
 
         session().save();
+        Thread.sleep(200);
 
         queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder/%'", 1);
         queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folderA/%'", 0);
@@ -1201,6 +1199,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
         folder.getSession().move(folder.getPath(), "/folderA/folderB");
         folder.getSession().save();
+        Thread.sleep(200);
 
         queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder/%'", 0);
         queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folderA/folderB/%'", 1);
@@ -1214,8 +1213,12 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         rootNode.addNode("a").addNode("b").addNode("c");
         rootNode.addNode("tmp");
         session.save();
+        Thread.sleep(200);
         queryAndExpectResults("SELECT * FROM [nt:unstructured] as node WHERE ISCHILDNODE (node, '/a/b')", 1);
+
         session.getWorkspace().move("/a/b", "/tmp/b");
+        Thread.sleep(200);
+
         queryAndExpectResults("SELECT * FROM [nt:unstructured] as node WHERE ISCHILDNODE (node, '/tmp/b')", 1);
         queryAndExpectResults("SELECT * FROM [nt:unstructured] as node WHERE ISCHILDNODE (node, '/a/b')", 0);
     }

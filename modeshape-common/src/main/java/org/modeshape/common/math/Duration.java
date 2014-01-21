@@ -52,33 +52,21 @@ public class Duration extends Number implements Comparable<Duration> {
         this.durationInNanos = TimeUnit.NANOSECONDS.convert(duration, unit);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public double doubleValue() {
         return this.durationInNanos;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float floatValue() {
         return this.durationInNanos;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int intValue() {
         return (int)this.durationInNanos;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long longValue() {
         return this.durationInNanos;
@@ -165,9 +153,6 @@ public class Duration extends Number implements Comparable<Duration> {
         return this.toBigDecimal().divide(duration.toBigDecimal()).doubleValue();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int compareTo( Duration that ) {
         if (that == null) return 1;

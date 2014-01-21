@@ -1,41 +1,46 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl.dialect.postgres;
 
-import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
 import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.COMMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLE_STATEMENT_POSTGRES;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_RULE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_FUNCTION_PARAMETER;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RENAME_COLUMN;
+import javax.jcr.Node;
+import org.junit.Test;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
 
 /**
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Postgres dialects are parsed.
- *
+ * 
  * @author Horia Chiorean
  */
 public class PostgresDdlSequencerTest extends AbstractDdlSequencerTest {
@@ -47,7 +52,7 @@ public class PostgresDdlSequencerTest extends AbstractDdlSequencerTest {
 
         Node node = findNode(statementsNode, "increment", TYPE_CREATE_FUNCTION_STATEMENT);
         verifyProperty(node, DDL_START_LINE_NUMBER, 214);
-        verifyProperty(node, DDL_START_CHAR_INDEX, 7604);
+        verifyProperty(node, DDL_START_CHAR_INDEX, 7616);
 
         // COMMENT ON FUNCTION my_function (timestamp) IS ’Returns Roman Numeral’;
         node = findNode(statementsNode, "my_function", TYPE_COMMENT_ON_STATEMENT);
@@ -66,9 +71,9 @@ public class PostgresDdlSequencerTest extends AbstractDdlSequencerTest {
         assertNotNull(parameter_1);
         verifyProperty(parameter_1, DATATYPE_NAME, "int");
     }
-    
+
     @Test
-    public void shouldSequenceStatementsWithDoubleQuotes() throws Exception {    
+    public void shouldSequenceStatementsWithDoubleQuotes() throws Exception {
         Node statementsNode = sequenceDdl("ddl/d_quoted_statements.ddl");
         assertThat(statementsNode.getNodes().getSize(), is(3l));
 

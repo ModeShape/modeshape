@@ -38,6 +38,9 @@ public class Collections {
         return java.util.Collections.unmodifiableSet(values);
     }
 
+    private Collections() {
+    }
+
     /**
      * Concatenate two Iterable sources
      * 

@@ -172,6 +172,7 @@ public class MimeTypeUtil {
         Map<String, String> mimeTypesByExtension = new HashMap<String, String>();
         if (lines != null) {
             for (String line : lines) {
+                // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                 line = line.trim();
                 if (line.length() == 0 || line.startsWith("#")) continue;
                 // Apply the pattern to each line ...
@@ -182,6 +183,7 @@ public class MimeTypeUtil {
                     if (extensions.length() != 0) {
                         // A valid mime type with at least one extension was found, so for each extension ...
                         for (String extensionString : extensions.split("\\s+")) {
+                            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                             extensionString = extensionString.trim();
                             if (extensionString.length() != 0) {
                                 // Register the extension with the MIME type ...

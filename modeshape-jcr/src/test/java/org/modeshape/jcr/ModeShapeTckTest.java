@@ -1,5 +1,24 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -46,15 +65,11 @@ import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
+import junit.framework.Test;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrTools;
-import junit.framework.Test;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
-import static org.junit.Assert.assertThat;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -701,7 +716,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         ValueFactory vf = session.getValueFactory();
 
         Node root = session.getRootNode();
-        Node file = root.addNode("createfile4.mode", "nt:file");
+        Node file = root.addNode("createfile.mode", "nt:file");
 
         Node content = file.addNode("jcr:content", "nt:resource");
         content.setProperty("jcr:data", vf.createBinary(new ByteArrayInputStream("Write 1".getBytes())));
@@ -2533,9 +2548,13 @@ public class ModeShapeTckTest extends AbstractJCRTest {
                                                            String path,
                                                            int counts ) throws RepositoryException {
         CountDownListener listener = new CountDownListener(session, counts);
-        session.getWorkspace()
-               .getObservationManager()
-               .addEventListener(listener, Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED, path, true, null, null, false);
+        session.getWorkspace().getObservationManager().addEventListener(listener,
+                                                                        Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED,
+                                                                        path,
+                                                                        true,
+                                                                        null,
+                                                                        null,
+                                                                        false);
         return listener;
     }
 
@@ -2624,10 +2643,13 @@ public class ModeShapeTckTest extends AbstractJCRTest {
                 }
             }
         };
-        testRootNode.getSession()
-                    .getWorkspace()
-                    .getObservationManager()
-                    .addEventListener(listener, eventTypes, testRootNode.getPath(), true, null, null, false);
+        testRootNode.getSession().getWorkspace().getObservationManager().addEventListener(listener,
+                                                                                          eventTypes,
+                                                                                          testRootNode.getPath(),
+                                                                                          true,
+                                                                                          null,
+                                                                                          null,
+                                                                                          false);
 
         // setup parent nodes and first child
         Node a1 = testRootNode.addNode("a1");
@@ -2736,7 +2758,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             vm.restore(version1, false);
             fail("An exception should be thrown, because a removed not cannot be restored");
         } catch (VersionException e) {
-            //expected
+            // expected
         }
     }
 

@@ -1,67 +1,52 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr.value.binary.infinispan;
 
-
-import org.infinispan.Cache;
-import org.infinispan.manager.DefaultCacheManager;
-import org.junit.*;
-import org.modeshape.common.FixFor;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
-
-import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.assertArrayEquals;
+import org.infinispan.Cache;
+import org.infinispan.manager.DefaultCacheManager;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
 
 /**
  * Unit test for {@link ChunkStreamTest} and {@link ChunkOutputStream}
@@ -80,12 +65,12 @@ public class ChunkStreamTest {
     }
 
     @AfterClass
-    public static void afterClass(){
+    public static void afterClass() {
         InfinispanTestUtil.afterClassShutdown(cacheManager);
     }
 
     @Before
-    public void before(){
+    public void before() {
         // blob
         blobCache = cacheManager.getCache("ChunkStreamTest");
         blobCache.start();
@@ -93,13 +78,14 @@ public class ChunkStreamTest {
     }
 
     @After
-    public void after(){
+    public void after() {
         cacheManager.getCache("ChunkStreamTest").stop();
     }
 
     @Test
     public void testStreamingLarge() throws IOException {
-        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, AbstractBinaryStoreTest.STORED_LARGE_KEY.toString());
+        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache,
+                                                                    AbstractBinaryStoreTest.STORED_LARGE_KEY.toString());
         chunkOutputStream.write(AbstractBinaryStoreTest.STORED_LARGE_BINARY);
         chunkOutputStream.close();
         assertEquals(1, chunkOutputStream.chunksCount());
@@ -123,7 +109,8 @@ public class ChunkStreamTest {
 
     @Test
     public void testStreamingZero() throws IOException {
-        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, AbstractBinaryStoreTest.EMPTY_BINARY_KEY.toString());
+        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache,
+                                                                    AbstractBinaryStoreTest.EMPTY_BINARY_KEY.toString());
         chunkOutputStream.write(AbstractBinaryStoreTest.EMPTY_BINARY);
         chunkOutputStream.close();
         assertEquals(0, chunkOutputStream.chunksCount());
@@ -149,7 +136,7 @@ public class ChunkStreamTest {
         ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, data.length);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         int b;
-        while((b = chunkInputStream.read()) != -1){
+        while ((b = chunkInputStream.read()) != -1) {
             byteArrayOutputStream.write(b);
         }
         chunkInputStream.close();
@@ -183,23 +170,22 @@ public class ChunkStreamTest {
         IoUtil.write(new ByteArrayInputStream(data), chunkOutputStream);
 
         ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, data.length);
-        //skip 2 bytes, expect the same amount
+        // skip 2 bytes, expect the same amount
         assertEquals(2, chunkInputStream.skip(2));
-        //skip the equivalent of 2 chunks, expect the same amount
-        assertEquals(chunkSize * 2 , chunkInputStream.skip(chunkSize * 2));
-        //skip on chunk, expect on chunk - 2 bytes because of the above skip calls
-        assertEquals(chunkSize - 2 , chunkInputStream.skip(chunkSize));
-        //already at EOS so expect no more skipping
-        assertEquals(0 , chunkInputStream.skip(1));
-        assertEquals(0 , chunkInputStream.skip(chunkSize));
+        // skip the equivalent of 2 chunks, expect the same amount
+        assertEquals(chunkSize * 2, chunkInputStream.skip(chunkSize * 2));
+        // skip on chunk, expect on chunk - 2 bytes because of the above skip calls
+        assertEquals(chunkSize - 2, chunkInputStream.skip(chunkSize));
+        // already at EOS so expect no more skipping
+        assertEquals(0, chunkInputStream.skip(1));
+        assertEquals(0, chunkInputStream.skip(chunkSize));
 
         chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, data.length);
         assertEquals(totalSize, chunkInputStream.skip(totalSize));
-        assertEquals(0 , chunkInputStream.skip(chunkSize));
+        assertEquals(0, chunkInputStream.skip(chunkSize));
         assertEquals(totalSize, new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, data.length).skip(totalSize + 1));
         assertEquals(totalSize, new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, data.length).skip(chunkSize * 4));
     }
-
 
     @Test
     @FixFor( "MODE-1752" )
@@ -211,30 +197,30 @@ public class ChunkStreamTest {
         ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey.toString());
         IoUtil.write(new ByteArrayInputStream(data), chunkOutputStream);
 
-        //skip 2 bytes and read the rest
+        // skip 2 bytes and read the rest
         ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, data.length);
         chunkInputStream.skip(2);
         byte[] expected = new byte[data.length - 2];
         System.arraycopy(data, 2, expected, 0, expected.length);
-        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream)) ;
+        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream));
 
-        //skip 1 chunk and read until nothing is left
+        // skip 1 chunk and read until nothing is left
         chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, data.length);
         chunkInputStream.skip(chunkSize);
         expected = new byte[data.length - chunkSize];
         System.arraycopy(data, chunkSize, expected, 0, expected.length);
-        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream)) ;
+        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream));
 
-        //skip the equivalent of 2 chunks, read the rest
+        // skip the equivalent of 2 chunks, read the rest
         chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, data.length);
         chunkInputStream.skip(chunkSize * 2);
         expected = new byte[data.length - (chunkSize * 2)];
         System.arraycopy(data, chunkSize * 2, expected, 0, expected.length);
-        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream)) ;
+        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream));
 
         chunkInputStream.skip(chunkSize);
         expected = new byte[0];
-        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream)) ;
+        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream));
     }
 
     @Test
@@ -249,21 +235,21 @@ public class ChunkStreamTest {
         ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey.toString());
         IoUtil.write(new ByteArrayInputStream(data), chunkOutputStream);
 
-        //skip 2 bytes and read the rest
+        // skip 2 bytes and read the rest
         ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, totalSize);
         chunkInputStream.skip(2);
         byte[] expected = new byte[data.length - 2];
         System.arraycopy(data, 2, expected, 0, expected.length);
-        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream)) ;
+        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream));
 
-        //skip 1 chunk and read until nothing is left
+        // skip 1 chunk and read until nothing is left
         chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, totalSize);
         chunkInputStream.skip(chunkSize);
         expected = new byte[data.length - chunkSize];
         System.arraycopy(data, chunkSize, expected, 0, expected.length);
-        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream)) ;
+        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream));
 
-        //skip the equivalent of 2 chunks, read the rest
+        // skip the equivalent of 2 chunks, read the rest
         chunkInputStream = new ChunkInputStream(blobCache, dataKey.toString(), chunkSize, totalSize);
         chunkInputStream.skip(chunkSize * 2);
         expected = new byte[data.length - (chunkSize * 2)];
@@ -272,6 +258,6 @@ public class ChunkStreamTest {
 
         chunkInputStream.skip(chunkSize);
         expected = new byte[0];
-        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream)) ;
+        assertArrayEquals(expected, IoUtil.readBytes(chunkInputStream));
     }
 }

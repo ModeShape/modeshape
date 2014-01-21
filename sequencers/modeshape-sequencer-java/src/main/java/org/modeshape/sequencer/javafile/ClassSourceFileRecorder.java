@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.javafile;
 
@@ -80,7 +72,9 @@ import org.modeshape.sequencer.javafile.metadata.TypeMetadata;
 public class ClassSourceFileRecorder implements SourceFileRecorder {
 
     @Override
-    public void record( Sequencer.Context context, Node outputNode, JavaMetadata javaMetadata ) throws RepositoryException {
+    public void record( Sequencer.Context context,
+                        Node outputNode,
+                        JavaMetadata javaMetadata ) throws RepositoryException {
         String packageName = javaMetadata.getPackageMetadata().getName();
         for (TypeMetadata typeMetadata : javaMetadata.getTypeMetadata()) {
             Node typeNode = getTypeNode(packageName, typeMetadata, outputNode);
@@ -89,7 +83,9 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         }
     }
 
-    private Node getTypeNode( String packageName, TypeMetadata typeMetadata, Node outputNode ) throws RepositoryException {
+    private Node getTypeNode( String packageName,
+                              TypeMetadata typeMetadata,
+                              Node outputNode ) throws RepositoryException {
         final String[] packagePath = packageName.split("\\.");
 
         if (packageName.length() > 0) {
@@ -106,7 +102,9 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         return classNode;
     }
 
-    private void writeClassMetadata( Sequencer.Context context, Node typeNode, TypeMetadata typeMetadata ) throws RepositoryException {
+    private void writeClassMetadata( Sequencer.Context context,
+                                     Node typeNode,
+                                     TypeMetadata typeMetadata ) throws RepositoryException {
         setTypeMetaInformation(context, typeNode, typeMetadata);
 
         List<MethodMetadata> methods = new ArrayList<MethodMetadata>();
@@ -132,7 +130,9 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         writeAnnotationsNode(typeNode, typeMetadata.getAnnotations());
     }
 
-    private void setTypeMetaInformation( Sequencer.Context context, Node typeNode, TypeMetadata typeMetadata ) throws RepositoryException {
+    private void setTypeMetaInformation( Sequencer.Context context,
+                                         Node typeNode,
+                                         TypeMetadata typeMetadata ) throws RepositoryException {
         /*
         - class:name (string) mandatory 
         - class:superTypeName (string) 
@@ -161,7 +161,7 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         typeNode.setProperty(FINAL, typeMetadata.hasFinalModifier());
         typeNode.setProperty(STRICT_FP, typeMetadata.hasStrictFPModifier());
         typeNode.setProperty(INTERFACES, typeMetadata.getInterfaceNames().toArray(new String[0]));
-        
+
         if (typeMetadata instanceof EnumMetadata) {
             typeNode.setProperty(ENUM_VALUES, ((EnumMetadata)typeMetadata).getValues().toArray(new String[0]));
         }
@@ -181,7 +181,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         return Visibility.PACKAGE;
     }
 
-    private void writeAnnotationsNode( Node rootNode, List<AnnotationMetadata> annotations ) throws RepositoryException {
+    private void writeAnnotationsNode( Node rootNode,
+                                       List<AnnotationMetadata> annotations ) throws RepositoryException {
 
         /*
         [class:annotationMember]
@@ -217,7 +218,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         }
     }
 
-    private void writeFieldsNode( Node fields, List<FieldMetadata> fieldsMetadata ) throws RepositoryException {
+    private void writeFieldsNode( Node fields,
+                                  List<FieldMetadata> fieldsMetadata ) throws RepositoryException {
 
         /*
             [class:field]
@@ -247,7 +249,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         }
     }
 
-    private void writeMethods( Node rootNode, List<MethodMetadata> methods ) throws RepositoryException {
+    private void writeMethods( Node rootNode,
+                               List<MethodMetadata> methods ) throws RepositoryException {
 
         /*
             [class:method]

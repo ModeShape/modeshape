@@ -1,3 +1,18 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.jcr.security;
 
 import java.io.IOException;
@@ -212,12 +227,15 @@ public class JaasSecurityContext implements SecurityContext {
                     TextOutputCallback toc = (TextOutputCallback)callbacks[i];
                     switch (toc.getMessageType()) {
                         case TextOutputCallback.INFORMATION:
+                            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                             System.out.println(toc.getMessage());
                             break;
                         case TextOutputCallback.ERROR:
+                            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                             System.out.println("ERROR: " + toc.getMessage());
                             break;
                         case TextOutputCallback.WARNING:
+                            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                             System.out.println("WARNING: " + toc.getMessage());
                             break;
                         default:
@@ -231,6 +249,7 @@ public class JaasSecurityContext implements SecurityContext {
 
                     if (LOG_TO_CONSOLE) {
                         // ignore the provided defaultName
+                        // CHECKSTYLE IGNORE check FOR NEXT 2 LINES
                         System.out.print(nc.getPrompt());
                         System.out.flush();
                     }
@@ -243,6 +262,7 @@ public class JaasSecurityContext implements SecurityContext {
                     // prompt the user for sensitive information
                     PasswordCallback pc = (PasswordCallback)callbacks[i];
                     if (LOG_TO_CONSOLE) {
+                        // CHECKSTYLE IGNORE check FOR NEXT 2 LINES
                         System.out.print(pc.getPrompt());
                         System.out.flush();
                     }

@@ -1,3 +1,18 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.modeshape.jcr;
 
 import java.util.Collection;
@@ -289,7 +304,7 @@ class RepositoryLockManager implements ChangeSetListener {
             system.removeLock(lock);
             NodeKey lockedNodeKey = lock.getLockedNodeKey();
             if (session.cache().getNode(lockedNodeKey) == null) {
-                //the node on which the lock was placed, has been removed
+                // the node on which the lock was placed, has been removed
                 continue;
             }
             MutableCachedNode lockedNode = lockingSession.mutable(lockedNodeKey);
@@ -318,7 +333,7 @@ class RepositoryLockManager implements ChangeSetListener {
             }
         }
         if (locks != null) {
-            //clear the locks which have been unlocked
+            // clear the locks which have been unlocked
             unlock(session, locks);
             for (ModeShapeLock lock : locks) {
                 locksByNodeKey.remove(lock.getLockedNodeKey());
@@ -380,7 +395,7 @@ class RepositoryLockManager implements ChangeSetListener {
         return repository.context().getValueFactories().getBooleanFactory().create(property.getFirstValue());
     }
 
-    final ModeShapeLock findLockByToken(String token) {
+    final ModeShapeLock findLockByToken( String token ) {
         assert token != null;
         for (ModeShapeLock lock : locksByNodeKey.values()) {
             if (token.equals(lock.getLockToken())) {

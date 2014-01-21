@@ -34,11 +34,6 @@ public class ThreadSafeProblems extends AbstractProblems {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final List<Problem> problems = new LinkedList<Problem>();
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#hasErrors()
-     */
     @Override
     public boolean hasErrors() {
         try {
@@ -49,11 +44,6 @@ public class ThreadSafeProblems extends AbstractProblems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#hasProblems()
-     */
     @Override
     public boolean hasProblems() {
         try {
@@ -64,11 +54,6 @@ public class ThreadSafeProblems extends AbstractProblems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#hasInfo()
-     */
     @Override
     public boolean hasInfo() {
         try {
@@ -79,11 +64,6 @@ public class ThreadSafeProblems extends AbstractProblems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#hasWarnings()
-     */
     @Override
     public boolean hasWarnings() {
         try {
@@ -94,11 +74,6 @@ public class ThreadSafeProblems extends AbstractProblems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#isEmpty()
-     */
     @Override
     public boolean isEmpty() {
         try {
@@ -109,11 +84,6 @@ public class ThreadSafeProblems extends AbstractProblems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#size()
-     */
     @Override
     public int size() {
         try {
@@ -124,11 +94,6 @@ public class ThreadSafeProblems extends AbstractProblems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#addProblem(Problem)
-     */
     @Override
     protected void addProblem( Problem problem ) {
         try {
@@ -139,11 +104,6 @@ public class ThreadSafeProblems extends AbstractProblems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Problems#addAll(java.lang.Iterable)
-     */
     @Override
     public void addAll( Iterable<Problem> problems ) {
         if (problems == this) return;
@@ -159,11 +119,6 @@ public class ThreadSafeProblems extends AbstractProblems {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#getProblems()
-     */
     @Override
     protected List<Problem> getProblems() {
         // Return an unmodifiable copy ...

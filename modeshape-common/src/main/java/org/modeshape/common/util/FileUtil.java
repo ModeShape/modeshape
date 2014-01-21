@@ -160,4 +160,7 @@ public class FileUtil {
         return file.toURI().toURL();
     }
 
+    private FileUtil() {
+    }
+
 }

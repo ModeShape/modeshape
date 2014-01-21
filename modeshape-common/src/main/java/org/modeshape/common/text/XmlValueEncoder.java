@@ -25,8 +25,10 @@ import org.modeshape.common.annotation.Immutable;
  * An encoder useful for converting text to be used within XML attribute values. The following translations will be performed:
  * <table cellspacing="0" cellpadding="1" border="1">
  * <tr>
- * <th>Raw (Unencoded)<br/>Character</th>
- * <th>Translated (Encoded)<br/>Entity</th>
+ * <th>Raw (Unencoded)<br/>
+ * Character</th>
+ * <th>Translated (Encoded)<br/>
+ * Entity</th>
  * </tr>
  * <tr>
  * <td>&amp;</td>
@@ -119,6 +121,7 @@ public class XmlValueEncoder implements TextEncoder, TextDecoder {
                 int index = iter.getIndex();
 
                 do {
+                    // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                     c = iter.next();
                 } while (c != CharacterIterator.DONE && c != ';');
 
@@ -143,6 +146,7 @@ public class XmlValueEncoder implements TextEncoder, TextDecoder {
                 }
 
                 // Malformed encoding, restore state and pass poorly encoded data back
+                // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
                 c = '&';
                 iter.setIndex(index);
             }

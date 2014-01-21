@@ -19,9 +19,6 @@ import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.BitSet;
 
-/**
- * 
- */
 public class QuoteEncoder implements TextDecoder, TextEncoder {
 
     private static final BitSet ESCAPE_CHARACTERS = new BitSet(256);
@@ -35,17 +32,9 @@ public class QuoteEncoder implements TextDecoder, TextEncoder {
         ESCAPE_CHARACTERS.set('\t');
     }
 
-    /**
-     * 
-     */
     public QuoteEncoder() {
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.text.TextDecoder#decode(java.lang.String)
-     */
     @Override
     public String decode( String encodedText ) {
         if (encodedText == null) return null;
@@ -74,11 +63,6 @@ public class QuoteEncoder implements TextDecoder, TextEncoder {
         return result.toString();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.text.TextEncoder#encode(java.lang.String)
-     */
     @Override
     public String encode( String text ) {
         final StringBuilder result = new StringBuilder();
@@ -87,16 +71,17 @@ public class QuoteEncoder implements TextDecoder, TextEncoder {
             if (ESCAPE_CHARACTERS.get(c)) {
                 result.append(ESCAPE_CHARACTER);
                 if (c == '\n') {
-                    c = 'n';
+                    result.append('n');
                 } else if (c == '\t') {
-                    c = 't';
+                    result.append('t');
                 } else if (c == '\r') {
-                    c = 'r';
+                    result.append('r');
                 } else if (c == '\f') {
-                    c = 'f';
+                    result.append('f');
                 }
+            } else {
+                result.append(c);
             }
-            result.append(c);
         }
         return result.toString();
     }

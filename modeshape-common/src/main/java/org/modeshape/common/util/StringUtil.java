@@ -149,6 +149,7 @@ public class StringUtil {
         CheckArg.isNotNull(pattern, "pattern");
         if (parameters == null) parameters = EMPTY_STRING_ARRAY;
         Matcher matcher = PARAMETER_COUNT_PATTERN.matcher(pattern);
+        // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
         StringBuffer text = new StringBuffer();
         int requiredParameterCount = 0;
         boolean err = false;

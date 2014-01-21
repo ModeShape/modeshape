@@ -53,15 +53,9 @@ public class SingletonInitialContextFactory implements InitialContextFactory {
 
     private static SingletonInitialContext SINGLETON;
 
-    /**
-     * No-arg constructor
-     */
     public SingletonInitialContextFactory() {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Context getInitialContext( Hashtable<?, ?> environment ) {
         return getInstance(environment);
@@ -101,7 +95,7 @@ public class SingletonInitialContextFactory implements InitialContextFactory {
      * Set the {@link Context#INITIAL_CONTEXT_FACTORY} system property to the name of this context's
      * {@link SingletonInitialContextFactory factory class}.
      */
-    static public void initialize() {
+    public static void initialize() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {

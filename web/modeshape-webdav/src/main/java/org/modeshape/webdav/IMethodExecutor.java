@@ -15,10 +15,10 @@
  */
 package org.modeshape.webdav;
 
+import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.webdav.exceptions.LockFailedException;
-import java.io.IOException;
 
 public interface IMethodExecutor {
 

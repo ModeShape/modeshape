@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * Unless otherwise indicated, all code in ModeShape is licensed
- * to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr;
 
@@ -37,7 +29,6 @@ import java.util.Collections;
 import java.util.List;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
@@ -248,9 +239,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * This method first attempts to find a single-valued property definition with the supplied property name and
      * {@link Value#getType() value's property type} in the primary type, skipping any property definitions that are protected.
-     * The property definition is returned if it has a matching type (or has an {@link PropertyType#UNDEFINED undefined property
-     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} . Otherwise,
-     * the process continues with each of the mixin types, in the order they are named.
+     * The property definition is returned if it has a matching type (or has an {@link javax.jcr.PropertyType#UNDEFINED undefined
+     * property type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} .
+     * Otherwise, the process continues with each of the mixin types, in the order they are named.
      * </p>
      * <p>
      * If no matching property definition could be found (and <code>checkMultiValuedDefinitions</code> parameter is
@@ -325,9 +316,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * This method first attempts to find a single-valued property definition with the supplied property name and
      * {@link Value#getType() value's property type} in the primary type, skipping any property definitions that are protected.
-     * The property definition is returned if it has a matching type (or has an {@link PropertyType#UNDEFINED undefined property
-     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} . Otherwise,
-     * the process continues with each of the mixin types, in the order they are named.
+     * The property definition is returned if it has a matching type (or has an {@link javax.jcr.PropertyType#UNDEFINED undefined
+     * property type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints} .
+     * Otherwise, the process continues with each of the mixin types, in the order they are named.
      * </p>
      * <p>
      * If no matching property definition could be found (and <code>checkMultiValuedDefinitions</code> parameter is

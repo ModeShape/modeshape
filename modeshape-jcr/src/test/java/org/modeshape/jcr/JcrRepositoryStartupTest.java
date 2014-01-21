@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr;
 
@@ -44,6 +36,8 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.infinispan.schematic.document.EditableArray;
@@ -643,5 +637,54 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, "config/repo-config-persistent-predefined-ws.json");
+    }
+
+    @Test
+    @FixFor( "MODE-2142" )
+    public void shouldAllowChangingNamespacePrefixesInSession() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+
+        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
+
+        final String prefix = "admb";
+        final String uri = "http://www.admb.be/modeshape/admb/1.0";
+        final String nodeTypeName = prefix + ":test";
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+
+                NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+
+                // First create a namespace for the nodeType which is going to be added
+                session.getWorkspace().getNamespaceRegistry().registerNamespace(prefix, uri);
+
+                // Start creating a nodeTypeTemplate, keep it basic.
+                NodeTypeTemplate nodeTypeTemplate = nodeTypeManager.createNodeTypeTemplate();
+                nodeTypeTemplate.setName(nodeTypeName);
+                nodeTypeManager.registerNodeType(nodeTypeTemplate, false);
+
+                session.getRootNode().addNode("testNode", nodeTypeName);
+                session.save();
+
+                Node node = session.getNode("/testNode");
+                assertEquals(nodeTypeName, node.getPrimaryNodeType().getName());
+                session.setNamespacePrefix("newPrefix", uri);
+                assertEquals("newPrefix:test", node.getPrimaryNodeType().getName());
+
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                Node node = session.getNode("/testNode");
+                assertEquals(nodeTypeName, node.getPrimaryNodeType().getName());
+                return null;
+            }
+        }, repositoryConfigFile);
     }
 }

@@ -1,16 +1,18 @@
 /*
- * ImageInfo.java
+ * ModeShape (http://www.modeshape.org)
  *
- * Version 1.9
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * A Java class to determine image width, height and color depth for
- * a number of image file formats.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * Written by Marco Schmidt 
- *
- * Contributed to the Public Domain.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package org.modeshape.sequencer.image;
 
 import java.io.DataInput;
@@ -361,7 +363,7 @@ public class ImageMetadata {
                 {
                     int extensionType = read();
                     if (collectComments && extensionType == 0xfe) {
-                        StringBuffer sb = new StringBuffer();
+                        StringBuilder sb = new StringBuilder();
                         int n;
                         do {
                             n = read();
@@ -907,7 +909,7 @@ public class ImageMetadata {
                 InputStream in = null;
                 try {
                     String name = args[index++];
-                    System.out.print(name + ";");
+                    // System.out.print(name + ";");
                     if (name.startsWith("http://")) {
                         in = new URL(name).openConnection().getInputStream();
                     } else {
@@ -915,13 +917,13 @@ public class ImageMetadata {
                     }
                     run(name, in, imageMetadata, verbose);
                 } catch (IOException e) {
-                    System.out.println(e);
+                    e.printStackTrace();
                 } finally {
                     if (in != null) {
                         try {
                             in.close();
                         } catch (IOException ee) {
-                            System.out.println(ee);
+                            ee.printStackTrace();
                         }
                     }
                 }
@@ -942,6 +944,7 @@ public class ImageMetadata {
     private static void printCompact( String sourceName,
                                       ImageMetadata imageMetadata ) {
         final String SEP = "\t";
+        // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
         System.out.println(sourceName + SEP + imageMetadata.getFormatName() + SEP + imageMetadata.getMimeType() + SEP
                            + imageMetadata.getWidth() + SEP + imageMetadata.getHeight() + SEP + imageMetadata.getBitsPerPixel()
                            + SEP + imageMetadata.getNumberOfImages() + SEP + imageMetadata.getPhysicalWidthDpi() + SEP
@@ -974,6 +977,7 @@ public class ImageMetadata {
         if (value == null || value.length() == 0) {
             return;
         }
+        // CHECKSTYLE IGNORE check FOR NEXT 8 LINES
         while (indentLevels-- > 0) {
             System.out.print("\t");
         }
@@ -1033,10 +1037,10 @@ public class ImageMetadata {
     }
 
     private String readLine() throws IOException {
-        return readLine(new StringBuffer());
+        return readLine(new StringBuilder());
     }
 
-    private String readLine( StringBuffer sb ) throws IOException {
+    private String readLine( StringBuilder sb ) throws IOException {
         boolean finished;
         do {
             int value = read();

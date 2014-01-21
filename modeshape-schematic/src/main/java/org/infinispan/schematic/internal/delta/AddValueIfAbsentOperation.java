@@ -67,6 +67,11 @@ public class AddValueIfAbsentOperation extends AddValueOperation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj instanceof AddValueIfAbsentOperation) {
             AddValueIfAbsentOperation other = (AddValueIfAbsentOperation)obj;

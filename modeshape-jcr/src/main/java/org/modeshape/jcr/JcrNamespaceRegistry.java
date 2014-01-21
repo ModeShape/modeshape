@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr;
 
@@ -38,6 +30,7 @@ import javax.xml.XMLConstants;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.xml.XmlCharacters;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
 import org.modeshape.jcr.value.Path;
@@ -232,13 +225,19 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
             throw new NamespaceException(JcrI18n.unableToRegisterNamespaceWithInvalidPrefix.text(prefix, uri));
         }
 
+        String existingPrefixForURI = registry.getPrefixForNamespaceUri(uri, false);
+        if (prefix.equals(existingPrefixForURI)) {
+            //this is a no-op because we're trying to register the URI under the same prefix
+            return;
+        }
+
         boolean global = false;
         switch (behavior) {
             case SESSION:
                 // --------------------------------------
                 // JSR-283 Session remapping behavior ...
                 // --------------------------------------
-                // Section 4.3.3 (of the Draft specification):
+                // Section 5.11:
                 // "All local mappings already present in the Session that include either the specified prefix
                 // or the specified uri are removed and the new mapping is added."
                 String existingUriForPrefix = registry.getNamespaceForPrefix(prefix);
@@ -248,23 +247,11 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
                 registry.unregister(uri);
 
                 break;
-
             case WORKSPACE:
                 // --------------------------------------------------
                 // JSR-170 & JSR-283 Workspace namespace registry ...
                 // --------------------------------------------------
                 global = true;
-
-                try {
-                    session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
-                } catch (AccessControlException ace) {
-                    throw new AccessDeniedException(ace);
-                }
-
-                // Check the zero-length prefix and zero-length URI ...
-                if (DEFAULT_NAMESPACE_PREFIX.equals(prefix) || DEFAULT_NAMESPACE_URI.equals(uri)) {
-                    throw new NamespaceException(JcrI18n.unableToChangeTheDefaultNamespace.text());
-                }
                 // Check whether the prefix or URI are reserved (case-sensitive) ...
                 if (STANDARD_BUILT_IN_PREFIXES.contains(prefix)) {
                     throw new NamespaceException(JcrI18n.unableToRegisterReservedNamespacePrefix.text(prefix, uri));
@@ -272,17 +259,28 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
                 if (STANDARD_BUILT_IN_URIS.contains(uri)) {
                     throw new NamespaceException(JcrI18n.unableToRegisterReservedNamespaceUri.text(prefix, uri));
                 }
+
+                try {
+                    session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
+                } catch (AccessControlException ace) {
+                    throw new AccessDeniedException(ace);
+                }
+
+                if (existingPrefixForURI != null) {
+                    //the uri is already mapped under a different prefix so check that it's not in use
+                    checkURINotInUse(uri);
+                }
+                registry.unregister(uri);
                 break;
             default:
                 assert false; // should never happen
         }
 
-        // Signal the local node type manager ...
-        session.signalNamespaceChanges(global);
-
         // Now we're sure the prefix and URI are valid and okay for a custom mapping ...
         try {
             registry.register(prefix, uri);
+            // Signal the local node type manager ...
+            session.signalNamespaceChanges(global);
         } catch (RuntimeException e) {
             throw new RepositoryException(e.getMessage(), e.getCause());
         }
@@ -317,14 +315,39 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
             throw new NamespaceException(JcrI18n.unableToUnregisterReservedNamespaceUri.text(prefix, uri));
         }
 
-        // Signal the local node type manager ...
-        session.workspace().nodeTypeManager().signalNamespaceChanges();
+        // Do not allow to unregister a namespace which is used by a node type
+        checkURINotInUse(uri);
+
+        boolean global = false;
+        switch (behavior) {
+            case WORKSPACE: {
+                global = true;
+                break;
+            }
+            case SESSION: {
+                break;
+            }
+            default: {
+                //should never happen
+                assert false;
+            }
+        }
 
         // Now we're sure the prefix is valid and is actually used in a mapping ...
         try {
             registry.unregister(uri);
+            session.signalNamespaceChanges(global);
         } catch (RuntimeException e) {
             throw new RepositoryException(e.getMessage(), e.getCause());
+        }
+    }
+
+    private void checkURINotInUse( String uri ) throws RepositoryException {
+        RepositoryNodeTypeManager.NodeTypes nodeTypes = session.nodeTypes();
+        for (Name nodeTypeName : nodeTypes.getAllNodeTypeNames()) {
+            if (nodeTypeName.getNamespaceUri().equals(uri)) {
+                throw new NamespaceException(JcrI18n.unableToUnregisterPrefixForNamespaceUsedByNodeType.text(uri, nodeTypeName));
+            }
         }
     }
 
@@ -346,7 +369,7 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
                 // --------------------------------------
                 // JSR-283 Session remapping behavior ...
                 // --------------------------------------
-
+                break;
             case WORKSPACE:
                 // --------------------------------------------------
                 // JSR-170 & JSR-283 Workspace namespace registry ...
@@ -373,11 +396,6 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return registry.toString();

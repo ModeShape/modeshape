@@ -118,10 +118,14 @@ public final class CommonI18n {
     public static I18n log4jAvailable;
     public static I18n jdkFallback;
 
+    private CommonI18n() {
+    }
+
     static {
         try {
             I18n.initialize(CommonI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

@@ -102,6 +102,11 @@ public class RemoveAllValuesOperation extends ArrayOperation {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "Remove at '" + parentPath + "' the values: " + values;
     }

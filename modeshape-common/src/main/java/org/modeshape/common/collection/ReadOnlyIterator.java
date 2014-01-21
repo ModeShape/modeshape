@@ -32,31 +32,16 @@ public final class ReadOnlyIterator<T> implements Iterator<T> {
         assert this.delegate != null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
     @Override
     public boolean hasNext() {
         return delegate.hasNext();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
     @Override
     public T next() {
         return delegate.next();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
     @Override
     public void remove() {
         throw new UnsupportedOperationException();

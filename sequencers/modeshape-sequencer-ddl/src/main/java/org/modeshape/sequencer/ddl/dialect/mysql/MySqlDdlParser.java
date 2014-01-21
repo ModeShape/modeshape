@@ -1,43 +1,66 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl.dialect.mysql;
 
-import org.modeshape.common.text.ParsingException;
-import org.modeshape.sequencer.ddl.DdlTokenStream;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_ORIGINAL_EXPRESSION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_ALGORITHM_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_DEFINER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_EVENT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_LOGFILE_GROUP_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_ALTER_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_DEFINER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_EVENT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_EVENT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_LOGFILE_GROUP_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_DROP_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_RENAME_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_RENAME_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_RENAME_TABLE_STATEMENT;
+import java.util.ArrayList;
+import java.util.List;
+import org.modeshape.common.text.ParsingException;
+import org.modeshape.common.text.TokenStream;
+import org.modeshape.sequencer.ddl.DdlTokenStream;
 import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
-import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * MySql-specific DDL Parser. Includes custom data types as well as custom DDL statements.
@@ -51,11 +74,11 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
     static List<String[]> mysqlDataTypeStrings = new ArrayList<String[]>();
     /*
     * ===========================================================================================================================
-    	* Data Definition Statements
-    	ALTER [DATABASE | EVENT | FUNCTION | SERVER | TABLE | VIEW]
-    	CREATE [DATABASE | EVENT | FUNCTION | INDEX | PROCEDURE | SERVER | TABLE | TRIGGER | VIEW]
-    	DROP [DATABASE | EVENT | FUNCTION | INDEX | PROCEDURE | SERVER | TABLE | TRIGGER | VIEW]
-    	RENAME TABLE
+    * Data Definition Statements
+        ALTER [DATABASE | EVENT | FUNCTION | SERVER | TABLE | VIEW]
+        CREATE [DATABASE | EVENT | FUNCTION | INDEX | PROCEDURE | SERVER | TABLE | TRIGGER | VIEW]
+        DROP [DATABASE | EVENT | FUNCTION | INDEX | PROCEDURE | SERVER | TABLE | TRIGGER | VIEW]
+        RENAME TABLE
     */
 
     /*
@@ -167,7 +190,7 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
             [VALUES {LESS THAN {(expr) | MAXVALUE} | IN (value_list)}]
             [[STORAGE] ENGINE [=] engine_name]
             [COMMENT [=] 'comment_text' ]
-            [DATA DIRECTORY [=] 'data_dir']    	
+            [DATA DIRECTORY [=] 'data_dir']        
             [INDEX DIRECTORY [=] 'index_dir']
             [MAX_ROWS [=] max_number_of_rows]
             [MIN_ROWS [=] min_number_of_rows]
@@ -347,55 +370,55 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
          * 
 
         ALTER [ONLINE | OFFLINE] [IGNORE] TABLE tbl_name
-        	alter_specification [, alter_specification] ...
+            alter_specification [, alter_specification] ...
 
-        	alter_specification:
-        	    table_options
-        	  | ADD [COLUMN] col_name column_definition
-        	        [FIRST | AFTER col_name ]
-        	  | ADD [COLUMN] (col_name column_definition,...)
-        	  | ADD {INDEX|KEY} [index_name]
-        	        [index_type] (index_col_name,...) [index_option] ...
-        	  | ADD [CONSTRAINT [symbol]] PRIMARY KEY
-        	        [index_type] (index_col_name,...) [index_option] ...
-        	  | ADD [CONSTRAINT [symbol]]
-        	        UNIQUE [INDEX|KEY] [index_name]
-        	        [index_type] (index_col_name,...) [index_option] ...
-        	  | ADD FULLTEXT [INDEX|KEY] [index_name]
-        	        (index_col_name,...) [index_option] ...
-        	  | ADD SPATIAL [INDEX|KEY] [index_name]
-        	        (index_col_name,...) [index_option] ...
-        	  | ADD [CONSTRAINT [symbol]]
-        	        FOREIGN KEY [index_name] (index_col_name,...)
-        	        reference_definition
-        	  | ALTER [COLUMN] col_name {SET DEFAULT literal | DROP DEFAULT}
-        	  | CHANGE [COLUMN] old_col_name new_col_name column_definition
-        	        [FIRST|AFTER col_name]
-        	  | MODIFY [COLUMN] col_name column_definition
-        	        [FIRST | AFTER col_name]
-        	  | DROP [COLUMN] col_name
-        	  | DROP PRIMARY KEY
-        	  | DROP {INDEX|KEY} index_name
-        	  | DROP FOREIGN KEY fk_symbol
-        	  | DISABLE KEYS
-        	  | ENABLE KEYS
-        	  | RENAME [TO] new_tbl_name
-        	  | ORDER BY col_name [, col_name] ...
-        	  | CONVERT TO CHARACTER SET charset_name [COLLATE collation_name]
-        	  | [DEFAULT] CHARACTER SET [=] charset_name [COLLATE [=] collation_name]
-        	  | DISCARD TABLESPACE
-        	  | IMPORT TABLESPACE
-        	  | partition_options
-        	  | ADD PARTITION (partition_definition)
-        	  | DROP PARTITION partition_names
-        	  | COALESCE PARTITION number
-        	  | REORGANIZE PARTITION [partition_names INTO (partition_definitions)]
-        	  | ANALYZE PARTITION partition_names
-        	  | CHECK PARTITION partition_names
-        	  | OPTIMIZE PARTITION partition_names
-        	  | REBUILD PARTITION partition_names
-        	  | REPAIR PARTITION partition_names
-        	  | REMOVE PARTITIONING
+            alter_specification:
+                table_options
+              | ADD [COLUMN] col_name column_definition
+                    [FIRST | AFTER col_name ]
+              | ADD [COLUMN] (col_name column_definition,...)
+              | ADD {INDEX|KEY} [index_name]
+                    [index_type] (index_col_name,...) [index_option] ...
+              | ADD [CONSTRAINT [symbol]] PRIMARY KEY
+                    [index_type] (index_col_name,...) [index_option] ...
+              | ADD [CONSTRAINT [symbol]]
+                    UNIQUE [INDEX|KEY] [index_name]
+                    [index_type] (index_col_name,...) [index_option] ...
+              | ADD FULLTEXT [INDEX|KEY] [index_name]
+                    (index_col_name,...) [index_option] ...
+              | ADD SPATIAL [INDEX|KEY] [index_name]
+                    (index_col_name,...) [index_option] ...
+              | ADD [CONSTRAINT [symbol]]
+                    FOREIGN KEY [index_name] (index_col_name,...)
+                    reference_definition
+              | ALTER [COLUMN] col_name {SET DEFAULT literal | DROP DEFAULT}
+              | CHANGE [COLUMN] old_col_name new_col_name column_definition
+                    [FIRST|AFTER col_name]
+              | MODIFY [COLUMN] col_name column_definition
+                    [FIRST | AFTER col_name]
+              | DROP [COLUMN] col_name
+              | DROP PRIMARY KEY
+              | DROP {INDEX|KEY} index_name
+              | DROP FOREIGN KEY fk_symbol
+              | DISABLE KEYS
+              | ENABLE KEYS
+              | RENAME [TO] new_tbl_name
+              | ORDER BY col_name [, col_name] ...
+              | CONVERT TO CHARACTER SET charset_name [COLLATE collation_name]
+              | [DEFAULT] CHARACTER SET [=] charset_name [COLLATE [=] collation_name]
+              | DISCARD TABLESPACE
+              | IMPORT TABLESPACE
+              | partition_options
+              | ADD PARTITION (partition_definition)
+              | DROP PARTITION partition_names
+              | COALESCE PARTITION number
+              | REORGANIZE PARTITION [partition_names INTO (partition_definitions)]
+              | ANALYZE PARTITION partition_names
+              | CHECK PARTITION partition_names
+              | OPTIMIZE PARTITION partition_names
+              | REBUILD PARTITION partition_names
+              | REPAIR PARTITION partition_names
+              | REMOVE PARTITIONING
          */
 
         return super.parseAlterTableStatement(tokens, parentNode);
@@ -649,9 +672,9 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
                 String typeName = tokens.consume();
                 dataType = new DataType(typeName);
                 tokens.canConsume("BINARY");
-                tokens.canConsume("COLLATE", DdlTokenStream.ANY_VALUE);
-                tokens.canConsume("CHARACTER", "SET", DdlTokenStream.ANY_VALUE);
-                tokens.canConsume("COLLATE", DdlTokenStream.ANY_VALUE);
+                tokens.canConsume("COLLATE", TokenStream.ANY_VALUE);
+                tokens.canConsume("CHARACTER", "SET", TokenStream.ANY_VALUE);
+                tokens.canConsume("COLLATE", TokenStream.ANY_VALUE);
             } else if (tokens.matches(DTYPE_SET)) {
                 // SET(value1,value2,value3,...) [CHARACTER SET charset_name] [COLLATE collation_name]
                 String typeName = tokens.consume();
@@ -663,9 +686,9 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
                 } while (tokens.canConsume(COMMA));
                 tokens.consume(R_PAREN);
 
-                tokens.canConsume("COLLATE", DdlTokenStream.ANY_VALUE);
-                tokens.canConsume("CHARACTER", "SET", DdlTokenStream.ANY_VALUE);
-                tokens.canConsume("COLLATE", DdlTokenStream.ANY_VALUE);
+                tokens.canConsume("COLLATE", TokenStream.ANY_VALUE);
+                tokens.canConsume("CHARACTER", "SET", TokenStream.ANY_VALUE);
+                tokens.canConsume("COLLATE", TokenStream.ANY_VALUE);
             } else if (tokens.matches(DTYPE_ENUM)) {
                 // ENUM(value1,value2,value3,...) [CHARACTER SET charset_name] [COLLATE collation_name]
                 String typeName = tokens.consume();
@@ -677,9 +700,9 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
                 } while (tokens.canConsume(COMMA));
                 tokens.consume(R_PAREN);
 
-                tokens.canConsume("COLLATE", DdlTokenStream.ANY_VALUE);
-                tokens.canConsume("CHARACTER", "SET", DdlTokenStream.ANY_VALUE);
-                tokens.canConsume("COLLATE", DdlTokenStream.ANY_VALUE);
+                tokens.canConsume("COLLATE", TokenStream.ANY_VALUE);
+                tokens.canConsume("CHARACTER", "SET", TokenStream.ANY_VALUE);
+                tokens.canConsume("COLLATE", TokenStream.ANY_VALUE);
             }
 
             if (dataType == null) {

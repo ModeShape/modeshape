@@ -58,11 +58,6 @@ public class MetaDataQueryResult implements javax.jcr.query.QueryResult {
         getColumnNames();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.QueryResult#getColumnNames()
-     */
     @Override
     public String[] getColumnNames() throws RepositoryException {
         if (columnNames != null) {
@@ -148,31 +143,16 @@ class QueryResultRowIterator implements RowIterator {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
     @Override
     public long getPosition() {
         return position;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
     @Override
     public long getSize() {
         return numRows;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
     @Override
     public void skip( long skipNum ) {
         for (long i = 0L; i != skipNum; ++i) {
@@ -181,11 +161,6 @@ class QueryResultRowIterator implements RowIterator {
         position += skipNum;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
     @Override
     public boolean hasNext() {
         if (nextRow != null) {
@@ -194,42 +169,23 @@ class QueryResultRowIterator implements RowIterator {
 
         while (tuples.hasNext()) {
             final List<?> tuple = tuples.next();
-            try {
-                // Get the next row ...
-                nextRow = getNextRow(tuple);
-                if (nextRow != null) return true;
-            } catch (RepositoryException e) {
-                // The node could not be found in this session, so skip it ...
-            }
+            // Get the next row ...
+            nextRow = getNextRow(tuple);
+            if (nextRow != null) return true;
             --numRows;
         }
         return false;
     }
 
-    /**
-     * @param tuple
-     * @return Row
-     * @throws RepositoryException
-     */
-    private Row getNextRow( List<?> tuple ) throws RepositoryException {
+    private Row getNextRow( List<?> tuple ) {
         return new QueryResultRow(this, tuple, colNames);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
     @Override
     public Object next() {
         return nextRow();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
@@ -249,11 +205,6 @@ class QueryResultRow implements Row {
         this.columnNames = colNames;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getNode()
-     */
     @Override
     public Node getNode() {
         throw new UnsupportedOperationException();
@@ -264,49 +215,26 @@ class QueryResultRow implements Row {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getPath()
-     */
     @Override
     public String getPath() {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getPath(java.lang.String)
-     */
     @Override
     public String getPath( String selectorName ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getScore()
-     */
     @Override
     public double getScore() /* throws RepositoryException */{
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getScore(java.lang.String)
-     */
     @Override
     public double getScore( String selectorName ) /* throws RepositoryException */{
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * @throws ItemNotFoundException
-     */
     @Override
     public Value getValue( String arg0 ) throws ItemNotFoundException {
         int pos = getColumnPosition(arg0);
@@ -325,9 +253,7 @@ class QueryResultRow implements Row {
 
     }
 
-    /**
-     * @throws RepositoryException
-     */
+    @SuppressWarnings( "unused" )
     @Override
     public Value[] getValues() throws RepositoryException {
         Value[] values = new Value[tuple.size()];

@@ -1,33 +1,20 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl.dialect.postgres;
 
-import org.modeshape.common.text.ParsingException;
-import org.modeshape.sequencer.ddl.DdlParserProblem;
-import org.modeshape.sequencer.ddl.DdlSequencerI18n;
-import org.modeshape.sequencer.ddl.DdlTokenStream;
-import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.ALL_PRIVILEGES;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_LENGTH;
@@ -65,19 +52,129 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_MISSING_TERMIN
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.FUNCTION_PARAMETER_MODE;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.ROLE;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.SCHEMA_NAME;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ABORT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_AGGREGATE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_CONVERSION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_FOREIGN_DATA_WRAPPER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_GROUP_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_LANGUAGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_OPERATOR_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLE_STATEMENT_POSTGRES;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TEXT_SEARCH_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_USER_MAPPING_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_USER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ANALYZE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CLUSTER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COMMIT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COPY_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_AGGREGATE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_CAST_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_CONSTRAINT_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_CONVERSION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_FOREIGN_DATA_WRAPPER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_GROUP_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_LANGUAGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_OPERATOR_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_RULE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_TEXT_SEARCH_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_TYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_USER_MAPPING_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_USER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DEALLOCATE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DECLARE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_AGGREGATE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_CAST_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_CONSTRAINT_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_CONVERSION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_FOREIGN_DATA_WRAPPER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_GROUP_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_LANGUAGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_OPERATOR_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_OWNED_BY_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_ROLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_RULE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_TEXT_SEARCH_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_TYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_USER_MAPPING_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_DROP_USER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_EXPLAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_FETCH_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_FUNCTION_PARAMETER;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_DATABASE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_FOREIGN_DATA_WRAPPER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_FOREIGN_SERVER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_LANGUAGE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_TABLESPACE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ROLES_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LISTEN_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LOAD_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LOCK_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_MOVE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_NOTIFY_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_PREPARE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_REASSIGN_OWNED_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_REINDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RELEASE_SAVEPOINT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RENAME_COLUMN;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ROLLBACK_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_SELECT_INTO_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_SHOW_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_TRUNCATE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_UNLISTEN_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_VACUUM_STATEMENT;
+import java.util.ArrayList;
+import java.util.List;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.text.ParsingException;
+import org.modeshape.sequencer.ddl.DdlParserProblem;
+import org.modeshape.sequencer.ddl.DdlSequencerI18n;
+import org.modeshape.sequencer.ddl.DdlTokenStream;
+import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
-import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Postgres-specific DDL Parser. Includes custom data types as well as custom DDL statements.
  */
 public class PostgresDdlParser extends StandardDdlParser
     implements PostgresDdlConstants, PostgresDdlConstants.PostgresStatementStartPhrases {
+
+    private static final Logger LOGGER = Logger.getLogger(PostgresDdlParser.class);
 
     /**
      * The Postress parser identifier.
@@ -104,21 +201,11 @@ public class PostgresDdlParser extends StandardDdlParser
         postgresDataTypeStrings.addAll(PostgresDataTypes.CUSTOM_DATATYPE_START_PHRASES);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#getId()
-     */
     @Override
     public String getId() {
         return ID;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#initializeTokenStream(org.modeshape.sequencer.ddl.DdlTokenStream)
-     */
     @Override
     protected void initializeTokenStream( DdlTokenStream tokens ) {
         super.initializeTokenStream(tokens);
@@ -406,12 +493,12 @@ public class PostgresDdlParser extends StandardDdlParser
                 tokens.canConsume("NOT", "NULL");
                 tokens.canConsume("NULL");
             } else {
-                System.out.println("  WARNING:  Option not found for ALTER TABLE - ALTER COLUMN. Check your DDL for incomplete statement.");
+                LOGGER.debug("  WARNING:  Option not found for ALTER TABLE - ALTER COLUMN. Check your DDL for incomplete statement.");
             }
 
         } else if (tokens.canConsume("ENABLE")) {
             AstNode optionNode = nodeFactory().node("action", alterTableNode, TYPE_STATEMENT_OPTION);
-            StringBuffer sb = new StringBuffer("ENABLE");
+            StringBuilder sb = new StringBuilder("ENABLE");
             // -- ENABLE TRIGGER [ trigger_name | ALL | USER ]
             // -- ENABLE REPLICA TRIGGER trigger_name
             // -- ENABLE REPLICA RULE rewrite_rule_name
@@ -439,12 +526,12 @@ public class PostgresDdlParser extends StandardDdlParser
                 sb.append(SPACE).append("RULE");
                 sb.append(SPACE).append(parseName(tokens)); // rewrite_rule_name
             } else {
-                System.out.println("  WARNING:  Option not found for ALTER TABLE - ENABLE XXXX. Check your DDL for incomplete statement.");
+                LOGGER.debug("  WARNING:  Option not found for ALTER TABLE - ENABLE XXXX. Check your DDL for incomplete statement.");
             }
             optionNode.setProperty(VALUE, sb.toString());
         } else if (tokens.canConsume("DISABLE")) {
             AstNode optionNode = nodeFactory().node("action", alterTableNode, TYPE_STATEMENT_OPTION);
-            StringBuffer sb = new StringBuffer("DISABLE");
+            StringBuilder sb = new StringBuilder("DISABLE");
             // -- DISABLE TRIGGER [ trigger_name | ALL | USER ]
             // -- DISABLE RULE rewrite_rule_name
             if (tokens.canConsume("TRIGGER")) {
@@ -456,7 +543,7 @@ public class PostgresDdlParser extends StandardDdlParser
                 sb.append(SPACE).append("RULE");
                 sb.append(SPACE).append(parseName(tokens)); // rewrite_rule_name
             } else {
-                System.out.println("  WARNING:  Option not found for ALTER TABLE - DISABLE XXXX. Check your DDL for incomplete statement.");
+                LOGGER.debug("  WARNING:  Option not found for ALTER TABLE - DISABLE XXXX. Check your DDL for incomplete statement.");
             }
             optionNode.setProperty(VALUE, sb.toString());
         } else if (tokens.canConsume("CLUSTER", "ON")) {
@@ -509,7 +596,7 @@ public class PostgresDdlParser extends StandardDdlParser
             String schemaName = parseName(tokens);
             alterTableNode.setProperty(SCHEMA_NAME, schemaName);
         } else {
-            System.out.println("  WARNING:  Option not found for ALTER TABLE. Check your DDL for incomplete statement.");
+            LOGGER.debug("  WARNING:  Option not found for ALTER TABLE. Check your DDL for incomplete statement.");
         }
     }
 
@@ -736,14 +823,14 @@ public class PostgresDdlParser extends StandardDdlParser
         assert columnNode != null;
 
         /*
-        	} else if( tokens.matches("NOW")){
-        	    tokens.consume("NOW");
-        	    tokens.consume('(');
-        	    tokens.consume(')');
-        	    defaultValue = "NOW()";
-        	} else if( tokens.matches("NEXTVAL")){
-        	    defaultValue = tokens.consume() + consumeParenBoundedTokens(tokens, true);
-        	} 
+            } else if( tokens.matches("NOW")){
+                tokens.consume("NOW");
+                tokens.consume('(');
+                tokens.consume(')');
+                defaultValue = "NOW()";
+            } else if( tokens.matches("NEXTVAL")){
+                defaultValue = tokens.consume() + consumeParenBoundedTokens(tokens, true);
+            } 
          * 
          */
         // defaultClause
@@ -1043,7 +1130,7 @@ public class PostgresDdlParser extends StandardDdlParser
 
             // Since there is more than ONE name, then the EXPRESSION property of the first node's expression needs to be reset to
             // the first name and the ORIGINAL EXPRESSION property set to the entire statement.
-            StringBuffer sb = new StringBuffer().append(getStatementTypeName(startPhrase));
+            StringBuilder sb = new StringBuilder().append(getStatementTypeName(startPhrase));
             if (usesIfExists) {
                 sb.append(SPACE).append("IF EXISTS");
             }
@@ -1073,7 +1160,7 @@ public class PostgresDdlParser extends StandardDdlParser
         assert parentNode != null;
 
         AstNode newNode = nodeFactory().node(name, parentNode, nodeType);
-        StringBuffer sb = new StringBuffer().append(getStatementTypeName(startPhrase));
+        StringBuilder sb = new StringBuilder().append(getStatementTypeName(startPhrase));
         if (usesIfExists) {
             sb.append(SPACE).append("IF EXISTS");
         }
@@ -1648,7 +1735,7 @@ public class PostgresDdlParser extends StandardDdlParser
 
         localTokens.start();
 
-        StringBuffer unusedTokensSB = new StringBuffer();
+        StringBuilder unusedTokensSB = new StringBuilder();
 
         do {
             if (isColumnDefinitionStart(localTokens)) {

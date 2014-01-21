@@ -1,27 +1,18 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 /**
  * This class provides basic parsing of SQL-92 based DDL files.  The initial implementation does NOT handle generic SQL query
  * statements, but rather database schema manipulation (i.e. CREATE, DROP, ALTER, etc...)
@@ -29,24 +20,115 @@
  */
 package org.modeshape.sequencer.ddl;
 
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.ALL_PRIVILEGES;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CHECK_SEARCH_CONDITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.COLLATION_CHARACTER_SET_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.COLLATION_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.COLLATION_SOURCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_LENGTH;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_PROBLEM;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_CURRENT_USER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_DATETIME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_LITERAL;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_NULL;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_SESSION_USER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_SYSTEM_USER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_USER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_PRECISION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.EXISTING_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.MESSAGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NULLABLE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PAD_ATTRIBUTE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PAD_ATTRIBUTE_NO_PAD;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PAD_ATTRIBUTE_PAD;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROBLEM_LEVEL;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.SOURCE_CHARACTER_SET_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TARGET_CHARACTER_SET_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TEMPORARY;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CONSTRAINT_ATTRIBUTE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_ASSERTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_CHARACTER_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_COLLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TRANSLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_ASSERTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_CHARACTER_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TRANSLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_FK_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_CHARACTER_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_COLLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TRANSLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_INSERT_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_MISSING_TERMINATOR;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_CHARACTER_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_COLLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_TRANSLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.WITH_GRANT_OPTION;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
+import org.modeshape.common.text.TokenStream;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import org.modeshape.sequencer.ddl.node.AstNodeFactory;
-import java.math.BigInteger;
-import java.util.*;
 
 /**
  * Standard SQL 92 DDL file content parser.
  */
 @NotThreadSafe
 public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.StatementStartPhrases {
+
+    private static final Logger LOGGER = Logger.getLogger(StandardDdlParser.class);
 
     /**
      * The Standard DDL parser identifier.
@@ -215,7 +297,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             }
             // testPrint("== >> Found Statement" + "(" + (++count) + "):\n" + stmtNode);
         }
-        
+
         postProcess(rootNode);
 
         rewrite(tokens, rootNode);
@@ -294,7 +376,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     private boolean moveToNextStatementStart( DdlTokenStream tokens ) throws ParsingException {
         assert tokens != null;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         DdlParserProblem problem = null;
 
         // Check to see if any more tokens exists
@@ -998,7 +1080,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         tokens.consume(STMT_CREATE_DOMAIN);
 
         String name = parseName(tokens);
-        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DOMAIN_STATEMENT);        
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DOMAIN_STATEMENT);
 
         tokens.canConsume("AS");
         DataType datatype = getDatatypeParser().parse(tokens);
@@ -1035,33 +1117,32 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_COLLATION_STATEMENT);
 
-        //character set attribute
+        // character set attribute
         tokens.consume("FOR");
         String charSetName = parseName(tokens);
         node.setProperty(COLLATION_CHARACTER_SET_NAME, charSetName);
 
-        //collation source
-        //TODO author=Horia Chiorean date=1/4/12 description=Only parsing a string atm (should probably be some nested nodes - see StandardDdl.cnd
+        // collation source
+        // TODO author=Horia Chiorean date=1/4/12 description=Only parsing a string atm (should probably be some nested nodes -
+        // see StandardDdl.cnd
         tokens.consume("FROM");
         String collationSource = null;
         if (tokens.canConsume("EXTERNAL") || tokens.canConsume("DESC")) {
             collationSource = consumeParenBoundedTokens(tokens, false);
-        }
-        else if (tokens.canConsume("TRANSLATION")) {
+        } else if (tokens.canConsume("TRANSLATION")) {
             StringBuilder translationCollation = new StringBuilder("TRANSLATION ").append(tokens.consume());
             if (tokens.canConsume("THEN", "COLLATION")) {
                 translationCollation.append(" THEN COLLATION ");
                 translationCollation.append(parseName(tokens));
             }
             collationSource = translationCollation.toString();
-        }
-        else {
-            collationSource =parseName(tokens);
+        } else {
+            collationSource = parseName(tokens);
         }
         node.setProperty(COLLATION_SOURCE, collationSource);
 
-        //pad attribute
-        if (tokens.canConsume("PAD", "SPACE")){
+        // pad attribute
+        if (tokens.canConsume("PAD", "SPACE")) {
             node.setProperty(PAD_ATTRIBUTE, PAD_ATTRIBUTE_PAD);
         } else if (tokens.canConsume("NO", "PAD")) {
             node.setProperty(PAD_ATTRIBUTE, PAD_ATTRIBUTE_NO_PAD);
@@ -1124,7 +1205,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_CHARACTER_SET_STATEMENT);
-        //TODO author=Horia Chiorean date=1/4/12 description=Some of the optional attributes from the CND are not implemented yet
+        // TODO author=Horia Chiorean date=1/4/12 description=Some of the optional attributes from the CND are not implemented yet
         node.setProperty(EXISTING_NAME, consumeIdentifier(tokens));
 
         parseUntilTerminator(tokens);
@@ -1274,7 +1355,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         localTokens.start();
 
-        StringBuffer unusedTokensSB = new StringBuffer();
+        StringBuilder unusedTokensSB = new StringBuilder();
         do {
             if (isTableConstraint(localTokens)) {
                 parseTableConstraint(localTokens, tableNode, false);
@@ -1318,7 +1399,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         getDatatypeParser().setPropertiesOnNode(columnNode, datatype);
 
         // Now clauses and constraints can be defined in any order, so we need to keep parsing until we get to a comma
-        StringBuffer unusedTokensSB = new StringBuffer();
+        StringBuilder unusedTokensSB = new StringBuilder();
 
         while (tokens.hasNext() && !tokens.matches(COMMA)) {
             boolean parsedDefaultClause = parseDefaultClause(tokens, columnNode);
@@ -1392,7 +1473,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                                              boolean useTerminator ) throws ParsingException {
         assert tokens != null;
 
-        StringBuffer sb = new StringBuffer(100);
+        StringBuilder sb = new StringBuilder(100);
 
         if (useTerminator) {
             while (!isTerminator(tokens)) {
@@ -1442,7 +1523,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         // Assume we start with open parenthesis '(', then we can count on walking through ALL tokens until we find the close
         // parenthesis ')'. If there are intermediate parenthesis, we can count on them being pairs.
         if (tokens.canConsume(L_PAREN)) { // EXPECTED
-            StringBuffer sb = new StringBuffer(100);
+            StringBuilder sb = new StringBuilder(100);
             if (includeParens) {
                 sb.append(L_PAREN);
             }
@@ -1686,8 +1767,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             | INITIALLY IMMEDIATE
             
         <check constraint definition> ::=
-        	CHECK
-        		<left paren> <search condition> <right paren>
+            CHECK
+                <left paren> <search condition> <right paren>
          */
         consumeComment(tokens);
 
@@ -1742,7 +1823,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
                 consumeComment(tokens);
             }
-        } else if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "UNIQUE")) {
+        } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "UNIQUE")) {
             // CONSTRAINT P_KEY_2a UNIQUE (PERMISSIONUID)
             tokens.consume(); // CONSTRAINT
             String uc_name = parseName(tokens); // UNIQUE CONSTRAINT NAME
@@ -1757,7 +1838,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             parseConstraintAttributes(tokens, constraintNode);
 
             consumeComment(tokens);
-        } else if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "PRIMARY", "KEY")) {
+        } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "PRIMARY", "KEY")) {
             // CONSTRAINT U_KEY_2a PRIMARY KEY (PERMISSIONUID)
             tokens.consume("CONSTRAINT"); // CONSTRAINT
             String pk_name = parseName(tokens); // PRIMARY KEY NAME
@@ -1773,7 +1854,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             consumeComment(tokens);
 
-        } else if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "FOREIGN", "KEY")) {
+        } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "FOREIGN", "KEY")) {
             // CONSTRAINT F_KEY_2a FOREIGN KEY (PERMISSIONUID)
             tokens.consume("CONSTRAINT"); // CONSTRAINT
             String fk_name = parseName(tokens); // FOREIGN KEY NAME
@@ -1793,7 +1874,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             consumeComment(tokens);
 
-        } else if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "CHECK")) {
+        } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "CHECK")) {
             // CONSTRAINT zipchk CHECK (char_length(zipcode) = 5);
             tokens.consume("CONSTRAINT"); // CONSTRAINT
             String ck_name = parseName(tokens); // NAME
@@ -1874,17 +1955,17 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             tokens.canConsume("MATCH", "FULL");
             tokens.canConsume("MATCH", "PARTIAL");
 
-            //	
+            //
             // referentialTriggeredAction : (updateRule deleteRule?) | (deleteRule updateRule?);
             //
             // deleteRule : 'ON' 'DELETE' referencialAction;
-            //	
+            //
             // updateRule : 'ON' 'UPDATE' referencialAction;
             //
             // referencialAction
             // : cascadeOption | setNullOption | setDefaultOption | noActionOption
             // ;
-            //    		
+            //
             // cascadeOption : 'CASCADE';
             // setNullOption : 'SET' 'NULL';
             // setDefaultOption : 'SET' 'DEFAULT';
@@ -1903,7 +1984,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 } else if (tokens.matches("NO", "ACTION")) {
                     tokens.consume("NO", "ACTION");
                 } else {
-                    System.out.println(" ERROR:   ColumnDefinition REFERENCES has NO REFERENCIAL ACTION.");
+                    LOGGER.debug(" ERROR:   ColumnDefinition REFERENCES has NO REFERENCIAL ACTION.");
                 }
             }
         }
@@ -2269,10 +2350,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         if ((tokens.matches("PRIMARY", "KEY")) || (tokens.matches("FOREIGN", "KEY")) || (tokens.matches("UNIQUE"))) {
             result = true;
         } else if (tokens.matches("CONSTRAINT")) {
-            if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "UNIQUE")
-                || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "PRIMARY", "KEY")
-                || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "FOREIGN", "KEY")
-                || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "CHECK")) {
+            if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "UNIQUE")
+                || tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "PRIMARY", "KEY")
+                || tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "FOREIGN", "KEY")
+                || tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "CHECK")) {
                 result = true;
             }
         }
@@ -2295,9 +2376,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             result = false;
         } else {
             for (String dTypeStartWord : getDataTypeStartWords()) {
-                result = (tokens.matches(DdlTokenStream.ANY_VALUE, dTypeStartWord) || tokens.matches("COLUMN",
-                                                                                                     DdlTokenStream.ANY_VALUE,
-                                                                                                     dTypeStartWord));
+                result = (tokens.matches(TokenStream.ANY_VALUE, dTypeStartWord) || tokens.matches("COLUMN",
+                                                                                                  TokenStream.ANY_VALUE,
+                                                                                                  dTypeStartWord));
                 if (result) {
                     break;
                 }
@@ -2343,7 +2424,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         // Basically we want to construct a name that could have the form:
         // [schemaName].[tableName].[columnName]
         // NOTE: "[]" brackets are optional
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         if (tokens.matches('[')) {
             // We have the bracketed case, so assume all brackets
@@ -2479,12 +2560,13 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected String parseUntilTerminator( DdlTokenStream tokens ) throws ParsingException {
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         boolean lastTokenWasPeriod = false;
         Position prevPosition = (tokens.hasNext() ? tokens.nextPosition() : Position.EMPTY_CONTENT_POSITION);
         String prevToken = "";
 
-        while (tokens.hasNext() && !tokens.matches(DdlTokenizer.STATEMENT_KEY) && ((doUseTerminator() && !isTerminator(tokens)) || !doUseTerminator())) {
+        while (tokens.hasNext() && !tokens.matches(DdlTokenizer.STATEMENT_KEY)
+               && ((doUseTerminator() && !isTerminator(tokens)) || !doUseTerminator())) {
             final Position currPosition = tokens.nextPosition();
             final String thisToken = tokens.consume();
             final boolean thisTokenIsPeriod = thisToken.equals(PERIOD);
@@ -2521,7 +2603,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected String parseUntilTerminatorIgnoreEmbeddedStatements( DdlTokenStream tokens ) throws ParsingException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean lastTokenWasPeriod = false;
         Position prevPosition = Position.EMPTY_CONTENT_POSITION;
         String prevToken = "";
@@ -2561,7 +2643,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected String parseUntilSemiColon( DdlTokenStream tokens ) throws ParsingException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         boolean lastTokenWasPeriod = false;
         while (tokens.hasNext() && !tokens.matches(SEMICOLON)) {
@@ -2584,7 +2666,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     }
 
     protected String parseUntilCommaOrTerminator( DdlTokenStream tokens ) throws ParsingException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (doUseTerminator()) {
             while (tokens.hasNext() && !tokens.matches(DdlTokenizer.STATEMENT_KEY) && !isTerminator(tokens)
                    && !tokens.matches(COMMA)) {
@@ -2620,7 +2702,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     }
 
     public String getStatementTypeName( String[] stmtPhrase ) {
-        StringBuffer sb = new StringBuffer(100);
+        StringBuilder sb = new StringBuilder(100);
         for (int i = 0; i < stmtPhrase.length; i++) {
             if (i == 0) {
                 sb.append(stmtPhrase[0]);
@@ -2834,21 +2916,21 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         testPrint("== >> SOURCE:\n" + source + "\n");
     }
-    
-    
+
     /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.sequencer.ddl.DdlParser#postProcess(org.modeshape.sequencer.ddl.node.AstNode)
      */
     @Override
-	public void postProcess(AstNode rootNode) {
-		// Default behavior is no post processing
-    	// Subclasses will need to override this method
-	}
+    public void postProcess( AstNode rootNode ) {
+        // Default behavior is no post processing
+        // Subclasses will need to override this method
+    }
 
-	protected void testPrint( String str ) {
+    protected void testPrint( String str ) {
         if (isTestMode()) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.out.println(str);
         }
     }

@@ -252,10 +252,6 @@
         
         <!-- Cassandra binary storage -->
         <dependency>
-            <groupId>org.apache-extras.cassandra-jdbc</groupId>
-            <artifactId>cassandra-jdbc</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
         </dependency>
@@ -263,10 +259,6 @@
             <groupId>org.apache.cassandra</groupId>
             <artifactId>cassandra-all</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-        </dependency>    
     </dependencies>
     <build>
         <resources>

@@ -332,7 +332,6 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
                 o.replay(value);
             }
         } catch (AssertionError e) {
-            System.out.println("Assertion while applying changes to " + value + " --> " + changes);
             LOGGER.debug("Assertion while applying changes to " + value + " --> " + changes);
             throw e;
         }

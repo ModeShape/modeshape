@@ -15,6 +15,10 @@
  */
 package org.modeshape.jdbc.delegate;
 
+import java.sql.DriverPropertyInfo;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 import javax.jcr.Credentials;
 import javax.jcr.SimpleCredentials;
 import org.modeshape.common.text.TextDecoder;
@@ -23,10 +27,6 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jdbc.JdbcLocalI18n;
 import org.modeshape.jdbc.LocalJcrDriver;
-import java.sql.DriverPropertyInfo;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
 
 /**
  * The ConnectionInfo contains the information used to connect to the Jcr Repository.
@@ -44,7 +44,6 @@ public abstract class ConnectionInfo {
         this.url = url;
         this.properties = properties;
     }
-
 
     protected void init() {
         Properties props = getProperties() != null ? (Properties)getProperties().clone() : new Properties();
@@ -78,7 +77,7 @@ public abstract class ConnectionInfo {
 
     /**
      * Get the original URL of the connection.
-     *
+     * 
      * @return the URL; never null
      */
     public String getUrl() {
@@ -86,9 +85,9 @@ public abstract class ConnectionInfo {
     }
 
     /**
-     * Get the part of the {@link #getUrl()} that indicates the path to connect to the Repository.
-     * This value should be prefixed by the {@link #getUrlPrefix()} in the {@link #getUrl()}.
-     *
+     * Get the part of the {@link #getUrl()} that indicates the path to connect to the Repository. This value should be prefixed
+     * by the {@link #getUrlPrefix()} in the {@link #getUrl()}.
+     * 
      * @return String
      */
     public String getRepositoryPath() {
@@ -97,7 +96,7 @@ public abstract class ConnectionInfo {
 
     /**
      * Get the immutable properties for the connection.
-     *
+     * 
      * @return the properties; never null
      */
     public Properties getProperties() {
@@ -105,20 +104,19 @@ public abstract class ConnectionInfo {
     }
 
     /**
-     * Get the name of the repository. This is required only if the
-     * {@link Repositories} instance is being used to obtain the Repository.
-     *
-     * @return the name of the repository, or null if no repository name was
-     *         specified
+     * Get the name of the repository. This is required only if the {@link Repositories} instance is being used to obtain the
+     * Repository.
+     * 
+     * @return the name of the repository, or null if no repository name was specified
      */
     public String getRepositoryName() {
         return properties.getProperty(LocalJcrDriver.REPOSITORY_PROPERTY_NAME);
     }
 
     /**
-     * Call to set the repository name.  This is called when no repository name is set
-     * on the URL, but there is only one repository in the list.
-     *
+     * Call to set the repository name. This is called when no repository name is set on the URL, but there is only one repository
+     * in the list.
+     * 
      * @param repositoryName
      */
     void setRepositoryName( String repositoryName ) {
@@ -126,20 +124,19 @@ public abstract class ConnectionInfo {
     }
 
     /**
-     * Get the name of the workspace. This is not required, and if abscent
-     * implies obtaining the JCR Repository's default workspace.
-     *
-     * @return the name of the workspace, or null if no workspace name was
-     *         specified
+     * Get the name of the workspace. This is not required, and if abscent implies obtaining the JCR Repository's default
+     * workspace.
+     * 
+     * @return the name of the workspace, or null if no workspace name was specified
      */
     public String getWorkspaceName() {
         return properties.getProperty(LocalJcrDriver.WORKSPACE_PROPERTY_NAME);
     }
 
     /**
-     * Call to set the workspace name. This is not required, and if abscent
-     * implies obtaining the JCR Repository's default workspace.
-     *
+     * Call to set the workspace name. This is not required, and if abscent implies obtaining the JCR Repository's default
+     * workspace.
+     * 
      * @param workSpaceName
      */
     public void setWorkspaceName( String workSpaceName ) {
@@ -147,9 +144,9 @@ public abstract class ConnectionInfo {
     }
 
     /**
-     * Get the JCR user name. This is not required, and if abscent implies that
-     * no credentials should be used when obtaining a JCR Session.
-     *
+     * Get the JCR user name. This is not required, and if abscent implies that no credentials should be used when obtaining a JCR
+     * Session.
+     * 
      * @return the JCR user name, or null if no user name was specified
      */
     public String getUsername() {
@@ -158,7 +155,7 @@ public abstract class ConnectionInfo {
 
     /**
      * Get the JCR password. This is not required.
-     *
+     * 
      * @return the JCR password, or null if no password was specified
      */
     public char[] getPassword() {
@@ -168,7 +165,7 @@ public abstract class ConnectionInfo {
 
     /**
      * Return true of Teiid support is required for this connection.
-     *
+     * 
      * @return true if Teiid support is required.
      */
     public boolean isTeiidSupport() {
@@ -188,9 +185,9 @@ public abstract class ConnectionInfo {
     }
 
     /**
-     * Get the effective URL of this connection, which places all properties
-     * on the URL (with a '*' for each character in the password property)
-     *
+     * Get the effective URL of this connection, which places all properties on the URL (with a '*' for each character in the
+     * password property)
+     * 
      * @return the effective URL; never null
      */
     public String getEffectiveUrl() {
@@ -205,8 +202,7 @@ public abstract class ConnectionInfo {
             if (LocalJcrDriver.PASSWORD_PROPERTY_NAME.equals(propertyName)) {
                 value = StringUtil.createString('*', value.length());
             }
-            url.append(propertyDelim).append(propertyName).append('=')
-               .append(value);
+            url.append(propertyDelim).append(propertyName).append('=').append(value);
             propertyDelim = '&';
         }
         return url.toString();
@@ -214,7 +210,7 @@ public abstract class ConnectionInfo {
 
     /**
      * Return the starting property delimiter
-     *
+     * 
      * @return char property delimiter
      */
     protected char getPropertyDelimiter() {
@@ -227,7 +223,7 @@ public abstract class ConnectionInfo {
 
     /**
      * Obtain the array of {@link DriverPropertyInfo} objects that describe the missing properties.
-     *
+     * 
      * @return DriverPropertyInfo the property infos; never null but possibly empty
      */
     public DriverPropertyInfo[] getPropertyInfos() {
@@ -244,11 +240,10 @@ public abstract class ConnectionInfo {
 
     protected void addUrlPropertyInfo( List<DriverPropertyInfo> results ) {
         if (getUrl() == null) {
-            DriverPropertyInfo info = new DriverPropertyInfo(
-                    JdbcLocalI18n.urlPropertyName.text(), null);
+            DriverPropertyInfo info = new DriverPropertyInfo(JdbcLocalI18n.urlPropertyName.text(), null);
             info.description = JdbcLocalI18n.urlPropertyDescription.text(this.getEffectiveUrl(), getUrlExample());
             info.required = true;
-            info.choices = new String[] { getUrlExample() };
+            info.choices = new String[] {getUrlExample()};
             results.add(info);
         }
     }
@@ -295,21 +290,21 @@ public abstract class ConnectionInfo {
 
     /**
      * The delegate should provide an example of the URL to be used
-     *
+     * 
      * @return String url example
      */
     public abstract String getUrlExample();
 
     /**
      * The delegate should provide the prefix defined by the {@link LocalJcrDriver}
-     *
+     * 
      * @return String url prefix
      */
     public abstract String getUrlPrefix();
 
     /**
      * Return the credentials based on the user name and password.
-     *
+     * 
      * @return Credentials
      */
     public Credentials getCredentials() {

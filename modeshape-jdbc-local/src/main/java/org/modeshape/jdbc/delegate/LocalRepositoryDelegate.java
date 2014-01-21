@@ -87,11 +87,6 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         return LocalSession.getLocalSessionInstance().getLocalSession();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jdbc.delegate.RepositoryDelegate#getDescriptor(java.lang.String)
-     */
     @Override
     public String getDescriptor( String descriptorKey ) {
         return getRepository().getDescriptor(descriptorKey);
@@ -139,11 +134,8 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
 
         // Create the query ...
 
-        final org.modeshape.jcr.api.query.Query jcrQuery = (org.modeshape.jcr.api.query.Query)getLocalSession().getSession()
-                                                                                                               .getWorkspace()
-                                                                                                               .getQueryManager()
-                                                                                                               .createQuery(query,
-                                                                                                                            language);
+        final org.modeshape.jcr.api.query.Query jcrQuery = (org.modeshape.jcr.api.query.Query)getLocalSession().getSession().getWorkspace().getQueryManager().createQuery(query,
+                                                                                                                                                                          language);
         return jcrQuery.explain().getPlan();
     }
 
@@ -225,9 +217,6 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         this.setRepositoryNames(repositoryNames);
     }
 
-    /**
-     * @see java.sql.Connection#isValid(int)
-     */
     @Override
     public boolean isValid( final int timeout ) throws RepositoryException {
 
@@ -240,11 +229,6 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jdbc.delegate.RepositoryDelegate#closeStatement()
-     */
     @Override
     public void closeStatement() {
         LocalSession session = getCurrentLocalSession();
@@ -257,11 +241,6 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Connection#close()
-     */
     @Override
     public void close() {
         for (LocalSession id : TRANSACTION_IDS) {
@@ -269,24 +248,12 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Connection#rollback()
-     */
     @SuppressWarnings( "unused" )
     @Override
     public void rollback() throws RepositoryException {
         closeStatement();
     }
 
-    /**
-     * @param iface
-     * @param <T>
-     * @return <T> T
-     * @throws SQLException
-     * @see java.sql.Wrapper#unwrap(java.lang.Class)
-     */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
 
@@ -309,10 +276,6 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
 
     class JNDIConnectionInfo extends ConnectionInfo {
 
-        /**
-         * @param url
-         * @param properties
-         */
         protected JNDIConnectionInfo( String url,
                                       Properties properties ) {
             super(url, properties);

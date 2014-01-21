@@ -67,9 +67,6 @@ public class Histogram<T extends Number> {
         return this.bucketingStrategy;
     }
 
-    /**
-     * @return math
-     */
     public MathOperations<T> getMathOperations() {
         return this.math;
     }

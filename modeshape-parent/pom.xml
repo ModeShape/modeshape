@@ -25,11 +25,9 @@
 
     <licenses>
         <license>
-            <name>GNU Lesser General Public License</name>
-            <url>http://repository.jboss.org/licenses/lgpl-2.1.txt</url>
-            <!--url>http://www.gnu.org/licenses/lgpl.html</url-->
+            <name>Apache Software License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
             <distribution>repo</distribution>
-            <comments>A business-friendly OSS license</comments>
         </license>
     </licenses>
 
@@ -226,10 +224,11 @@
         <modeshape.java.version>1.7</modeshape.java.version>
         <maven.compiler.source>${modeshape.java.version}</maven.compiler.source>
         <maven.compiler.target>${modeshape.java.version}</maven.compiler.target>
+        <checkstyle.version>5.6</checkstyle.version>
 
         <joda.time.version>1.6.2</joda.time.version>
-        <junit.version>4.10</junit.version>
-        <hamcrest.version>1.1</hamcrest.version>
+        <junit.version>4.11</junit.version>
+        <hamcrest.version>1.3</hamcrest.version>
         <mockito.all.version>1.8.4</mockito.all.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
         <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
@@ -315,7 +314,7 @@
         <mapdb.version>0.9.8</mapdb.version>
 
         <!--WebDAV servlet-->
-        <jmock.version>2.4.0</jmock.version>
+        <jmock.version>2.6.0</jmock.version>
         <spring.webmvc>2.5.2</spring.webmvc>
         <spring.mock>2.0.7</spring.mock>
 
@@ -364,6 +363,7 @@
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
         <version.failsafe.plugin>2.13</version.failsafe.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
+        <version.checkstyle.maven.plugin>2.10</version.checkstyle.maven.plugin>
 
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
@@ -373,10 +373,8 @@
 
         <!--Skip long running tests by default-->
         <skipLongRunningTests>true</skipLongRunningTests>
-        <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
-        <cassandra-cql-driver>1.0.0</cassandra-cql-driver>
-        <cassandra.all.version>1.2.0</cassandra.all.version>
-        <apache.avro.version>1.4.0</apache.avro.version>
+        <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>
+        <cassandra.all.version>2.0.3</cassandra.all.version>
     </properties>
 
     <profiles>
@@ -954,6 +952,35 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${version.checkstyle.maven.plugin}</version><!--$NO-MVN-MAN-VER$-->
+                <dependencies>
+                    <dependency>
+                        <groupId>org.modeshape</groupId>
+                        <artifactId>modeshape-checkstyle</artifactId>
+                        <version>${project.version}</version>
+                     </dependency>
+                </dependencies>
+                <configuration>
+                   <configLocation>checkstyle.xml</configLocation>
+                   <consoleOutput>true</consoleOutput>
+                   <failsOnError>true</failsOnError>
+                   <linkXRef>false</linkXRef>
+                   <violationSeverity>error</violationSeverity>
+                   <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+                <executions>
+                   <execution>
+                      <id>check-style</id>
+                      <phase>verify</phase>
+                      <goals>
+                         <goal>checkstyle</goal>
+                      </goals>
+                   </execution>
+                </executions>
+             </plugin>
         </plugins>
     </build>
 
@@ -1369,12 +1396,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit-dep</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-library</artifactId>
                 <version>${hamcrest.version}</version>
@@ -1410,6 +1431,12 @@
                 <groupId>org.jmock</groupId>
                 <artifactId>jmock</artifactId>
                 <version>${jmock.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hamcrest</groupId>
+                        <artifactId>hamcrest-core</artifactId>
+                    </exclusion>
+                </exclusions>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1471,7 +1498,7 @@
             </dependency>
 
 		<!-- GWT dependency -->
-	<dependency>
+	      <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-servlet</artifactId>
             <version>${gwt.version}</version>
@@ -2214,12 +2241,6 @@
 
             <!-- Cassandra JDBC driver -->
             <dependency>
-                <groupId>org.apache-extras.cassandra-jdbc</groupId>
-                <artifactId>cassandra-jdbc</artifactId>
-                <version>${cassandra-jdbc-driver}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
                 <groupId>com.datastax.cassandra</groupId>
                 <artifactId>cassandra-driver-core</artifactId>
                 <version>${cassandra-cql-driver}</version>
@@ -2229,12 +2250,6 @@
                 <groupId>org.apache.cassandra</groupId>
                 <artifactId>cassandra-all</artifactId>
                 <version>${cassandra.all.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro</artifactId>
-                <version>${apache.avro.version}</version>
                 <scope>test</scope>
             </dependency>
 

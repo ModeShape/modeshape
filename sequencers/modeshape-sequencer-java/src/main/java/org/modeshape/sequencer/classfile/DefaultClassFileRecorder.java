@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.classfile;
 
@@ -73,7 +65,9 @@ import org.modeshape.sequencer.javafile.metadata.ImportMetadata;
 public class DefaultClassFileRecorder implements ClassFileRecorder {
 
     @Override
-    public void recordClass( Sequencer.Context context, Node outputNode, ClassMetadata classMetadata ) throws RepositoryException {
+    public void recordClass( Sequencer.Context context,
+                             Node outputNode,
+                             ClassMetadata classMetadata ) throws RepositoryException {
 
         Node classNode = getClassNode(classMetadata, outputNode);
 
@@ -91,7 +85,9 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         writeImports(classNode, classMetadata.getImports());
     }
 
-    private void writeClassMetaInformation( Sequencer.Context context, ClassMetadata classMetadata, Node classNode ) throws RepositoryException {
+    private void writeClassMetaInformation( Sequencer.Context context,
+                                            ClassMetadata classMetadata,
+                                            Node classNode ) throws RepositoryException {
         /*
         - class:name (string) mandatory
         - class:superClassName (string)
@@ -126,16 +122,17 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         }
     }
 
-    private Node getClassNode( ClassMetadata classMetadata, Node outputNode ) throws RepositoryException {
+    private Node getClassNode( ClassMetadata classMetadata,
+                               Node outputNode ) throws RepositoryException {
         final String[] packagePath = classMetadata.getClassName().split("\\.");
         int i = 0;
 
-        //create a series of nt:unstructured nodes as the package path
+        // create a series of nt:unstructured nodes as the package path
         if (packagePath.length > 1) {
             for (final int numPkgs = (packagePath.length - 1); i < numPkgs; ++i) {
                 outputNode = outputNode.addNode(packagePath[i]);
                 outputNode.addMixin(PACKAGE);
-            }            
+            }
         }
 
         final Node classNode = outputNode.addNode(packagePath[i]);
@@ -145,7 +142,8 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         return classNode;
     }
 
-    private void writeFieldsNode( Node fieldsNode, List<FieldMetadata> fields ) throws RepositoryException {
+    private void writeFieldsNode( Node fieldsNode,
+                                  List<FieldMetadata> fields ) throws RepositoryException {
 
         /*
             [class:field]
@@ -173,7 +171,8 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         }
     }
 
-    private void writeMethods( Node rootNode, List<MethodMetadata> methods ) throws RepositoryException {
+    private void writeMethods( Node rootNode,
+                               List<MethodMetadata> methods ) throws RepositoryException {
 
         /*
             [class:method]
@@ -224,7 +223,8 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
         }
     }
 
-    private void writeAnnotationsNode( Node rootNode, List<AnnotationMetadata> annotations ) throws RepositoryException {
+    private void writeAnnotationsNode( Node rootNode,
+                                       List<AnnotationMetadata> annotations ) throws RepositoryException {
 
         /*
         [class:annotationMember]

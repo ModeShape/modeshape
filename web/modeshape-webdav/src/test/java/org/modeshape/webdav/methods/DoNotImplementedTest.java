@@ -13,9 +13,9 @@ public class DoNotImplementedTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getMethod();
+                oneOf(mockReq).getMethod();
                 will(returnValue("notImplementedMethod"));
-                one(mockRes).sendError(WebdavStatus.SC_FORBIDDEN);
+                oneOf(mockRes).sendError(WebdavStatus.SC_FORBIDDEN);
             }
         });
 
@@ -30,9 +30,9 @@ public class DoNotImplementedTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getMethod();
+                oneOf(mockReq).getMethod();
                 will(returnValue("notImplementedMethod"));
-                one(mockRes).sendError(WebdavStatus.SC_NOT_IMPLEMENTED);
+                oneOf(mockRes).sendError(WebdavStatus.SC_NOT_IMPLEMENTED);
             }
         });
 

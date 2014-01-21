@@ -37,9 +37,6 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class StreamingContentHandler extends DefaultHandler {
 
-    /** Debug setting that allows all output to be written to {@link System#out}. */
-    private static final boolean LOG_TO_CONSOLE = false;
-
     public static final String DEFAULT_ENCODING = "UTF-8";
 
     /**
@@ -96,11 +93,6 @@ public class StreamingContentHandler extends DefaultHandler {
         this.declaration = "version=\"1.0\" encoding=\"" + encoding + "\"";
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
-     */
     @Override
     public void characters( char[] ch,
                             int start,
@@ -108,21 +100,11 @@ public class StreamingContentHandler extends DefaultHandler {
         emit(VALUE_ENCODER.encode(new String(ch, start, length)));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#startDocument()
-     */
     @Override
     public void startDocument() throws SAXException {
         emit("<?xml " + declaration + "?>");
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#endDocument()
-     */
     @Override
     public void endDocument() throws SAXException {
         try {
@@ -132,12 +114,6 @@ public class StreamingContentHandler extends DefaultHandler {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
-     *      org.xml.sax.Attributes)
-     */
     @Override
     public void startElement( String uri,
                               String localName,
@@ -169,11 +145,6 @@ public class StreamingContentHandler extends DefaultHandler {
         emit(">");
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public void endElement( String uri,
                             String localName,
@@ -181,15 +152,10 @@ public class StreamingContentHandler extends DefaultHandler {
         emit("</");
         emit(name);
         emit(">");
-        if (LOG_TO_CONSOLE) System.out.println();
+        // System.out.println();
 
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#startPrefixMapping(java.lang.String, java.lang.String)
-     */
     @Override
     public void startPrefixMapping( String prefix,
                                     String uri ) {
@@ -207,10 +173,7 @@ public class StreamingContentHandler extends DefaultHandler {
     private void emit( String text ) throws SAXException {
 
         try {
-            if (LOG_TO_CONSOLE) {
-                System.out.print(text);
-            }
-
+            // System.out.print(text);
             writer.write(text);
         } catch (IOException ioe) {
             throw new SAXException(ioe);

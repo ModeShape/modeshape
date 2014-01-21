@@ -1,35 +1,40 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl.dialect.oracle;
 
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.matchers.JUnitMatchers.hasItems;
-import java.util.List;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_INDEXTYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ANALYZE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_JAVA_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_MATERIALIZED_VIEW_LOG_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_MATERIALIZED_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ROLLBACK_STATEMENT;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -37,9 +42,6 @@ import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.DdlParserTestHelper;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 public class OracleDdlParserTest extends DdlParserTestHelper {
@@ -59,11 +61,11 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     // @Test
     // public void shouldParseOracleDDL() {
     // String content = getFileContent(DDL_FILE_PATH + "oracle_test_create.ddl");
-    //	  
+    //
     // List<Statement> stmts = parser.parse(content);
-    //	  	
+    //
     // System.out.println("  END PARSING.  # Statements = " + stmts.size());
-    //	  
+    //
     // }
 
     @Test
@@ -343,7 +345,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         assertScoreAndParse(content, "oracle_test_statements_4", 48);
     }
 
-    @FixFor("MODE-1326")
+    @FixFor( "MODE-1326" )
     @Test
     public void shouldSequenceCreateIndexStatements() throws Exception {
         String content = getFileContent(DDL_FILE_PATH + "mode_1326.ddl");
@@ -359,7 +361,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
                                + "TEST_GROUP_DESCRIPTION  VARCHAR2(50 BYTE),\n" //$NON-NLS-1$
                                + "ACTIVE_IND NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
                                + "ACTIVE_STATUS_CD NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
-// this includes PL/SQL and does not parse        + "ACTIVE_STATUS_DT_TM DATE DEFAULT TO_DATE ( '01/01/190000:00:00' , 'MM/DD/YYYYHH24:MI:SS' ) NOT NULL,\n" //$NON-NLS-1$
+                               // this includes PL/SQL and does not parse        + "ACTIVE_STATUS_DT_TM DATE DEFAULT TO_DATE ( '01/01/190000:00:00' , 'MM/DD/YYYYHH24:MI:SS' ) NOT NULL,\n" //$NON-NLS-1$
                                + "ACTIVE_STATUS_PRSNL_ID NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
                                + "UPDT_CNT NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
                                + "UPDT_DT_TM DATE DEFAULT SYSDATE NOT NULL,\n" //$NON-NLS-1$
@@ -423,17 +425,17 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     @Test
     public void shouldParseCreateTableIndexStatement() throws Exception {
         final String content = "CREATE TABLE CUST_MPAGE(\n" //$NON-NLS-1$
-                                   + "MPAGE_ID INTEGER,\n" //$NON-NLS-1$
-                                   + "NAME VARCHAR2(50 BYTE),\n" //$NON-NLS-1$
-                                   + "DESCRIPTION VARCHAR2(200 BYTE)\n" //$NON-NLS-1$
-                                   + ")\n" //$NON-NLS-1$
-                                   + "LOGGING\n" //$NON-NLS-1$
-                                   + "NOCOMPRESS\n" //$NON-NLS-1$
-                                   + "NOCACHE\n" //$NON-NLS-1$
-                                   + "NOPARALLEL\n" //$NON-NLS-1$
-                                   + "MONITORING;\n" //$NON-NLS-1$
-                                   + "" //$NON-NLS-1$
-                                   + "CREATE INDEX CUST_MPAGE_PK ON CUST_MPAGE (MPAGE_ID) LOGGING NOPARALLEL;";
+                               + "MPAGE_ID INTEGER,\n" //$NON-NLS-1$
+                               + "NAME VARCHAR2(50 BYTE),\n" //$NON-NLS-1$
+                               + "DESCRIPTION VARCHAR2(200 BYTE)\n" //$NON-NLS-1$
+                               + ")\n" //$NON-NLS-1$
+                               + "LOGGING\n" //$NON-NLS-1$
+                               + "NOCOMPRESS\n" //$NON-NLS-1$
+                               + "NOCACHE\n" //$NON-NLS-1$
+                               + "NOPARALLEL\n" //$NON-NLS-1$
+                               + "MONITORING;\n" //$NON-NLS-1$
+                               + "" //$NON-NLS-1$
+                               + "CREATE INDEX CUST_MPAGE_PK ON CUST_MPAGE (MPAGE_ID) LOGGING NOPARALLEL;";
         this.parser.parse(content, this.rootNode, null);
         assertThat(this.rootNode.getChildCount(), is(2)); // table & index
 
@@ -560,7 +562,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         assertThat(indexNode.getChildCount(), is(3)); // 1 column references, 2 table references
 
         { // 1 column reference
-            final List<AstNode> colRefs = indexNode.getChildren(OracleDdlLexicon.TYPE_COLUMN_REFERENCE);
+            final List<AstNode> colRefs = indexNode.getChildren(StandardDdlLexicon.TYPE_COLUMN_REFERENCE);
             assertThat(colRefs.size(), is(1));
 
             final AstNode colRefNode = colRefs.get(0);
@@ -568,7 +570,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         }
 
         { // 2 table references
-            final List<AstNode> tableRefs = indexNode.getChildren(OracleDdlLexicon.TYPE_TABLE_REFERENCE);
+            final List<AstNode> tableRefs = indexNode.getChildren(StandardDdlLexicon.TYPE_TABLE_REFERENCE);
             assertThat(tableRefs.size(), is(2));
 
             { // sales table
@@ -582,7 +584,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
             }
         }
     }
-    
+
     @Test
     public void shouldParseDbObjectNameWithValidSymbols() {
         final String content = "CREATE TABLE EL$VIS (\n" //$NON-NLS-1$

@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * Unless otherwise indicated, all code in ModeShape is licensed
- * to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr.security.acl;
 
@@ -31,18 +23,16 @@ import javax.jcr.security.AccessControlException;
 import javax.jcr.security.Privilege;
 
 /**
- * Implementation for the Access Control entry record.
- * 
- * An AccessControlEntry represents the association of one or more 
- * <code>Privilege</code> objects with a specific <code>Principal</code>. 
+ * Implementation for the Access Control entry record. An AccessControlEntry represents the association of one or more
+ * <code>Privilege</code> objects with a specific <code>Principal</code>.
  * 
  * @author kulikov
  */
 public class AccessControlEntryImpl implements AccessControlEntry {
 
     private Principal principal;
-    private ArrayList<Privilege>privileges = new ArrayList<Privilege>();
-    
+    private ArrayList<Privilege> privileges = new ArrayList<Privilege>();
+
     /**
      * Creates new ACL entry.
      * 
@@ -50,10 +40,10 @@ public class AccessControlEntryImpl implements AccessControlEntry {
      * @param privileges one or more privilege in association with given principal.
      * @throws AccessControlException if one or more privileges are invalid.
      */
-    public AccessControlEntryImpl(Principal principal, Privilege[] privileges) throws AccessControlException {
+    public AccessControlEntryImpl( Principal principal,
+                                   Privilege[] privileges ) throws AccessControlException {
         for (Privilege p : privileges) {
-            if (p.getName() == null) 
-                throw new AccessControlException("Invalid privilege");
+            if (p.getName() == null) throw new AccessControlException("Invalid privilege");
         }
         this.principal = principal;
         this.privileges.clear();
@@ -61,7 +51,7 @@ public class AccessControlEntryImpl implements AccessControlEntry {
             this.privileges.add(privilege);
         }
     }
-    
+
     @Override
     public Principal getPrincipal() {
         return principal;
@@ -71,14 +61,14 @@ public class AccessControlEntryImpl implements AccessControlEntry {
     public Privilege[] getPrivileges() {
         return privileges.toArray(new Privilege[privileges.size()]);
     }
-    
+
     /**
      * Tests given privileges.
-     *      
+     * 
      * @param privileges privileges for testing.
      * @return true if this entry contains all given privileges
      */
-    protected boolean hasPrivileges(Privilege[] privileges) {
+    protected boolean hasPrivileges( Privilege[] privileges ) {
         for (Privilege p : privileges) {
             if (!contains(this.privileges, p)) {
                 return false;
@@ -86,8 +76,9 @@ public class AccessControlEntryImpl implements AccessControlEntry {
         }
         return true;
     }
-    
-    private boolean contains(List<Privilege>privileges, Privilege p) {
+
+    private boolean contains( List<Privilege> privileges,
+                              Privilege p ) {
         for (int i = 0; i < privileges.size(); i++) {
             if (((PrivilegeImpl)privileges.get(i)).contains(p)) {
                 return true;
@@ -102,15 +93,15 @@ public class AccessControlEntryImpl implements AccessControlEntry {
      * @param privileges privileges to add.
      * @return true if at least one of privileges was added.
      */
-    protected boolean addIfNotPresent(Privilege[] privileges) {
+    protected boolean addIfNotPresent( Privilege[] privileges ) {
         ArrayList<Privilege> list = new ArrayList<Privilege>();
         for (Privilege privilege : privileges) {
             list.add(privilege);
         }
-        
+
         boolean res = combineRecursively(list, privileges);
 
-        this.privileges.addAll(list);        
+        this.privileges.addAll(list);
         return res;
     }
 
@@ -121,9 +112,10 @@ public class AccessControlEntryImpl implements AccessControlEntry {
      * @param privileges privileges to add.
      * @return true if at least one of privileges was added.
      */
-    protected boolean combineRecursively(List<Privilege>list, Privilege[] privileges) {
+    protected boolean combineRecursively( List<Privilege> list,
+                                          Privilege[] privileges ) {
         boolean res = false;
-        
+
         for (Privilege p : privileges) {
             if (p.isAggregate()) {
                 res = combineRecursively(list, p.getAggregatePrivileges());
@@ -134,33 +126,33 @@ public class AccessControlEntryImpl implements AccessControlEntry {
         }
         return res;
     }
-    
+
     @Override
-    public boolean equals(Object other) {
+    public boolean equals( Object other ) {
         if (other == null) {
             return false;
         }
-        
+
         if (!(other instanceof AccessControlEntryImpl)) {
             return false;
         }
-        
-        AccessControlEntryImpl entry = (AccessControlEntryImpl) other;
-        
+
+        AccessControlEntryImpl entry = (AccessControlEntryImpl)other;
+
         if (!entry.principal.equals(principal)) {
             return false;
         }
-        
+
         if (this.privileges.size() != entry.privileges.size()) {
             return false;
         }
-        
+
         for (int i = 0; i < privileges.size(); i++) {
             if (!contains(entry.privileges, privileges.get(i))) {
                 return false;
             }
         }
-        
+
         return true;
     }
 

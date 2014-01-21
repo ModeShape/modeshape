@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.jcr.value.basic;
 
@@ -73,8 +65,7 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
 
     @Factory
     public static Matcher<Iterable<Segment>> hasSegments( @SuppressWarnings( "unchecked" ) Matcher<Path.Segment>... elementMatchers ) {
-        Collection<Matcher<? extends Iterable<Path.Segment>>> all = new ArrayList<Matcher<? extends Iterable<Path.Segment>>>(
-                                                                                                                             elementMatchers.length);
+        Collection<Matcher<? super Iterable<Path.Segment>>> all = new ArrayList<>(elementMatchers.length);
 
         for (Matcher<Path.Segment> elementMatcher : elementMatchers) {
             Matcher<Iterable<Path.Segment>> itemMatcher = hasSegment(elementMatcher);
@@ -86,8 +77,7 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
 
     @Factory
     public static Matcher<Iterable<Segment>> hasSegments( Segment... elements ) {
-        Collection<Matcher<? extends Iterable<Segment>>> all = new ArrayList<Matcher<? extends Iterable<Segment>>>(
-                                                                                                                   elements.length);
+        Collection<Matcher<? super Iterable<Segment>>> all = new ArrayList<>(elements.length);
         for (Segment element : elements) {
             all.add(hasSegment(element));
         }
@@ -104,8 +94,7 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
     @Factory
     public static Matcher<Iterable<Segment>> hasSegments( PathFactory pathFactory,
                                                           String... segments ) {
-        Collection<Matcher<? extends Iterable<Segment>>> all = new ArrayList<Matcher<? extends Iterable<Segment>>>(
-                                                                                                                   segments.length);
+        Collection<Matcher<? super Iterable<Segment>>> all = new ArrayList<>(segments.length);
         for (String element : segments) {
             all.add(hasSegment(pathFactory, element));
         }

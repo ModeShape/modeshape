@@ -62,7 +62,7 @@ public final class RestHelper {
                                                                   QUERY_METHOD_NAME,
                                                                   QUERY_PLAN_METHOD_NAME,
                                                                   NODE_TYPES_METHOD_NAME);
-    //almost ISO8601, because in JDK 6 Z/z do not support timezones of the format hh:mm
+    // almost ISO8601, because in JDK 6 Z/z do not support timezones of the format hh:mm
     private static final List<SimpleDateFormat> ISO8601_DATE_PARSERS = Arrays.asList(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"),
                                                                                      new SimpleDateFormat("yyyy-MM-dd"));
 
@@ -120,7 +120,7 @@ public final class RestHelper {
      * @return a string representing an absolute-url
      */
     public static String repositoryUrl( HttpServletRequest request ) {
-        StringBuffer requestURL = request.getRequestURL();
+        String requestURL = request.getRequestURL().toString();
         int delimiterSegmentIdx = requestURL.length();
         for (String methodName : ALL_METHODS) {
             if (requestURL.indexOf(methodName) != -1) {
@@ -207,38 +207,40 @@ public final class RestHelper {
 
     /**
      * Converts an object value coming from a JSON object, to a JCR value by attempting to convert it to a valid data type.
+     * 
      * @param value a generic value, may be {@code null}
      * @param valueFactory a {@link ValueFactory} instance which is used to perform the conversion
      * @return either a {@link Value} or {@code null} if the object value is {@code null}.
      */
-    public static Value jsonValueToJCRValue(Object value, ValueFactory valueFactory) {
+    public static Value jsonValueToJCRValue( Object value,
+                                             ValueFactory valueFactory ) {
         if (value == null) {
             return null;
         }
 
-        //try the datatypes that can be handled by Jettison
+        // try the datatypes that can be handled by Jettison
         if (value instanceof Integer || value instanceof Long) {
-            return valueFactory.createValue(((Number) value).longValue());
+            return valueFactory.createValue(((Number)value).longValue());
         } else if (value instanceof Double || value instanceof Float) {
-            return valueFactory.createValue(((Number) value).doubleValue());
+            return valueFactory.createValue(((Number)value).doubleValue());
         } else if (value instanceof Boolean) {
             return valueFactory.createValue((Boolean)value);
         }
 
-        //try to convert to a date
+        // try to convert to a date
         String valueString = value.toString();
         for (DateFormat dateFormat : ISO8601_DATE_PARSERS) {
             try {
                 Date date = dateFormat.parse(valueString);
                 return valueFactory.createValue(date);
             } catch (ParseException e) {
-                //ignore
+                // ignore
             } catch (ValueFormatException e) {
-                //ignore
+                // ignore
             }
         }
 
-        //default to a string
+        // default to a string
         return valueFactory.createValue(valueString);
     }
 

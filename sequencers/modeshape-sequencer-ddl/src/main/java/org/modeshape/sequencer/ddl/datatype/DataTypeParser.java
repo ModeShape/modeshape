@@ -1,25 +1,17 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- * 
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.sequencer.ddl.datatype;
 
@@ -30,7 +22,9 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_SCALE;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.ParsingException;
+import org.modeshape.common.text.TokenStream;
 import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.DdlTokenStream;
 import org.modeshape.sequencer.ddl.node.AstNode;
@@ -39,6 +33,9 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  * A parser for SQL data types.
  */
 public class DataTypeParser implements DdlConstants {
+
+    private static Logger LOGGER = Logger.getLogger(DataTypeParser.class);
+
     private static List<String[]> basicCharStringTypes = new ArrayList<String[]>();
     private static List<String[]> basicNationalCharStringTypes = new ArrayList<String[]>();
     private static List<String[]> basicBitStringTypes = new ArrayList<String[]>();
@@ -587,7 +584,7 @@ public class DataTypeParser implements DdlConstants {
             typeName = consume(tokens, dataType, false, DataTypes.DTYPE_INTERVAL);
             dataType.setName(typeName);
             // <non-second datetime field> TO <end field>
-            // 
+            //
             // CASE 2a: { YEAR | MONTH | DAY | HOUR | MINUTE } [ [ <left paren> <interval leading field precision> <right paren> ]
             // CASE 2b: SECOND [ <left paren> <interval leading field precision> [ <comma> <interval fractional seconds precision>
             // ] <right paren> ]
@@ -601,13 +598,13 @@ public class DataTypeParser implements DdlConstants {
                     // CASE 1:
                     // assume "YEAR | MONTH | DAY | HOUR | MINUTE" and consume
                     consume(tokens, dataType, true);
-                } else if (tokens.matches(L_PAREN, DdlTokenStream.ANY_VALUE, R_PAREN)) {
+                } else if (tokens.matches(L_PAREN, TokenStream.ANY_VALUE, R_PAREN)) {
                     // CASE 2a:
                     consume(tokens, dataType, true, L_PAREN);
                     consume(tokens, dataType, true);
                     consume(tokens, dataType, true, R_PAREN);
                 } else {
-                    System.out.println("  WARNING:  PROBLEM parsing INTERVAL data type. Check your DDL for incomplete statement.");
+                    LOGGER.debug("  WARNING:  PROBLEM parsing INTERVAL data type. Check your DDL for incomplete statement.");
                 }
             } else if (canConsume(tokens, dataType, true, "SECOND")) {
                 // CASE 2b:
@@ -619,10 +616,10 @@ public class DataTypeParser implements DdlConstants {
                     }
                     canConsume(tokens, dataType, true, R_PAREN);
                 } else {
-                    System.out.println("  WARNING:  PROBLEM parsing INTERVAL data type. Check your DDL for incomplete statement.");
+                    LOGGER.debug("  WARNING:  PROBLEM parsing INTERVAL data type. Check your DDL for incomplete statement.");
                 }
             } else {
-                System.out.println("  WARNING:  PROBLEM parsing INTERVAL data type. Check your DDL for incomplete statement.");
+                LOGGER.debug("  WARNING:  PROBLEM parsing INTERVAL data type. Check your DDL for incomplete statement.");
             }
         }
 
@@ -783,7 +780,7 @@ public class DataTypeParser implements DdlConstants {
                               String initialStr,
                               String... additionalStrs ) throws ParsingException {
         tokens.consume(initialStr, additionalStrs);
-        StringBuffer value = new StringBuffer(initialStr);
+        StringBuilder value = new StringBuilder(initialStr);
         dataType.appendSource(addSpacePrefix, initialStr);
 
         for (String str : additionalStrs) {
@@ -801,7 +798,7 @@ public class DataTypeParser implements DdlConstants {
 
         tokens.consume(additionalStrs);
 
-        StringBuffer value = new StringBuffer(100);
+        StringBuilder value = new StringBuilder(100);
 
         int i = 0;
 
@@ -918,7 +915,7 @@ public class DataTypeParser implements DdlConstants {
      * @return concatenated name
      */
     public String getStatementTypeName( String[] stmtPhrase ) {
-        StringBuffer sb = new StringBuffer(100);
+        StringBuilder sb = new StringBuilder(100);
         for (int i = 0; i < stmtPhrase.length; i++) {
             if (i == 0) {
                 sb.append(stmtPhrase[0]);

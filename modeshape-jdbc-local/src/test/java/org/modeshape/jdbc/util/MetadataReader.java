@@ -19,41 +19,41 @@ import java.io.IOException;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
-
 public class MetadataReader extends StringLineReader {
 
-	ResultSetMetaData source;
+    ResultSetMetaData source;
     String delimiter = "    "; //$NON-NLS-1$
 
     boolean firsttime = true;
-	int currentColumn = 0;
-    
-	public MetadataReader(ResultSetMetaData metadata, String delimiter) {
-		this.source = metadata;
-		this.delimiter = delimiter;
-	}
-	
-	@Override
-	protected String nextLine() throws IOException {
-		if (firsttime) {
-			this.firsttime = false;
-			return firstLine();
-		}
-		
-		try {
-			int count = this.source.getColumnCount();
-			if (this.currentColumn < count) {
-				this.currentColumn++;
-				return getNextRow();
-			}
-		} catch (SQLException e) {
-			 throw new IOException(e.getMessage());
-		}
-		return null;
-	}
-	
+    int currentColumn = 0;
+
+    public MetadataReader( ResultSetMetaData metadata,
+                           String delimiter ) {
+        this.source = metadata;
+        this.delimiter = delimiter;
+    }
+
+    @Override
+    protected String nextLine() throws IOException {
+        if (firsttime) {
+            this.firsttime = false;
+            return firstLine();
+        }
+
+        try {
+            int count = this.source.getColumnCount();
+            if (this.currentColumn < count) {
+                this.currentColumn++;
+                return getNextRow();
+            }
+        } catch (SQLException e) {
+            throw new IOException(e.getMessage());
+        }
+        return null;
+    }
+
     String firstLine() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("ColumnName").append(delimiter); //$NON-NLS-1$
         sb.append("ColumnType").append(delimiter); //$NON-NLS-1$
         sb.append("ColumnTypeName").append(delimiter); //$NON-NLS-1$
@@ -63,22 +63,22 @@ public class MetadataReader extends StringLineReader {
         sb.append("SchemaName").append(delimiter); //$NON-NLS-1$
         sb.append("CatalogName").append(delimiter); //$NON-NLS-1$
         sb.append("\n"); //$NON-NLS-1$
-        return sb.toString();        
-    }	
-	
-	String getNextRow() throws SQLException {
-		StringBuffer sb = new StringBuffer();
-		
-		sb.append(source.getColumnName(currentColumn)).append(delimiter);
-		sb.append(source.getColumnType(currentColumn)).append(delimiter);
-		sb.append(source.getColumnTypeName(currentColumn)).append(delimiter);
-		sb.append(source.getColumnClassName(currentColumn)).append(delimiter);
-		sb.append(source.isNullable(currentColumn)).append(delimiter);
-		sb.append(source.getTableName(currentColumn)).append(delimiter);
-		sb.append(source.getSchemaName(currentColumn)).append(delimiter);
-		sb.append(source.getCatalogName(currentColumn)).append(delimiter);
-		sb.append("\n"); //$NON-NLS-1$
-		
-		return sb.toString();
-	}	
+        return sb.toString();
+    }
+
+    String getNextRow() throws SQLException {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(source.getColumnName(currentColumn)).append(delimiter);
+        sb.append(source.getColumnType(currentColumn)).append(delimiter);
+        sb.append(source.getColumnTypeName(currentColumn)).append(delimiter);
+        sb.append(source.getColumnClassName(currentColumn)).append(delimiter);
+        sb.append(source.isNullable(currentColumn)).append(delimiter);
+        sb.append(source.getTableName(currentColumn)).append(delimiter);
+        sb.append(source.getSchemaName(currentColumn)).append(delimiter);
+        sb.append(source.getCatalogName(currentColumn)).append(delimiter);
+        sb.append("\n"); //$NON-NLS-1$
+
+        return sb.toString();
+    }
 }

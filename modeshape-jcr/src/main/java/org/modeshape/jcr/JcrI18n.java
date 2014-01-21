@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -124,6 +124,7 @@ public final class JcrI18n {
     public static I18n unableToUnregisterReservedNamespacePrefix;
     public static I18n unableToUnregisterReservedNamespaceUri;
     public static I18n unableToUnregisterPrefixForNamespaceThatIsNotRegistered;
+    public static I18n unableToUnregisterPrefixForNamespaceUsedByNodeType;
 
     public static I18n errorWhileInitializingTheNamespaceRegistry;
     public static I18n errorCleaningUpLocks;
@@ -517,10 +518,14 @@ public final class JcrI18n {
     public static I18n cannotStopJournal;
     public static I18n journalHasNotCompletedReconciliation;
 
+    private JcrI18n() {
+    }
+
     static {
         try {
             I18n.initialize(JcrI18n.class);
         } catch (final Exception err) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(err);
         }
     }

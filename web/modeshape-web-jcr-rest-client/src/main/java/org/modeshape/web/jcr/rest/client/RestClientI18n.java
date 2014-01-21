@@ -53,10 +53,14 @@ public final class RestClientI18n {
     public static I18n getNodeTypesFailedMsg;
     public static I18n getNodeTypeFailedMsg;
 
+    private RestClientI18n() {
+    }
+
     static {
         try {
             I18n.initialize(RestClientI18n.class);
         } catch (Exception e) {
+            // CHECKSTYLE IGNORE check FOR NEXT 1 LINES
             System.err.println(e);
         }
     }
