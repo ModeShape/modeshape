@@ -17,7 +17,6 @@ package org.modeshape.jcr;
 
 import javax.jcr.RepositoryException;
 import org.infinispan.Cache;
-import org.infinispan.loaders.CacheLoaderException;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
@@ -572,9 +571,6 @@ public class BackupService {
                                            repositoryName(),
                                            backupLocation(),
                                            e2.getMessage());
-                } catch (CacheLoaderException e2) {
-                    I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
-                    this.problems.addError(msg, repositoryName(), backupLocation(), e2.getMessage());
                 } catch (ExecutionException e2) {
                     I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
                     this.problems.addError(msg, repositoryName(), backupLocation(), e2.getMessage());

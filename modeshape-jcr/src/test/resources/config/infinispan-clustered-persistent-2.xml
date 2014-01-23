@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
-            xmlns="urn:infinispan:config:5.2">
+            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
+            xmlns="urn:infinispan:config:6.0">
 
     <global>
         <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
@@ -23,17 +23,15 @@
         <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
                      transactionMode="TRANSACTIONAL"
                      lockingMode="PESSIMISTIC"/>
-        <loaders passivation="false"
-                 shared="false"
-                 preload="false">
-            <loader class="org.infinispan.loaders.file.FileCacheStore"
+        <persistence passivation="false">
+            <singleFile
+                    shared="false"
+                    preload="false"
                     fetchPersistentState="true"
-                    purgeOnStartup="true">
-                <properties>
-                    <property name="location" value="target/clustered/repository_2/store"/>
-                </properties>
-            </loader>
-        </loaders>
+                    purgeOnStartup="true"
+                    location="target/clustered/repository_2/store">
+            </singleFile>
+        </persistence>
     </namedCache>
     <namedCache name="binary-data">
         <!-- Configure a synchronous replication cache -->
@@ -44,17 +42,15 @@
         <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
                      transactionMode="TRANSACTIONAL"
                      lockingMode="PESSIMISTIC"/>
-        <loaders passivation="false"
-                 shared="false"
-                 preload="false">
-            <loader class="org.infinispan.loaders.file.FileCacheStore"
+        <persistence passivation="false">
+            <singleFile
+                    shared="false"
+                    preload="false"
                     fetchPersistentState="true"
-                    purgeOnStartup="true">
-                <properties>
-                    <property name="location" value="target/clustered/repository_2/binary"/>
-                </properties>
-            </loader>
-        </loaders>
+                    purgeOnStartup="true"
+                    location="target/clustered/repository_2/binary">
+            </singleFile>
+        </persistence>
     </namedCache>
     <namedCache name="binary-meta-data">
         <!-- Configure a synchronous replication cache -->
@@ -65,16 +61,14 @@
         <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
                      transactionMode="TRANSACTIONAL"
                      lockingMode="PESSIMISTIC"/>
-        <loaders passivation="false"
-                 shared="false"
-                 preload="false">
-            <loader class="org.infinispan.loaders.file.FileCacheStore"
+        <persistence passivation="false">
+            <singleFile
+                    shared="false"
+                    preload="false"
                     fetchPersistentState="true"
-                    purgeOnStartup="true">
-                <properties>
-                    <property name="location" value="target/clustered/repository_2/binary"/>
-                </properties>
-            </loader>
-        </loaders>
+                    purgeOnStartup="true"
+                    location="target/clustered/repository_2/binary">
+            </singleFile>
+        </persistence>
     </namedCache>
 </infinispan>

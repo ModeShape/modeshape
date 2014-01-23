@@ -85,11 +85,7 @@
         -->
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-cachestore-bdbje</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-cachestore-jdbm</artifactId>
+            <artifactId>infinispan-cachestore-leveldb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>

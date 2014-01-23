@@ -17,7 +17,6 @@ package org.infinispan.schematic.internal;
 
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
-import org.infinispan.context.FlagContainer;
 import org.infinispan.schematic.SchematicEntry;
 
 /**
@@ -41,8 +40,9 @@ public class SchematicEntryLookup {
      */
     public static SchematicEntry getSchematicValue( CacheContext cacheContext,
                                                     String key ) {
-        return getSchematicValue(cacheContext, key, true, null);
+        return getSchematicValue(cacheContext, key, true);
     }
+
 
     /**
      * Retrieves a schematic value from the given cache, stored under the given key.
@@ -51,42 +51,11 @@ public class SchematicEntryLookup {
      * @param key key under which the atomic map exists
      * @param createIfAbsent if true, a new atomic map is created if one doesn't exist; otherwise null is returned if the map
      *        didn't exist.
-     * @return an AtomicMap, or null if one did not exist.
-     */
-    public static SchematicEntry getSchematicValue( CacheContext cacheContext,
-                                                    String key,
-                                                    boolean createIfAbsent ) {
-        return getSchematicValue(cacheContext, key, createIfAbsent, null);
-    }
-
-    /**
-     * Retrieves a schematic value from the given cache, stored under the given key.
-     * 
-     * @param cacheContext cache context
-     * @param key key under which the atomic map exists
-     * @param flagContainer a container to pass in per-invocation flags to the underlying cache. May be null if no flags are used.
-     * @return an AtomicMap, or null if one did not exist.
-     */
-    public static SchematicEntry getSchematicValue( CacheContext cacheContext,
-                                                    String key,
-                                                    FlagContainer flagContainer ) {
-        return getSchematicValue(cacheContext, key, true, flagContainer);
-    }
-
-    /**
-     * Retrieves a schematic value from the given cache, stored under the given key.
-     * 
-     * @param cacheContext cache context
-     * @param key key under which the atomic map exists
-     * @param createIfAbsent if true, a new atomic map is created if one doesn't exist; otherwise null is returned if the map
-     *        didn't exist.
-     * @param flagContainer a container to pass in per-invocation flags to the underlying cache. May be null if no flags are used.
      * @return an AtomicMap, or null if one did not exist.
      */
     private static final SchematicEntry getSchematicValue( CacheContext cacheContext,
                                                            String key,
-                                                           boolean createIfAbsent,
-                                                           FlagContainer flagContainer ) {
+                                                           boolean createIfAbsent ) {
         Cache<String, SchematicEntry> cache = cacheContext.getCache();
         SchematicEntry value = cache.get(key);
         if (value == null) {
@@ -94,7 +63,7 @@ public class SchematicEntryLookup {
             else return null;
         }
         SchematicEntryLiteral castValue = (SchematicEntryLiteral)value;
-        return castValue.getProxy(cacheContext, key, flagContainer);
+        return castValue.getProxy(cacheContext, key);
     }
 
     /**
@@ -107,7 +76,7 @@ public class SchematicEntryLookup {
      */
     public static SchematicEntry getReadOnlySchematicValue( CacheContext cacheContext,
                                                             String key ) {
-        SchematicEntry existingValue = getSchematicValue(cacheContext, key, false, null);
+        SchematicEntry existingValue = getSchematicValue(cacheContext, key, false);
         if (existingValue == null) existingValue = new SchematicEntryLiteral(key);
         return new ImmutableSchematicValue(existingValue);
     }

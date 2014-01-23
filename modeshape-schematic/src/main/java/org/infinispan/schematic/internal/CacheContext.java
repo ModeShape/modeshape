@@ -54,7 +54,7 @@ final class CacheContext {
         flags.add(Flag.SKIP_REMOTE_LOOKUP);
         flags.add(Flag.DELTA_WRITE);
         LOGGER.debug("Deltas will be used to serializing changes to documents in '" + cache.getName() + "'.");
-        LOGGER.debug("Passivation? " + config.loaders().passivation());
+        LOGGER.debug("Passivation? " + config.persistence().passivation());
         LOGGER.debug("Eviction? " + config.eviction().strategy());
         LOGGER.debug("Clustering mode? " + config.clustering().cacheMode());
 

@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.infinispan.commons.util.Base64;
 import org.infinispan.schematic.document.Bson.BinaryType;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.DocumentSequence;
@@ -48,7 +49,6 @@ import org.infinispan.schematic.document.NotThreadSafe;
 import org.infinispan.schematic.document.Null;
 import org.infinispan.schematic.document.ParsingException;
 import org.infinispan.schematic.document.ThreadSafe;
-import org.infinispan.util.Base64;
 
 /**
  * A class that reads the <a href="http://www.json.org/">JSON</a> data format and constructs an in-memory <a

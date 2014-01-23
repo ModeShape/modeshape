@@ -8,7 +8,12 @@
    <name>ModeShape Checkstyle Rules</name>
    <description>Contains the definitions for the ModeShape commons code style and conventions</description>
 
-   <!-- 
+
+    <properties>
+        <!-- Instruct the build to use only UTF-8 encoding for source code -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+   <!--
    This module is referenced by ModeShape's parent POM, so it needs to be build before the parent
    or any other module. Therefore, this module cannot reference the parent, and needs to define enough
    to build and deploy the "modeshape-checkstyle" module.

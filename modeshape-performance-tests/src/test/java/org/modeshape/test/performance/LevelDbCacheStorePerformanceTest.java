@@ -15,30 +15,33 @@
  */
 package org.modeshape.test.performance;
 
-import java.io.File;
 import javax.jcr.Node;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.loaders.bdbje.configuration.BdbjeCacheStoreConfigurationBuilder;
+import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfiguration;
+import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfigurationBuilder;
 import org.junit.Test;
 import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
 
-public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest {
+public class LevelDbCacheStorePerformanceTest extends InMemoryPerformanceTest {
 
-    private final File dbDir = new File("target/database");
 
     @Override
     protected void cleanUpFileSystem() {
-        FileUtil.delete(dbDir);
+        FileUtil.delete("target/leveldb");
+        FileUtil.delete("target/leveldbdocuments");
     }
 
     @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        BdbjeCacheStoreConfigurationBuilder builder = new BdbjeCacheStoreConfigurationBuilder(configurationBuilder.loaders());
-        builder.location(dbDir.getAbsolutePath());
+
+        LevelDBStoreConfigurationBuilder builder = new LevelDBStoreConfigurationBuilder(configurationBuilder.persistence());
+        builder.location("target/leveldb/content");
+        builder.expiredLocation("target/leveldb/expired");
+        builder.implementationType(LevelDBStoreConfiguration.ImplementationType.JAVA);
         builder.purgeOnStartup(true);
-        configurationBuilder.loaders().addStore(builder);
+        configurationBuilder.persistence().addStore(builder);
     }
 
     @Performance

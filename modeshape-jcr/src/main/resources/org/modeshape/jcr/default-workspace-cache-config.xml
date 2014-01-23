@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<infinispan
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
-        xmlns="urn:infinispan:config:5.2">
-
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
+            xmlns="urn:infinispan:config:6.0">
     <global>
         <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
     </global>
-    
+
     <!--
       Define the configuration for each workspace cache. This configuration will be used if there is no "namedCache"
       definition for the workspace name. Note that the names of caches following the convention 
@@ -22,14 +20,12 @@
         <eviction maxEntries="10000" strategy="LIRS"/>
 
         <!-- Expire entries after 120 seconds or after 60 seconds of not being used (whichever comes first). -->
-        <expiration lifespan="120000" maxIdle="60000"/>  
-          
+        <expiration lifespan="120000" maxIdle="60000"/>
+
         <!-- Locking nodes in the workspace cache should block for no more than 10 seconds (the ISPN default).
              If your application has high contenion for the same nodes, and you see TimeoutException in the log
              then you may consider increasing this value.
         -->
         <locking lockAcquisitionTimeout="10000"/>
-          
     </default>
-    
 </infinispan>

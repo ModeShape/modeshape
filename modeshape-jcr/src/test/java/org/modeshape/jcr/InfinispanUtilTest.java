@@ -35,9 +35,9 @@ public class InfinispanUtilTest {
     private static DefaultCacheManager cacheManager;
 
     private static Configuration LOCAL;
-    private static Configuration LOCAL_STORE;
+    private static Configuration LOCAL_STORE_SHARED;
     private static Configuration DIST;
-    private static Configuration DIST_STORE;
+    private static Configuration DIST_STORE_SHARED;
     private static Configuration DIST_STORE_UNSHARED;
 
     @BeforeClass
@@ -54,21 +54,21 @@ public class InfinispanUtilTest {
         File dir = new File(System.getProperty("java.io.tmpdir"), "InfinispanLocalBinaryStoreWithPersistenceTest");
         if (dir.exists()) FileUtil.delete(dir);
         dir.mkdirs();
-        configurationBuilder.loaders().shared(true);
-        configurationBuilder.loaders().addFileCacheStore().purgeOnStartup(true).location(dir.getAbsolutePath());
-
+        configurationBuilder.persistence().addSingleFileStore().shared(true).purgeOnStartup(true).location(dir.getAbsolutePath());
         configurationBuilder.clustering().cacheMode(CacheMode.LOCAL);
-        LOCAL_STORE = configurationBuilder.build();
+        LOCAL_STORE_SHARED = configurationBuilder.build();
+
         configurationBuilder.clustering().cacheMode(CacheMode.DIST_SYNC);
-        DIST_STORE = configurationBuilder.build();
-        configurationBuilder.loaders().shared(false);
+        DIST_STORE_SHARED = configurationBuilder.build();
+
+        configurationBuilder.persistence().clearStores().addSingleFileStore().shared(false).purgeOnStartup(true).location(dir.getAbsolutePath());
         DIST_STORE_UNSHARED = configurationBuilder.build();
 
         // define caches
         cacheManager.defineConfiguration("LOCAL", LOCAL);
-        cacheManager.defineConfiguration("LOCAL_STORE", LOCAL_STORE);
+        cacheManager.defineConfiguration("LOCAL_STORE", LOCAL_STORE_SHARED);
         cacheManager.defineConfiguration("DIST", DIST);
-        cacheManager.defineConfiguration("DIST_STORE", DIST_STORE);
+        cacheManager.defineConfiguration("DIST_STORE", DIST_STORE_SHARED);
         cacheManager.defineConfiguration("DIST_STORE_UNSHARED", DIST_STORE_UNSHARED);
         cacheManager.start();
     }

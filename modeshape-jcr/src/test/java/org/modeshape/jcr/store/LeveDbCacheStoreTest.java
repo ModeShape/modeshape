@@ -15,31 +15,26 @@
  */
 package org.modeshape.jcr.store;
 
-import java.io.File;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.loaders.jdbm.configuration.JdbmCacheStoreConfigurationBuilder;
-import org.junit.Ignore;
+import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfiguration;
+import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfigurationBuilder;
 import org.modeshape.common.util.FileUtil;
 
-/**
- * Currently ignored because of the time required to run it.
- */
-@Ignore
-public class JdbmCacheStoreTest extends InMemoryTest {
-
-    private final File dbDir = new File("target/database");
+public class LeveDbCacheStoreTest extends InMemoryTest {
 
     @Override
     protected void cleanUpFileSystem() {
-        FileUtil.delete(dbDir);
+        FileUtil.delete("target/leveldb");
+        FileUtil.delete("target/leveldbdocuments");
     }
 
     @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        JdbmCacheStoreConfigurationBuilder builder = new JdbmCacheStoreConfigurationBuilder(configurationBuilder.loaders());
-        builder.location(dbDir.getAbsolutePath());
-        builder.purgeOnStartup(true);
-        configurationBuilder.loaders().addStore(builder);
+        configurationBuilder.persistence()
+                            .addStore(LevelDBStoreConfigurationBuilder.class)
+                            .location("target/leveldb/content")
+                            .expiredLocation("target/leveldb/expired")
+                            .implementationType(LevelDBStoreConfiguration.ImplementationType.JAVA)
+                            .purgeOnStartup(true);
     }
-
 }

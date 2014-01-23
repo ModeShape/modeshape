@@ -34,15 +34,16 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
+import org.infinispan.configuration.cache.StoreConfiguration;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.infinispan.distexec.mapreduce.Reducer;
-import org.infinispan.loaders.CacheLoader;
-import org.infinispan.loaders.CacheLoaderException;
-import org.infinispan.loaders.CacheLoaderManager;
 import org.infinispan.manager.CacheContainer;
+import org.infinispan.marshall.core.MarshalledEntry;
+import org.infinispan.persistence.manager.PersistenceManager;
+import org.infinispan.persistence.spi.AdvancedCacheLoader;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.modeshape.common.SystemFailureException;
@@ -333,25 +334,17 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
         // todo what about GC thread interruption?
 
         // determine type of cache store
-        CacheLoader cacheLoader = null;
-        boolean cacheLoaderShared = false;
-        CacheLoaderManager cacheLoaderManager = metadataCache.getAdvancedCache()
-                                                             .getComponentRegistry()
-                                                             .getComponent(CacheLoaderManager.class);
-        if (cacheLoaderManager != null) {
-            cacheLoader = cacheLoaderManager.getCacheLoader();
-            cacheLoaderShared = cacheLoaderManager.isShared();
-        }
+        List<StoreConfiguration> storeConfigurations = metadataCache.getCacheConfiguration().persistence().stores();
+        boolean cacheLoaderShared = storeConfigurations != null && !storeConfigurations.isEmpty() && storeConfigurations.get(0).shared();
+        boolean isCoordinator = metadataCache.getCacheManager().isCoordinator();
 
-        if (!metadataCache.getCacheManager().isCoordinator() && cacheLoaderShared) {
+        if (!isCoordinator && cacheLoaderShared) {
             // in this case an other node will care...
             return;
         }
 
-        long minimumAgeInMS = unit.toMillis(minimumAge);
-        Set<Object> processedKeys = new HashSet<Object>();
-        if (metadataCache.getCacheConfiguration().clustering().cacheMode().isDistributed()
-            && metadataCache.getCacheManager().isCoordinator()) {
+        final long minimumAgeInMS = unit.toMillis(minimumAge);
+        if (metadataCache.getCacheConfiguration().clustering().cacheMode().isDistributed() && isCoordinator) {
             // distributed mapper finds unused...
             MapReduceTask<String, Metadata, String, String> task = new MapReduceTask<String, Metadata, String, String>(
                                                                                                                        metadataCache);
@@ -369,6 +362,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
         } else {
             // local / repl cache
             // process entries in memory
+            final Set<Object> processedKeys = new HashSet<Object>();
             for (String key : metadataCache.keySet()) {
                 if (!isMetadataKey(key)) continue;
                 Metadata metadata = metadataCache.get(key);
@@ -382,30 +376,46 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
                     }
                 }
             }
+            //process stored entries
+            PersistenceManager persistenceManager = metadataCache.getAdvancedCache()
+                                                                 .getComponentRegistry()
+                                                                 .getComponent(PersistenceManager.class);
+            if (isCoordinator && persistenceManager != null) {
+                // process cache loader content
+                persistenceManager.processOnAllStores(AdvancedCacheLoader.KeyFilter.LOAD_ALL_FILTER,
+                                                      new AdvancedCacheLoader.CacheLoaderTask<Object, Object>() {
+                                                          @Override
+                                                          public void processEntry( MarshalledEntry<Object, Object> marshalledEntry,
+                                                                                    AdvancedCacheLoader.TaskContext taskContext ) throws InterruptedException {
+                                                              Object key = marshalledEntry.getKey();
+                                                              if (!(key instanceof String)) {
+                                                                  return;
+                                                              }
+                                                              if (!isMetadataKey((String)key)) {
+                                                                  return;
+                                                              }
+                                                              if (processedKeys.contains(key)) {
+                                                                  return;
+                                                              }
+                                                              Metadata metadata = metadataCache.get(key);
+                                                              if (isValueUnused(metadata, minimumAgeInMS)) {
+                                                                  try {
+                                                                      Lock lock = lockFactory.writeLock((String)key);
+                                                                      try {
+                                                                          removeUnusedBinaryValue(metadataCache, blobCache,
+                                                                                                  (String)key);
+                                                                      } finally {
+                                                                          lock.unlock();
+                                                                      }
+                                                                  } catch (BinaryStoreException e) {
+                                                                      throw new RuntimeException(e);
+                                                                  }
+                                                              }
+                                                          }
+                                                      }, false, false);
 
-        }
-        if (metadataCache.getCacheManager().isCoordinator() && cacheLoader != null) {
-            // process cache loader content
-            try {
-                for (Object key : new ArrayList<Object>(cacheLoader.loadAllKeys(processedKeys))) {
-                    if (!(key instanceof String)) continue;
-                    if (!isMetadataKey((String)key)) continue;
-                    Metadata metadata = metadataCache.get(key);
-                    if (isValueUnused(metadata, minimumAgeInMS)) {
-                        InfinispanBinaryStore.Lock lock = lockFactory.writeLock((String)key);
-                        try {
-                            removeUnusedBinaryValue(metadataCache, blobCache, (String)key);
-                        } finally {
-                            lock.unlock();
-                        }
-                    }
-                }
-            } catch (CacheLoaderException cle) {
-                logger.debug("Error during cleanup of cache loader", cle);
-                throw new BinaryStoreException(JcrI18n.errorDuringGarbageCollection.text(cle.getMessage()));
             }
         }
-
     }
 
     static boolean isValueUnused( Metadata metadata,
@@ -562,11 +572,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
                 }
 
             }
-        } catch (CacheLoaderException ex) {
-            throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
-        } catch (InterruptedException ex) {
-            throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
-        } catch (ExecutionException ex) {
+        }  catch (InterruptedException | ExecutionException ex) {
             throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
         }
 

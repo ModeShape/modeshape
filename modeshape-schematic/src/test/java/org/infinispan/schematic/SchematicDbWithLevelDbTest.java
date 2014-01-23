@@ -18,7 +18,8 @@ package org.infinispan.schematic;
 import java.io.File;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.loaders.bdbje.configuration.BdbjeCacheStoreConfigurationBuilder;
+import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfiguration;
+import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfigurationBuilder;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
@@ -26,13 +27,13 @@ import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
+public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
 
     @Override
     @Before
     public void beforeTest() {
-        File dbDir = new File("target/bdb");
-        TestUtil.delete(dbDir);
+        TestUtil.delete(new File("target/leveldb"));
+        TestUtil.delete(new File("target/leveldbdocuments"));
 
         GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
         globalConfigurationBuilder.transport().transport(null).serialization().addAdvancedExternalizer(Schematic.externalizers());
@@ -41,9 +42,11 @@ public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
         configurationBuilder.invocationBatching().enable().transaction()
         // .lockingMode(LockingMode.PESSIMISTIC)
                             .transactionManagerLookup(new DummyTransactionManagerLookup());
-        configurationBuilder.loaders()
-                            .addStore(BdbjeCacheStoreConfigurationBuilder.class)
-                            .location(dbDir.getAbsolutePath())
+        configurationBuilder.persistence()
+                            .addStore(LevelDBStoreConfigurationBuilder.class)
+                            .implementationType(LevelDBStoreConfiguration.ImplementationType.JAVA)
+                            .location("target/leveldb/store")
+                            .expiredLocation("target/leveldb/expired")
                             .purgeOnStartup(true);
 
         cm = TestCacheManagerFactory.createClusteredCacheManager(globalConfigurationBuilder, configurationBuilder);

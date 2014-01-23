@@ -23,7 +23,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.infinispan.Cache;
-import org.infinispan.context.FlagContainer;
+import org.infinispan.commons.util.concurrent.FutureListener;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.infinispan.schematic.SchemaLibrary;
@@ -35,8 +36,6 @@ import org.infinispan.schematic.SchematicEntry.FieldName;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.JsonSchema;
-import org.infinispan.util.concurrent.FutureListener;
-import org.infinispan.util.concurrent.NotifyingFuture;
 
 public class CacheSchematicDb implements SchematicDb {
 
@@ -207,8 +206,7 @@ public class CacheSchematicDb implements SchematicDb {
                                     SchematicEntry entry ) {
         if (entry == null) return null;
         SchematicEntryLiteral literal = (SchematicEntryLiteral)entry;
-        FlagContainer flagContainer = null;
-        return literal.getProxy(context, key, flagContainer);
+        return literal.getProxy(context, key);
     }
 
     protected SchematicEntry removedResult( String key,
