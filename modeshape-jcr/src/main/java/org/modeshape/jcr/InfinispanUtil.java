@@ -15,9 +15,7 @@
  */
 package org.modeshape.jcr;
 
-import java.io.Serializable;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -27,12 +25,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.infinispan.Cache;
+import org.infinispan.configuration.cache.StoreConfiguration;
 import org.infinispan.distexec.DefaultExecutorService;
 import org.infinispan.distexec.DistributedCallable;
 import org.infinispan.distexec.DistributedExecutorService;
-import org.infinispan.loaders.CacheLoader;
-import org.infinispan.loaders.CacheLoaderException;
-import org.infinispan.loaders.CacheLoaderManager;
+import org.infinispan.tasks.GlobalKeySetTask;
 import org.modeshape.common.logging.Logger;
 
 /**
@@ -74,7 +71,8 @@ public class InfinispanUtil {
         if (location == null) location = Location.LOCALLY;
 
         DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
-        boolean shared = cache.getCacheConfiguration().loaders().shared();
+        List<StoreConfiguration> stores = cache.getCacheConfiguration().persistence().stores();
+        boolean shared = (stores != null) && !stores.isEmpty() && stores.get(0).shared();
         T result = null;
         if (!shared) {
             // store is not shared so every node must return key list of the store
@@ -130,33 +128,14 @@ public class InfinispanUtil {
      * @param <V> the type of value
      * @param cache the cache
      * @return the sequence that can be used to obtain the keys; never null
-     * @throws CacheLoaderException if there is an error within the cache loader
      * @throws InterruptedException if the process is interrupted
      * @throws ExecutionException if there is an error while getting all keys
      */
     public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache )
-        throws CacheLoaderException, InterruptedException, ExecutionException {
+        throws InterruptedException, ExecutionException {
         LOGGER.debug("getAllKeys of {0}", cache.getName());
-
-        GetAllKeys<K, V> task = new GetAllKeys<K, V>();
-        KeyMerger<K> merger = new KeyMerger<K>();
-        Set<K> cacheKeys = execute(cache, Location.EVERYWHERE, task, merger);
+        Set<K> cacheKeys = GlobalKeySetTask.getGlobalKeySet(cache);
         return new IteratorSequence<K>(cacheKeys.iterator());
-    }
-
-    /**
-     * Since keys can appear more than one time e.g. multiple owners in a distributed cache, they all must be merged into a Set.
-     * 
-     * @param <K> the type of key
-     */
-    protected static class KeyMerger<K> implements Combiner<Set<K>> {
-        @Override
-        public Set<K> combine( Set<K> priorResult,
-                               Set<K> newResult ) {
-            if (priorResult == null) priorResult = new HashSet<K>();
-            if (newResult != null) priorResult.addAll(newResult);
-            return priorResult;
-        }
     }
 
     /**
@@ -193,68 +172,6 @@ public class InfinispanUtil {
         @Override
         public boolean hasNext() {
             return iterator.hasNext();
-        }
-    }
-
-    /**
-     * A {@link DistributedCallable} implementation that returns the set of keys in an Infinispan cache. The keys inside cache
-     * store are ignored.
-     * 
-     * @param <K> the type of key
-     * @param <V> the type of value
-     */
-    protected static final class GetAllMemoryKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private Cache<K, V> cache;
-
-        @Override
-        public void setEnvironment( Cache<K, V> cache,
-                                    Set<K> inputKeys ) {
-            this.cache = cache;
-        }
-
-        @Override
-        public Set<K> call() throws Exception {
-            return cache.keySet();
-        }
-    }
-
-    /**
-     * A {@link DistributedCallable} implementation that returns the set of keys in an Infinispan cache which are stored in
-     * memory.
-     * 
-     * @param <K> the type of key
-     * @param <V> the type of value
-     */
-    protected static final class GetAllKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private Cache<K, V> cache;
-
-        @Override
-        public void setEnvironment( Cache<K, V> cache,
-                                    Set<K> inputKeys ) {
-            this.cache = cache;
-        }
-
-        @Override
-        @SuppressWarnings( "unchecked" )
-        public Set<K> call() throws Exception {
-            CacheLoaderManager cacheLoaderManager = cache.getAdvancedCache()
-                                                         .getComponentRegistry()
-                                                         .getComponent(CacheLoaderManager.class);
-            if (cacheLoaderManager == null) {
-                return cache.keySet();
-            }
-            CacheLoader cacheLoader = cacheLoaderManager.getCacheLoader();
-            if (cacheLoader == null) {
-                return cache.keySet();
-            }
-            // load only these keys, which are not already in memory
-            Set<K> cacheKeys = new HashSet<K>(cache.keySet());
-            cacheKeys.addAll((Set<K>)cacheLoader.loadAllKeys((Set<Object>)cacheKeys));
-            return cacheKeys;
         }
     }
 }

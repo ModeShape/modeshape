@@ -82,7 +82,7 @@
 			    Build the distribution before running the integration tests, 
 			    as some of the integration tests rely upon the distributions
 			  -->
-				<module>integration</module>
+				<!--<module>integration</module>-->
 			</modules>
 		</profile>
 		
@@ -109,7 +109,7 @@
             <modules>
                 <module>modeshape-client</module>
                 <module>demos</module>
-                <module>integration</module>
+                <!--<module>integration</module>-->
             </modules>
         </profile>
 		

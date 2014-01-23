@@ -21,9 +21,7 @@ import javax.transaction.TransactionManager;
 import org.infinispan.AdvancedCache;
 import org.infinispan.batch.AutoBatchSupport;
 import org.infinispan.container.entries.CacheEntry;
-import org.infinispan.context.Flag;
-import org.infinispan.context.FlagContainer;
-import org.infinispan.marshall.MarshalledValue;
+import org.infinispan.marshall.core.MarshalledValue;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
@@ -46,7 +44,7 @@ import org.infinispan.util.logging.LogFactory;
  * follow software transactional memory approaches to dealing with concurrency. <br />
  * <br />
  * Implementations of this class are rarely created on their own;
- * {@link SchematicEntryLiteral#getProxy(CacheContext, String, FlagContainer)} should be used to retrieve an instance of this
+ * {@link SchematicEntryLiteral#getProxy(CacheContext, String)} should be used to retrieve an instance of this
  * proxy. <br />
  * <br />
  * Typically proxies are only created by the {@link SchematicEntryLookup} helper, and would not be created by end-user code
@@ -61,17 +59,14 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
     private static final boolean TRACE = LOGGER.isTraceEnabled();
 
     private final CacheContext context;
-    private final FlagContainer flagContainer;
     private final String key;
     private volatile boolean startedReadingValue = false;
 
     SchematicEntryProxy( CacheContext context,
-                         String key,
-                         FlagContainer flagContainer ) {
+                         String key ) {
         this.key = key;
         this.context = context;
         this.batchContainer = context.getCacheForWriting().getBatchContainer();
-        this.flagContainer = flagContainer;
     }
 
     /**
@@ -145,17 +140,6 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         if (lockedAndCopied) {
             return getDeltaValueForRead();
         }
-        // Otherwise, acquire the write lock ...
-        boolean suppressLocks = flagContainer != null && flagContainer.hasFlag(Flag.SKIP_LOCKING);
-        if (!suppressLocks && flagContainer != null) flagContainer.setFlags(Flag.FORCE_WRITE_LOCK);
-
-        if (TRACE) {
-            if (suppressLocks) {
-                LOGGER.trace("Skip locking flag used.  Skipping locking.");
-            } else {
-                LOGGER.trace("Forcing write lock even for reads");
-            }
-        }
 
         // We need to lock the entry **BEFORE** we copy the value (and clone its document). Without this explicit lock,
         // it's possible for multiple concurrent threads to both make copies of the same value, each change them to something
@@ -183,10 +167,6 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
             LOGGER.trace("Created copy of " + key + ": " + copy.data());
         }
 
-        // reinstate the flag
-        if (suppressLocks) {
-            flagContainer.setFlags(Flag.SKIP_LOCKING);
-        }
         AdvancedCache<String, SchematicEntry> cache = context.getCacheForWriting();
         cache.put(key, copy);
         return copy;

@@ -23,8 +23,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.infinispan.Cache;
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
-import org.infinispan.context.FlagContainer;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
@@ -38,7 +38,6 @@ import org.infinispan.schematic.internal.document.BasicDocument;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.document.Paths;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
 import org.infinispan.util.logging.Log;
 import org.infinispan.util.logging.LogFactory;
 
@@ -143,18 +142,17 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     /**
      * Builds a thread-safe proxy for this instance so that concurrent reads are isolated from writes.
      * 
+     *
      * @param context the cache context
      * @param mapKey the key
-     * @param flagContainer the flag container
      * @return an instance of {@link SchematicEntryProxy}
      */
     public SchematicEntry getProxy( CacheContext context,
-                                    String mapKey,
-                                    FlagContainer flagContainer ) {
+                                    String mapKey ) {
         // construct the proxy lazily
         if (proxy == null) { // DCL is OK here since proxy is volatile (and we live in a post-JDK 5 world)
             synchronized (this) {
-                if (proxy == null) proxy = new SchematicEntryProxy(context, mapKey, flagContainer);
+                if (proxy == null) proxy = new SchematicEntryProxy(context, mapKey);
             }
         }
         return proxy;

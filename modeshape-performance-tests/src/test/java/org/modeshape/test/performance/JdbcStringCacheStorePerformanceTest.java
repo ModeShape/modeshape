@@ -17,7 +17,7 @@ package org.modeshape.test.performance;
 
 import java.io.File;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.loaders.jdbc.configuration.JdbcStringBasedCacheStoreConfigurationBuilder;
+import org.infinispan.persistence.jdbc.configuration.JdbcStringBasedStoreConfigurationBuilder;
 
 public class JdbcStringCacheStorePerformanceTest extends InMemoryPerformanceTest {
 
@@ -31,8 +31,7 @@ public class JdbcStringCacheStorePerformanceTest extends InMemoryPerformanceTest
 
     @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        JdbcStringBasedCacheStoreConfigurationBuilder builder = new JdbcStringBasedCacheStoreConfigurationBuilder(
-                                                                                                                  configurationBuilder.loaders());
+        JdbcStringBasedStoreConfigurationBuilder builder = new JdbcStringBasedStoreConfigurationBuilder(configurationBuilder.persistence());
         builder.purgeOnStartup(true);
         builder.table()
                .createOnStart(true)
@@ -47,6 +46,6 @@ public class JdbcStringCacheStorePerformanceTest extends InMemoryPerformanceTest
                .connectionUrl("jdbc:h2:file:" + dbDir.getAbsolutePath() + "/string_based_db;DB_CLOSE_DELAY=1")
                .driverClass("org.h2.Driver")
                .username("sa");
-        configurationBuilder.loaders().addStore(builder);
+        configurationBuilder.persistence().addStore(builder);
     }
 }

@@ -16,12 +16,11 @@
 package org.modeshape.jcr.store;
 
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.loaders.jdbc.configuration.JdbcBinaryCacheStoreConfigurationBuilder;
+import org.infinispan.persistence.jdbc.configuration.JdbcStringBasedStoreConfigurationBuilder;
 import org.junit.Ignore;
 
 /**
- * Currently ignored because of the time required to run it. //TODO author=Horia Chiorean date=9/12/12 description=If they are
- * ever enabled, c3p0 needs to be added as a test dependency
+ * Currently ignored because of the time required to run it.
  */
 @Ignore
 public class JdbcStringCacheStoreTest extends InMemoryTest {
@@ -36,8 +35,7 @@ public class JdbcStringCacheStoreTest extends InMemoryTest {
 
     @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        JdbcBinaryCacheStoreConfigurationBuilder builder = new JdbcBinaryCacheStoreConfigurationBuilder(
-                                                                                                        configurationBuilder.loaders());
+        JdbcStringBasedStoreConfigurationBuilder builder = new JdbcStringBasedStoreConfigurationBuilder(configurationBuilder.persistence());
         builder.purgeOnStartup(true);
         builder.table()
                .createOnStart(true)
@@ -52,7 +50,7 @@ public class JdbcStringCacheStoreTest extends InMemoryTest {
                .connectionUrl(dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1")
                .driverClass(dataSourceConfig.getDriverClassName())
                .username(dataSourceConfig.getUsername());
-        configurationBuilder.loaders().addStore(builder);
+        configurationBuilder.persistence().addStore(builder);
     }
 
 }

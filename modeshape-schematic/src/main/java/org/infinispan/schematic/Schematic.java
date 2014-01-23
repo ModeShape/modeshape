@@ -26,11 +26,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.infinispan.Cache;
+import org.infinispan.commons.marshall.AbstractExternalizer;
+import org.infinispan.commons.marshall.AdvancedExternalizer;
+import org.infinispan.commons.util.Util;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.marshall.AbstractExternalizer;
-import org.infinispan.marshall.AdvancedExternalizer;
-import org.infinispan.marshall.Externalizer;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Changes;
@@ -69,7 +69,6 @@ import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.document.ObservableDocumentEditor;
 import org.infinispan.schematic.internal.document.Paths;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
 
 public class Schematic extends DocumentFactory {
 
@@ -302,14 +301,9 @@ public class Schematic extends DocumentFactory {
     }
 
     /**
-     * Get the set of {@link Externalizer} implementations that are used by Schematic. These need to be registered with the
-     * {@link GlobalConfiguration}:
-     * 
-     * <pre>
-     * GlobalConfiguration config = new GlobalConfiguration();
-     * config = config.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
-     * </pre>
-     * 
+     * Get the set of {@link org.infinispan.commons.marshall.Externalizer} implementations that are used by Schematic.
+     * These need to be registered with the {@link GlobalConfiguration}:
+     *
      * @return the list of externalizer
      */
     @SuppressWarnings( "unchecked" )
@@ -318,8 +312,8 @@ public class Schematic extends DocumentFactory {
     }
 
     /**
-     * Get the complete set of {@link AdvancedExternalizer} implementations. Note that this does not include {@link Externalizer}
-     * implementations that are not {@link AdvancedExternalizer}s.
+     * Get the complete set of {@link AdvancedExternalizer} implementations. Note that this does not include
+     * {@link org.infinispan.commons.marshall.Externalizer} implementations that are not {@link AdvancedExternalizer}s.
      * 
      * @return immutable set of {@link AdvancedExternalizer} implementations.
      */

@@ -249,9 +249,9 @@
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
 
-        <infinispan.version>5.2.7.Final</infinispan.version>
+        <infinispan.version>6.0.1.Final</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.2.10.Final</jgroups.version>
+        <jgroups.version>3.4.1.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <jboss.logging.version>3.1.2.GA</jboss.logging.version>
 
@@ -1228,16 +1228,6 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${infinispan.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>woodstox-core-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>stax2-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -1258,22 +1248,17 @@
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-bdbje</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-jdbm</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-jdbc</artifactId>
                 <version>${infinispan.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-cachestore-leveldb</artifactId>
+                <version>${infinispan.version}</version>
+                <scope>test</scope>
+            </dependency>
+
             <!--Required by infinispan-cachestore-jdbc -->
             <dependency>
                 <groupId>c3p0</groupId>
@@ -1292,18 +1277,6 @@
                         <artifactId>hibernate-search-analyzers</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-infinispan</artifactId>
-                <version>${hibernate.search.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-infinispan</artifactId>
-                <version>${hibernate.search.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
             </dependency>
 
             <dependency>

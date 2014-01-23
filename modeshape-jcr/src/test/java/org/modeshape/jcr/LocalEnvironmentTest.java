@@ -49,17 +49,17 @@ public class LocalEnvironmentTest extends AbstractTransactionalTest {
                                            .transactionMode(TransactionMode.TRANSACTIONAL)
                                            .autoCommit(true)
                                            .lockingMode(LockingMode.PESSIMISTIC)
-                                           .loaders()
+                                           .persistence()
                                            .passivation(false)
+                                           .addSingleFileStore()
                                            .shared(false)
                                            .preload(false)
-                                           .addFileCacheStore()
                                            .async()
                                            .threadPoolSize(10)
                                            .enabled(true)
                                            .fetchPersistentState(false)
                                            .purgeOnStartup(false)
-                                           .addProperty("location", pathToStorage)
+                                           .location(pathToStorage)
                                            .build();
 
         LocalEnvironment environment = new LocalEnvironment();

@@ -50,7 +50,7 @@
 
     <properties>
         <jcr.version>2.0</jcr.version>
-        <infinispan.version>5.2.7.Final</infinispan.version>
+        <infinispan.version>6.0.1.Final</infinispan.version>
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.17.SP2</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
@@ -61,7 +61,7 @@
         <tika.version>1.3</tika.version>
 
         <!--//TODO author=Horia Chiorean date=1/8/14 description=The following version props should not be here-->
-        <jgroups.version>3.2.10.Final</jgroups.version>
+        <jgroups.version>3.4.1.Final</jgroups.version>
         <jboss.logging.version>3.1.2.GA</jboss.logging.version>
         <hibernate.search.version>4.3.0.Final</hibernate.search.version>
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
@@ -323,7 +323,7 @@
             -->
             <dependency>
                 <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-bdbje</artifactId>
+                <artifactId>infinispan-cachestore-leveldb</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
             <dependency>
@@ -619,11 +619,6 @@
                         <artifactId>hibernate-search-analyzers</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-infinispan</artifactId>
-                <version>${hibernate.search.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>

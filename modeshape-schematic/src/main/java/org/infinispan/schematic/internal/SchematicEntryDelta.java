@@ -23,11 +23,11 @@ import java.util.List;
 import java.util.Set;
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.internal.delta.Operation;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
 import org.infinispan.util.logging.Log;
 import org.infinispan.util.logging.LogFactory;
 

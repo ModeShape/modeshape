@@ -19,10 +19,10 @@ import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import org.infinispan.commons.util.concurrent.FutureListener;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 import org.infinispan.schematic.DocumentLibrary;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.util.concurrent.FutureListener;
-import org.infinispan.util.concurrent.NotifyingFuture;
 
 public class InMemoryDocumentLibrary implements DocumentLibrary, Serializable {
 

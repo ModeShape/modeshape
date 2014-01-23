@@ -19,10 +19,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
 
 /**
  * A {@link Bson.Type#JAVASCRIPT JavaScript code} value for use within a {@link Document BSON Object}.
@@ -108,7 +108,7 @@ public class Code {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends Code>> getTypeClasses() {
-            return Util.<Class<? extends Code>>asSet(Code.class, CodeWithScope.class);
+            return Util.asSet(Code.class, CodeWithScope.class);
         }
     }
 

@@ -24,12 +24,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Util;
 
 public class Paths {
 
@@ -481,7 +481,7 @@ public class Paths {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends Path>> getTypeClasses() {
-            return Util.<Class<? extends Path>>asSet(EmptyPath.class, SinglePath.class, MultiSegmentPath.class);
+            return Util.asSet(EmptyPath.class, SinglePath.class, MultiSegmentPath.class);
         }
     }
 }

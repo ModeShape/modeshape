@@ -19,12 +19,12 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.SerializeWith;
+import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.commons.util.Base64;
+import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.BsonUtils;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.Base64;
-import org.infinispan.util.Util;
 
 /**
  * A {@link Bson.Type#OBJECTID ObjectId} value for use within a {@link Document BSON object}, and are 12-byte binary values
