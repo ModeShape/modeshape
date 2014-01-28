@@ -22,11 +22,12 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.query.InvalidQueryException;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import org.codehaus.jettison.json.JSONException;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.modeshape.web.jcr.NoSuchRepositoryException;
 import org.modeshape.web.jcr.rest.handler.AbstractHandler;
 import org.modeshape.web.jcr.rest.model.RestException;
@@ -35,13 +36,12 @@ import org.modeshape.web.jcr.rest.model.RestException;
  * {@link ExceptionMapper} implementation which handles all thrown {@link Throwable} instances for the ModeShape REST service.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
- * @param <T> a {@link Throwable} instance
  */
 @Provider
-public class ModeShapeExceptionMapper<T extends Throwable> implements ExceptionMapper<T> {
+public class ModeShapeExceptionMapper implements ExceptionMapper<Throwable> {
 
     @Override
-    public Response toResponse( T throwable ) {
+    public Response toResponse( Throwable throwable ) {
         //always cleanup a potential active session is case of an exception
         AbstractHandler.cleanupActiveSession();
 
@@ -51,6 +51,10 @@ public class ModeShapeExceptionMapper<T extends Throwable> implements ExceptionM
             throwable instanceof NoSuchRepositoryException ||
             throwable instanceof NoSuchNodeTypeException) {
             return exceptionResponse(throwable, Status.NOT_FOUND);
+        }
+
+        if (throwable instanceof NotAuthorizedException) {
+            return exceptionResponse(throwable, Status.FORBIDDEN);
         }
 
         if (throwable instanceof JSONException ||

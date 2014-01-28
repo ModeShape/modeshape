@@ -62,7 +62,7 @@
         </dependency>
         <dependency>
             <groupId>javax.jms</groupId>
-            <artifactId>jms-api</artifactId>
+            <artifactId>javax.jms-api</artifactId>
         </dependency>
 
         <!-- MIME-type detection. This can be excluded in applications and components that depend on ModeShape
@@ -151,11 +151,11 @@
         -->
         <dependency>
             <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.security.jacc</groupId>
-            <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+            <artifactId>jboss-jacc-api_1.5_spec</artifactId>
         </dependency>
 
         <!--

@@ -41,7 +41,6 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.jboss.metric.ModelMetrics;
 import org.modeshape.jboss.metric.MonitorService;
 import org.modeshape.jboss.service.BinaryStorage;
@@ -267,12 +266,12 @@ public class AddRepository extends AbstractAddStepHandler {
             ContextNames.BindInfo aliasInfo = ContextNames.bindInfoFor(jndiAlias);
             ServiceName alias = aliasInfo.getBinderServiceName();
             binderBuilder.addAliases(alias);
-            Logger.getLogger(getClass()).debug("Binding repository '{0}' to JNDI name '{1}' and '{2}'",
+            LOG.debugv("Binding repository {0} to JNDI name {1} and {2}",
                                                repositoryName,
                                                bindInfo.getAbsoluteJndiName(),
                                                aliasInfo.getAbsoluteJndiName());
         } else {
-            Logger.getLogger(getClass()).debug("Binding repository '{0}' to JNDI name '{1}'",
+            LOG.debugv("Binding repository {0} to JNDI name {1}",
                                                repositoryName,
                                                bindInfo.getAbsoluteJndiName());
         }
@@ -322,6 +321,12 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(indexBuilder.install());
         newControllers.add(binaryStorageBuilder.install());
         newControllers.add(monitorBuilder.install());
+    }
+
+    @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        //always require the performRuntime method to be called
+        return true;
     }
 
     private void parseClustering( String clusterChannelName,

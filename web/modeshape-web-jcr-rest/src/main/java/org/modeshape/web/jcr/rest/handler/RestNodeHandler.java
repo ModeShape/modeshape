@@ -22,10 +22,10 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.model.RestItem;
 
@@ -104,13 +104,13 @@ public final class RestNodeHandler extends ItemHandler {
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param id the node identifier
      * @throws NotFoundException if no item exists at {@code path}
-     * @throws UnauthorizedException if the user does not have the access required to delete the node with this id.
+     * @throws javax.ws.rs.NotAuthorizedException if the user does not have the access required to delete the node with this id.
      * @throws RepositoryException if any other error occurs
      */
     public void deleteNodeWithId( HttpServletRequest request,
                                   String rawRepositoryName,
                                   String rawWorkspaceName,
-                                  String id ) throws NotFoundException, UnauthorizedException, RepositoryException {
+                                  String id ) throws NotFoundException, NotAuthorizedException, RepositoryException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;

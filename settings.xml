@@ -39,11 +39,11 @@
                 </pluginRepository>
             </pluginRepositories>
         </profile>
-
+        <!--
         <profile>
             <id>jboss-eap-repository</id>
             <repositories>
-                <!--This is a non-standard repository, where EAP/AS components artifacts are located-->
+                This is a non-standard repository, where EAP/AS components artifacts are located
                 <repository>
                     <id>jboss-eap-techpreview</id>
                     <name>JBoss.org Public EAP Repository</name>
@@ -60,10 +60,11 @@
                 </repository>
             </repositories>
         </profile>
+        -->
     </profiles>
 
     <activeProfiles>
         <activeProfile>jboss-public-repository</activeProfile>
-        <activeProfile>jboss-eap-repository</activeProfile>
+        <!--<activeProfile>jboss-eap-repository</activeProfile>-->
     </activeProfiles>
 </settings>

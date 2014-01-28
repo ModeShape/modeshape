@@ -25,9 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.net.Authenticator;
 import java.net.HttpURLConnection;
-import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -38,14 +36,12 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.handler.AbstractHandler;
-import sun.net.www.protocol.http.AuthCacheImpl;
-import sun.net.www.protocol.http.AuthCacheValue;
 
 /**
  * Test of the ModeShape JCR REST resource. Note that this test case uses a very low-level API to construct requests and
@@ -76,23 +72,6 @@ public class JcrResourcesTest {
 
     private HttpURLConnection connection;
 
-    @Before
-    public void beforeEach() {
-        setDefaultAuthenticator("dnauser", "password");
-    }
-
-    private void setDefaultAuthenticator( final String username,
-                                          final String password ) {
-        // the next line is a workaround for: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6626700
-        AuthCacheValue.setAuthCache(new AuthCacheImpl());
-        Authenticator.setDefault(new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(username, password.toCharArray());
-            }
-        });
-    }
-
     @After
     public void afterEach() throws Exception {
         doDelete(itemsUrl(TEST_NODE)).submit();
@@ -103,14 +82,12 @@ public class JcrResourcesTest {
 
     @Test
     public void shouldNotServeContentToUnauthorizedUser() throws Exception {
-        setDefaultAuthenticator("dnauser", "invalidpassword");
-        doGet().isUnauthorized();
+        doGet("dnauser", "invalidpassword").isUnauthorized();
     }
 
     @Test
     public void shouldNotServeContentToUserWithoutConnectRole() throws Exception {
-        setDefaultAuthenticator("unauthorizeduser", "password");
-        doGet().isUnauthorized();
+        doGet("unauthorizeduser", "password").isUnauthorized();
     }
 
     @Test
@@ -530,11 +507,15 @@ public class JcrResourcesTest {
     }
 
     protected Response doGet() throws Exception {
-        return new Response(newConnection("GET", null));
+        return new Response(newDefaultConnection("GET", null));
+    }
+
+    protected Response doGet(String username, String password) throws Exception {
+        return new Response(newConnection("GET", null, MediaType.APPLICATION_JSON, username, password));
     }
 
     protected Response doGet( String url ) throws Exception {
-        return new Response(newConnection("GET", null, url));
+        return new Response(newDefaultConnection("GET", null, url));
     }
 
     protected Response doPost( String payloadFile,
@@ -554,7 +535,7 @@ public class JcrResourcesTest {
 
     protected Response doPost( JSONObject request,
                                String url ) throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, url);
+        HttpURLConnection connection = newDefaultConnection("POST", MediaType.APPLICATION_JSON, url);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(byteArrayOutputStream);
         request.write(writer);
@@ -596,7 +577,7 @@ public class JcrResourcesTest {
     protected Response postStream( InputStream is,
                                    String url,
                                    String mediaType ) throws Exception {
-        HttpURLConnection connection = newConnection("POST", mediaType, url);
+        HttpURLConnection connection = newDefaultConnection("POST", mediaType, url);
         if (is != null) {
             OutputStream outputStream = connection.getOutputStream();
             outputStream.write(IoUtil.readBytes(is));
@@ -608,7 +589,7 @@ public class JcrResourcesTest {
     protected Response postStreamForTextResponse( InputStream is,
                                                   String url,
                                                   String mediaType ) throws Exception {
-        HttpURLConnection connection = newTextConnection("POST", mediaType, url);
+        HttpURLConnection connection = newConnection("POST", mediaType, "dnauser", "password", MediaType.TEXT_PLAIN, url);
         if (is != null) {
             OutputStream outputStream = connection.getOutputStream();
             outputStream.write(IoUtil.readBytes(is));
@@ -627,7 +608,7 @@ public class JcrResourcesTest {
         String boundary = Long.toHexString(System.currentTimeMillis()); // random
         String lineSeparator = "\r\n";
 
-        HttpURLConnection connection = newConnection("POST", "multipart/form-data; boundary=" + boundary, url);
+        HttpURLConnection connection = newDefaultConnection("POST", "multipart/form-data; boundary=" + boundary, url);
         PrintWriter writer = null;
         try {
             OutputStream output = connection.getOutputStream();
@@ -663,7 +644,7 @@ public class JcrResourcesTest {
 
     protected Response doPut( String payloadFile,
                               String url ) throws Exception {
-        HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, url);
+        HttpURLConnection connection = newDefaultConnection("PUT", MediaType.APPLICATION_JSON, url);
         if (payloadFile != null) {
             String fileContent = IoUtil.read(fileStream(payloadFile));
             connection.getOutputStream().write(fileContent.getBytes());
@@ -673,14 +654,14 @@ public class JcrResourcesTest {
 
     protected Response doPut( InputStream is,
                               String url ) throws Exception {
-        HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, url);
+        HttpURLConnection connection = newDefaultConnection("PUT", MediaType.APPLICATION_JSON, url);
         connection.getOutputStream().write(IoUtil.readBytes(is));
         return new Response(connection);
     }
 
     protected Response doPut( JSONObject request,
                               String url ) throws Exception {
-        HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, url);
+        HttpURLConnection connection = newDefaultConnection("PUT", MediaType.APPLICATION_JSON, url);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(byteArrayOutputStream);
         request.write(writer);
@@ -691,12 +672,12 @@ public class JcrResourcesTest {
     }
 
     protected Response doDelete( String url ) throws Exception {
-        return new Response(newConnection("DELETE", null, url));
+        return new Response(newDefaultConnection("DELETE", null, url));
     }
 
     protected Response doDelete( String payloadFile,
                                  String url ) throws Exception {
-        HttpURLConnection connection = newConnection("DELETE", null, url);
+        HttpURLConnection connection = newDefaultConnection("DELETE", null, url);
         if (payloadFile != null) {
             String fileContent = IoUtil.read(fileStream(payloadFile));
             connection.getOutputStream().write(fileContent.getBytes());
@@ -704,8 +685,17 @@ public class JcrResourcesTest {
         return new Response(connection);
     }
 
-    private HttpURLConnection newConnection( String method,
+    private HttpURLConnection newDefaultConnection( String method,
+                                                    String contentType,
+                                                    String... pathSegments ) throws IOException {
+        return newConnection(method, contentType, "dnauser", "password", MediaType.APPLICATION_JSON, pathSegments);
+    }
+
+     private HttpURLConnection newConnection( String method,
                                              String contentType,
+                                             String username,
+                                             String password,
+                                             String accepts,
                                              String... pathSegments ) throws IOException {
         if (connection != null) {
             connection.disconnect();
@@ -722,29 +712,10 @@ public class JcrResourcesTest {
         if (contentType != null) {
             connection.setRequestProperty("Content-Type", contentType);
         }
-        connection.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
-        return connection;
-    }
-
-    private HttpURLConnection newTextConnection( String method,
-                                                 String contentType,
-                                                 String... pathSegments ) throws IOException {
-        if (connection != null) {
-            connection.disconnect();
-        }
-
-        String serviceUrl = getServerUrl() + getServerContext();
-        String url = RestHelper.urlFrom(serviceUrl, pathSegments);
-
-        URL postUrl = new URL(url);
-        connection = (HttpURLConnection)postUrl.openConnection();
-
-        connection.setDoOutput(true);
-        connection.setRequestMethod(method);
-        if (contentType != null) {
-            connection.setRequestProperty("Content-Type", contentType);
-        }
-        connection.setRequestProperty("Accept", MediaType.TEXT_PLAIN);
+        connection.setRequestProperty("Accept", accepts);
+        String userPassword = username + ":" + password;
+        String encoding = Base64.encodeBytes(userPassword.getBytes());
+        connection.setRequestProperty("Authorization", "Basic " + encoding);
         return connection;
     }
 

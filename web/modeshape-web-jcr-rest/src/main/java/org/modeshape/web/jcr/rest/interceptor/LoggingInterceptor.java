@@ -19,7 +19,7 @@ package org.modeshape.web.jcr.rest.interceptor;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.ext.Provider;
 import org.jboss.resteasy.annotations.interception.ServerInterceptor;
-import org.jboss.resteasy.core.ResourceMethod;
+import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.core.ServerResponse;
 import org.jboss.resteasy.spi.Failure;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -40,7 +40,7 @@ public class LoggingInterceptor implements PreProcessInterceptor {
 
     @Override
     public ServerResponse preProcess( HttpRequest request,
-                                      ResourceMethod method ) throws Failure, WebApplicationException {
+                                      ResourceMethodInvoker method ) throws Failure, WebApplicationException {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Received request: {0}", request.getUri().getRequestUri().toString());
             LOGGER.debug("Executing method: {0}", method.getMethod().toString());

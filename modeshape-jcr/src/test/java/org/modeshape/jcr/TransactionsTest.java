@@ -48,22 +48,6 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     private static final String MULTI_LINE_VALUE = "Line\t1\nLine 2\rLine 3\r\nLine 4";
 
-    protected void initializeData() throws Exception {
-        Node root = session.getRootNode();
-        Node a = root.addNode("a");
-        Node b = a.addNode("b");
-        Node c = b.addNode("c");
-        a.addMixin("mix:lockable");
-        a.setProperty("stringProperty", "value");
-
-        b.addMixin("mix:referenceable");
-        b.setProperty("booleanProperty", true);
-
-        c.setProperty("stringProperty", "value");
-        c.setProperty("multiLineProperty", MULTI_LINE_VALUE);
-        session.save();
-    }
-
     @FixFor( "MODE-1819" )
     @Test
     public void shouldBeAbleToMoveNodeWithinUserTransaction() throws Exception {

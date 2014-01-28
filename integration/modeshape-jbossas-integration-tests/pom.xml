@@ -132,8 +132,8 @@
             This is not defined in any of the above mentioned BOMs, but is critical for working with managed EAP containers
           -->
         <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-arquillian-container-managed</artifactId>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
         </dependency>
 
         <!--Needed by the JDBC remote driver tets -->

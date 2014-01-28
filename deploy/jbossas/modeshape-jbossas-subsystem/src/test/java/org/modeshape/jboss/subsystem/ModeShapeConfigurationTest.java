@@ -15,16 +15,15 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -224,7 +223,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         roundTrip("modeshape-custom-authenticators-config.xml", "modeshape-custom-authenticators-config.json");
     }
 
-    @SuppressWarnings( "deprecation" )
     protected void roundTrip( String filenameOfInputXmlConfig,
                               String filenameOfExpectedJson ) throws Exception {
         String subsystemXml = readResource(filenameOfInputXmlConfig);
@@ -235,7 +233,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         String triggered = outputModel(testModel);
         System.out.println("Triggered: " + triggered);
 
-        KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
+        KernelServices services = initKernel(subsystemXml);
 
         // Get the model and the persisted xml from the controller
         ModelNode model = services.readWholeModel();
@@ -253,22 +251,20 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
     }
 
+    private KernelServices initKernel( String subsystemXml ) throws Exception {
+        return super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(subsystemXml).build();
+    }
+
     @SuppressWarnings( "deprecation" )
     @Test
     public void testSchema() throws Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
         validate(subsystemXml);
-
-        // TODO: AS7.2 Use this next line in AS7.2 (but it doesn't work in 7.1.1!) ...
-        // KernelServices services = super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT)
-        // .setSubsystemXml(subsystemXml).build();
-        KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
+        KernelServices services = initKernel(subsystemXml);
 
         // Get the model and the persisted xml from the controller
-        /*ModelNode model =*/
         services.readWholeModel();
         String marshalled = services.getPersistedSubsystemXml();
-
         validate(marshalled);
     }
 
@@ -307,7 +303,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     @Ignore
     @Test
     public void testAddRemoveRepository() throws Exception {
-        KernelServices services = buildSubsystem();
+        KernelServices services = super.installInController("modeshape-sample-config.xml");
 
         PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME));
 
@@ -340,19 +336,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         assertEquals(3, opNames.size());
         String[] ops2 = {"myrepository", "sample1", "sample2"};
         assertEquals(Arrays.asList(ops2), opNames);
-
-    }
-
-    @SuppressWarnings( "deprecation" )
-    private KernelServices buildSubsystem() throws IOException, FileNotFoundException, Exception {
-        String subsystemXml = readResource("modeshape-sample-config.xml");
-
-        // TODO: AS7.2 Use this next line in AS7.2 (but it doesn't work in 7.1.1!) ...
-        // KernelServices services = super.createKernelServicesBuilder(null)
-        // .setSubsystemXml(subsystemXml)
-        // .build();
-        KernelServices services = super.installInController(subsystemXml);
-        return services;
     }
 
     private static List<String> getList( ModelNode operationResult ) {
@@ -371,69 +354,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         }
         return list;
     }
-
-    // private ModelNode buildProperty(String name, String value) {
-    // ModelNode node = new ModelNode();
-    // node.get("property-name").set(name);
-    // node.get("property-value").set(value);
-    // return node;
-    // }
-
-    // @Test
-    // public void testConnector() throws Exception {
-    // KernelServices services = buildSubsystem();
-    //
-    // PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, ModeShapeExtension.TEIID_SUBSYSTEM));
-    //
-    // ModelNode addOp = new ModelNode();
-    // addOp.get(OP).set("add");
-    // addOp.get(OP_ADDR).set(addr.toModelNode().add("translator", "oracle"));
-    // ModelNode result = services.executeOperation(addOp);
-    // Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-    //
-    // ModelNode read = new ModelNode();
-    // read.get(OP).set("read-children-names");
-    // read.get(OP_ADDR).set(addr.toModelNode());
-    // read.get(CHILD_TYPE).set("translator");
-    //
-    // result = services.executeOperation(read);
-    // Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-    //
-    // List<String> translators = Util.getList(result);
-    // Assert.assertTrue(translators.contains("oracle"));
-    //
-    // ModelNode resourceRead = new ModelNode();
-    // resourceRead.get(OP).set("read-resource");
-    // resourceRead.get(OP_ADDR).set(addr.toModelNode());
-    // resourceRead.get("translator").set("oracle");
-    //
-    // result = services.executeOperation(resourceRead);
-    // Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-    //
-    // ModelNode oracleNode = result.get("result");
-    //
-    // ModelNode oracle = new ModelNode();
-    // oracle.get("translator-name").set("oracle");
-    // oracle.get("description").set("A translator for Oracle 9i Database or later");
-    // oracle.get("children",
-    // "properties").add(buildProperty("execution-factory-class","org.teiid.translator.jdbc.oracle.OracleExecutionFactory"));
-    // oracle.get("children", "properties").add(buildProperty("TrimStrings","false"));
-    // oracle.get("children", "properties").add(buildProperty("SupportedJoinCriteria","ANY"));
-    // oracle.get("children", "properties").add(buildProperty("requiresCriteria","false"));
-    // oracle.get("children", "properties").add(buildProperty("supportsOuterJoins","true"));
-    // oracle.get("children", "properties").add(buildProperty("useCommentsInSourceQuery","false"));
-    // oracle.get("children", "properties").add(buildProperty("useBindVariables","true"));
-    // oracle.get("children", "properties").add(buildProperty("MaxPreparedInsertBatchSize","2048"));
-    // oracle.get("children", "properties").add(buildProperty("supportsInnerJoins","true"));
-    // oracle.get("children", "properties").add(buildProperty("MaxInCriteriaSize","1000"));
-    // oracle.get("children", "properties").add(buildProperty("supportsSelectDistinct","true"));
-    // oracle.get("children", "properties").add(buildProperty("supportsOrderBy","true"));
-    // oracle.get("children", "properties").add(buildProperty("supportsFullOuterJoins","true"));
-    // oracle.get("children", "properties").add(buildProperty("Immutable","false"));
-    // oracle.get("children", "properties").add(buildProperty("MaxDependentInPredicates","50"));
-    //
-    // super.compare(oracleNode, oracle);
-    // }
 
     /**
      * When JSON strings are parsed into ModelNode structures, any integer values are parsed into org.jboss.dmr.BigIntegerValue

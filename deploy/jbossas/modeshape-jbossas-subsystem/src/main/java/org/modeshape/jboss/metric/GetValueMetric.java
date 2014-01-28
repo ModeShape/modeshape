@@ -44,8 +44,6 @@ final class GetValueMetric extends ModeShapeMetricHandler {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @see org.modeshape.jboss.metric.ModeShapeMetricHandler#history(org.modeshape.jcr.api.monitor.RepositoryMonitor)
      */
     @Override

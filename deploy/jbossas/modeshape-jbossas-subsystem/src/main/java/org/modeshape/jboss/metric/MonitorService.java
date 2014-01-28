@@ -33,8 +33,6 @@ public final class MonitorService implements Service<RepositoryMonitor> {
     private final InjectedValue<JcrRepository> repoInjector = new InjectedValue<JcrRepository>();
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.jboss.msc.value.Value#getValue()
      */
     @Override
@@ -49,8 +47,6 @@ public final class MonitorService implements Service<RepositoryMonitor> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.jboss.msc.service.Service#start(org.jboss.msc.service.StartContext)
      */
     @Override
@@ -59,8 +55,6 @@ public final class MonitorService implements Service<RepositoryMonitor> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.jboss.msc.service.Service#stop(org.jboss.msc.service.StopContext)
      */
     @Override

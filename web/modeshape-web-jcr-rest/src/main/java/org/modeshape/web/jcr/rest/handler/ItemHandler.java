@@ -43,13 +43,13 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionManager;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
 import org.modeshape.jcr.api.JcrConstants;
@@ -84,7 +84,7 @@ public class ItemHandler extends AbstractHandler {
      * @throws NotFoundException if the named repository does not exists, the named workspace does not exist, or the user does not
      *         have access to the named workspace
      * @throws JSONException if there is an error encoding the node
-     * @throws UnauthorizedException if the given login information is invalid
+     * @throws NotAuthorizedException if the given login information is invalid
      * @throws RepositoryException if any other error occurs
      * @see #EMPTY_REPOSITORY_NAME
      * @see #EMPTY_WORKSPACE_NAME
@@ -96,7 +96,7 @@ public class ItemHandler extends AbstractHandler {
                            String rawRepositoryName,
                            String rawWorkspaceName,
                            String path,
-                           int depth ) throws JSONException, UnauthorizedException, RepositoryException {
+                           int depth ) throws JSONException, NotAuthorizedException, RepositoryException {
         assert path != null;
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -272,7 +272,7 @@ public class ItemHandler extends AbstractHandler {
      * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
      *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
      * @throws NotFoundException if the parent of the item to be added does not exist
-     * @throws UnauthorizedException if the user does not have the access required to create the node at this path
+     * @throws NotAuthorizedException if the user does not have the access required to create the node at this path
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
@@ -282,7 +282,7 @@ public class ItemHandler extends AbstractHandler {
                               String path,
                               boolean fullNodeInResponse,
                               String requestContent )
-        throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
+        throws NotFoundException, NotAuthorizedException, RepositoryException, JSONException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -492,13 +492,13 @@ public class ItemHandler extends AbstractHandler {
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
      * @throws NotFoundException if no item exists at {@code path}
-     * @throws UnauthorizedException if the user does not have the access required to delete the item at this path
+     * @throws NotAuthorizedException if the user does not have the access required to delete the item at this path
      * @throws RepositoryException if any other error occurs
      */
     public void deleteItem( HttpServletRequest request,
                             String rawRepositoryName,
                             String rawWorkspaceName,
-                            String path ) throws NotFoundException, UnauthorizedException, RepositoryException {
+                            String path ) throws NotFoundException, NotAuthorizedException, RepositoryException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -537,7 +537,7 @@ public class ItemHandler extends AbstractHandler {
      * @param requestContent the JSON-encoded representation of the values and, possibly, properties to be set
      * @return the JSON-encoded representation of the node on which the property or properties were set.
      * @throws NotFoundException if the parent of the item to be added does not exist
-     * @throws UnauthorizedException if the user does not have the access required to create the node at this path
+     * @throws NotAuthorizedException if the user does not have the access required to create the node at this path
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      * @throws IOException if there is a problem reading the value
@@ -546,7 +546,7 @@ public class ItemHandler extends AbstractHandler {
                            String rawRepositoryName,
                            String rawWorkspaceName,
                            String path,
-                           String requestContent ) throws UnauthorizedException, JSONException, RepositoryException, IOException {
+                           String requestContent ) throws NotAuthorizedException, JSONException, RepositoryException, IOException {
 
         assert path != null;
         assert rawRepositoryName != null;
@@ -602,13 +602,7 @@ public class ItemHandler extends AbstractHandler {
         try {
             node = updateNode(node, jsonItem, changes);
             changes.checkin();
-        } catch (RepositoryException e) {
-            changes.abort();
-            throw e;
-        } catch (JSONException e) {
-            changes.abort();
-            throw e;
-        } catch (RuntimeException e) {
+        } catch (RepositoryException | JSONException | RuntimeException e) {
             changes.abort();
             throw e;
         }

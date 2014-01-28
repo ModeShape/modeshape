@@ -118,6 +118,11 @@ public class AddTextExtractor extends AbstractAddStepHandler {
         newControllers.add(controller);
     }
 
+    @Override
+    protected boolean requiresRuntimeVerification() {
+        return true;
+    }
+
     private void ensureClassLoadingPropertyIsSet( Properties properties ) {
         // could be already set if the "module" element is present in the xml
         if (properties.containsKey(FieldName.CLASSLOADER)) {

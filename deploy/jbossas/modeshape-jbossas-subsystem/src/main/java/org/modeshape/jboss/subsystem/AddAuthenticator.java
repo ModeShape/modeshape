@@ -111,4 +111,9 @@ public class AddAuthenticator extends AbstractAddStepHandler {
         ServiceController<JcrRepository> controller = authenticatorBuilder.install();
         newControllers.add(controller);
     }
+
+    @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        return true;
+    }
 }

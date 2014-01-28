@@ -18,6 +18,7 @@ package org.modeshape.webdav.methods;
 
 import java.io.ByteArrayOutputStream;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import org.junit.Ignore;
 
 @Ignore
@@ -33,5 +34,15 @@ public class TestingOutputStream extends ServletOutputStream {
     @Override
     public String toString() {
         return baos.toString();
+    }
+
+    @Override
+    public boolean isReady() {
+        return true;
+    }
+
+    @Override
+    public void setWriteListener( WriteListener writeListener ) {
+        throw new UnsupportedOperationException("Not supported for testing");
     }
 }
