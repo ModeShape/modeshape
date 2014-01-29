@@ -16,8 +16,8 @@
 
 package org.modeshape.web.jcr.rest.form;
 
-import javax.ws.rs.FormParam;
 import java.io.InputStream;
+import javax.ws.rs.FormParam;
 
 /**
  * POJO which leverages RestEasy's support for HTML forms, containing one element {@link FileUploadForm#fileData}, which is

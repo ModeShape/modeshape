@@ -16,7 +16,7 @@
     <properties>
         <arquillian.suspend>n</arquillian.suspend>
 
-        <!--Force Ipv4 since that's how Arquillian starts EAP -->
+        <!--Force Ipv4 since that's how Arquillian starts -->
         <preferIpv4>true</preferIpv4>
         <preferIpv6>false</preferIpv6>
     </properties>
@@ -85,10 +85,12 @@
 
         <!-- Import JUnit, Arquillian, and other artifacts used in the tests -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.jboss.shrinkwrap.resolver</groupId>
+            <artifactId>shrinkwrap-resolver-depchain</artifactId>
+            <type>pom</type>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
@@ -102,21 +104,20 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-depchain</artifactId>
-            <type>pom</type>
-            <scope>test</scope>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.shrinkwrap</groupId>
-            <artifactId>shrinkwrap-impl-base</artifactId>
-            <scope>test</scope>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>${jboss.logging.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -124,63 +125,67 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
 
-        <!--
-            This is not defined in any of the above mentioned BOMs, but is critical for working with managed EAP containers
-          -->
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-arquillian-container-managed</artifactId>
-        </dependency>
-
-        <!--Needed by the JDBC remote driver tets -->
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc</artifactId>
-            <scope>test</scope>
-            <type>test-jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc-local</artifactId>
-            <scope>test</scope>
-            <type>test-jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc-local</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!--Needed by the webdav tests -->
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-webdav-war</artifactId>
-            <scope>test</scope>
-            <type>test-jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-jcr-webdav-war</artifactId>
-            <scope>test</scope>
-            <type>test-jar</type>
-        </dependency>
         <!--Needed by the federation tests-->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-connector-jdbc-metadata</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!--Needed by the JDBC remote driver tets -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc-local</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc-local</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!--Needed by the webdav tests -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-webdav-war</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr-webdav-war</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
         <dependency>
             <groupId>com.googlecode.sardine</groupId>
             <artifactId>sardine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -224,11 +229,11 @@
                         </goals>
                         <configuration>
                             <artifactItems>
-                                <!-- Unpack the JBoss EAP version which should be installed locally first into the 'target' directory -->
+                                <!-- Unpack the JBoss Server version which should be installed locally first into the 'target' directory -->
                                 <artifactItem>
-                                    <groupId>${jboss.eap.groupId}</groupId>
-                                    <artifactId>${jboss.eap.artifactId}</artifactId>
-                                    <version>${jboss.eap.version}</version>
+                                    <groupId>${jboss.server.groupId}</groupId>
+                                    <artifactId>${jboss.server.artifactId}</artifactId>
+                                    <version>${jboss.server.version}</version>
                                     <type>zip</type>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
@@ -239,10 +244,10 @@
                                     <groupId>org.modeshape</groupId>
                                     <artifactId>modeshape-distribution</artifactId>
                                     <version>${project.version}</version>
-                                    <classifier>${jboss.eap.distribution.id}</classifier>
+                                    <classifier>${jboss.kit.distribution.id}</classifier>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/${jboss.eap.root.folder}</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/${jboss.server.root.folder}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -261,11 +266,11 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/${jboss.eap.root.folder}/${jboss.eap.modules.location}</outputDirectory>
+                            <outputDirectory>${project.build.directory}/${jboss.server.root.folder}/${jboss.kit.modules.location}</outputDirectory>
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
-                                    <directory>src/main/resources/kit/jboss-eap61</directory>
+                                    <directory>src/main/resources/kit/jboss-wf8</directory>
                                     <filtering>false</filtering>
                                     <excludes>
                                         <exclude>standalone/**</exclude>
@@ -281,11 +286,11 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/${jboss.eap.root.folder}</outputDirectory>
+                            <outputDirectory>${project.build.directory}/${jboss.server.root.folder}</outputDirectory>
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
-                                    <directory>src/main/resources/kit/jboss-eap61</directory>
+                                    <directory>src/main/resources/kit/jboss-wf8</directory>
                                     <filtering>false</filtering>
                                     <includes>
                                         <include>standalone/**</include>

@@ -15,6 +15,8 @@
  */
 package org.modeshape.test.kit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.io.IOException;
 import javax.annotation.Resource;
@@ -38,14 +40,13 @@ import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.DependencyResolvers;
-import org.jboss.shrinkwrap.resolver.api.maven.MavenDependencyResolver;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
+import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.api.Repository;
-import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Arquillian based test which verifies that the standard ModeShape distribution kit starts up correctly and its deployed applications
@@ -65,16 +66,25 @@ public class JBossASKitTest {
     @Resource( mappedName = "java:/jcr/sample" )
     private Repository sampleRepo;
 
-
     @Deployment
     public static WebArchive createDeployment() {
-        MavenDependencyResolver mavenResolver = DependencyResolvers.use(MavenDependencyResolver.class)
-                                                                   .goOffline()
-                                                                   .loadMetadataFromPom("pom.xml")
-                                                                   .artifact("org.apache.httpcomponents:httpclient:jar")
-                                                                   .scope("test");
+        File[] testDeps = Maven.resolver()
+                               .offline()
+                               .loadPomFromFile("pom.xml")
+                               .addDependencies(
+                                       MavenDependencies.createDependency(
+                                               "org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven",
+                                               ScopeType.TEST,
+                                               false),
+                                       MavenDependencies.createDependency(
+                                               "org.apache.httpcomponents:httpclient",
+                                               ScopeType.TEST,
+                                               false))
+                               .resolve()
+                               .withTransitivity()
+                               .asFile();
         return ShrinkWrap.create(WebArchive.class, "as7-kit-test.war")
-                         .addAsLibraries(mavenResolver.resolveAsFiles())
+                         .addAsLibraries(testDeps)
                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }

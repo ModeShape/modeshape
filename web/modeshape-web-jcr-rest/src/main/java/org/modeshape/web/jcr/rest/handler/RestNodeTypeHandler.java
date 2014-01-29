@@ -16,6 +16,10 @@
 
 package org.modeshape.web.jcr.rest.handler;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
@@ -27,10 +31,6 @@ import javax.ws.rs.core.Response;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.web.jcr.rest.RestHelper;
 import org.modeshape.web.jcr.rest.model.RestNodeType;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Class which handles {@link NodeType} operations for incoming http requests on {@link org.modeshape.web.jcr.rest.ModeShapeRestService}

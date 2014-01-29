@@ -8,7 +8,7 @@
 		<relativePath>../../modeshape-parent/pom.xml</relativePath>
 	</parent>
 	<packaging>pom</packaging>
-	<artifactId>modeshape-jbossas7</artifactId>
+	<artifactId>modeshape-jbossas</artifactId>
 	<name>ModeShape JBoss Deployment Components</name>
 	<url>http://www.modeshape.org</url>
 	<description>Builds the ModeShape components that can be deployed to JBoss</description>

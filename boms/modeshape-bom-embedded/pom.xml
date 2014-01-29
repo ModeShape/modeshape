@@ -10,7 +10,7 @@
 
     <url>http://www.modeshape.org</url>
     <packaging>pom</packaging>
-    <description>Bill of Material (BOM) for embedding ModeShape within JavaSE apps, libraries, and (non-EAP) web apps</description>
+    <description>Bill of Material (BOM) for embedding ModeShape within JavaSE apps, libraries, and (non-AS) web apps</description>
     <inceptionYear>2008</inceptionYear>
 
     <organization>

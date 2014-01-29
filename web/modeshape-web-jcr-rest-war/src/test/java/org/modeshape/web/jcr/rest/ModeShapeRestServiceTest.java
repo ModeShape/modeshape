@@ -472,7 +472,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         // No need to create any data, since we are not executing the query ...
         String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
         Response response = jcrSQL2QueryPlanAsText(query, queryPlanUrl()).isOk();
-        assertThat(response.getContentTypeHeader().startsWith("text/plain;charset=utf-8"), is(true));
+        assertThat(response.getContentTypeHeader().toLowerCase().startsWith("text/plain;"), is(true));
         String plan = response.responseString();
         assertThat(plan, is(notNullValue()));
         // System.out.println("**** PLAN: \n" + plan);

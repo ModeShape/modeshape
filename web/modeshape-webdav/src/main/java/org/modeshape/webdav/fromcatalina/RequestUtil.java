@@ -16,10 +16,13 @@
 
 package org.modeshape.webdav.fromcatalina;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Map;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * General purpose request parsing and encoding utility methods.
@@ -490,4 +493,20 @@ public final class RequestUtil {
 
     }
 
+    /**
+     * Checks if the input stream of the given request is nor isn't consumed. This method is backwards-compatible with Servlet 2.x,
+     * as in Servlet 3.x there is a "isFinished" method.
+     *
+     * @param request a {@code HttpServletRequest}, never {@code null}
+     * @return {@code true} if the request stream has been consumed, {@code false} otherwise.
+     */
+    public static boolean streamNotConsumed( HttpServletRequest request ) {
+        try {
+            ServletInputStream servletInputStream = request.getInputStream();
+            //in servlet >= 3.0, available will throw an exception (while previously it didn't)
+            return request.getContentLength() != 0 && servletInputStream.available() > 0;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 }

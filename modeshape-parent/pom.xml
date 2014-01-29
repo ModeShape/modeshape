@@ -308,11 +308,6 @@
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
         <mapdb.version>0.9.8</mapdb.version>
 
-        <!--WebDAV servlet-->
-        <jmock.version>2.6.0</jmock.version>
-        <spring.webmvc>2.5.2</spring.webmvc>
-        <spring.mock>2.0.7</spring.mock>
-
         <!-- Apache chemistry version -->
         <chemistry.version>0.10.0</chemistry.version>
 
@@ -327,31 +322,27 @@
             JBOSS AS/EAP constants
         -->
         <org.jboss.spec.javax.resource.connector-api.version>1.0.0.Final</org.jboss.spec.javax.resource.connector-api.version>
-        <!--Version of the artifacts (API) needed by the Wildfly subsystem -->
-        <wildfly.version>8.0.0.CR1</wildfly.version>
-        <!--Properties which must be used when installing locally an EAP ZIP distribution -->
-        <jboss.eap.groupId>org.jboss.as</jboss.eap.groupId>
-        <jboss.eap.artifactId>jboss-eap</jboss.eap.artifactId>
-        <jboss.eap.version>6.1.1.GA</jboss.eap.version>
-        <jboss.eap.root.folder>jboss-eap-6.1</jboss.eap.root.folder>
+
+        <!--Properties which must be used when installing locally a server ZIP distribution -->
+        <jboss.server.groupId>org.wildfly</jboss.server.groupId>
+        <jboss.server.artifactId>wildfly-dist</jboss.server.artifactId>
+        <jboss.server.version>8.0.0.CR1</jboss.server.version>
+        <jboss.server.root.folder>wildfly-8.0.0.CR1</jboss.server.root.folder>
 
         <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
-        <jboss.eap.modules.location>modules</jboss.eap.modules.location>
+        <jboss.kit.modules.location>modules</jboss.kit.modules.location>
 
         <!-- The id of the maven distribution which is building the current kit -->
-        <jboss.eap.distribution.id>jbosseap-61-dist</jboss.eap.distribution.id>
+        <jboss.kit.distribution.id>jboss-wf8-dist</jboss.kit.distribution.id>
 
-        <javax.connector-api.version>1.5</javax.connector-api.version>
-
-        <!--Versions used by the integration/kit tests an -->
-        <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-9</jboss-javaee-6.0-with-tools.version>
-        <jboss-as-arquillian-container-managed.version>7.2.0.Final</jboss-as-arquillian-container-managed.version>
+         <!--Versions used by the integration/kit tests an -->
+        <jboss-javaee-6.0-with-tools.version>1.0.7.Final</jboss-javaee-6.0-with-tools.version>
 
         <!--
           Maven plugin versions
           -->
-        <cargo.container>jetty7x</cargo.container>
-        <maven.codehaus.cargo.plugin.version>1.3.3</maven.codehaus.cargo.plugin.version>
+        <cargo.container>jetty9x</cargo.container>
+        <maven.codehaus.cargo.plugin.version>1.4.6</maven.codehaus.cargo.plugin.version>
         <version.jar.plugin>2.4</version.jar.plugin>
         <version.javadoc.plugin>2.9</version.javadoc.plugin>
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
@@ -788,13 +779,20 @@
                             <home>${project.build.directory}/cargo</home>
                             <type>embedded</type>
                         </container>
-                        <configuration>
+                        <configuration >
                             <properties>
                                 <cargo.logging>high</cargo.logging>
                                 <cargo.servlet.users>dnauser:password:connect,readwrite,admin|unauthorized:password:bogus</cargo.servlet.users>
                                 <cargo.servlet.port>8090</cargo.servlet.port>
                             </properties>
                         </configuration>
+                        <deployables>
+                            <deployable>
+                                <properties>
+                                    <context>${project.build.finalName}</context>
+                                </properties>
+                            </deployable>
+                        </deployables>
                     </configuration>
                 </plugin>
 
@@ -897,7 +895,7 @@
                             <value>${skipLongRunningTests}</value>
                         </property>
                     </systemProperties>
-                    <argLine>-Xmx1524M ${debug.argline} -XX:MaxPermSize=256M -Djava.awt.headless=true</argLine>
+                    <argLine>-Xmx1524M ${debug.argline} -XX:MaxPermSize=256M -Xss1024k -Djava.awt.headless=true</argLine>
                     <runOrder>alphabetical</runOrder>
                     <useFile>false</useFile>
                 </configuration>
@@ -1369,31 +1367,6 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!--WebDAV servlet-->
-            <dependency>
-                <groupId>org.jmock</groupId>
-                <artifactId>jmock</artifactId>
-                <version>${jmock.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.hamcrest</groupId>
-                        <artifactId>hamcrest-core</artifactId>
-                    </exclusion>
-                </exclusions>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-webmvc</artifactId>
-                <version>${spring.webmvc}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-mock</artifactId>
-                <version>${spring.mock}</version>
                 <scope>test</scope>
             </dependency>
 
@@ -2036,37 +2009,32 @@
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-controller</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${jboss.server.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-naming</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${jboss.server.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-clustering-jgroups</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${jboss.server.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-subsystem-test-framework</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${jboss.server.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-arquillian-container-managed</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${jboss.server.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-arquillian-container-managed</artifactId>
-                <version>${jboss-as-arquillian-container-managed.version}</version>
             </dependency>
             <!--JCA connector-->
             <dependency>

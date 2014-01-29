@@ -84,7 +84,7 @@
                                         <unzip src="${project.build.directory}/tempjars/jcr-${jcr.version}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/commons-codec-1.4.jar"
+                                        <unzip src="${project.build.directory}/tempjars/commons-codec-1.6.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE.txt"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_commons-codec.txt"/>

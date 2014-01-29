@@ -52,7 +52,7 @@
 
         <!-- Finally the BOMs -->
         <module>boms/modeshape-bom-embedded</module>
-        <module>boms/modeshape-bom-jbosseap</module>
+        <module>boms/modeshape-bom-jbossas</module>
         <module>boms/modeshape-bom-remote-client</module>
     </modules>
 	<properties>
