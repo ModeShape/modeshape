@@ -34,6 +34,7 @@ import org.modeshape.webdav.exceptions.ObjectAlreadyExistsException;
 import org.modeshape.webdav.exceptions.ObjectNotFoundException;
 import org.modeshape.webdav.exceptions.UnauthenticatedException;
 import org.modeshape.webdav.exceptions.WebdavException;
+import org.modeshape.webdav.fromcatalina.RequestUtil;
 import org.modeshape.webdav.locking.ResourceLocks;
 import org.modeshape.webdav.methods.DoCopy;
 import org.modeshape.webdav.methods.DoDelete;
@@ -160,12 +161,16 @@ public class WebDavServletBean extends HttpServlet {
                  * Clear not consumed data Clear input stream if available otherwise later access include current input. These
                  * cases occure if the client sends a request with body to an not existing resource.
                  */
-                if (req.getContentLength() != 0 && req.getInputStream().available() > 0) {
+                if (RequestUtil.streamNotConsumed(req)) {
                     if (LOG.isTraceEnabled()) {
                         LOG.trace("Clear not consumed data!");
                     }
-                    while (req.getInputStream().available() > 0) {
-                        req.getInputStream().read();
+                    try {
+                        while (req.getInputStream().available() > 0) {
+                            req.getInputStream().read();
+                        }
+                    } catch (IOException e) {
+                        //ignore
                     }
                 }
                 needRollback = false;

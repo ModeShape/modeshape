@@ -91,6 +91,11 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
         newControllers.add(indexBuilder.install());
     }
 
+    @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        return true;
+    }
+
     protected abstract void writeIndexStorageConfiguration( final OperationContext context,
                                                             final ModelNode storage,
                                                             EditableDocument indexStorage,

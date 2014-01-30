@@ -35,6 +35,7 @@ import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.exceptions.AccessDeniedException;
 import org.modeshape.webdav.exceptions.LockFailedException;
 import org.modeshape.webdav.exceptions.WebdavException;
+import org.modeshape.webdav.fromcatalina.RequestUtil;
 import org.modeshape.webdav.fromcatalina.XMLHelper;
 import org.modeshape.webdav.fromcatalina.XMLWriter;
 import org.modeshape.webdav.locking.LockedObject;
@@ -130,7 +131,7 @@ public class DoProppatch extends AbstractMethod {
                 Node tosetNode = null;
                 Node toremoveNode = null;
 
-                if (req.getContentLength() != 0) {
+                if (RequestUtil.streamNotConsumed(req)) {
                     DocumentBuilder documentBuilder = getDocumentBuilder();
                     try {
                         Document document = documentBuilder.parse(new InputSource(req.getInputStream()));

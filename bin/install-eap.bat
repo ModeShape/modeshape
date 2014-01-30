@@ -4,9 +4,9 @@ REM ----------------------------------------------------------------------------
 REM This script installs a downloaded version of JBoss EAP into the local Maven Repository.
 REM Its purpose is to allow running the "integration" and "assembly" profiles from the build, run the AS7/EAP integration tests
 REM The values used for "artifactId", "groupId" and "version" *must* match the following properties from the modeshape-parent/pom.xml file:
-REM groupId <-> ${jboss.eap.groupId}
-REM artifactId <-> ${jboss.eap.artifactId}
-REM version <-> ${jboss.eap.version}
+REM groupId <-> ${jboss.server.groupId}
+REM artifactId <-> ${jboss.server.artifactId}
+REM version <-> ${jboss.server.version}
 REM ---------------------------------------------------------------------------------------------------------------------------------------
 
 if "%1" == "" (

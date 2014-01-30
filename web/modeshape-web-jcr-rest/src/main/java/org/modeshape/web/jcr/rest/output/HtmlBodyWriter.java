@@ -16,6 +16,8 @@
 
 package org.modeshape.web.jcr.rest.output;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
@@ -23,8 +25,6 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.modeshape.web.jcr.rest.model.JSONAble;
 import org.modeshape.web.jcr.rest.model.RestException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Extension of {@link JSONBodyWriter} which produces HTML output for {@link JSONAble} objects.

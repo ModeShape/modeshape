@@ -36,7 +36,7 @@ import org.modeshape.jcr.api.monitor.Window;
 public abstract class ModeShapeMetricHandler extends AbstractRuntimeOnlyHandler {
 
     /**
-     * Will be <code>null</code> until {@link #logger} is called.
+     * Will be <code>null</code> until {@link ModeShapeMetricHandler#logger()} is called.
      */
     private Logger logger;
 
@@ -51,8 +51,6 @@ public abstract class ModeShapeMetricHandler extends AbstractRuntimeOnlyHandler 
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.jboss.as.controller.AbstractRuntimeOnlyHandler#executeRuntimeStep(org.jboss.as.controller.OperationContext,
      *      org.jboss.dmr.ModelNode)
      */
@@ -62,7 +60,12 @@ public abstract class ModeShapeMetricHandler extends AbstractRuntimeOnlyHandler 
         final ModelNode address = operation.require(OP_ADDR);
         final PathAddress pathAddress = PathAddress.pathAddress(address);
         final String repositoryName = pathAddress.getLastElement().getValue();
-        final ServiceController<?> sc = context.getServiceRegistry(false).getRequiredService(ModeShapeServiceNames.monitorServiceName(repositoryName));
+        final ServiceController<?> sc = context.getServiceRegistry(false).getService(ModeShapeServiceNames.monitorServiceName(repositoryName));
+        if (sc == null) {
+            logger().debugv("ModeShape metric handler for repository {0} ignoring runtime step because the monitoring service is unavailable." +
+                            "Most likely the repository has been removed", repositoryName);
+            return;
+        }
         final RepositoryMonitor repoStats = (RepositoryMonitor)sc.getValue();
 
         try {

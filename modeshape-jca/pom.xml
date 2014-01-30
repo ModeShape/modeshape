@@ -28,8 +28,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.resource</groupId>
-            <artifactId>jboss-connector-api_1.6_spec</artifactId>
-            <scope>provided</scope>
+            <artifactId>jboss-connector-api_1.7_spec</artifactId>
         </dependency>
         <!--
         Testing (note the scope)

@@ -161,19 +161,17 @@
                 <groupId>org.codehaus.cargo</groupId>
                 <artifactId>cargo-maven2-plugin</artifactId>
                 <configuration>
-                    <configuration>
-                        <deployables>
-                            <!-- application to deploy (brought in as a transitive dependency of modeshape-rest-client -->
-                            <deployable>
-                                <groupId>org.modeshape</groupId>
-                                <artifactId>modeshape-web-jcr-rest-war</artifactId>
-                                <type>war</type>
-                                <properties>
-                                    <context>modeshape</context>
-                                </properties>
-                            </deployable>
-                        </deployables>
-                    </configuration>
+                    <deployables>
+                        <!-- application to deploy (brought in as a transitive dependency of modeshape-rest-client -->
+                        <deployable>
+                            <groupId>org.modeshape</groupId>
+                            <artifactId>modeshape-web-jcr-rest-war</artifactId>
+                            <type>war</type>
+                            <properties>
+                                <context>modeshape</context>
+                            </properties>
+                        </deployable>
+                    </deployables>
                 </configuration>
             </plugin>
         </plugins>

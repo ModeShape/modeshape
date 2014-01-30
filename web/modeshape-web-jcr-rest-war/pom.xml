@@ -19,7 +19,11 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr-rest</artifactId>
         </dependency>
-
+        <!--This is provided dependency of the above, which Maven seems to ignore as transitive-->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>

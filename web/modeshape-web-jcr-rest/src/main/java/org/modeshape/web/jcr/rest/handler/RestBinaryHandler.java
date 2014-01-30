@@ -16,6 +16,8 @@
 
 package org.modeshape.web.jcr.rest.handler;
 
+import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -28,8 +30,6 @@ import javax.ws.rs.core.Response;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.model.RestProperty;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Class which handles incoming requests related to {@link Binary binary values}

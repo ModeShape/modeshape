@@ -16,14 +16,14 @@
 
 package org.modeshape.web.jcr.rest.handler;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.Repository;
 import javax.jcr.Value;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.rest.RestHelper;
 import org.modeshape.web.jcr.rest.model.RestRepositories;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An extension of {@link RepositoryHandler} which returns POJO-based rest model instances.

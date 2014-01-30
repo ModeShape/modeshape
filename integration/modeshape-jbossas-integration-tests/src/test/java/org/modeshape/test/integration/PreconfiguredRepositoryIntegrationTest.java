@@ -118,7 +118,7 @@ public class PreconfiguredRepositoryIntegrationTest {
 
     @Test
     @FixFor( "MODE-1919" )
-    public void artifactsRepositoryShouldBePublishArea() throws Exception {
+    public void shouldHavePrePublishedArtifacts() throws Exception {
         Session session = artifactsRepository.login();
         Node filesFolder = session.getNode("/files");
         assertNotNull(filesFolder);

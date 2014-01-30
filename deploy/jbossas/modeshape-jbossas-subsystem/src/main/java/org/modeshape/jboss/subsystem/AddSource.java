@@ -143,6 +143,11 @@ public class AddSource extends AbstractAddStepHandler {
         newControllers.add(controller);
     }
 
+    @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        return true;
+    }
+
     private Object propertyValue(Property property) {
         String propertyName = property.getName();
         String valueAsString = property.getValue().asString();

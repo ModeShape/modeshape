@@ -16,10 +16,10 @@
 
 package org.modeshape.web.jcr.rest.model;
 
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 /**
  * A representation of an {@link Exception} which is used by the REST service to signal clients that a server-side exception

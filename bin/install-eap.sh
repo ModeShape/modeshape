@@ -4,9 +4,9 @@
 # This script installs a downloaded version of JBoss EAP into the local Maven Repository.
 # Its purpose is to allow running the "integration" and "assembly" profiles from the build, run the AS7/EAP integration tests
 # The values used for "artifactId", "groupId" and "version" *must* match the following properties from the modeshape-parent/pom.xml file:
-# groupId <-> ${jboss.eap.groupId}
-# artifactId <-> ${jboss.eap.artifactId}
-# version <-> ${jboss.eap.version}
+# groupId <-> ${jboss.server.groupId}
+# artifactId <-> ${jboss.server.artifactId}
+# version <-> ${jboss.server.version}
 ##########################################################################################################################################
 
 if [ "$#" -ne 1 ] ; then

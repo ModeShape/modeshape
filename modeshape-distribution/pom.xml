@@ -418,9 +418,9 @@
                   <scope>compile</scope>
                 </dependency>
                 <dependency>
-                    <groupId>org.jboss.as</groupId>
-                    <artifactId>jboss-as-controller</artifactId>
-                    <version>${jbossas.version}</version>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-controller</artifactId>
+                    <version>${jboss.server.version}</version>
                     <scope>compile</scope>
                 </dependency>
             </dependencies>
@@ -586,7 +586,7 @@
                             <descriptorRefs>
                                 <descriptorRef>binary-distribution</descriptorRef>
                                 <descriptorRef>source-distribution</descriptorRef>
-                                <descriptorRef>${jboss.eap.distribution.id}</descriptorRef>
+                                <descriptorRef>${jboss.kit.distribution.id}</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>
@@ -610,7 +610,7 @@
                         <configuration>
                             <finalName>modeshape-${project.version}</finalName>
                             <descriptorRefs>
-                                <descriptorRef>${jboss.eap.distribution.id}</descriptorRef>
+                                <descriptorRef>${jboss.kit.distribution.id}</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>
