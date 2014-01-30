@@ -6,7 +6,7 @@
     <artifactId>modeshape-bom-jbossas</artifactId>
     <version>4.0-SNAPSHOT</version>
 
-    <name>ModeShape BOM for usage within a JBoss Application Server</name>
+    <name>ModeShape BOM for use within a JBoss App Server</name>
 
     <url>http://www.modeshape.org</url>
     <packaging>pom</packaging>
