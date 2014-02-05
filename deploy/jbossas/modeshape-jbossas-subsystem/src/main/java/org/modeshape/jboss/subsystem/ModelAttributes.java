@@ -223,20 +223,6 @@ public class ModelAttributes {
                                                                                                                           .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                           .build();
 
-    public static final SimpleAttributeDefinition CLUSTER_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_NAME,
-                                                                                                      ModelType.STRING).setXmlName(Attribute.CLUSTER_NAME.getLocalName())
-                                                                                                                       .setAllowExpression(true)
-                                                                                                                       .setAllowNull(true)
-                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                       .build();
-
-    public static final SimpleAttributeDefinition CLUSTER_STACK = new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_STACK,
-                                                                                                       ModelType.STRING).setXmlName(Attribute.CLUSTER_STACK.getLocalName())
-                                                                                                                        .setAllowExpression(true)
-                                                                                                                        .setAllowNull(true)
-                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                        .build();
-
     public static final SimpleAttributeDefinition CLASSNAME = new MappedAttributeDefinitionBuilder(ModelKeys.CLASSNAME,
                                                                                                    ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
                                                                                                                     .setAllowExpression(false)
@@ -898,7 +884,7 @@ public class ModelAttributes {
         DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, THREAD_POOL, BATCH_SIZE,
         READER_STRATEGY, MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME,
         ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_STARTUP_MODE,
-        REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, CLUSTER_NAME, CLUSTER_STACK, GARBAGE_COLLECTION_THREAD_POOL,
+        REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, GARBAGE_COLLECTION_THREAD_POOL,
         GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL, DOCUMENT_OPTIMIZATION_THREAD_POOL,
         DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
         DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE, JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS, JOURNAL_GC_INITIAL_TIME,

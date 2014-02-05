@@ -7,8 +7,6 @@
         "binary-storage" : null,
         "cache-container" : null,
         "cache-name" : null,
-        "cluster-name" : null,
-        "cluster-stack" : null,
         "default-workspace" : "default",
         "enable-monitoring" : true,
         "index-storage" : null,

@@ -108,24 +108,6 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         }
     }
 
-    @Test
-    @FixFor( "MODE-1701" )
-    public void shouldStartRepositoryWithJGroupsXMLConfigurationFile() throws Exception {
-        JcrRepository repository = null;
-        try {
-            repository = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-jgroups-file.json");
-            assertEquals(ModeShapeEngine.State.RUNNING, repository.getState());
-        } finally {
-            TestingUtil.killRepository(repository);
-        }
-    }
-
-    @Test( expected = RepositoryException.class )
-    @FixFor( "MODE-1701" )
-    public void shouldNotStartRepositoryWithInvalidJGroupsConfiguration() throws Exception {
-        TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-invalid-jgroups-file.json");
-    }
-
     /*
      * Each Infinispan configuration persists data in a separate location, and we use replication mode.
      */
@@ -208,8 +190,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
     @Test
     @FixFor("MODE-1683")
     public void shouldClusterJournals() throws Exception {
-        FileUtil.delete("target/journal1");
-        FileUtil.delete("target/journal2");
+        FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
         try {

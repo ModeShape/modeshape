@@ -16,10 +16,12 @@
 
 package org.modeshape.jcr.clustering;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.modeshape.jcr.ClusteringHelper.startNewClusteringService;
-import java.util.Set;
-import java.util.TreeSet;
+import static org.junit.Assert.assertTrue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -52,8 +54,8 @@ public class ClusteringServiceTest {
         ClusteringHelper.removeJGroupsBindings();
     }
 
-    @Test( expected = IllegalStateException.class )
-    public void shouldNotAllowSettingClusterNameToNull() throws Exception {
+    @Test
+    public void shouldAllowSettingClusterNameToNull() throws Exception {
         initClusterService(null);
     }
 
@@ -79,24 +81,20 @@ public class ClusteringServiceTest {
 
     @Test
     public void shouldBroadcastMessagesBetweenServices() throws Exception {
-        ClusteringService service1 = startNewClusteringService("test-cluster1");
-        TestConsumer consumer1 = new TestConsumer();
+        ClusteringService service1 = new ClusteringService().startStandalone("test-cluster1", "config/jgroups-test-config.xml");
+        TestConsumer consumer1 = new TestConsumer("hello_1", "hello_2");
         service1.addConsumer(consumer1);
 
-        ClusteringService service2 = startNewClusteringService("test-cluster1");
-        TestConsumer consumer2 = new TestConsumer();
+        ClusteringService service2 = new ClusteringService().startStandalone("test-cluster1", "config/jgroups-test-config.xml");
+        TestConsumer consumer2 = new TestConsumer("hello_1", "hello_2");
         service2.addConsumer(consumer2);
 
         try {
             service1.sendMessage("hello_1");
             service2.sendMessage("hello_2");
 
-            // we need a delay to make sure the messages arrive
-            Thread.sleep(200);
-
-            String[] expectedPayloads = new String[] {"hello_1", "hello_2"};
-            assertArrayEquals(expectedPayloads, consumer1.getPayloads().toArray(new String[0]));
-            assertArrayEquals(expectedPayloads, consumer2.getPayloads().toArray(new String[0]));
+            consumer1.assertAllPayloadsConsumed();
+            consumer2.assertAllPayloadsConsumed();
         } finally {
             service1.shutdown();
             service2.shutdown();
@@ -104,23 +102,27 @@ public class ClusteringServiceTest {
     }
 
     private void initClusterService( String name ) throws Exception {
-        this.clusteringService = startNewClusteringService(name);
+        this.clusteringService = new ClusteringService().startStandalone(name, "config/jgroups-test-config.xml");
     }
 
     protected class TestConsumer extends MessageConsumer<String> {
-        private Set<String> payloads = new TreeSet<String>();
+        private List<String> payloads = new ArrayList<>();
+        private CountDownLatch payloadsLatch;
 
-        protected TestConsumer() {
+        protected TestConsumer(String...expectedPayloads) {
             super(String.class);
+            payloads = Arrays.asList(expectedPayloads);
+            payloadsLatch = new CountDownLatch(expectedPayloads.length);
         }
 
         @Override
         public void consume( String payload ) {
-            payloads.add(payload);
+            assertTrue(payloads.contains(payload));
+            payloadsLatch.countDown();
         }
 
-        protected Set<String> getPayloads() {
-            return payloads;
+        protected void assertAllPayloadsConsumed() throws InterruptedException {
+            payloadsLatch.await(1, TimeUnit.SECONDS);
         }
     }
 }

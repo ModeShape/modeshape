@@ -65,8 +65,11 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import org.hibernate.search.backend.TransactionContext;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
+import org.infinispan.remoting.rpc.RpcManager;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.document.Array;
@@ -74,6 +77,7 @@ import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.Paths;
+import org.jgroups.Channel;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -1072,6 +1076,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.connectors = new Connectors(this, connectorComponents, preconfiguredProjectionsByWorkspace);
                     logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
                     SchematicDb database = Schematic.get(container, cacheName);
+
+                    Channel cacheChannel = checkClustering(database);
+                    this.clusteringService = cacheChannel != null ? new ClusteringService().startForked(cacheChannel) : null;
+
                     this.documentStore = connectors.hasConnectors() ?
                                          new FederatedDocumentStore(connectors, database) :
                                          new LocalDocumentStore(database);
@@ -1097,23 +1105,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Create clustering service and event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
                     ChangeBus localBus = new RepositoryChangeBus(changeDispatchingQueue, systemWorkspaceName);
-
-                    RepositoryConfiguration.Clustering clustering = config.getClustering();
-                    if (clustering.isEnabled()) {
-                        this.clusteringService = new ClusteringService(context.getProcessId(), clustering);
-                        this.clusteringService.start();
-                        this.changeBus = new ClusteredRepositoryChangeBus(localBus, clusteringService);
-                    } else {
-                        this.clusteringService = null;
-                        this.changeBus = localBus;
-                    }
+                    this.changeBus = clusteringService != null ? new ClusteredRepositoryChangeBus(localBus, clusteringService) :
+                                     localBus;
                     this.changeBus.start();
 
                     // Set up the event journal
                     RepositoryConfiguration.Journaling journaling = config.getJournaling();
                     if (journaling.isEnabled()) {
                         LocalJournal localJournal = new LocalJournal(journaling.location(), journaling.asyncWritesEnabled(), journaling.maxDaysToKeepRecords());
-                        this.journal = clustering.isEnabled() ? new ClusteredJournal(localJournal, clusteringService) : localJournal;
+                        this.journal = clusteringService != null ? new ClusteredJournal(localJournal, clusteringService) : localJournal;
                         this.journal.start();
                         this.changeBus.register(journal);
                     } else {
@@ -1257,6 +1257,25 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 resumeExistingUserTransaction();
                 throw (t instanceof Exception) ? (Exception)t : new RuntimeException(t);
             }
+        }
+
+        protected Channel checkClustering( SchematicDb database ) {
+            Channel cacheChannel = null;
+            if (database.getCache() instanceof AdvancedCache) {
+                RpcManager rpcManager = ((AdvancedCache<?, ?>)database.getCache()).getRpcManager();
+                if (rpcManager != null && rpcManager.getTransport() instanceof JGroupsTransport) {
+                    cacheChannel = ((JGroupsTransport)rpcManager.getTransport()).getChannel();
+                }
+            }
+            if  (logger.isDebugEnabled()) {
+                if (cacheChannel != null) {
+                    logger.debug("ModeShape detected active Infinispan cluster '{0}' and will be started in clustered mode",
+                                 cacheChannel.getClusterName());
+                } else {
+                    logger.debug("ModeShape could not detect an active Infinispan cluster and will be started in non-clustered mode");
+                }
+            }
+            return cacheChannel;
         }
 
         protected Transactions createTransactions( TransactionMode mode,

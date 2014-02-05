@@ -35,8 +35,8 @@ import org.modeshape.jcr.clustering.ClusteringService;
 public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
 
     private ClusteredRepositoryChangeBus defaultBus;
-    private List<ChangeBus> buses = new ArrayList<ChangeBus>();
-    private List<ClusteringService> clusteringServices = new ArrayList<ClusteringService>();
+    private List<ChangeBus> buses = new ArrayList<>();
+    private List<ClusteringService> clusteringServices = new ArrayList<>();
     
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -296,13 +296,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
     }
 
     private ClusteredRepositoryChangeBus startNewBus() throws Exception {
-        ClusteringService clusteringService = new ClusteringService("test-bus-process",
-                                                                     ClusteringHelper.createClusteringConfiguration("testcluster-event-bus"));
-        clusteringService.start();
+        ClusteringService clusteringService = new ClusteringService().startStandalone("test-bus-process", "config/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
-
-        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(super.createRepositoryChangeBus(),
-                                                                            clusteringService);
+        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(super.createRepositoryChangeBus(), clusteringService);
         bus.start();
         buses.add(bus);
         return bus;

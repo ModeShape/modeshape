@@ -21,7 +21,6 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
-import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.clustering.ClusteringService;
 
 /**
@@ -36,8 +35,8 @@ public class ClusteredJournalTest extends LocalJournalTest {
 
     @Override
     public void before() throws Exception {
-        this.defaultJournal = startNewJournal("default-test-journal-process",
-                                              "target/default_clustered_journal",
+        this.defaultJournal = startNewJournal(
+                "target/default_clustered_journal",
                                               "default-journal-cluster");
         insertTestRecords();
     }
@@ -66,13 +65,13 @@ public class ClusteredJournalTest extends LocalJournalTest {
         after();
 
         // start a journal
-        ClusteredJournal journal1 = startNewJournal("test-journal-node-1", "target/clustered_journal_1", "journal-cluster-1");
+        ClusteredJournal journal1 = startNewJournal("target/clustered_journal_1", "journal-cluster-1");
         // add 2 record to the 1st journal
         journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
         journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
 
         // start another journal
-        ClusteredJournal journal2 = startNewJournal("test-journal-node-2", "target/clustered_journal_2", "journal-cluster-1");
+        ClusteredJournal journal2 = startNewJournal("target/clustered_journal_2", "journal-cluster-1");
         // check that the 2nd journal has received all the changes from the 1st (they haven't seen each other yet)
         Assert.assertEquals(2, journal2.allRecords(false).size());
 
@@ -92,7 +91,7 @@ public class ClusteredJournalTest extends LocalJournalTest {
         journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
 
         // start the 2nd journal back and verify it received a 1 delta from the 1st journal
-        journal2.clusteringService().start();
+        journal2.clusteringService().startStandalone("journal-cluster-1", "config/jgroups-test-config.xml");
         journal2.start();
 
         Assert.assertEquals(4, journal2.allRecords(false).size());
@@ -100,12 +99,9 @@ public class ClusteredJournalTest extends LocalJournalTest {
         journal1.shutdown();
     }
 
-    private ClusteredJournal startNewJournal( String processId,
-                                              String fileLocation,
+    private ClusteredJournal startNewJournal( String fileLocation,
                                               String clusterName ) throws Exception {
-        ClusteringService clusteringService = new ClusteringService(processId,
-                                                                    ClusteringHelper.createClusteringConfiguration(clusterName));
-        clusteringService.start();
+        ClusteringService clusteringService = new ClusteringService().startStandalone(clusterName, "config/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
 
         FileUtil.delete(fileLocation);

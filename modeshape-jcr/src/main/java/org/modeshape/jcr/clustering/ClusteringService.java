@@ -29,16 +29,24 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.jcr.RepositoryException;
 import org.jgroups.Address;
 import org.jgroups.Channel;
 import org.jgroups.ChannelListener;
+import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
+import org.jgroups.conf.ProtocolStackConfigurator;
+import org.jgroups.conf.XmlConfigurator;
+import org.jgroups.fork.ForkChannel;
+import org.jgroups.stack.Protocol;
+import org.jgroups.stack.ProtocolStack;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
-import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 
 /**
  * ModeShape service which handles sending/receiving messages in a cluster via JGroups
@@ -56,39 +64,29 @@ public final class ClusteringService {
     private static final long DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS = TimeUnit.MINUTES.toMillis(10);
 
     /**
-     * The id of the process which started this service
-     */
-    private final String processId;
-
-    /**
      * The listener for channel changes.
      */
-    private final Listener listener = new Listener();
+    private final Listener listener;
 
     /**
      * The component that will receive the JGroups messages.
      */
-    private final Receiver receiver = new Receiver();
+    private final Receiver receiver;
 
     /**
      * Flag that dictates whether this service has connected to the cluster.
      */
-    protected final AtomicBoolean isOpen = new AtomicBoolean(false);
+    protected final AtomicBoolean isOpen;
 
     /**
      * The numbers of members in the cluster
      */
-    protected final AtomicInteger membersInCluster = new AtomicInteger(1);
-
-    /**
-     * The clustering configuration
-     */
-    private final RepositoryConfiguration.Clustering clusteringConfiguration;
+    protected final AtomicInteger membersInCluster;
 
     /**
      * The maximum accepted clock delay between cluster members
      */
-    private final long maxAllowedClockDelayMillis = DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS;
+    private final long maxAllowedClockDelayMillis;
 
     /**
      * The JGroups channel which will be used to send/receive event across the cluster
@@ -98,67 +96,111 @@ public final class ClusteringService {
     /**
      * A list of message consumers which register themselves with this service.
      */
-    protected Set<MessageConsumer<Serializable>> consumers;
+    private final Set<MessageConsumer<Serializable>> consumers;
 
     /**
-     * Creates a new service
-     * 
-     * @param clusteringConfiguration the clustering configuration
-     * @param processId the id of the process which started this bus
+     * Creates an empty, not started clustering service.
      */
-    public ClusteringService( String processId,
-                              RepositoryConfiguration.Clustering clusteringConfiguration ) {
-        this.processId = processId;
-        this.clusteringConfiguration = clusteringConfiguration;
-        assert clusteringConfiguration.isEnabled();
-        // make sure the set is thread safe
-        this.consumers = new CopyOnWriteArraySet<MessageConsumer<Serializable>>();
+    public ClusteringService() {
+        this.listener = new Listener();
+        this.receiver = new Receiver();
+        this.isOpen = new AtomicBoolean(false);
+        this.membersInCluster = new AtomicInteger(1);
+        this.maxAllowedClockDelayMillis = DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS;
+        this.consumers = new CopyOnWriteArraySet<>();
     }
 
     /**
-     * Starts the clustering service.
-     * 
-     * @throws Exception if anything unexpected fails
+     * Starts a standalone clustering service which in turn will start & connect its own JGroup channel.
+     *
+     * @param clusterName the name of the cluster to which the JGroups channel should connect.
+     * @param jgroupsConfig either the path or the XML content of a JGroups configuration file; may be null
+     * @return this instance
      */
-    public synchronized void start() throws Exception {
-        if (channel != null) {
-            // we've already been started
-            return;
+    public synchronized ClusteringService startStandalone(String clusterName, String jgroupsConfig) {
+        if (StringUtil.isBlank(clusterName)) {
+            clusterName = "modeshape-cluster";
         }
+        try {
+            // Create the new channel by calling the delegate method ...
+            this.channel = newChannel(jgroupsConfig);
+            // Add a listener through which we'll know what's going on within the cluster ...
+            this.channel.addChannelListener(listener);
 
-        String clusterName = clusteringConfiguration.getClusterName();
-        if (clusterName == null) {
-            throw new IllegalStateException(ClusteringI18n.clusterNameRequired.text());
+            // Set the receiver through which we'll receive all of the changes ...
+            this.channel.setReceiver(receiver);
+
+            // Now connect to the cluster ...
+            this.channel.connect(clusterName);
+
+            return this;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        // Create the new channel by calling the delegate method ...
-        channel = newChannel();
-        // Add a listener through which we'll know what's going on within the cluster ...
-        channel.addChannelListener(listener);
-
-        // Set the receiver through which we'll receive all of the changes ...
-        channel.setReceiver(receiver);
-
-        // Now connect to the cluster ...
-        channel.connect(clusterName);
     }
 
-    private Channel newChannel() throws Exception {
-        // Try to get the channel directly from the configuration (and its environment) ...
-        Channel channel = clusteringConfiguration.getChannel();
-        if (channel != null) {
-            return channel;
+    /**
+     * Starts a new clustering service by forking a channel of an existing JGroups channel.
+     *
+     * @param mainChannel a {@link org.jgroups.Channel} instance; may not be null.
+     * @return this instance
+     */
+    public synchronized ClusteringService startForked(Channel mainChannel) {
+        CheckArg.isNotNull(mainChannel, "mainChannel");
+        try {
+            Protocol topProtocol = mainChannel.getProtocolStack().getTopProtocol();
+            //add the fork at the top of the stack (the bottom should be either TCP/UDP) to preserve the default configuration
+            this.channel = new ForkChannel(mainChannel, "modeshape-stack", "modeshape-fork-channel", true, ProtocolStack.ABOVE,
+                                           topProtocol.getClass());
+            // Add a listener through which we'll know what's going on within the cluster ...
+            this.channel.addChannelListener(listener);
+
+            // Set the receiver through which we'll receive all of the changes ...
+            this.channel.setReceiver(receiver);
+
+            // The name of the cluster is ignored for fork channels
+            this.channel.connect("modeshape-fork-channel");
+
+            return this;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Channel newChannel( String jgroupsConfig ) throws Exception {
+
+        if (StringUtil.isBlank(jgroupsConfig)) {
+            return new JChannel();
         }
 
-        String lookupClassName = clusteringConfiguration.getChannelProviderClassName();
-        assert lookupClassName != null;
-
-        Class<?> lookupClass = Class.forName(lookupClassName);
-        if (!ChannelProvider.class.isAssignableFrom(lookupClass)) {
-            throw new IllegalArgumentException(
-                                               "Invalid channel lookup class configured. Expected a subclass of org.modeshape.jcr.clustering.ChannelProvider. Actual class:"
-                                               + lookupClass);
+        ProtocolStackConfigurator configurator = null;
+        //check if it points to a file accessible via the class loader
+        InputStream stream = ClusteringService.class.getClassLoader().getResourceAsStream(jgroupsConfig);
+        try {
+            configurator = XmlConfigurator.getInstance(stream);
+        } catch (IOException e) {
+            LOGGER.debug(e, "Channel configuration is not a classpath resource");
+            //check if the configuration is valid xml content
+            stream = new ByteArrayInputStream(jgroupsConfig.getBytes());
+            try {
+                configurator = XmlConfigurator.getInstance(stream);
+            } catch (IOException e1) {
+                LOGGER.debug(e, "Channel configuration is not valid XML content");
+            }
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    // ignore this
+                }
+            }
         }
-        return ((ChannelProvider)lookupClass.newInstance()).getChannel(clusteringConfiguration);
+
+        if (configurator == null) {
+            throw new RepositoryException(ClusteringI18n.channelConfigurationError.text(jgroupsConfig));
+        }
+        return new JChannel(configurator);
     }
 
     /**
@@ -224,16 +266,7 @@ public final class ClusteringService {
      * @return a {@code String} the name of the cluster; never {@code null}
      */
     public String clusterName() {
-        return clusteringConfiguration.getClusterName();
-    }
-
-    /**
-     * Returns the id of the process which started this service.
-     * 
-     * @return a {@code String} the id of the process; never {@code null}
-     */
-    public String processId() {
-        return processId;
+        return channel.getClusterName();
     }
 
     /**
@@ -257,7 +290,7 @@ public final class ClusteringService {
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Process {0} from cluster {1} sending payload {2}", processId(), clusterName(), payload);
+            LOGGER.debug("Sending payload {0} in cluster {1} ", payload, clusterName());
         }
         try {
             byte[] messageData = toByteArray(payload);
@@ -266,7 +299,7 @@ public final class ClusteringService {
             return true;
         } catch (Exception e) {
             // Something went wrong here
-            throw new SystemFailureException(ClusteringI18n.errorSendingMessage.text(clusterName(), processId()), e);
+            throw new SystemFailureException(ClusteringI18n.errorSendingMessage.text(clusterName()), e);
         }
     }
 
@@ -307,7 +340,7 @@ public final class ClusteringService {
                 Serializable payload = fromByteArray(message.getBuffer(), getClass().getClassLoader());
 
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Process {0} from cluster {1} received payload {2}", processId(), clusterName(), payload);
+                    LOGGER.debug("Cluster {0} received payload {1}", clusterName(), payload);
                 }
 
                 for (MessageConsumer<Serializable> consumer : consumers) {
@@ -317,7 +350,7 @@ public final class ClusteringService {
                 }
             } catch (Exception e) {
                 // Something went wrong here (this should not happen) ...
-                String msg = ClusteringI18n.errorReceivingMessage.text(clusterName(), processId());
+                String msg = ClusteringI18n.errorReceivingMessage.text(clusterName());
                 throw new SystemFailureException(msg, e);
             }
         }

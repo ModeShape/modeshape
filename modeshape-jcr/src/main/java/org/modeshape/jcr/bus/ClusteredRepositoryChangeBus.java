@@ -117,8 +117,7 @@ public final class ClusteredRepositoryChangeBus extends MessageConsumer<ChangeSe
 
     protected final void logSendOperation( ChangeSet changeSet ) {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Process {0} sending to cluster '{1}' {2} changes on workspace {3} made by {4} from process '{5}' at {6}",
-                         clusteringService.processId(),
+            LOGGER.trace("Sending to cluster '{0}' {1} changes on workspace {2} made by {3} from process '{4}' at {5}",
                          clusteringService.clusterName(),
                          changeSet.size(),
                          changeSet.getWorkspaceName(),
@@ -130,8 +129,7 @@ public final class ClusteredRepositoryChangeBus extends MessageConsumer<ChangeSe
 
     protected final void logReceivedOperation( ChangeSet changeSet ) {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Process {0} received on cluster '{1}' {2} changes on workspace {3} made by {4} from process '{5}' at {6}",
-                         clusteringService.processId(),
+            LOGGER.trace("Received from cluster '{0}' {1} changes on workspace {2} made by {3} from process '{4}' at {5}",
                          clusteringService.clusterName(),
                          changeSet.size(),
                          changeSet.getWorkspaceName(),

@@ -5,14 +5,14 @@
         "default" : "default",
         "allowCreation" : true
     },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-clustered-persistent-1.xml"
+    },
     "query" : {
         "enabled" : false
     },
-    "clustering" : {
-        "clusterName" : "modeshape",
-        "channelConfiguration" : "config/jgroups-test-config.xml"
-    },
     "journaling" : {
-        "location" : "target/journal2"
+        "location" : "target/clustered/journal2"
     }
 }

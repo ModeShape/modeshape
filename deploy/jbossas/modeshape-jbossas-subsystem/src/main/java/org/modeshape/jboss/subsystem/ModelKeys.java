@@ -41,8 +41,6 @@ public class ModelKeys {
     static final String NESTED_STORAGE_TYPE_CUSTOM = "nested-storage-type-custom";
     static final String CACHE_CONTAINER = "cache-container";
     static final String CACHE_NAME = "cache-name";
-    static final String CLUSTER_NAME = "cluster-name";
-    static final String CLUSTER_STACK = "cluster-stack";
     static final String CLASSNAME = "classname";
     static final String CONNECTION_FACTORY_JNDI_NAME = "connection-factory-jndi-name";
     static final String COPY_BUFFER_SIZE = "copy-buffer-size";

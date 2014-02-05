@@ -11,8 +11,5 @@
     },
     "query": {
         "enabled" : false
-    },
-    "clustering" : {
-        "clusterName" : "modeshape-event-cluster"
     }
 }

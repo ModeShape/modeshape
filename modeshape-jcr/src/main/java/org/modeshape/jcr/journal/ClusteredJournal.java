@@ -233,6 +233,6 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
     }
 
     protected String clusterName() {
-        return clusteringService().processId();
+        return clusteringService().clusterName();
     }
 }

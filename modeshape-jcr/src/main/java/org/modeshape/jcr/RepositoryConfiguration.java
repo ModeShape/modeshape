@@ -60,7 +60,6 @@ import org.infinispan.schematic.document.Editor;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.document.ParsingException;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
-import org.jgroups.Channel;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -68,7 +67,6 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.connector.filesystem.FileSystemConnector;
-import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
@@ -484,27 +482,6 @@ public class RepositoryConfiguration {
         public static final String REBUILD_MODE = "mode";
 
         /**
-         * The name of the clustering top-level configuration document
-         */
-        public static final String CLUSTERING = "clustering";
-
-        /**
-         * The name of the cluster as used by JChannel.connect
-         */
-        public static final String CLUSTER_NAME = "clusterName";
-
-        /**
-         * The fully qualified name of the {@link org.modeshape.jcr.clustering.ChannelProvider} implementation which will provide
-         * the JChannel instance
-         */
-        public static final String CHANNEL_PROVIDER = "channelProvider";
-
-        /**
-         * The optional string representing a valid JGroups channel configuration object
-         */
-        public static final String CHANNEL_CONFIGURATION = "channelConfiguration";
-
-        /**
          * The name of the journaling schema field.
          */
         public static final String JOURNALING = "journaling";
@@ -604,7 +581,6 @@ public class RepositoryConfiguration {
         public static final String INDEXING_BACKEND_TYPE = "lucene";
 
         public static final String CLUSTER_NAME = "ModeShape-JCR";
-        public static final String CHANNEL_PROVIDER = DefaultChannelProvider.class.getName();
 
         public static final String GARBAGE_COLLECTION_INITIAL_TIME = "00:00";
         public static final int GARBAGE_COLLECTION_INTERVAL_IN_HOURS = 24;
@@ -672,11 +648,6 @@ public class RepositoryConfiguration {
      * The set of field names that should be skipped when {@link Component#createInstance(ClassLoader) instantiating a component}.
      */
     protected static final Set<String> COMPONENT_SKIP_PROPERTIES;
-
-    /**
-     * Flag which is used to determine whether clustering should be enabled or not
-     */
-    protected static final boolean JGROUPS_PRESENT = isJGroupsInClasspath();
 
     static {
         Set<String> skipProps = new HashSet<String>();
@@ -916,22 +887,6 @@ public class RepositoryConfiguration {
         return document;
     }
 
-    private static boolean isJGroupsInClasspath() {
-        List<String> requiredJGroupsClasses = Arrays.asList("org.jgroups.JChannel",
-                                                            "org.jgroups.ReceiverAdapter",
-                                                            "org.jgroups.ChannelListener");
-        try {
-            ClassLoader classLoader = RepositoryConfiguration.class.getClassLoader();
-
-            for (String jGroupsClass : requiredJGroupsClasses) {
-                Class.forName(jGroupsClass, false, classLoader);
-            }
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
     private final String docName;
     private final Document doc;
     private transient Environment environment = new LocalEnvironment();
@@ -1031,10 +986,6 @@ public class RepositoryConfiguration {
             storage = Schematic.newDocument();
         }
         return new BinaryStorage(storage.getDocument(FieldName.BINARY_STORAGE));
-    }
-
-    public Clustering getClustering() {
-        return new Clustering(doc.getDocument(FieldName.CLUSTERING));
     }
 
     /**
@@ -2420,59 +2371,6 @@ public class RepositoryConfiguration {
         }
     }
 
-    /**
-     * Class holding the clustering configuration for a repository.
-     */
-    @Immutable
-    public class Clustering {
-
-        private final Document clusteringDoc;
-
-        public Clustering( Document clusteringDoc ) {
-            this.clusteringDoc = (clusteringDoc != null && JGROUPS_PRESENT) ? clusteringDoc : EMPTY;
-        }
-
-        /**
-         * Checks whether clustering is enabled or not, based on a) JGroups being in the classpath and b) a clustering
-         * configuration having been provided.
-         * 
-         * @return true if clustering is enabled, or false otherwise
-         */
-        public boolean isEnabled() {
-            return this.clusteringDoc != EMPTY;
-        }
-
-        public String getChannelProviderClassName() {
-            return clusteringDoc.getString(FieldName.CHANNEL_PROVIDER, Default.CHANNEL_PROVIDER);
-        }
-
-        public String getClusterName() {
-            return clusteringDoc.getString(FieldName.CLUSTER_NAME, Default.CLUSTER_NAME);
-        }
-
-        public String getChannelConfiguration() {
-            return clusteringDoc.getString(FieldName.CHANNEL_CONFIGURATION);
-        }
-
-        public Document getDocument() {
-            return clusteringDoc;
-        }
-
-        /**
-         * Attempt to get the correct channel from the environment, if the environment has specified one.
-         * 
-         * @return the environment's channel, if defined; may be null if the environment doesn't provide a channel and the
-         *         {@link #getChannelProviderClassName() channel provider} should be used
-         * @throws Exception if there is a problem getting the channel from the environment
-         */
-        public Channel getChannel() throws Exception {
-            Environment env = environment();
-            if (env == null) return null;
-            Channel channel = env.getChannel(getClusterName());
-            return channel;
-        }
-    }
-
     @Immutable
     public class Journaling {
 
@@ -2483,7 +2381,7 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Checks whether clustering is enabled or not, based on a journaling configuration having been provided.
+         * Checks whether journaling is enabled or not, based on a journaling configuration having been provided.
          *
          * @return true if journaling is enabled, or false otherwise
          */

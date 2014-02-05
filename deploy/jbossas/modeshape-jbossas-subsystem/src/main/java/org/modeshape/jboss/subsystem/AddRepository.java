@@ -21,7 +21,6 @@ import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
-import org.jboss.as.clustering.jgroups.ChannelFactory;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -115,8 +114,6 @@ public class AddRepository extends AbstractAddStepHandler {
         final PathAddress pathAddress = PathAddress.pathAddress(address);
         final String repositoryName = pathAddress.getLastElement().getValue();
         final String cacheName = attribute(context, model, ModelAttributes.CACHE_NAME, repositoryName);
-        final String clusterChannelName = attribute(context, model, ModelAttributes.CLUSTER_NAME, null);
-        final String clusterStackName = attribute(context, model, ModelAttributes.CLUSTER_STACK, null);
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
         final boolean enableQueries = attribute(context, model, ModelAttributes.ENABLE_QUERIES).asBoolean();
         final String gcThreadPool = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL, null);
@@ -171,9 +168,6 @@ public class AddRepository extends AbstractAddStepHandler {
         // security
         parseSecurity(context, model, configDoc);
 
-        // Clustering and the JGroups channel ...
-        parseClustering(clusterChannelName, configDoc);
-
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
         RepositoryService repositoryService = new RepositoryService(repositoryConfig);
@@ -213,13 +207,6 @@ public class AddRepository extends AbstractAddStepHandler {
             if (optTolerance != null) {
                 docOpt.setNumber(FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE, optTolerance.intValue());
             }
-        }
-
-        // Add dependency to the JGroups channel (used for events) ...
-        if (clusterStackName != null) {
-            builder.addDependency(ServiceName.JBOSS.append("jgroups", "stack", clusterStackName),
-                                  ChannelFactory.class,
-                                  repositoryService.getChannelFactoryInjector());
         }
 
         // Add dependency to the Infinispan cache container used for content ...
@@ -327,14 +314,6 @@ public class AddRepository extends AbstractAddStepHandler {
     protected boolean requiresRuntime( OperationContext context ) {
         //always require the performRuntime method to be called
         return true;
-    }
-
-    private void parseClustering( String clusterChannelName,
-                                  EditableDocument configDoc ) {
-        if (clusterChannelName != null) {
-            EditableDocument clustering = configDoc.getOrCreateDocument(FieldName.CLUSTERING);
-            clustering.setString(FieldName.CLUSTER_NAME, clusterChannelName);
-        }
     }
 
     private void parseSecurity( OperationContext context,

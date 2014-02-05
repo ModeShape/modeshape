@@ -38,8 +38,6 @@ public enum Attribute {
     CACHE_NAME("cache-name"),
     CHANNEL_NAME("channel-name"),
     CLASSNAME("classname"),
-    CLUSTER_NAME("cluster-name"),
-    CLUSTER_STACK("cluster-stack"),
     CONNECTION_FACTORY_JNDI_NAME("connection-factory-jndi-name"),
     COPY_BUFFER_SIZE("copy-buffer-size"),
     DATA_CACHE_NAME("data-cache-name"),

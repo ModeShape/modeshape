@@ -15,11 +15,11 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
@@ -162,12 +162,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         break;
                     case USE_ANONYMOUS_IF_AUTH_FAILED:
                         ModelAttributes.USE_ANONYMOUS_IF_AUTH_FAILED.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case CLUSTER_STACK:
-                        ModelAttributes.CLUSTER_STACK.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case CLUSTER_NAME:
-                        ModelAttributes.CLUSTER_NAME.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     case GARBAGE_COLLECTION_THREAD_POOL:
                         ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);

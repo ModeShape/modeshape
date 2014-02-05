@@ -109,8 +109,5 @@
                 "splitPattern" : ","
             }
         }
-    },
-    "clustering" : {
-        "description" : "This nested document is not needed, since this repository will not be clustered.",
     }
 }
