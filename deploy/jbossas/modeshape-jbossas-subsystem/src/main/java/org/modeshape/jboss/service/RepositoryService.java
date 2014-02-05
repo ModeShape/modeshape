@@ -25,7 +25,6 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
-import org.jboss.as.clustering.jgroups.ChannelFactory;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -37,7 +36,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jgroups.Channel;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringUtil;
@@ -66,7 +64,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<CacheContainer> cacheManagerInjector = new InjectedValue<CacheContainer>();
     private final InjectedValue<CacheContainer> workspacesCacheContainerInjector = new InjectedValue<CacheContainer>();
-    private final InjectedValue<ChannelFactory> channelFactoryInjector = new InjectedValue<ChannelFactory>();
     private final InjectedValue<IndexStorage> indexStorageConfigInjector = new InjectedValue<IndexStorage>();
     private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<BinaryStorage>();
     private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
@@ -108,11 +105,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             container = cacheManagerInjector.getValue();
         }
         return container;
-    }
-
-    @Override
-    public Channel getChannel( String name ) throws Exception {
-        return channelFactoryInjector.getValue().createChannel(name);
     }
 
     @Override
@@ -511,13 +503,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
      */
     public InjectedValue<CacheContainer> getCacheManagerInjector() {
         return cacheManagerInjector;
-    }
-
-    /**
-     * @return the injector used to set the JGroups' ChannelFactory
-     */
-    public InjectedValue<ChannelFactory> getChannelFactoryInjector() {
-        return channelFactoryInjector;
     }
 
     /**

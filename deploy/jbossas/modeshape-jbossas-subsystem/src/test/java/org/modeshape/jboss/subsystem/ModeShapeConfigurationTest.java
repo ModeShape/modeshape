@@ -208,11 +208,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         }
 
         @Test
-        public void testOutputPersistenceOfConfigurationWithClustering() throws Exception {
-        roundTrip("modeshape-clustered-config.xml", "modeshape-clustered-config.json");
-        }
-
-        @Test
         public void testOutputPersistenceOfConfigurationWithMinimalRepository() throws Exception {
         roundTrip("modeshape-minimal-config.xml", "modeshape-minimal-config.json");
         }

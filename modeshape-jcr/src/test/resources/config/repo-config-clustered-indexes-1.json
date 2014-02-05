@@ -34,8 +34,5 @@
             "lockingStrategy":"simple",
             "fileSystemAccessType":"auto"
         }
-    },
-    "clustering" : {
-        "clusterName" : "modeshape-cluster"
     }
 }

@@ -78,7 +78,5 @@
                 "splitPattern" : ","
             }
         }
-    },
-    "clustering" : {
     }
 }

@@ -43,8 +43,6 @@
 
         <module name="org.joda.time"/>
         <module name="org.jgroups"/>
-        <!--Needed in order to be able to use ChannelInjector in our kit -->
-        <module name="org.jboss.as.clustering.jgroups"/>
         <module name="org.apache.tika" slot="${tika.version}" services="import"/>
         <module name="org.mapdb" slot="${mapdb.version}" services="import"/>
         <module name="org.apache.lucene" slot="3.6.2"/>

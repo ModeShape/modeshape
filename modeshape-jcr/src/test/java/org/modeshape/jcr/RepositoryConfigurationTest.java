@@ -19,8 +19,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import org.infinispan.schematic.Schematic;
@@ -289,33 +287,6 @@ public class RepositoryConfigurationTest {
     @Test
     public void shouldAllowValidButSimpleRepositoryConfigurationWithSingleQuotes() {
         assertValid("{ 'name' : 'sample', 'jndiName' : 'modeshape_repo1'}");
-    }
-
-    @Test
-    public void shouldUseDefaultClusteringValues() throws Exception {
-        RepositoryConfiguration config = RepositoryConfiguration.read("{ \"clustering\" : { } }");
-        RepositoryConfiguration.Clustering clusteringConfiguration = config.getClustering();
-        assertEquals(RepositoryConfiguration.Default.CLUSTER_NAME, clusteringConfiguration.getClusterName());
-        assertEquals(RepositoryConfiguration.Default.CHANNEL_PROVIDER, clusteringConfiguration.getChannelProviderClassName());
-        assertNull(clusteringConfiguration.getChannelConfiguration());
-        assertNotNull(clusteringConfiguration.getDocument());
-    }
-
-    @Test
-    public void shouldAllowClusteringToBeConfigured() throws Exception {
-        String clusterName = "testCluster";
-        String providerClass = "someClass";
-        String channelConfig = "someConfig";
-
-        RepositoryConfiguration config = RepositoryConfiguration.read("{ \"clustering\" : {\"clusterName\":\"" + clusterName
-                                                                      + "\", \"channelProvider\":\"" + providerClass
-                                                                      + "\", \"channelConfiguration\": \"" + channelConfig
-                                                                      + "\"} }");
-        RepositoryConfiguration.Clustering clusteringConfiguration = config.getClustering();
-        assertEquals(clusterName, clusteringConfiguration.getClusterName());
-        assertEquals(providerClass, clusteringConfiguration.getChannelProviderClassName());
-        assertEquals(channelConfig, clusteringConfiguration.getChannelConfiguration());
-        assertNotNull(clusteringConfiguration.getDocument());
     }
 
     @Test
