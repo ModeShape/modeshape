@@ -310,8 +310,8 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
     @Test
     public void shouldBeAbleToMoveExternalNodes() throws Exception {
         assertNotNull(session.getNode("/cmis/My_Folder-0-0/My_Document-1-0"));
-        ((Workspace)session.getWorkspace()).move("/cmis/My_Folder-0-0/My_Document-1-0", "/cmis/My_Folder-0-0/My_Document-1-X");
-        Node file = session.getNode("/cmis/My_Folder-0-0/My_Document-1-X");
+        ((Workspace)session.getWorkspace()).move("/cmis/My_Folder-0-0/My_Document-1-0", "/cmis/My_Folder-0-1/My_Document-1-X");
+        Node file = session.getNode("/cmis/My_Folder-0-1/My_Document-1-X");
         assertNotNull(file);
         assertNotNull(session.getNode("/cmis/My_Folder-0-0"));
         ((Workspace)session.getWorkspace()).move("/cmis/My_Folder-0-0", "/cmis/My_Folder-0-X");
