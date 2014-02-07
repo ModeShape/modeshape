@@ -44,6 +44,7 @@ public final class JcrI18n {
     public static I18n indexRebuildingOfWorkspaceComplete;
     public static I18n unableToInitializeSystemWorkspace;
     public static I18n repositoryWasNeverInitializedAfterMinutes;
+    public static I18n repositoryWasInitializedByOtherProcess;
     public static I18n repositoryWasNeverUpgradedAfterMinutes;
     public static I18n failureDuringUpgradeOperation;
 

@@ -34,12 +34,15 @@ import org.jgroups.Address;
 import org.jgroups.Channel;
 import org.jgroups.ChannelListener;
 import org.jgroups.JChannel;
+import org.jgroups.MergeView;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
+import org.jgroups.blocks.locking.LockService;
 import org.jgroups.conf.ProtocolStackConfigurator;
 import org.jgroups.conf.XmlConfigurator;
 import org.jgroups.fork.ForkChannel;
+import org.jgroups.protocols.CENTRAL_LOCK;
 import org.jgroups.stack.Protocol;
 import org.jgroups.stack.ProtocolStack;
 import org.modeshape.common.SystemFailureException;
@@ -62,6 +65,11 @@ public final class ClusteringService {
      * An approximation about the maximum delay in local time that we consider acceptable.
      */
     private static final long DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS = TimeUnit.MINUTES.toMillis(10);
+
+    /**
+     * The name for a global cluster lock
+     */
+    private static final String GLOBAL_LOCK = "modeshape-global-lock";
 
     /**
      * The listener for channel changes.
@@ -94,6 +102,16 @@ public final class ClusteringService {
     private Channel channel;
 
     /**
+     * The JGroups fork channel which will be used for cluster-wide locking.
+     */
+    private JChannel lockChannel;
+
+    /**
+     * The service used for cluster-wide locking
+     */
+    private LockService lockService;
+
+    /**
      * A list of message consumers which register themselves with this service.
      */
     private final Set<MessageConsumer<Serializable>> consumers;
@@ -124,14 +142,9 @@ public final class ClusteringService {
         try {
             // Create the new channel by calling the delegate method ...
             this.channel = newChannel(jgroupsConfig);
-            // Add a listener through which we'll know what's going on within the cluster ...
-            this.channel.addChannelListener(listener);
 
-            // Set the receiver through which we'll receive all of the changes ...
-            this.channel.setReceiver(receiver);
-
-            // Now connect to the cluster ...
-            this.channel.connect(clusterName);
+            initChannel(clusterName);
+            initLockService(this.channel);
 
             return this;
         } catch (Exception e) {
@@ -152,19 +165,45 @@ public final class ClusteringService {
             //add the fork at the top of the stack (the bottom should be either TCP/UDP) to preserve the default configuration
             this.channel = new ForkChannel(mainChannel, "modeshape-stack", "modeshape-fork-channel", true, ProtocolStack.ABOVE,
                                            topProtocol.getClass());
-            // Add a listener through which we'll know what's going on within the cluster ...
-            this.channel.addChannelListener(listener);
-
-            // Set the receiver through which we'll receive all of the changes ...
-            this.channel.setReceiver(receiver);
-
-            // The name of the cluster is ignored for fork channels
-            this.channel.connect("modeshape-fork-channel");
+            initChannel("modeshape-fork-channel");
+            initLockService(mainChannel);
 
             return this;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void initLockService( Channel mainChannel ) throws Exception {
+        Protocol bottomProtocol = mainChannel.getProtocolStack().getBottomProtocol();
+        this.lockChannel = new ForkChannel(mainChannel, "modeshape-lock-stack", "modeshape-lock-channel", true,
+                                           ProtocolStack.ABOVE,
+                                           bottomProtocol.getClass(),
+                                           new CENTRAL_LOCK());
+        this.lockChannel.setReceiver(new ReceiverAdapter() {
+            @Override
+            public void viewAccepted( View view ) {
+               if (view instanceof MergeView) {
+                   //see JGroups docs in case of a cluster split-merge case
+                   lockService.unlockAll();
+               }
+            }
+        });
+        //channel name is ignored for fork channels
+        this.lockChannel.connect("ignored");
+
+        this.lockService = new LockService(this.lockChannel);
+    }
+
+    private void initChannel( String clusterName ) throws Exception {
+        // Add a listener through which we'll know what's going on within the cluster ...
+        this.channel.addChannelListener(listener);
+
+        // Set the receiver through which we'll receive all of the changes ...
+        this.channel.setReceiver(receiver);
+
+        // Now connect to the cluster ...
+        this.channel.connect(clusterName);
     }
 
     private Channel newChannel( String jgroupsConfig ) throws Exception {
@@ -217,7 +256,19 @@ public final class ClusteringService {
      * Shuts down and clears resources held by this service.
      */
     public synchronized void shutdown() {
+        LOGGER.debug("Shutting down cluster service");
         consumers.clear();
+        if (lockChannel != null) {
+            try {
+                lockService.unlockAll();
+                lockChannel.close();
+                LOGGER.debug("Successfully closed lock channel");
+            } finally {
+                lockService = null;
+                lockChannel = null;
+            }
+        }
+
         if (channel != null) {
             // Mark this as not accepting any more ...
             isOpen.set(false);
@@ -226,11 +277,40 @@ public final class ClusteringService {
                 channel.close();
                 channel.removeChannelListener(listener);
                 channel.setReceiver(null);
+                LOGGER.debug("Successfully closed main channel");
             } finally {
                 channel = null;
             }
             membersInCluster.set(1);
         }
+    }
+
+    /**
+     * Acquires a cluster-wide lock, waiting a maximum amount of time for it.
+     *
+     * @param time an amount of time
+     * @param unit a {@link java.util.concurrent.TimeUnit}; may not be null
+     * @return {@code true} if the lock was successfully acquired, {@code false} otherwise
+     *
+     * @see java.util.concurrent.locks.Lock#tryLock(long, java.util.concurrent.TimeUnit)
+     */
+    public boolean tryLock(long time, TimeUnit unit) {
+        try {
+            return lockService.getLock(GLOBAL_LOCK).tryLock(time, unit);
+        } catch (InterruptedException e) {
+            LOGGER.debug("Thread " + Thread.currentThread().getName() + " received interrupt request while waiting to acquire lock '{0}'", GLOBAL_LOCK);
+            Thread.interrupted();
+            return false;
+        }
+    }
+
+    /**
+     * Unlocks a previously acquired cluster-wide lock.
+     *
+     * @see java.util.concurrent.locks.Lock#unlock()
+     */
+    public void unlock() {
+        lockService.getLock(GLOBAL_LOCK).unlock();
     }
 
     /**

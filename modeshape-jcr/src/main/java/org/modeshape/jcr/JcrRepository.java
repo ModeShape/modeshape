@@ -1129,7 +1129,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                           new RepositorySessionEnvironment(this.transactions, indexingClustered,
                                                                                            this.journal.journalId());
                     CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
-                    this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv,
+                    this.cache = new RepositoryCache(context, documentStore, clusteringService, config, systemContentInitializer, sessionEnv,
                                                      changeBus, workspaceCacheContainer, Upgrades.STANDARD_UPGRADES);
 
                     // Set up the node type manager ...
