@@ -18,9 +18,12 @@ package org.modeshape.jcr.journal;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.clustering.ClusteringService;
 
 /**
@@ -32,6 +35,16 @@ public class ClusteredJournalTest extends LocalJournalTest {
 
     private ClusteredJournal defaultJournal;
     private List<ClusteringService> clusteringServices = new ArrayList<ClusteringService>();
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        ClusteringHelper.bindJGroupsToLocalAddress();
+    }
+
+    @AfterClass
+    public static void afterClass() throws Exception {
+        ClusteringHelper.removeJGroupsBindings();
+    }
 
     @Override
     public void before() throws Exception {
