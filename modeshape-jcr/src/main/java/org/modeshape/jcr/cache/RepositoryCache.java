@@ -77,6 +77,7 @@ import org.modeshape.jcr.cache.document.LocalDocumentStore.DocumentOperationResu
 import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
+import org.modeshape.jcr.clustering.ClusteringService;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.txn.Transactions.Transaction;
 import org.modeshape.jcr.value.Name;
@@ -129,9 +130,12 @@ public class RepositoryCache implements Observable {
     private volatile boolean initializingRepository = false;
     private volatile boolean upgradingRepository = false;
     private int lastUpgradeId;
+    private final ClusteringService clusteringService;
+    private volatile boolean isHoldingClusterLock = false;
 
     public RepositoryCache( ExecutionContext context,
                             DocumentStore documentStore,
+                            ClusteringService clusteringService,
                             RepositoryConfiguration configuration,
                             ContentInitializer initializer,
                             SessionEnvironment sessionContext,
@@ -141,6 +145,7 @@ public class RepositoryCache implements Observable {
         this.context = context;
         this.configuration = configuration;
         this.documentStore = documentStore;
+        this.clusteringService = clusteringService;
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.sessionContext = sessionContext;
@@ -152,6 +157,18 @@ public class RepositoryCache implements Observable {
         this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
         this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
         this.upgrades = upgradeFunctions;
+
+        //if we're running in a cluster, try to acquire a global cluster lock to perform initialization
+        if (clusteringService != null) {
+            int minutesToWait = 10;
+            LOGGER.debug("Waiting at most for {0} minutes while verifying the status of the '{1}' repository", minutesToWait, name);
+            if (!clusteringService.tryLock(minutesToWait, TimeUnit.MINUTES)) {
+                throw new SystemFailureException(JcrI18n.repositoryWasNeverInitializedAfterMinutes.text(name, minutesToWait));
+            }
+            LOGGER.debug("Repository '{0}' acquired clustered-wide lock for performing initialization or verifying status", name);
+            //at this point we should have a global cluster-wide lock
+            isHoldingClusterLock = true;
+        }
 
         SchematicEntry repositoryInfo = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
         boolean upgradeRequired = false;
@@ -174,19 +191,23 @@ public class RepositoryCache implements Observable {
             doc.setString(REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME, ModeShape.getVersion());
             doc.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, upgrades.getLatestAvailableUpgradeId());
 
-            // Try to put it, but don't overwrite one that might have been stored since we checked ...
-            this.documentStore.localStore().putIfAbsent(REPOSITORY_INFO_KEY, doc);
-            repositoryInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
-
-            if (repositoryInfo.getContentAsDocument().getString(REPOSITORY_INITIALIZER_FIELD_NAME).equals(initializerId)) {
-                // We're doing the initialization ...
-                initializingRepository = true;
-                LOGGER.debug("Initializing the '{0}' repository", name);
+            // store the repository info
+            if (this.documentStore.localStore().putIfAbsent(REPOSITORY_INFO_KEY, doc) != null) {
+                //if clustered, we should be holding a cluster-wide lock, so if some other process managed to write under this key,
+                //smth is seriously wrong. If not clustered, only 1 thread will always perform repository initialization.
+                // in either case, this should not happen
+                throw new SystemFailureException(JcrI18n.repositoryWasInitializedByOtherProcess.text(name));
             }
-
+            repositoryInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
+            // We're doing the initialization ...
+            initializingRepository = true;
+            LOGGER.debug("Initializing the '{0}' repository", name);
         } else {
             // Get the repository key and source key from the repository info document ...
             Document info = repositoryInfo.getContentAsDocument();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Repository '{0}' already initialized at '{1}'", name, info.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME));
+            }
             String repoName = info.getString(REPOSITORY_NAME_FIELD_NAME, this.name);
             String sourceName = info.getString(REPOSITORY_SOURCE_NAME_FIELD_NAME, configuration.getStoreName());
             this.repoKey = info.getString(REPOSITORY_KEY_FIELD_NAME, NodeKey.keyForSourceName(repoName));
@@ -229,19 +250,6 @@ public class RepositoryCache implements Observable {
                     LOGGER.debug("The content in repository '{0}' does not need to be upgraded", name);
                 }
             }
-        }
-
-        // If we're not doing the initialization of the repository, block for at most 10 minutes while another process does ...
-        if (!initializingRepository) {
-            LOGGER.debug("Waiting at most for 10 minutes while verifying the status of the '{0}' repository", name);
-            waitUntil(new Callable<Boolean>() {
-                @Override
-                public Boolean call() {
-                    Document info = documentStore().localStore().get(REPOSITORY_INFO_KEY).getContentAsDocument();
-                    return info.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) != null;
-                }
-            }, 10, TimeUnit.MINUTES, JcrI18n.repositoryWasNeverInitializedAfterMinutes);
-            LOGGER.debug("Found repository '{0}' to be fully initialized", name);
         }
 
         // If we're not doing the upgrade, then block for at most 10 minutes while another process does ...
@@ -343,14 +351,22 @@ public class RepositoryCache implements Observable {
      * error occurs.
      */
     public final void rollbackRepositoryInfo() {
-        SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
-        if (repositoryInfoEntry != null) {
-            Document repoInfoDoc = repositoryInfoEntry.getContentAsDocument();
-            // we should only remove the repository info if it wasn't initialized successfully previously
-            // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
-            // should not remove the entry)
-            if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
-                this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
+        try {
+            SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
+            if (repositoryInfoEntry != null) {
+                Document repoInfoDoc = repositoryInfoEntry.getContentAsDocument();
+                // we should only remove the repository info if it wasn't initialized successfully previously
+                // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
+                // should not remove the entry)
+                if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
+                    this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
+                }
+            }
+        } finally {
+            //if we have a global cluster-wide lock, make sure its released
+            if (isHoldingClusterLock) {
+                clusteringService.unlock();
+                LOGGER.debug("Repository '{0}' released clustered-wide lock after failing to start up ", name);
             }
         }
     }
@@ -400,22 +416,30 @@ public class RepositoryCache implements Observable {
 
     public RepositoryCache completeInitialization() {
         if (initializingRepository) {
-            LOGGER.debug("Marking repository '{0}' as fully initialized", name);
-            runInTransaction(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    LocalDocumentStore store = documentStore().localStore();
-                    store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                    SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
-                    EditableDocument editor = repositoryInfo.editDocumentContent();
-                    if (editor.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
-                        DateTime now = context().getValueFactories().getDateFactory().create();
-                        editor.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
+            try {
+                LOGGER.debug("Marking repository '{0}' as fully initialized", name);
+                runInTransaction(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        LocalDocumentStore store = documentStore().localStore();
+                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
+                        SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
+                        EditableDocument editor = repositoryInfo.editDocumentContent();
+                        if (editor.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
+                            DateTime now = context().getValueFactories().getDateFactory().create();
+                            editor.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
+                        }
+                        return null;
                     }
-                    return null;
+                });
+                LOGGER.debug("Repository '{0}' is fully initialized", name);
+            } finally {
+                //if we have a global cluster-wide lock, make sure its released
+                if (isHoldingClusterLock) {
+                    clusteringService.unlock();
+                    LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
                 }
-            });
-            LOGGER.debug("Repository '{0}' is fully initialized", name);
+            }
         }
         return this;
     }
@@ -466,9 +490,7 @@ public class RepositoryCache implements Observable {
                 txn.rollback();
                 throw (e instanceof RuntimeException) ? (RuntimeException)e : new RuntimeException(e);
             }
-        } catch (IllegalStateException err) {
-            throw new SystemFailureException(err);
-        } catch (SystemException err) {
+        } catch (IllegalStateException | SystemException err) {
             throw new SystemFailureException(err);
         } catch (NotSupportedException e) {
             logger.debug(e, "nested transactions not supported");
