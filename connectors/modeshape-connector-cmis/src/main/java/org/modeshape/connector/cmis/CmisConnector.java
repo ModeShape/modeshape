@@ -32,6 +32,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
+import org.apache.chemistry.opencmis.client.api.FileableCmisObject;
 import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.client.api.Folder;
 import org.apache.chemistry.opencmis.client.api.ItemIterable;
@@ -49,6 +50,7 @@ import org.apache.chemistry.opencmis.commons.definitions.PropertyDefinition;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
@@ -548,19 +550,73 @@ public class CmisConnector extends Connector {
                 }
 
                 ChildrenChanges childrenChanges = delta.getChildrenChanges();
-                Map<String, Name> renamed = childrenChanges.getRenamed();
+                Map<String, Name> renamed = new HashMap<>();
+                renamed.putAll(childrenChanges.getRenamed());
+                renamed.putAll(childrenChanges.getAppended());
 
+                String before, after;
                 for (String key : renamed.keySet()) {
                     CmisObject object = session.getObject(key);
                     if (object == null) continue;
 
-                    Map<String, Object> newName = new HashMap<String, Object>();
-                    newName.put("cmis:name", renamed.get(key).getLocalName());
+                    // check if name was changed
+                    before = object.getName();
+                    after = renamed.get(key).getLocalName();
+                    if (after.equals(before)) continue;
 
-                    object.updateProperties(newName);
+                    // determine if in child's parent already exists a child with same name
+                    if (isExistCmisObject(((FileableCmisObject) object).getParents().get(0).getPath() + "/" + after)) {
+                        // already exists, so generates a temporary name
+                        after += "-temp";
+                    }
+
+                    rename(object, after);
                 }
+            
+                // run move action
+                if (delta.getParentChanges().hasNewPrimaryParent()) {
+                    FileableCmisObject object = (FileableCmisObject)cmisObject;
+                    CmisObject source = object.getParents().get(0);
+                    CmisObject destination = session.getObject(delta.getParentChanges().getNewPrimaryParent());
+
+                    object.move(source, destination);
+
+                    // rename temporary name to a original
+                    String name = object.getName();
+                    if (name.endsWith("-temp")) {
+                        rename(object, name.replace("-temp", ""));
+                    }
+                }
+                
                 break;
         }
+    }
+
+    /**
+     * Utility method for checking if CMIS object exists at defined path
+     * @param path path for object
+     * @return <code>true</code> if exists, <code>false</code> otherwise
+     */
+    private boolean isExistCmisObject(String path) {
+        try {
+            session.getObjectByPath(path);
+            return true;
+        }
+        catch (CmisObjectNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Utility method for renaming CMIS object
+     * @param object CMIS object to rename
+     * @param name new name
+     */
+    private void rename(CmisObject object, String name){
+        Map<String, Object> newName = new HashMap<String, Object>();
+        newName.put("cmis:name", name);
+
+        object.updateProperties(newName);
     }
 
     @Override

@@ -319,7 +319,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertNotNull(folder);
         assertEquals("nt:folder", folder.getPrimaryNodeType().getName());
         //undo the moves so that the original folder and document are unchaged (they are used by the other tests as well)
-        ((Workspace) session.getWorkspace()).move("/cmis/My_Folder-0-X/My_Document-1-X", "/cmis/My_Folder-0-X/My_Document-1-0");
+        ((Workspace) session.getWorkspace()).move("/cmis/My_Folder-0-1/My_Document-1-X", "/cmis/My_Folder-0-X/My_Document-1-0");
         ((Workspace) session.getWorkspace()).move("/cmis/My_Folder-0-X", "/cmis/My_Folder-0-0");
     }
 
