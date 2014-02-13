@@ -943,6 +943,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                         EditableDocument doc = documentStore.get(keyStr).editDocumentContent();
                         translator.changeReferrers(doc, referrerChanges);
                     }
+
+                    // if the node had any binary properties, make sure we decrement the ref count of each
+                    for (Iterator<Property> propertyIterator = persisted.getProperties(workspaceCache); propertyIterator.hasNext(); ) {
+                        Property property = propertyIterator.next();
+                        if (property.isBinary()) {
+                            Object value = property.isMultiple() ? Arrays.asList(property.getValuesAsArray()) : property.getFirstValue();
+                            translator.decrementBinaryReferenceCount(value, unusedBinaryKeys);
+                        }
+                    }
+
                     // Note 1: Do not actually remove the document from the documentStore yet; see below (note 2)
                 }
                 // Otherwise, the removed node was created in the session (but not ever persisted),

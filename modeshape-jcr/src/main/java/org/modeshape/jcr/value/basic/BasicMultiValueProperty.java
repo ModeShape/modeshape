@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Reference;
 
@@ -91,6 +92,11 @@ public class BasicMultiValueProperty extends BasicProperty {
     public boolean isSimpleReference() {
         Object firstValue = getFirstValue();
         return  firstValue instanceof  Reference && ((Reference) firstValue).isSimple();
+    }
+
+    @Override
+    public boolean isBinary() {
+        return getFirstValue() instanceof Binary;
     }
 
     @Override
