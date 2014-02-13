@@ -120,10 +120,6 @@ public final class NoOpChanges implements Changes {
     }
 
     @Override
-    public void binaryValueNowUsed( BinaryKey key ) {
-    }
-
-    @Override
     public void nodeReordered( NodeKey key,
                                Name primaryType,
                                Set<Name> mixinTypes,

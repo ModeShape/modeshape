@@ -9,8 +9,7 @@
         "cacheConfiguration" : "config/infinispan-persistent.xml",
         "binaryStorage" : {
             "type" : "file",
-            "directory": "target/persistent_repository/binaries",
-            "minimumBinarySizeInBytes" : 40
+            "directory": "target/persistent_repository/binaries"
         }
     },
     "workspaces" : {
