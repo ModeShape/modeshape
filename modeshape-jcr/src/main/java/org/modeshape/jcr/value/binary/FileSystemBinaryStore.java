@@ -498,7 +498,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         // We could do this lazily, but doing so is more complicated than just grabbing them all at once.
         // So we'll implement the simple approach now ...
         Set<BinaryKey> keys = new HashSet<BinaryKey>();
-
+        Set<BinaryKey> keysToExclude = new HashSet<BinaryKey>();
         // Iterate over all of the files in the directory structure (excluding trash) and assemble the results ...
         if (isReadableDir(directory)) {
             for (File first : directory.listFiles()) {
@@ -514,6 +514,14 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                                         if (filename.length() != 40) continue;
                                         BinaryKey key = new BinaryKey(file.getName());
                                         keys.add(key);
+
+                                        //exclude mime types (which will be seen as binaries)
+                                        BinaryKey mimeTypeKey = createKeyFromSourceWithSuffix(key, MIME_TYPE_SUFFIX);
+                                        keysToExclude.add(mimeTypeKey);
+
+                                        //exclude extracted text
+                                        BinaryKey textKey = createKeyFromSourceWithSuffix(key, EXTRACTED_TEXT_SUFFIX);
+                                        keysToExclude.add(textKey);
                                     }
                                 }
                             }
@@ -522,6 +530,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 }
             }
         }
+        keys.removeAll(keysToExclude);
         return keys;
     }
 

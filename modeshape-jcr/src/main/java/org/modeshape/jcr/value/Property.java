@@ -126,6 +126,13 @@ public interface Property extends Iterable<Object>, Comparable<Property>, Readab
     boolean isSimpleReference();
 
     /**
+     * Determine whether this property is a binary property or not.
+     *
+     * @return true if the property is a binary property, false otherwise.
+     */
+    boolean isBinary();
+
+    /**
      * Obtain the property's first value in its natural form. This is equivalent to calling
      * <code>isEmpty() ? null : iterator().next()</code>
      * 

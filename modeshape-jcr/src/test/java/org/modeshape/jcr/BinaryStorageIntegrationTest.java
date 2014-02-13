@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.value.binary;
+package org.modeshape.jcr;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -30,15 +30,19 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import org.junit.Assert;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.SingleUseAbstractTest;
+import org.modeshape.jcr.api.Binary;
+import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.binary.BinaryStore;
 
 /**
  * Test suite that should include test cases which verify that a repository configured with various binary stores, correctly
@@ -46,7 +50,7 @@ import org.modeshape.jcr.SingleUseAbstractTest;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class BinaryStorageTest extends SingleUseAbstractTest {
+public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
 
     private static final Random RANDOM = new Random();
 
@@ -54,7 +58,7 @@ public class BinaryStorageTest extends SingleUseAbstractTest {
     @FixFor( "MODE-1786" )
     public void shouldStoreBinariesIntoJDBCBinaryStore() throws Exception {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
-        byte[] data = randomBytes(AbstractBinaryStore.MEDIUM_BUFFER_SIZE * 2);
+        byte[] data = randomBytes(4 * 1024);
         storeAndAssert(data, "node");
     }
 
@@ -130,6 +134,86 @@ public class BinaryStorageTest extends SingleUseAbstractTest {
         expected = new byte[data.length - 2000];
         System.arraycopy(data, 2000, expected, 0, data.length - 2000);
         assertArrayEquals(expected, IoUtil.readBytes(inputStream));
+    }
+
+    @Test
+    @FixFor( "MODE-2144" )
+    public void shouldCleanupUnusedBinariesForFilesystemStore() throws Exception {
+        FileUtil.delete("target/persistent_repository");
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
+
+        checkUnusedBinariesAreCleanedUp();
+    }
+
+    @Test
+    @FixFor( "MODE-2144" )
+    public void shouldCleanupUnusedBinariesForDatabaseStore() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
+        checkUnusedBinariesAreCleanedUp();
+    }
+
+    @Test
+    @FixFor( "MODE-2144" )
+    public void shouldCleanupUnusedBinariesForCacheBinaryStore() throws Exception {
+        FileUtil.delete("target/persistent_repository");
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
+        checkUnusedBinariesAreCleanedUp();
+    }
+
+    private void checkUnusedBinariesAreCleanedUp() throws Exception {
+        Session session = repository.login();
+
+        try {
+            assertEquals("There should be no binaries in store", 0, binariesCount());
+            tools.uploadFile(session, "/file1.txt", resourceStream("io/file1.txt"));
+            tools.uploadFile(session, "/file2.txt", resourceStream("io/file2.txt"));
+            Node node3 = session.getRootNode().addNode("file3");
+            node3.setProperty("binary", session.getValueFactory().createBinary(resourceStream("io/file3.txt")));
+            session.save();
+
+            //verify the mime-type has been extracted for the 2 nt:resources
+            Binary file1Binary = (Binary)session.getNode("/file1.txt/jcr:content").getProperty("jcr:data").getBinary();
+            assertEquals("Invalid mime-type", "text/plain", file1Binary.getMimeType());
+
+            Binary file2Binary = (Binary)session.getNode("/file2.txt/jcr:content").getProperty("jcr:data").getBinary();
+            assertEquals("Invalid mime-type", "text/plain", file2Binary.getMimeType());
+
+            //expect 3 binaries
+            assertEquals("Incorrect number of binaries in store", 3, binariesCount());
+
+            session.removeItem("/file1.txt");
+            session.removeItem("/file2.txt");
+            session.save();
+            //sleep to give the binary change listener to mark the binaries as unused
+            Thread.sleep(100);
+            binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+
+            //expect 1 binary
+            assertEquals("Incorrect number of binaries in store", 1, binariesCount());
+
+            session.removeItem("/file3/binary");
+            session.save();
+
+            //sleep to give the binary change listener to mark the binaries as unused
+            Thread.sleep(100);
+            binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+
+            assertEquals("There should be no binaries in store", 0, binariesCount());
+        } finally {
+            session.logout();
+        }
+    }
+
+    private int binariesCount() throws Exception {
+        int count = 0;
+        for (BinaryKey binaryKey : binaryStore().getAllBinaryKeys()) {
+            count++;
+        }
+        return count;
+    }
+
+    private BinaryStore binaryStore() {
+        return repository.runningState().binaryStore();
     }
 
     private byte[] randomBytes(int size) {

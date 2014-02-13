@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Reference;
 
@@ -81,6 +82,11 @@ public class BasicSingleValueProperty extends BasicProperty {
     public boolean isSimpleReference() {
         Object firstValue = getFirstValue();
         return firstValue instanceof  Reference && ((Reference) firstValue).isSimple();
+    }
+
+    @Override
+    public boolean isBinary() {
+        return getFirstValue() instanceof Binary;
     }
 
     @Override

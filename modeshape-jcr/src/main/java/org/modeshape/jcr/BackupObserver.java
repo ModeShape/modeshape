@@ -29,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.BinaryValueUnused;
-import org.modeshape.jcr.cache.change.BinaryValueUsed;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
@@ -72,15 +71,6 @@ public class BackupObserver implements ChangeSetListener {
                     break;
                 }
                 unusedBinaryKeys.put(key, null);
-            } else if (change instanceof BinaryValueUsed) {
-                BinaryValueUsed used = (BinaryValueUsed)change;
-                BinaryKey key = used.getKey();
-                if (unusedBinaryKeys.containsKey(key)) {
-                    // This change set had marked it as unused, but now is used again; removed it from the unused.
-                    unusedBinaryKeys.remove(key);
-                    break;
-                }
-                usedBinaryKeys.put(key, null);
             }
         }
     }

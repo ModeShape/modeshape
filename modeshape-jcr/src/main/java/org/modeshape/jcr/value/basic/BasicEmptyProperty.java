@@ -72,6 +72,11 @@ public class BasicEmptyProperty extends BasicProperty {
     }
 
     @Override
+    public boolean isBinary() {
+        return false;
+    }
+
+    @Override
     public int size() {
         return 0;
     }

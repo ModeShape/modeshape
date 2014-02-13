@@ -111,10 +111,6 @@ public final class NoOpChanges implements Changes {
     }
 
     @Override
-    public void binaryValueNowUsed( BinaryKey key ) {
-    }
-
-    @Override
     public void nodeReordered( NodeKey key,
                                NodeKey parent,
                                Path newPath,

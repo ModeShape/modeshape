@@ -29,7 +29,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -202,7 +201,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     public void removeValuesUnusedLongerThan( long minimumAge,
                                               TimeUnit unit ) throws BinaryStoreException {
         // compute usage deadline (in past)
-        long deadline = now() - unit.toMillis(minimumAge);
+        long deadline = System.currentTimeMillis() - unit.toMillis(minimumAge);
         PreparedStatement sql = database.removeExpiredContentSQL(deadline);
         Database.execute(sql); // doesn't produce a result set
     }
@@ -325,15 +324,6 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                 }
             }
         }
-    }
-
-    /**
-     * Current time.
-     * 
-     * @return current time in milliseconds
-     */
-    private long now() {
-        return new Date().getTime();
     }
 
     /**

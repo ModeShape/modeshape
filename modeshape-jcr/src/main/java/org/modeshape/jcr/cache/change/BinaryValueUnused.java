@@ -32,7 +32,7 @@ public class BinaryValueUnused extends BinaryValueUsageChange {
 
     private static final long serialVersionUID = 1L;
 
-    public BinaryValueUnused( BinaryKey key ) {
+    protected BinaryValueUnused( BinaryKey key ) {
         super(key);
     }
 

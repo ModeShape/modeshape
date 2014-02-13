@@ -23,11 +23,11 @@
  */
 package org.modeshape.jcr;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
@@ -864,6 +864,8 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         session.getRootNode().getNode("file").remove();
         session.save();
+        //sleep so that the binary can be properly cleaned up (this is done via a listener)
+        Thread.sleep(200);
 
         session.getWorkspace().importXML("/", new FileInputStream(outputFile), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
         assertNotNull(session.getNode("/file"));
