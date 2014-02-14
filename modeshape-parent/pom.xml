@@ -326,8 +326,9 @@
         <!--Properties which must be used when installing locally a server ZIP distribution -->
         <jboss.server.groupId>org.wildfly</jboss.server.groupId>
         <jboss.server.artifactId>wildfly-dist</jboss.server.artifactId>
-        <jboss.server.version>8.0.0.CR1</jboss.server.version>
-        <jboss.server.root.folder>wildfly-8.0.0.CR1</jboss.server.root.folder>
+        <jboss.server.artifact.type>tar.gz</jboss.server.artifact.type>
+        <jboss.server.version>8.0.0.Final</jboss.server.version>
+        <jboss.server.root.folder>wildfly-8.0.0.Final</jboss.server.root.folder>
 
         <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
         <jboss.kit.modules.location>modules</jboss.kit.modules.location>

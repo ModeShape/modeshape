@@ -24,7 +24,7 @@ import org.junit.Test;
  */
 public class TimeBasedKeysTest {
 
-    protected TimeBasedKeys counter = TimeBasedKeys.create();
+    protected TimeBasedKeys counter = TimeBasedKeys.create(32);
     private boolean print;
 
     @Before
