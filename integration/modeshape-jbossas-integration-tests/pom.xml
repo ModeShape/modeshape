@@ -234,7 +234,7 @@
                                     <groupId>${jboss.server.groupId}</groupId>
                                     <artifactId>${jboss.server.artifactId}</artifactId>
                                     <version>${jboss.server.version}</version>
-                                    <type>zip</type>
+                                    <type>${jboss.server.artifact.type}</type>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                 </artifactItem>
