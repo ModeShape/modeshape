@@ -47,13 +47,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.NamespaceException;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
+import javax.jcr.Workspace;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.observation.Event;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
@@ -1203,12 +1208,54 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     public void shouldReturnStartupProblemsAfterStarting() throws Exception {
         shutdownDefaultRepository();
         RepositoryConfiguration config = RepositoryConfiguration.read(
-                getClass().getClassLoader().getResourceAsStream("config/repo-config-with-startup-problems.json"), "Deprecated config");
+                getClass().getClassLoader().getResourceAsStream("config/repo-config-with-startup-problems.json"),
+                "Deprecated config");
         repository = new JcrRepository(config);
         repository.start();
         Problems problems = repository.getStartupProblems();
         assertEquals("Expected 2 startup warnings:" + problems.toString(), 2, problems.warningCount());
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
+    }
+
+    @Test
+    @FixFor( "MODE-2140" )
+    public void shouldNotAllowNodeTypeRemovalWithQueryPlaceholderConfiguration() throws Exception {
+        shutdownDefaultRepository();
+        FileUtil.delete("target/indexes");
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader().getResource(
+                "config/repoc-config-query-placeholder.json"));
+        repository = new JcrRepository(config);
+        String namespaceName = "admb";
+        String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";
+        String nodeTypeName = "test";
+
+        Session session = repository.login();
+        Workspace workspace = session.getWorkspace();
+        NamespaceRegistry namespaceRegistry = workspace.getNamespaceRegistry();
+        NodeTypeManager nodeTypeManager = workspace.getNodeTypeManager();
+
+        namespaceRegistry.registerNamespace(namespaceName, namespaceUri);
+
+        NodeTypeTemplate nodeTypeTemplate = nodeTypeManager.createNodeTypeTemplate();
+        nodeTypeTemplate.setName(namespaceName.concat(":").concat(nodeTypeName));
+        nodeTypeTemplate.setMixin(true);
+        NodeType nodeType = nodeTypeManager.registerNodeType(nodeTypeTemplate, false);
+
+        // Now create a node with the newly created nodeType
+        Node rootNode = session.getRootNode();
+        Node newNode = rootNode.addNode("testNode");
+        newNode.addMixin(nodeType.getName());
+        session.save();
+        //sleep to make sure the node is indexed
+        Thread.sleep(100);
+
+        try {
+            nodeTypeManager.unregisterNodeType(nodeType.getName());
+            fail("Should not be able to remove node type");
+        } catch (RepositoryException e) {
+            //expected
+        }
+        session.logout();
     }
 
     protected void nodeExists( Session session,
