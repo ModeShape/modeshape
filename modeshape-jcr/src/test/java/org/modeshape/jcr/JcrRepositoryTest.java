@@ -40,13 +40,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.NamespaceException;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
+import javax.jcr.Workspace;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.observation.Event;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
@@ -67,8 +72,8 @@ import org.modeshape.jcr.api.monitor.Statistics;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.journal.LocalJournal;
 import org.modeshape.jcr.journal.JournalRecord;
+import org.modeshape.jcr.journal.LocalJournal;
 
 public class JcrRepositoryTest extends AbstractTransactionalTest {
 
@@ -1259,6 +1264,47 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertEquals(expectedJournalKeys, new TreeSet<NodeKey>(lastRecord.changedNodes()));
 
         repository.shutdown();
+    }
+
+    @Test
+    @FixFor( "MODE-2140" )
+    public void shouldNotAllowNodeTypeRemovalWithQueryPlaceholderConfiguration() throws Exception {
+        shutdownDefaultRepository();
+        FileUtil.delete("target/indexes");
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader().getResource(
+                "config/repoc-config-query-placeholder.json"));
+        repository = new JcrRepository(config);
+        String namespaceName = "admb";
+        String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";
+        String nodeTypeName = "test";
+
+        Session session = repository.login();
+        Workspace workspace = session.getWorkspace();
+        NamespaceRegistry namespaceRegistry = workspace.getNamespaceRegistry();
+        NodeTypeManager nodeTypeManager = workspace.getNodeTypeManager();
+
+        namespaceRegistry.registerNamespace(namespaceName, namespaceUri);
+
+        NodeTypeTemplate nodeTypeTemplate = nodeTypeManager.createNodeTypeTemplate();
+        nodeTypeTemplate.setName(namespaceName.concat(":").concat(nodeTypeName));
+        nodeTypeTemplate.setMixin(true);
+        NodeType nodeType = nodeTypeManager.registerNodeType(nodeTypeTemplate, false);
+
+        // Now create a node with the newly created nodeType
+        Node rootNode = session.getRootNode();
+        Node newNode = rootNode.addNode("testNode");
+        newNode.addMixin(nodeType.getName());
+        session.save();
+        //sleep to make sure the node is indexed
+        Thread.sleep(100);
+
+        try {
+            nodeTypeManager.unregisterNodeType(nodeType.getName());
+            fail("Should not be able to remove node type");
+        } catch (RepositoryException e) {
+            //expected
+        }
+        session.logout();
     }
 
     protected void nodeExists( Session session,
