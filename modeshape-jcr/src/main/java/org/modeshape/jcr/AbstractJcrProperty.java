@@ -329,6 +329,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
     @Override
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
+        checkNotProtected();
         checkForLock();
         checkForCheckedOut();
         session.checkPermission(path(), ModeShapePermissions.REMOVE);
@@ -345,6 +346,12 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
         }
 
         node.removeProperty(this);
+    }
+
+    private void checkNotProtected() throws RepositoryException {
+        if (this.getDefinition().isProtected()) {
+            throw new ConstraintViolationException(JcrI18n.propertyIsProtected.text(getPath()));
+        }
     }
 
     @Override
