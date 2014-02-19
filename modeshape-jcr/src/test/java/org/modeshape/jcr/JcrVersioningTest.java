@@ -1048,6 +1048,36 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         assertNode("/parent/_context");
     }
 
+    @Test
+    @FixFor( "MODE-2153" )
+    public void shouldRemoveVersionWhichWasRestoredAtSomePoint() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node node = session.getRootNode().addNode("node", "jj:page");
+        session.save();
+
+        Version v1 = versionManager.checkpoint(node.getPath());
+        assertEquals("1.0", v1.getName());
+        assertEquals(2, versionManager.getVersionHistory("/node").getAllVersions().getSize());
+
+        Version v2 = versionManager.checkin("/node");
+        assertEquals("1.1", v2.getName());
+        assertEquals(3, versionManager.getVersionHistory("/node").getAllVersions().getSize());
+
+        versionManager.restore(v1, true);
+        assertEquals(3, versionManager.getVersionHistory("/node").getAllVersions().getSize());
+
+        Version baseVersion = versionManager.checkpoint(node.getPath());
+        assertEquals("1.0", baseVersion.getName());
+        assertEquals(3, versionManager.getVersionHistory("/node").getAllVersions().getSize());
+
+        Version v4 = versionManager.checkin("/node");
+        assertEquals("1.1.0", v4.getName());
+        assertEquals(4, versionManager.getVersionHistory("/node").getAllVersions().getSize());
+
+        versionManager.getVersionHistory("/node").removeVersion(v1.getName());
+    }
+
     private List<String> allChildrenPaths( Node root ) throws Exception {
         List<String> paths = new ArrayList<String>();
         NodeIterator nodeIterator = root.getNodes();
