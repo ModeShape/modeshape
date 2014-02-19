@@ -892,15 +892,6 @@ final class JcrVersionManager implements VersionManager {
                                                Collections.singleton(existingNode.path()), Collections.<Version>emptySet(),
                                                labelToRestore, removeExisting);
         op.execute();
-
-        clearCheckoutStatus(existingNode.mutable(), jcrVersion.key(), cache, propertyFactory());
-        ReferenceFactory refFactory = session.referenceFactory();
-        Reference baseVersionRef = refFactory.create(jcrVersion.key(), true);
-
-        MutableCachedNode mutable = existingNode.mutable();
-        mutable.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
-        mutable.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
-
         session.save();
     }
 
