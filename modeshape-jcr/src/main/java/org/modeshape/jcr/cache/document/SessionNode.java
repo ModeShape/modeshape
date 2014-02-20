@@ -643,15 +643,16 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public void addReferrer( SessionCache cache,
+                             Property property,
                              NodeKey referrerKey,
                              ReferenceType type ) {
         ReferrerChanges changes = referrerChanges(true);
         switch (type) {
             case WEAK:
-                changes.addWeakReferrer(referrerKey);
+                changes.addWeakReferrer(property, referrerKey);
                 break;
             case STRONG:
-                changes.addStrongReferrer(referrerKey);
+                changes.addStrongReferrer(property, referrerKey);
                 break;
             case BOTH:
                 throw new IllegalArgumentException("The type parameter may be WEAK or STRONG, but may not be BOTH");
@@ -660,15 +661,16 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public void removeReferrer( SessionCache cache,
+                                Property property,
                                 NodeKey referrerKey,
                                 ReferenceType type ) {
         ReferrerChanges changes = referrerChanges(true);
         switch (type) {
             case WEAK:
-                changes.removeWeakReferrer(referrerKey);
+                changes.removeWeakReferrer(property, referrerKey);
                 break;
             case STRONG:
-                changes.removeStrongReferrer(referrerKey);
+                changes.removeStrongReferrer(property, referrerKey);
                 break;
             case BOTH:
                 throw new IllegalArgumentException("The type parameter may be WEAK or STRONG, but may not be BOTH");
@@ -783,6 +785,9 @@ public class SessionNode implements MutableCachedNode {
     private void updateReferences( SessionCache cache,
                                    Name propertyName,
                                    SessionCache systemCache ) {
+        Property propertyWhichWasRemoved = null;
+        Property propertyWhichWasAdded = null;
+
         // first try to determine if there's old reference property with the same name so that old references can be removed
         boolean oldPropertyWasReference = false;
         List<Reference> referencesToRemove = new ArrayList<Reference>();
@@ -792,6 +797,7 @@ public class SessionNode implements MutableCachedNode {
             Property oldProperty = persistedNode.getProperty(propertyName, cache);
             if (oldProperty != null && oldProperty.isReference()) {
                 oldPropertyWasReference = true;
+                propertyWhichWasRemoved  = oldProperty;
                 for (Object referenceObject : oldProperty.getValuesAsArray()) {
                     assert referenceObject instanceof Reference;
                     referencesToRemove.add((Reference)referenceObject);
@@ -805,6 +811,7 @@ public class SessionNode implements MutableCachedNode {
         Property property = changedProperties.get(propertyName);
         if (property != null && property.isReference()) {
             updatedPropertyIsReference = true;
+            propertyWhichWasAdded = property;
             for (Object referenceObject : property.getValuesAsArray()) {
                 assert referenceObject instanceof Reference;
                 Reference updatedReference = (Reference)referenceObject;
@@ -827,10 +834,10 @@ public class SessionNode implements MutableCachedNode {
         }
 
         if (!referencesToRemove.isEmpty()) {
-            addOrRemoveReferrers(cache, systemCache, referencesToRemove.iterator(), false);
+            addOrRemoveReferrers(cache, systemCache, propertyWhichWasRemoved, referencesToRemove.iterator(), false);
         }
         if (!referencesToAdd.isEmpty()) {
-            addOrRemoveReferrers(cache, systemCache, referencesToAdd.iterator(), true);
+            addOrRemoveReferrers(cache, systemCache, propertyWhichWasAdded, referencesToAdd.iterator(), true);
         }
     }
 
@@ -841,12 +848,13 @@ public class SessionNode implements MutableCachedNode {
                 continue;
             }
 
-            this.addOrRemoveReferrers(cache, null, property.getValues(), false);
+            this.addOrRemoveReferrers(cache, null, property, property.getValues(), false);
         }
     }
 
     protected void addOrRemoveReferrers( SessionCache cache,
                                          SessionCache systemCache,
+                                         Property property,
                                          Iterator<?> referenceValuesIterator,
                                          boolean add ) {
 
@@ -880,9 +888,9 @@ public class SessionNode implements MutableCachedNode {
 
             ReferenceType referenceType = isWeak ? ReferenceType.WEAK : ReferenceType.STRONG;
             if (add) {
-                referredNode.addReferrer(cache, key, referenceType);
+                referredNode.addReferrer(cache, property, key, referenceType);
             } else {
-                referredNode.removeReferrer(cache, key, referenceType);
+                referredNode.removeReferrer(cache, property, key, referenceType);
             }
         }
     }
@@ -2138,43 +2146,67 @@ public class SessionNode implements MutableCachedNode {
     }
 
     protected static class ReferrerChanges {
-        // we use lists to be able to count multiple references from the same referrer
-        private final List<NodeKey> addedWeak = new ArrayList<NodeKey>();
-        private final List<NodeKey> removedWeak = new ArrayList<NodeKey>();
-        private final List<NodeKey> addedStrong = new ArrayList<NodeKey>();
-        private final List<NodeKey> removedStrong = new ArrayList<NodeKey>();
+        // we need to be able to have multiple references from the same referrer and also multiple references from the same
+        // property of differet referrers
+        private final Map<String, Set<NodeKey>> addedWeak = new HashMap<String, Set<NodeKey>>();
+        private final Map<String, Set<NodeKey>> removedWeak = new HashMap<String, Set<NodeKey>>();
+        private final Map<String, Set<NodeKey>> addedStrong = new HashMap<String, Set<NodeKey>>();
+        private final Map<String, Set<NodeKey>> removedStrong = new HashMap<String, Set<NodeKey>>();
 
-        public void addWeakReferrer( NodeKey nodeKey ) {
-            this.addedWeak.add(nodeKey);
-            this.removedWeak.remove(nodeKey);
+        public void addWeakReferrer( Property property, NodeKey nodeKey ) {
+            putInFirstAndRemoveFromSecond(property, nodeKey, addedWeak, removedWeak);
         }
 
-        public void removeWeakReferrer( NodeKey nodeKey ) {
-            this.addedWeak.remove(nodeKey);
-            this.removedWeak.add(nodeKey);
+        public void removeWeakReferrer( Property property, NodeKey nodeKey ) {
+            putInFirstAndRemoveFromSecond(property, nodeKey, removedWeak, addedWeak);
         }
 
-        public void addStrongReferrer( NodeKey nodeKey ) {
-            this.addedStrong.add(nodeKey);
-            this.removedStrong.remove(nodeKey);
+        public void addStrongReferrer( Property property, NodeKey nodeKey ) {
+            putInFirstAndRemoveFromSecond(property, nodeKey, addedStrong, removedStrong);
         }
 
-        public void removeStrongReferrer( NodeKey nodeKey ) {
-            this.addedStrong.remove(nodeKey);
-            this.removedStrong.add(nodeKey);
+        public void removeStrongReferrer( Property property, NodeKey nodeKey ) {
+            putInFirstAndRemoveFromSecond(property, nodeKey, removedStrong, addedStrong);
+        }
+
+        private void putInFirstAndRemoveFromSecond(Property property, NodeKey nodeKey, Map<String, Set<NodeKey>> firstMap,
+                                                   Map<String, Set<NodeKey>> secondMap) {
+            String propertyKey = keyFromProperty(property);
+
+            Set<NodeKey> toAdd = firstMap.get(propertyKey);
+            if (toAdd == null) {
+                toAdd = new HashSet<NodeKey>();
+                firstMap.put(propertyKey, toAdd);
+            }
+            toAdd.add(nodeKey);
+
+            Set<NodeKey> toRemove = secondMap.get(propertyKey);
+            if (toRemove != null) {
+                toRemove.remove(nodeKey);
+                if (toRemove.isEmpty()) {
+                    secondMap.remove(propertyKey);
+                }
+            }
+        }
+
+        private String keyFromProperty(Property property) {
+            StringBuilder key = new StringBuilder(property.getName().getString()).append("_");
+            if (property.isSingle()) {
+                key.append("_sv");
+            } else {
+                key.append("_mv");
+            }
+            return key.toString();
         }
 
         public List<NodeKey> getAddedReferrers( ReferenceType type ) {
             switch (type) {
                 case STRONG:
-                    return addedStrong;
+                    return collectKeys(addedStrong);
                 case WEAK:
-                    return addedWeak;
+                    return collectKeys(addedWeak);
                 case BOTH:
-                    List<NodeKey> result = new ArrayList<NodeKey>();
-                    result.addAll(addedWeak);
-                    result.addAll(addedStrong);
-                    return result;
+                    return collectKeys(addedWeak, addedStrong);
             }
             assert false : "Should never get here";
             return null;
@@ -2183,17 +2215,24 @@ public class SessionNode implements MutableCachedNode {
         public List<NodeKey> getRemovedReferrers( ReferenceType type ) {
             switch (type) {
                 case STRONG:
-                    return removedStrong;
+                    return collectKeys(removedStrong);
                 case WEAK:
-                    return removedWeak;
+                    return collectKeys(removedWeak);
                 case BOTH:
-                    List<NodeKey> result = new ArrayList<NodeKey>();
-                    result.addAll(removedStrong);
-                    result.addAll(removedWeak);
-                    return result;
+                    return collectKeys(removedStrong, removedWeak);
             }
             assert false : "Should never get here";
             return null;
+        }
+
+        private final List<NodeKey> collectKeys( Map<String, Set<NodeKey>>... sources ) {
+            List<NodeKey> keys = new ArrayList<NodeKey>();
+            for (Map<String, Set<NodeKey>> source : sources) {
+                for (Set<NodeKey> sourceKeys : source.values()) {
+                    keys.addAll(sourceKeys);
+                }
+            }
+            return keys;
         }
 
         public boolean isEmpty() {

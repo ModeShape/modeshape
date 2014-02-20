@@ -671,4 +671,37 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             session.save();
         }
     }
+
+    @Test
+    @FixFor( "MODE-2156" )
+    public void settingTheSameReferencePropertyMultipleTimeShouldNotIncreaseTheRefCount() throws Exception {
+        JcrRootNode rootNode = session.getRootNode();
+        AbstractJcrNode a = rootNode.addNode("A");
+        a.addMixin("mix:referenceable");
+
+        org.modeshape.jcr.api.ValueFactory valueFactory = session.getValueFactory();
+
+        Node testNode = rootNode.addNode("test");
+        Value simpleReference = valueFactory.createValue(a);
+        testNode.setProperty("ref", simpleReference);
+        testNode.setProperty("ref", simpleReference);
+        testNode.setProperty("ref", simpleReference);
+        session.save();
+
+        testNode.getProperty("ref").remove();
+        session.save();
+
+        try {
+            testNode.getProperty("ref").getNode();
+            fail("Target node for simple reference property should not be found");
+        } catch (javax.jcr.PathNotFoundException pne) {
+            // expected
+        }
+
+        a.remove();
+        session.save();
+
+        testNode.remove();
+        session.save();
+    }
 }

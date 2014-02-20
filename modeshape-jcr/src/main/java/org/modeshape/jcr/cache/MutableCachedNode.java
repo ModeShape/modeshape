@@ -337,23 +337,27 @@ public interface MutableCachedNode extends CachedNode {
 
     /**
      * Adds to this node a reference with the given type from the node with the supplied key to this node.
-     * 
+     *
      * @param cache the cache to which this node belongs; may not be null
+     * @param property the {@link org.modeshape.jcr.value.Property} of the referrer node; may not be null
      * @param referrerKey the key for the node that has a new reference to this node; may not be null
      * @param type the reference type; may not be null
      */
     void addReferrer( SessionCache cache,
+                      Property property,
                       NodeKey referrerKey,
                       ReferenceType type );
 
     /**
      * Remove from this node a reference with the given type from the node with the supplied key to this node.
-     * 
+     *
      * @param cache the cache to which this node belongs; may not be null
+     * @param property the {@link org.modeshape.jcr.value.Property} of the referrer node; may not be null
      * @param referrerKey the key for the node that no longer has a reference to this node; may not be null
      * @param type the reference type; may not be null
      */
     void removeReferrer( SessionCache cache,
+                         Property property,
                          NodeKey referrerKey,
                          ReferenceType type );
 
