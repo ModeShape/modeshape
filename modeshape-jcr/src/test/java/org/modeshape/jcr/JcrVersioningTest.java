@@ -957,7 +957,8 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         versionManager.restore(version, true);
 
         parent = session.getNode("/parent");
-        assertEquals(Arrays.asList("/parent/child", "/parent/child/descendant", "/parent/child/descendant[2]"), allChildrenPaths(parent));
+        assertEquals(Arrays.asList("/parent/child", "/parent/child/descendant", "/parent/child/descendant[2]"),
+                     allChildrenPaths(parent));
     }
 
     @Test
@@ -1054,6 +1055,25 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         assertNode("/parent/child1");
         assertNode("/parent/child2");
         assertNode("/parent/_context");
+    }
+
+    @Test
+    @FixFor( "MODE-2152" )
+    public void shouldRemoveVersionInVersionGraphWithBranches2() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node node = session.getRootNode().addNode("node", "jj:page");
+        session.save();
+        String nodePath = node.getPath();
+
+        //create two versions
+        versionManager.checkpoint(nodePath);    // version 1.0
+        versionManager.checkpoint(nodePath);    // version 1.1
+        versionManager.restore(nodePath, "1.0", true);
+        versionManager.checkout(nodePath);
+        versionManager.checkpoint(nodePath);    // version 1.1.0
+
+        versionManager.getVersionHistory(nodePath).removeVersion("1.1");
     }
 
     private List<String> allChildrenPaths( Node root ) throws Exception {

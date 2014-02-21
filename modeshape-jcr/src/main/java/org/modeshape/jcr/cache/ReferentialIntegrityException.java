@@ -25,10 +25,11 @@ package org.modeshape.jcr.cache;
 
 import java.util.Collections;
 import java.util.Set;
+import org.modeshape.jcr.JcrI18n;
 
 /**
  * An exception signalling that a set of nodes could not be deleted because there are other nodes that contain JCR REFERENCE
- * properties pointing to these ndoes, preventing their deletion.
+ * properties pointing to these nodes, preventing their deletion.
  */
 public class ReferentialIntegrityException extends RuntimeException {
 
@@ -67,5 +68,10 @@ public class ReferentialIntegrityException extends RuntimeException {
      */
     public Set<NodeKey> getRemovedNodes() {
         return removedNodes;
+    }
+
+    @Override
+    public String getMessage() {
+        return JcrI18n.referentialIntegrityException.text(removedNodes, referrers);
     }
 }
