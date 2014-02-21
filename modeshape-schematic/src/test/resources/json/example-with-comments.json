@@ -1,0 +1,20 @@
+//  beginning of file
+{
+  "firstName": "Jane", //this is a comment
+    //this is another comment"'gergeg
+  "lastName": "Doe",
+  //"commentedOut1": value" {,
+  // 'commentedOut1': "value2";
+  "address": {
+      //nested comment 1
+    "street": "Main // Street", //nested comment 2
+      //"commentedOut: value" {
+      // },
+    "city": "Mem/ phis",
+    "zip": 12345
+  },
+  "phone": {
+    "home": "(800)555-1212"
+  }
+} //end of file
+//after end

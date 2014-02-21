@@ -1076,9 +1076,22 @@ public class JsonReader {
         }
 
         public char nextUsefulChar() throws ParsingException {
+            boolean withinComment = false;
             do {
                 char next = next();
-                if (next == 0 || (next != ' ' && next != '\t' && next != '\n' && next != '\r')) return next;
+                if (next == '/') {
+                    char afterNext = next();
+                    if (afterNext != '/') {
+                        throw error("Invalid character '" + afterNext + "' (expected comment //)");
+                    }
+                    withinComment = true;
+                    continue;
+                }
+                boolean isLineSeparator = (next == '\n') || (next == '\r');
+                if (isLineSeparator && withinComment) {
+                    withinComment = false;
+                }
+                if (next == 0 || (!withinComment && next != ' ' && next != '\t' && !isLineSeparator)) return next;
             } while (true);
         }
 

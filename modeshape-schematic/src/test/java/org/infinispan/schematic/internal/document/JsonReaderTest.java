@@ -16,11 +16,16 @@
 package org.infinispan.schematic.internal.document;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.InputStream;
+import org.infinispan.schematic.FixFor;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.DocumentSequence;
 import org.infinispan.schematic.document.Null;
+import org.infinispan.schematic.document.ParsingException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -112,9 +117,53 @@ public class JsonReaderTest {
             Document doc = seq.nextDocument();
             if (doc == null) break;
             ++count;
-            // System.out.println("Read document " + count + " --> " + doc);
         }
         assertThat(count, is(265));
+    }
+
+    @Test
+    @FixFor( "MODE-2082" )
+    public void shouldParseJsonWithComments() throws Exception {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream("json/example-with-comments.json");
+        doc = reader.read(stream);
+        assertNotNull(doc);
+        assertEquals(4, countFields(doc));
+        assertField("firstName", "Jane");
+        assertField("lastName", "Doe");
+
+        doc = doc.getDocument("address");
+        assertEquals(3, countFields(doc));
+        assertField("street", "Main // Street");
+        assertField("city", "Mem/ phis");
+        assertField("zip", 12345);
+    }
+
+    @Test
+    @FixFor( "MODE-2082" )
+    public void shouldNotParseJsonWithInvalidComments() throws Exception {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream("json/invalid-example-with-comments.json");
+        try {
+            doc = reader.read(stream);
+            fail("Expected parsing exception");
+        } catch (ParsingException e) {
+            //expected
+        }
+
+        stream = getClass().getClassLoader().getResourceAsStream("json/invalid-example-with-comments2.json");
+        try {
+            doc = reader.read(stream);
+            fail("Expected parsing exception");
+        } catch (ParsingException e) {
+            //expected
+        }
+    }
+
+    private int countFields(Document doc) {
+        int fieldCount = 0;
+        for (Document.Field field : doc.fields()) {
+            fieldCount++;
+        }
+        return fieldCount;
     }
 
     protected void assertField( String name,
