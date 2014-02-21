@@ -1,4 +1,4 @@
-{
+{ //test schema
  "name":"Product",
  "properties":{
    "id":{
@@ -7,7 +7,7 @@
      "required":true
    },
    "name":{
-     "description":"Name of the product",
+     "description":"Name of the product", //the name of the product
      "type":"string",
      "required":true
    },

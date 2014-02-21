@@ -1,0 +1,4 @@
+{
+    "firstName": "Jane" //invalid comment,
+    "lastName": "Doe"
+}
