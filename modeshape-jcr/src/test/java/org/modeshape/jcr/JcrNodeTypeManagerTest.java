@@ -34,6 +34,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.value.ValueFormatException;
 
 public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
 
@@ -219,7 +220,8 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
         // definition as BOOLEAN and a String constraint like 'true'
         NodeTypeTemplate nodeTypeTemplate = nodeTypeMgr.createNodeTypeTemplate();
         nodeTypeTemplate.setPrimaryItemName("test");
-        nodeTypeTemplate.setName(namespaceName.concat(":").concat(nodeTypeName));
+        String primaryType = namespaceName.concat(":").concat(nodeTypeName);
+        nodeTypeTemplate.setName(primaryType);
 
         PropertyDefinitionTemplate propertyDefinition = nodeTypeMgr.createPropertyDefinitionTemplate();
         propertyDefinition.setName("test");
@@ -230,7 +232,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
 
         nodeTypeMgr.registerNodeType(nodeTypeTemplate, false);
 
-        Node node = session.getRootNode().addNode("test", namespaceName.concat(":").concat(nodeTypeName));
+        Node node = session.getRootNode().addNode("test", primaryType);
         node.setProperty("test", true);
         session.save();
         try {
@@ -238,6 +240,39 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
             session.save();
             fail("Value which violates constraint did not raise exception");
         } catch (ConstraintViolationException e) {
+            //expected
+            node.remove();
+            session.save();
+            nodeTypeMgr.unregisterNodeType(primaryType);
+        }
+    }
+
+    @Test
+    @FixFor( "MOE-2149" )
+    @SuppressWarnings("unchecked")
+    public void shouldValidateConstraintValue() throws Exception {
+        String namespaceName = "admb";
+        String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";
+        String nodeTypeName = "test";
+
+        session.getWorkspace().getNamespaceRegistry().registerNamespace(namespaceName, namespaceUri);
+
+        NodeTypeTemplate nodeTypeTemplate = nodeTypeMgr.createNodeTypeTemplate();
+        nodeTypeTemplate.setPrimaryItemName("test");
+        String primaryType = namespaceName.concat(":").concat(nodeTypeName);
+        nodeTypeTemplate.setName(primaryType);
+
+        PropertyDefinitionTemplate propertyDefinition = nodeTypeMgr.createPropertyDefinitionTemplate();
+        propertyDefinition.setName("test");
+        propertyDefinition.setRequiredType(PropertyType.LONG);
+        propertyDefinition.setMandatory(true);
+        propertyDefinition.setValueConstraints(new String[] { "test" });
+        nodeTypeTemplate.getPropertyDefinitionTemplates().add(propertyDefinition);
+
+        try {
+            nodeTypeMgr.registerNodeType(nodeTypeTemplate, false);
+            fail("Should not allow the registration of a node type with invalid constraint");
+        } catch (ValueFormatException e) {
             //expected
         }
     }

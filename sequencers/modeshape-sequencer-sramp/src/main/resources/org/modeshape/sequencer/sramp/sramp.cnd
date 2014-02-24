@@ -20,7 +20,8 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
-<sramp = "http://s-ramp.org/xmlns/2010/s-ramp">
+<sramp='http://s-ramp.org/xmlns/2010/s-ramp'>
+<owl='http://www.w3.org/2002/07/owl'>
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
