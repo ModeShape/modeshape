@@ -67,6 +67,18 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
                 }
             }
         }
+
+        //check if there are constraints of type Name, for which additional namespaces may need registration
+        boolean shouldCheckForNameConstraints = requiredType == PropertyType.NAME ||
+                                                requiredType == PropertyType.REFERENCE ||
+                                                requiredType == PropertyType.WEAKREFERENCE ||
+                                                requiredType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE;
+        if (this.valueConstraints != null && this.valueConstraints.length > 0 && shouldCheckForNameConstraints) {
+            for (String constraintValue : original.getValueConstraints()) {
+                Name nameValue = original.getContext().getValueFactories().getNameFactory().create(constraintValue);
+                JcrItemDefinitionTemplate.registerMissingNamespaces(original.getContext(), context, nameValue);
+            }
+        }
     }
 
     JcrPropertyDefinitionTemplate with( ExecutionContext context ) {

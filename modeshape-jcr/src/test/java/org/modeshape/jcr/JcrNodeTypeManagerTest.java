@@ -22,7 +22,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.Iterator;
 import java.util.List;
+import javax.jcr.Node;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
@@ -31,12 +34,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.value.ValueFormatException;
 
 public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
 
     private static final String MIXIN1 = "mix:lockable";
     private static final String MIXIN2 = "mix:referenceable";
-    private static final String[] MIXINS = new String[] {MIXIN1, MIXIN2};
+    private static final String[] MIXINS = new String[] { MIXIN1, MIXIN2 };
 
     private static final String HIERARCHY_NODE_TYPE = "nt:hierarchyNode";
     private static final String NT_FILE_NODE_TYPE = "nt:file";
@@ -44,7 +48,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
 
     private static final String SUBTYPE1 = NT_FILE_NODE_TYPE; // subtype of HIERARCHY_NODE_TYPE
     private static final String SUBTYPE2 = NT_FOLDER_NODE_TYPE; // subtype of HIERARCHY_NODE_TYPE
-    private static final String[] SUBTYPES = new String[] {SUBTYPE1, SUBTYPE2};
+    private static final String[] SUBTYPES = new String[] { SUBTYPE1, SUBTYPE2 };
 
     private static final String NO_MATCH_TYPE = "nt:query";
 
@@ -75,22 +79,22 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
         nodeTypeMgr = session().nodeTypeManager();
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test(expected = IllegalArgumentException.class)
     public void shouldNotAllowNullSubTypeNames() throws RepositoryException {
         this.nodeTypeMgr.isDerivedFrom(null, "nt:base", MIXINS);
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test(expected = IllegalArgumentException.class)
     public void shouldNotAllowEmptySubTypeNames() throws Exception {
         this.nodeTypeMgr.isDerivedFrom(new String[0], "nt:base", MIXINS);
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test(expected = IllegalArgumentException.class)
     public void shouldNotAllowNullPrimaryType() throws Exception {
         this.nodeTypeMgr.isDerivedFrom(SUBTYPES, null, MIXINS);
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test(expected = IllegalArgumentException.class)
     public void shouldNotAllowEmptyPrimaryType() throws Exception {
         this.nodeTypeMgr.isDerivedFrom(SUBTYPES, "", MIXINS);
     }
@@ -103,7 +107,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
 
     @Test
     public void shouldBeDerivedFromIfSubtypeMatchesMixin() throws Exception {
-        assertTrue(this.nodeTypeMgr.isDerivedFrom(new String[] {MIXIN2}, SUBTYPE1, MIXINS));
+        assertTrue(this.nodeTypeMgr.isDerivedFrom(new String[] { MIXIN2 }, SUBTYPE1, MIXINS));
     }
 
     @Test
@@ -136,9 +140,9 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
         assertThat(ntFile.getPrimaryItemName(), is("jcr:content"));
     }
 
-    @SuppressWarnings( "unchecked" )
+    @SuppressWarnings("unchecked")
     @Test
-    @FixFor( "MODE-1954" )
+    @FixFor("MODE-1954")
     public void shouldRemovePropertyDefinitionViaTemplate() throws Exception {
         session.getWorkspace().getNamespaceRegistry().registerNamespace("dmsmix", "http://myexample.com/dms");
         NodeTypeTemplate fileContent = nodeTypeMgr.createNodeTypeTemplate();
@@ -166,7 +170,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-1963" )
+    @FixFor("MODE-1963")
     public void shouldAllowReRegistrationOfMixinViaTemplate() throws Exception {
         session.getWorkspace().getNamespaceRegistry().registerNamespace("dmsmix", "http://myexample.com/dms");
         String mixinName = "dmsmix:test";
@@ -176,7 +180,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-1965" )
+    @FixFor("MODE-1965")
     public void shouldNotAllowRegistrationOfMixinThatInheritsNonMixin() throws Exception {
         session.getWorkspace().getNamespaceRegistry().registerNamespace("test", "http://myexample.com/test");
         String mixinName = "test:mixin";
@@ -189,7 +193,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-1965" )
+    @FixFor("MODE-1965")
     public void shouldNotAllowRegistrationOfMixinThatInheritsBothNonMixinAndMixin() throws Exception {
         session.getWorkspace().getNamespaceRegistry().registerNamespace("test", "http://myexample.com/test");
         registerMixin("test:mixinParent");
@@ -198,6 +202,78 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
             fail("Should not allow registration of mixin that inherits non-mixin");
         } catch (RepositoryException e) {
             // expected
+        }
+    }
+
+    @Test
+    @FixFor( "MOE-2150" )
+    @SuppressWarnings("unchecked")
+    public void shouldAllowRegisteringBooleanConstraints() throws Exception {
+
+        String namespaceName = "admb";
+        String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";
+        String nodeTypeName = "test";
+
+        session.getWorkspace().getNamespaceRegistry().registerNamespace(namespaceName, namespaceUri);
+
+        // Start creating a nodeTypeTemplate but also add the property
+        // definition as BOOLEAN and a String constraint like 'true'
+        NodeTypeTemplate nodeTypeTemplate = nodeTypeMgr.createNodeTypeTemplate();
+        nodeTypeTemplate.setPrimaryItemName("test");
+        String primaryType = namespaceName.concat(":").concat(nodeTypeName);
+        nodeTypeTemplate.setName(primaryType);
+
+        PropertyDefinitionTemplate propertyDefinition = nodeTypeMgr.createPropertyDefinitionTemplate();
+        propertyDefinition.setName("test");
+        propertyDefinition.setRequiredType(PropertyType.BOOLEAN);
+        propertyDefinition.setMandatory(true);
+        propertyDefinition.setValueConstraints(new String[] { "true" });
+        nodeTypeTemplate.getPropertyDefinitionTemplates().add(propertyDefinition);
+
+        nodeTypeMgr.registerNodeType(nodeTypeTemplate, false);
+
+        Node node = session.getRootNode().addNode("test", primaryType);
+        node.setProperty("test", true);
+        session.save();
+        try {
+            node.setProperty("test", false);
+            session.save();
+            fail("Value which violates constraint did not raise exception");
+        } catch (ConstraintViolationException e) {
+            //expected
+            node.remove();
+            session.save();
+            nodeTypeMgr.unregisterNodeType(primaryType);
+        }
+    }
+
+    @Test
+    @FixFor( "MOE-2149" )
+    @SuppressWarnings("unchecked")
+    public void shouldValidateConstraintValue() throws Exception {
+        String namespaceName = "admb";
+        String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";
+        String nodeTypeName = "test";
+
+        session.getWorkspace().getNamespaceRegistry().registerNamespace(namespaceName, namespaceUri);
+
+        NodeTypeTemplate nodeTypeTemplate = nodeTypeMgr.createNodeTypeTemplate();
+        nodeTypeTemplate.setPrimaryItemName("test");
+        String primaryType = namespaceName.concat(":").concat(nodeTypeName);
+        nodeTypeTemplate.setName(primaryType);
+
+        PropertyDefinitionTemplate propertyDefinition = nodeTypeMgr.createPropertyDefinitionTemplate();
+        propertyDefinition.setName("test");
+        propertyDefinition.setRequiredType(PropertyType.LONG);
+        propertyDefinition.setMandatory(true);
+        propertyDefinition.setValueConstraints(new String[] { "test" });
+        nodeTypeTemplate.getPropertyDefinitionTemplates().add(propertyDefinition);
+
+        try {
+            nodeTypeMgr.registerNodeType(nodeTypeTemplate, false);
+            fail("Should not allow the registration of a node type with invalid constraint");
+        } catch (ValueFormatException e) {
+            //expected
         }
     }
 
