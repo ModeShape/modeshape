@@ -142,24 +142,26 @@ public class TikaTextExtractor extends TextExtractor {
             @Override
             public Object execute( InputStream stream ) throws Exception {
                 Metadata metadata = prepareMetadata(binary, context);
+                //TODO author=Horia Chiorean date=1/30/13 description=//TIKA 1.2 TXTParser seems to have a bug, always adding 1 ignorable whitespace to the actual chars to be parsed
+                //https://issues.apache.org/jira/browse/TIKA-1069
+                ContentHandler textHandler = writeLimit == null ? new BodyContentHandler() : new BodyContentHandler(writeLimit + 1);
                 try {
                     LOGGER.debug("Using TikaTextExtractor to extract text");
-                    //TODO author=Horia Chiorean date=1/30/13 description=//TIKA 1.2 TXTParser seems to have a bug, always adding 1 ignorable whitespace to the actual chars to be parsed
-                    //https://issues.apache.org/jira/browse/TIKA-1069
-                    ContentHandler textHandler = writeLimit == null ? new BodyContentHandler() : new BodyContentHandler(writeLimit + 1);
                     // Parse the input stream ...
                     parser.parse(stream, textHandler, metadata, new ParseContext());
-
-                    // Record all of the text in the body ...
-                    String text = textHandler.toString().trim();
-                    output.recordText(text);
-                    LOGGER.debug("TikaTextExtractor found text: " + text);
                 } catch (SAXException sae) {
                     LOGGER.warn(TikaI18n.parseExceptionWhileExtractingText, sae.getMessage());
                 } catch (NoClassDefFoundError ncdfe) {
                     LOGGER.warn(TikaI18n.warnNoClassDefFound, ncdfe.getMessage());
                 } catch (Throwable e) {
                     LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, e.getMessage());
+                } finally {
+                    // Record all of the text in the body ...
+                    String text = textHandler.toString().trim();
+                    if (!StringUtil.isBlank(text)) {
+                        output.recordText(text);
+                        LOGGER.debug("TikaTextExtractor found text: " + text);
+                    }
                 }
                 return null;
             }
