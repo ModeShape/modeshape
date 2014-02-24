@@ -65,7 +65,7 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
 
     @Test
     @FixFor( "MODE-1561" )
-    public void shouldNotExtractPastWriteLimit() throws Exception {
+    public void shouldExtractPartiallyPastWriteLimit() throws Exception {
         startRepositoryWithConfiguration(getResource("repo-config-text-extraction-limit.json"));
         // configured in the cfg file
         int configuredWriteLimit = 100;
@@ -85,7 +85,7 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
         session.save();
 
         sql = "select [jcr:path] from [nt:base] where contains([nt:base].*, '" + randomString + "')";
-        queryAndExpectResults(sql, 0);
+        queryAndExpectResults(sql, 1);
     }
 
     private void queryAndExpectResults(String queryString, int howMany) throws RepositoryException {
