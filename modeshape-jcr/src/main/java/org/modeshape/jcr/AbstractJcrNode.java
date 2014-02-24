@@ -165,7 +165,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
     }
 
-    protected static final Pattern WILDCARD_PATTERN = Pattern.compile(".*");
     private static final Set<Name> INTERNAL_NODE_TYPE_NAMES = Collections.singleton(ModeShapeLexicon.SHARE);
 
     protected final NodeKey key;
@@ -263,6 +262,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     protected final boolean isForeign() {
         return session().isForeignKey(key());
+    }
+
+    /**
+     * Checks if this node belongs to an external source.
+     *
+     * @return true if the node is not repository-local
+     */
+    protected final boolean isExternal() {
+        return !key().getSourceKey().equals(session().cache().getRootKey().getSourceKey());
     }
 
     protected final boolean isInTheSameProcessAs( String otherProcessId ) {
@@ -2824,6 +2832,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                     return false;
                 }
             }
+        }
+
+        //do not allow versionable mixin on external nodes
+        if (isExternal() && mixinName.equalsIgnoreCase(JcrMixLexicon.VERSIONABLE.getString())) {
+            return false;
         }
 
         return true;
