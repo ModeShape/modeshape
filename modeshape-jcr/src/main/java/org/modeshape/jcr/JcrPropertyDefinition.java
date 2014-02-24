@@ -473,6 +473,9 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 return new StringConstraintChecker(valueConstraints, context);
             case PropertyType.DECIMAL:
                 return new DecimalConstraintChecker(valueConstraints, context);
+            case PropertyType.BOOLEAN: {
+                return new BooleanConstraintChecker(context, valueConstraints);
+            }
             default:
                 throw new IllegalStateException("Invalid property type: " + type);
         }
@@ -1208,6 +1211,48 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 }
             }
             return true;
+        }
+    }
+
+    private static class BooleanConstraintChecker implements ConstraintChecker {
+
+        private final Boolean constraint;
+        private final ValueFactories valueFactories;
+
+        private BooleanConstraintChecker( ExecutionContext executionContext, String... constraints ) {
+            this.valueFactories = executionContext.getValueFactories();
+            if (constraints != null && constraints.length > 0) {
+                constraint = valueFactories.getBooleanFactory().create(constraints[0]);
+            } else {
+                constraint = null;
+            }
+        }
+
+        @Override
+        public int getType() {
+            return PropertyType.BOOLEAN;
+        }
+
+        @Override
+        public boolean matches( Value value, JcrSession session ) {
+            try {
+                return constraint == null || (value.getBoolean() && constraint);
+            } catch (RepositoryException e) {
+                return false;
+            }
+        }
+
+        @Override
+        public boolean isAsOrMoreConstrainedThan( ConstraintChecker other ) {
+            if (!other.getClass().equals(this.getClass())) {
+                return false;
+            }
+            Boolean otherConstraint = ((BooleanConstraintChecker)other).getConstraint();
+            return otherConstraint == null || otherConstraint.equals(constraint);
+        }
+
+        private Boolean getConstraint() {
+            return constraint;
         }
     }
 
