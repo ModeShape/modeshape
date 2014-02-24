@@ -42,7 +42,6 @@ import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
-import org.modeshape.jcr.value.basic.JodaDateTime;
 
 /**
  * ModeShape implementation of the {@link PropertyDefinition} interface. This implementation is immutable and has all fields
@@ -103,6 +102,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         this.defaultValues = defaultValues;
         this.requiredType = requiredType;
         this.valueConstraints = valueConstraints;
+        assert this.valueConstraints != null;
+        if(requiredType != PropertyType.UNDEFINED && valueConstraints.length > 0) {
+            //if we have a required type, create the default checker eagerly to detect any invalid constraint values
+            this.checker = createChecker(context, requiredType, valueConstraints);
+        }
         this.multiple = multiple;
         this.fullTextSearchable = fullTextSearchable;
         this.queryOrderable = queryOrderable;
@@ -111,7 +115,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN,
             QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, QueryObjectModelConstants.JCR_OPERATOR_LIKE,
             QueryObjectModelConstants.JCR_OPERATOR_NOT_EQUAL_TO};
-        assert this.valueConstraints != null;
         this.id = this.declaringNodeType == null ? null : new PropertyDefinitionId(this.declaringNodeType.getInternalName(),
                                                                                    this.name, this.requiredType, this.multiple);
         this.key = this.id == null ? prototypeKey : prototypeKey.withId("/jcr:system/jcr:nodeTypes/" + this.id.getString());
@@ -408,7 +411,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             assert value instanceof JcrValue : "Illegal implementation of Value interface";
             ((JcrValue)value).asType(getRequiredType()); // throws ValueFormatException if there's a problem
             return satisfiesConstraints(value, session);
-        } catch (javax.jcr.ValueFormatException vfe) {
+        } catch (javax.jcr.ValueFormatException | org.modeshape.jcr.value.ValueFormatException vfe) {
             // Cast failed
             return false;
         }
@@ -469,6 +472,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 return new ReferenceConstraintChecker(valueConstraints, context);
             case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
                 return new SimpleReferenceConstraintChecker(valueConstraints, context);
+            case PropertyType.URI:
             case PropertyType.STRING:
                 return new StringConstraintChecker(valueConstraints, context);
             case PropertyType.DECIMAL:
@@ -618,8 +622,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
         protected abstract ValueFactory<T> getValueFactory( ValueFactories valueFactories );
 
-        protected abstract T parseValue( String s );
-
         @Override
         public String toString() {
             return constraints.toString();
@@ -683,8 +685,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             String rval = commaInd < valueConstraint.length() - 2 ? valueConstraint.substring(commaInd + 1,
                                                                                               valueConstraint.length() - 1) : null;
 
-            final T lower = lval == null ? null : parseValue(lval.trim());
-            final T upper = rval == null ? null : parseValue(rval.trim());
+            final T lower = lval == null ? null : valueFactory.create(lval.trim());
+            final T upper = rval == null ? null : valueFactory.create(rval.trim());
 
             return new Range<T>() {
                 @Override
@@ -836,10 +838,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             return valueFactories.getLongFactory();
         }
 
-        @Override
-        protected Long parseValue( String s ) {
-            return Long.parseLong(s);
-        }
     }
 
     @Immutable
@@ -860,10 +858,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             return valueFactories.getDateFactory();
         }
 
-        @Override
-        protected DateTime parseValue( String s ) {
-            return new JodaDateTime(s.trim());
-        }
     }
 
     @Immutable
@@ -884,10 +878,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             return valueFactories.getDoubleFactory();
         }
 
-        @Override
-        protected Double parseValue( String s ) {
-            return Double.parseDouble(s);
-        }
     }
 
     @Immutable
@@ -908,10 +898,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             return valueFactories.getDecimalFactory();
         }
 
-        @Override
-        protected BigDecimal parseValue( String s ) {
-            return new BigDecimal(s);
-        }
     }
 
     @Immutable
@@ -1078,7 +1064,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             for (int i = 0; i < valueConstraints.length; i++) {
                 String expr = valueConstraints[i];
-                constraints[i] = Pattern.compile(expr);
+                try {
+                    constraints[i] = Pattern.compile(expr);
+                } catch (Exception e) {
+                    throw new ValueFormatException(expr, org.modeshape.jcr.value.PropertyType.STRING, "Invalid string pattern ");
+                }
                 expressions.add(expr);
             }
         }
