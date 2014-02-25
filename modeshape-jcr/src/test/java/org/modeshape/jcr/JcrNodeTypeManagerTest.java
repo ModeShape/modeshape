@@ -206,7 +206,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MOE-2150" )
+    @FixFor( "MODE-2150" )
     @SuppressWarnings("unchecked")
     public void shouldAllowRegisteringBooleanConstraints() throws Exception {
 
@@ -248,7 +248,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MOE-2149" )
+    @FixFor( "MODE-2149" )
     @SuppressWarnings("unchecked")
     public void shouldValidateConstraintValue() throws Exception {
         String namespaceName = "admb";

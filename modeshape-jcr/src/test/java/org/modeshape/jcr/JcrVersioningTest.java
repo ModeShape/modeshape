@@ -1098,6 +1098,50 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         versionManager.getVersionHistory(nodePath).removeVersion("1.1");
     }
 
+    @Test
+    @FixFor( "MODE-1839" )
+    public void shouldRemoveEmptyVersionHistories() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node node1 = session.getRootNode().addNode("node1", "jj:page");
+        node1.addNode("node11", "jj:page");
+        node1.addNode("node12", "jj:content");
+        session.save();
+
+        ((org.modeshape.jcr.api.version.VersionManager) versionManager).remove("/node1");
+        try {
+            versionManager.getVersionHistory("/node1");
+            fail("Version history has not been removed");
+        } catch (PathNotFoundException e) {
+            //expected
+        }
+
+        try {
+            versionManager.getVersionHistory("/node1/node11");
+            fail("Version history has not been removed");
+        } catch (PathNotFoundException e) {
+            //expected
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1839" )
+    public void shouldNotRemoveNonEmptyVersionHistories() throws Exception {
+        registerNodeTypes("cnd/jj.cnd");
+
+        Node node1 = session.getRootNode().addNode("node1", "jj:page");
+        node1.addNode("node11", "jj:page");
+        session.save();
+
+        versionManager.checkpoint("/node1/node11");
+        try {
+            ((org.modeshape.jcr.api.version.VersionManager) versionManager).remove("/node1");
+            fail("Should not allow removal of non empty version history");
+        } catch (UnsupportedRepositoryOperationException e) {
+            //expected
+        }
+    }
+
     private List<String> allChildrenPaths( Node root ) throws Exception {
         List<String> paths = new ArrayList<String>();
         NodeIterator nodeIterator = root.getNodes();
