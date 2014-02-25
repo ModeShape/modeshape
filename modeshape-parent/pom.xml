@@ -306,7 +306,7 @@
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
         <tika.version>1.3</tika.version>
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
-        <mapdb.version>0.9.8</mapdb.version>
+        <mapdb.version>0.9.10</mapdb.version>
 
         <!-- Apache chemistry version -->
         <chemistry.version>0.10.0</chemistry.version>
