@@ -30,7 +30,7 @@ import org.modeshape.jcr.value.Path.Segment;
 
 /**
  * A concrete {@link javax.jcr.Node JCR Node} implementation that is used for all nodes that are part of a shared set but not the
- * original node that was shared. In essense, all instances of JcrShareableNode are proxies that have their own name and location,
+ * original node that was shared. In essence, all instances of JcrShareableNode are proxies that have their own name and location,
  * but that delegate nearly all other operations to the referenced node.
  * <p>
  * Instances of this class are created for each node in a workspace that have a primary type of "{@link ModeShapeLexicon#SHARE

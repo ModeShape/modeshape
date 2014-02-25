@@ -50,7 +50,6 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
-import javax.jcr.version.VersionManager;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
@@ -78,7 +77,7 @@ import org.modeshape.jcr.value.ReferenceFactory;
  * Local implementation of version management code, comparable to an implementation of the JSR-283 {@code VersionManager}
  * interface. Valid instances of this class can be obtained by calling {@link JcrWorkspace#versionManager()}.
  */
-final class JcrVersionManager implements VersionManager {
+final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionManager {
 
     private final static Logger LOGGER = Logger.getLogger(JcrVersionManager.class);
 
@@ -1038,6 +1037,45 @@ final class JcrVersionManager implements VersionManager {
     public NodeIterator merge( Node activityNode ) throws /*VersionException, AccessDeniedException, MergeException, LockException, InvalidItemStateException,*/
     RepositoryException {
         throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public void remove( String absPath )
+            throws UnsupportedOperationException, PathNotFoundException, VersionException, RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.remove('{0}')", absPath);
+
+        JcrSession removeSession = session.spawnSession(false);
+        AbstractJcrNode node = removeSession.getNode(absPath);
+        checkVersionable(node);
+
+        SessionCache systemCache = session.createSystemCache(false);
+        removeHistories(node, systemCache);
+        node.remove();
+        removeSession.cache().save(systemCache, null);
+    }
+
+    private void removeHistories( AbstractJcrNode node, SessionCache systemSession ) throws RepositoryException {
+        JcrVersionHistoryNode versionHistory = null;
+        if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
+            if (node.isShareable()) {
+                throw new UnsupportedRepositoryOperationException(JcrI18n.nodeIsShareable.text(node.getPath()));
+            }
+            versionHistory = getVersionHistory(node);
+            if (versionHistory.getAllVersions().getSize() > 1) {
+                throw new UnsupportedRepositoryOperationException(JcrI18n.versionHistoryNotEmpty.text(node.getPath()));
+            }
+        }
+
+        NodeIterator nodeIterator = node.getNodes();
+        while (nodeIterator.hasNext()) {
+            removeHistories((AbstractJcrNode)nodeIterator.nextNode(), systemSession);
+        }
+
+        if (versionHistory != null) {
+            MutableCachedNode historyParent = systemSession.mutable(versionHistory.parentKey());
+            historyParent.removeChild(systemSession, versionHistory.key());
+            systemSession.destroy(versionHistory.key());
+        }
     }
 
     @NotThreadSafe
