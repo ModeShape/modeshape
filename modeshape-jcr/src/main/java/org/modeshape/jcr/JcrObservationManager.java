@@ -952,8 +952,11 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 boolean isMultiValue = propertyChanged.getNewProperty().isMultiple();
                 Object currentValue = isMultiValue ? propertyChanged.getNewProperty().getValuesAsArray() : propertyChanged.getNewProperty().getFirstValue();
 
-                boolean wasMultiValue = propertyChanged.getOldProperty().isMultiple();
-                Object oldValue = wasMultiValue ? propertyChanged.getOldProperty().getValuesAsArray() : propertyChanged.getOldProperty().getFirstValue();
+                Object oldValue = null;
+                if (propertyChanged.getOldProperty() != null) {
+                    boolean wasMultiValue = propertyChanged.getOldProperty().isMultiple();
+                    oldValue = wasMultiValue ? propertyChanged.getOldProperty().getValuesAsArray() : propertyChanged.getOldProperty().getFirstValue();
+                }
 
                 events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_CHANGED, stringFor(propertyPath), nodeId, currentValue,
                                                 oldValue, primaryType, mixinTypes));

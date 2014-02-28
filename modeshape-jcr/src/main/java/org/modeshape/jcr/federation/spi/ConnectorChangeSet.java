@@ -163,7 +163,7 @@ public interface ConnectorChangeSet {
      * @param nodePrimaryType the primary type of the node; may not be null
      * @param nodeMixinTypes the mixin types of the node; may not be null
      * @param nodePath the path of the node that was changed
-     * @param oldProperty the old property, with name and value(s); may not be null
+     * @param oldProperty the old property, with name and value(s); may be null
      * @param newProperty the new property, with name and value(s); may not be null
      */
     void propertyChanged( String docId,
