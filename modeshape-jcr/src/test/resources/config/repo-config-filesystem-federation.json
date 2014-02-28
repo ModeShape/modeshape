@@ -66,6 +66,11 @@
             "projections" : [
                 "default:/fs => /"
             ]
+        },
+        "monitoring" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/monitoring",
+            "enableEvents" : true
         }
     },
     "query" : {

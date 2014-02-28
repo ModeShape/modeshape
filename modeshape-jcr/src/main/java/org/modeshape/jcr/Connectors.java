@@ -955,7 +955,15 @@ public final class Connectors {
 
                             // Find the connector that serves up this external key ...
                             Connector conn = getConnectorForSourceKey(externalKey.getSourceKey());
-                            if (conn == null) continue; // really?
+                            if (conn == null) {
+                                //should never happen
+                                throw new IllegalStateException("External source key: " + externalKey.getSourceKey() + " has no matching connector");
+                            }
+                            if (conn != connector) {
+                                //since projections are stored in bulk (not on a per-connector basis), we only care about the projection
+                                //if it belongs to this connector
+                                continue;
+                            }
                             // Find the path mappings ...
                             BasicPathMappings mappings = mappingsByConnectorSourceName.get(connectorSourceName);
                             if (mappings == null) {
