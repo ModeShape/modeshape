@@ -17,7 +17,6 @@ package org.modeshape.web.jcr.rest.client.http;
 
 import static org.modeshape.web.jcr.rest.client.RestClientI18n.unknownHttpRequestMethodMsg;
 import java.net.URL;
-import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -38,6 +37,8 @@ import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
  * <code>HttpClientConnection</code> uses the <code>Apache HttpClient</code>.
  */
 public final class HttpClientConnection {
+
+    private static final String APPLICATION_JSON = "application/json";
 
     // ===========================================================================================================================
     // Fields
@@ -98,7 +99,7 @@ public final class HttpClientConnection {
         }
 
         // set the accepts header to application/json
-        this.request.setHeader("Accept", MediaType.APPLICATION_JSON);
+        this.request.setHeader("Accept", APPLICATION_JSON);
 
         // set request URI
         this.request.setURI(url.toURI());
@@ -152,7 +153,7 @@ public final class HttpClientConnection {
 
         ByteArrayEntity entity = new ByteArrayEntity(bytes);
         if (contentType == null) {
-            entity.setContentType(MediaType.APPLICATION_JSON);
+            entity.setContentType(APPLICATION_JSON);
         }
 
         if (this.request instanceof HttpEntityEnclosingRequestBase) {
