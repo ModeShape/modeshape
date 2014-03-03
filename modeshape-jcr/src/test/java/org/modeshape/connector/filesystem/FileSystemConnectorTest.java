@@ -47,6 +47,7 @@ import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
@@ -59,6 +60,9 @@ import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
+/**
+ * Unit test for {@link org.modeshape.connector.filesystem.FileSystemConnector}
+ */
 public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
     protected static final String TEXT_CONTENT = "Some text content";
@@ -91,13 +95,13 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
         noneProjection = new Projection("mutable-files-none", "target/federation/files-none");
         pagedProjection = new PagedProjection("paged-files", "target/federation/paged-files");
-        largeFilesProjection = new LargeFilesProjection("large-files","target/federation/large-files");
-        largeFilesProjectionDefault = new LargeFilesProjection("large-files-default","target/federation/large-files-default");
+        largeFilesProjection = new LargeFilesProjection("large-files", "target/federation/large-files");
+        largeFilesProjectionDefault = new LargeFilesProjection("large-files-default", "target/federation/large-files-default");
         monitoringProjection = new Projection("monitoring", "target/federation/monitoring");
 
-        projections = new Projection[] { readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
-                                         storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection,
-                                         largeFilesProjection, largeFilesProjectionDefault, monitoringProjection };
+        projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
+            storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection, largeFilesProjection,
+            largeFilesProjectionDefault, monitoringProjection};
 
         // Remove and then make the directory for our federation test ...
         for (Projection projection : projections) {
@@ -119,8 +123,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.create(testRoot, "legacy");
         noneProjection.create(testRoot, "none");
         pagedProjection.create(testRoot, "pagedFiles");
-        largeFilesProjection.create(testRoot,"largeFiles");
-        largeFilesProjectionDefault.create(testRoot,"largeFilesDefault");
+        largeFilesProjection.create(testRoot, "largeFiles");
+        largeFilesProjectionDefault.create(testRoot, "largeFilesDefault");
         monitoringProjection.create(testRoot, "monitoring");
     }
 
@@ -142,27 +146,27 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         long before = System.currentTimeMillis();
         Node node1 = session.getNode(path + "/large-file1.png");
         long after = System.currentTimeMillis();
-        long elapsed = after-before;
-        assertThat(node1.getName(),is("large-file1.png"));
-        assertThat(node1.getPrimaryNodeType().getName(),is("nt:file"));
+        long elapsed = after - before;
+        assertThat(node1.getName(), is("large-file1.png"));
+        assertThat(node1.getPrimaryNodeType().getName(), is("nt:file"));
 
         before = System.currentTimeMillis();
         Node node1Content = node1.getNode("jcr:content");
         after = System.currentTimeMillis();
-        elapsed = after-before;
-        assertThat(node1Content.getName(),is("jcr:content"));
-        assertThat(node1Content.getPrimaryNodeType().getName(),is("nt:resource"));
+        elapsed = after - before;
+        assertThat(node1Content.getName(), is("jcr:content"));
+        assertThat(node1Content.getPrimaryNodeType().getName(), is("nt:resource"));
 
-        Binary binary = (Binary) node1Content.getProperty("jcr:data").getBinary();
+        Binary binary = (Binary)node1Content.getProperty("jcr:data").getBinary();
         before = System.currentTimeMillis();
         String dsChecksum = binary.getHexHash();
         after = System.currentTimeMillis();
-        elapsed = after-before;
+        elapsed = after - before;
 
         before = System.currentTimeMillis();
         dsChecksum = binary.getHexHash();
         after = System.currentTimeMillis();
-        elapsed = after-before;
+        elapsed = after - before;
     }
 
     public void largeFilesContentBased() throws Exception {
@@ -176,27 +180,27 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         long before = System.currentTimeMillis();
         Node node1 = session.getNode(path + "/large-file1.png");
         long after = System.currentTimeMillis();
-        long elapsed = after-before;
-        assertThat(node1.getName(),is("large-file1.png"));
+        long elapsed = after - before;
+        assertThat(node1.getName(), is("large-file1.png"));
         assertThat(node1.getPrimaryNodeType().getName(), is("nt:file"));
 
         before = System.currentTimeMillis();
         Node node1Content = node1.getNode("jcr:content");
         after = System.currentTimeMillis();
-        elapsed = after-before;
-        assertThat(node1Content.getName(),is("jcr:content"));
+        elapsed = after - before;
+        assertThat(node1Content.getName(), is("jcr:content"));
         assertThat(node1Content.getPrimaryNodeType().getName(), is("nt:resource"));
 
-        Binary binary = (Binary) node1Content.getProperty("jcr:data").getBinary();
+        Binary binary = (Binary)node1Content.getProperty("jcr:data").getBinary();
         before = System.currentTimeMillis();
         String dsChecksum = binary.getHexHash();
         after = System.currentTimeMillis();
-        elapsed = after-before;
+        elapsed = after - before;
 
         before = System.currentTimeMillis();
         dsChecksum = binary.getHexHash();
         after = System.currentTimeMillis();
-        elapsed = after-before;
+        elapsed = after - before;
     }
 
     @Test
@@ -208,8 +212,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         legacyProjection.testContent(testRoot, "legacy");
         noneProjection.testContent(testRoot, "none");
         pagedProjection.testContent(testRoot, "pagedFiles");
-        largeFilesProjection.testContent(testRoot,"largeFiles");
-        largeFilesProjectionDefault.testContent(testRoot,"largeFilesDefault");
+        largeFilesProjection.testContent(testRoot, "largeFiles");
+        largeFilesProjectionDefault.testContent(testRoot, "largeFilesDefault");
     }
 
     @Test
@@ -424,7 +428,9 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2073" )
     public void shouldBeAbleToCopyExternalNodesWithBinaryValuesIntoTheRepository() throws Exception {
-        javax.jcr.Binary externalBinary = jcrSession().getNode("/testRoot/store/dir3/simple.json/jcr:content").getProperty("jcr:data").getBinary();
+        javax.jcr.Binary externalBinary = jcrSession().getNode("/testRoot/store/dir3/simple.json/jcr:content")
+                                                      .getProperty("jcr:data")
+                                                      .getBinary();
         jcrSession().getRootNode().addNode("files");
         jcrSession().save();
         jcrSession().getWorkspace().copy("/testRoot/store/dir3/simple.json", "/files/simple.json");
@@ -455,13 +461,14 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         addFile(rootFolder, "testfile2", "data/simple.json");
         File folder1 = new File(rootFolder, "folder1");
         assertTrue(folder1.mkdirs() && folder1.exists() && folder1.isDirectory());
-        //wait a bit to make sure the new folder is being watched
-        Thread.sleep(500);
+        // wait a bit to make sure the new folder is being watched
+        Thread.sleep(1600);
         addFile(folder1, "testfile11", "data/simple.json");
         Thread.sleep(300);
         addFile(rootFolder, "dir1/testfile11", "data/simple.json");
+        Thread.sleep(1600);
 
-        if (!latch.await(3, TimeUnit.SECONDS)) {
+        if (!latch.await(10, TimeUnit.SECONDS)) {
             fail("Events not received from connector");
         }
 
@@ -470,7 +477,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         List<String> receivedPaths = receivedEvents.get(Event.NODE_ADDED);
         assertNotNull(receivedPaths);
         assertEquals(expectedEventCount, receivedPaths.size());
-        //the root paths are defined in the monitoring projection
+        // the root paths are defined in the monitoring projection
         assertTrue(receivedPaths.contains("/testRoot/monitoring/testfile1"));
         assertTrue(receivedPaths.contains("/testRoot/monitoring/testfile2"));
         assertTrue(receivedPaths.contains("/testRoot/monitoring/folder1"));
@@ -478,6 +485,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertTrue(receivedPaths.contains("/testRoot/monitoring/dir1/testfile11"));
     }
 
+    @Ignore("Doesn't work correctly on OSX")
     @Test
     @FixFor( "MODE-2040" )
     public void shouldReceiveFSNotificationsWhenChangingFileContent() throws Exception {
@@ -493,8 +501,9 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         File dir3 = new File(rootFolder, "dir3");
         assertTrue(dir3.exists() && dir3.isDirectory());
         addFile(dir3, "simple.txt", "data/simple.json");
+        Thread.sleep(3000);
 
-        if (!latch.await(3, TimeUnit.SECONDS)) {
+        if (!latch.await(10, TimeUnit.SECONDS)) {
             fail("Events not received from connector");
         }
 
@@ -503,8 +512,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         List<String> receivedPaths = receivedEvents.get(Event.PROPERTY_CHANGED);
         assertNotNull(receivedPaths);
 
-        //don't assert the size because the count of MODIFIED events is OS dependent
-        //assertEquals(expectedEventCount, receivedPaths.size());
+        // don't assert the size because the count of MODIFIED events is OS dependent
+        // assertEquals(expectedEventCount, receivedPaths.size());
         assertTrue(receivedPaths.contains("/testRoot/monitoring/dir3/simple.txt/jcr:content/jcr:lastModified"));
         assertTrue(receivedPaths.contains("/testRoot/monitoring/dir3/simple.txt/jcr:content/jcr:data"));
     }
@@ -525,10 +534,10 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         FileUtil.delete(new File(dir3, "simple.json"));
         Thread.sleep(300);
         FileUtil.delete(new File(dir3, "simple.txt"));
-        Thread.sleep(300);
+        Thread.sleep(1700);
         FileUtil.delete(dir3);
 
-        if (!latch.await(3, TimeUnit.SECONDS)) {
+        if (!latch.await(10, TimeUnit.SECONDS)) {
             fail("Events not received from connector");
         }
 
@@ -542,7 +551,6 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertTrue(receivedPaths.contains("/testRoot/monitoring/dir3/simple.txt"));
         assertTrue(receivedPaths.contains("/testRoot/monitoring/dir3"));
     }
-
 
     protected void assertNoSidecarFile( Projection projection,
                                         String filePath ) {
@@ -832,7 +840,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             addFile(directory, "dir5/simple5.json", "data/simple.json");
         }
     }
-    
+
     protected class LargeFilesProjection extends Projection {
 
         public LargeFilesProjection( String name,

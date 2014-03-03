@@ -217,9 +217,9 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     private String extraPropertiesStorage;
 
     /**
-     * A boolean which determines whether for external binary values (i.e. {@link UrlBinaryValue}) the SHA1 is computed based
-     * on the content of the file itself or whether it's computed based on the URL string. This is {@code true} by default, but
-     * if the connector needs to deal with very large values it might be worth turning off.
+     * A boolean which determines whether for external binary values (i.e. {@link UrlBinaryValue}) the SHA1 is computed based on
+     * the content of the file itself or whether it's computed based on the URL string. This is {@code true} by default, but if
+     * the connector needs to deal with very large values it might be worth turning off.
      */
     private boolean contentBasedSha1 = true;
 
@@ -244,7 +244,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         }
         directoryAbsolutePath = directory.getAbsolutePath();
         if (!directoryAbsolutePath.endsWith(FILE_SEPARATOR)) directoryAbsolutePath = directoryAbsolutePath + FILE_SEPARATOR;
-        directoryAbsolutePathLength = directoryAbsolutePath.length() - FILE_SEPARATOR.length(); //does NOT include the separator
+        directoryAbsolutePathLength = directoryAbsolutePath.length() - FILE_SEPARATOR.length(); // does NOT include the separator
 
         // Initialize the filename filter ...
         filenameFilter = new InclusionExclusionFilenameFilter();
@@ -269,7 +269,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             try {
                 WatchService watchService = FileSystems.getDefault().newWatchService();
                 monitoringTask = Executors.newSingleThreadExecutor(new NamedThreadFactory("modeshape-fs-connector-monitor"))
-                                          .submit(new MonitoringTask(watchService, Paths.get(directoryAbsolutePath)));
+                                          .submit(new MonitoringTask(watchService, this, Paths.get(directoryAbsolutePath)));
             } catch (UnsupportedOperationException e) {
                 log().warn("Unable to to turn on monitoring, because it is not supported on this OS");
             }
@@ -289,7 +289,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
     /**
      * Get the namespace registry.
-     *
+     * 
      * @return the namespace registry; never null
      */
     NamespaceRegistry registry() {
@@ -300,7 +300,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * Utility method for determining if the supplied identifier is for the "jcr:content" child node of a file. * Subclasses may
      * override this method to change the format of the identifiers, but in that case should also override the
      * {@link #fileFor(String)}, {@link #isRoot(String)}, and {@link #idFor(File)} methods.
-     *
+     * 
      * @param id the identifier; may not be null
      * @return true if the identifier signals the "jcr:content" child node of a file, or false otherwise
      * @see #isRoot(String)
@@ -315,7 +315,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * Utility method for obtaining the {@link File} object that corresponds to the supplied identifier. Subclasses may override
      * this method to change the format of the identifiers, but in that case should also override the {@link #isRoot(String)},
      * {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
-     *
+     * 
      * @param id the identifier; may not be null
      * @return the File object for the given identifier
      * @see #isRoot(String)
@@ -337,7 +337,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * Utility method for determining if the node identifier is the identifier of the root node in this external source.
      * Subclasses may override this method to change the format of the identifiers, but in that case should also override the
      * {@link #fileFor(String)}, {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
-     *
+     * 
      * @param id the identifier; may not be null
      * @return true if the identifier is for the root of this source, or false otherwise
      * @see #isContentNode(String)
@@ -352,7 +352,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * Utility method for determining the node identifier for the supplied file. Subclasses may override this method to change the
      * format of the identifiers, but in that case should also override the {@link #fileFor(String)},
      * {@link #isContentNode(String)}, and {@link #isRoot(String)} methods.
-     *
+     * 
      * @param file the file; may not be null
      * @return the node identifier; never null
      * @see #isRoot(String)
@@ -366,8 +366,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 // This is the root
                 return DELIMITER;
             }
-            String msg = JcrI18n.fileConnectorNodeIdentifierIsNotWithinScopeOfConnector.text(getSourceName(), directoryPath,
-                                                                                             path);
+            String msg = JcrI18n.fileConnectorNodeIdentifierIsNotWithinScopeOfConnector.text(getSourceName(), directoryPath, path);
             throw new DocumentStoreException(path, msg);
         }
         String id = path.substring(directoryAbsolutePathLength);
@@ -379,7 +378,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     /**
      * Utility method for creating a {@link BinaryValue} for the given {@link File} object. Subclasses should rarely override this
      * method.
-     *
+     * 
      * @param file the file; may not be null
      * @return the BinaryValue; never null
      */
@@ -396,7 +395,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     /**
      * Utility method to create a {@link BinaryValue} object for the given file. Subclasses should rarely override this method,
      * since the {@link UrlBinaryValue} will be applicable in most situations.
-     *
+     * 
      * @param file the file for which the {@link BinaryValue} is to be created; never null
      * @return the binary value; never null
      * @throws IOException if there is an error creating the value
@@ -407,10 +406,10 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     }
 
     /**
-     * Computes the SHA1 for the given file. By default, this method will look at the {@link FileSystemConnector#contentBasedSha1()}
-     * flag and either take the URL of the file (using @see java.util.File#toURI().toURL() and return the SHA1 of the URL string
-     * or return the SHA1 of the entire file content.
-     *
+     * Computes the SHA1 for the given file. By default, this method will look at the
+     * {@link FileSystemConnector#contentBasedSha1()} flag and either take the URL of the file (using @see
+     * java.util.File#toURI().toURL() and return the SHA1 of the URL string or return the SHA1 of the entire file content.
+     * 
      * @param file a {@link File} instance; never null
      * @return the SHA1 of the file.
      */
@@ -433,7 +432,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * Subclasses can override this method to transform the URL into something different. For example, if the files are being
      * served by a web server, the overridden method might transform the file-based URL into the corresponding HTTP-based URL.
      * </p>
-     *
+     * 
      * @param file the file for which the URL is to be created; never null
      * @return the URL for the file; never null
      * @throws IOException if there is an error creating the URL
@@ -452,7 +451,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
     /**
      * Utility method to determine if the file is excluded by the inclusion/exclusion filter.
-     *
+     * 
      * @param file the file
      * @return true if the file is excluded, or false if it is to be included
      */
@@ -462,11 +461,11 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
 
     /**
      * Utility method to ensure that the file is writable by this connector.
-     *
+     * 
      * @param id the identifier of the node
      * @param file the file
      * @throws DocumentStoreException if the file is expected to be writable but is not or is excluded, or if the connector is
-     * readonly
+     *         readonly
      */
     protected void checkFileNotExcluded( String id,
                                          File file ) {
@@ -781,21 +780,49 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         return newFolderWriter(parentId, folder, pageKey.getOffsetInt()).document();
     }
 
-    private class MonitoringTask implements Callable<Void> {
-        private final WatchService watchService;
+    private static class MonitoringTask implements Callable<Void> {
+        private final static WatchEvent.Kind<?>[] EVENTS_TO_WATCH =
+                new WatchEvent.Kind<?>[] { ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE };
+        private final static java.nio.file.WatchEvent.Modifier WATCH_MODIFIER;
 
-        private MonitoringTask( WatchService watchService, Path rootPath ) {
+        private final WatchService watchService;
+        private final FileSystemConnector connector;
+
+        static {
+            java.nio.file.WatchEvent.Modifier modifier = null;
+            try {
+                @SuppressWarnings("unchecked")
+                Class<? extends Enum<?>> modifierClass =
+                        (Class<? extends Enum<?>>)Class.forName("com.sun.nio.file.SensitivityWatchEventModifier",
+                                false,
+                                FileSystemConnector.class.getClassLoader());
+                for (Enum<?> enumConstants : modifierClass.getEnumConstants()) {
+                    if (enumConstants.name().equalsIgnoreCase("HIGH")) {
+                        modifier = (WatchEvent.Modifier)enumConstants;
+                        break;
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                //modifier not available on this JDK
+            }
+            WATCH_MODIFIER = modifier;
+        }
+
+        private MonitoringTask( WatchService watchService,
+                                FileSystemConnector connector,
+                                Path rootPath ) {
             this.watchService = watchService;
+            this.connector = connector;
             recursiveWatch(rootPath, watchService);
         }
 
         @Override
         @SuppressWarnings( "unchecked" )
         public Void call() throws Exception {
-            for (; ;) {
+            for (;;) {
                 try {
                     WatchKey watchKey = watchService.take();
-                    ConnectorChangeSet connectorChangeSet = newConnectorChangedSet();
+                    ConnectorChangeSet connectorChangeSet = connector.newConnectorChangedSet();
                     for (WatchEvent<?> watchEvent : watchKey.pollEvents()) {
                         WatchEvent.Kind<?> kind = watchEvent.kind();
 
@@ -803,13 +830,13 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                         Path resolvedPath = ((Path)watchKey.watchable()).resolve(eventPath);
                         File resolvedFile = resolvedPath.toFile();
 
-                        if (isExcluded(resolvedFile)) {
+                        if (connector.isExcluded(resolvedFile)) {
                             continue;
                         }
 
                         if (kind == ENTRY_CREATE) {
                             fireEntryCreated(connectorChangeSet, resolvedPath);
-                        } else if (kind == ENTRY_DELETE ) {
+                        } else if (kind == ENTRY_DELETE) {
                             fireEntryDeleted(connectorChangeSet, resolvedPath);
                         } else if (kind == ENTRY_MODIFY) {
                             fireEntryModified(connectorChangeSet, resolvedPath);
@@ -826,38 +853,30 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             return null;
         }
 
-        private void fireEntryModified( ConnectorChangeSet connectorChangeSet, Path resolvedPath) {
-            //this event is *very much dependent on the OS*, so we'll try to focus on the most general case
-            //we only handle file modifications and fire events for last_modified and content
+        private void fireEntryModified( ConnectorChangeSet connectorChangeSet,
+                                        Path resolvedPath ) {
+            // this event is *very much dependent on the OS*, so we'll try to focus on the most general case
+            // we only handle file modifications and fire events for last_modified and content
             boolean isFile = Files.isRegularFile(resolvedPath, LinkOption.NOFOLLOW_LINKS);
             if (!isFile) {
-                log().debug("The entry at {0} is not a regular file; ignoring modify event", resolvedPath);
+                connector.log().debug("The entry at {0} is not a regular file; ignoring modify event", resolvedPath);
                 return;
             }
 
             File file = resolvedPath.toFile();
-            String id = idFor(file) + JCR_CONTENT_SUFFIX;
-            Property modifiedProperty = propertyFactory().create(JcrLexicon.LAST_MODIFIED,
-                                                                 factories().getDateFactory().create(file.lastModified()));
-            //there is no way to observe the previous value, so fire <null>
-            connectorChangeSet.propertyChanged(id,
-                                               JcrNtLexicon.FILE,
-                                               Collections.<Name>emptySet(),
-                                               id,
-                                               null,
-                                               modifiedProperty);
+            String id = connector.idFor(file) + JCR_CONTENT_SUFFIX;
+            Property modifiedProperty = connector.propertyFactory().create(JcrLexicon.LAST_MODIFIED,
+                                                                           connector.factories().getDateFactory().create(file.lastModified()));
+            // there is no way to observe the previous value, so fire <null>
+            connectorChangeSet.propertyChanged(id, JcrNtLexicon.FILE, Collections.<Name>emptySet(), id, null, modifiedProperty);
 
-            BinaryValue binaryValue = binaryFor(file);
-            Property binaryProperty = propertyFactory().create(JcrLexicon.DATA, binaryValue);
-            connectorChangeSet.propertyChanged(id,
-                                               JcrNtLexicon.FILE,
-                                               Collections.<Name>emptySet(),
-                                               id,
-                                               null,
-                                               binaryProperty);
+            BinaryValue binaryValue = connector.binaryFor(file);
+            Property binaryProperty = connector.propertyFactory().create(JcrLexicon.DATA, binaryValue);
+            connectorChangeSet.propertyChanged(id, JcrNtLexicon.FILE, Collections.<Name>emptySet(), id, null, binaryProperty);
         }
 
-        private void fireEntryDeleted( ConnectorChangeSet connectorChangeSet, Path resolvedPath) {
+        private void fireEntryDeleted( ConnectorChangeSet connectorChangeSet,
+                                       Path resolvedPath ) {
             Name primaryType = primaryTypeFor(resolvedPath);
             if (primaryType == null) {
                 // Atm when a deleted event is received, because the item is no longer accessible on the FS.
@@ -865,38 +884,45 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 primaryType = JcrNtLexicon.HIERARCHY_NODE;
             }
             File deletedFile = resolvedPath.toFile();
-            String id = idFor(deletedFile);
+            String id = connector.idFor(deletedFile);
             connectorChangeSet.nodeRemoved(id,
-                                           idFor(resolvedPath.getParent().toFile()),
+                                           connector.idFor(resolvedPath.getParent().toFile()),
                                            id,
                                            primaryType,
                                            Collections.<Name>emptySet());
         }
 
-        private void fireEntryCreated( ConnectorChangeSet connectorChangeSet, Path resolvedPath ) {
+        private void fireEntryCreated( ConnectorChangeSet connectorChangeSet,
+                                       Path resolvedPath ) {
             Name primaryType = primaryTypeFor(resolvedPath);
             if (primaryType == null) {
                 return;
             }
             if (Files.isDirectory(resolvedPath, LinkOption.NOFOLLOW_LINKS)) {
-                //if a new directory has been created, watch it
+                // if a new directory has been created, watch it
                 recursiveWatch(resolvedPath, watchService);
             }
-            String docId = idFor(resolvedPath.toFile());
+            String docId = connector.idFor(resolvedPath.toFile());
             connectorChangeSet.nodeCreated(docId,
-                                           idFor(resolvedPath.getParent().toFile()),
+                                           connector.idFor(resolvedPath.getParent().toFile()),
                                            docId,
                                            primaryType,
                                            Collections.<Name>emptySet(),
                                            Collections.<Name, Property>emptyMap());
         }
 
-        private void recursiveWatch( Path path, final WatchService watchService ) {
+        private void recursiveWatch( Path path,
+                                     final WatchService watchService ) {
             try {
                 Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                     @Override
-                    public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
-                        dir.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+                    public FileVisitResult preVisitDirectory( Path dir,
+                                                              BasicFileAttributes attrs ) throws IOException {
+                        if (WATCH_MODIFIER != null) {
+                            dir.register(watchService, EVENTS_TO_WATCH, WATCH_MODIFIER);
+                        } else {
+                            dir.register(watchService, EVENTS_TO_WATCH);
+                        }
                         return FileVisitResult.CONTINUE;
                     }
                 });
@@ -909,7 +935,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             boolean isFolder = Files.isDirectory(resolvedPath, LinkOption.NOFOLLOW_LINKS);
             boolean isFile = Files.isRegularFile(resolvedPath, LinkOption.NOFOLLOW_LINKS);
             if (!isFile && !isFolder) {
-                log().debug("The entry at {0} is neither a file nor a folder", resolvedPath);
+                connector.log().debug("The entry at {0} is neither a file nor a folder", resolvedPath);
                 return null;
             }
             return isFolder ? JcrNtLexicon.FOLDER : JcrNtLexicon.FILE;
