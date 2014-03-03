@@ -51,6 +51,7 @@
     <properties>
         <jcr.version>2.0</jcr.version>
         <infinispan.version>6.0.1.Final</infinispan.version>
+        <jgroups.version>3.4.1.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.17.SP2</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
@@ -59,20 +60,6 @@
         <embedmongo.version>1.28</embedmongo.version>
         <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>
         <tika.version>1.3</tika.version>
-
-        <!--//TODO author=Horia Chiorean date=1/8/14 description=The following version props should not be here-->
-        <jgroups.version>3.4.1.Final</jgroups.version>
-        <jboss.logging.version>3.1.2.GA</jboss.logging.version>
-        <hibernate.search.version>4.3.0.Final</hibernate.search.version>
-        <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
-        <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
-        <slf4j.api.version>1.6.1</slf4j.api.version>
-        <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
-        <log4j.version>1.2.16</log4j.version>
-        <logback.version>0.9.29</logback.version>
-        <lucene.version>3.6.2</lucene.version>
-        <lucene.regex.version>3.0.3</lucene.regex.version>
-        <junit.version>4.11</junit.version>
         <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
         <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
         <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
@@ -93,9 +80,6 @@
         <poi.version>3.10-beta1</poi.version>
         <jcommander.version>1.5</jcommander.version>
         <wsdl4j.version>1.6.2</wsdl4j.version>
-        <bson4jackson.version>1.1.2</bson4jackson.version>
-        <javax.jta.version>1.1</javax.jta.version>
-
         <!-- ***************** -->
         <!-- Repository Deployment URLs -->
         <!-- ***************** -->
@@ -318,8 +302,37 @@
                 <artifactId>jcr</artifactId>
                 <version>${jcr.version}</version>
             </dependency>
+
             <!--
-                Infinispan cachestores
+                  Infinispan
+              -->
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>stax2-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!--
+                JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
+                because of ISPN.
+             -->
+            <dependency>
+                <groupId>org.jgroups</groupId>
+                <artifactId>jgroups</artifactId>
+                <version>${jgroups.version}</version>
+            </dependency>
+
+            <!--
+               Infinispan cachestores
             -->
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -577,110 +590,10 @@
                 <version>${cassandra-cql-driver}</version>
                 <scope>provided</scope>
             </dependency>
-            <!--
-                //TODO author=Horia Chiorean date=1/8/14 description=The following dependencies are only here to be compatible with 3.6.0.Final.
-            -->
-            <!--
-                  Infinispan
-              -->
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>woodstox-core-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>stax2-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!--
-                JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
-                because of ISPN.
-             -->
-            <dependency>
-                <groupId>org.jgroups</groupId>
-                <artifactId>jgroups</artifactId>
-                <version>${jgroups.version}</version>
-            </dependency>
-
-            <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-engine</artifactId>
-                <version>${hibernate.search.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.hibernate</groupId>
-                        <artifactId>hibernate-search-analyzers</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-core-asl</artifactId>
-                <version>${hibernate.search.jackson-core-asl.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-mapper-asl</artifactId>
-                <version>${hibernate.search.jackson-mapper-asl.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-core</artifactId>
-                <version>${lucene.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-regex</artifactId>
-                <version>${lucene.regex.version}</version>
-            </dependency>
-
-            <!-- Recommended JUnit version -->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
 
             <!--
-              Compatible logging modules.
-            -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j.log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss.logging.version}</version>
-            </dependency>
-
-            <!--
-                Sequencers
-            -->
+               Sequencers
+           -->
 
             <!-- Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)
                  So we need to specify exact versions, and we can do that in a dependencyManagement section.
@@ -820,12 +733,6 @@
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-xmi</artifactId>
                 <version>${eclipse.emf.ecorexmi.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.transaction</groupId>
-                <artifactId>jta</artifactId>
-                <version>${javax.jta.version}</version>
-                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
