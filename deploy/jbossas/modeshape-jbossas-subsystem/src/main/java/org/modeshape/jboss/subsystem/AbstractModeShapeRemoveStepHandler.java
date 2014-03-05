@@ -52,7 +52,7 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
         for (ServiceName serviceName : servicesToRemove(context, operation, model)) {
             ServiceController<?> serviceController = context.getServiceRegistry(false).getService(serviceName);
             //only remove a service if it's up an running
-            if (serviceController.getState().in(ServiceController.State.UP)) {
+            if (serviceController != null && serviceController.getState().in(ServiceController.State.UP)) {
                 context.removeService(serviceController);
                 removedServices().put(serviceName, serviceController.getService());
                 if (log.isDebugEnabled()) {
