@@ -16,20 +16,13 @@
 package org.modeshape.jboss.subsystem;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.dmr.ModelNode;
 
 /**
  * 
  */
 public class AddIndexStorage extends AbstractAddStepHandler {
-
     public static final AddIndexStorage INSTANCE = new AddIndexStorage();
 
     private AddIndexStorage() {
-    }
-
-    @Override
-    protected void populateModel( ModelNode operation,
-                                  ModelNode model ) {
     }
 }

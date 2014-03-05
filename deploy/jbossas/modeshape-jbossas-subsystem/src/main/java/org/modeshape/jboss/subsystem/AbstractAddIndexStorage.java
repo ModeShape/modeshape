@@ -40,13 +40,10 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
 
     static void populate( ModelNode operation,
                           ModelNode model,
-                          String modelName,
                           AttributeDefinition[] attributes ) throws OperationFailedException {
         for (AttributeDefinition attribute : attributes) {
             attribute.validateAndSet(operation, model);
         }
-        // Set the index storage type last (overwriting any value that they've manually added) ...
-        model.get(ModelKeys.INDEX_STORAGE_TYPE).set(modelName);
     }
 
     @Override

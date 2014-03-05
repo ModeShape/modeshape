@@ -27,10 +27,6 @@ import org.jboss.as.controller.OperationStepHandler;
  */
 public class IndexStorageWriteAttributeHandler extends AbstractRepositoryConfigWriteAttributeHandler {
 
-    
-    static final IndexStorageWriteAttributeHandler RAM_INDEX_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
-            ModelAttributes.RAM_INDEX_STORAGE_ATTRIBUTES);
-    
     static final IndexStorageWriteAttributeHandler LOCAL_FILE_INDEX_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
             ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES);
     

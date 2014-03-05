@@ -52,7 +52,7 @@ public class AddCustomIndexStorage extends AbstractAddIndexStorage {
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.CUSTOM_INDEX_STORAGE, ModelAttributes.CUSTOM_INDEX_STORAGE_ATTRIBUTES);
+        populate(operation, model, ModelAttributes.CUSTOM_INDEX_STORAGE_ATTRIBUTES);
     }
 
 }

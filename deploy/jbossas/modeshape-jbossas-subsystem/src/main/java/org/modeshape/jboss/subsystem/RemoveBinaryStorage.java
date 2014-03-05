@@ -34,7 +34,7 @@ class RemoveBinaryStorage extends AbstractModeShapeRemoveStepHandler {
                                         ModelNode operation,
                                         ModelNode model ) throws OperationFailedException {
         String repositoryName = repositoryName(operation);
-        List<ServiceName> servicesToRemove = new ArrayList<ServiceName>();
+        List<ServiceName> servicesToRemove = new ArrayList<>();
         String storeName = null;
         if (model.hasDefined(ModelKeys.STORE_NAME)) {
             storeName = model.get(ModelKeys.STORE_NAME).asString();

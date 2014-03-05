@@ -76,6 +76,6 @@ public class AddSlaveFileSystemIndexStorage extends AbstractAddFileSystemIndexSt
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.SLAVE_FILE_INDEX_STORAGE, ModelAttributes.SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES);
+        populate(operation, model, ModelAttributes.SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES);
     }
 }

@@ -294,62 +294,70 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                                               Element element,
                                               boolean started ) throws XMLStreamException {
         ModelNode storage = node.get((String)node.keys().toArray()[0]);
-        for (String key : storage.keys()) {
-            if (ModelKeys.INDEX_STORAGE_TYPE.equals(key)) {
-                // skip this ...
-            }
-            // General indexing parameters ...
-            else if (ModelKeys.INDEX_FORMAT.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.INDEX_FORMAT, element, started);
-            }
-            // File-related ...
-            else if (ModelKeys.PATH.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.PATH, element, started);
-            } else if (ModelKeys.RELATIVE_TO.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.RELATIVE_TO, element, started);
-            } else if (ModelKeys.SOURCE_PATH.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.SOURCE_PATH, element, started);
-            } else if (ModelKeys.SOURCE_RELATIVE_TO.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.SOURCE_RELATIVE_TO, element, started);
-            } else if (ModelKeys.ACCESS_TYPE.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.ACCESS_TYPE, element, started);
-            } else if (ModelKeys.LOCKING_STRATEGY.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.LOCKING_STRATEGY, element, started);
-            } else if (ModelKeys.REFRESH_PERIOD.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.REFRESH_PERIOD, element, started);
-            } else if (ModelKeys.COPY_BUFFER_SIZE.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.COPY_BUFFER_SIZE, element, started);
-            }
-            // JMS-backend (for master & slave file storage only) ...
-            else if (ModelKeys.CONNECTION_FACTORY_JNDI_NAME.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.CONNECTION_FACTORY_JNDI_NAME, element, started);
-            } else if (ModelKeys.QUEUE_JNDI_NAME.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.QUEUE_JNDI_NAME, element, started);
-            }
-            // Cache-related ...
-            else if (ModelKeys.LOCK_CACHE_NAME.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.LOCK_CACHE_NAME, element, started);
-            } else if (ModelKeys.DATA_CACHE_NAME.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME, element, started);
-            } else if (ModelKeys.METADATA_CACHE_NAME.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.METADATA_CACHE_NAME, element, started);
-            } else if (ModelKeys.CACHE_CONTAINER.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.CACHE_CONTAINER, element, started);
-            } else if (ModelKeys.DATA_CACHE_NAME.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME, element, started);
-            }
+        if (storage.isDefined()) {
+            for (String key : storage.keys()) {
+                if (ModelKeys.INDEX_STORAGE_TYPE.equals(key)) {
+                    // skip this ...
+                }
+                // General indexing parameters ...
+                else if (ModelKeys.INDEX_FORMAT.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.INDEX_FORMAT, element, started);
+                }
+                // File-related ...
+                else if (ModelKeys.PATH.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.PATH, element, started);
+                } else if (ModelKeys.RELATIVE_TO.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.RELATIVE_TO, element, started);
+                } else if (ModelKeys.SOURCE_PATH.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.SOURCE_PATH, element, started);
+                } else if (ModelKeys.SOURCE_RELATIVE_TO.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.SOURCE_RELATIVE_TO, element, started);
+                } else if (ModelKeys.ACCESS_TYPE.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.ACCESS_TYPE, element, started);
+                } else if (ModelKeys.LOCKING_STRATEGY.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.LOCKING_STRATEGY, element, started);
+                } else if (ModelKeys.REFRESH_PERIOD.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.REFRESH_PERIOD, element, started);
+                } else if (ModelKeys.COPY_BUFFER_SIZE.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.COPY_BUFFER_SIZE, element, started);
+                }
+                // JMS-backend (for master & slave file storage only) ...
+                else if (ModelKeys.CONNECTION_FACTORY_JNDI_NAME.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.CONNECTION_FACTORY_JNDI_NAME, element,
+                                                     started);
+                } else if (ModelKeys.QUEUE_JNDI_NAME.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.QUEUE_JNDI_NAME, element, started);
+                } else if (ModelKeys.RETRY_INITIALIZE_PERIOD.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.RETRY_INITIALIZE_PERIOD, element, started);
+                } else if (ModelKeys.RETRY_MARKER_LOOKUP.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.RETRY_MARKER_LOOKUP, element, started);
+                }
+                // Cache-related ...
+                else if (ModelKeys.LOCK_CACHE_NAME.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.LOCK_CACHE_NAME, element, started);
+                } else if (ModelKeys.DATA_CACHE_NAME.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME, element, started);
+                } else if (ModelKeys.METADATA_CACHE_NAME.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.METADATA_CACHE_NAME, element, started);
+                } else if (ModelKeys.CACHE_CONTAINER.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.CACHE_CONTAINER, element, started);
+                } else if (ModelKeys.DATA_CACHE_NAME.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME, element, started);
+                }
 
-            // Custom ...
-            else if (ModelKeys.CLASSNAME.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.CLASSNAME, element, started);
-            } else if (ModelKeys.MODULE.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.CLASSNAME, element, started);
-            }
-            // Extra parameters ...
-            else {
-                writer.writeAttribute(key, storage.get(key).asString());
+                // Custom ...
+                else if (ModelKeys.CLASSNAME.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.CLASSNAME, element, started);
+                } else if (ModelKeys.MODULE.equals(key)) {
+                    started = startAndWriteAttribute(writer, storage, ModelAttributes.MODULE, element, started);
+                }
+                // Extra parameters ...
+                else {
+                    writer.writeAttribute(key, storage.get(key).asString());
+                }
             }
         }
+
         if (started) {
             writer.writeEndElement();
         }

@@ -22,7 +22,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.modeshape.jboss.subsystem.ModeShapeExtension.SUBSYSTEM_NAME;
+import static org.modeshape.jboss.subsystem.ModelKeys.REPOSITORY;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -42,19 +45,21 @@ import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
+import org.jboss.dmr.ModelType;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-@SuppressWarnings( "nls" )
+/**
+ * Unit test for the ModeShape AS7 subsystem.
+ */
+@SuppressWarnings("nls")
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     public ModeShapeConfigurationTest() {
-        super(ModeShapeExtension.SUBSYSTEM_NAME, new ModeShapeExtension());
+        super(SUBSYSTEM_NAME, new ModeShapeExtension());
     }
 
     @Override
@@ -68,8 +73,13 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testMinimalConfigurationWithOneMinimalRepository() throws Exception {
+    public void testMinimalConfiguration() throws Exception {
         standardSubsystemTest("minimal");
+    }
+
+    @Test
+    public void testFullConfiguration() throws Exception {
+        standardSubsystemTest("full");
     }
 
     @Test
@@ -147,110 +157,48 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         parse(readResource("modeshape-journaling.xml"));
     }
 
-    /* // todo replace with dmr format not json
     @Test
-    public void testOutputPersistence() throws Exception {
-    String subsystemXml = readResource("modeshape-sample-config.xml");
+    public void testSampleConfigurationModel() throws Exception {
+        List<ModelNode> nodes = parse(readResource("modeshape-sample-config.xml"));
+        assertEquals(7, nodes.size());
 
-    String json = readResource("modeshape-sample-config.json");
-    ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-    String triggered = outputModel(testModel);
+        ModelNode subsystem = nodes.get(0);
+        assertNode(subsystem.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME));
 
-    KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
+        ModelNode repo1 = nodes.get(1);
+        assertNode(repo1.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample1"));
+        assertEquals(repo1.get(ModelKeys.JNDI_NAME).asString(), "jcr/local/modeshape_repo1");
 
-    // Get the model and the persisted xml from the controller
-    ModelNode model = services.readWholeModel();
-    String marshalled = services.getPersistedSubsystemXml();
+        ModelNode seq1 = nodes.get(2);
+        assertNode(seq1.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample1"),
+                   new KeyValue("sequencer", "modeshape-sequencer-ddl"));
+        assertEquals(seq1.get(ModelKeys.CLASSNAME).asString(), "ddl");
+        assertEquals(seq1.get(ModelKeys.PATH_EXPRESSIONS).asList().get(0).asString(), "//a/b");
 
-    compare(testModel, model);
-    Assert.assertEquals(triggered, marshalled);
-    Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-    }
-    */
-    /*
-    @Test
-    public void testOutputPersistenceOfRelativelyThoroughConfiguration() throws Exception {
-        String subsystemXml = readResource("modeshape-full-config.xml");
+        ModelNode seq2 = nodes.get(3);
+        assertNode(seq2.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample1"),
+                   new KeyValue("sequencer", "modeshape-sequencer-java"));
+        assertEquals(seq2.get(ModelKeys.CLASSNAME).asString(), "java");
+        assertEquals(seq2.get(ModelKeys.PATH_EXPRESSIONS).asList().get(0).asString(), "//a/b");
+        assertNode(seq2.get(ModelKeys.PROPERTIES), new KeyValue("extra1", "value1"), new KeyValue("extra2", "2"));
 
-        String json = readResource("modeshape-full-config.json");
-        ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-        String triggered = outputModel(testModel);
+        ModelNode repo2 = nodes.get(4);
+        assertNode(repo2.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample2"));
 
-        KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
+        ModelNode seq3 = nodes.get(5);
+        assertNode(seq3.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample2"),
+                   new KeyValue("sequencer", "modeshape-sequencer-ddl"));
+        assertEquals(seq3.get(ModelKeys.CLASSNAME).asString(), "ddl");
+        assertEquals(seq3.get(ModelKeys.PATH_EXPRESSIONS).asList().get(0).asString(), "//a/b/");
+        assertEquals(seq3.get(ModelKeys.PATH_EXPRESSIONS).asList().get(1).asString(), "//a/b2/");
 
-        // Get the model and the persisted xml from the controller
-        ModelNode model = services.readWholeModel();
-        String marshalled = services.getPersistedSubsystemXml();
-
-        compare(ModelNode.fromJSONString(json), model);
-        compare(testModel, model);
-        Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-        // The input XML contains some default values, and the marshalled value doesn't contain the defaults;
-        // therefore we cannot compare them directly (though they are equivalent) ...
-        // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
-    }
-    */
-
-    /*
-        @Test
-        public void testOutputPersistenceOfConfigurationWithLocalFileIndexStorage() throws Exception {
-        roundTrip("modeshape-local-file-index-storage.xml", "modeshape-local-file-index-storage.json");
-        }
-
-        @Test
-        public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
-        roundTrip("modeshape-file-binary-storage.xml", "modeshape-file-binary-storage.json");
-        }
-
-        @Test
-        public void testOutputPersistenceOfConfigurationWithCacheBinaryStorage() throws Exception {
-        roundTrip("modeshape-cache-binary-storage.xml", "modeshape-cache-binary-storage.json");
-        }
-
-        @Test
-        public void testOutputPersistenceOfConfigurationWithMinimalRepository() throws Exception {
-        roundTrip("modeshape-minimal-config.xml", "modeshape-minimal-config.json");
-        }
-    */
-    @Ignore
-    @Test
-    public void testOutputPersistenceOfConfigurationWithAuthenticators() throws Exception {
-        roundTrip("modeshape-custom-authenticators-config.xml", "modeshape-custom-authenticators-config.json");
+        ModelNode seq4 = nodes.get(6);
+        assertNode(seq4.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample2"),
+                   new KeyValue("sequencer", "modeshape-sequencer-java"));
+        assertEquals(seq4.get(ModelKeys.CLASSNAME).asString(), "java");
+        assertEquals(seq4.get(ModelKeys.PATH_EXPRESSIONS).asList().get(0).asString(), "//a/b");
     }
 
-    protected void roundTrip( String filenameOfInputXmlConfig,
-                              String filenameOfExpectedJson ) throws Exception {
-        String subsystemXml = readResource(filenameOfInputXmlConfig);
-
-        String json = readResource(filenameOfExpectedJson);
-        System.out.println("JSON: " + json);
-        ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-        String triggered = outputModel(testModel);
-        System.out.println("Triggered: " + triggered);
-
-        KernelServices services = initKernel(subsystemXml);
-
-        // Get the model and the persisted xml from the controller
-        ModelNode model = services.readWholeModel();
-        System.out.println("Original Model: " + testModel);
-        System.out.println("Re-read  Model: " + model);
-        String marshalled = services.getPersistedSubsystemXml();
-
-        System.out.println("Marshalled: " + marshalled);
-
-        compare(ModelNode.fromJSONString(json), model);
-        compare(testModel, model);
-        Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-        // The input XML contains some default values, and the marshalled value doesn't contain the defaults;
-        // therefore we cannot compare them directly (though they are equivalent) ...
-        // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
-    }
-
-    private KernelServices initKernel( String subsystemXml ) throws Exception {
-        return super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(subsystemXml).build();
-    }
-
-    @SuppressWarnings( "deprecation" )
     @Test
     public void testSchema() throws Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
@@ -261,6 +209,49 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         services.readWholeModel();
         String marshalled = services.getPersistedSubsystemXml();
         validate(marshalled);
+    }
+
+    @Test
+    public void testAddRemoveRepository() throws Exception {
+        String subsystemXml = readResource("modeshape-sample-config.xml");
+        validate(subsystemXml);
+        KernelServices services = initKernel(subsystemXml);
+
+        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME));
+
+        // look at current query engines make sure there are only two from configuration.
+        ModelNode read = new ModelNode();
+        read.get(OP).set("read-children-names");
+        read.get(OP_ADDR).set(addr.toModelNode());
+        read.get(CHILD_TYPE).set("repository");
+
+        ModelNode result = services.executeOperation(read);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+
+        List<String> opNames = getList(result);
+        assertEquals(2, opNames.size());
+        String[] ops = {"sample1", "sample2"};
+        assertEquals(Arrays.asList(ops), opNames);
+
+        // add repository
+        ModelNode addOp = new ModelNode();
+        addOp.get(OP).set("add");
+        addOp.get(OP_ADDR).set(addr.toModelNode().add("repository", "myrepository")); //$NON-NLS-1$;
+        addOp.get("jndi-name").set("jcr:local:myrepository");
+
+        result = services.executeOperation(addOp);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+
+        result = services.executeOperation(read);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        opNames = getList(result);
+        assertEquals(3, opNames.size());
+        String[] ops2 = {"myrepository", "sample1", "sample2"};
+        assertEquals(Arrays.asList(ops2), opNames);
+    }
+
+    private KernelServices initKernel( String subsystemXml ) throws Exception {
+        return super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(subsystemXml).build();
     }
 
     private void validate( String marshalled ) throws SAXException, IOException {
@@ -295,44 +286,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         validator.validate(source);
     }
 
-    @Ignore
-    @Test
-    public void testAddRemoveRepository() throws Exception {
-        KernelServices services = super.installInController("modeshape-sample-config.xml");
-
-        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME));
-
-        // look at current query engines make sure there are only two from configuration.
-        ModelNode read = new ModelNode();
-        read.get(OP).set("read-children-names");
-        read.get(OP_ADDR).set(addr.toModelNode());
-        read.get(CHILD_TYPE).set("repository");
-
-        ModelNode result = services.executeOperation(read);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-
-        List<String> opNames = getList(result);
-        assertEquals(2, opNames.size());
-        String[] ops = {"sample1", "sample2"};
-        assertEquals(Arrays.asList(ops), opNames);
-
-        // add repository
-        ModelNode addOp = new ModelNode();
-        addOp.get(OP).set("add");
-        addOp.get(OP_ADDR).set(addr.toModelNode().add("repository", "myrepository")); //$NON-NLS-1$;
-        addOp.get("jndi-name").set("jcr:local:myrepository");
-
-        result = services.executeOperation(addOp);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-
-        result = services.executeOperation(read);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        opNames = getList(result);
-        assertEquals(3, opNames.size());
-        String[] ops2 = {"myrepository", "sample1", "sample2"};
-        assertEquals(Arrays.asList(ops2), opNames);
-    }
-
     private static List<String> getList( ModelNode operationResult ) {
         if (!operationResult.hasDefined("result")) {
             return Collections.emptyList();
@@ -350,45 +303,59 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         return list;
     }
 
-    /**
-     * When JSON strings are parsed into ModelNode structures, any integer values are parsed into org.jboss.dmr.BigIntegerValue
-     * instances rather than org.jboss.dmr.IntegerValue instances. This method converts all BigIntegerValue instances into a
-     * IntegerValue instance.
-     * 
-     * @param node the model
-     * @return the updated model
-     */
-    protected ModelNode filterValues( ModelNode node ) {
-        ModelNode result = new ModelNode();
-        switch (node.getType()) {
-            case OBJECT:
-                for (String key : node.keys()) {
-                    ModelNode value = node.get(key);
-                    result.get(key).set(filterValues(value));
-                }
-                break;
-            case LIST:
-                for (ModelNode value : node.asList()) {
-                    result.add(filterValues(value));
-                }
-                break;
-            case PROPERTY:
-                Property prop = node.asProperty();
-                ModelNode propValue = prop.getValue();
-                ModelNode filteredValue = filterValues(propValue);
-                if (propValue != filteredValue) {
-                    Property newProp = new Property(prop.getName(), filteredValue);
-                    result.set(newProp);
-                } else {
-                    result = node;
-                }
-                break;
-            case BIG_INTEGER:
-                result.set(node.asBigInteger().intValue());
-                break;
-            default:
-                result = node;
+    private void assertNode(ModelNode node, KeyValue...values) {
+        assertTrue(values.length > 0);
+        if (node.getType() == ModelType.LIST) {
+            List<ModelNode> modelNodes = node.asList();
+            Assert.assertEquals(values.length, modelNodes.size());
+            for (int i = 0; i < modelNodes.size(); i++) {
+                assertNode(modelNodes.get(i), values[i]);
+            }
+        } else {
+            values[0].assertEquals(node);
         }
-        return result;
+    }
+
+    private class KeyValue {
+        private String key;
+        private Object value;
+        private ModelType type;
+
+        private KeyValue( String key, Object value, ModelType type ) {
+            this.key = key;
+            this.value = value;
+            this.type = type;
+        }
+
+        private KeyValue( String key, Object value ) {
+            this(key, value, ModelType.STRING);
+        }
+
+        private void assertEquals(ModelNode node) {
+            Object actualInstance = null;
+            assertTrue(key + " not present on ModelNode", node.has(key));
+            switch (type) {
+                case BIG_DECIMAL: {
+                    actualInstance = node.get(key).asBigDecimal();
+                    break;
+                }
+                case STRING: {
+                    actualInstance = node.get(key).asString();
+                    break;
+                }
+                case LONG: {
+                    actualInstance = node.get(key).asLong();
+                    break;
+                }
+                case BOOLEAN: {
+                    actualInstance = node.get(key).asBoolean();
+                    break;
+                }
+                default: {
+                    actualInstance = node.get(key).asString();
+                }
+            }
+            Assert.assertEquals("Unexpected value in model node under " + key, value, actualInstance);
+        }
     }
 }

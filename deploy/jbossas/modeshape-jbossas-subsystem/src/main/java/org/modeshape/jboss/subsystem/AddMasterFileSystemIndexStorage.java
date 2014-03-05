@@ -68,6 +68,6 @@ public class AddMasterFileSystemIndexStorage extends AbstractAddFileSystemIndexS
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.MASTER_FILE_INDEX_STORAGE, ModelAttributes.MASTER_FILE_INDEX_STORAGE_ATTRIBUTES);
+        populate(operation, model, ModelAttributes.MASTER_FILE_INDEX_STORAGE_ATTRIBUTES);
     }
 }

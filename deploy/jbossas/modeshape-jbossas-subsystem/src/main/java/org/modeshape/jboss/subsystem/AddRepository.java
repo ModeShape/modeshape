@@ -178,10 +178,11 @@ public class AddRepository extends AbstractAddStepHandler {
         ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
         // Add the EngineService's dependencies ...
-        ServiceBuilder<JcrRepository> builder = target.addService(repositoryServiceName, repositoryService);
+        ServiceBuilder<JcrRepository> repositoryServiceBuilder = target.addService(repositoryServiceName, repositoryService);
 
         // Add dependency to the ModeShape engine service ...
-        builder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, repositoryService.getEngineInjector());
+        repositoryServiceBuilder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, repositoryService.getEngineInjector());
+        repositoryServiceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         // Add garbage collection information ...
         if (gcThreadPool != null) {
@@ -210,7 +211,7 @@ public class AddRepository extends AbstractAddStepHandler {
         }
 
         // Add dependency to the Infinispan cache container used for content ...
-        builder.addDependency(ServiceName.JBOSS.append("infinispan", namedContainer),
+        repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("infinispan", namedContainer),
                               CacheContainer.class,
                               repositoryService.getCacheManagerInjector());
 
@@ -218,24 +219,24 @@ public class AddRepository extends AbstractAddStepHandler {
         String workspacesCacheContainer = attribute(context, model, ModelAttributes.WORKSPACES_CACHE_CONTAINER, null);
         if (workspacesCacheContainer != null && !workspacesCacheContainer.toLowerCase().equalsIgnoreCase(namedContainer)) {
             // there is a different ISPN container configured for the ws caches
-            builder.addDependency(ServiceName.JBOSS.append("infinispan", workspacesCacheContainer),
+            repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("infinispan", workspacesCacheContainer),
                                   CacheContainer.class,
                                   repositoryService.getWorkspacesCacheContainerInjector());
             // the name is a constant which will be resolved later by the RepositoryService
             workspacesDoc.set(FieldName.WORKSPACE_CACHE_CONFIGURATION, RepositoryService.WORKSPACES_CONTAINER_NAME);
         }
 
-        builder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER,
+        repositoryServiceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER,
                               ModuleLoader.class,
                               repositoryService.getModuleLoaderInjector());
 
         // Add dependency to the index storage service, which captures the properties for the index storage
-        builder.addDependency(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
+        repositoryServiceBuilder.addDependency(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
                               IndexStorage.class,
                               repositoryService.getIndexStorageConfigInjector());
 
         // Add dependency to the binaries storage service, which captures the properties for the binaries storage
-        builder.addDependency(ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
+        repositoryServiceBuilder.addDependency(ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
                               BinaryStorage.class,
                               repositoryService.getBinaryStorageInjector());
 
@@ -262,7 +263,8 @@ public class AddRepository extends AbstractAddStepHandler {
                                                repositoryName,
                                                bindInfo.getAbsoluteJndiName());
         }
-        binderBuilder.addDependency(referenceFactoryServiceName, ManagedReferenceFactory.class, binder.getManagedObjectInjector());
+        binderBuilder.addDependency(referenceFactoryServiceName, ManagedReferenceFactory.class,
+                                    binder.getManagedObjectInjector());
         binderBuilder.addDependency(bindInfo.getParentContextServiceName(),
                                     ServiceBasedNamingStore.class,
                                     binder.getNamingStoreInjector());
@@ -275,7 +277,7 @@ public class AddRepository extends AbstractAddStepHandler {
                                                                                             ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
                                                                                             target);
         newControllers.add(dataDirServiceController);
-        builder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
+        repositoryServiceBuilder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
 
         // Add the default index storage service which will provide the indexing configuration
         IndexStorageService defaultIndexService = new IndexStorageService(query);
@@ -301,8 +303,7 @@ public class AddRepository extends AbstractAddStepHandler {
         monitorBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         // Now add the controller for the RepositoryService ...
-        builder.setInitialMode(ServiceController.Mode.ACTIVE);
-        newControllers.add(builder.install());
+        newControllers.add(repositoryServiceBuilder.install());
         newControllers.add(referenceBuilder.install());
         newControllers.add(binderBuilder.install());
         newControllers.add(indexBuilder.install());

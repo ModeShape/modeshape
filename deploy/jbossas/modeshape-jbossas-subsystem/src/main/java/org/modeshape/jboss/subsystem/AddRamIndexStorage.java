@@ -17,7 +17,6 @@ package org.modeshape.jboss.subsystem;
 
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.modeshape.jcr.RepositoryConfiguration;
 
@@ -37,11 +36,5 @@ public class AddRamIndexStorage extends AbstractAddIndexStorage {
                                                    EditableDocument indexStorage,
                                                    String repositoryName ) {
         indexStorage.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEX_STORAGE_RAM);
-    }
-    
-    @Override
-    protected void populateModel( ModelNode operation,
-                                  ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.RAM_INDEX_STORAGE, ModelAttributes.RAM_INDEX_STORAGE_ATTRIBUTES);
     }
 }

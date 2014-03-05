@@ -31,12 +31,6 @@ public class ModeShapeRamIndexStorageResource extends SimpleResourceDefinition {
     }
 
     @Override
-    public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
-        super.registerAttributes(resourceRegistration);
-        IndexStorageWriteAttributeHandler.RAM_INDEX_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
-    }
-
-    @Override
     public void registerOperations( ManagementResourceRegistration indexStorageSubmodel ) {
         super.registerOperations(indexStorageSubmodel);
     }

@@ -53,6 +53,6 @@ public class AddLocalFileSystemIndexStorage extends AbstractAddFileSystemIndexSt
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.LOCAL_FILE_INDEX_STORAGE, ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES);
+        populate(operation, model, ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES);
     }
 }
