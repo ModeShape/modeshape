@@ -835,7 +835,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             return registerNodeTypes(importFromXml(new InputSource(new FileInputStream(file))), allowUpdate);
         }
         // Assume this is CND format ...
-        CndImporter importer = new CndImporter(context(), true);
+        CndImporter importer = new CndImporter(context());
         Problems problems = new SimpleProblems();
         importer.importFrom(content, problems, file.getAbsolutePath());
 
@@ -868,7 +868,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             return registerNodeTypes(importFromXml(new InputSource(new StringReader(content))), allowUpdate);
         }
         // Assume this is CND format ...
-        CndImporter importer = new CndImporter(context(), true);
+        CndImporter importer = new CndImporter(context());
         Problems problems = new SimpleProblems();
         importer.importFrom(content, problems, "stream");
 
@@ -898,7 +898,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             return registerNodeTypes(importFromXml(new InputSource(new StringReader(content))), allowUpdate);
         }
         // Assume this is CND format ...
-        CndImporter importer = new CndImporter(context(), true);
+        CndImporter importer = new CndImporter(context());
         Problems problems = new SimpleProblems();
         importer.importFrom(content, problems, url.toExternalForm());
 

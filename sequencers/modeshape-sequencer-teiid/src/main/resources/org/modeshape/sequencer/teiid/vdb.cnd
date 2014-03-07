@@ -83,7 +83,7 @@
  - vdb:anyAuthenticated (boolean) = 'false' autocreated
  - vdb:allowCreateTemporaryTables (boolean) = 'false' autocreated
  - vdb:mappedRoleNames (string) multiple
- + vdb:permission (vdb:permission) = vdb:permission multiple copy
+ + vdb:permission (vdb:permission) = vdb:permission sns copy
 
 [vdb:entries] > nt:unstructured
  + vdb:vdbEntry (vdb:entry) copy sns

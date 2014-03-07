@@ -51,7 +51,7 @@
 - wsdl:typeNamespace (uri)
 
 [wsdl:message] > wsdl:namedWsdlDerivedArtifactType
-+ * (wsdl:part) = wsdl:part multiple
++ * (wsdl:part) = wsdl:part sns
 
 /*
  * Port types, operations, inputs, outputs, and faults

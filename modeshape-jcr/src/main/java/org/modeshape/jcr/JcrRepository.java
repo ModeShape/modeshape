@@ -1149,7 +1149,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     if (!this.nodeTypes.refreshFromSystem()) {
                         try {
                             // Read in the built-in node types ...
-                            CndImporter importer = new CndImporter(context, true);
+                            CndImporter importer = new CndImporter(context);
                             importer.importBuiltIns(this.problems);
                             this.nodeTypes.registerNodeTypes(importer.getNodeTypeDefinitions(), false, true, true);
                         } catch (RepositoryException re) {

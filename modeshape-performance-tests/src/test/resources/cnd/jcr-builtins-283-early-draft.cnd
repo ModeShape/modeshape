@@ -21,23 +21,24 @@
   orderable 
   - * (undefined) multiple 
   - * (undefined) 
-  + * (nt:base) = nt:unstructured multiple version 
+  + * (nt:base) = nt:unstructured sns version
 
 [nt:hierarchyNode] > mix:created abstract 
 
-[nt:file] > nt:hierarchyNode 
-  + jcr:content (nt:base) primary mandatory
+[nt:file] > nt:hierarchyNode primaryitem jcr:content
+  + jcr:content (nt:base) mandatory
 
-[nt:linkedFile] > nt:hierarchyNode 
-  - jcr:content (reference) primary mandatory
+[nt:linkedFile] > nt:hierarchyNode primaryitem jcr:content
+  - jcr:content (reference) mandatory
 
 [nt:folder] > nt:hierarchyNode 
   + * (nt:hierarchyNode) version
   
 [nt:resource] > mix:referenceable, 
                 mix:mimeTyped, 
-                mix:lastModified 
-  - jcr:data (binary) primary mandatory
+                mix:lastModified
+                primaryitem jcr:data
+  - jcr:data (binary) mandatory
 
 [nt:nodeType] 
   - jcr:nodeTypeName (name) mandatory 
@@ -47,9 +48,9 @@
   - jcr:hasOrderableChildNodes (boolean) mandatory 
   - jcr:primaryItemName (name) 
   + jcr:propertyDefinition (nt:propertyDefinition) 
-      = nt:propertyDefinition multiple version 
+      = nt:propertyDefinition sns version
   + jcr:childNodeDefinition (nt:childNodeDefinition) 
-      = nt:childNodeDefinition multiple version
+      = nt:childNodeDefinition sns version
 
 [nt:propertyDefinition] 
   - jcr:name (name) 
@@ -115,7 +116,7 @@
       protected abort 
   - * (undefined) protected abort 
   - * (undefined) protected multiple abort 
-  + * (nt:base) protected multiple abort
+  + * (nt:base) protected sns abort
 
 [nt:versionedChild] 
   - jcr:childVersionHistory (reference) mandatory 

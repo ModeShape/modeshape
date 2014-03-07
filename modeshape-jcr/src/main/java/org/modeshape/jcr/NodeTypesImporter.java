@@ -87,7 +87,7 @@ public final class NodeTypesImporter {
                     return;
                 }
 
-                CndImporter cndImporter = new CndImporter(repository.context(), true);
+                CndImporter cndImporter = new CndImporter(repository.context());
                 Problems importProblems = new SimpleProblems();
                 cndImporter.importFrom(cndFileStream, importProblems, cndFile);
 

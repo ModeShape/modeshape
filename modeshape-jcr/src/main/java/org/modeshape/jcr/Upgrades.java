@@ -196,7 +196,7 @@ public class Upgrades {
         }
 
         private boolean updateInternalNodeTypes( RunningState repository ) {
-            CndImporter importer = new CndImporter(repository.context(), true);
+            CndImporter importer = new CndImporter(repository.context());
             SimpleProblems problems = new SimpleProblems();
             try {
                 importer.importFrom(getClass().getClassLoader().getResourceAsStream(CndImporter.MODESHAPE_BUILT_INS),
