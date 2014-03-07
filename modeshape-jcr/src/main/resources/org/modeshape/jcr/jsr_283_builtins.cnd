@@ -23,11 +23,11 @@
 
 [nt:hierarchyNode] > mix:created abstract 
 
-[nt:file] > nt:hierarchyNode 
-  + jcr:content (nt:base) primary mandatory
+[nt:file] > nt:hierarchyNode primaryitem jcr:content
+  + jcr:content (nt:base) mandatory
 
-[nt:linkedFile] > nt:hierarchyNode 
-  - jcr:content (reference) primary mandatory
+[nt:linkedFile] > nt:hierarchyNode primaryitem jcr:content
+  - jcr:content (reference) mandatory
 
 [nt:folder] > nt:hierarchyNode 
   + * (nt:hierarchyNode) version
@@ -43,8 +43,8 @@
   - jcr:lastModified (date) 
   - jcr:lastModifiedBy (string)
   
-[nt:resource] > mix:mimeType, mix:lastModified 
-  - jcr:data (binary) primary mandatory
+[nt:resource] > mix:mimeType, mix:lastModified primaryitem jcr:data
+  - jcr:data (binary) mandatory
 
 [nt:nodeType] 
   - jcr:nodeTypeName (name) mandatory protected copy 

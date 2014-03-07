@@ -48,8 +48,8 @@
 - git:committed (date) mandatory protected
 - git:title (string) mandatory protected
 
-[git:root]
-+ tree (git:trees) abort protected primary // the 'tree' subgraph is considered primary
+[git:root] primaryitem tree // the 'tree' subgraph is considered primary
++ tree (git:trees) abort protected
 + branches (git:branches) abort protected
 + tags (git:tags) abort protected
 + commits (git:commits) abort protected
@@ -59,8 +59,8 @@
 // The content with the branch and tag information
 //------------------------------------------------------------------------------
 
-[git:branches]
-+ master (git:branch) abort protected primary // the 'master' branch is considered primary if it exists
+[git:branches] primaryitem master // the 'master' branch is considered primary if it exists
++ master (git:branch) abort protected
 + * (git:branch) abort protected
 
 [git:branch] > git:reference
@@ -98,8 +98,8 @@
 // The content with the folder and file structure of a particular object
 //------------------------------------------------------------------------------
 
-[git:trees]
-+ master (git:folder) abort protected primary // the 'master' tree is considered primary if it exists
+[git:trees] primaryitem master // the 'master' tree is considered primary if it exists
++ master (git:folder) abort protected
 + * (git:folder) abort protected
 
 [git:folder] > nt:folder, git:committed, git:historical

@@ -130,7 +130,7 @@ public class CndSequencer extends Sequencer {
     private CndImporter importNodesFromCND( InputStream cndInputStream ) throws IOException {
         Problems problemsDuringImport = new SimpleProblems();
 
-        CndImporter cndImporter = new CndImporter(new ExecutionContext(), true);
+        CndImporter cndImporter = new CndImporter(new ExecutionContext());
         cndImporter.importFrom(cndInputStream, problemsDuringImport, null);
         if (problemsDuringImport.hasErrors()) {
             problemsDuringImport.writeTo(LOGGER);

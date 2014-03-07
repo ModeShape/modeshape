@@ -43,7 +43,7 @@ import org.modeshape.jcr.value.NamespaceException;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
 /**
- * 
+ * Unit test for {@link org.modeshape.jcr.CndImporter}
  */
 public class CndImporterTest {
 
@@ -62,7 +62,7 @@ public class CndImporterTest {
         context.getNamespaceRegistry().register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
 
         // Set up the importer ...
-        importer = new CndImporter(context, true);
+        importer = new CndImporter(context);
     }
 
     protected Name name( String name ) {
@@ -325,159 +325,13 @@ public class CndImporterTest {
     }
 
     @Test
-    public void shouldImportJcrBuiltinNodeTypesForJSR170() throws Exception {
+    @FixFor( "MODE-1696" )
+    public void shouldRaiseProblemsImportingJcrBuiltinNodeTypesForJSR170() throws Exception {
         importer.importFrom(openCndFile("jcr-builtins-170.cnd"), problems);
         if (problems.size() != 0) printProblems();
         registerImportedNamespaces();
-        assertThat(problems.size(), is(0));
-
-        // [nt:base]
-        // - jcr:primaryType (name) mandatory autocreated protected compute
-        // - jcr:mixinTypes (name) protected multiple compute
-        assertNodeType("nt:base", NO_SUPERTYPES, NO_PRIMARY_NAME, NodeOptions.Queryable);
-        assertProperty("nt:base", "jcr:primaryType", "Name", NO_DEFAULTS, new PropertyOptions[] {PropertyOptions.Mandatory,
-            PropertyOptions.Autocreated, PropertyOptions.Protected, PropertyOptions.FullTextSearchable,
-            PropertyOptions.QueryOrderable}, OnParentVersion.Compute);
-        assertProperty("nt:base",
-                       "jcr:mixinTypes",
-                       "Name",
-                       NO_DEFAULTS,
-                       new PropertyOptions[] {PropertyOptions.Multiple, PropertyOptions.Protected,
-                           PropertyOptions.FullTextSearchable, PropertyOptions.QueryOrderable},
-                       OnParentVersion.Compute);
-
-        // [nt:unstructured]
-        // orderable
-        // - * (undefined) multiple
-        // - * (undefined)
-        // + * (nt:base) = nt:unstructured multiple version
-        assertNodeType("nt:unstructured", NO_SUPERTYPES, NO_PRIMARY_NAME, NodeOptions.Ordered, NodeOptions.Queryable);
-        assertProperty("nt:unstructured",
-                       "*",
-                       "Undefined",
-                       NO_DEFAULTS,
-                       PropertyOptions.Multiple,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-        // We should test for this, but we'd have to rewrite node() to look more like
-        // RepositoryNodeTypeManager.findChildNodeDefinition
-        // assertProperty("nt:unstructured", "*", "Undefined", NO_DEFAULTS);
-        assertChild("nt:unstructured",
-                    "*",
-                    "nt:base",
-                    "nt:unstructured",
-                    OnParentVersion.Version,
-                    ChildOptions.Multiple,
-                    ChildOptions.Sns);
-
-        // [mix:referenceable]
-        // mixin
-        // - jcr:uuid (string) mandatory autocreated protected initialize
-        assertNodeType("mix:referenceable", NO_SUPERTYPES, NO_PRIMARY_NAME, NodeOptions.Mixin, NodeOptions.Queryable);
-        assertProperty("mix:referenceable",
-                       "jcr:uuid",
-                       "String",
-                       NO_DEFAULTS,
-                       OnParentVersion.Initialize,
-                       PropertyOptions.Mandatory,
-                       PropertyOptions.Autocreated,
-                       PropertyOptions.Protected,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-
-        // [mix:lockable]
-        // mixin
-        // - jcr:lockOwner (string) protected ignore
-        // - jcr:lockIsDeep (boolean) protected ignore
-        assertNodeType("mix:lockable",
-                       new String[] {"mix:referenceable"},
-                       NO_PRIMARY_NAME,
-                       NodeOptions.Mixin,
-                       NodeOptions.Queryable);
-        assertProperty("mix:lockable",
-                       "jcr:lockOwner",
-                       "String",
-                       NO_DEFAULTS,
-                       OnParentVersion.Ignore,
-                       PropertyOptions.Protected,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-        assertProperty("mix:lockable",
-                       "jcr:lockIsDeep",
-                       "Boolean",
-                       NO_DEFAULTS,
-                       OnParentVersion.Ignore,
-                       PropertyOptions.Protected,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-
-        // [nt:propertyDefinition]
-        // - jcr:name (name)
-        // - jcr:autoCreated (boolean) mandatory
-        // - jcr:mandatory (boolean) mandatory
-        // - jcr:onParentVersion (string) mandatory
-        // < 'COPY', 'VERSION', 'INITIALIZE', 'COMPUTE', 'IGNORE', 'ABORT'
-        // - jcr:protected (boolean) mandatory
-        // - jcr:requiredType (string) mandatory
-        // < 'STRING', 'BINARY', 'LONG', 'DOUBLE', 'BOOLEAN', 'DATE', 'NAME', 'PATH', 'REFERENCE', 'UNDEFINED'
-        // - jcr:valueConstraints (string) multiple
-        // - jcr:defaultValues (undefined) multiple
-        // - jcr:multiple (boolean) mandatory
-        assertNodeType("nt:propertyDefinition", NO_SUPERTYPES, NO_PRIMARY_NAME, NodeOptions.Queryable);
-        assertProperty("nt:propertyDefinition",
-                       "jcr:name",
-                       "Name",
-                       NO_DEFAULTS,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-        assertProperty("nt:propertyDefinition",
-                       "jcr:autoCreated",
-                       "Boolean",
-                       NO_DEFAULTS,
-                       PropertyOptions.Mandatory,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-        assertProperty("nt:propertyDefinition",
-                       "jcr:mandatory",
-                       "Boolean",
-                       NO_DEFAULTS,
-                       PropertyOptions.Mandatory,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-        assertProperty("nt:propertyDefinition", "jcr:onParentVersion", "String", NO_DEFAULTS, new PropertyOptions[] {
-            PropertyOptions.Mandatory, PropertyOptions.FullTextSearchable, PropertyOptions.QueryOrderable}, null, new String[] {
-            "COPY", "VERSION", "INITIALIZE", "COMPUTE", "IGNORE", "ABORT"});
-        assertProperty("nt:propertyDefinition",
-                       "jcr:protected",
-                       "Boolean",
-                       NO_DEFAULTS,
-                       PropertyOptions.Mandatory,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-        assertProperty("nt:propertyDefinition", "jcr:requiredType", "String", NO_DEFAULTS, new PropertyOptions[] {
-            PropertyOptions.Mandatory, PropertyOptions.FullTextSearchable, PropertyOptions.QueryOrderable}, null, new String[] {
-            "STRING", "BINARY", "LONG", "DOUBLE", "BOOLEAN", "DATE", "NAME", "PATH", "REFERENCE", "UNDEFINED"});
-        assertProperty("nt:propertyDefinition",
-                       "jcr:valueConstraints",
-                       "String",
-                       NO_DEFAULTS,
-                       PropertyOptions.Multiple,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-        assertProperty("nt:propertyDefinition",
-                       "jcr:defaultValues",
-                       "Undefined",
-                       NO_DEFAULTS,
-                       PropertyOptions.Multiple,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
-        assertProperty("nt:propertyDefinition",
-                       "jcr:multiple",
-                       "Boolean",
-                       NO_DEFAULTS,
-                       PropertyOptions.Mandatory,
-                       PropertyOptions.FullTextSearchable,
-                       PropertyOptions.QueryOrderable);
+        //jsr 170 isn't supported, because of the MULTIPLE and PRIMARY attribute on properties
+        assertThat(problems.size(), is(1));
     }
 
     @Test

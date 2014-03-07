@@ -139,7 +139,7 @@
 - teiidddl:insteadOf (string) mandatory < 'INSERT', 'UPDATE', 'DELETE'
 - teiidddl:tableRef (reference) mandatory
 - teiidddl:atomic (boolean) = 'true' autocreated
-+ rowAction (teiidddl:triggerRowAction) = teiidddl:triggerRowAction multiple sns
++ rowAction (teiidddl:triggerRowAction) = teiidddl:triggerRowAction sns
 + * (ddl:statementOption) = ddl:statementOption
 
 // =============================================================================

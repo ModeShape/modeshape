@@ -106,25 +106,21 @@ public class CndImporter {
     protected final NameFactory nameFactory;
     protected final org.modeshape.jcr.value.ValueFactory<String> stringFactory;
     protected final ValueFactory valueFactory;
-    protected final boolean jcr170;
     protected final List<NodeTypeDefinition> nodeTypes;
 
     /**
      * Create a new importer that will place the content in the supplied destination under the supplied path.
-     * 
+     *
      * @param context the context in which the importing should be performed; may not be null
-     * @param compatibleWithPreJcr2 true if this parser should accept the CND format that was used in the reference implementation
-     *        prior to JCR 2.0.
+     *
      */
-    public CndImporter( ExecutionContext context,
-                        boolean compatibleWithPreJcr2 ) {
+    public CndImporter( ExecutionContext context ) {
         assert context != null;
         this.localRegistry = new LocalNamespaceRegistry(context.getNamespaceRegistry());
         this.context = context.with(this.localRegistry);
         this.valueFactory = new JcrValueFactory(this.context);
         this.nameFactory = this.context.getValueFactories().getNameFactory();
         this.stringFactory = this.context.getValueFactories().getStringFactory();
-        this.jcr170 = compatibleWithPreJcr2;
         this.nodeTypes = new LinkedList<NodeTypeDefinition>();
     }
 
@@ -557,16 +553,12 @@ public class CndImporter {
                 isQueryOrderable = false;
             } else if (tokens.canConsumeAnyOf("QUERYOPS", "QOP")) {
                 parseQueryOperators(tokens, propDefn);
-            } else if (tokens.canConsumeAnyOf("PRIMARY", "PRI", "!")) {
-                if (!jcr170) {
-                    Position pos = tokens.previousPosition();
-                    int line = pos.getLine();
-                    int column = pos.getColumn();
-                    throw new ParsingException(tokens.previousPosition(),
-                                               CndI18n.primaryKeywordNotValidInJcr2CndFormat.text(line, column));
-                }
-                // Then this child node is considered the primary item ...
-                nodeType.setPrimaryItemName(propDefn.getName());
+            } else if (tokens.canConsumeAnyOf("PRIMARYITEM", "PRIMARY", "PRI", "!")) {
+                Position pos = tokens.previousPosition();
+                int line = pos.getLine();
+                int column = pos.getColumn();
+                throw new ParsingException(tokens.previousPosition(),
+                                           CndI18n.primaryKeywordNotValidInJcr2CndFormat.text(line, column));
             } else if (tokens.matches(CndTokenizer.VENDOR_EXTENSION)) {
                 List<Property> properties = new LinkedList<Property>();
                 parseVendorExtensions(tokens, properties);
@@ -706,15 +698,11 @@ public class CndImporter {
                 tokens.canConsume('?');
                 sns = true;
             } else if (tokens.canConsumeAnyOf("MULTIPLE", "MUL", "*")) { // from pre-JCR 2.0 ref impl
-                if (!jcr170) {
-                    Position pos = tokens.previousPosition();
-                    int line = pos.getLine();
-                    int column = pos.getColumn();
-                    throw new ParsingException(tokens.previousPosition(),
-                                               CndI18n.multipleKeywordNotValidInJcr2CndFormat.text(line, column));
-                }
-                tokens.canConsume('?');
-                sns = true;
+                Position pos = tokens.previousPosition();
+                int line = pos.getLine();
+                int column = pos.getColumn();
+                throw new ParsingException(tokens.previousPosition(),
+                                           CndI18n.multipleKeywordNotValidInJcr2CndFormat.text(line, column));
             } else if (tokens.matchesAnyOf(VALID_ON_PARENT_VERSION)) {
                 onParentVersion = tokens.consume();
                 tokens.canConsume('?');
@@ -723,8 +711,11 @@ public class CndImporter {
                 onParentVersion = tokens.consume();
                 tokens.canConsume('?');
             } else if (tokens.canConsumeAnyOf("PRIMARYITEM", "PRIMARY", "PRI", "!")) {
-                // Then this child node is considered the primary item ...
-                nodeType.setPrimaryItemName(childDefn.getName());
+                Position pos = tokens.previousPosition();
+                int line = pos.getLine();
+                int column = pos.getColumn();
+                throw new ParsingException(tokens.previousPosition(),
+                                           CndI18n.primaryKeywordNotValidInJcr2CndFormat.text(line, column));
             } else if (tokens.matches(CndTokenizer.VENDOR_EXTENSION)) {
                 List<Property> properties = new LinkedList<Property>();
                 parseVendorExtensions(tokens, properties);

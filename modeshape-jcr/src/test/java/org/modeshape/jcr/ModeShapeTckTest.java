@@ -2410,7 +2410,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     @SuppressWarnings( "unused" )
     public void testShouldVerifyNtFileNodesHavePrimaryItem() throws Exception {
         Session session1 = getHelper().getSuperuserSession();
-        LockManager lm1 = session1.getWorkspace().getLockManager();
 
         // Create node structure
         Node root1 = getTestRoot(session1);
@@ -2436,6 +2435,25 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertNotNull(file1);
         Item primary2 = file1.getPrimaryItem();
         assertThat(primary2, is(sameInstance((Item)content2)));
+    }
+
+    @SuppressWarnings( "unused" )
+    @FixFor( "MODE-1696" )
+    public void testShouldVerifyNtResourceNodesHavePrimaryItem() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+
+        // Create node structure
+        Node root1 = getTestRoot(session1);
+        Node resource = root1.addNode("resource", "nt:resource");
+        Binary binary = session1.getValueFactory().createBinary(getClass().getResourceAsStream("/data/simple.json"));
+        resource.setProperty("jcr:data", binary);
+        session1.save();
+
+        // Find the primary item ...
+        resource = root1.getNode("resource");
+        Item primary = resource.getPrimaryItem();
+        assertNotNull(primary);
+        assertThat(resource.getProperty("jcr:data"), is(sameInstance(primary)));
     }
 
     boolean isVersionable( VersionManager vm,

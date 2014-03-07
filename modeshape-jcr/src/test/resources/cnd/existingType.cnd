@@ -9,4 +9,4 @@
 <dna = "http://www.modeshape.org/1.0">
 
 [nt:folder] > nt:base
-- jcr:resource (string) primary protected version
+- jcr:resource (string) protected version
