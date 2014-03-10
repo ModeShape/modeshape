@@ -29,7 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -578,11 +577,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     final JcrValue valueFrom( String value ) {
         return session.valueFactory().createValue(value);
-    }
-
-    final JcrValue valueFrom( UUID value ) {
-        Reference ref = context().getValueFactories().getReferenceFactory().create(value);
-        return valueFrom(PropertyType.REFERENCE, ref);
     }
 
     final JcrValue valueFrom( Calendar value ) {

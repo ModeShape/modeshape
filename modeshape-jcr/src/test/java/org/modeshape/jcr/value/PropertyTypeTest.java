@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.NodeKey;
 
 public class PropertyTypeTest {
 
@@ -57,8 +58,10 @@ public class PropertyTypeTest {
         assertThat(PropertyType.discoverType(name("system")), is(PropertyType.NAME));
         assertThat(PropertyType.discoverType(date()), is(PropertyType.DATE));
         assertThat(PropertyType.discoverType(calendar()), is(PropertyType.DATE));
-        assertThat(PropertyType.discoverType(reference(uuid())), is(PropertyType.REFERENCE));
-        assertThat(PropertyType.discoverType(weakReference(uuid())), is(PropertyType.WEAKREFERENCE));
+        String key = UUID.randomUUID().toString();
+        assertThat(PropertyType.discoverType(reference(key)), is(PropertyType.REFERENCE));
+        assertThat(PropertyType.discoverType(weakReference(key)), is(PropertyType.WEAKREFERENCE));
+        assertThat(PropertyType.discoverType(simpleReference(key)), is(PropertyType.SIMPLEREFERENCE));
     }
 
     protected static Path path( Object path ) throws ValueFormatException {
@@ -75,14 +78,6 @@ public class PropertyTypeTest {
 
     protected static URI uri( Object value ) throws ValueFormatException {
         return context.getValueFactories().getUriFactory().create(value);
-    }
-
-    protected static UUID uuid( Object value ) throws ValueFormatException {
-        return context.getValueFactories().getUuidFactory().create(value);
-    }
-
-    protected static UUID uuid() throws ValueFormatException {
-        return context.getValueFactories().getUuidFactory().create();
     }
 
     protected static BigDecimal decimal( Object value ) throws ValueFormatException {
@@ -106,11 +101,15 @@ public class PropertyTypeTest {
     }
 
     protected static Reference reference( Object value ) throws ValueFormatException {
-        return context.getValueFactories().getReferenceFactory().create(value);
+        return context.getValueFactories().getReferenceFactory().create(new NodeKey(value.toString()));
     }
 
     protected static Reference weakReference( Object value ) throws ValueFormatException {
-        return context.getValueFactories().getWeakReferenceFactory().create(value);
+        return context.getValueFactories().getWeakReferenceFactory().create(new NodeKey(value.toString()));
+    }
+
+    protected static Reference simpleReference( Object value ) throws ValueFormatException {
+        return context.getValueFactories().getSimpleReferenceFactory().create(new NodeKey(value.toString()));
     }
 
 }

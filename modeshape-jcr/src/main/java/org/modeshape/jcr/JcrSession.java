@@ -106,7 +106,6 @@ import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
-import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 import org.modeshape.jcr.value.basic.NodeIdentifierReferenceFactory;
@@ -331,10 +330,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     final ReferenceFactory referenceFactory() {
         return context.getValueFactories().getReferenceFactory();
-    }
-
-    final UuidFactory uuidFactory() {
-        return context.getValueFactories().getUuidFactory();
     }
 
     final DateTimeFactory dateFactory() {

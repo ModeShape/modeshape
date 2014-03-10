@@ -20,7 +20,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.UUID;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
@@ -53,7 +52,6 @@ import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
-import org.modeshape.jcr.value.basic.UuidReference;
 
 /**
  * An abstract {@link Property JCR Property} implementation.
@@ -379,13 +377,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
                 if (value instanceof NodeKeyReference) {
                     // REFERENCE and WEAKREFERENCE values are node keys ...
                     key = ((NodeKeyReference)value).getNodeKey();
-                } else if (value instanceof UuidReference) {
-                    // REFERENCE and WEAKREFERENCE values should be node keys, so create a key from the
-                    // supplied UUID and this node's key ...
-                    UUID uuid = ((UuidReference)value).getUuid();
-                    key = getParent().key().withId(uuid.toString());
                 } else {
-                    assert false : "Unknown type of Reference value";
+                    throw new IllegalArgumentException("Unknown reference type: " + value.getClass().getSimpleName());
                 }
                 return session().node(key, null);
             }
