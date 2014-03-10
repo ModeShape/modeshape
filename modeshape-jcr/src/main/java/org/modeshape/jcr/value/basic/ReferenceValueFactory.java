@@ -89,21 +89,14 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
         if (value == null) {
             return null;
         }
-        if (NodeKey.isValidFormat(value)) {
-            return new NodeKeyReference(new NodeKey(value), weak, false, simple);
-        } else if (simple) {
-            // simple references should only be created from node keys
+        if (!NodeKey.isValidFormat(value)) {
+            // references should only be created from node keys
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                               String.class.getSimpleName(),
                                                                               value));
         }
-        try {
-            UUID uuid = UUID.fromString(value);
-            return new UuidReference(uuid, weak);
-        } catch (IllegalArgumentException err) {
-            return new StringReference(value, weak);
-        }
+        return new NodeKeyReference(new NodeKey(value), weak, false, simple);
     }
 
     @Override
@@ -210,17 +203,10 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
 
     @Override
     public Reference create( UUID value ) {
-        if (value == null) {
-            return null;
-        }
-        if (simple) {
-            // simple references should only be allowed via NodeKeys, so in this case we need to reject the UUID
-            throw new ValueFormatException(value, getPropertyType(),
-                                           GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                              UUID.class.getSimpleName(),
-                                                                              value));
-        }
-        return new UuidReference(value, weak);
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          UUID.class.getSimpleName(),
+                                                                          value));
     }
 
     @Override

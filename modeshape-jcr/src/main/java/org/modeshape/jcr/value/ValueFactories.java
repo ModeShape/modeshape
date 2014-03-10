@@ -143,13 +143,6 @@ public interface ValueFactories extends Iterable<ValueFactory<?>>, NameFactory.H
     UriFactory getUriFactory();
 
     /**
-     * Get the value factory for {@link PropertyType#UUID UUID} properties.
-     * 
-     * @return the factory; never null
-     */
-    UuidFactory getUuidFactory();
-
-    /**
      * Get the value factory for {@link PropertyType#OBJECT object} properties.
      * 
      * @return the factory; never null

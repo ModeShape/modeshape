@@ -29,7 +29,6 @@ import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.UriFactory;
-import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 
@@ -64,11 +63,6 @@ public abstract class BaseValueFactoryTest {
 
         @Override
         public ReferenceFactory getWeakReferenceFactory() {
-            return null;
-        }
-
-        @Override
-        public UuidFactory getUuidFactory() {
             return null;
         }
 

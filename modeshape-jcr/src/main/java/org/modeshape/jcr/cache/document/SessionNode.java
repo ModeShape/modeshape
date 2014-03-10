@@ -71,7 +71,6 @@ import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
-import org.modeshape.jcr.value.basic.UuidReference;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
@@ -892,9 +891,6 @@ public class SessionNode implements MutableCachedNode {
             return ((NodeKeyReference)reference).getNodeKey();
         } else if (reference instanceof StringReference) {
             return new NodeKey(reference.getString());
-        } else if (reference instanceof UuidReference) {
-            UuidReference uuidReference = (UuidReference)reference;
-            return getKey().withId(uuidReference.getString());
         }
         throw new IllegalArgumentException("Unknown reference type: " + reference.getClass().getSimpleName());
     }

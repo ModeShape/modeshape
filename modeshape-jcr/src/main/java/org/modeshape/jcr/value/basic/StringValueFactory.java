@@ -180,7 +180,7 @@ public final class StringValueFactory extends AbstractValueFactory<String> imple
                 // The local part of the segment's name should be the identifier ...
                 return segment.getString(getEncoder());
             } catch (IllegalArgumentException err) {
-                throw new ValueFormatException(value, PropertyType.UUID,
+                throw new ValueFormatException(value, PropertyType.STRING,
                                                GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                   Path.class.getSimpleName(),
                                                                                   value));
@@ -201,7 +201,7 @@ public final class StringValueFactory extends AbstractValueFactory<String> imple
                 // The local part of the segment's name should be the identifier, though it may not be a UUID ...
                 return value.getName().getLocalName();
             } catch (IllegalArgumentException err) {
-                throw new ValueFormatException(value, PropertyType.UUID,
+                throw new ValueFormatException(value, PropertyType.STRING,
                                                GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                   Path.Segment.class.getSimpleName(),
                                                                                   value));

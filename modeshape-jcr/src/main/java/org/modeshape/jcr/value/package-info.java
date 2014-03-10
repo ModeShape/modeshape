@@ -32,7 +32,6 @@
  *  <li>{@link org.modeshape.jcr.value.PropertyType#BOOLEAN Boolean} - A value represented with instances of the standard {@link java.lang.Boolean} class.</li>
  *  <li>{@link org.modeshape.jcr.value.PropertyType#NAME Name} - A value represented with instances of the {@link org.modeshape.jcr.value.Name} interface.</li>
  *  <li>{@link org.modeshape.jcr.value.PropertyType#PATH Path} - A value represented with instances of the {@link org.modeshape.jcr.value.Path} interface.</li>
- *  <li>{@link org.modeshape.jcr.value.PropertyType#UUID UUID} - A value represented with instances of the standard {@link java.util.UUID} class.</li>
  *  <li>{@link org.modeshape.jcr.value.PropertyType#REFERENCE Reference} - A value represented with instances of the {@link org.modeshape.jcr.value.Reference} interface.</li>
  *  <li>{@link org.modeshape.jcr.value.PropertyType#URI URI} - A value represented with instances of the standard {@link java.net.URI} class.</li>
  *  <li>{@link org.modeshape.jcr.value.PropertyType#OBJECT Object} - A value represented with instances of any class, although the class
@@ -69,7 +68,6 @@
  *       T create( java.util.Calendar value ) throws ValueFormatException;
  *       T create( DateTime value ) throws ValueFormatException;
  *       ...
- *       T create( java.util.UUID value ) throws ValueFormatException;
  *       T create( java.net.URI value ) throws ValueFormatException;
  *       T create( Reference value ) throws ValueFormatException;
  *       T create( Name value ) throws ValueFormatException;
@@ -121,8 +119,9 @@
  *                        String timeZoneId );
  *   }
  * </pre>
- * There are specialized factory interfaces for several other types, including {@link org.modeshape.jcr.value.PathFactory}, {@link org.modeshape.jcr.value.NameFactory},
- * and {@link org.modeshape.jcr.value.UuidFactory}.
+ * There are specialized factory interfaces for several other types, including {@link org.modeshape.jcr.value.PathFactory}
+ * and {@link org.modeshape.jcr.value.NameFactory},
+ *
  * </p>
  * <p>
  * The {@link org.modeshape.jcr.value.ValueFactories} interface collects all the factories into a single spot:

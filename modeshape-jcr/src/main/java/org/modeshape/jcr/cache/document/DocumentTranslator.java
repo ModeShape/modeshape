@@ -68,12 +68,9 @@ import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
-import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
-import org.modeshape.jcr.value.basic.StringReference;
-import org.modeshape.jcr.value.basic.UuidReference;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
 import org.modeshape.jcr.value.binary.EmptyBinaryValue;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
@@ -101,7 +98,6 @@ public class DocumentTranslator implements DocumentConstants {
     private final ReferenceFactory refs;
     private final ReferenceFactory weakrefs;
     private final ReferenceFactory simplerefs;
-    private final UuidFactory uuids;
     private final TextEncoder encoder = NoOpEncoder.getInstance();
     private final TextDecoder decoder = NoOpEncoder.getInstance();
 
@@ -124,7 +120,6 @@ public class DocumentTranslator implements DocumentConstants {
         this.refs = this.factories.getReferenceFactory();
         this.weakrefs = this.factories.getWeakReferenceFactory();
         this.simplerefs = this.factories.getSimpleReferenceFactory();
-        this.uuids = this.factories.getUuidFactory();
         this.strings = this.factories.getStringFactory();
         assert this.largeStringSize.get() >= 0;
     }
@@ -141,10 +136,6 @@ public class DocumentTranslator implements DocumentConstants {
         return this.refs;
     }
 
-    public final ReferenceFactory getWeakReferenceFactory() {
-        return this.weakrefs;
-    }
-
     public final PropertyFactory getPropertyFactory() {
         return propertyFactory;
     }
@@ -158,7 +149,7 @@ public class DocumentTranslator implements DocumentConstants {
      * Obtain the preferred {@link NodeKey key} for the parent of this node. Because a node can be used in more than once place,
      * it may technically have more than one parent. Therefore, in such cases this method prefers the parent that is in the
      * {@code primaryWorkspaceKey} and, if there is no such parent, the parent that is in the {@code secondaryWorkspaceKey}.
-     * 
+     *
      * @param document the document for the node; may not be null
      * @param primaryWorkspaceKey the key for the workspace in which the parent should preferably exist; may be null
      * @param secondaryWorkspaceKey the key for the workspace in which the parent should exist if not in the primary workspace;
@@ -894,7 +885,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Reads the children of the given block and returns a {@link ChildReferences} instance.
-     * 
+     *
      * @param block a {@code non-null} {@link Document} representing a block of children
      * @return a {@code non-null} child references instance
      */
@@ -1087,7 +1078,7 @@ public class DocumentTranslator implements DocumentConstants {
     /**
      * Given the lists of added & removed referrers (which may contain duplicates), compute the delta with which the count has to
      * be updated in the document
-     * 
+     *
      * @param addedReferrers the list of referrers that was added
      * @param removedReferrers the list of referrers that was removed
      * @return a map(nodekey, delta) pairs
@@ -1216,7 +1207,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Increment the reference count for the stored binary value with the supplied SHA-1 hash.
-     * 
+     *
      * @param binaryKey the key for the binary value; never null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
@@ -1243,7 +1234,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Decrement the reference count for the binary value.
-     * 
+     *
      * @param fieldValue the value in the document that may contain a binary value reference; may be null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
@@ -1353,7 +1344,7 @@ public class DocumentTranslator implements DocumentConstants {
                 return createReferenceFromString(simplerefs, doc, valueStr);
             }
             if (!Null.matches(valueStr = doc.getString("$uuid"))) {
-                return uuids.create(valueStr);
+                return UUID.fromString(valueStr);
             }
             if (!Null.matches(valueStr = doc.getString("$uri"))) {
                 return uris.create(valueStr);
@@ -1386,15 +1377,10 @@ public class DocumentTranslator implements DocumentConstants {
                                               Document doc,
                                               String valueStr ) {
         boolean isForeign = doc.getBoolean("$foreign");
-        if (NodeKey.isValidFormat(valueStr)) {
-            return referenceFactory.create(new NodeKey(valueStr), isForeign);
+        if (!NodeKey.isValidFormat(valueStr)) {
+            throw new IllegalStateException("The reference " + valueStr + " is corrupt: expected a node-key reference");
         }
-        try {
-            UUID uuid = UUID.fromString(valueStr);
-            return refs.create(new UuidReference(uuid));
-        } catch (IllegalArgumentException e) {
-            return refs.create(new StringReference(valueStr));
-        }
+        return referenceFactory.create(new NodeKey(valueStr), isForeign);
     }
 
     protected List<Segment> segmentsFrom( List<?> segmentValues ) {
@@ -1430,7 +1416,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Checks if the given document is already locked
-     * 
+     *
      * @param doc the document
      * @return true if the change was made successfully, or false otherwise
      */
@@ -1468,7 +1454,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Marks the given document as queryable, by setting a flag.
-     * 
+     *
      * @param document a {@link EditableDocument} instance; never null
      * @param queryable a boolean which indicates whether the document should be queryable or not.
      */
@@ -1495,7 +1481,7 @@ public class DocumentTranslator implements DocumentConstants {
     /**
      * Returns the value of the {@link org.modeshape.jcr.cache.document.DocumentTranslator#CACHE_TTL_SECONDS} field, if such a
      * value exists.
-     * 
+     *
      * @param document a {@code non-null} document
      * @return either the value of the above field, or {@code null} if such a value doesn't exist.
      */

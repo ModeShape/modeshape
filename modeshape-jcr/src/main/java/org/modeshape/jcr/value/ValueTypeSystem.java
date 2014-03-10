@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import org.modeshape.common.util.Base64;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.model.TypeSystem;
@@ -112,7 +111,6 @@ public class ValueTypeSystem implements TypeSystem {
         factories.put(PropertyType.WEAKREFERENCE, new Factory<Reference>(valueFactories.getWeakReferenceFactory()));
         factories.put(PropertyType.SIMPLEREFERENCE, new Factory<Reference>(valueFactories.getSimpleReferenceFactory()));
         factories.put(PropertyType.URI, new Factory<URI>(valueFactories.getUriFactory()));
-        factories.put(PropertyType.UUID, new Factory<UUID>(valueFactories.getUuidFactory()));
         factories.put(PropertyType.BINARY, this.binaryFactory);
         this.typeFactoriesByPropertyType = Collections.unmodifiableMap(factories);
         Map<String, PropertyType> propertyTypeByName = new HashMap<String, PropertyType>();

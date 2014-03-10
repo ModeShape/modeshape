@@ -376,7 +376,6 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
             case REFERENCE:
             case WEAKREFERENCE:
             case SIMPLEREFERENCE:
-            case UUID:
             case PATH:
             case NAME:
             case URI:
@@ -761,7 +760,6 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                 return query;
             case OBJECT:
             case URI:
-            case UUID:
             case PATH:
             case NAME:
             case STRING:

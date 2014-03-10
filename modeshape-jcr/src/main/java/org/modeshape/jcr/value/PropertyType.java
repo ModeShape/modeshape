@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.LinkedListMultimap;
 import org.modeshape.common.collection.Multimap;
@@ -45,7 +44,6 @@ import org.modeshape.jcr.value.basic.JodaDateTime;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.RootPath;
 import org.modeshape.jcr.value.basic.StringReference;
-import org.modeshape.jcr.value.basic.UuidReference;
 
 /**
  * The data types for property values.
@@ -63,14 +61,12 @@ public enum PropertyType {
     NAME("Name", ValueComparators.NAME_COMPARATOR, new ObjectCanonicalizer(), Name.class, BasicName.class),
     PATH("Path", ValueComparators.PATH_COMPARATOR, new ObjectCanonicalizer(), Path.class, BasicPath.class, ChildPath.class,
          IdentifierPath.class, RootPath.class),
-    UUID("UUID", ValueComparators.UUID_COMPARATOR, new ObjectCanonicalizer(), UUID.class),
     REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
-              NodeKeyReference.class, StringReference.class, UuidReference.class),
+              NodeKeyReference.class, StringReference.class),
     WEAKREFERENCE("WeakReference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
-                  NodeKeyReference.class, StringReference.class, UuidReference.class),
+                  NodeKeyReference.class, StringReference.class),
     SIMPLEREFERENCE(org.modeshape.jcr.api.PropertyType.TYPENAME_SIMPLE_REFERENCE,
-                    ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
-                    NodeKeyReference.class),
+                    ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class, NodeKeyReference.class),
     URI("URI", ValueComparators.URI_COMPARATOR, new ObjectCanonicalizer(), URI.class),
     OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, new ObjectCanonicalizer(), Object.class);
 
