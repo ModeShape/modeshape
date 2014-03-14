@@ -62,6 +62,11 @@ public class SystemPropertyFactoryTest {
         assertSystemPropertySubstituted("find.the.property.${" + TESTPROP + "}.find.the.property", "find.the.property."
                                                                                                    + TESTPROPVALUE
                                                                                                    + ".find.the.property");
+        String pathEnvironmentValue = System.getenv("PATH");
+        if (pathEnvironmentValue != null) {
+            //test variable substitution for environment values
+            assertSystemPropertySubstituted("${PATH}", pathEnvironmentValue);
+        }
     }
 
     @Test

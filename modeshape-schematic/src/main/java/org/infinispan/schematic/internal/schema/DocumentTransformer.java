@@ -252,8 +252,7 @@ public class DocumentTransformer {
                                  Object value ) {
             // Only look at string values ...
             if (value instanceof String) {
-                String modified = getSubstitutedProperty((String)value, SystemPropertyAccessor.INSTANCE);
-                return modified;
+                return getSubstitutedProperty((String)value, SystemPropertyAccessor.INSTANCE);
             }
             return value;
         }
