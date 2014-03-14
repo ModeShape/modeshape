@@ -1038,7 +1038,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.txnMgr = documentStore.transactionManager();
 
                     MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                    this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
+                    this.transactions = createTransactions(this.cache.getName(), config.getTransactionMode(), monitorFactory, this.txnMgr);
 
                     suspendExistingUserTransaction();
 
@@ -1085,7 +1085,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                          new LocalDocumentStore(database);
                     this.txnMgr = this.documentStore.transactionManager();
                     MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                    this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
+                    this.transactions = createTransactions(cacheName, config.getTransactionMode(), monitorFactory, this.txnMgr);
 
                     suspendExistingUserTransaction();
 
@@ -1278,11 +1278,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return cacheChannel;
         }
 
-        protected Transactions createTransactions( TransactionMode mode,
+        protected Transactions createTransactions( String cacheName,
+                                                   TransactionMode mode,
                                                    MonitorFactory monitorFactory,
                                                    TransactionManager txnMgr ) {
             if (txnMgr == null) {
-                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
+                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName(), cacheName));
             }
 
             switch (mode) {
