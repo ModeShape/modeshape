@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -40,10 +41,12 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.VersionIterator;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Workspace;
@@ -126,7 +129,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertThat(newSourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
     }
 
-    @FixFor( "MODE-1405" )
+    @FixFor("MODE-1405")
     @Test
     public void shouldImportProtectedContentUsingWorkpace() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
@@ -152,7 +155,6 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     }
 
-    @Ignore( "JR TCK is broken" )
     @Test
     public void shouldImportExportEscapedXmlCharactersInDocumentViewUsingSession() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
@@ -240,7 +242,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldImportSystemViewWithUuidsIntoDifferentSpotAfterNodesWithSameUuidsAreDeletedInSessionButNotSaved()
-        throws Exception {
+            throws Exception {
         // Register the Cars node types ...
         tools.registerNodeTypes(session, "cars.cnd");
 
@@ -282,7 +284,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertNoNode("/otherNode[2]");
     }
 
-    @FixFor( "MODE-1137" )
+    @FixFor("MODE-1137")
     @Test
     public void shouldExportContentWithUnicodeCharactersAsDocumentView() throws Exception {
         Node unicode = session.getRootNode().addNode("unicodeContent");
@@ -311,7 +313,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertSameProperties(desc, desc2);
     }
 
-    @FixFor( "MODE-1137" )
+    @FixFor("MODE-1137")
     @Test
     public void shouldExportContentWithUnicodeCharactersAsSystemView() throws Exception {
         Node unicode = session.getRootNode().addNode("unicodeContent");
@@ -372,7 +374,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldImportCarsSystemViewWithRemoveExistingBehaviorWhenImportedContentDoesNotContainJcrRootOrAnyUuids()
-        throws Exception {
+            throws Exception {
         // Register the Cars node types ...
         tools.registerNodeTypes(session, "cars.cnd");
 
@@ -401,7 +403,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldImportCarsSystemViewWithCreateNewBehaviorWhenImportedContentDoesNotContainJcrRootButDoesContainUnusedUuids()
-        throws Exception {
+            throws Exception {
         // Register the Cars node types ...
         tools.registerNodeTypes(session, "cars.cnd");
 
@@ -429,7 +431,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldImportCarsSystemViewWithCreateNewBehaviorWhenImportedContentDoesNotContainJcrRootButDoesContainAlreadyUsedUuids()
-        throws Exception {
+            throws Exception {
         // Register the Cars node types ...
         tools.registerNodeTypes(session, "cars.cnd");
 
@@ -457,7 +459,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldImportCarsSystemViewOverExistingContentWhenImportedContentDoesNotContainJcrRootButDoesContainAlreadyUsedUuids()
-        throws Exception {
+            throws Exception {
         // Register the Cars node types ...
         tools.registerNodeTypes(session, "cars.cnd");
 
@@ -486,7 +488,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldImportCarsSystemViewWhenImportedContentDoesNotContainJcrRootButDoesContainAlreadyUsedUuids()
-        throws Exception {
+            throws Exception {
         // Register the Cars node types ...
         tools.registerNodeTypes(session, "cars.cnd");
 
@@ -525,9 +527,9 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertNoNode("/a/b/Cars/Sports[2]");
     }
 
-    @Test( expected = ItemExistsException.class )
+    @Test(expected = ItemExistsException.class)
     public void shouldFailToImportCarsSystemViewWithThrowBehaviorWhenImportedContentDoesNotContainJcrRootButDoesContainAlreadyUsedUuids()
-        throws Exception {
+            throws Exception {
         // Register the Cars node types ...
         tools.registerNodeTypes(session, "cars.cnd");
 
@@ -576,7 +578,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertImport(filename, "/a", ImportBehavior.THROW); // no matching UUIDs expected
     }
 
-    @FixFor( "MODE-1026" )
+    @FixFor("MODE-1026")
     @Test
     public void shouldImportFileExportedFromJackrabbitContainingBinaryStringData() throws Exception {
         // Register the node types ...
@@ -645,8 +647,8 @@ public class ImportExportTest extends SingleUseAbstractTest {
     // Import Document and System View containing constraint violations
     // ----------------------------------------------------------------------------------------------------------------
 
-    @FixFor( "MODE-1139" )
-    @Test( expected = ConstraintViolationException.class )
+    @FixFor("MODE-1139")
+    @Test(expected = ConstraintViolationException.class)
     public void shouldThrowCorrectExceptionWhenImportingDocumentViewContainingPropertiesThatViolateConstraints() throws Exception {
         // Register the node types ...
         tools.registerNodeTypes(session, "cars.cnd");
@@ -655,8 +657,8 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertImport("io/full-workspace-document-view-with-constraint-violation.xml", "/", ImportBehavior.THROW);
     }
 
-    @FixFor( "MODE-1139" )
-    @Test( expected = ConstraintViolationException.class )
+    @FixFor("MODE-1139")
+    @Test(expected = ConstraintViolationException.class)
     public void shouldThrowCorrectExceptionWhenImportingSystemViewContainingPropertiesThatViolateConstraints() throws Exception {
         // Register the node types ...
         tools.registerNodeTypes(session, "cars.cnd");
@@ -693,7 +695,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertCarsImported();
     }
 
-    @FixFor( "MODE-1171" )
+    @FixFor("MODE-1171")
     @Test
     public void shouldExportAndImportMultiValuedPropertyWithSingleValue() throws Exception {
         Node rootNode = session.getRootNode();
@@ -701,7 +703,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         Node nodeB = nodeA.addNode("b", "nt:unstructured");
 
         Value v = session.getValueFactory().createValue("singleValue");
-        javax.jcr.Property prop = nodeB.setProperty("multiValuedProp", new Value[] {v});
+        javax.jcr.Property prop = nodeB.setProperty("multiValuedProp", new Value[] { v });
         assertTrue(prop.isMultiple());
 
         prop = nodeB.setProperty("singleValuedProp", v);
@@ -840,7 +842,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-1573" )
+    @FixFor("MODE-1573")
     public void shouldPerformRoundTripOnDocumentViewWithBinaryContent() throws Exception {
         JcrTools tools = new JcrTools();
 
@@ -869,7 +871,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertEquals(binaryFile.length(), binary.getSize());
     }
 
-    @FixFor( "MODE-1478" )
+    @FixFor("MODE-1478")
     @Test
     public void shouldBeAbleToImportDroolsXMLIntoSystemView() throws Exception {
         startRepositoryWithConfiguration(resourceStream("config/drools-repository.json"));
@@ -886,7 +888,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertNode("/drools:repository/drools.package.migrated", "nt:folder");
     }
 
-    @FixFor( "MODE-1795" )
+    @FixFor("MODE-1795")
     @Test
     public void shouldBeAbleToImportXmlFileThatUsesDefaultNamespaceWithNonBlankUri() throws Exception {
         session.importXML("/",
@@ -898,7 +900,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertNode("/" + prefix + ":childNode", "nt:unstructured");
     }
 
-    @FixFor( "MODE-1945" )
+    @FixFor("MODE-1945")
     @Test
     public void shouldBeAbleToImportDocumentViewTwiceWithRemoveExistingCollisionMode() throws Exception {
         // Register the node types ...
@@ -912,20 +914,22 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertCarsImported();
     }
 
-    @FixFor( "MODE-1945" )
+    @FixFor("MODE-1945")
     @Test
     public void shouldBeAbleToImportSystemViewWithBinaryTwiceWithRemoveExistingCollisionMode2() throws Exception {
         // Register the node types ...
         tools.registerNodeTypes(session, "cnd/magnolia.cnd");
         // Now import the file ...
-        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs
-                                                                                                              // expected
-        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs
-                                                                                                              // expected
+        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/",
+                     ImportBehavior.REMOVE_EXISTING); // no matching UUIDs
+        // expected
+        assertImport("io/system-export-with-binary-data-and-uuids.xml", "/",
+                     ImportBehavior.REMOVE_EXISTING); // no matching UUIDs
+        // expected
     }
 
     @Test
-    @FixFor( "MODE-1961" )
+    @FixFor("MODE-1961")
     public void shouldBeAbleToImportTwiceWithoutLoosingMixins() throws Exception {
         tools.registerNodeTypes(session, "cnd/brix.cnd");
         session.save();
@@ -948,9 +952,92 @@ public class ImportExportTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-2039" )
+    @FixFor("MODE-2039")
     public void shouldImportVersionedSystemView() throws Exception {
         assertImport("io/system-export-with-versioning.xml", "/", ImportBehavior.REMOVE_EXISTING); // no matching UUIDs expected
+    }
+
+    @Test
+    @FixFor( "MODE-2172" )
+    public void shouldDocumentImportCheckedInNodes() throws Exception {
+        Node node1 = session.getRootNode().addNode("node1");
+        node1.addMixin("mix:versionable");
+        Node node2 = session.getRootNode().addNode("node2");
+        node2.addMixin("mix:versionable");
+        session.save();
+
+        JcrVersionManager versionManager = session.getWorkspace().getVersionManager();
+        versionManager.checkpoint("/node1");
+        session.getNode("/node1").setProperty("11", "some string");
+        session.getNode("/node1").setProperty("11a1", "some string");
+        session.save();
+        versionManager.checkin("/node1");
+
+        versionManager.checkpoint("/node2");
+
+        //export the data
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        session.exportDocumentView("/", baos, false, false);
+        session.getWorkspace().importXML("/", new ByteArrayInputStream(baos.toByteArray()),
+                                         ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+
+        assertEquals(((org.modeshape.jcr.api.Property) session.getItem("/node1/11")).getString(), "some string");
+        assertEquals(((org.modeshape.jcr.api.Property) session.getItem("/node1/11a1")).getString(), "some string");
+    }
+
+    @Test
+    @FixFor( "MODE-1864" )
+    @Ignore( "Ignoring until feature is implemented")
+    public void shouldImportBackVersionHistory() throws Exception {
+        Node node1 = session.getRootNode().addNode("node1");
+        node1.addMixin("mix:versionable");
+        session.save();
+
+        JcrVersionManager versionManager = session.getWorkspace().getVersionManager();
+        versionManager.checkpoint("/node1");
+        session.getNode("/node1").setProperty("11", "some string");
+        session.save();
+        versionManager.checkin("/node1");
+
+        JcrVersionHistoryNode versionHistory = versionManager.getVersionHistory("/node1");
+        String versionHistoryId = versionHistory.getIdentifier();
+        long versionsCount = versionHistory.getAllVersions().getSize();
+
+        //export the data
+        File file = new File("target/version_export.xml");
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        //ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        session.exportSystemView("/", fileOutputStream, false, false);
+
+
+        //remove all the versioning information
+        versionHistory = versionManager.getVersionHistory("/node1");
+        VersionIterator versionIterator = versionHistory.getAllVersions();
+        while (versionIterator.hasNext()) {
+            versionHistory.removeVersion(versionIterator.nextVersion().getName());
+        }
+        versionManager.remove("/node1");
+        assertNoNode("/node1");
+
+        //import the data
+        session.getWorkspace().importXML("/", new ByteArrayInputStream(IoUtil.readBytes(file)),
+                                         ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+        //verify versioning information
+        AbstractJcrNode node = session.getNode("/node1");
+        assertNotNull(node);
+        assertEquals("some string", node.getProperty("11").getString());
+        versionHistory = versionManager.getVersionHistory("/node1");
+        assertEquals(versionHistoryId, versionHistory.getIdentifier());
+
+        assertEquals(versionsCount, versionManager.getVersionHistory("/node1").getAllVersions().getSize());
+        versionManager.restore("/node1", "1.0", true);
+        try {
+            session.getItem("/node1/11");
+            fail("Version non restored correctly");
+        } catch (PathNotFoundException e) {
+            //expected
+        }
     }
 
     @Test
