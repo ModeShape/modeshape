@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -99,11 +100,11 @@ class JcrContentHandler extends DefaultHandler {
 
     private AbstractJcrNode currentNode;
     private ContentHandler delegate;
-    protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<AbstractJcrProperty>();
-    protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<AbstractJcrNode>();
+    protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<>();
+    protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<>();
 
-    protected final Map<String, NodeKey> uuidToNodeKeyMapping = new HashMap<String, NodeKey>();
-    protected final Map<NodeKey, String> shareIdsToUUIDMap = new HashMap<NodeKey, String>();
+    protected final Map<String, NodeKey> uuidToNodeKeyMapping = new HashMap<>();
+    protected final Map<NodeKey, String> shareIdsToUUIDMap = new HashMap<>();
 
     protected SessionCache cache;
 
@@ -163,7 +164,7 @@ class JcrContentHandler extends DefaultHandler {
     }
 
     protected final Map<Name, Integer> propertyTypesFor( String primaryTypeName ) {
-        Map<Name, Integer> propertyTypesMap = new HashMap<Name, Integer>();
+        Map<Name, Integer> propertyTypesMap = new HashMap<>();
         JcrNodeType nodeType = nodeTypeFor(primaryTypeName);
         if (nodeType == null) {
             // nt:share falls in this category
@@ -188,10 +189,6 @@ class JcrContentHandler extends DefaultHandler {
         return nameFactory.create(namespaceUri, localName);
     }
 
-    protected final Path pathFor( Name... names ) {
-        return pathFor(pathFactory.createRootPath(), names);
-    }
-
     protected final Path pathFor( Path parentPath,
                                   Name... names ) {
         return pathFactory.create(parentPath, names);
@@ -209,6 +206,13 @@ class JcrContentHandler extends DefaultHandler {
 
     protected final SessionCache cache() {
         return cache;
+    }
+
+    protected final boolean isInternal(Name propertyName) {
+        return
+                propertyName.getNamespaceUri().equals(JcrLexicon.Namespace.URI) ||
+                propertyName.getNamespaceUri().equals(JcrNtLexicon.Namespace.URI) ||
+                propertyName.getNamespaceUri().equals(ModeShapeLexicon.NAMESPACE.getNamespaceUri());
     }
 
     protected void postProcessNodes() throws SAXException {
@@ -552,8 +556,8 @@ class JcrContentHandler extends DefaultHandler {
                                     int uuidBehavior ) {
             this.nodeName = name;
             this.parentHandler = parentHandler;
-            this.properties = new HashMap<Name, List<Value>>();
-            this.multiValuedPropertyNames = new HashSet<Name>();
+            this.properties = new HashMap<>();
+            this.multiValuedPropertyNames = new HashSet<>();
             this.uuidBehavior = uuidBehavior;
         }
 
@@ -606,7 +610,7 @@ class JcrContentHandler extends DefaultHandler {
                     // The node hasn't been created yet, so just enqueue the property value into the map ...
                     List<Value> values = properties.get(name);
                     if (values == null) {
-                        values = new ArrayList<Value>();
+                        values = new ArrayList<>();
                         properties.put(name, values);
                     }
                     if (propertyType == PropertyType.BINARY) {
@@ -617,15 +621,14 @@ class JcrContentHandler extends DefaultHandler {
                         if (value != null && propertyType == PropertyType.STRING) {
                             // Strings and binaries can be empty -- other data types cannot
                             values.add(valueFor(value, propertyType));
-                        } else if (value != null
-                                   && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE
-                        || propertyType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE)) {
+                        } else if (!StringUtil.isBlank(value)
+                                   && (propertyType == PropertyType.REFERENCE ||
+                                       propertyType == PropertyType.WEAKREFERENCE ||
+                                       propertyType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE)) {
                             try {
-                                boolean isSystemReference = name.getNamespaceUri().equals(JcrLexicon.Namespace.URI)
-                                                            || name.getNamespaceUri()
-                                                                   .equals(ModeShapeLexicon.NAMESPACE.getNamespaceUri());
-                                if (!isSystemReference) {
-                                    // we only prepend the parent information for non-system references
+                                boolean isInternalReference = isInternal(name);
+                                if (!isInternalReference) {
+                                    // we only prepend the parent information for non-internal references
                                     value = parentHandler().node().key().withId(value).toString();
                                 }
                                 // we only have the identifier of the node, so try to use the parent to determine the workspace &
@@ -634,7 +637,7 @@ class JcrContentHandler extends DefaultHandler {
                             } catch (SAXException e) {
                                 throw new EnclosingSAXException(e);
                             }
-                        } else if (value != null && value.length() > 0) {
+                        } else if (!StringUtil.isBlank(value)) {
                             values.add(valueFor(value, propertyType));
                         }
                     }
@@ -642,10 +645,8 @@ class JcrContentHandler extends DefaultHandler {
                 if (!postProcessed && PROPERTIES_FOR_POST_PROCESSING.contains(name)) {
                     postProcessed = true;
                 }
-            } catch (IOException ioe) {
+            } catch (IOException | RepositoryException ioe) {
                 throw new EnclosingSAXException(ioe);
-            } catch (RepositoryException re) {
-                throw new EnclosingSAXException(re);
             }
         }
 
@@ -796,23 +797,40 @@ class JcrContentHandler extends DefaultHandler {
                     }
 
                     List<Value> values = entry.getValue();
-                    AbstractJcrProperty prop;
+                    AbstractJcrProperty prop = null;
 
+                    boolean allowEmptyValues = !isInternal(propertyName) || JcrLexicon.DATA.equals(propertyName);
                     if (values.size() == 1 && !this.multiValuedPropertyNames.contains(propertyName)) {
+                        JcrValue value = (JcrValue)values.get(0);
+                        if (!allowEmptyValues && StringUtil.isBlank(value.getString())) {
+                            //if an empty value has creeped here it means we weren't able to perform proper type validation earlier
+                            continue;
+                        }
                         // Don't check references or the protected status ...
-                        prop = child.setProperty(propertyName, (JcrValue)values.get(0), true, true, true, false);
+                        prop = child.setProperty(propertyName, value, true, true, true, false);
                     } else {
-                        prop = child.setProperty(propertyName,
-                                                 values.toArray(new JcrValue[values.size()]),
-                                                 PropertyType.UNDEFINED,
-                                                 true,
-                                                 true,
-                                                 false,
-                                                 true);
+                        if (!allowEmptyValues) {
+                            for (Iterator<Value> iterator = values.iterator(); iterator.hasNext();) {
+                                if (StringUtil.isBlank(iterator.next().getString())) {
+                                    iterator.remove();
+                                }
+                            }
+                        }
+                        if (!values.isEmpty()) {
+                            prop = child.setProperty(propertyName,
+                                                     values.toArray(new Value[values.size()]),
+                                                     PropertyType.UNDEFINED,
+                                                     true,
+                                                     true,
+                                                     false,
+                                                     true);
+                        }
                     }
 
-                    if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0
-                        && !prop.getDefinition().isProtected()) {
+                    if (prop != null &&
+                        prop.getType() == PropertyType.REFERENCE &&
+                        prop.getDefinition().getValueConstraints().length != 0 &&
+                        !prop.getDefinition().isProtected()) {
                         // This reference needs to be validated after all nodes have been imported ...
                         refPropsRequiringConstraintValidation.add(prop);
                     }
@@ -1000,28 +1018,32 @@ class JcrContentHandler extends DefaultHandler {
         public void endElement( String uri,
                                 String localName,
                                 String name ) throws SAXException {
-            if ("node".equals(localName)) {
-                current.finish(); // make sure the node is created
-                current = current.parentHandler();
-            } else if ("value".equals(localName)) {
-                // Add the content for the current property ...
-                String currentPropertyString = currentPropertyValue.toString();
-                if (currentPropertyValueIsBase64Encoded) {
-                    // The current string is a base64 encoded string, so we need to decode it first ...
-                    try {
-                        currentPropertyString = decodeBase64AsString(currentPropertyString);
-                    } catch (IOException ioe) {
-                        throw new EnclosingSAXException(ioe);
+            switch (localName) {
+                case "node":
+                    current.finish(); // make sure the node is created
+                    current = current.parentHandler();
+                    break;
+                case "value":
+                    // Add the content for the current property ...
+                    String currentPropertyString = currentPropertyValue.toString();
+                    if (currentPropertyValueIsBase64Encoded) {
+                        // The current string is a base64 encoded string, so we need to decode it first ...
+                        try {
+                            currentPropertyString = decodeBase64AsString(currentPropertyString);
+                        } catch (IOException ioe) {
+                            throw new EnclosingSAXException(ioe);
+                        }
                     }
-                }
-                current.addPropertyValue(nameFor(currentPropertyName),
-                                         currentPropertyString,
-                                         currentPropertyIsMultiValued,
-                                         currentPropertyType,
-                                         SYSTEM_VIEW_NAME_DECODER);
-            } else if ("property".equals(localName)) {
-            } else {
-                throw new IllegalStateException("Unexpected element '" + name + "' in system view");
+                    current.addPropertyValue(nameFor(currentPropertyName),
+                                             currentPropertyString,
+                                             currentPropertyIsMultiValued,
+                                             currentPropertyType,
+                                             SYSTEM_VIEW_NAME_DECODER);
+                    break;
+                case "property":
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected element '" + name + "' in system view");
             }
         }
     }
@@ -1046,20 +1068,24 @@ class JcrContentHandler extends DefaultHandler {
             String decodedLocalName = DOCUMENT_VIEW_NAME_DECODER.decode(localName);
             current = nodeHandlerFactory.createFor(nameFor(uri, decodedLocalName), current, uuidBehavior);
 
-            String primaryType = null;
-            Map<Name, String> propertiesNamesValues = new HashMap<Name, String>();
+            List<String> allTypes = new ArrayList<>();
+            Map<Name, String> propertiesNamesValues = new HashMap<>();
             for (int i = 0; i < atts.getLength(); i++) {
                 Name propertyName = nameFor(atts.getURI(i), DOCUMENT_VIEW_NAME_DECODER.decode(atts.getLocalName(i)));
                 String value = atts.getValue(i);
                 if (value != null) {
                     propertiesNamesValues.put(propertyName, value);
-                    if (JcrLexicon.PRIMARY_TYPE.equals(propertyName)) {
-                        primaryType = value;
+                    if (JcrLexicon.PRIMARY_TYPE.equals(propertyName) || JcrLexicon.MIXIN_TYPES.equals(propertyName)) {
+                        allTypes.add(value);
                     }
                 }
             }
 
-            Map<Name, Integer> propertyTypes = primaryType != null ? propertyTypesFor(primaryType) : java.util.Collections.<Name, Integer>emptyMap();
+            Map<Name, Integer> propertyTypes = new HashMap<>();
+            for (String typeName : allTypes) {
+                propertyTypes.putAll(propertyTypesFor(typeName));
+            }
+
             for (Map.Entry<Name, String> entry : propertiesNamesValues.entrySet()) {
                 Name propertyName = entry.getKey();
                 Integer propertyDefinitionType = propertyTypes.get(propertyName);
