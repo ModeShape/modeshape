@@ -213,8 +213,8 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         }
 
         atts.addAttribute(propName.getNamespaceUri(),
-                          propName.getLocalName(),
-                          localPropName,
+                          NAME_ENCODER.encode(propName.getLocalName()),
+                          NAME_ENCODER.encode(localPropName),
                           org.modeshape.jcr.api.PropertyType.nameFromValue(prop.getType()),
                           valueAsString);
     }
@@ -319,7 +319,13 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             StringBuilder sb = new StringBuilder();
             String hex = null;
             CharacterIterator iter = new StringCharacterIterator(text);
-            for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+            char first = iter.first();
+            boolean isDigit = Character.isDigit(first);
+            for (char c = first; c != CharacterIterator.DONE; c = iter.next()) {
+                if (c != first && isDigit && !Character.isDigit(c)) {
+                    isDigit = false;
+                }
+
                 if (c == '_') {
                     // Read the next character (if there is one) ...
                     char next = iter.next();
@@ -336,7 +342,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                     sb.append("_x005f_");
                     // And then write out the next character ...
                     sb.append(next);
-                } else if (!mappedCharacters.contains(c)) {
+                } else if (!mappedCharacters.contains(c) && !isDigit) {
                     // Legal characters for an XML Name ...
                     sb.append(c);
                 } else {
