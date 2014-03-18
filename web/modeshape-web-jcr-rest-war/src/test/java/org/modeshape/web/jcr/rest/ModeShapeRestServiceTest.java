@@ -623,4 +623,14 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
 
         assertEquals("There are active sessions in the repository", 0, activeSessionsCount);
     }
+
+    @Test
+    @FixFor( "MODE-2170" )
+    public void shouldAllowUpdatingMultivaluedProperty() throws Exception {
+        doPost("v2/post/node_multivalue_prop_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("v2/put/node_multivalue_prop_request.json", itemsUrl(TEST_NODE))
+                .isOk()
+                .isJSONObjectLikeFile("v2/put/node_multivalue_prop_response.json");
+
+    }
 }

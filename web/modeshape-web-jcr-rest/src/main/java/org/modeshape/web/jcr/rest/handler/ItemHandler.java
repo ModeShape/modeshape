@@ -405,20 +405,28 @@ public class ItemHandler extends AbstractHandler {
             propName = newLength > 0 ? propName.substring(0, newLength) : "";
         }
 
-        Value[] values = convertToJcrValues(node, value, encoded);
-        if (values.length == 0) {
+        Object values = convertToJcrValues(node, value, encoded);
+        if (values == null) {
             // remove the property
-            node.setProperty(propName, (Value[])null);
-        } else if (values.length == 1) {
-            node.setProperty(propName, values[0]);
+            node.setProperty(propName, (Value) null);
+        } else if (values instanceof Value) {
+            node.setProperty(propName, (Value) values);
         } else {
-            node.setProperty(propName, values);
+            node.setProperty(propName, (Value[]) values);
         }
     }
 
     private Set<String> updateMixins( Node node,
                                       Object mixinsJsonValue ) throws JSONException, RepositoryException {
-        Value[] values = convertToJcrValues(node, mixinsJsonValue, false);
+        Object valuesObject = convertToJcrValues(node, mixinsJsonValue, false);
+        Value[] values = null;
+        if (valuesObject == null) {
+            values = new Value[0];
+        } else if (valuesObject instanceof Value[]) {
+            values = (Value[])valuesObject;
+        } else {
+            values = new Value[]{(Value)valuesObject};
+        }
 
         Set<String> jsonMixins = new HashSet<String>(values.length);
         for (Value theValue : values) {
@@ -442,12 +450,12 @@ public class ItemHandler extends AbstractHandler {
         return mixinsToRemove;
     }
 
-    private Value[] convertToJcrValues( Node node,
+    private Object convertToJcrValues( Node node,
                                         Object value,
                                         boolean encoded ) throws RepositoryException, JSONException {
         if (value == JSONObject.NULL || (value instanceof JSONArray && ((JSONArray)value).length() == 0)) {
             // for any null value of empty json array, return an empty array which will mean the property will be removed
-            return new Value[0];
+            return null;
         }
         org.modeshape.jcr.api.ValueFactory valueFactory = (org.modeshape.jcr.api.ValueFactory)node.getSession().getValueFactory();
         if (value instanceof JSONArray) {
@@ -463,10 +471,8 @@ public class ItemHandler extends AbstractHandler {
             }
             return values;
         }
-        if (encoded) {
-            return new Value[] {createBinaryValue(value.toString(), valueFactory)};
-        }
-        return new Value[] {RestHelper.jsonValueToJCRValue(value, valueFactory)};
+
+        return encoded ? createBinaryValue(value.toString(), valueFactory) : RestHelper.jsonValueToJCRValue(value, valueFactory);
     }
 
     /**
