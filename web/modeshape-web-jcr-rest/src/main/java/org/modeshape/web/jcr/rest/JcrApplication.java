@@ -19,8 +19,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import javax.ws.rs.core.Application;
-import org.modeshape.web.jcr.rest.interceptor.CleanupInterceptor;
-import org.modeshape.web.jcr.rest.interceptor.LoggingInterceptor;
+import org.modeshape.web.jcr.rest.filter.CleanupFilter;
+import org.modeshape.web.jcr.rest.filter.LoggingFilter;
 import org.modeshape.web.jcr.rest.output.HtmlBodyWriter;
 import org.modeshape.web.jcr.rest.output.JSONBodyWriter;
 import org.modeshape.web.jcr.rest.output.TextBodyWriter;
@@ -35,8 +35,13 @@ public final class JcrApplication extends Application {
     @SuppressWarnings( "deprecation" )
     @Override
     public Set<Class<?>> getClasses() {
-        return new HashSet<Class<?>>(Arrays.asList(new Class<?>[] { JcrResources.class, ModeShapeRestService.class,
-                HtmlBodyWriter.class, JSONBodyWriter.class, TextBodyWriter.class, LoggingInterceptor.class,
-                CleanupInterceptor.class, ModeShapeExceptionMapper.class}));
+        return new HashSet<>(Arrays.asList(new Class<?>[] { JcrResources.class,
+                                                            ModeShapeRestService.class,
+                                                            HtmlBodyWriter.class,
+                                                            JSONBodyWriter.class,
+                                                            TextBodyWriter.class,
+                                                            LoggingFilter.class,
+                                                            CleanupFilter.class,
+                                                            ModeShapeExceptionMapper.class}));
     }
 }

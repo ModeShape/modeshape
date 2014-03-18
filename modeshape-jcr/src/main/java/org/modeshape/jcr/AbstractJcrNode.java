@@ -1660,7 +1660,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
-     * Removes an existing property with the supplied name. Note that if a propert with the given name does not exist, then this
+     * Removes an existing property with the supplied name. Note that if a property with the given name does not exist, then this
      * method returns null and does not throw an exception.
      * 
      * @param name the name of the property; may not be null

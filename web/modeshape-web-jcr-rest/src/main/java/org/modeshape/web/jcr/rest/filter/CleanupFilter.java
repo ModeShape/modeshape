@@ -14,32 +14,32 @@
  * limitations under the License.
  */
 
-package org.modeshape.web.jcr.rest.interceptor;
+package org.modeshape.web.jcr.rest.filter;
 
+import java.io.IOException;
 import javax.jcr.Session;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
-import org.jboss.resteasy.annotations.interception.ServerInterceptor;
-import org.jboss.resteasy.core.ServerResponse;
-import org.jboss.resteasy.spi.interception.PostProcessInterceptor;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.WebLogger;
 import org.modeshape.web.jcr.rest.handler.AbstractHandler;
 
 /**
- * {@link PostProcessInterceptor} implementation which will always close an active {@link Session} instance, if such an instance
+ * {@link ContainerResponseFilter} implementation which will always close an active {@link Session} instance, if such an instance
  * has been opened during a request.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Provider
-@ServerInterceptor
-public class CleanupInterceptor implements PostProcessInterceptor {
+public class CleanupFilter implements ContainerResponseFilter {
 
-    private static final Logger LOGGER = WebLogger.getLogger(CleanupInterceptor.class);
+    private static final Logger LOGGER = WebLogger.getLogger(CleanupFilter.class);
 
     @Override
-    public void postProcess( ServerResponse response ) {
-        LOGGER.trace("Executing CleanupInterceptor...");
+    public void filter( ContainerRequestContext requestContext, ContainerResponseContext responseContext ) throws IOException {
+        LOGGER.trace("Executing cleanup filter...");
         AbstractHandler.cleanupActiveSession();
     }
 }

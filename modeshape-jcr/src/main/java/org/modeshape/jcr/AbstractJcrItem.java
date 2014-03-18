@@ -89,11 +89,6 @@ abstract class AbstractJcrItem implements Item, Namespaced {
 
     abstract Path path() throws RepositoryException;
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getAncestor(int)
-     */
     @Override
     public Item getAncestor( int depth ) throws RepositoryException {
         checkSession();
@@ -122,22 +117,12 @@ abstract class AbstractJcrItem implements Item, Namespaced {
         return ancestor;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getDepth()
-     */
     @Override
     public int getDepth() throws RepositoryException {
         checkSession();
         return path().size();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getParent()
-     */
     @Override
     public abstract AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException;
 
