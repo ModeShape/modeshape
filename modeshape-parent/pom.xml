@@ -196,6 +196,7 @@
 
         <!-- Used to define the JCR Descriptor value -->
         <jcr.repository.vendor>${project.organization.name}</jcr.repository.vendor>
+        <jcr.repository.vendor.url>http://www.modeshape.org</jcr.repository.vendor.url>
         <jcr.repository.name>ModeShape</jcr.repository.name>
 
         <!-- Instruct the build to use only UTF-8 encoding for source code -->

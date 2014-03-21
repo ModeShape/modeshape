@@ -57,18 +57,18 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
             session.save();
         }
 
-        // Add a node directly under 'federation/classes/org' (which is a federated node)...
-        Node org = federation.getNode("classes/org");
+        // Add a node directly under 'generated-sources' (which is a federated node)...
+        Node sources = federation.getNode("generated-sources");
         for (int i = 0; i != 3; ++i) {
-            Node newNode = org.addNode("GeneratedFolder_" + UUID.randomUUID().toString(), "nt:folder");
+            Node newNode = sources.addNode("GeneratedFolder_" + UUID.randomUUID().toString(), "nt:folder");
             assertThat(newNode, is(notNullValue()));
             session.save();
         }
 
-        // Add a node directly under 'federation/generated-sources' (which is a federated node)...
-        Node generated = federation.getNode("generated-sources");
+        // Add a node directly under 'generated-sources/annotations' (which is a federated node)...
+        Node annotations = federation.getNode("generated-sources/annotations");
         for (int i = 0; i != 3; ++i) {
-            Node newNode = generated.addNode("GeneratedFolder_" + UUID.randomUUID().toString(), "nt:folder");
+            Node newNode = annotations.addNode("GeneratedFolder_" + UUID.randomUUID().toString(), "nt:folder");
             assertThat(newNode, is(notNullValue()));
             session.save();
         }
