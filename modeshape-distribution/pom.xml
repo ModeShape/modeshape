@@ -588,6 +588,9 @@
                                 <descriptorRef>source-distribution</descriptorRef>
                                 <descriptorRef>${jboss.kit.distribution.id}</descriptorRef>
                             </descriptorRefs>
+                            <descriptors>
+                                <descriptor>src/assembly/javadoc.xml</descriptor>
+                            </descriptors>
                         </configuration>
                     </plugin>
 
