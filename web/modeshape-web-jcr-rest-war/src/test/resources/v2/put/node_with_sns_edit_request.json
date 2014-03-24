@@ -1,0 +1,14 @@
+{
+    "children": [
+        {
+            "foo": {
+                "editedName": "editedFirst"
+            }
+        },
+        {
+            "foo": {
+                "editedName": "editedSecond"
+            }
+        }
+    ]
+}
