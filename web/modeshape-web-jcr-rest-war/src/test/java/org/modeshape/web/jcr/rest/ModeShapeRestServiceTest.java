@@ -633,4 +633,50 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
                 .isJSONObjectLikeFile("v2/put/node_multivalue_prop_response.json");
 
     }
+
+    @Test
+    @FixFor( "MODE-2181" )
+    public void shouldAllowCreatingSNS() throws Exception {
+        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/name")).isOk();
+    }
+
+    @Test
+    @FixFor( "MODE-2181" )
+    public void shouldAllowUpdatingSNSViaArray() throws Exception {
+        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("v2/put/node_with_sns_edit_request.json", itemsUrl(TEST_NODE)).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/editedName")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/editedName")).isOk();
+    }
+
+    @Test
+    @FixFor( "MODE-2181" )
+    public void shouldAllowUpdatingSNSViaObject() throws Exception {
+        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("v2/put/node_with_sns_edit_alt_request.json", itemsUrl(TEST_NODE)).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/editedName")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/editedName")).isOk();
+    }
+
+    @Test
+    @FixFor( "MODE-2181" )
+    @Ignore( "A limitation of HTTPUrlConnection prevents this test from running. Consider enabling it if/when switching to Http Client" )
+    public void shouldAllowDeletingSNS() throws Exception {
+        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doDelete("v2/delete/sns_nodes_delete.json", itemsUrl()).isDeleted();
+        doGet(itemsUrl(TEST_NODE, "foo[1]")).isNotFound();
+        doGet(itemsUrl(TEST_NODE, "foo[2]")).isNotFound();
+    }
 }

@@ -1,0 +1,14 @@
+{
+    "children": [
+        {
+            "foo": {
+                "name": "first"
+            }
+        },
+        {
+            "foo": {
+                "name": "second"
+            }
+        }
+    ]
+}

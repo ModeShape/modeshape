@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -337,21 +338,49 @@ public class ItemHandler extends AbstractHandler {
         }
 
         if (hasChildren(jsonNode)) {
-            JSONObject children = getChildren(jsonNode);
+            List<JSONChild> children = getChildren(jsonNode);
 
-            for (Iterator<?> iter = children.keys(); iter.hasNext();) {
-                String childName = (String)iter.next();
-                JSONObject child = children.getJSONObject(childName);
-
-                addNode(newNode, childName, child);
+            for (JSONChild child : children) {
+                addNode(newNode, child.getName(), child.getBody());
             }
         }
 
         return newNode;
     }
 
-    protected JSONObject getChildren( JSONObject jsonNode ) throws JSONException {
-        return jsonNode.getJSONObject(CHILD_NODE_HOLDER);
+    protected List<JSONChild> getChildren( JSONObject jsonNode ) throws JSONException {
+        List<JSONChild> children;
+        try {
+            JSONObject childrenObject = jsonNode.getJSONObject(CHILD_NODE_HOLDER);
+            children = new ArrayList<JSONChild>(childrenObject.length());
+            for (Iterator<?> iterator = childrenObject.keys(); iterator.hasNext();) {
+                String childName = iterator.next().toString();
+                //it is not possible to have SNS in the object form, so the index will always be 1
+                children.add(new JSONChild(childName, childrenObject.getJSONObject(childName), 1));
+            }
+            return children;
+        } catch (JSONException e) {
+            JSONArray childrenArray = jsonNode.getJSONArray(CHILD_NODE_HOLDER);
+            children = new ArrayList<JSONChild>(childrenArray.length());
+            Map<String, Integer> visitedNames = new HashMap<String, Integer>(childrenArray.length());
+
+            for (int i = 0; i < childrenArray.length(); i++) {
+                JSONObject child = childrenArray.getJSONObject(i);
+                if (child.length() == 0) {
+                    continue;
+                }
+                if (child.length() > 1) {
+                    logger.warn("The child object {0} has more than 1 elements, only the first one will be taken into account",
+                                child);
+                }
+                String childName = child.keys().next().toString();
+                int sns = visitedNames.containsKey(childName) ? visitedNames.get(childName) + 1 : 1;
+                visitedNames.put(childName, sns);
+
+                children.add(new JSONChild(childName, child.getJSONObject(childName), sns));
+            }
+            return children;
+        }
     }
 
     protected boolean hasChildren( JSONObject jsonNode ) {
@@ -668,7 +697,6 @@ public class ItemHandler extends AbstractHandler {
     private void updateChildren( Node node,
                                  JSONObject jsonNode,
                                  VersionableChanges changes ) throws JSONException, RepositoryException {
-        JSONObject children = getChildren(jsonNode);
         Session session = node.getSession();
 
         // Get the existing children ...
@@ -684,9 +712,10 @@ public class ItemHandler extends AbstractHandler {
         //keep track of the old/new order of children to be able to perform reorderings
         List<String> newChildrenToUpdate = new ArrayList<String>();
 
-        for (Iterator<?> iter = children.keys(); iter.hasNext();) {
-            String childName = (String)iter.next();
-            JSONObject child = children.getJSONObject(childName);
+        List<JSONChild> children = getChildren(jsonNode);
+        for (JSONChild jsonChild : children) {
+            String childName = jsonChild.getNameWithSNS();
+            JSONObject child = jsonChild.getBody();
             // Find the existing node ...
             if (node.hasNode(childName)) {
                 // The node exists, so get it and update it ...
@@ -759,6 +788,39 @@ public class ItemHandler extends AbstractHandler {
         int index = node.getIndex();
         String childName = node.getName();
         return index == 1 ? childName : childName + "[" + index + "]";
+    }
+
+    protected static class JSONChild {
+        private final String name;
+        private final JSONObject body;
+        private final int snsIdx;
+
+        protected JSONChild( String name, JSONObject body, int snsIdx ) {
+            this.name = name;
+            this.body = body;
+            this.snsIdx = snsIdx;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getNameWithSNS() {
+            return snsIdx > 1 ? name + "[" + snsIdx + "]" : name;
+        }
+
+        public JSONObject getBody() {
+            return body;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("JSONChild{");
+            sb.append("name='").append(getNameWithSNS()).append('\'');
+            sb.append(", body=").append(body);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
     protected static class VersionableChanges {
