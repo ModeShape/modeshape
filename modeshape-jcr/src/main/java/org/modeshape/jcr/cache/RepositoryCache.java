@@ -154,8 +154,8 @@ public class RepositoryCache implements Observable {
         this.logger = Logger.getLogger(getClass());
         this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
         this.name = configuration.getName();
-        this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
-        this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
+        this.workspaceCachesByName = new ConcurrentHashMap<>();
+        this.workspaceNames = new CopyOnWriteArraySet<>(configuration.getAllWorkspaceNames());
         this.upgrades = upgradeFunctions;
 
         //if we're running in a cluster, try to acquire a global cluster lock to perform initialization
