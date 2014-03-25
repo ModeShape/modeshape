@@ -25,6 +25,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
@@ -48,6 +49,8 @@ public class NoQueriesIntegrationTest {
         return archive;
     }
 
+    // TODO MODE-2178
+    @Ignore
     @Test
     public void shouldStillBeAbleToAddNodes() throws Exception {
         Session session = repository.login();

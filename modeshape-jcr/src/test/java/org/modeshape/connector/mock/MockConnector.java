@@ -102,57 +102,47 @@ public class MockConnector extends WritableConnector implements Pageable {
         String id1 = newId();
         EditableDocument doc1 = newDocument(id1).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
                                                 .addProperty(nameFrom("federated1_prop1"), "a string")
-                                                .addProperty("federated1_prop2", 12)
-                                                .document();
+                                                .addProperty("federated1_prop2", 12).document();
         documentsByLocation.put(DOC1_LOCATION, doc1);
         documentsById.put(id1, doc1);
 
         String id2 = newId();
         String id3 = newId();
         EditableDocument doc3 = newDocument(id3).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                                                .addProperty("federated3_prop1", "yet another string")
-                                                .setParent(id2)
-                                                .document();
+                                                .addProperty("federated3_prop1", "yet another string").setParent(id2).document();
         documentsById.put(id3, doc3);
         documentsByLocation.put(DOC3_LOCATION, doc3);
 
         EditableDocument doc2 = newDocument(id2).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
                                                 .addProperty("federated2_prop1", "another string")
-                                                .addProperty("federated2_prop2", Boolean.FALSE)
-                                                .addChild(id3, "federated3")
+                                                .addProperty("federated2_prop2", Boolean.FALSE).addChild(id3, "federated3")
                                                 .document();
         documentsByLocation.put(DOC2_LOCATION, doc2);
         documentsById.put(id2, doc2);
 
         String id4 = newId();
-        EditableDocument doc4 = newDocument(id4).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                                                .setParent(PAGED_DOCUMENT_ID)
+        EditableDocument doc4 = newDocument(id4).setPrimaryType(JcrNtLexicon.UNSTRUCTURED).setParent(PAGED_DOCUMENT_ID)
                                                 .document();
         documentsById.put(id4, doc4);
 
         String id5 = newId();
-        EditableDocument doc5 = newDocument(id5).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                                                .setParent(PAGED_DOCUMENT_ID)
+        EditableDocument doc5 = newDocument(id5).setPrimaryType(JcrNtLexicon.UNSTRUCTURED).setParent(PAGED_DOCUMENT_ID)
                                                 .document();
         documentsById.put(id5, doc5);
 
         String id6 = newId();
-        EditableDocument doc6 = newDocument(id6).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                                                .setParent(PAGED_DOCUMENT_ID)
+        EditableDocument doc6 = newDocument(id6).setPrimaryType(JcrNtLexicon.UNSTRUCTURED).setParent(PAGED_DOCUMENT_ID)
                                                 .document();
         documentsById.put(id6, doc6);
 
         EditableDocument pagedDoc = newDocument(PAGED_DOCUMENT_ID).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                                                                  .addChild(id4, "federated4")
-                                                                  .addChild(id5, "federated5")
-                                                                  .addChild(id6, "federated6")
-                                                                  .document();
+                                                                  .addChild(id4, "federated4").addChild(id5, "federated5")
+                                                                  .addChild(id6, "federated6").document();
         documentsById.put(PAGED_DOCUMENT_ID, pagedDoc);
         documentsByLocation.put(PAGED_DOC_LOCATION, pagedDoc);
 
         EditableDocument nonQueryableDoc = newDocument(NON_QUERYABLE_DOCUMENT_ID).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                                                                                 .setNotQueryable()
-                                                                                 .document();
+                                                                                 .setNotQueryable().document();
         documentsById.put(NON_QUERYABLE_DOCUMENT_ID, nonQueryableDoc);
         documentsByLocation.put(NONT_QUERYABLE_DOC_LOCATION, nonQueryableDoc);
     }
@@ -164,8 +154,7 @@ public class MockConnector extends WritableConnector implements Pageable {
         if (PAGED_DOCUMENT_ID.equals(id)) {
             DocumentReader reader = readDocument(doc);
             List<? extends Document> children = reader.getChildren();
-            DocumentWriter writer = newDocument(id).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                                                   .setChildren(children.subList(0, 1))
+            DocumentWriter writer = newDocument(id).setPrimaryType(JcrNtLexicon.UNSTRUCTURED).setChildren(children.subList(0, 1))
                                                    .addPage(reader.getDocumentId(), 1, 1, children.size());
             return writer.document();
         }
@@ -265,6 +254,9 @@ public class MockConnector extends WritableConnector implements Pageable {
         updateMixins(existingDocumentReader, updatedDocumentWriter, documentChanges);
         updateChildren(existingDocumentReader, updatedDocumentWriter, documentChanges);
         updateParents(existingDocumentReader, updatedDocumentWriter, documentChanges);
+        if (!existingDocumentReader.isQueryable()) {
+            updatedDocumentWriter.setNotQueryable();
+        }
 
         persistDocument(id, updatedDocumentWriter.document());
     }
@@ -340,8 +332,7 @@ public class MockConnector extends WritableConnector implements Pageable {
             for (String insertedBefore : insertedBeforeAnotherChild.keySet()) {
                 List<String> insertedChildren = new ArrayList<String>(insertedBeforeAnotherChild.get(insertedBefore).keySet());
                 for (String insertedChild : insertedChildren) {
-                    Collections.swap(childrenIdsList,
-                                     childrenIdsList.indexOf(insertedBefore),
+                    Collections.swap(childrenIdsList, childrenIdsList.indexOf(insertedBefore),
                                      childrenIdsList.indexOf(insertedChild));
                 }
             }

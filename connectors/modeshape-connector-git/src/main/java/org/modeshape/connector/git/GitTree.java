@@ -16,6 +16,7 @@
 package org.modeshape.connector.git;
 
 import java.io.IOException;
+import java.util.List;
 import javax.jcr.RepositoryException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -85,7 +86,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
             try {
                 RevCommit commit = walker.parseCommit(objId);
 
-                //could happen if not enough permissions, for example
+                // could happen if not enough permissions, for example
                 if (commit != null) {
                     // Add the properties for this node ...
                     String committer = commiterName(commit);
@@ -183,7 +184,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                 RevCommit folderCommit = git.log().addPath(path).call().iterator().next();
                 writer.setPrimaryType(GitLexicon.FOLDER);
 
-                //could happen if not enough permissions, for example
+                // could happen if not enough permissions, for example
                 if (folderCommit != null) {
                     // Add folder-related properties ...
                     String committer = commiterName(folderCommit);
@@ -196,7 +197,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                     writer.addProperty(GitLexicon.COMMITTER, committer);
                     writer.addProperty(GitLexicon.COMMITTED, committed);
                     writer.addProperty(GitLexicon.TITLE, folderCommit.getShortMessage());
-                }  else {
+                } else {
                     connector.getLogger().warn(GitI18n.cannotReadCommit, path);
                 }
 
@@ -216,7 +217,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                 if (isContentNode) {
                     writer.setPrimaryType(GitLexicon.RESOURCE);
                     if (fileCommit == null) {
-                        //could happen if not enough permissions, for example
+                        // could happen if not enough permissions, for example
                         connector.getLogger().warn(GitI18n.cannotReadCommit, path);
                         return;
                     }
@@ -244,7 +245,8 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                             value = values.binaryFrom(fileLoader.openStream());
                         } else {
                             // This is small enough to fit into a byte[], but it still may be pretty big ...
-                            value = new GitBinaryValue(fileObjectId, fileLoader, connector.getSourceName(), name, connector.getMimeTypeDetector());
+                            value = new GitBinaryValue(fileObjectId, fileLoader, connector.getSourceName(), name,
+                                                       connector.getMimeTypeDetector());
                         }
                     }
                     writer.addProperty(JcrLexicon.DATA, value);
@@ -262,7 +264,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                 } else {
                     writer.setPrimaryType(GitLexicon.FILE);
                     if (fileCommit == null) {
-                        //could happen if not enough permissions, for example
+                        // could happen if not enough permissions, for example
                         connector.getLogger().warn(GitI18n.cannotReadCommit, path);
                         return;
                     }
@@ -306,8 +308,9 @@ public class GitTree extends GitFunction implements PageableGitFunction {
 
     @Override
     protected boolean isQueryable( CallSpecification callSpec ) {
+        List<String> queryableBranches = connector.getQueryableBranches();
         if (callSpec.parameterCount() == 0) {
-            return true;
+            return !queryableBranches.isEmpty();
         }
         String branchName = callSpec.parameter(0);
         for (String queryableBranchName : connector.getQueryableBranches()) {

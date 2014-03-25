@@ -78,6 +78,11 @@ public final class HttpQueryResult implements QueryResult {
     }
 
     @Override
+    public boolean isEmpty() {
+        return rows.isEmpty();
+    }
+
+    @Override
     public RowIterator getRows() {
         return new HttpRowIterator();
     }

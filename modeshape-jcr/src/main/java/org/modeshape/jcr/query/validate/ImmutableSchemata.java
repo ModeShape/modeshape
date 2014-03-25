@@ -31,7 +31,9 @@ import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.GraphI18n;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.query.qom.Operator;
+import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.SelectorName;
@@ -55,12 +57,15 @@ public class ImmutableSchemata implements Schemata {
      * Obtain a new instance for building Schemata objects.
      * 
      * @param context the execution context that this schemata should use
+     * @param nodeTypes the node types that this schemata should use
      * @return the new builder; never null
      * @throws IllegalArgumentException if the context is null
      */
-    public static Builder createBuilder( ExecutionContext context ) {
+    public static Builder createBuilder( ExecutionContext context,
+                                         NodeTypes nodeTypes ) {
         CheckArg.isNotNull(context, "context");
-        return new Builder(context);
+        CheckArg.isNotNull(nodeTypes, "nodeTypes");
+        return new Builder(context, nodeTypes);
     }
 
     /**
@@ -70,6 +75,7 @@ public class ImmutableSchemata implements Schemata {
     public static class Builder {
 
         private final ExecutionContext context;
+        private final NodeTypes nodeTypes;
         private final TypeSystem typeSystem;
         private final Map<String, MutableTable> tables = new HashMap<String, MutableTable>();
         private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<SelectorName, QueryCommand>();
@@ -77,8 +83,10 @@ public class ImmutableSchemata implements Schemata {
         private final Map<String, Map<String, Boolean>> orderableColumnsByTableName = new HashMap<String, Map<String, Boolean>>();
         private final Map<String, Map<String, Set<Operator>>> operatorsForColumnsByTableName = new HashMap<String, Map<String, Set<Operator>>>();
 
-        protected Builder( ExecutionContext context ) {
+        protected Builder( ExecutionContext context,
+                           NodeTypes nodeTypes ) {
             this.context = context;
+            this.nodeTypes = nodeTypes;
             this.typeSystem = context.getValueFactories().getTypeSystem();
         }
 
@@ -191,14 +199,8 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
             CheckArg.isNotNull(type, "type");
-            return addColumn(tableName,
-                             columnName,
-                             type,
-                             ImmutableColumn.DEFAULT_REQUIRED_TYPE,
-                             ImmutableColumn.DEFAULT_FULL_TEXT_SEARCHABLE,
-                             ImmutableColumn.DEFAULT_ORDERABLE,
-                             null,
-                             null,
+            return addColumn(tableName, columnName, type, ImmutableColumn.DEFAULT_REQUIRED_TYPE,
+                             ImmutableColumn.DEFAULT_FULL_TEXT_SEARCHABLE, ImmutableColumn.DEFAULT_ORDERABLE, null, null,
                              ImmutableColumn.ALL_OPERATORS);
         }
 
@@ -442,6 +444,7 @@ public class ImmutableSchemata implements Schemata {
             // Make a copy of the view definitions, and create the views ...
             Map<SelectorName, QueryCommand> definitions = new HashMap<SelectorName, QueryCommand>(viewDefinitions);
             boolean added = false;
+            BufferManager bufferManager = new BufferManager(context);
             do {
                 added = false;
                 Set<SelectorName> viewNames = new HashSet<SelectorName>(definitions.keySet());
@@ -452,7 +455,8 @@ public class ImmutableSchemata implements Schemata {
                     hints.validateColumnExistance = false;
                     // Create a query context that queries all workspaces (we won't actually query using it) ...
                     Set<String> allWorkspaces = Collections.emptySet();
-                    QueryContext queryContext = new QueryContext(context, null, allWorkspaces, schemata, hints, null);
+                    QueryContext queryContext = new QueryContext(context, null, allWorkspaces, schemata, nodeTypes,
+                                                                 bufferManager, hints, null);
                     CanonicalPlanner planner = new CanonicalPlanner();
                     PlanNode plan = planner.createPlan(queryContext, command);
                     if (queryContext.getProblems().hasErrors()) {

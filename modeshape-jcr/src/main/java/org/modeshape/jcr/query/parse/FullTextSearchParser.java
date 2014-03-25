@@ -38,6 +38,7 @@ import org.modeshape.jcr.query.model.FullTextSearch.NegationTerm;
 import org.modeshape.jcr.query.model.FullTextSearch.SimpleTerm;
 import org.modeshape.jcr.query.model.FullTextSearch.Term;
 import org.modeshape.jcr.query.model.Limit;
+import org.modeshape.jcr.query.model.NullOrder;
 import org.modeshape.jcr.query.model.Order;
 import org.modeshape.jcr.query.model.Ordering;
 import org.modeshape.jcr.query.model.PropertyValue;
@@ -83,7 +84,8 @@ public class FullTextSearchParser implements QueryParser {
                                                                                                         new PropertyValue(
                                                                                                                           FULL_TEXT_SELECTOR_NAME,
                                                                                                                           SCORE_COLUMN_NAME),
-                                                                                                        Order.DESCENDING));
+                                                                                                        Order.DESCENDING,
+                                                                                                        NullOrder.NULLS_LAST));
     private static boolean FULL_TEXT_DISTINCT = true;
 
     private static FullTextSearchParser PARSER = new FullTextSearchParser();

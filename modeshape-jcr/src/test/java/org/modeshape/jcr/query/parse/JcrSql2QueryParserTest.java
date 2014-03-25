@@ -32,6 +32,7 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrValueFactory;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.query.JcrTypeSystem;
 import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.Comparison;
@@ -60,9 +61,11 @@ import org.modeshape.jcr.query.model.SetQuery;
 import org.modeshape.jcr.query.model.Source;
 import org.modeshape.jcr.query.model.StaticOperand;
 import org.modeshape.jcr.query.model.TypeSystem;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
+import org.modeshape.jcr.value.Reference;
 
 /**
  * 
@@ -633,7 +636,7 @@ public class JcrSql2QueryParserTest {
         return new TokenStream(content, new BasicSqlQueryParser.SqlTokenizer(false), false).start();
     }
 
-    protected static class MockJcrTypeSystem implements JcrTypeSystem {
+    protected static class MockJcrTypeSystem extends JcrTypeSystem {
         protected final JcrValueFactory valueFactory;
         protected final TypeSystem delegate;
         protected final ExecutionContext executionContext;
@@ -665,12 +668,12 @@ public class JcrSql2QueryParserTest {
         }
 
         @Override
-        public TypeFactory<?> getReferenceFactory() {
+        public TypeFactory<Reference> getReferenceFactory() {
             return delegate.getReferenceFactory();
         }
 
         @Override
-        public TypeFactory<?> getPathFactory() {
+        public TypeFactory<Path> getPathFactory() {
             return delegate.getPathFactory();
         }
 
@@ -682,6 +685,16 @@ public class JcrSql2QueryParserTest {
         @Override
         public TypeFactory<Double> getDoubleFactory() {
             return delegate.getDoubleFactory();
+        }
+
+        @Override
+        public TypeFactory<Name> getNameFactory() {
+            return delegate.getNameFactory();
+        }
+
+        @Override
+        public TypeFactory<NodeKey> getNodeKeyFactory() {
+            return delegate.getNodeKeyFactory();
         }
 
         @Override
@@ -711,12 +724,18 @@ public class JcrSql2QueryParserTest {
         }
 
         @Override
+        public TypeFactory<?> getCompatibleType( TypeFactory<?> type1,
+                                                 TypeFactory<?> type2 ) {
+            return delegate.getCompatibleType(type1, type2);
+        }
+
+        @Override
         public TypeFactory<Boolean> getBooleanFactory() {
             return delegate.getBooleanFactory();
         }
 
         @Override
-        public TypeFactory<?> getBinaryFactory() {
+        public TypeFactory<BinaryValue> getBinaryFactory() {
             return delegate.getBinaryFactory();
         }
 

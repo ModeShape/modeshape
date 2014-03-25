@@ -24,12 +24,14 @@ import java.util.Map;
 import java.util.Set;
 import org.modeshape.common.util.Base64;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.query.model.TypeSystem;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * 
  */
-public class ValueTypeSystem implements TypeSystem {
+public final class ValueTypeSystem extends TypeSystem {
 
     private final String defaultTypeName;
     protected final ValueFactories valueFactories;
@@ -42,10 +44,12 @@ public class ValueTypeSystem implements TypeSystem {
     private final TypeFactory<Long> longFactory;
     private final TypeFactory<Double> doubleFactory;
     private final TypeFactory<BigDecimal> decimalFactory;
-    private final TypeFactory<?> dateFactory;
-    private final TypeFactory<?> pathFactory;
-    private final TypeFactory<?> referenceFactory;
-    private final TypeFactory<?> binaryFactory;
+    private final TypeFactory<DateTime> dateFactory;
+    private final TypeFactory<Path> pathFactory;
+    private final TypeFactory<Name> nameFactory;
+    private final TypeFactory<Reference> referenceFactory;
+    private final TypeFactory<BinaryValue> binaryFactory;
+    private final TypeFactory<NodeKey> nodeKeyFactory;
 
     /**
      * Create a type system using the supplied value factories.
@@ -56,7 +60,7 @@ public class ValueTypeSystem implements TypeSystem {
     public ValueTypeSystem( ValueFactories valueFactories ) {
         this.valueFactories = valueFactories;
         this.defaultTypeName = PropertyType.STRING.getName().toUpperCase();
-        Map<PropertyType, TypeFactory<?>> factories = new HashMap<PropertyType, TypeFactory<?>>();
+        Map<PropertyType, TypeFactory<?>> factories = new HashMap<>();
         this.stringValueFactory = valueFactories.getStringFactory();
         this.stringFactory = new Factory<String>(stringValueFactory) {
             @Override
@@ -83,7 +87,9 @@ public class ValueTypeSystem implements TypeSystem {
             }
         };
         this.pathFactory = new Factory<Path>(valueFactories.getPathFactory());
+        this.nameFactory = new Factory<Name>(valueFactories.getNameFactory());
         this.referenceFactory = new Factory<Reference>(valueFactories.getReferenceFactory());
+        this.nodeKeyFactory = new NodeKeyTypeFactory(stringValueFactory);
         this.binaryFactory = new Factory<BinaryValue>(valueFactories.getBinaryFactory()) {
             @Override
             public String asReadableString( Object value ) {
@@ -118,10 +124,11 @@ public class ValueTypeSystem implements TypeSystem {
             propertyTypeByName.put(entry.getValue().getTypeName(), entry.getKey());
         }
         this.propertyTypeByName = Collections.unmodifiableMap(propertyTypeByName);
-        Map<String, TypeFactory<?>> byName = new HashMap<String, TypeFactory<?>>();
+        Map<String, TypeFactory<?>> byName = new HashMap<>();
         for (TypeFactory<?> factory : factories.values()) {
             byName.put(factory.getTypeName(), factory);
         }
+        byName.put(nodeKeyFactory.getTypeName(), nodeKeyFactory);
         this.typeFactoriesByName = Collections.unmodifiableMap(byName);
     }
 
@@ -172,18 +179,28 @@ public class ValueTypeSystem implements TypeSystem {
     }
 
     @Override
-    public TypeFactory<?> getPathFactory() {
+    public TypeFactory<Path> getPathFactory() {
         return pathFactory;
     }
 
     @Override
-    public TypeFactory<?> getReferenceFactory() {
+    public TypeFactory<Name> getNameFactory() {
+        return nameFactory;
+    }
+
+    @Override
+    public TypeFactory<Reference> getReferenceFactory() {
         return referenceFactory;
     }
 
     @Override
-    public TypeFactory<?> getBinaryFactory() {
+    public TypeFactory<BinaryValue> getBinaryFactory() {
         return binaryFactory;
+    }
+
+    @Override
+    public TypeFactory<NodeKey> getNodeKeyFactory() {
+        return nodeKeyFactory;
     }
 
     @Override
@@ -237,6 +254,12 @@ public class ValueTypeSystem implements TypeSystem {
 
         // Otherwise, it's just the default type (string) ...
         return getDefaultType();
+    }
+
+    @Override
+    public TypeFactory<?> getCompatibleType( TypeFactory<?> type1,
+                                             TypeFactory<?> type2 ) {
+        return getTypeFactory(getCompatibleType(type1.getTypeName(), type2.getTypeName()));
     }
 
     protected class Factory<T> implements TypeFactory<T> {
@@ -297,5 +320,70 @@ public class ValueTypeSystem implements TypeSystem {
             return typeName;
         }
 
+        @Override
+        public String toString() {
+            return "TypeFactory<" + getTypeName() + ">";
+        }
+
     }
+
+    protected static class NodeKeyTypeFactory implements TypeFactory<NodeKey> {
+        private final ValueFactory<String> stringFactory;
+
+        protected NodeKeyTypeFactory( ValueFactory<String> stringFactory ) {
+            this.stringFactory = stringFactory;
+        }
+
+        @Override
+        public Class<NodeKey> getType() {
+            return NodeKey.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return getType().getName().toUpperCase();
+        }
+
+        @Override
+        public String asString( Object value ) {
+            return ((NodeKey)value).toString();
+        }
+
+        @Override
+        public String asReadableString( Object value ) {
+            return asString(value);
+        }
+
+        @Override
+        public long length( Object value ) {
+            return asString(value).length();
+        }
+
+        @Override
+        public NodeKey create( Object value ) throws ValueFormatException {
+            if (value == null) return null;
+            if (value instanceof NodeKey) {
+                return (NodeKey)value;
+            }
+            if (value instanceof NodeKeyReference) {
+                return ((NodeKeyReference)value).getNodeKey();
+            }
+            String str = stringFactory.create(value);
+            return create(str);
+        }
+
+        @Override
+        public NodeKey create( String value ) throws ValueFormatException {
+            if (NodeKey.isValidFormat(value)) {
+                return new NodeKey(value);
+            }
+            throw new ValueFormatException(value, PropertyType.OBJECT, "Unable to convert " + value.getClass() + " to a NodeKey");
+        }
+
+        @Override
+        public Comparator<NodeKey> getComparator() {
+            return NodeKey.COMPARATOR;
+        }
+    }
+
 }

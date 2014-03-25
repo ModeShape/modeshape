@@ -330,12 +330,63 @@ public interface QueryObjectModelFactory extends javax.jcr.query.qom.QueryObject
      * @param operand1 the first operand; non-null
      * @param operand2 the second operand; non-null
      * @return the constraint; non-null
-     * @throws InvalidQueryException if a particular validity test is possible
-     *                               on this method, the implemention chooses to perform that test (and not
-     *                               leave it until later, on {@link #createQuery}), and the parameters given
-     *                               fail that test
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
      * @throws RepositoryException if the operation otherwise fails
      */
     public Relike relike( javax.jcr.query.qom.StaticOperand operand1,
                           javax.jcr.query.qom.PropertyValue operand2 ) throws InvalidQueryException, RepositoryException;
+
+    /**
+     * Orders by the value of the specified operand, in ascending order. The query is invalid if <code>operand</code> does not
+     * evaluate to a scalar value. Null values are returned last; use {@link #ascendingNullsFirst(DynamicOperand)} for other
+     * behavior.
+     * 
+     * @param operand the operand by which to order; non-null
+     * @return the ordering
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
+     * @throws RepositoryException if the operation otherwise fails
+     */
+    @Override
+    public Ordering ascending( DynamicOperand operand ) throws InvalidQueryException, RepositoryException;
+
+    /**
+     * Orders by the value of the specified operand, in descending order. The query is invalid if <code>operand</code> does not
+     * evaluate to a scalar value. Null values are returned first; use {@link #descendingNullsLast(DynamicOperand)} for other
+     * behavior.
+     * 
+     * @param operand the operand by which to order; non-null
+     * @return the ordering
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
+     * @throws RepositoryException if the operation otherwise fails
+     */
+    @Override
+    public Ordering descending( DynamicOperand operand ) throws InvalidQueryException, RepositoryException;
+
+    /**
+     * Orders by the value of the specified operand, in ascending order. The query is invalid if <code>operand</code> does not
+     * evaluate to a scalar value.
+     * 
+     * @param operand the operand by which to order; non-null
+     * @return the ordering
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
+     * @throws RepositoryException if the operation otherwise fails
+     */
+    public Ordering ascendingNullsFirst( DynamicOperand operand ) throws InvalidQueryException, RepositoryException;
+
+    /**
+     * Orders by the value of the specified operand, in descending order. The query is invalid if <code>operand</code> does not
+     * evaluate to a scalar value.
+     * 
+     * @param operand the operand by which to order; non-null
+     * @return the ordering
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
+     * @throws RepositoryException if the operation otherwise fails
+     */
+    public Ordering descendingNullsLast( DynamicOperand operand ) throws InvalidQueryException, RepositoryException;
+
 }

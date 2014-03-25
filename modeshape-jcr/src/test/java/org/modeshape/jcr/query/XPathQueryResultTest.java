@@ -24,10 +24,10 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.query.QueryResults.Columns;
+import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.query.model.Column;
 import org.modeshape.jcr.query.model.SelectorName;
-import org.modeshape.jcr.query.process.QueryResultColumns;
-import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.query.plan.PlanHints;
 
 public class XPathQueryResultTest {
 
@@ -35,7 +35,6 @@ public class XPathQueryResultTest {
     private JcrQueryContext context;
     private String query;
     private QueryResults graphResult;
-    private Schemata schemata;
     private Columns resultColumns;
     private List<String> columnTypes;
     private List<String> columnNames;
@@ -43,7 +42,6 @@ public class XPathQueryResultTest {
 
     @Before
     public void beforeEach() {
-        schemata = mock(Schemata.class);
         context = mock(JcrQueryContext.class);
         query = "SELECT jcr:primaryType, foo:bar FROM nt:unstructured";
         graphResult = mock(QueryResults.class);
@@ -52,10 +50,12 @@ public class XPathQueryResultTest {
         SelectorName tableName = new SelectorName("nt:unstructured");
         columns = Arrays.asList(new Column(tableName, columnNames.get(0), columnNames.get(0)),
                                 new Column(tableName, columnNames.get(1), columnNames.get(1)));
-        resultColumns = new QueryResultColumns(columns, columnTypes, true);
+        resultColumns = new ScanningQueryEngine.ResultColumns(columns, columnTypes, true, null);
         when(graphResult.getColumns()).thenReturn(resultColumns);
+        when(graphResult.getRows()).thenReturn(NodeSequence.emptySequence(1));
 
-        result = new XPathQueryResult(context, query, graphResult, schemata);
+        PlanHints hints = new PlanHints();
+        result = new XPathQueryResult(context, query, graphResult, hints.restartable, hints.rowsKeptInMemory);
     }
 
     @Test

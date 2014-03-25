@@ -15,7 +15,9 @@
  */
 package org.modeshape.jcr.query.optimize;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.query.QueryContext;
@@ -44,8 +46,7 @@ import org.modeshape.jcr.query.plan.PlanNode.Traversal;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
 
 /**
- * An {@link OptimizerRule optimizer rule} that moves up higher in the plan any {@link Property#VARIABLE_NAME variable name}
- * property to the node immediately under a {@link Type#DEPENDENT_QUERY dependent query} node.
+ * Changes any criteria that writes criteria containing pseudo-columns into standard criteria.
  */
 @Immutable
 public class RewritePseudoColumns implements OptimizerRule {
@@ -64,10 +65,10 @@ public class RewritePseudoColumns implements OptimizerRule {
             if (newCondition != condition) {
                 join.setProperty(Property.JOIN_CONDITION, newCondition);
             }
-            Constraint constraint = join.getProperty(Property.JOIN_CONSTRAINTS, Constraint.class);
-            Constraint newConstraint = rewrite(context, constraint);
-            if (newConstraint != constraint) {
-                join.setProperty(Property.JOIN_CONSTRAINTS, newConstraint);
+            List<Constraint> constraints = join.getPropertyAsList(Property.JOIN_CONSTRAINTS, Constraint.class);
+            List<Constraint> newConstraints = rewrite(context, constraints);
+            if (newConstraints != constraints) {
+                join.setProperty(Property.JOIN_CONSTRAINTS, newConstraints);
             }
         }
 
@@ -103,6 +104,16 @@ public class RewritePseudoColumns implements OptimizerRule {
             }
         }
         return condition;
+    }
+
+    protected List<Constraint> rewrite( QueryContext context,
+                                        List<Constraint> constraints ) {
+        if (constraints == null) return null;
+        List<Constraint> rewritten = new ArrayList<>(constraints.size());
+        for (Constraint constraint : constraints) {
+            rewritten.add(rewrite(context, constraint));
+        }
+        return rewritten;
     }
 
     protected Constraint rewrite( QueryContext context,
@@ -189,6 +200,11 @@ public class RewritePseudoColumns implements OptimizerRule {
             }
         }
         return operand;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
     }
 
 }

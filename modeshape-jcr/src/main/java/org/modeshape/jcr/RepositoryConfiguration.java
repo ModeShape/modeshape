@@ -64,6 +64,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.connector.filesystem.FileSystemConnector;
@@ -403,6 +404,7 @@ public class RepositoryConfiguration {
         public static final String DATA_SOURCE_JNDI_NAME = "dataSourceJndiName";
         public static final String DATA_CACHE_NAME = "dataCacheName";
         public static final String FULL_TEXT_SEARCH_ENABLED = "enableFullTextSearch";
+        public static final String INDEXES = "indexes";
         public static final String METADATA_CACHE_NAME = "metadataCacheName";
         public static final String CHUNK_SIZE = "chunkSize";
         public static final String QUERY = "query";
@@ -589,7 +591,7 @@ public class RepositoryConfiguration {
         public static final int OPTIMIZATION_INTERVAL_IN_HOURS = 24;
 
         public static final String JOURNAL_LOCATION = "modeshape/journal";
-        //by default journal entries are kept indefinitely
+        // by default journal entries are kept indefinitely
         public static final int MAX_DAYS_TO_KEEP_RECORDS = -1;
         public static final boolean ASYNC_WRITES_ENABLED = false;
     }
@@ -797,6 +799,7 @@ public class RepositoryConfiguration {
      * @throws ParsingException if the content could not be parsed as a valid JSON document
      */
     public static RepositoryConfiguration read( URL url ) throws ParsingException {
+        CheckArg.isNotNull(url, "url");
         Document doc = Json.read(url);
         return new RepositoryConfiguration(doc, withoutExtension(url.getFile()));
     }
@@ -810,6 +813,7 @@ public class RepositoryConfiguration {
      * @throws FileNotFoundException if the file could not be found
      */
     public static RepositoryConfiguration read( File file ) throws ParsingException, FileNotFoundException {
+        CheckArg.isNotNull(file, "file");
         Document doc = Json.read(new FileInputStream(file));
         return new RepositoryConfiguration(doc, withoutExtension(file.getName()));
     }
@@ -825,6 +829,8 @@ public class RepositoryConfiguration {
      */
     public static RepositoryConfiguration read( InputStream stream,
                                                 String name ) throws ParsingException, FileNotFoundException {
+        CheckArg.isNotNull(stream, "stream");
+        CheckArg.isNotNull(name, "name");
         Document doc = Json.read(stream);
         return new RepositoryConfiguration(doc, withoutExtension(name));
     }
@@ -841,6 +847,7 @@ public class RepositoryConfiguration {
      */
     public static RepositoryConfiguration read( String resourcePathOrJsonContentString )
         throws ParsingException, FileNotFoundException {
+        CheckArg.isNotNull(resourcePathOrJsonContentString, "resourcePathOrJsonContentString");
         FileLookup factory = FileLookupFactory.newInstance();
         InputStream stream = factory.lookupFile(resourcePathOrJsonContentString, Thread.currentThread().getContextClassLoader());
         if (stream == null) {
@@ -990,7 +997,7 @@ public class RepositoryConfiguration {
 
     /**
      * Returns the journaling configuration
-     *
+     * 
      * @return a {@link Journaling} instance, never {@code null}
      */
     public Journaling getJournaling() {
@@ -1184,7 +1191,8 @@ public class RepositoryConfiguration {
 
                 // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
-                store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName, chunkSize);
+                store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName,
+                                                  chunkSize);
             } else if (type.equalsIgnoreCase("composite")) {
 
                 Map<String, BinaryStore> binaryStores = new LinkedHashMap<String, BinaryStore>();
@@ -1680,6 +1688,43 @@ public class RepositoryConfiguration {
     }
 
     /**
+     * Get the configuration for the indexes used by this repository.
+     * 
+     * @return the index-related configuration; never null
+     */
+    public Indexes getIndexes() {
+        return new Indexes(doc.getDocument(FieldName.INDEXES));
+    }
+
+    /**
+     * The index-related configuration information.
+     */
+    @Immutable
+    public class Indexes {
+        private final Document indexes;
+
+        protected Indexes( Document indexes ) {
+            this.indexes = indexes != null ? indexes : EMPTY;
+        }
+
+        /**
+         * Get the ordered list of index providers defined in the configuration.
+         * 
+         * @return the immutable list of provider components; never null but possibly empty
+         */
+        public List<Component> getProviders() {
+            Problems problems = new SimpleProblems();
+            List<Component> components = readComponents(indexes,
+                                                        FieldName.PROVIDERS,
+                                                        FieldName.CLASSNAME,
+                                                        SEQUENCER_ALIASES,
+                                                        problems);
+            assert !problems.hasErrors();
+            return components;
+        }
+    }
+
+    /**
      * Get the configuration for the query-related aspects of this repository.
      * 
      * @return the query configuration; never null
@@ -1708,6 +1753,15 @@ public class RepositoryConfiguration {
          */
         public boolean queriesEnabled() {
             return query.getBoolean(FieldName.QUERY_ENABLED, Default.QUERY_ENABLED);
+        }
+
+        /**
+         * Determine whether queries and searches include "{@code /jcr:system}" content.
+         * 
+         * @return true if the system content is included in queries, or false if it is excluded
+         */
+        public boolean querySystemContent() {
+            return true;
         }
 
         /**
@@ -1775,21 +1829,24 @@ public class RepositoryConfiguration {
             setDefProp(props, FieldName.TYPE, FieldValue.INDEX_STORAGE_RAM);
             String type = props.getProperty(FieldName.TYPE);
             if (FieldValue.INDEX_STORAGE_FILESYSTEM.equalsIgnoreCase(type)) {
-                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
-                                                                                                                  .toLowerCase());
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_LOCKING_STRATEGY,
+                           Default.INDEX_STORAGE_LOCKING_STRATEGY.toString().toLowerCase());
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
                            Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
             } else if (FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER.equalsIgnoreCase(type)) {
-                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
-                                                                                                                  .toLowerCase());
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_LOCKING_STRATEGY,
+                           Default.INDEX_STORAGE_LOCKING_STRATEGY.toString().toLowerCase());
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
                            Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
                 setDefProp(props, FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, Default.INDEX_STORAGE_REFRESH_IN_SECONDS);
             } else if (FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE.equalsIgnoreCase(type)) {
-                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
-                                                                                                                  .toLowerCase());
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_LOCKING_STRATEGY,
+                           Default.INDEX_STORAGE_LOCKING_STRATEGY.toString().toLowerCase());
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
                            Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
@@ -1921,13 +1978,11 @@ public class RepositoryConfiguration {
                 this.includeSystemContent = defaultIncludeSystemContent;
                 this.mode = defaultIndexingMode;
             } else {
-                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, defaultQueryRebuild.name())
-                                                      .toUpperCase();
+                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, defaultQueryRebuild.name()).toUpperCase();
                 this.when = QueryRebuild.valueOf(when);
                 this.includeSystemContent = rebuildOnStartupDocument.getBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT,
                                                                                 defaultIncludeSystemContent.booleanValue());
-                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, defaultIndexingMode.name())
-                                                      .toUpperCase();
+                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, defaultIndexingMode.name()).toUpperCase();
                 this.mode = IndexingMode.valueOf(mode);
             }
         }
@@ -2382,7 +2437,7 @@ public class RepositoryConfiguration {
 
         /**
          * Checks whether journaling is enabled or not, based on a journaling configuration having been provided.
-         *
+         * 
          * @return true if journaling is enabled, or false otherwise
          */
         public boolean isEnabled() {
@@ -2391,7 +2446,7 @@ public class RepositoryConfiguration {
 
         /**
          * The location of the journal
-         *
+         * 
          * @return a {@code non-null} String
          */
         public String location() {
@@ -2400,7 +2455,7 @@ public class RepositoryConfiguration {
 
         /**
          * The maximum number of days journal entries should be kept on disk
-         *
+         * 
          * @return the number of days
          */
         public int maxDaysToKeepRecords() {
@@ -2409,7 +2464,7 @@ public class RepositoryConfiguration {
 
         /**
          * Whether asynchronous writes shoudl be enabled or not.
-         *
+         * 
          * @return true if anyschronos writes should be enabled.
          */
         public boolean asyncWritesEnabled() {
@@ -2418,7 +2473,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the thread pool that should be used for garbage collection journal entries.
-         *
+         * 
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
@@ -2427,7 +2482,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the time that the first GC process should be run.
-         *
+         * 
          * @return the initial time; never null
          */
         public String getInitialTimeExpression() {
@@ -2436,13 +2491,14 @@ public class RepositoryConfiguration {
 
         /**
          * Get the GC interval in hours.
-         *
+         * 
          * @return the interval; never null
          */
         public int getIntervalInHours() {
             return journalingDoc.getInteger(FieldName.INTERVAL_IN_HOURS, Default.GARBAGE_COLLECTION_INTERVAL_IN_HOURS);
         }
     }
+
     protected List<Component> readComponents( Document doc,
                                               String fieldName,
                                               String aliasFieldName,

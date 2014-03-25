@@ -24,8 +24,10 @@ import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
+import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
 import org.modeshape.jcr.query.model.DescendantNodeJoinCondition;
@@ -49,7 +51,7 @@ public class ChooseJoinAlgorithmTest extends AbstractQueryTest {
     @Before
     public void beforeEach() {
         context = new QueryContext(new ExecutionContext(), mock(RepositoryCache.class), Collections.singleton("workspace"),
-                                   mock(Schemata.class));
+                                   mock(Schemata.class), mock(NodeTypes.class), mock(BufferManager.class));
         bestRule = ChooseJoinAlgorithm.USE_BEST_JOIN_ALGORITHM;
         nestedRule = ChooseJoinAlgorithm.USE_ONLY_NESTED_JOIN_ALGORITHM;
     }

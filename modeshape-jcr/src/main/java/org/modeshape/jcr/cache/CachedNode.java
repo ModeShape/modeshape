@@ -90,6 +90,21 @@ public interface CachedNode {
     Path getPath( PathCache pathCache ) throws NodeNotFoundException;
 
     /**
+     * Get the depth of this node. The depth is equivalent to the number of segments in the node's path (0 for the root node, 1
+     * for "{@code /foo}", 2 for "{@code /foo/bar}", etc.), although this method will likely compute the depth more efficiently
+     * that finding the path and asking for the number of segments.
+     * <p>
+     * The depth is calculated based upon the primary parent (and {@link #getPath(NodeCache) primary path}). This is, although
+     * shared nodes are accessible at multiple paths, only the primary path is used to determine the depth of the node.
+     * </p>
+     * 
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @return the depth of this node; 0 for the root, or a positive number for all other nodes
+     * @throws NodeNotFoundException if this node no longer exists
+     */
+    int getDepth( NodeCache cache ) throws NodeNotFoundException;
+
+    /**
      * Get the node key for this node's primary parent within this workspace.
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
@@ -216,11 +231,11 @@ public interface CachedNode {
                          Path path );
 
     /**
-     * Determine if this node should be indexed and therefore available for querying. By default, every node is queryable,
-     * so only in certain cases can a node be made non-queryable.
-
-     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null     *
+     * Determine if this node should be indexed and therefore available for querying. By default, every node is queryable, so only
+     * in certain cases can a node be made non-queryable.
+     * 
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null *
      * @return {@code true} if the node should be indexed, {@code false} otherwise
      */
-    boolean isQueryable(NodeCache cache);
+    boolean isQueryable( NodeCache cache );
 }

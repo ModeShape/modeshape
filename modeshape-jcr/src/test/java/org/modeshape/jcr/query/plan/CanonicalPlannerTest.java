@@ -29,8 +29,10 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.QueryBuilder;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.And;
@@ -67,11 +69,13 @@ public class CanonicalPlannerTest {
     private PlanNode plan;
     private Problems problems;
     private Schemata schemata;
+    private NodeTypes nodeTypes;
     private ImmutableSchemata.Builder schemataBuilder;
     private QueryContext queryContext;
     private boolean print;
     private RepositoryCache repoCache;
     private Set<String> workspaces;
+    private BufferManager bufferMgr;
 
     @Before
     public void beforeEach() {
@@ -83,7 +87,9 @@ public class CanonicalPlannerTest {
         hints = new PlanHints();
         builder = new QueryBuilder(typeSystem);
         problems = new SimpleProblems();
-        schemataBuilder = ImmutableSchemata.createBuilder(executionContext);
+        nodeTypes = mock(NodeTypes.class);
+        schemataBuilder = ImmutableSchemata.createBuilder(executionContext, nodeTypes);
+        bufferMgr = new BufferManager(executionContext);
         print = false;
     }
 
@@ -139,11 +145,16 @@ public class CanonicalPlannerTest {
         }
     }
 
+    protected QueryContext initQueryContext() {
+        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, nodeTypes, bufferMgr, hints, problems);
+        return queryContext;
+    }
+
     @Test
     public void shouldProducePlanForSelectStarFromTable() {
         schemata = schemataBuilder.addTable("__ALLNODES__", "column1", "column2", "column3").build();
         query = builder.selectStar().fromAllNodes().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.isEmpty(), is(true));
         assertProjectNode(plan, "column1", "column2", "column3");
@@ -159,7 +170,7 @@ public class CanonicalPlannerTest {
     public void shouldProduceErrorWhenSelectingNonExistantTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.selectStar().fromAllNodes().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -168,7 +179,7 @@ public class CanonicalPlannerTest {
     public void shouldProduceErrorWhenSelectingNonExistantColumnOnExistingTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.select("column1", "column4").from("someTable").query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -177,7 +188,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingAllColumnsOnExistingTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.selectStar().from("someTable").query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         print(plan);
         assertThat(problems.hasErrors(), is(false));
@@ -194,7 +205,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingColumnsFromTableWithoutAlias() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.select("column1", "column2").from("someTable").where().path("someTable").isEqualTo(1L).end().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         assertThat(plan.getType(), is(PlanNode.Type.PROJECT));
@@ -205,7 +216,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingColumnsFromTableWithAlias() {
         schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
         query = builder.select("column1", "column2").from("dna:someTable AS t1").where().path("t1").isEqualTo(1L).end().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         print(plan);
@@ -217,7 +228,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingAllColumnsFromTableWithAlias() {
         schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
         query = builder.selectStar().from("dna:someTable AS t1").where().path("t1").isEqualTo(1L).end().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         print(plan);
@@ -230,23 +241,22 @@ public class CanonicalPlannerTest {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         // Make sure the query without the search criteria does not have an error
         query = builder.select("column1", "column2").from("someTable").query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
 
         query = builder.select("column1", "column2").from("someTable").where().search("someTable", "term1").end().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
 
     @Test
     public void shouldProducePlanWhenFullTextSearchingTableWithAtLeastOneSearchableColumn() {
-        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3")
-                                  .makeSearchable("someTable", "column1")
+        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").makeSearchable("someTable", "column1")
                                   .build();
         query = builder.select("column1", "column4").from("someTable").where().search("someTable", "term1").end().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -256,33 +266,24 @@ public class CanonicalPlannerTest {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         // Make sure the query without the search criteria does not have an error
         query = builder.select("column1", "column2").from("someTable").query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
 
-        query = builder.select("column1", "column2")
-                       .from("someTable")
-                       .where()
-                       .search("someTable", "column2", "term1")
-                       .end()
+        query = builder.select("column1", "column2").from("someTable").where().search("someTable", "column2", "term1").end()
                        .query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
 
     @Test
     public void shouldProducePlanWhenFullTextSearchingColumnThatIsSearchable() {
-        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3")
-                                  .makeSearchable("someTable", "column1")
+        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").makeSearchable("someTable", "column1")
                                   .build();
-        query = builder.select("column1", "column4")
-                       .from("someTable")
-                       .where()
-                       .search("someTable", "column1", "term1")
-                       .end()
+        query = builder.select("column1", "column4").from("someTable").where().search("someTable", "column1", "term1").end()
                        .query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -290,18 +291,9 @@ public class CanonicalPlannerTest {
     @Test
     public void shouldProducePlanWhenOrderByClauseIsUsed() {
         schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
-        query = builder.selectStar()
-                       .from("dna:someTable AS t1")
-                       .where()
-                       .path("t1")
-                       .isEqualTo(1L)
-                       .end()
-                       .orderBy()
-                       .ascending()
-                       .propertyValue("t1", "column1")
-                       .end()
-                       .query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        query = builder.selectStar().from("dna:someTable AS t1").where().path("t1").isEqualTo(1L).end().orderBy().ascending()
+                       .propertyValue("t1", "column1").end().query();
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         print(plan);
@@ -312,18 +304,9 @@ public class CanonicalPlannerTest {
     @Test
     public void shouldProducePlanWhenOrderByClauseWithScoreIsUsed() {
         schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
-        query = builder.selectStar()
-                       .from("dna:someTable AS t1")
-                       .where()
-                       .path("t1")
-                       .isEqualTo(1L)
-                       .end()
-                       .orderBy()
-                       .ascending()
-                       .fullTextSearchScore("t1")
-                       .end()
-                       .query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        query = builder.selectStar().from("dna:someTable AS t1").where().path("t1").isEqualTo(1L).end().orderBy().ascending()
+                       .fullTextSearchScore("t1").end().query();
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         print(plan);
@@ -336,15 +319,14 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenUsingSubquery() {
         // Define the schemata ...
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3")
-                                  .addTable("otherTable", "columnA", "columnB")
-                                  .build();
+                                  .addTable("otherTable", "columnA", "columnB").build();
         // Define the subquery command ...
         QueryCommand subquery = builder.select("columnA").from("otherTable").query();
         builder = new QueryBuilder(typeSystem);
 
         // Define the query command (which uses the subquery) ...
         query = builder.selectStar().from("someTable").where().path("someTable").isLike(subquery).end().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         // print = true;
         print(plan);
@@ -388,34 +370,21 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenUsingSubqueryInSubquery() {
         // Define the schemata ...
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3")
-                                  .addTable("otherTable", "columnA", "columnB")
-                                  .addTable("stillOther", "columnX", "columnY")
+                                  .addTable("otherTable", "columnA", "columnB").addTable("stillOther", "columnX", "columnY")
                                   .build();
         // Define the innermost subquery command ...
-        QueryCommand subquery2 = builder.select("columnY")
-                                        .from("stillOther")
-                                        .where()
-                                        .propertyValue("stillOther", "columnX")
-                                        .isLessThan()
-                                        .cast(3)
-                                        .asLong()
-                                        .end()
-                                        .query();
+        QueryCommand subquery2 = builder.select("columnY").from("stillOther").where().propertyValue("stillOther", "columnX")
+                                        .isLessThan().cast(3).asLong().end().query();
         builder = new QueryBuilder(typeSystem);
 
         // Define the outer subquery command ...
-        QueryCommand subquery1 = builder.select("columnA")
-                                        .from("otherTable")
-                                        .where()
-                                        .propertyValue("otherTable", "columnB")
-                                        .isEqualTo(subquery2)
-                                        .end()
-                                        .query();
+        QueryCommand subquery1 = builder.select("columnA").from("otherTable").where().propertyValue("otherTable", "columnB")
+                                        .isEqualTo(subquery2).end().query();
         builder = new QueryBuilder(typeSystem);
 
         // Define the query command (which uses the subquery) ...
         query = builder.selectStar().from("someTable").where().path("someTable").isLike(subquery1).end().query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         // print = true;
         print(plan);
@@ -486,43 +455,22 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenUsingTwoSubqueries() {
         // Define the schemata ...
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3")
-                                  .addTable("otherTable", "columnA", "columnB")
-                                  .addTable("stillOther", "columnX", "columnY")
+                                  .addTable("otherTable", "columnA", "columnB").addTable("stillOther", "columnX", "columnY")
                                   .build();
         // Define the first subquery command ...
-        QueryCommand subquery1 = builder.select("columnA")
-                                        .from("otherTable")
-                                        .where()
-                                        .propertyValue("otherTable", "columnB")
-                                        .isEqualTo("winner")
-                                        .end()
-                                        .query();
+        QueryCommand subquery1 = builder.select("columnA").from("otherTable").where().propertyValue("otherTable", "columnB")
+                                        .isEqualTo("winner").end().query();
         builder = new QueryBuilder(typeSystem);
 
         // Define the second subquery command ...
-        QueryCommand subquery2 = builder.select("columnY")
-                                        .from("stillOther")
-                                        .where()
-                                        .propertyValue("stillOther", "columnX")
-                                        .isLessThan()
-                                        .cast(3)
-                                        .asLong()
-                                        .end()
-                                        .query();
+        QueryCommand subquery2 = builder.select("columnY").from("stillOther").where().propertyValue("stillOther", "columnX")
+                                        .isLessThan().cast(3).asLong().end().query();
         builder = new QueryBuilder(typeSystem);
 
         // Define the query command (which uses the subquery) ...
-        query = builder.selectStar()
-                       .from("someTable")
-                       .where()
-                       .path("someTable")
-                       .isLike(subquery2)
-                       .and()
-                       .propertyValue("someTable", "column3")
-                       .isInSubquery(subquery1)
-                       .end()
-                       .query();
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, hints, problems);
+        query = builder.selectStar().from("someTable").where().path("someTable").isLike(subquery2).and()
+                       .propertyValue("someTable", "column3").isInSubquery(subquery1).end().query();
+        initQueryContext();
         plan = planner.createPlan(queryContext, query);
         // print = true;
         print(plan);

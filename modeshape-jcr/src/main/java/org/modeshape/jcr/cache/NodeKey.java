@@ -16,9 +16,11 @@
 package org.modeshape.jcr.cache;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.UUID;
 import org.infinispan.schematic.SchematicDb;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrRepository;
@@ -38,6 +40,14 @@ import org.modeshape.jcr.JcrRepository;
  */
 @Immutable
 public final class NodeKey implements Serializable, Comparable<NodeKey> {
+
+    public static final Comparator<NodeKey> COMPARATOR = new Comparator<NodeKey>() {
+        @Override
+        public int compare( NodeKey key1,
+                            NodeKey key2 ) {
+            return ObjectUtil.compareWithNulls(key1, key2);
+        }
+    };
 
     private static final int UUID_LENGTH = UUID.randomUUID().toString().length();
     private static final long serialVersionUID = 1L;

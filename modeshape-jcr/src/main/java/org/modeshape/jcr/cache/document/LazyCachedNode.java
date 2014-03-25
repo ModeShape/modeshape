@@ -313,6 +313,22 @@ public class LazyCachedNode implements CachedNode, Serializable {
     }
 
     @Override
+    public int getDepth( NodeCache cache ) throws NodeNotFoundException {
+        WorkspaceCache wsCache = workspaceCache(cache);
+        CachedNode parent = parent(wsCache);
+        if (parent != null) {
+            // This is not the root, so get our parent's depth and add 1 ...
+            return parent.getDepth(cache) + 1;
+        }
+        // make sure that this isn't a node which has been removed in the meantime
+        if (wsCache.getNode(key) == null) {
+            throw new NodeNotFoundException(key);
+        }
+        // This is the root node ...
+        return 0;
+    }
+
+    @Override
     public Name getPrimaryType( NodeCache cache ) {
         Property prop = getProperty(JcrLexicon.PRIMARY_TYPE, cache);
         assert prop != null;

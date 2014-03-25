@@ -17,12 +17,14 @@ package org.modeshape.jcr;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
 import org.modeshape.common.util.CheckArg;
@@ -140,7 +142,8 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
     }
 
     @Override
-    public BinaryValue createBinary( InputStream value, String hint ) {
+    public BinaryValue createBinary( InputStream value,
+                                     String hint ) {
         if (value == null) return null;
         return valueFactories.getBinaryFactory().create(value, hint);
     }
@@ -189,6 +192,12 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
     public JcrValue createValue( Date value ) {
         if (value == null) return null;
         return new JcrValue(valueFactories, PropertyType.DATE, value);
+    }
+
+    @Override
+    public Value createValue( URI value ) {
+        if (value == null) return null;
+        return new JcrValue(valueFactories, PropertyType.URI, value);
     }
 
     public JcrValue createValue( Reference value ) {

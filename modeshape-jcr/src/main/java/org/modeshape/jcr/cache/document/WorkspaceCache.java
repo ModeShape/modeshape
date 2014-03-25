@@ -254,7 +254,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
 
     @Override
     public Iterator<NodeKey> getAllNodeKeysAtAndBelow( NodeKey startingKey ) {
-        return new NodeCacheIterator(this, startingKey);
+        return new NodeCacheIterator(this, startingKey, null);
     }
 
     @Override

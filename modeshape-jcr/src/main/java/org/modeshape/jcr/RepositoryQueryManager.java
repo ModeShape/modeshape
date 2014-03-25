@@ -17,7 +17,6 @@ package org.modeshape.jcr;
 
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -26,15 +25,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.jcr.query.InvalidQueryException;
-import javax.transaction.Synchronization;
-import org.hibernate.search.backend.TransactionContext;
-import org.hibernate.search.engine.spi.SearchFactoryImplementor;
-import org.hibernate.search.spi.SearchFactoryBuilder;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.api.query.QueryCancelledException;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
@@ -43,60 +39,47 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.CancellableQuery;
-import org.modeshape.jcr.query.QueryIndexing;
-import org.modeshape.jcr.query.lucene.LuceneQueryEngine;
-import org.modeshape.jcr.query.lucene.LuceneSearchConfiguration;
-import org.modeshape.jcr.query.lucene.basic.BasicLuceneConfiguration;
-import org.modeshape.jcr.query.optimize.Optimizer;
-import org.modeshape.jcr.query.optimize.RuleBasedOptimizer;
-import org.modeshape.jcr.query.plan.CanonicalPlanner;
+import org.modeshape.jcr.query.QueryContext;
+import org.modeshape.jcr.query.QueryEngine;
+import org.modeshape.jcr.query.QueryEngineBuilder;
+import org.modeshape.jcr.query.QueryResults;
+import org.modeshape.jcr.query.engine.IndexQueryEngine;
+import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.query.plan.PlanHints;
-import org.modeshape.jcr.query.plan.Planner;
 import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.spi.query.QueryIndexWriter;
+import org.modeshape.jcr.spi.query.QueryIndexWriter.IndexingContext;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
 /**
- * The query manager a the repository. Each instance lazily starts up the {@link LuceneQueryEngine}, which can be expensive.
+ * The query manager a the repository. Each instance lazily starts up the {@link QueryEngine}, which can be expensive.
  */
 class RepositoryQueryManager {
 
+    private final Logger logger = Logger.getLogger(getClass());
     private final RunningState runningState;
     private final ExecutorService indexingExecutorService;
-    private final LuceneSearchConfiguration config;
+    private final RepositoryConfiguration repoConfig;
     private final Lock engineInitLock = new ReentrantLock();
     @GuardedBy( "engineInitLock" )
-    private volatile LuceneQueryEngine queryEngine;
-    private final Logger logger = Logger.getLogger(getClass());
-
-    private Future<Void> asyncReindexingResult;
-    private JMSMasterIndexingListener jmsListener;
+    private volatile QueryEngine queryEngine;
+    private volatile Future<Void> asyncReindexingResult;
 
     protected RepositoryQueryManager( RunningState runningState ) {
         this.runningState = runningState;
         this.indexingExecutorService = null;
-        this.config = null;
+        this.repoConfig = null;
     }
 
     RepositoryQueryManager( RunningState runningState,
                             ExecutorService indexingExecutorService,
-                            Properties backendProps,
-                            Properties indexingProps,
-                            Properties indexStorageProps ) {
+                            RepositoryConfiguration config ) {
         this.runningState = runningState;
         this.indexingExecutorService = indexingExecutorService;
-        // Set up the query engine ...
-        String repoName = runningState.name();
-        this.config = new BasicLuceneConfiguration(repoName, backendProps, indexingProps, indexStorageProps);
-        checkForJMSMasterConfiguration(backendProps);
-    }
-
-    private void checkForJMSMasterConfiguration( Properties backendProperties ) {
-        String backendType = backendProperties.getProperty(RepositoryConfiguration.FieldName.TYPE);
-        if (backendType.equalsIgnoreCase(RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_JMS_MASTER)) {
-            this.jmsListener = new JMSMasterIndexingListener(backendProperties);
-        }
+        this.repoConfig = config;
     }
 
     void shutdown() {
@@ -111,15 +94,10 @@ class RepositoryQueryManager {
                         queryEngine = null;
                     }
                 }
-                if (jmsListener != null) {
-                    jmsListener.shutdown();
-                    jmsListener = null;
-                }
             } finally {
                 engineInitLock.unlock();
             }
         }
-
     }
 
     void stopReindexing() {
@@ -145,44 +123,73 @@ class RepositoryQueryManager {
                                    RepositoryCache repositoryCache,
                                    Set<String> workspaceNames,
                                    Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
-                                   QueryCommand query,
+                                   final QueryCommand query,
                                    Schemata schemata,
+                                   NodeTypes nodeTypes,
                                    PlanHints hints,
-                                   Map<String, Object> variables ) throws InvalidQueryException {
-        return queryEngine().query(context,
-                                   repositoryCache,
-                                   workspaceNames,
-                                   overriddenNodeCachesByWorkspaceName,
-                                   (org.modeshape.jcr.query.model.QueryCommand)query,
-                                   schemata,
-                                   hints,
-                                   variables);
+                                   Map<String, Object> variables ) {
+        final QueryEngine queryEngine = queryEngine();
+        final QueryContext queryContext = queryEngine.createQueryContext(context, repositoryCache, workspaceNames,
+                                                                         overriddenNodeCachesByWorkspaceName, schemata,
+                                                                         nodeTypes, new BufferManager(context), hints, variables);
+        final org.modeshape.jcr.query.model.QueryCommand command = (org.modeshape.jcr.query.model.QueryCommand)query;
+        return new CancellableQuery() {
+            private final Lock lock = new ReentrantLock();
+            private QueryResults results;
+
+            @Override
+            public QueryResults execute() throws QueryCancelledException, RepositoryException {
+                try {
+                    lock.lock();
+                    if (results == null) {
+                        // this will block and will hold the lock until it is done ...
+                        results = queryEngine.execute(queryContext, command);
+                    }
+                    return results;
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public boolean cancel() {
+                return queryContext.cancel();
+            }
+        };
     }
 
-    public QueryIndexing getIndexes() {
-        return queryEngine().getQueryIndexing();
+    /**
+     * Get the writer to the indexes.
+     * 
+     * @return the index writer; never null
+     */
+    public QueryIndexWriter getIndexes() {
+        return queryEngine().getQueryIndexWriter();
     }
 
-    protected final LuceneQueryEngine queryEngine() {
+    /**
+     * Obtain the query engine, which is created lazily and in a thread-safe manner.
+     * 
+     * @return the query engine; never null
+     */
+    protected final QueryEngine queryEngine() {
         if (queryEngine == null) {
             try {
                 engineInitLock.lock();
                 if (queryEngine == null) {
-                    Logger.getLogger(getClass()).debug("Hibernate Search configuration for repository '{0}': {1}",
-                                                       runningState.name(),
-                                                       config);
-                    boolean enableFullTextSearch = runningState.isFullTextSearchEnabled();
-                    Planner planner = new CanonicalPlanner();
-                    Optimizer optimizer = new RuleBasedOptimizer();
-                    SearchFactoryImplementor searchFactory = new SearchFactoryBuilder().configuration(config)
-                                                                                       .buildSearchFactory();
-                    queryEngine = new LuceneQueryEngine(runningState.context(), runningState.name(), planner, optimizer,
-                                                        searchFactory, config.getVersion(), enableFullTextSearch);
-
-                    if (this.jmsListener != null) {
-                        //if we're dealing with a JMS master configuration, we need to start the JMS listener
-                        this.jmsListener.start(this.queryEngine.getAllIndexesManager());
+                    QueryEngineBuilder builder = null;
+                    if (!repoConfig.getIndexes().getProviders().isEmpty()) {
+                        // There is at least one index provider ...
+                        builder = IndexQueryEngine.builder();
+                        logger.debug("Queries with indexes are enabled for the '{0}' repository. Executing queries may require scanning the repository contents when the query cannot use the defined indexes.",
+                                     repoConfig.getName());
+                    } else {
+                        // There are no indexes ...
+                        builder = ScanningQueryEngine.builder();
+                        logger.debug("Queries with no indexes are enabled for the '{0}' repository. Executing queries will always scan the repository contents.",
+                                     repoConfig.getName());
                     }
+                    queryEngine = builder.using(repoConfig, runningState.context()).build();
                 }
             } finally {
                 engineInitLock.unlock();
@@ -222,7 +229,8 @@ class RepositoryQueryManager {
     }
 
     protected boolean indexesEmpty() {
-        return getIndexes().initializedIndexes();
+        QueryIndexWriter indexes = getIndexes();
+        return indexes.initializedIndexes() && !indexes.canBeSkipped();
     }
 
     /**
@@ -231,6 +239,7 @@ class RepositoryQueryManager {
      * @param includeSystemContent true if the system content should also be indexed
      */
     private void reindexContent( boolean includeSystemContent ) {
+        if (getIndexes().canBeSkipped()) return;
         // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
         NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
         RepositoryCache repoCache = runningState.repositoryCache();
@@ -277,6 +286,10 @@ class RepositoryQueryManager {
     public void reindexContent( JcrWorkspace workspace,
                                 Path path,
                                 int depth ) {
+        if (getIndexes().canBeSkipped()) {
+            // There's no indexes that require updating ...
+            return;
+        }
         CheckArg.isPositive(depth, "depth");
         JcrSession session = workspace.getSession();
         NodeCache cache = session.cache().getWorkspace();
@@ -310,6 +323,8 @@ class RepositoryQueryManager {
                                    CachedNode node,
                                    int depth,
                                    boolean reindexSystemContent ) {
+        final QueryIndexWriter indexes = getIndexes();
+        if (indexes.canBeSkipped()) return;
         if (!node.isQueryable(cache)) {
             return;
         }
@@ -319,16 +334,9 @@ class RepositoryQueryManager {
         Path nodePath = paths.getPath(node);
 
         // Index the first node ...
-        final QueryIndexing indexes = getIndexes();
-        final TransactionContext txnCtx = NO_TRANSACTION;
-        indexes.updateIndex(workspaceName,
-                            node.getKey(),
-                            nodePath,
-                            node.getPrimaryType(cache),
-                            node.getMixinTypes(cache),
-                            node.getProperties(cache),
-                            schemata,
-                            txnCtx);
+        final IndexingContext indxCtx = indexes.createIndexingContext(null); // not in a transaction
+        indexes.updateIndex(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
+                            node.getProperties(cache), schemata, indxCtx);
 
         if (depth == 1) return;
 
@@ -374,14 +382,8 @@ class RepositoryQueryManager {
             nodePath = paths.getPath(node);
 
             // Index the node ...
-            indexes.updateIndex(workspaceName,
-                                node.getKey(),
-                                nodePath,
-                                node.getPrimaryType(cache),
-                                node.getMixinTypes(cache),
-                                node.getProperties(cache),
-                                schemata,
-                                txnCtx);
+            indexes.updateIndex(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
+                                node.getProperties(cache), schemata, indxCtx);
 
             // Check the depth ...
             if (nodePath.size() <= depth) {
@@ -468,20 +470,4 @@ class RepositoryQueryManager {
         });
     }
 
-    protected static final TransactionContext NO_TRANSACTION = new TransactionContext() {
-        @Override
-        public boolean isTransactionInProgress() {
-            return false;
-        }
-
-        @Override
-        public Object getTransactionIdentifier() {
-            throw new UnsupportedOperationException("Should not be called since we're just reading content");
-        }
-
-        @Override
-        public void registerSynchronization( Synchronization synchronization ) {
-            throw new UnsupportedOperationException("Should not be called since we're just reading content");
-        }
-    };
 }

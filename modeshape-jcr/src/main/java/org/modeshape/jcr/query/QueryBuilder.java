@@ -59,6 +59,7 @@ import org.modeshape.jcr.query.model.NodeLocalName;
 import org.modeshape.jcr.query.model.NodeName;
 import org.modeshape.jcr.query.model.NodePath;
 import org.modeshape.jcr.query.model.Not;
+import org.modeshape.jcr.query.model.NullOrder;
 import org.modeshape.jcr.query.model.Or;
 import org.modeshape.jcr.query.model.Order;
 import org.modeshape.jcr.query.model.Ordering;
@@ -161,13 +162,8 @@ import org.modeshape.jcr.value.PropertyType;
  * <td>
  * 
  * <pre>
- * query = builder.selectStar()
- *                .from(&quot;table1 AS t1&quot;)
- *                .innerJoin(&quot;table2 AS t2&quot;)
- *                .on(&quot;t1.c0=t2.c0&quot;)
- *                .innerJoin(&quot;table3 AS t3&quot;)
- *                .on(&quot;t1.c1=t3.c1&quot;)
- *                .query();
+ * query = builder.selectStar().from(&quot;table1 AS t1&quot;).innerJoin(&quot;table2 AS t2&quot;).on(&quot;t1.c0=t2.c0&quot;).innerJoin(&quot;table3 AS t3&quot;)
+ *                .on(&quot;t1.c1=t3.c1&quot;).query();
  * </pre>
  * 
  * </td>
@@ -854,7 +850,7 @@ public class QueryBuilder {
          * @return the interface for specifying the operand that is to be ordered; never null
          */
         public OrderByOperandBuilder ascending() {
-            return new SingleOrderByOperandBuilder(this, Order.ASCENDING);
+            return new SingleOrderByOperandBuilder(this, Order.ASCENDING, NullOrder.NULLS_LAST);
         }
 
         /**
@@ -863,7 +859,25 @@ public class QueryBuilder {
          * @return the interface for specifying the operand that is to be ordered; never null
          */
         public OrderByOperandBuilder descending() {
-            return new SingleOrderByOperandBuilder(this, Order.DESCENDING);
+            return new SingleOrderByOperandBuilder(this, Order.DESCENDING, NullOrder.NULLS_FIRST);
+        }
+
+        /**
+         * Begin specifying an order-by specification using {@link Order#ASCENDING ascending order}.
+         * 
+         * @return the interface for specifying the operand that is to be ordered; never null
+         */
+        public OrderByOperandBuilder ascendingNullsFirst() {
+            return new SingleOrderByOperandBuilder(this, Order.ASCENDING, NullOrder.NULLS_FIRST);
+        }
+
+        /**
+         * Begin specifying an order-by specification using {@link Order#DESCENDING descending order}.
+         * 
+         * @return the interface for specifying the operand that is to be ordered; never null
+         */
+        public OrderByOperandBuilder descendingNullsLast() {
+            return new SingleOrderByOperandBuilder(this, Order.DESCENDING, NullOrder.NULLS_LAST);
         }
 
         /**
@@ -887,16 +901,19 @@ public class QueryBuilder {
 
     protected class SingleOrderByOperandBuilder implements OrderByOperandBuilder {
         private final Order order;
+        private final NullOrder nullOrder;
         private final OrderByBuilder builder;
 
         protected SingleOrderByOperandBuilder( OrderByBuilder builder,
-                                               Order order ) {
+                                               Order order,
+                                               NullOrder nullOrder ) {
             this.order = order;
+            this.nullOrder = nullOrder;
             this.builder = builder;
         }
 
         protected OrderByBuilder addOrdering( DynamicOperand operand ) {
-            Ordering ordering = new Ordering(operand, order);
+            Ordering ordering = new Ordering(operand, order, nullOrder);
             QueryBuilder.this.orderings.add(ordering);
             return builder;
         }
@@ -951,7 +968,7 @@ public class QueryBuilder {
 
         @Override
         public OrderByOperandBuilder lowerCaseOf() {
-            return new SingleOrderByOperandBuilder(builder, order) {
+            return new SingleOrderByOperandBuilder(builder, order, nullOrder) {
                 @Override
                 protected OrderByBuilder addOrdering( DynamicOperand operand ) {
                     return super.addOrdering(new LowerCase(operand));
@@ -961,7 +978,7 @@ public class QueryBuilder {
 
         @Override
         public OrderByOperandBuilder upperCaseOf() {
-            return new SingleOrderByOperandBuilder(builder, order) {
+            return new SingleOrderByOperandBuilder(builder, order, nullOrder) {
                 @Override
                 protected OrderByBuilder addOrdering( DynamicOperand operand ) {
                     return super.addOrdering(new UpperCase(operand));

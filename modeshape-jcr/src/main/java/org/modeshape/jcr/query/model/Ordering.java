@@ -15,33 +15,38 @@
  */
 package org.modeshape.jcr.query.model;
 
-import javax.jcr.query.qom.QueryObjectModelConstants;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 
 /**
  * A specification of the ordering for the results.
  */
 @Immutable
-public class Ordering implements LanguageObject, javax.jcr.query.qom.Ordering {
+public class Ordering implements LanguageObject, org.modeshape.jcr.api.query.qom.Ordering {
     private static final long serialVersionUID = 1L;
 
     private final DynamicOperand operand;
     private final Order order;
+    private final NullOrder nullOrder;
 
     /**
      * Create a new ordering specification, given the supplied operand and order.
      * 
      * @param operand the operand being ordered
      * @param order the order type
+     * @param nullOrder the order specification for null values; may not be null
      * @throws IllegalArgumentException if the operand or order type is null
      */
     public Ordering( DynamicOperand operand,
-                     Order order ) {
+                     Order order,
+                     NullOrder nullOrder ) {
         CheckArg.isNotNull(operand, "operand");
         CheckArg.isNotNull(order, "order");
+        CheckArg.isNotNull(nullOrder, "nullOrder");
         this.operand = operand;
         this.order = order;
+        this.nullOrder = nullOrder;
     }
 
     @Override
@@ -49,13 +54,16 @@ public class Ordering implements LanguageObject, javax.jcr.query.qom.Ordering {
         return operand;
     }
 
-    /**
-     * The order type.
-     * 
-     * @return the type; never null
-     */
     public Order order() {
         return order;
+    }
+
+    public NullOrder nullOrder() {
+        return nullOrder;
+    }
+
+    public boolean isDefaultNullOrder() {
+        return NullOrder.defaultOrder(order) == nullOrder;
     }
 
     @Override
@@ -65,6 +73,18 @@ public class Ordering implements LanguageObject, javax.jcr.query.qom.Ordering {
                 return QueryObjectModelConstants.JCR_ORDER_ASCENDING;
             case DESCENDING:
                 return QueryObjectModelConstants.JCR_ORDER_DESCENDING;
+        }
+        assert false;
+        return null;
+    }
+
+    @Override
+    public String getNullOrder() {
+        switch (nullOrder()) {
+            case NULLS_FIRST:
+                return QueryObjectModelConstants.JCR_ORDER_NULLS_FIRST;
+            case NULLS_LAST:
+                return QueryObjectModelConstants.JCR_ORDER_NULLS_LAST;
         }
         assert false;
         return null;

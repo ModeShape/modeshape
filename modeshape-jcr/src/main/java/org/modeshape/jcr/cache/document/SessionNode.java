@@ -438,6 +438,23 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
+    public int getDepth( NodeCache cache ) throws NodeNotFoundException {
+        AbstractSessionCache session = session(cache);
+        CachedNode parent = parent(session);
+        if (parent != null) {
+            // This is not the root, so get our parent's depth and add 1 ...
+            return parent.getDepth(cache) + 1;
+        }
+        // make sure that this isn't a node which has been removed in the meantime
+        CachedNode persistedNode = workspace(cache).getNode(key);
+        if (persistedNode == null) {
+            throw new NodeNotFoundException(key);
+        }
+        // This is the root node ...
+        return 0;
+    }
+
+    @Override
     public Path getPath( NodeCache cache ) {
         AbstractSessionCache session = session(cache);
         CachedNode parent = parent(session);
@@ -788,7 +805,7 @@ public class SessionNode implements MutableCachedNode {
             Property oldProperty = persistedNode.getProperty(propertyName, cache);
             if (oldProperty != null && oldProperty.isReference()) {
                 oldPropertyWasReference = true;
-                propertyWhichWasRemoved  = oldProperty;
+                propertyWhichWasRemoved = oldProperty;
                 for (Object referenceObject : oldProperty.getValuesAsArray()) {
                     assert referenceObject instanceof Reference;
                     referencesToRemove.add((Reference)referenceObject);
@@ -2141,24 +2158,30 @@ public class SessionNode implements MutableCachedNode {
         private final Map<String, Set<NodeKey>> addedStrong = new HashMap<>();
         private final Map<String, Set<NodeKey>> removedStrong = new HashMap<>();
 
-        public void addWeakReferrer( Property property, NodeKey nodeKey ) {
+        public void addWeakReferrer( Property property,
+                                     NodeKey nodeKey ) {
             putInFirstAndRemoveFromSecond(property, nodeKey, addedWeak, removedWeak);
         }
 
-        public void removeWeakReferrer( Property property, NodeKey nodeKey ) {
+        public void removeWeakReferrer( Property property,
+                                        NodeKey nodeKey ) {
             putInFirstAndRemoveFromSecond(property, nodeKey, removedWeak, addedWeak);
         }
 
-        public void addStrongReferrer( Property property, NodeKey nodeKey ) {
+        public void addStrongReferrer( Property property,
+                                       NodeKey nodeKey ) {
             putInFirstAndRemoveFromSecond(property, nodeKey, addedStrong, removedStrong);
         }
 
-        public void removeStrongReferrer( Property property, NodeKey nodeKey ) {
+        public void removeStrongReferrer( Property property,
+                                          NodeKey nodeKey ) {
             putInFirstAndRemoveFromSecond(property, nodeKey, removedStrong, addedStrong);
         }
 
-        private void putInFirstAndRemoveFromSecond(Property property, NodeKey nodeKey, Map<String, Set<NodeKey>> firstMap,
-                                                   Map<String, Set<NodeKey>> secondMap) {
+        private void putInFirstAndRemoveFromSecond( Property property,
+                                                    NodeKey nodeKey,
+                                                    Map<String, Set<NodeKey>> firstMap,
+                                                    Map<String, Set<NodeKey>> secondMap ) {
             String propertyKey = keyFromProperty(property);
 
             Set<NodeKey> toAdd = firstMap.get(propertyKey);
@@ -2177,7 +2200,7 @@ public class SessionNode implements MutableCachedNode {
             }
         }
 
-        private String keyFromProperty(Property property) {
+        private String keyFromProperty( Property property ) {
             StringBuilder key = new StringBuilder(property.getName().getString()).append("_");
             if (property.isSingle()) {
                 key.append("_sv");
@@ -2343,17 +2366,16 @@ public class SessionNode implements MutableCachedNode {
                     } else {
                         // The child is a normal child of this node ...
 
-                        //check if there is a child with the same segment in the target which was not processed yet
+                        // check if there is a child with the same segment in the target which was not processed yet
                         ChildReferences targetNodeChildReferences = targetNode.getChildReferences(targetCache);
                         ChildReference targetChildSameSegment = targetNodeChildReferences.getChild(sourceChildReference.getSegment());
-                        if (targetChildSameSegment != null &&
-                            !sourceToTargetKeys.containsValue(targetChildSameSegment.getKey())) {
-                            //we found a child of the target node which has the same segment and has not been processed yet
-                            //meaning it was present in the target before the deep copy/clone started (e.g. an autocreated node)
+                        if (targetChildSameSegment != null && !sourceToTargetKeys.containsValue(targetChildSameSegment.getKey())) {
+                            // we found a child of the target node which has the same segment and has not been processed yet
+                            // meaning it was present in the target before the deep copy/clone started (e.g. an autocreated node)
                             childCopy = targetCache.mutable(targetChildSameSegment.getKey());
                             if (!isExternal) {
-                                //if the child is not external, we should remove it because the new child needs to be identical
-                                //to the source child
+                                // if the child is not external, we should remove it because the new child needs to be identical
+                                // to the source child
                                 targetNode.removeChild(targetCache, targetChildSameSegment.getKey());
                                 targetCache.destroy(targetChildSameSegment.getKey());
                                 childCopy = null;
@@ -2361,9 +2383,8 @@ public class SessionNode implements MutableCachedNode {
                         }
 
                         if (childCopy == null) {
-                            //we should create a new child in target with a preferred key (different for copy/clone)
-                            String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(),
-                                                                                        sourceChildName,
+                            // we should create a new child in target with a preferred key (different for copy/clone)
+                            String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(), sourceChildName,
                                                                                         sourceChild.getPrimaryType(sourceCache));
                             NodeKey newKey = createTargetKeyFor(childKey, targetKey, childCopyPreferredKey);
                             childCopy = targetNode.createChild(targetCache, newKey, sourceChildName, null);

@@ -186,13 +186,25 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
     @Override
     public Ordering ascending( javax.jcr.query.qom.DynamicOperand operand ) {
         DynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, DynamicOperand.class, "operand");
-        return new Ordering(jcrOperand, Order.ASCENDING);
+        return new Ordering(jcrOperand, Order.ASCENDING, NullOrder.NULLS_LAST);
+    }
+
+    @Override
+    public javax.jcr.query.qom.Ordering ascendingNullsFirst( javax.jcr.query.qom.DynamicOperand operand ) {
+        DynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, DynamicOperand.class, "operand");
+        return new Ordering(jcrOperand, Order.ASCENDING, NullOrder.NULLS_FIRST);
     }
 
     @Override
     public Ordering descending( javax.jcr.query.qom.DynamicOperand operand ) {
         DynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, DynamicOperand.class, "operand");
-        return new Ordering(jcrOperand, Order.DESCENDING);
+        return new Ordering(jcrOperand, Order.DESCENDING, NullOrder.NULLS_FIRST);
+    }
+
+    @Override
+    public javax.jcr.query.qom.Ordering descendingNullsLast( javax.jcr.query.qom.DynamicOperand operand ) {
+        DynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, DynamicOperand.class, "operand");
+        return new Ordering(jcrOperand, Order.DESCENDING, NullOrder.NULLS_LAST);
     }
 
     @Override
@@ -280,8 +292,7 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
                                           String propertyName,
                                           javax.jcr.query.qom.StaticOperand fullTextSearchExpression ) throws RepositoryException {
         CheckArg.isNotNull(selectorName, "selectorName");
-        StaticOperand expression = CheckArg.getInstanceOf(fullTextSearchExpression,
-                                                          StaticOperand.class,
+        StaticOperand expression = CheckArg.getInstanceOf(fullTextSearchExpression, StaticOperand.class,
                                                           "fullTextSearchExpression");
         return new FullTextSearch(selectorName(selectorName), propertyName, expression, null);
     }
@@ -492,7 +503,7 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
 
     @Override
     public Relike relike( javax.jcr.query.qom.StaticOperand operand1,
-                          javax.jcr.query.qom.PropertyValue operand2) {
+                          javax.jcr.query.qom.PropertyValue operand2 ) {
         StaticOperand jcrOperand1 = CheckArg.getInstanceOf(operand2, StaticOperand.class, "operand1");
         PropertyValue jcrOperand2 = CheckArg.getInstanceOf(operand1, PropertyValue.class, "operand2");
         return new Relike(jcrOperand1, jcrOperand2);

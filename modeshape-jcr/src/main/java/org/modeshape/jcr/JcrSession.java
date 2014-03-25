@@ -71,7 +71,6 @@ import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
-import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.monitor.DurationMetric;

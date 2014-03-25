@@ -305,13 +305,8 @@ public class JcrTools {
                 }
             }
         };
-        session.getWorkspace().getObservationManager().addEventListener(listener,
-                                                                        Event.NODE_ADDED,
-                                                                        parentPath,
-                                                                        true,
-                                                                        null,
-                                                                        null,
-                                                                        false);
+        session.getWorkspace().getObservationManager()
+               .addEventListener(listener, Event.NODE_ADDED, parentPath, true, null, null, false);
         uploadFile(session, nodePath, url);
 
         // Save the session ...
@@ -465,6 +460,10 @@ public class JcrTools {
 
     public boolean isDebug() {
         return debug;
+    }
+
+    public void setDebug( boolean debug ) {
+        this.debug = debug;
     }
 
     public void print( Object msg ) {

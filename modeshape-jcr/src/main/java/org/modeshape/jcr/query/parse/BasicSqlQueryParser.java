@@ -62,6 +62,7 @@ import org.modeshape.jcr.query.model.NodeLocalName;
 import org.modeshape.jcr.query.model.NodeName;
 import org.modeshape.jcr.query.model.NodePath;
 import org.modeshape.jcr.query.model.Not;
+import org.modeshape.jcr.query.model.NullOrder;
 import org.modeshape.jcr.query.model.Or;
 import org.modeshape.jcr.query.model.Order;
 import org.modeshape.jcr.query.model.Ordering;
@@ -765,7 +766,7 @@ public class BasicSqlQueryParser implements QueryParser {
             StaticOperand left = parseStaticOperand(tokens, typeSystem);
             tokens.consume(',');
             PropertyValue right = parsePropertyValue(tokens, typeSystem, source);
-            tokens.consume(')');            
+            tokens.consume(')');
             constraint = new Relike(left, right);
         } else {
             // First try a property existance ...
@@ -887,7 +888,10 @@ public class BasicSqlQueryParser implements QueryParser {
         Order order = Order.ASCENDING;
         if (tokens.canConsume("DESC")) order = Order.DESCENDING;
         if (tokens.canConsume("ASC")) order = Order.ASCENDING;
-        return ordering(operand, order);
+        NullOrder nullOrder = NullOrder.defaultOrder(order);
+        if (tokens.canConsume("NULLS", "FIRST")) nullOrder = NullOrder.NULLS_FIRST;
+        if (tokens.canConsume("NULLS", "LAST")) nullOrder = NullOrder.NULLS_LAST;
+        return ordering(operand, order, nullOrder);
     }
 
     protected Constraint parsePropertyExistance( TokenStream tokens,
@@ -978,11 +982,8 @@ public class BasicSqlQueryParser implements QueryParser {
                 Object literal = typeFactory.create(value);
                 return literal(typeSystem, literal);
             } catch (ValueFormatException e) {
-                String msg = GraphI18n.valueCannotBeCastToSpecifiedType.text(value,
-                                                                             pos.getLine(),
-                                                                             pos.getColumn(),
-                                                                             typeFactory.getTypeName(),
-                                                                             e.getMessage());
+                String msg = GraphI18n.valueCannotBeCastToSpecifiedType.text(value, pos.getLine(), pos.getColumn(),
+                                                                             typeFactory.getTypeName(), e.getMessage());
                 throw new ParsingException(pos, msg);
             }
         }
@@ -1274,9 +1275,7 @@ public class BasicSqlQueryParser implements QueryParser {
                 int offset = to - first;
                 if (offset < 0) {
                     Position pos = tokens.previousPosition();
-                    String msg = GraphI18n.secondValueInLimitRangeCannotBeLessThanFirst.text(first,
-                                                                                             to,
-                                                                                             pos.getLine(),
+                    String msg = GraphI18n.secondValueInLimitRangeCannotBeLessThanFirst.text(first, to, pos.getLine(),
                                                                                              pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
@@ -1288,6 +1287,10 @@ public class BasicSqlQueryParser implements QueryParser {
             }
             // No offset
             return limit(first, 0);
+        }
+        if (tokens.canConsume("OFFSET")) {
+            int offset = tokens.consumeInteger();
+            return limit(Integer.MAX_VALUE, offset);
         }
         return null;
     }
@@ -1523,8 +1526,9 @@ public class BasicSqlQueryParser implements QueryParser {
     }
 
     protected Ordering ordering( DynamicOperand operand,
-                                 Order order ) {
-        return new Ordering(operand, order);
+                                 Order order,
+                                 NullOrder nullOrder ) {
+        return new Ordering(operand, order, nullOrder);
     }
 
     protected PropertyExistence propertyExistence( SelectorName selector,

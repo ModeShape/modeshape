@@ -306,7 +306,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     }
 
     final Set<NodeType> nodeTypes( Set<Name> names ) {
-        RepositoryNodeTypeManager.NodeTypes nodeTypes = session.repository().nodeTypeManager().getNodeTypes();
+        NodeTypes nodeTypes = session.repository().nodeTypeManager().getNodeTypes();
         Set<NodeType> result = new HashSet<NodeType>(names.size());
         for (Name name : names) {
             result.add(nodeTypes.getNodeType(name));

@@ -58,7 +58,8 @@ public class Literal implements StaticOperand {
             Literal that = (Literal)obj;
             return this.value.equals(that.value) || this.value.toString().equals(that.value.toString());
         }
-        return false;
+        // Otherwise, check whether this literal's value is the same as the object ...
+        return this.value.equals(obj);
     }
 
     @Override

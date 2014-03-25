@@ -25,6 +25,14 @@ import javax.jcr.PropertyType;
 public interface QueryResult extends javax.jcr.query.QueryResult {
 
     /**
+     * Return whether the number of rows in the results is 0. This is often significantly more efficient and more accurate than
+     * {@link javax.jcr.RangeIterator#getSize() getting the size} of the {@link #getRows() rows} or {@link #getNodes() nodes}.
+     * 
+     * @return true if this result set is empty, or false if there is at least one row.
+     */
+    public boolean isEmpty();
+
+    /**
      * Returns an array of the {@link PropertyType} name for each of the columns in this result.
      * 
      * @return the array of property type names; never null, never has null elements, and the size always matches

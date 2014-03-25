@@ -33,7 +33,6 @@ import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.query.IndexRules;
@@ -97,7 +96,7 @@ public class NodeTypeSchemata implements Schemata {
 
         // Build the schemata for the current node types ...
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
-        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(context);
+        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(context, nodeTypes);
 
         // Build the fast-search for type names based upon PropertyType values ...
         types = new HashMap<Integer, String>();
@@ -108,9 +107,9 @@ public class NodeTypeSchemata implements Schemata {
         types.put(PropertyType.DOUBLE, typeSystem.getDoubleFactory().getTypeName());
         types.put(PropertyType.LONG, typeSystem.getLongFactory().getTypeName());
         types.put(PropertyType.PATH, typeSystem.getStringFactory().getTypeName());
-        types.put(PropertyType.REFERENCE, typeSystem.getReferenceFactory().getTypeName());
-        types.put(PropertyType.WEAKREFERENCE, typeSystem.getReferenceFactory().getTypeName());
-        types.put(org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE, typeSystem.getReferenceFactory().getTypeName());
+        types.put(PropertyType.REFERENCE, typeSystem.getStringFactory().getTypeName());
+        types.put(PropertyType.WEAKREFERENCE, typeSystem.getStringFactory().getTypeName());
+        types.put(org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.STRING, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.NAME, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.URI, typeSystem.getStringFactory().getTypeName());
@@ -123,9 +122,7 @@ public class NodeTypeSchemata implements Schemata {
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
         IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(IndexRules.DEFAULT_RULES);
-        indexRulesBuilder.defaultTo(Field.Store.NO,
-                                    Field.Index.ANALYZED,
-                                    DEFAULT_CAN_CONTAIN_REFERENCES,
+        indexRulesBuilder.defaultTo(Field.Store.NO, Field.Index.ANALYZED, DEFAULT_CAN_CONTAIN_REFERENCES,
                                     DEFAULT_FULL_TEXT_SEARCHABLE);
         addAllNodesTable(builder, indexRulesBuilder, context, pseudoProperties);
 
@@ -221,21 +218,10 @@ public class NodeTypeSchemata implements Schemata {
             Set<Operator> operators = operatorsFor(defn);
             Object minimum = defn.getMinimumValue();
             Object maximum = defn.getMaximumValue();
-            builder.addColumn(tableName,
-                              columnName,
-                              type,
-                              requiredType,
-                              fullTextSearchable,
-                              orderable,
-                              minimum,
-                              maximum,
+            builder.addColumn(tableName, columnName, type, requiredType, fullTextSearchable, orderable, minimum, maximum,
                               operators);
             // And build an indexing rule for this type ...
-            if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder,
-                                                       defn,
-                                                       type,
-                                                       typeSystem,
-                                                       canBeReference,
+            if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder, defn, type, typeSystem, canBeReference,
                                                        isStrongReference);
         }
         if (additionalProperties != null) {
@@ -260,25 +246,14 @@ public class NodeTypeSchemata implements Schemata {
                 Object minimum = defn.getMinimumValue();
                 Object maximum = defn.getMaximumValue();
                 org.modeshape.jcr.value.PropertyType requiredType = PropertyTypeUtil.modePropertyTypeFor(defn.getRequiredType());
-                builder.addColumn(tableName,
-                                  columnName,
-                                  type,
-                                  requiredType,
-                                  fullTextSearchable,
-                                  orderable,
-                                  minimum,
-                                  maximum,
+                builder.addColumn(tableName, columnName, type, requiredType, fullTextSearchable, orderable, minimum, maximum,
                                   operators);
                 if (!includePseudoColumnsInSelectStar) {
                     builder.excludeFromSelectStar(tableName, columnName);
                 }
 
                 // And build an indexing rule for this type ...
-                if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder,
-                                                           defn,
-                                                           type,
-                                                           typeSystem,
-                                                           canBeReference,
+                if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder, defn, type, typeSystem, canBeReference,
                                                            isStrongReference);
             }
         }
@@ -530,7 +505,7 @@ public class NodeTypeSchemata implements Schemata {
             this.session = session;
             this.context = this.session.context();
             this.nameFactory = context.getValueFactories().getNameFactory();
-            this.builder = ImmutableSchemata.createBuilder(context);
+            this.builder = ImmutableSchemata.createBuilder(context, session.nodeTypes());
             // Add the "AllNodes" table ...
             addAllNodesTable(builder, null, context, null);
             this.schemata = builder.build();

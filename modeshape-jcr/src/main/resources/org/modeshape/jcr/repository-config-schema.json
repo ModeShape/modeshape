@@ -712,6 +712,42 @@
                 }
             }
         },
+        "indexes" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "description" : "The specification of the indexes used in the repository.",
+            "properties" : {
+                "description" : {
+                    "type" : "string",
+                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
+                "providers" : {
+                    "type" : "object",
+                    "description" : "The named set of index provider configurations",
+                    "required" : false,
+                    "additionalProperties" : {
+                        "type" : "object",
+                        "additionalProperties" : true,
+                        "description" : "Specification of a sequencer configuration.",
+                        "properties" : {
+                            "classname" : {
+                                "type" : "string",
+                                "required" : true,
+                                "description" : "The fully-qualified name of the 'org.modeshape.jcr.spi.query.index.QueryIndexService' implementation class."
+                            },
+                            "classloader" : {
+                                "type" : "string",
+                                "description" : "The optional name of the classloader that should be used to load the QueryIndexService implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                            },
+                        }
+                    }
+                }
+            }
+        },
         "query" : {
             "type" : "object",
             "additionalProperties" : false,

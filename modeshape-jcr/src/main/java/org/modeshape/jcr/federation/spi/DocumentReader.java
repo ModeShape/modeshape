@@ -54,12 +54,11 @@ public interface DocumentReader {
     /**
      * Returns an ordered map of (childId, childName) the underlying document has. This preserves the order of the children as
      * defined on the document.
-     *
      * <p>
-     * The returned map does not contain any explicit same name sibling information, so a connector interested in that would
-     * have to do its own, custom processing.
+     * The returned map does not contain any explicit same name sibling information, so a connector interested in that would have
+     * to do its own, custom processing.
      * </p>
-     *
+     * 
      * @return a {@code non-null} {@link LinkedHashMap}
      */
     LinkedHashMap<String, Name> getChildrenMap();
@@ -129,4 +128,12 @@ public interface DocumentReader {
      * @return a {@code non-null} {@link Map} of (property name, property value) pairs.
      */
     Map<Name, Property> getProperties();
+
+    /**
+     * Determine whether the document is considered queryable.
+     * 
+     * @return true if the document is queryable, or false if it is not
+     */
+    boolean isQueryable();
+
 }

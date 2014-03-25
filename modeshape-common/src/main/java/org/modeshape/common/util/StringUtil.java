@@ -220,6 +220,37 @@ public class StringUtil {
         return justifyLeft(original, length, padChar, false);
     }
 
+    public static enum Justify {
+        LEFT,
+        RIGHT,
+        CENTER;
+    }
+
+    /**
+     * Justify the contents of the string.
+     * 
+     * @param justify the way in which the string is to be justified
+     * @param str the string to be right justified; if null, an empty string is used
+     * @param width the desired width of the string; must be positive
+     * @param padWithChar the character to use for padding, if needed
+     * @return the right justified string
+     */
+    public static String justify( Justify justify,
+                                  String str,
+                                  final int width,
+                                  char padWithChar ) {
+        switch (justify) {
+            case LEFT:
+                return justifyLeft(str, width, padWithChar);
+            case RIGHT:
+                return justifyRight(str, width, padWithChar);
+            case CENTER:
+                return justifyCenter(str, width, padWithChar);
+        }
+        assert false;
+        return null;
+    }
+
     /**
      * Right justify the contents of the string, ensuring that the string ends at the last character. If the supplied string is
      * longer than the desired width, the leading characters are removed so that the last character in the supplied string at the
