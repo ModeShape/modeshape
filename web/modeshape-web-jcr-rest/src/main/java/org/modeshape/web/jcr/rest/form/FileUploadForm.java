@@ -27,6 +27,8 @@ import javax.ws.rs.FormParam;
  */
 public final class FileUploadForm {
 
+    public static final String PARAM_NAME = "file";
+
     private InputStream fileData;
 
     /**
@@ -42,7 +44,7 @@ public final class FileUploadForm {
      *
      * @param fileData a {@link InputStream} or {@code null} if there isn't an HTML field with the {@code file} name.
      */
-    @FormParam( "file" )
+    @FormParam(PARAM_NAME)
     public void setFileData( InputStream fileData ) {
         this.fileData = fileData;
     }

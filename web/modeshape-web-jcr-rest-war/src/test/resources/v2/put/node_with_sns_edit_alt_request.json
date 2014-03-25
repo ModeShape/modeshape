@@ -1,0 +1,10 @@
+{
+    "children": {
+        "foo": {
+            "editedName": "editedFirst"
+        },
+        "foo[2]": {
+            "editedName": "editedSecond"
+        }
+    }
+}

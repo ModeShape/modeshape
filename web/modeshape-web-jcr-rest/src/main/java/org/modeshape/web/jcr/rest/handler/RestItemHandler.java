@@ -240,11 +240,11 @@ public final class RestItemHandler extends ItemHandler {
         }
 
         Session session = getSession(request, repositoryName, workspaceName);
-        TreeSet<String> pathsInOrder = new TreeSet<String>();
+        TreeSet<String> pathsInOrder = new TreeSet<>();
         for (int i = 0; i < requestArray.length(); i++) {
             pathsInOrder.add(absPath(requestArray.get(i).toString()));
         }
-        List<String> pathsInOrderList = new ArrayList<String>(pathsInOrder);
+        List<String> pathsInOrderList = new ArrayList<>(pathsInOrder);
         Collections.reverse(pathsInOrderList);
         for (String path : pathsInOrderList) {
             try {

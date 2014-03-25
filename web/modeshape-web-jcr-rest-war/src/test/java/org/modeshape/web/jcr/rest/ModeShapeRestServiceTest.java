@@ -24,7 +24,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,6 +35,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.web.jcr.rest.form.FileUploadForm;
 import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
 
 /**
@@ -281,14 +281,13 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     public void shouldRetrieveBinaryPropertyValue() throws Exception {
         doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk()
-                                                         .hasMimeType(MediaType.TEXT_PLAIN)
-                                                         .hasContentDisposition(RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX
-                                                                                + TEST_NODE)
-                                                         .copyInputStream(bos);
-        assertTrue(bos.size() > 0);
-        assertEquals("testValue", new String(bos.toByteArray()));
+        Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk()
+                                                                             .hasMimeType(MediaType.TEXT_PLAIN)
+                                                                             .hasContentDisposition(
+                                                                                     RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX
+                                                                                     + TEST_NODE);
+
+        assertEquals("testValue", response.contentAsString());
     }
 
     private String newBinaryProperty() {
@@ -324,11 +323,10 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
         doPost(fileStream("v2/post/binary.pdf"), binaryUrl(TEST_NODE, binaryPropertyName())).isCreated()
                                                                                             .isJSONObjectLikeFile(newBinaryProperty());
-        ByteArrayOutputStream actualBinaryContent = new ByteArrayOutputStream();
-        doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk().copyInputStream(actualBinaryContent);
+        Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
 
         byte[] expectedBinaryContent = IoUtil.readBytes(fileStream("v2/post/binary.pdf"));
-        assertArrayEquals(expectedBinaryContent, actualBinaryContent.toByteArray());
+        assertArrayEquals(expectedBinaryContent, response.contentAsBytes());
     }
 
     @Test
@@ -338,9 +336,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         String otherBinaryValue = String.valueOf(System.currentTimeMillis());
         doPost(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk().copyInputStream(bos);
-        assertEquals(otherBinaryValue, new String(bos.toByteArray()));
+        Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+        assertEquals(otherBinaryValue, response.contentAsString());
     }
 
     @Test
@@ -350,9 +347,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         String otherBinaryValue = String.valueOf(System.currentTimeMillis());
         doPut(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk().copyInputStream(bos);
-        assertEquals(otherBinaryValue, new String(bos.toByteArray()));
+        Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+        assertEquals(otherBinaryValue, response.contentAsString());
     }
 
     @Test
@@ -366,8 +362,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     public void shouldCreateBinaryValueViaMultiPartRequest() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPostMultiPart(fileStream("v2/post/binary.pdf"),
-                        "file",
+        doPostMultiPart("v2/post/binary.pdf",
+                        FileUploadForm.PARAM_NAME,
                         binaryUrl(TEST_NODE, binaryPropertyName()),
                         MediaType.APPLICATION_OCTET_STREAM).isCreated().isJSONObjectLikeFile(newBinaryProperty());
     }
@@ -397,13 +393,14 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
 
     @Test
     public void shouldImportCNDFileViaMultiPartRequest() throws Exception {
-        doPostMultiPart(fileStream(nodeTypesCND()), "file", nodeTypesUrl(), MediaType.TEXT_PLAIN).isOk()
-                                                                                                 .isJSONArrayLikeFile(cndImportResponse());
+        doPostMultiPart(nodeTypesCND(), FileUploadForm.PARAM_NAME, nodeTypesUrl(), MediaType.TEXT_PLAIN)
+                .isOk()
+                .isJSONArrayLikeFile(cndImportResponse());
     }
 
     @Test
     public void importingCNDViaWrongHTMLElementNameShouldFail() throws Exception {
-        doPostMultiPart(fileStream(nodeTypesCND()), "invalidHTML", nodeTypesUrl(), MediaType.TEXT_PLAIN).isBadRequest();
+        doPostMultiPart(nodeTypesCND(), "invalidHTML", nodeTypesUrl(), MediaType.TEXT_PLAIN).isBadRequest();
     }
 
     @Test
@@ -419,17 +416,16 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
         doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
         doPut("v2/put/multiple_nodes_edit_request.json", itemsUrl()).isOk()
-                                                                    .isJSONArrayLikeFile("v2/put/multiple_nodes_edit_response.json");
+                                                                    .isJSONArrayLikeFile(
+                                                                            "v2/put/multiple_nodes_edit_response.json");
         // System.out.println("*****  GET: \n" + doGet(itemsUrl(TEST_NODE)));
     }
 
     @Test
-    @Ignore( "A limitation of HTTPUrlConnection prevents this test from running. Consider enabling it if/when switching to Http Client" )
     public void shouldDeleteMultipleNodes() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
         doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
         doDelete("v2/delete/multiple_nodes_delete.json", itemsUrl()).isOk();
-        doGet(itemsUrl(TEST_NODE)).isJSONObjectLikeFile(nodeWithoutPrimaryTypeRequest());
     }
 
     private String binaryUrl( String... additionalPathSegments ) {
@@ -473,7 +469,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
         Response response = jcrSQL2QueryPlanAsText(query, queryPlanUrl()).isOk();
         assertThat(response.getContentTypeHeader().toLowerCase().startsWith("text/plain;"), is(true));
-        String plan = response.responseString();
+        String plan = response.contentAsString();
         assertThat(plan, is(notNullValue()));
         // System.out.println("**** PLAN: \n" + plan);
     }
@@ -485,7 +481,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
         Response response = jcrSQL2QueryPlan(query, queryPlanUrl()).isOk();
         assertThat(response.getContentTypeHeader().startsWith("application/json"), is(true));
-        String plan = response.responseString();
+        String plan = response.contentAsString();
         assertThat(plan, is(notNullValue()));
         // System.out.println("**** PLAN: \n" + plan);
     }
@@ -581,24 +577,29 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
          *   - child2
          *   - child3
          */
-        JSONObject children = doPost("v2/post/node_multiple_children_request.json", itemsUrl("node1")).isCreated().children();
-        String child2Id = children.getJSONObject("child2").getString(ID_KEY);
+        try {
+            JSONObject children = doPost("v2/post/node_multiple_children_request.json", itemsUrl("node1")).isCreated().children();
+            String child2Id = children.getJSONObject("child2").getString(ID_KEY);
 
-        /**
-         * node2
-         *   - childNode
-         */
-        JSONObject request = readJson("v2/post/node_hierarchy_request.json");
-        doPost(request, itemsUrl("node2")).isCreated();
+            /**
+             * node2
+             *   - childNode
+             */
+            JSONObject request = readJson("v2/post/node_hierarchy_request.json");
+            doPost(request, itemsUrl("node2")).isCreated();
 
-        JSONObject requestChildren = request.getJSONObject(CHILDREN_KEY);
-        request.remove("childNode");
-        requestChildren.put(child2Id, Collections.emptyMap());
+            JSONObject requestChildren = request.getJSONObject(CHILDREN_KEY);
+            request.remove("childNode");
+            requestChildren.put(child2Id, Collections.emptyMap());
 
-        //move node1/child2 to node2
-        doPut(request, itemsUrl("node2")).isOk();
-        assertTrue(doGet(itemsUrl("node2")).children().has("child2"));
-        assertFalse(doGet(itemsUrl("node1")).children().has("child2"));
+            //move node1/child2 to node2
+            doPut(request, itemsUrl("node2")).isOk();
+            assertTrue(doGet(itemsUrl("node2")).children().has("child2"));
+            assertFalse(doGet(itemsUrl("node1")).children().has("child2"));
+        } finally {
+            doDelete(itemsUrl("node1")).isDeleted();
+            doDelete(itemsUrl("node2")).isDeleted();
+        }
     }
 
     @Test
@@ -624,5 +625,50 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
                 .isOk()
                 .isJSONObjectLikeFile("v2/put/node_multivalue_prop_response.json");
 
+    }
+
+    @Test
+    @FixFor( "MODE-2181" )
+    public void shouldAllowCreatingSNS() throws Exception {
+        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/name")).isOk();
+    }
+
+    @Test
+    @FixFor( "MODE-2181" )
+    public void shouldAllowUpdatingSNSViaArray() throws Exception {
+        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("v2/put/node_with_sns_edit_request.json", itemsUrl(TEST_NODE)).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/editedName")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/editedName")).isOk();
+    }
+
+    @Test
+    @FixFor( "MODE-2181" )
+    public void shouldAllowUpdatingSNSViaObject() throws Exception {
+        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("v2/put/node_with_sns_edit_alt_request.json", itemsUrl(TEST_NODE)).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]/editedName")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/name")).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[2]/editedName")).isOk();
+    }
+
+    @Test
+    @FixFor( "MODE-2181" )
+    public void shouldAllowDeletingSNS() throws Exception {
+        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doDelete("v2/delete/sns_nodes_delete.json", itemsUrl()).isOk();
+        doGet(itemsUrl(TEST_NODE, "foo[1]")).isNotFound();
+        doGet(itemsUrl(TEST_NODE, "foo[2]")).isNotFound();
     }
 }
