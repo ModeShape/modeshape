@@ -74,6 +74,8 @@
 - mode:alias (String) mandatory protected ignore
 
 [mode:system] > nt:base
+- * (undefined) protected
+- * (undefined) multiple protected
 + mode:namespaces (mode:namespaces) = mode:namespaces autocreated mandatory protected abort
 + mode:locks (mode:locks) = mode:locks autocreated mandatory protected abort
 + mode:repository (mode:repository) = mode:repository autocreated protected abort

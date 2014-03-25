@@ -26,7 +26,9 @@ package org.modeshape.jcr;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeTypeDefinition;
+import javax.jcr.query.Query;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
@@ -35,7 +37,9 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.query.JcrQuery;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -68,7 +72,7 @@ public class Upgrades {
     public static final Upgrades STANDARD_UPGRADES;
 
     static {
-        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE);
+        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE, ModeShape_3_7_4.INSTANCE);
     }
 
     private final List<UpgradeOperation> operations = new ArrayList<UpgradeOperation>();
@@ -234,6 +238,55 @@ public class Upgrades {
                 return false;
             }
             return true;
+        }
+    }
+
+
+    /**
+     * Upgrade operation handling moving to ModeShape 3.8.0.Final. This consists of making sure that the access control metadata
+     * information is correctly stored in the repository metadata and that the {@link ModeShapeLexicon#ACL_COUNT} property
+     * correctly reflects this.
+     */
+    protected static class ModeShape_3_7_4 extends UpgradeOperation {
+        protected static final UpgradeOperation INSTANCE = new ModeShape_3_7_4();
+
+        protected ModeShape_3_7_4() {
+            super(374);
+        }
+
+        @Override
+        public void apply( Context resources ) {
+            LOGGER.info(JcrI18n.upgrade3_7_4Running);
+            RunningState runningState = resources.getRepository();
+            RepositoryCache repositoryCache = runningState.repositoryCache();
+
+            try {
+                long nodesWithAccessControl = 0;
+                for (String workspaceName : repositoryCache.getWorkspaceNames()) {
+                    JcrSession session = runningState.loginInternalSession(workspaceName);
+                    try {
+                        JcrQueryManager queryManager = session.getWorkspace().getQueryManager();
+                        Query query = queryManager.createQuery(
+                                "select [jcr:name] from [" + AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE + "]",
+                                JcrQuery.JCR_SQL2);
+                        nodesWithAccessControl = query.execute().getNodes().getSize();
+                    } finally {
+                        session.logout();
+                    }
+                }
+                if (nodesWithAccessControl == 0) {
+                    repositoryCache.setAccessControlEnabled(false);
+                }
+
+                ExecutionContext context = runningState.context();
+                SessionCache systemSession = runningState.createSystemSession(context, false);
+                SystemContent systemContent = new SystemContent(systemSession);
+                MutableCachedNode systemNode = systemContent.mutableSystemNode();
+                systemNode.setProperty(systemSession, context.getPropertyFactory().create(ModeShapeLexicon.ACL_COUNT, nodesWithAccessControl));
+                systemSession.save();
+            } catch (RepositoryException e) {
+               LOGGER.error(e, JcrI18n.upgrade3_7_4Running, e.getMessage());
+            }
         }
     }
 }
