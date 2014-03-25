@@ -32,6 +32,9 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.DB;
 import org.mapdb.DB.BTreeMapMaker;
@@ -40,6 +43,7 @@ import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 import org.modeshape.common.collection.SingleIterator;
+import org.modeshape.common.collection.Supplier;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.value.DateTime;
@@ -295,25 +299,72 @@ public class BufferManager implements AutoCloseable {
         SortingBuffer<SortType, RecordType> make();
     }
 
+    protected static final class DbHolder implements AutoCloseable {
+        private final AtomicReference<DB> reference = new AtomicReference<>();
+        private final Lock lock = new ReentrantLock();
+        private final Supplier<DB> supplier;
+
+        protected DbHolder( Supplier<DB> supplier ) {
+            this.supplier = supplier;
+        }
+
+        public DB get() {
+            DB db = reference.get();
+            if (db == null) {
+                try {
+                    lock.lock();
+                    // Allocate it ...
+                    db = supplier.get();
+                    reference.set(db);
+                } finally {
+                    lock.unlock();
+                }
+            }
+            return db;
+        }
+
+        @Override
+        public void close() {
+            DB db = reference.getAndSet(null);
+            if (db != null) {
+                db.close();
+            }
+        }
+    }
+
+    private final static Supplier<DB> OFF_HEAP_DB_SUPPLIER = new Supplier<DB>() {
+        @Override
+        public DB get() {
+            return DBMaker.newMemoryDirectDB().make();
+        }
+    };
+
+    private final static Supplier<DB> ON_HEAP_DB_SUPPLIER = new Supplier<DB>() {
+        @Override
+        public DB get() {
+            return DBMaker.newMemoryDB().make();
+        }
+    };
+
     private final static Serializer<?> DEFAULT_SERIALIZER = Serializer.BASIC;
     private final static BTreeKeySerializer<?> DEFAULT_BTREE_KEY_SERIALIZER = BTreeKeySerializer.BASIC;
 
     private final Map<Class<?>, Serializer<?>> serializersByClass;
     private final Map<Class<?>, BTreeKeySerializer<?>> bTreeKeySerializersByClass;
     private final Map<Class<?>, BTreeKeySerializer<?>> packedBTreeKeySerializersByClass;
-    private final DB offheap;
-    private final DB onheap;
+    private final DbHolder offheap;
+    private final DbHolder onheap;
     private final AtomicLong dbCounter = new AtomicLong();
 
     public BufferManager( ExecutionContext context ) {
-        this(context, DBMaker.newDirectMemoryDB(), DBMaker.newMemoryDB());
+        this(context, OFF_HEAP_DB_SUPPLIER, ON_HEAP_DB_SUPPLIER);
     }
 
     protected BufferManager( ExecutionContext context,
-                             @SuppressWarnings( "rawtypes" ) DBMaker offheapMaker,
-                             @SuppressWarnings( "rawtypes" ) DBMaker onheapMaker ) {
-        offheap = offheapMaker.make();
-        onheap = onheapMaker.make();
+                             Supplier<DB> offheapDbSupplier,
+                             Supplier<DB> onheapDbSupplier ) {
+        offheap = new DbHolder(offheapDbSupplier);
+        onheap = new DbHolder(onheapDbSupplier);
 
         // Create the serializers ...
         ValueFactories factories = context.getValueFactories();
@@ -475,7 +526,7 @@ public class BufferManager implements AutoCloseable {
     }
 
     protected final DB db( boolean useHeap ) {
-        return useHeap ? onheap : offheap;
+        return useHeap ? onheap.get() : offheap.get();
     }
 
     protected final void delete( String name,

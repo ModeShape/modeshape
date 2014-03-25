@@ -230,17 +230,15 @@ class JcrQueryManager implements QueryManager {
     protected static class SessionQueryContext implements JcrQueryContext {
         private final JcrSession session;
         private final ValueFactories factories;
-        private final BufferManager bufferMgr;
 
         protected SessionQueryContext( JcrSession session ) {
             this.session = session;
             this.factories = session.context().getValueFactories();
-            this.bufferMgr = new BufferManager(session.context());
         }
 
         @Override
         public BufferManager getBufferManager() {
-            return bufferMgr;
+            return session.bufferManager();
         }
 
         @Override

@@ -134,49 +134,49 @@ public class QueryEngineTest extends MultiUseAbstractTest {
     @Test
     public void shouldQueryForAllNodes() throws Exception {
         String sql = "SELECT * FROM [nt:base]";
-        print = true;
+        // print = true;
         query(sql);
     }
 
     @Test
     public void shouldQueryForAllDescendantNodesUnderCars() throws Exception {
         String sql = "SELECT * FROM [nt:base] AS nodes WHERE ISDESCENDANTNODE(nodes,'/Cars')";
-        print = true;
+        // print = true;
         query(sql, 17, pathStartsWith("/Cars/"));
     }
 
     @Test
     public void shouldQueryForAllChildrenUnderCars() throws Exception {
         String sql = "SELECT * FROM [nt:base] AS nodes WHERE ISCHILDNODE(nodes,'/Cars')";
-        print = true;
+        // print = true;
         query(sql, 4, pathStartsWith("/Cars/"));
     }
 
     @Test
     public void shouldQueryForNodeAtPath() throws Exception {
         String sql = "SELECT * FROM [nt:base] AS nodes WHERE PATH(nodes) = '/Cars'";
-        print = true;
+        // print = true;
         query(sql, 1, pathStartsWith("/Cars"));
     }
 
     @Test
     public void shouldQueryForNodeAtPathAndUnnecessaryCriteria() throws Exception {
         String sql = "SELECT * FROM [nt:base] AS nodes WHERE PATH(nodes) = '/Cars' AND ISCHILDNODE(nodes,'/')";
-        print = true;
+        // print = true;
         query(sql, 1, pathStartsWith("/Cars"));
     }
 
     @Test
     public void shouldQueryForNodeUsingJoinWithChildNodesWithOnlyJoinCriteria() throws Exception {
         String sql = "SELECT * FROM [nt:unstructured] AS category JOIN [car:Car] AS car ON ISCHILDNODE(car,category)";
-        print = true;
+        // print = true;
         query(sql, 13);
     }
 
     @Test
     public void shouldQueryForCarNodesAtPathAndUnnecessaryCriteria() throws Exception {
         String sql = "SELECT * FROM [car:Car] AS nodes WHERE PATH(nodes) = '/Cars/Utility/Toyota Land Cruiser'";
-        print = true;
+        // print = true;
         query(sql, 1, pathStartsWith("/Cars/Utility/Toyota Land Cruiser"));
     }
 
@@ -184,7 +184,7 @@ public class QueryEngineTest extends MultiUseAbstractTest {
     @Test
     public void shouldQueryNodesWithMultipleCriteria() throws Exception {
         String sql = "SELECT * FROM [nt:base] WHERE ([acme:something] = 'foo' AND [acme:prop2] = 3.55 ) OR [acme:prop3] > 2";
-        print = true;
+        // print = true;
         query(sql);
     }
 
@@ -201,34 +201,33 @@ public class QueryEngineTest extends MultiUseAbstractTest {
         };
     }
 
-    protected QueryResult query( String sql ) throws Exception {
-        return query(sql, -1, null);
+    protected void query( String sql ) throws Exception {
+        query(sql, -1, null);
     }
 
-    protected QueryResult query( String sql,
-                                 Predicate predicate ) throws Exception {
-        return query(sql, -1, predicate);
+    protected void query( String sql,
+                          Predicate predicate ) throws Exception {
+        query(sql, -1, predicate);
     }
 
-    protected QueryResult query( String sql,
-                                 long numberOfResults ) throws Exception {
-        return query(sql, Query.JCR_SQL2, numberOfResults, null);
+    protected void query( String sql,
+                          long numberOfResults ) throws Exception {
+        query(sql, Query.JCR_SQL2, numberOfResults, null);
     }
 
-    protected QueryResult query( String sql,
-                                 long numberOfResults,
-                                 Predicate predicate ) throws Exception {
-        return query(sql, Query.JCR_SQL2, numberOfResults, predicate);
+    protected void query( String sql,
+                          long numberOfResults,
+                          Predicate predicate ) throws Exception {
+        query(sql, Query.JCR_SQL2, numberOfResults, predicate);
     }
 
-    protected QueryResult query( String sql,
-                                 String language,
-                                 long numberOfResults,
-                                 Predicate predicate ) throws Exception {
+    protected void query( String sql,
+                          String language,
+                          long numberOfResults,
+                          Predicate predicate ) throws Exception {
         Query query = ((Session)session).getWorkspace().getQueryManager().createQuery(sql, language);
         QueryResult result = query.execute();
         assertResults(query, result, numberOfResults, predicate);
-        return result;
     }
 
     protected void assertResults( Query query,
