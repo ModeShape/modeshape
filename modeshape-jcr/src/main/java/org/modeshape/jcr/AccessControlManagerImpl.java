@@ -64,9 +64,8 @@ import org.modeshape.jcr.value.Path;
  */
 public class AccessControlManagerImpl implements AccessControlManager {
 
+    public static final String MODE_ACCESS_CONTROLLABLE = "mode:accessControllable";
     public static final String MODE_ACCESS_LIST_NODE = "mode:Acl";
-
-    private static final String MODE_ACCESS_CONTROLLABLE = "mode:accessControllable";
     private static final String ACCESS_LIST_NODE = "mode:acl";
     private static final String MODE_ACCESS_LIST_ENTRY_NODE = "mode:Permission";
     private static final String PRINCIPAL_NAME = "name";
@@ -252,7 +251,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
                 entryNode.remove();
             }
         }
-        session.repository.repositoryCache().setAccessControlEnabled(true);
+        session.aclAdded();
     }
 
     @Override
@@ -275,6 +274,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
                 AbstractJcrNode aclNode = node.getNode(ACCESS_LIST_NODE, true);
                 aclNode.remove();
                 node.removeMixin(MODE_ACCESS_CONTROLLABLE);
+                session.aclRemoved();
             }
         } catch (PathNotFoundException e) {
         }

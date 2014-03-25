@@ -205,6 +205,10 @@ public class SystemContent {
         return system.mutable(versionStorageKey());
     }
 
+    public MutableCachedNode mutableSystemNode() {
+        return system.mutable(systemKey());
+    }
+
     /**
      * Stores the node types in the system area under <code>/jcr:system/jcr:nodeTypes</code>.
      * <p>
