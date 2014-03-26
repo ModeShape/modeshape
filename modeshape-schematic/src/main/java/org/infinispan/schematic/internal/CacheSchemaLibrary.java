@@ -107,37 +107,6 @@ public class CacheSchemaLibrary implements SchemaLibrary, Lifecycle {
     }
 
     @Override
-    public NotifyingFuture<Document> getAsync( String key ) {
-        return future(store.getAsync(key));
-    }
-
-    @Override
-    public NotifyingFuture<Document> putAsync( String key,
-                                               Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
-        return future(store.putAsync(key, newEntry));
-    }
-
-    @Override
-    public NotifyingFuture<Document> putIfAbsentAsync( String key,
-                                                       Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
-        return future(store.putIfAbsentAsync(key, newEntry));
-    }
-
-    @Override
-    public NotifyingFuture<Document> replaceAsync( String key,
-                                                   Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
-        return future(store.replaceAsync(key, newEntry));
-    }
-
-    @Override
-    public NotifyingFuture<Document> removeAsync( String key ) {
-        return future(store.removeAsync(key));
-    }
-
-    @Override
     public Results validate( Document document,
                              String schemaUri ) {
         ValidationResult result = new ValidationResult();

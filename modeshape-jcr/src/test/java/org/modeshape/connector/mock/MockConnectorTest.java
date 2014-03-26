@@ -16,9 +16,12 @@
 
 package org.modeshape.connector.mock;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.modeshape.jcr.ValidateQuery.validateQuery;
@@ -833,7 +836,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
             projectionRoot.addMixin("mix:versionable");
             fail("Should not allow versionable mixin on external nodes");
         } catch (ConstraintViolationException e) {
-            //expected
+            // expected
         }
 
         try {
@@ -842,16 +845,17 @@ public class MockConnectorTest extends SingleUseAbstractTest {
             session.save();
             fail("Should not allow versionable mixin on external nodes");
         } catch (ConstraintViolationException e) {
-            //expected
+            // expected
         }
 
         Node externalChild = projectionRoot.addNode("child");
+        assertThat(externalChild, is(notNullValue()));
         session.save();
         try {
-            ((Node) session.getNode("/testRoot/child")).addMixin("mix:versionable");
+            ((Node)session.getNode("/testRoot/child")).addMixin("mix:versionable");
             fail("Should not allow versionable mixin on external nodes");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
     }
 

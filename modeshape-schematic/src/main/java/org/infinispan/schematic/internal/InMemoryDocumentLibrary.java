@@ -18,9 +18,6 @@ package org.infinispan.schematic.internal;
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import org.infinispan.commons.util.concurrent.FutureListener;
-import org.infinispan.commons.util.concurrent.NotifyingFuture;
 import org.infinispan.schematic.DocumentLibrary;
 import org.infinispan.schematic.document.Document;
 
@@ -67,74 +64,4 @@ public class InMemoryDocumentLibrary implements DocumentLibrary, Serializable {
     public Document remove( String key ) {
         return documents.remove(key);
     }
-
-    @Override
-    public NotifyingFuture<Document> getAsync( String key ) {
-        return new ImmediateFuture(get(key));
-    }
-
-    @Override
-    public NotifyingFuture<Document> putAsync( String key,
-                                               Document document ) {
-        return new ImmediateFuture(put(key, document));
-    }
-
-    @Override
-    public NotifyingFuture<Document> putIfAbsentAsync( String key,
-                                                       Document document ) {
-        return new ImmediateFuture(putIfAbsent(key, document));
-    }
-
-    @Override
-    public NotifyingFuture<Document> replaceAsync( String key,
-                                                   Document document ) {
-        return new ImmediateFuture(replace(key, document));
-    }
-
-    @Override
-    public NotifyingFuture<Document> removeAsync( String key ) {
-        return new ImmediateFuture(remove(key));
-    }
-
-    protected static class ImmediateFuture implements NotifyingFuture<Document> {
-
-        private final Document value;
-
-        protected ImmediateFuture( Document value ) {
-            this.value = value;
-        }
-
-        @Override
-        public boolean cancel( boolean mayInterruptIfRunning ) {
-            return false;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return true;
-        }
-
-        @Override
-        public Document get() {
-            return value;
-        }
-
-        @Override
-        public Document get( long timeout,
-                             TimeUnit unit ) {
-            return value;
-        }
-
-        @Override
-        public NotifyingFuture<Document> attachListener( FutureListener<Document> listener ) {
-            throw new UnsupportedOperationException();
-        }
-
-    }
-
 }

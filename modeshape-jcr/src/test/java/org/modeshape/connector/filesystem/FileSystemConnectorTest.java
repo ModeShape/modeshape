@@ -17,6 +17,7 @@
 package org.modeshape.connector.filesystem;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -161,12 +162,14 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         before = System.currentTimeMillis();
         String dsChecksum = binary.getHexHash();
         after = System.currentTimeMillis();
+        assertThat(dsChecksum, is(notNullValue()));
         elapsed = after - before;
 
         before = System.currentTimeMillis();
         dsChecksum = binary.getHexHash();
         after = System.currentTimeMillis();
         elapsed = after - before;
+        assertTrue(elapsed < 1000);
     }
 
     public void largeFilesContentBased() throws Exception {
@@ -195,12 +198,14 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         before = System.currentTimeMillis();
         String dsChecksum = binary.getHexHash();
         after = System.currentTimeMillis();
+        assertThat(dsChecksum, is(notNullValue()));
         elapsed = after - before;
 
         before = System.currentTimeMillis();
         dsChecksum = binary.getHexHash();
         after = System.currentTimeMillis();
         elapsed = after - before;
+        assertTrue(elapsed < 1000);
     }
 
     @Test
@@ -429,8 +434,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     @FixFor( "MODE-2073" )
     public void shouldBeAbleToCopyExternalNodesWithBinaryValuesIntoTheRepository() throws Exception {
         javax.jcr.Binary externalBinary = jcrSession().getNode("/testRoot/store/dir3/simple.json/jcr:content")
-                                                      .getProperty("jcr:data")
-                                                      .getBinary();
+                                                      .getProperty("jcr:data").getBinary();
         jcrSession().getRootNode().addNode("files");
         jcrSession().save();
         jcrSession().getWorkspace().copy("/testRoot/store/dir3/simple.json", "/files/simple.json");
@@ -485,7 +489,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertTrue(receivedPaths.contains("/testRoot/monitoring/dir1/testfile11"));
     }
 
-    @Ignore("Doesn't work correctly on OSX")
+    @Ignore( "Doesn't work correctly on OSX" )
     @Test
     @FixFor( "MODE-2040" )
     public void shouldReceiveFSNotificationsWhenChangingFileContent() throws Exception {
@@ -633,9 +637,9 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         }
     }
 
-    private static void addFile( File directory,
-                                 String path,
-                                 String contentFile ) throws IOException {
+    protected static void addFile( File directory,
+                                   String path,
+                                   String contentFile ) throws IOException {
         File file = new File(directory, path);
         IoUtil.write(FileSystemConnectorTest.class.getClassLoader().getResourceAsStream(contentFile), new FileOutputStream(file));
     }
@@ -645,7 +649,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         private final CountDownLatch latch;
         private Map<Integer, List<String>> receivedEventTypeAndPaths;
 
-        private FSListener( CountDownLatch latch ) {
+        protected FSListener( CountDownLatch latch ) {
             this.latch = latch;
             this.receivedEventTypeAndPaths = new HashMap<>();
         }
@@ -671,7 +675,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             }
         }
 
-        private Map<Integer, List<String>> getReceivedEventTypeAndPaths() {
+        protected Map<Integer, List<String>> getReceivedEventTypeAndPaths() {
             return receivedEventTypeAndPaths;
         }
     }
@@ -776,13 +780,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             String path = federatedNode.getPath() + "/" + childName;
 
             assertFolder(session, path, "dir1", "dir2", "dir3", "dir4", "dir5");
-            assertFolder(session,
-                         path + "/dir1",
-                         "simple1.json",
-                         "simple2.json",
-                         "simple3.json",
-                         "simple4.json",
-                         "simple5.json",
+            assertFolder(session, path + "/dir1", "simple1.json", "simple2.json", "simple3.json", "simple4.json", "simple5.json",
                          "simple6.json");
             assertFolder(session, path + "/dir2", "simple1.json", "simple2.json");
             assertFolder(session, path + "/dir3", "simple1.json");

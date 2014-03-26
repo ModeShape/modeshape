@@ -44,6 +44,7 @@ import org.infinispan.manager.CacheContainer;
 import org.infinispan.marshall.core.MarshalledEntry;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.spi.AdvancedCacheLoader;
+import org.infinispan.persistence.spi.AdvancedCacheLoader.CacheLoaderTask;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.modeshape.common.SystemFailureException;
@@ -79,10 +80,10 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
     private static final int RETRY_COUNT = 5;
 
     protected Cache<String, Metadata> metadataCache;
-    private LockFactory lockFactory;
+    protected LockFactory lockFactory;
+    protected Cache<String, byte[]> blobCache;
     private CacheContainer cacheContainer;
     private boolean dedicatedCacheContainer;
-    private Cache<String, byte[]> blobCache;
     private int chunkSize;
 
     private String metadataCacheName;
@@ -227,8 +228,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
             // using tmp file to determine SHA1
             SecureHash.HashingInputStream hashingStream = SecureHash.createHashingStream(SecureHash.Algorithm.SHA_1, inputStream);
             tmpFile = File.createTempFile("ms-ispn-binstore", "hashing");
-            IoUtil.write(hashingStream,
-                         new BufferedOutputStream(new FileOutputStream(tmpFile)),
+            IoUtil.write(hashingStream, new BufferedOutputStream(new FileOutputStream(tmpFile)),
                          AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
             final BinaryKey binaryKey = new BinaryKey(hashingStream.getHash());
 
@@ -335,7 +335,8 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
 
         // determine type of cache store
         List<StoreConfiguration> storeConfigurations = metadataCache.getCacheConfiguration().persistence().stores();
-        boolean cacheLoaderShared = storeConfigurations != null && !storeConfigurations.isEmpty() && storeConfigurations.get(0).shared();
+        boolean cacheLoaderShared = storeConfigurations != null && !storeConfigurations.isEmpty()
+                                    && storeConfigurations.get(0).shared();
         boolean isCoordinator = metadataCache.getCacheManager().isCoordinator();
 
         if (!isCoordinator && cacheLoaderShared) {
@@ -376,43 +377,41 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
                     }
                 }
             }
-            //process stored entries
-            PersistenceManager persistenceManager = metadataCache.getAdvancedCache()
-                                                                 .getComponentRegistry()
+            // process stored entries
+            PersistenceManager persistenceManager = metadataCache.getAdvancedCache().getComponentRegistry()
                                                                  .getComponent(PersistenceManager.class);
             if (isCoordinator && persistenceManager != null) {
                 // process cache loader content
-                persistenceManager.processOnAllStores(AdvancedCacheLoader.KeyFilter.LOAD_ALL_FILTER,
-                                                      new AdvancedCacheLoader.CacheLoaderTask<Object, Object>() {
-                                                          @Override
-                                                          public void processEntry( MarshalledEntry<Object, Object> marshalledEntry,
-                                                                                    AdvancedCacheLoader.TaskContext taskContext ) throws InterruptedException {
-                                                              Object key = marshalledEntry.getKey();
-                                                              if (!(key instanceof String)) {
-                                                                  return;
-                                                              }
-                                                              if (!isMetadataKey((String)key)) {
-                                                                  return;
-                                                              }
-                                                              if (processedKeys.contains(key)) {
-                                                                  return;
-                                                              }
-                                                              Metadata metadata = metadataCache.get(key);
-                                                              if (isValueUnused(metadata, minimumAgeInMS)) {
-                                                                  try {
-                                                                      Lock lock = lockFactory.writeLock((String)key);
-                                                                      try {
-                                                                          removeUnusedBinaryValue(metadataCache, blobCache,
-                                                                                                  (String)key);
-                                                                      } finally {
-                                                                          lock.unlock();
-                                                                      }
-                                                                  } catch (BinaryStoreException e) {
-                                                                      throw new RuntimeException(e);
-                                                                  }
-                                                              }
-                                                          }
-                                                      }, false, false);
+                CacheLoaderTask<Object, Object> task = new CacheLoaderTask<Object, Object>() {
+                    @Override
+                    public void processEntry( MarshalledEntry<Object, Object> marshalledEntry,
+                                              AdvancedCacheLoader.TaskContext taskContext ) {
+                        Object key = marshalledEntry.getKey();
+                        if (!(key instanceof String)) {
+                            return;
+                        }
+                        if (!isMetadataKey((String)key)) {
+                            return;
+                        }
+                        if (processedKeys.contains(key)) {
+                            return;
+                        }
+                        Metadata metadata = metadataCache.get(key);
+                        if (isValueUnused(metadata, minimumAgeInMS)) {
+                            try {
+                                Lock lock = lockFactory.writeLock((String)key);
+                                try {
+                                    removeUnusedBinaryValue(metadataCache, blobCache, (String)key);
+                                } finally {
+                                    lock.unlock();
+                                }
+                            } catch (BinaryStoreException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                };
+                persistenceManager.processOnAllStores(AdvancedCacheLoader.KeyFilter.LOAD_ALL_FILTER, task, false, false);
 
             }
         }
@@ -572,7 +571,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
                 }
 
             }
-        }  catch (InterruptedException | ExecutionException ex) {
+        } catch (InterruptedException | ExecutionException ex) {
             throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
         }
 

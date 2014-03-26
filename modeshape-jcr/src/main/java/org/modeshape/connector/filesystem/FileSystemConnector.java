@@ -781,9 +781,9 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     }
 
     private static class MonitoringTask implements Callable<Void> {
-        private final static WatchEvent.Kind<?>[] EVENTS_TO_WATCH =
-                new WatchEvent.Kind<?>[] { ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE };
-        private final static java.nio.file.WatchEvent.Modifier WATCH_MODIFIER;
+        protected final static WatchEvent.Kind<?>[] EVENTS_TO_WATCH = new WatchEvent.Kind<?>[] {ENTRY_CREATE, ENTRY_MODIFY,
+            ENTRY_DELETE};
+        protected final static java.nio.file.WatchEvent.Modifier WATCH_MODIFIER;
 
         private final WatchService watchService;
         private final FileSystemConnector connector;
@@ -791,11 +791,10 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         static {
             java.nio.file.WatchEvent.Modifier modifier = null;
             try {
-                @SuppressWarnings("unchecked")
-                Class<? extends Enum<?>> modifierClass =
-                        (Class<? extends Enum<?>>)Class.forName("com.sun.nio.file.SensitivityWatchEventModifier",
-                                false,
-                                FileSystemConnector.class.getClassLoader());
+                @SuppressWarnings( "unchecked" )
+                Class<? extends Enum<?>> modifierClass = (Class<? extends Enum<?>>)Class.forName("com.sun.nio.file.SensitivityWatchEventModifier",
+                                                                                                 false,
+                                                                                                 FileSystemConnector.class.getClassLoader());
                 for (Enum<?> enumConstants : modifierClass.getEnumConstants()) {
                     if (enumConstants.name().equalsIgnoreCase("HIGH")) {
                         modifier = (WatchEvent.Modifier)enumConstants;
@@ -803,14 +802,14 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                     }
                 }
             } catch (ClassNotFoundException e) {
-                //modifier not available on this JDK
+                // modifier not available on this JDK
             }
             WATCH_MODIFIER = modifier;
         }
 
-        private MonitoringTask( WatchService watchService,
-                                FileSystemConnector connector,
-                                Path rootPath ) {
+        protected MonitoringTask( WatchService watchService,
+                                  FileSystemConnector connector,
+                                  Path rootPath ) {
             this.watchService = watchService;
             this.connector = connector;
             recursiveWatch(rootPath, watchService);
@@ -822,6 +821,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             for (;;) {
                 try {
                     WatchKey watchKey = watchService.take();
+                    @SuppressWarnings( "synthetic-access" )
                     ConnectorChangeSet connectorChangeSet = connector.newConnectorChangedSet();
                     for (WatchEvent<?> watchEvent : watchKey.pollEvents()) {
                         WatchEvent.Kind<?> kind = watchEvent.kind();
@@ -853,6 +853,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             return null;
         }
 
+        @SuppressWarnings( "synthetic-access" )
         private void fireEntryModified( ConnectorChangeSet connectorChangeSet,
                                         Path resolvedPath ) {
             // this event is *very much dependent on the OS*, so we'll try to focus on the most general case
@@ -866,7 +867,8 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             File file = resolvedPath.toFile();
             String id = connector.idFor(file) + JCR_CONTENT_SUFFIX;
             Property modifiedProperty = connector.propertyFactory().create(JcrLexicon.LAST_MODIFIED,
-                                                                           connector.factories().getDateFactory().create(file.lastModified()));
+                                                                           connector.factories().getDateFactory()
+                                                                                    .create(file.lastModified()));
             // there is no way to observe the previous value, so fire <null>
             connectorChangeSet.propertyChanged(id, JcrNtLexicon.FILE, Collections.<Name>emptySet(), id, null, modifiedProperty);
 
@@ -885,10 +887,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             }
             File deletedFile = resolvedPath.toFile();
             String id = connector.idFor(deletedFile);
-            connectorChangeSet.nodeRemoved(id,
-                                           connector.idFor(resolvedPath.getParent().toFile()),
-                                           id,
-                                           primaryType,
+            connectorChangeSet.nodeRemoved(id, connector.idFor(resolvedPath.getParent().toFile()), id, primaryType,
                                            Collections.<Name>emptySet());
         }
 
@@ -903,12 +902,8 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 recursiveWatch(resolvedPath, watchService);
             }
             String docId = connector.idFor(resolvedPath.toFile());
-            connectorChangeSet.nodeCreated(docId,
-                                           connector.idFor(resolvedPath.getParent().toFile()),
-                                           docId,
-                                           primaryType,
-                                           Collections.<Name>emptySet(),
-                                           Collections.<Name, Property>emptyMap());
+            connectorChangeSet.nodeCreated(docId, connector.idFor(resolvedPath.getParent().toFile()), docId, primaryType,
+                                           Collections.<Name>emptySet(), Collections.<Name, Property>emptyMap());
         }
 
         private void recursiveWatch( Path path,
@@ -931,7 +926,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             }
         }
 
-        private Name primaryTypeFor(Path resolvedPath) {
+        private Name primaryTypeFor( Path resolvedPath ) {
             boolean isFolder = Files.isDirectory(resolvedPath, LinkOption.NOFOLLOW_LINKS);
             boolean isFile = Files.isRegularFile(resolvedPath, LinkOption.NOFOLLOW_LINKS);
             if (!isFile && !isFolder) {

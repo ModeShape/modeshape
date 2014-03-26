@@ -103,8 +103,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         this.requiredType = requiredType;
         this.valueConstraints = valueConstraints;
         assert this.valueConstraints != null;
-        if(requiredType != PropertyType.UNDEFINED && valueConstraints.length > 0) {
-            //if we have a required type, create the default checker eagerly to detect any invalid constraint values
+        if (requiredType != PropertyType.UNDEFINED && valueConstraints.length > 0) {
+            // if we have a required type, create the default checker eagerly to detect any invalid constraint values
             this.checker = createChecker(context, requiredType, valueConstraints);
         }
         this.multiple = multiple;
@@ -1209,7 +1209,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         private final Boolean constraint;
         private final ValueFactories valueFactories;
 
-        private BooleanConstraintChecker( ExecutionContext executionContext, String... constraints ) {
+        protected BooleanConstraintChecker( ExecutionContext executionContext,
+                                            String... constraints ) {
             this.valueFactories = executionContext.getValueFactories();
             if (constraints != null && constraints.length > 0) {
                 constraint = valueFactories.getBooleanFactory().create(constraints[0]);
@@ -1224,7 +1225,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         @Override
-        public boolean matches( Value value, JcrSession session ) {
+        public boolean matches( Value value,
+                                JcrSession session ) {
             try {
                 return constraint == null || (value.getBoolean() && constraint);
             } catch (RepositoryException e) {

@@ -46,8 +46,6 @@ import org.modeshape.common.FixFor;
 
 public class TransactionsTest extends SingleUseAbstractTest {
 
-    private static final String MULTI_LINE_VALUE = "Line\t1\nLine 2\rLine 3\r\nLine 4";
-
     @FixFor( "MODE-1819" )
     @Test
     public void shouldBeAbleToMoveNodeWithinUserTransaction() throws Exception {
@@ -321,8 +319,8 @@ public class TransactionsTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2050" )
     public void shouldBeAbleToUseNoClientTransactionsInMultithreadedEnvironment() throws Exception {
-        InputStream configFile = getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-inmemory-local-environment-no-client-tx.json");
+        InputStream configFile = getClass().getClassLoader()
+                                           .getResourceAsStream("config/repo-config-inmemory-local-environment-no-client-tx.json");
         startRepositoryWithConfiguration(configFile);
         int threadsCount = 2;
         ExecutorService executorService = Executors.newFixedThreadPool(threadsCount);
