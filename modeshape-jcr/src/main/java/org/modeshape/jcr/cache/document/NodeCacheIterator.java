@@ -23,7 +23,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Path;
 
 /**
  * An iterator that returns all of the keys for the nodes in the cache that are below the specified starting node.
@@ -33,7 +32,6 @@ public class NodeCacheIterator implements Iterator<NodeKey> {
     private final Queue<NodeKey> keys = new LinkedList<NodeKey>();
     private final NodeCache cache;
     private final NodeFilter filter;
-    private final Path startingNodePath;
     private final NodeKey startingNode;
     private NodeKey nextNode;
 
@@ -45,7 +43,7 @@ public class NodeCacheIterator implements Iterator<NodeKey> {
      */
     public NodeCacheIterator( NodeCache cache,
                               NodeKey startingNode ) {
-        this(cache, startingNode, null, null);
+        this(cache, startingNode, null);
     }
 
     /**
@@ -53,26 +51,11 @@ public class NodeCacheIterator implements Iterator<NodeKey> {
      * 
      * @param cache the node cache; may not be null
      * @param startingNode the starting node and the root of the subgraph; may not be null
-     * @param startingNodePath the path of the starting node; may be null if not known (used for logging purposes only)
-     */
-    public NodeCacheIterator( NodeCache cache,
-                              NodeKey startingNode,
-                              Path startingNodePath ) {
-        this(cache, startingNode, startingNodePath, null);
-    }
-
-    /**
-     * Create a new iterator over the nodes in the supplied node cache that are at or below the supplied starting node.
-     * 
-     * @param cache the node cache; may not be null
-     * @param startingNode the starting node and the root of the subgraph; may not be null
-     * @param startingNodePath the path of the starting node; may be null if not known (used for logging purposes only)
      * @param filter the filter that should be used to determine which nodes are exposed by this iterator; may be null if the
      *        iterator should not filter
      */
     public NodeCacheIterator( NodeCache cache,
                               NodeKey startingNode,
-                              Path startingNodePath,
                               NodeFilter filter ) {
         CheckArg.isNotNull(cache, "cache");
         CheckArg.isNotNull(startingNode, "startingNode");
@@ -80,7 +63,6 @@ public class NodeCacheIterator implements Iterator<NodeKey> {
         this.startingNode = startingNode;
         this.keys.add(startingNode);
         this.filter = filter;
-        this.startingNodePath = startingNodePath;
     }
 
     @Override
@@ -146,12 +128,8 @@ public class NodeCacheIterator implements Iterator<NodeKey> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("(nodes from ").append(cache);
-        if (startingNodePath != null) {
-            sb.append(" under ").append(startingNodePath);
-        } else {
-            // Compute the path ...
-            sb.append(" under ").append(cache.getNode(startingNode).getPath(cache));
-        }
+        // Compute the path ...
+        sb.append(" under ").append(cache.getNode(startingNode).getPath(cache));
         if (filter != null) sb.append(" satisfying ").append(filter);
         sb.append(")");
         return sb.toString();

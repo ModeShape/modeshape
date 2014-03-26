@@ -27,6 +27,7 @@ import org.modeshape.jcr.query.BufferManager.DistinctBuffer;
 import org.modeshape.jcr.query.BufferManager.KeySerializerWithComparator;
 import org.modeshape.jcr.query.BufferManager.SortingBuffer;
 import org.modeshape.jcr.query.NodeSequence;
+import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.engine.process.BufferedRows.BufferedRow;
 import org.modeshape.jcr.query.engine.process.BufferedRows.BufferedRowFactory;
 import org.modeshape.jcr.query.model.TypeSystem.TypeFactory;

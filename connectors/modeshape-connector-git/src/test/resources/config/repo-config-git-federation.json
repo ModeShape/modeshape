@@ -9,7 +9,7 @@
             "directoryPath" : "../../",
             "remoteName" : "upstream,origin",
             "includeMimeType" : true,
-            "queryableBranches" : ["master"]
+            "queryableBranches" : ["master", "2.x"]
         }
     }
 }

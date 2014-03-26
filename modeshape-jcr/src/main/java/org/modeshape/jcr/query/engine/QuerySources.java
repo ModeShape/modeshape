@@ -401,11 +401,10 @@ public class QuerySources {
             CachedNode node = getNodeAtPath(path, cache);
             if (node != null) startingNode = node.getKey();
         } else {
-            path = Path.ROOT_PATH;
             startingNode = cache.getRootKey();
         }
         if (startingNode != null) {
-            return new NodeCacheIterator(cache, startingNode, path, nodeFilter);
+            return new NodeCacheIterator(cache, startingNode, nodeFilter);
         }
         return null;
     }

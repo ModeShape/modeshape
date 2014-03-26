@@ -22,9 +22,9 @@ import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.query.AbstractNodeSequenceTest;
 import org.modeshape.jcr.query.BufferManager;
-import org.modeshape.jcr.query.NodeSequence;
-import org.modeshape.jcr.query.NodeSequence.ExtractFromRow;
 import org.modeshape.jcr.query.NodeSequence.RowAccessor;
+import org.modeshape.jcr.query.RowExtractors;
+import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.engine.process.JoinSequence.RangeProducer;
 import org.modeshape.jcr.query.model.JoinType;
 import org.modeshape.jcr.query.model.TypeSystem;
@@ -54,20 +54,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = true;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
-            print("Parent of nodes:", allNodes(), NodeSequence.extractParentNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
+            print("Parent of nodes:", allNodes(), RowExtractors.extractParentNodeKey(0, cache, types));
         }
         JoinType joinType = JoinType.INNER;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractParentNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractParentNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          leftInnerJoinVerifier(NodeSequence.extractPath(0, cache, types),
-                                                NodeSequence.extractParentPath(1, cache, types)));
+                          leftInnerJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                                RowExtractors.extractParentPath(1, cache, types)));
     }
 
     @Test
@@ -76,20 +76,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = false;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
-            print("Parent of nodes:", allNodes(), NodeSequence.extractParentNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
+            print("Parent of nodes:", allNodes(), RowExtractors.extractParentNodeKey(0, cache, types));
         }
         JoinType joinType = JoinType.INNER;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractParentNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractParentNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          leftInnerJoinVerifier(NodeSequence.extractPath(0, cache, types),
-                                                NodeSequence.extractParentPath(1, cache, types)));
+                          leftInnerJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                                RowExtractors.extractParentPath(1, cache, types)));
     }
 
     @Test
@@ -98,20 +98,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = true;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
-            print("Parent of nodes:", allNodes(), NodeSequence.extractParentNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
+            print("Parent of nodes:", allNodes(), RowExtractors.extractParentNodeKey(0, cache, types));
         }
         JoinType joinType = JoinType.LEFT_OUTER;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractParentNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractParentNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          leftOuterJoinVerifier(NodeSequence.extractPath(0, cache, types),
-                                                NodeSequence.extractParentPath(1, cache, types)));
+                          leftOuterJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                                RowExtractors.extractParentPath(1, cache, types)));
     }
 
     @Test
@@ -120,20 +120,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = false;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
-            print("Parent of nodes:", allNodes(), NodeSequence.extractParentNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
+            print("Parent of nodes:", allNodes(), RowExtractors.extractParentNodeKey(0, cache, types));
         }
         JoinType joinType = JoinType.LEFT_OUTER;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractParentNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractParentNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          leftOuterJoinVerifier(NodeSequence.extractPath(0, cache, types),
-                                                NodeSequence.extractParentPath(1, cache, types)));
+                          leftOuterJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                                RowExtractors.extractParentPath(1, cache, types)));
     }
 
     @Test
@@ -142,20 +142,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = true;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
-            print("Parent of nodes:", allNodes(), NodeSequence.extractParentNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
+            print("Parent of nodes:", allNodes(), RowExtractors.extractParentNodeKey(0, cache, types));
         }
         JoinType joinType = JoinType.RIGHT_OUTER;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractParentNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractParentNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          rightOuterJoinVerifier(NodeSequence.extractPath(0, cache, types),
-                                                 NodeSequence.extractParentPath(1, cache, types)));
+                          rightOuterJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                                 RowExtractors.extractParentPath(1, cache, types)));
     }
 
     @Test
@@ -164,20 +164,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = false;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
-            print("Parent of nodes:", allNodes(), NodeSequence.extractParentNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
+            print("Parent of nodes:", allNodes(), RowExtractors.extractParentNodeKey(0, cache, types));
         }
         JoinType joinType = JoinType.RIGHT_OUTER;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractParentNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractParentNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          rightOuterJoinVerifier(NodeSequence.extractPath(0, cache, types),
-                                                 NodeSequence.extractParentPath(1, cache, types)));
+                          rightOuterJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                                 RowExtractors.extractParentPath(1, cache, types)));
     }
 
     @Test
@@ -186,20 +186,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = true;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
-            print("Parent of nodes:", allNodes(), NodeSequence.extractParentNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
+            print("Parent of nodes:", allNodes(), RowExtractors.extractParentNodeKey(0, cache, types));
         }
         JoinType joinType = JoinType.FULL_OUTER;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractParentNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractParentNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          fullOuterJoinVerifier(NodeSequence.extractPath(0, cache, types),
-                                                NodeSequence.extractParentPath(1, cache, types)));
+                          fullOuterJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                                RowExtractors.extractParentPath(1, cache, types)));
     }
 
     @Test
@@ -208,20 +208,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = false;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
-            print("Parent of nodes:", allNodes(), NodeSequence.extractParentNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
+            print("Parent of nodes:", allNodes(), RowExtractors.extractParentNodeKey(0, cache, types));
         }
         JoinType joinType = JoinType.FULL_OUTER;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractParentNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractParentNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          fullOuterJoinVerifier(NodeSequence.extractPath(0, cache, types),
-                                                NodeSequence.extractParentPath(1, cache, types)));
+                          fullOuterJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                                RowExtractors.extractParentPath(1, cache, types)));
     }
 
     @Test
@@ -230,20 +230,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = true;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
         }
         long nodeCount = countRows(allNodes());
         JoinType joinType = JoinType.CROSS;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          crossJoinVerifier(NodeSequence.extractPath(0, cache, types), NodeSequence.extractPath(1, cache, types),
-                                            nodeCount * nodeCount));
+                          crossJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                            RowExtractors.extractPath(1, cache, types), nodeCount * nodeCount));
     }
 
     @Test
@@ -252,20 +252,20 @@ public class HashJoinSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = false;
         boolean pack = false;
         if (print()) {
-            print("All nodes:", allNodes(), NodeSequence.extractPath(0, cache, types));
-            print("NodeKeys of nodes:", allNodes(), NodeSequence.extractNodeKey(0, cache, types));
+            print("All nodes:", allNodes(), RowExtractors.extractPath(0, cache, types));
+            print("NodeKeys of nodes:", allNodes(), RowExtractors.extractNodeKey(0, cache, types));
         }
         long nodeCount = countRows(allNodes());
         JoinType joinType = JoinType.CROSS;
-        ExtractFromRow leftExtractor = NodeSequence.extractNodeKey(0, cache, types);
-        ExtractFromRow rightExtractor = NodeSequence.extractNodeKey(0, cache, types);
+        ExtractFromRow leftExtractor = RowExtractors.extractNodeKey(0, cache, types);
+        ExtractFromRow rightExtractor = RowExtractors.extractNodeKey(0, cache, types);
         RangeProducer<?> rangeProducer = null;
         HashJoinSequence join = new HashJoinSequence(workspaceName(), allNodes(), allNodes(), leftExtractor, rightExtractor,
                                                      joinType, bufferMgr, cache, rangeProducer, pack, useHeap);
         // Verify the join ...
         assertRowsSatisfy(join,
-                          crossJoinVerifier(NodeSequence.extractPath(0, cache, types), NodeSequence.extractPath(1, cache, types),
-                                            nodeCount * nodeCount));
+                          crossJoinVerifier(RowExtractors.extractPath(0, cache, types),
+                                            RowExtractors.extractPath(1, cache, types), nodeCount * nodeCount));
     }
 
     protected Verifier leftInnerJoinVerifier( final ExtractFromRow leftExtractor,

@@ -54,10 +54,8 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.BufferManager;
-import org.modeshape.jcr.query.Extractors;
 import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.NodeSequence.Batch;
-import org.modeshape.jcr.query.NodeSequence.ExtractFromRow;
 import org.modeshape.jcr.query.NodeSequence.RowAccessor;
 import org.modeshape.jcr.query.NodeSequence.RowFilter;
 import org.modeshape.jcr.query.QueryContext;
@@ -66,6 +64,8 @@ import org.modeshape.jcr.query.QueryEngineBuilder;
 import org.modeshape.jcr.query.QueryResults;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Statistics;
+import org.modeshape.jcr.query.RowExtractors;
+import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.engine.process.DependentQuery;
 import org.modeshape.jcr.query.engine.process.DistinctSequence;
 import org.modeshape.jcr.query.engine.process.HashJoinSequence;
@@ -607,20 +607,20 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                 // Get extractors that will get the path of the nodes ...
                                 PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
                                 Path relPath = pathFactory.create(relativePath);
-                                leftExtractor = NodeSequence.extractPath(leftIndex, cache, types);
-                                rightExtractor = NodeSequence.extractRelativePath(rightIndex, relPath, cache, types);
+                                leftExtractor = RowExtractors.extractPath(leftIndex, cache, types);
+                                rightExtractor = RowExtractors.extractRelativePath(rightIndex, relPath, cache, types);
                             } else {
                                 // The nodes must be the same node ...
-                                leftExtractor = NodeSequence.extractNodeKey(leftIndex, cache, types);
-                                rightExtractor = NodeSequence.extractNodeKey(rightIndex, cache, types);
+                                leftExtractor = RowExtractors.extractNodeKey(leftIndex, cache, types);
+                                rightExtractor = RowExtractors.extractNodeKey(rightIndex, cache, types);
                             }
                         } else if (joinCondition instanceof ChildNodeJoinCondition) {
                             ChildNodeJoinCondition condition = (ChildNodeJoinCondition)joinCondition;
                             assert leftColumns.getSelectorNames().contains(condition.getParentSelectorName());
                             int leftIndex = leftColumns.getSelectorIndex(condition.getParentSelectorName());
                             int rightIndex = rightColumns.getSelectorIndex(condition.getChildSelectorName());
-                            leftExtractor = NodeSequence.extractNodeKey(leftIndex, cache, types);
-                            rightExtractor = NodeSequence.extractParentNodeKey(rightIndex, cache, types);
+                            leftExtractor = RowExtractors.extractNodeKey(leftIndex, cache, types);
+                            rightExtractor = RowExtractors.extractParentNodeKey(rightIndex, cache, types);
                         } else if (joinCondition instanceof EquiJoinCondition) {
                             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
                             if (!leftColumns.getSelectorNames().contains(condition.getSelector1Name())) {
@@ -648,8 +648,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                             String descendantSelector = condition.getDescendantSelectorName();
                             int ancestorSelectorIndex = leftColumns.getSelectorIndex(ancestorSelector);
                             int descendantSelectorIndex = rightColumns.getSelectorIndex(descendantSelector);
-                            leftExtractor = NodeSequence.extractPath(ancestorSelectorIndex, cache, types);
-                            rightExtractor = NodeSequence.extractPath(descendantSelectorIndex, cache, types);
+                            leftExtractor = RowExtractors.extractPath(ancestorSelectorIndex, cache, types);
+                            rightExtractor = RowExtractors.extractPath(descendantSelectorIndex, cache, types);
                             // This is the only time we need a RangeProducer ...
                             final PathFactory paths = context.getExecutionContext().getValueFactories().getPathFactory();
                             rangeProducer = new RangeProducer<Path>() {
@@ -685,8 +685,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 if (!leftType.equals(rightType)) {
                     // wrap the right extractor with a converting extractor ...
                     final TypeFactory<?> commonType = context.getTypeSystem().getCompatibleType(leftType, rightType);
-                    if (!leftType.equals(commonType)) leftExtractor = Extractors.convert(leftExtractor, commonType);
-                    if (!rightType.equals(commonType)) rightExtractor = Extractors.convert(rightExtractor, commonType);
+                    if (!leftType.equals(commonType)) leftExtractor = RowExtractors.convert(leftExtractor, commonType);
+                    if (!rightType.equals(commonType)) rightExtractor = RowExtractors.convert(rightExtractor, commonType);
                 }
 
                 rows = new HashJoinSequence(workspaceName, left, right, leftExtractor, rightExtractor, joinType,
@@ -805,7 +805,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                         } else {
                             // Order by the location(s) because it's before a merge-join ...
                             final TypeFactory<?> keyType = context.getTypeSystem().getReferenceFactory();
-                            List<ExtractFromRow> extractors = new ArrayList<ExtractFromRow>();
+                            List<ExtractFromRow> extractors = new ArrayList<>();
                             for (Object ordering : orderBys) {
                                 SelectorName selectorName = (SelectorName)ordering;
                                 final int index = columns.getSelectorIndex(selectorName.name());
@@ -825,7 +825,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                             // This is jsut for a merge join, so use standard null ordering ...
                             nullOrder = NullOrder.NULLS_LAST;
                             // Now create the single sorting extractor ...
-                            sortExtractor = NodeSequence.extractorWith(extractors);
+                            sortExtractor = RowExtractors.extractorWith(extractors);
                         }
 
                         // Now create the sorting sequence ...
@@ -942,26 +942,26 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         if (orderings.size() == 2) {
             ExtractFromRow first = createSortingExtractor(orderings.get(0), sourceNamesByAlias, context, columns, sources);
             ExtractFromRow second = createSortingExtractor(orderings.get(1), sourceNamesByAlias, context, columns, sources);
-            return NodeSequence.extractorWith(first, second);
+            return RowExtractors.extractorWith(first, second);
         }
         if (orderings.size() == 3) {
             ExtractFromRow first = createSortingExtractor(orderings.get(0), sourceNamesByAlias, context, columns, sources);
             ExtractFromRow second = createSortingExtractor(orderings.get(1), sourceNamesByAlias, context, columns, sources);
             ExtractFromRow third = createSortingExtractor(orderings.get(2), sourceNamesByAlias, context, columns, sources);
-            return NodeSequence.extractorWith(first, second, third);
+            return RowExtractors.extractorWith(first, second, third);
         }
         if (orderings.size() == 4) {
             ExtractFromRow first = createSortingExtractor(orderings.get(0), sourceNamesByAlias, context, columns, sources);
             ExtractFromRow second = createSortingExtractor(orderings.get(1), sourceNamesByAlias, context, columns, sources);
             ExtractFromRow third = createSortingExtractor(orderings.get(2), sourceNamesByAlias, context, columns, sources);
             ExtractFromRow fourth = createSortingExtractor(orderings.get(3), sourceNamesByAlias, context, columns, sources);
-            return NodeSequence.extractorWith(first, second, third, fourth);
+            return RowExtractors.extractorWith(first, second, third, fourth);
         }
-        List<ExtractFromRow> extractors = new ArrayList<ExtractFromRow>(orderings.size());
+        List<ExtractFromRow> extractors = new ArrayList<>(orderings.size());
         for (Ordering ordering : orderings) {
             extractors.add(createSortingExtractor(ordering, sourceNamesByAlias, context, columns, sources));
         }
-        return NodeSequence.extractorWith(extractors);
+        return RowExtractors.extractorWith(extractors);
     }
 
     /**
@@ -984,7 +984,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         TypeFactory<?> defaultType = context.getTypeSystem().getStringFactory();// only when ordered column is residual or not
                                                                                 // defined
         ExtractFromRow extractor = createExtractFromRow(operand, context, columns, sources, defaultType, false, false);
-        return NodeSequence.extractorWith(extractor, ordering.order(), ordering.nullOrder());
+        return RowExtractors.extractorWith(extractor, ordering.order(), ordering.nullOrder());
     }
 
     /**
@@ -1264,7 +1264,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 op = createExtractFromRow(dynamicOperand, context, columns, sources, expectedType, true, true);
                 if (op.getType() != expectedType) {
                     // Need to convert the extracted value(s) to strings because this is a LIKE operation ...
-                    op = Extractors.convert(op, expectedType);
+                    op = RowExtractors.convert(op, expectedType);
                 }
             }
             final TypeFactory<?> defaultType = expectedType;
@@ -1469,13 +1469,13 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                         Object result = propertyValueExtractor.getValueInRow(row);
                         if (result == null) return null;
                         StringBuilder fullTextString = new StringBuilder();
-                        NodeSequence.extractFullTextFrom(result, strings, binaries, fullTextString);
+                        RowExtractors.extractFullTextFrom(result, strings, binaries, fullTextString);
                         return fullTextString.toString();
                     }
                 };
             } else {
                 // This is to search all aspects of the node (name, all property values) ...
-                fullTextExtractor = NodeSequence.extractFullText(index, cache, context.getTypeSystem(), binaries);
+                fullTextExtractor = RowExtractors.extractFullText(index, cache, context.getTypeSystem(), binaries);
             }
             // Return a filter that processes all of the text ...
             final ExtractFromRow extractor = fullTextExtractor;

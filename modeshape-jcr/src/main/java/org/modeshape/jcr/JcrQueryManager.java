@@ -269,7 +269,6 @@ class JcrQueryManager implements QueryManager {
             Map<String, NodeCache> overriddenNodeCaches = new HashMap<String, NodeCache>();
             overriddenNodeCaches.put(workspaceName, nodeCache);
             Set<String> workspaceNames = null;
-            new LinkedHashSet<String>();
             if (hints.includeSystemContent) {
                 workspaceNames = new LinkedHashSet<String>();
                 workspaceNames.add(workspaceName);

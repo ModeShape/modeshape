@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.query.NodeSequence;
+import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.model.TypeSystem.TypeFactory;
 
 /**

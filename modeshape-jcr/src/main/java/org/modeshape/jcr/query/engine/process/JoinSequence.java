@@ -20,6 +20,7 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.CachedNodeSupplier;
 import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.NodeSequence;
+import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.model.JoinType;
 
 /**

@@ -376,9 +376,9 @@ public class BufferManager implements AutoCloseable {
         final DateTimeFactory dateFactory = factories.getDateFactory();
         final ValueFactory<BigDecimal> decimalFactory = factories.getDecimalFactory();
         serializersByClass = new HashMap<Class<?>, Serializer<?>>();
-        serializersByClass.put(String.class, new StringSerializer());
-        serializersByClass.put(Long.class, new LongSerializer());
-        serializersByClass.put(Boolean.class, new BooleanSerializer());
+        serializersByClass.put(String.class, Serializer.STRING);
+        serializersByClass.put(Long.class, Serializer.LONG);
+        serializersByClass.put(Boolean.class, Serializer.BOOLEAN);
         serializersByClass.put(Double.class, new DoubleSerializer());
         serializersByClass.put(BigDecimal.class, new ValueSerializer<BigDecimal>(stringFactory, decimalFactory));
         serializersByClass.put(URI.class, new ValueSerializer<URI>(stringFactory, uriFactory));
@@ -1281,79 +1281,13 @@ public class BufferManager implements AutoCloseable {
         }
     }
 
-    public static class StringSerializer implements Serializer<String>, Serializable {
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public void serialize( DataOutput out,
-                               String value ) throws IOException {
-            if (value != null) out.writeUTF(value);
-            else out.writeUTF("");
-        }
-
-        @Override
-        public String deserialize( DataInput in,
-                                   int available ) throws IOException {
-            return in.readUTF();
-        }
-
-        @Override
-        public int fixedSize() {
-            return -1;
-        }
-    }
-
-    public static class BooleanSerializer implements Serializer<Boolean>, Serializable {
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public void serialize( DataOutput out,
-                               Boolean value ) throws IOException {
-            if (value != null) out.writeBoolean(value.booleanValue());
-        }
-
-        @Override
-        public Boolean deserialize( DataInput in,
-                                    int available ) throws IOException {
-            if (available == 0) return null;
-            return in.readBoolean();
-        }
-
-        @Override
-        public int fixedSize() {
-            return -1;
-        }
-    }
-
-    public static class LongSerializer implements Serializer<Long>, Serializable {
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public void serialize( DataOutput out,
-                               Long value ) throws IOException {
-            if (value != null) out.writeLong(value.longValue());
-        }
-
-        @Override
-        public Long deserialize( DataInput in,
-                                 int available ) throws IOException {
-            if (available == 0) return null;
-            return in.readLong();
-        }
-
-        @Override
-        public int fixedSize() {
-            return -1;
-        }
-    }
-
     public static class DoubleSerializer implements Serializer<Double>, Serializable {
         private static final long serialVersionUID = 1L;
 
         @Override
         public void serialize( DataOutput out,
                                Double value ) throws IOException {
-            if (value != null) out.writeDouble(value.doubleValue());
+            out.writeDouble(value.doubleValue());
         }
 
         @Override

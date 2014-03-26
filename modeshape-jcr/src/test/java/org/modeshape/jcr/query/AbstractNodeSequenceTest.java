@@ -30,9 +30,9 @@ import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.query.NodeSequence.Batch;
-import org.modeshape.jcr.query.NodeSequence.ExtractFromRow;
 import org.modeshape.jcr.query.NodeSequence.RowAccessor;
 import org.modeshape.jcr.query.NodeSequence.RowFilter;
+import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 
 /**
  * An abstract base class for test classes that operate against {@link NodeSequence}.

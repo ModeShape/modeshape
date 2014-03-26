@@ -1717,7 +1717,7 @@ public class RepositoryConfiguration {
             List<Component> components = readComponents(indexes,
                                                         FieldName.PROVIDERS,
                                                         FieldName.CLASSNAME,
-                                                        SEQUENCER_ALIASES,
+                                                        PROVIDER_ALIASES,
                                                         problems);
             assert !problems.hasErrors();
             return components;

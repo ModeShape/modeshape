@@ -20,6 +20,8 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.BufferManager.DistinctBuffer;
 import org.modeshape.jcr.query.NodeSequence;
+import org.modeshape.jcr.query.RowExtractors;
+import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.Tuples;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.query.model.TypeSystem.TypeFactory;
@@ -52,7 +54,7 @@ public class DistinctSequence extends DelegatingSequence {
                              BufferManager bufferMgr,
                              boolean useHeap ) {
         super(delegate);
-        this.keyExtractor = NodeSequence.extractUniqueKey(delegate.width(), types);
+        this.keyExtractor = RowExtractors.extractUniqueKey(delegate.width(), types);
         TypeFactory<?> keyType = types.getReferenceFactory();
         Serializer<?> keySerializer = bufferMgr.serializerFor(keyType);
         Serializer<?> serializer = Tuples.serializer(keySerializer, delegate.width());

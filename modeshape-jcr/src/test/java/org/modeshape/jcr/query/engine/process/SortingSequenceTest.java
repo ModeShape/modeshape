@@ -29,7 +29,8 @@ import org.modeshape.jcr.query.AbstractNodeSequenceTest;
 import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.NodeSequence.Batch;
-import org.modeshape.jcr.query.NodeSequence.ExtractFromRow;
+import org.modeshape.jcr.query.RowExtractors;
+import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.model.NullOrder;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.value.ValueTypeSystem;
@@ -64,7 +65,7 @@ public class SortingSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = true;
         boolean pack = false;
         boolean allowDups = true;
-        ExtractFromRow extractor = NodeSequence.extractPath(0, cache, types);
+        ExtractFromRow extractor = RowExtractors.extractPath(0, cache, types);
         SortingSequence sorted = new SortingSequence(workspaceName(), allNodes(), extractor, bufferMgr, cache, pack, useHeap,
                                                      allowDups, NullOrder.NULLS_LAST);
         assertThat(sorted.getRowCount(), is(countRows(allNodes())));
@@ -77,7 +78,7 @@ public class SortingSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = true;
         boolean pack = false;
         boolean allowDups = false;
-        ExtractFromRow extractor = NodeSequence.extractPath(0, cache, types);
+        ExtractFromRow extractor = RowExtractors.extractPath(0, cache, types);
         SortingSequence sorted = new SortingSequence(workspaceName(), allNodes(), extractor, bufferMgr, cache, pack, useHeap,
                                                      allowDups, NullOrder.NULLS_LAST);
         assertThat(sorted.getRowCount(), is(countRows(allNodes())));
@@ -90,7 +91,7 @@ public class SortingSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = false;
         boolean pack = false;
         boolean allowDups = true;
-        ExtractFromRow extractor = NodeSequence.extractPath(0, cache, types);
+        ExtractFromRow extractor = RowExtractors.extractPath(0, cache, types);
         SortingSequence sorted = new SortingSequence(workspaceName(), allNodes(), extractor, bufferMgr, cache, pack, useHeap,
                                                      allowDups, NullOrder.NULLS_LAST);
         assertThat(sorted.getRowCount(), is(countRows(allNodes())));
@@ -103,7 +104,7 @@ public class SortingSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = false;
         boolean pack = false;
         boolean allowDups = false;
-        ExtractFromRow extractor = NodeSequence.extractPath(0, cache, types);
+        ExtractFromRow extractor = RowExtractors.extractPath(0, cache, types);
         SortingSequence sorted = new SortingSequence(workspaceName(), allNodes(), extractor, bufferMgr, cache, pack, useHeap,
                                                      allowDups, NullOrder.NULLS_LAST);
         assertThat(sorted.getRowCount(), is(countRows(allNodes())));
@@ -116,7 +117,7 @@ public class SortingSequenceTest extends AbstractNodeSequenceTest {
         boolean useHeap = true;
         boolean pack = false;
         boolean allowDups = true;
-        ExtractFromRow extractor = NodeSequence.extractPropertyValue(name("propC"), 0, cache, types.getStringFactory());
+        ExtractFromRow extractor = RowExtractors.extractPropertyValue(name("propC"), 0, cache, types.getStringFactory());
         SortingSequence sorted = new SortingSequence(workspaceName(), allNodes(), extractor, bufferMgr, cache, pack, useHeap,
                                                      allowDups, NullOrder.NULLS_LAST);
         assertSorted(sorted, extractor);
