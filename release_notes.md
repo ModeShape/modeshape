@@ -6,15 +6,62 @@ We hope you enjoy it!
 ## What's new
 
 &version; provides a fast, elastic, distributed hierarchical database that clients
-work with via the standard JCR 2.0 (JSR-283) API. ModeShape 3 is a major upgrade over 2.x
-and offers significant improvements in performance and scalability, while retaining all of
-ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JBoss EAP 6.1,
-allowing deployed components to simply lookup and use repositories managed by ModeShape's 
-service.
+work with via the standard JCR 2.0 (JSR-283) API. ModeShape 4 is a major upgrade over 3.x
+and offers significant improvements in clustering, performance, query, and events.
+All JCR 2.0 features are supported, and ModeShape 4 has complete integration with
+Wildfly 8, allowing deployed applications to simply lookup and use repositories managed 
+by ModeShape's service.
 
-This patch release addresses an issue in the BOMs that could have broken application builds
-that have been relying upon default versions of logging and several other third-party dependencies.
-See MODE-2133 for details.
+As of 4.0.0.Alpha1, ModeShape is licensed under the Apache Software License, 2.0.
+
+This is the first alpha release of the 4.0 stream, and it includes several significant
+changes. The largest impact is the query engine, which has been completely rewritten
+so that it can use a variety of indexing technology. As of 4.0.0.Alpha1, all queries 
+work except those that use full text search or outer joins (see MODE-2178 for details);
+these will be fixed in an upcoming release. Also, version &version; does not yet have
+support for defining custom indexes, so queries may be slower than in 3.x. However,
+you will soon be able to define custom indexes for the queries that you are using in 
+your application, reducing the amount of time and processing required to update the indexes.
+
+Clustering has also been made simpler. ModeShape now automatically piggybacks onto 
+Infinispan's clustering configuration, and events can now be captured in a journal
+on each machine. Over the next few alpha releases, we'll use this to improve how quickly
+processes can (re)join the cluster. We'll also add support for JCR's event journaling
+feature.
+
+## What to test
+
+Since this is an alpha release, not all features targeted to 4.0 are complete, and there
+are likely bugs with some of the newer features. Therefore, please do not put &version;
+into production.
+
+However, we would like to get as much feedback as possible, so we do ask that our
+community do limited testing with &version; to help us identify problems. Specifically,
+we ask that you test the following areas:
+
+* JDK - ModeShape now requires JDK 7. We've not yet begun testing with Java 8, but we'd
+be happy to hear about it if you do.
+* Queries - although there are known issues (see MODE-2178 for details), we think that most
+queries will work, albeit a bit slower, especially on medium or large repositories. We'll
+increase speed by adding indexes in a forthcoming release, but in the meantime please
+check that your queries work. If not, please file an issue.
+* Clustering - ModeShape no longer has a clustering section in its configuration, since
+we simply piggyback on top of Infinispan's clustering setup. We've also upgraded to 
+a newer version of JGroups.
+* Journalling - Try enabling journaling and verify it works and does not affect performance.
+You can't yet see what's in the journals, but even some modest testing with journaling
+enabled will help us.
+* Infinispan - We've moved to Infinispan 6.0.1.Final, which is faster and has new cache stores.
+Some older and poorly-performaing cache stores are no longer valid, so check out the new
+file-based cache stores. Also, the LevelDB cache store is supposedly very fast.
+* Backup and restore - given that some older Infinispan cache stores are no longer supported,
+in order to test migrating 3.x repositories to 4.0 you will need to use ModeShape's backup
+and restore feature. If you don't regularly use that, please test it with your repository.
+Just be sure not to overwrite any 3.x repositories.
+* Bugs - we've fixed a number of bugs reported against 3.x; see the list below for details. 
+All these are ready for testing.
+* Configuration - comments are now allowed in our JSON configuration.
+
 
 ## Features
 
@@ -26,10 +73,9 @@ Infinispan offers a great deal of storage options (via cache loaders), but using
 as a distributed, mulit-site, in-memory data grid provides incredible scalability and performance.
 - Strongly consistent. ModeShape is atomic, consistent, isolated and durable (ACID), so writing
 applications is very natural. Applications can even use JTA transactions.
-- Fast. ModeShape 3 is just plain seriously fast, and performance is all-around
-faster than 2.x - most operations are at least one if not several orders of magnitude faster!
-We'll publish performance and benchmarking results soon.
-- Larger content. ModeShape 3 has been designed to store and access the content so that
+- Fast. ModeShape 4 is just plain seriously fast, and performance is all-around
+faster than earlier version.
+- Larger content. ModeShape 4 can store and access the content so that
 a node can have hundreds of thousands (or more!) of child nodes (even with same-name-siblings)
 yet still be incredibly fast. Additionally, repositories can scale to many millions of nodes 
 and be deployed across many processes.
@@ -132,8 +178,8 @@ All of the JCR 2.0 features previously supported in 2.x are currently supported:
 
 ### Content Storage Options
 - In-memory (local, replicated, and distributed)
-- BerkleyDB
 - Relational databases (via JDBC), including in-memory, file-based, or remote
+- LevelDB
 - File system
 - Cassandra
 - Cloud storage (e.g., Amazon's S3, Rackspace's Cloudfiles, or any other provider supported by JClouds)
@@ -152,6 +198,7 @@ ModeShape also has features that go beyond the JCR API:
 - File system connector (read and write)
 - Git repository connector (read-only)
 - CMIS reposiotry connector (read and write, tech preview)
+- JDBC metadata connector (read-only)
 
 ### ModeShape Sequencers
 - Compact Node Definition (CND) Sequencer
