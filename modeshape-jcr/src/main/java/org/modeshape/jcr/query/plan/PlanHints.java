@@ -16,6 +16,7 @@
 package org.modeshape.jcr.query.plan;
 
 import java.io.Serializable;
+import javax.jcr.query.QueryResult;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.query.QueryResults;
 
@@ -86,6 +87,25 @@ public final class PlanHints implements Serializable, Cloneable {
      */
     public boolean qualifyExpandedColumnNames = false;
 
+    /**
+     * Flag indicating whether iterating over the results can be done more than once. The query engine is optimized to only
+     * require access to the results one time. In such cases, results are pulled lazily only as they are needed by the client, and
+     * there is minimal buffering and no extra overhead of temporarily storing the results. This is also inline with the JCR 2.0
+     * specification, which states that when {@link QueryResult#getRows()} or {@link QueryResult#getNodes()} are called a second
+     * time the implementation may throw an exception. However, this places a restriction on JCR client applications that are not
+     * always ideal. Therefore, the default is {@code true} so that working with results is easier but less-efficient. Where
+     * possible, set this to {@code false} to enforce strict "use results once" and eliminate this overhead.
+     */
+    public boolean restartable = true;
+
+    /**
+     * When ModeShape buffers results so that they can be accessed more than once, it keeps a small number of rows in memory to
+     * minimize the performance overhead. Increasing this value for a query will cause the query's results to consume more memory,
+     * but for small queries this may improve how quickly the results can be accessed. Note that the value also affects
+     * performance when a lot of queries are being processed concurrently. The default value is {@value} .
+     */
+    public int rowsKeptInMemory = 200;
+
     public PlanHints() {
     }
 
@@ -107,7 +127,8 @@ public final class PlanHints implements Serializable, Cloneable {
         sb.append(", validateColumnExistance=").append(validateColumnExistance);
         sb.append(", includeSystemContent=").append(includeSystemContent);
         sb.append(", useSessionContent=").append(useSessionContent);
-        sb.append(", qualifyExpandedColumnNames=").append(qualifyExpandedColumnNames);
+        sb.append(", restartable=").append(restartable);
+        sb.append(", rowsKeptInMemory=").append(rowsKeptInMemory);
         sb.append('}');
         return sb.toString();
     }
@@ -131,6 +152,8 @@ public final class PlanHints implements Serializable, Cloneable {
         clone.includeSystemContent = this.includeSystemContent;
         clone.useSessionContent = this.useSessionContent;
         clone.qualifyExpandedColumnNames = this.qualifyExpandedColumnNames;
+        clone.restartable = this.restartable;
+        clone.rowsKeptInMemory = this.rowsKeptInMemory;
         return clone;
     }
 }

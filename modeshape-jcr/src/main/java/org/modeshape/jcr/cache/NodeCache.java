@@ -20,7 +20,7 @@ import java.util.Iterator;
 /**
  * 
  */
-public interface NodeCache {
+public interface NodeCache extends CachedNodeSupplier {
 
     /**
      * Clears all changes in the cache.
@@ -33,14 +33,6 @@ public interface NodeCache {
      * @return the root node's key; never null
      */
     NodeKey getRootKey();
-
-    /**
-     * Get the cached representation of the node with the supplied node key.
-     * 
-     * @param key the node key; may not be null
-     * @return the cached node, or null if there is no such node
-     */
-    CachedNode getNode( NodeKey key );
 
     /**
      * Get the cached representation of the node as represented by the supplied child reference. This is a convenience method that

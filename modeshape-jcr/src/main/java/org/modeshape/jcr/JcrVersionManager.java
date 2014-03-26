@@ -224,7 +224,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
         if (cachedNode instanceof MutableCachedNode) {
             // There are at least some changes. See if the node is newly versionable ...
             MutableCachedNode mutable = (MutableCachedNode)cachedNode;
-            RepositoryNodeTypeManager.NodeTypes nodeTypeCapabilities = repository().nodeTypeManager().getNodeTypes();
+            NodeTypes nodeTypeCapabilities = repository().nodeTypeManager().getNodeTypes();
             Name primaryType = mutable.getPrimaryType(cache);
             Set<Name> mixinTypes = mutable.getAddedMixins(cache);
             if (nodeTypeCapabilities.isVersionable(primaryType, mixinTypes)) {

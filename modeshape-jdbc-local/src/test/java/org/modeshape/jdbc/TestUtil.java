@@ -206,6 +206,11 @@ public class TestUtil {
             }
 
             @Override
+            public boolean isEmpty() {
+                return nodes.length == 0;
+            }
+
+            @Override
             public NodeIterator getNodes() {
                 List<Node> nodeArray = new ArrayList<Node>();
                 for (int i = 0; i < nodes.length; i++) {
@@ -229,6 +234,11 @@ public class TestUtil {
             @Override
             public String[] getSelectorNames() {
                 return null;
+            }
+
+            @Override
+            public void close() {
+                // nothing to do
             }
         };
         return qr;

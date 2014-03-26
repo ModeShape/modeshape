@@ -18,11 +18,8 @@ package org.modeshape.jcr.query;
 import org.modeshape.jcr.JcrValueFactory;
 import org.modeshape.jcr.query.model.TypeSystem;
 
-/**
- * 
- */
-public interface JcrTypeSystem extends TypeSystem {
+public abstract class JcrTypeSystem extends TypeSystem {
 
-    JcrValueFactory getValueFactory();
+    public abstract JcrValueFactory getValueFactory();
 
 }

@@ -17,6 +17,7 @@ package org.modeshape.jcr.query.parse;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.Calendar;
 import javax.jcr.Binary;
 import javax.jcr.Node;
@@ -29,6 +30,8 @@ import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.JcrTypeSystem;
 import org.modeshape.jcr.query.model.LiteralValue;
 import org.modeshape.jcr.query.model.TypeSystem;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFormatException;
@@ -75,15 +78,22 @@ public class JcrSql2QueryParser extends BasicSqlQueryParser {
             jcrValue = factory.createValue((Long)value);
         } else if (value instanceof Reference) {
             jcrValue = factory.createValue((Reference)value);
+        } else if (value instanceof URI) {
+            jcrValue = factory.createValue((URI)value);
         } else if (value instanceof InputStream) {
             Binary binary = factory.createBinary((InputStream)value);
             jcrValue = factory.createValue(binary);
+        } else if (value instanceof Name || value instanceof Path) {
+            // Convert first to a string ...
+            String strValue = typeSystem.getStringFactory().create(value);
+            jcrValue = factory.createValue(strValue);
         } else if (value instanceof Node) {
             try {
                 jcrValue = factory.createValue((Node)value);
             } catch (RepositoryException e) {
-                throw new ValueFormatException(value, PropertyType.REFERENCE, GraphI18n.errorConvertingType.text(
-                        Node.class.getSimpleName(), Reference.class.getSimpleName(), value), e);
+                throw new ValueFormatException(value, PropertyType.REFERENCE,
+                                               GraphI18n.errorConvertingType.text(Node.class.getSimpleName(),
+                                                                                  Reference.class.getSimpleName(), value), e);
             }
         } else {
             jcrValue = factory.createValue(value.toString());

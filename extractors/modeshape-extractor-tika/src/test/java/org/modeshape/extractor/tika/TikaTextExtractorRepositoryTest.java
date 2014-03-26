@@ -25,6 +25,7 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.SingleUseAbstractTest;
@@ -38,6 +39,8 @@ import org.modeshape.jcr.query.JcrQuery;
  * 
  * @author Horia Chiorean
  */
+// TODO: MODE-2178
+@Ignore
 public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
 
     private JcrTools jcrTools = new JcrTools();
@@ -88,7 +91,8 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
         queryAndExpectResults(sql, 1);
     }
 
-    private void queryAndExpectResults(String queryString, int howMany) throws RepositoryException {
+    private void queryAndExpectResults( String queryString,
+                                        int howMany ) throws RepositoryException {
         QueryManager queryManager = ((javax.jcr.Workspace)session.getWorkspace()).getQueryManager();
         Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
         NodeIterator nodes = query.execute().getNodes();

@@ -203,9 +203,7 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         Query query = session().getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult results = query.execute();
         printMessage(query.getStatement());
-        printResults(results);
-        printMessage("");
-        assertThat(results.getRows().getSize(), is(expectedRowCount));
+        ValidateQuery.validateQuery().printDetail(print).rowCount(expectedRowCount).validate(query, results);
         return results;
     }
 

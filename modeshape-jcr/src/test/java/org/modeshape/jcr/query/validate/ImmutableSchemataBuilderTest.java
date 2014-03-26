@@ -19,10 +19,12 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.validate.Schemata.Table;
 import org.modeshape.jcr.query.validate.Schemata.View;
@@ -42,7 +44,7 @@ public class ImmutableSchemataBuilderTest {
     @Before
     public void beforeEach() {
         context = new ExecutionContext();
-        builder = ImmutableSchemata.createBuilder(context);
+        builder = ImmutableSchemata.createBuilder(context, mock(NodeTypes.class));
     }
 
     @After

@@ -71,11 +71,9 @@ import org.modeshape.web.jcr.rest.handler.AbstractHandler;
  * @author ?
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-@SuppressWarnings( "restriction" )
 public class JcrResourcesTest {
 
-    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid",
-                                                                                    "jcr:score",
+    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid", "jcr:score",
                                                                                     AbstractHandler.NODE_ID_CUSTOM_PROPERTY);
 
     /**
@@ -511,7 +509,7 @@ public class JcrResourcesTest {
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
 
-        String query = "//element(child) order by @foo";
+        String query = "//element(child) order by @foo, @jcr:path";
         xpathQuery(query, queryUrl() + "?offset=1&limit=2").isOk().isJSON().isJSONObjectLikeFile(queryResultOffsetAndLimit());
     }
 
@@ -527,7 +525,7 @@ public class JcrResourcesTest {
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
 
-        String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
+        String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "') ORDER BY [jcr:path]";
         jcrSQL2Query(query, queryUrl()).isOk().isJSON().isJSONObjectLikeFile(jcrSQL2Result());
     }
 
@@ -765,8 +763,7 @@ public class JcrResourcesTest {
             JSONArray expectedArray = (JSONArray)expected;
             JSONArray actualArray = (JSONArray)actual;
             Assert.assertEquals("Arrays don't match. \nExpected:" + expectedArray.toString() + "\nActual  :" + actualArray,
-                                expectedArray.length(),
-                                actualArray.length());
+                                expectedArray.length(), actualArray.length());
             for (int i = 0; i < expectedArray.length(); i++) {
                 assertJSON(expectedArray.get(i), actualArray.get(i));
             }

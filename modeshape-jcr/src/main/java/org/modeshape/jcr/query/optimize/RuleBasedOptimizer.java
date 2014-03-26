@@ -57,6 +57,7 @@ public class RuleBasedOptimizer implements Optimizer {
      */
     protected void populateRuleStack( LinkedList<OptimizerRule> ruleStack,
                                       PlanHints hints ) {
+        ruleStack.addFirst(ReorderSortAndRemoveDuplicates.INSTANCE);
         ruleStack.addFirst(RewritePathAndNameCriteria.INSTANCE);
         if (hints.hasSubqueries) {
             ruleStack.addFirst(RaiseVariableName.INSTANCE);
@@ -71,11 +72,27 @@ public class RuleBasedOptimizer implements Optimizer {
         ruleStack.addFirst(PushProjects.INSTANCE);
         ruleStack.addFirst(PushSelectCriteria.INSTANCE);
         ruleStack.addFirst(AddAccessNodes.INSTANCE);
+        ruleStack.addFirst(JoinOrder.INSTANCE);
         ruleStack.addFirst(RightOuterToLeftOuterJoins.INSTANCE);
         ruleStack.addFirst(CopyCriteria.INSTANCE);
         if (hints.hasView) {
             ruleStack.addFirst(ReplaceViews.INSTANCE);
         }
         ruleStack.addFirst(RewritePseudoColumns.INSTANCE);
+        // Add indexes determination last ...
+        populateIndexingRules(ruleStack, hints);
+        ruleStack.addLast(OrderIndexesByCost.INSTANCE);
+    }
+
+    /**
+     * Method that is used to add the indexing rules to the rule stack. This method can be overridden by subclasses when custom
+     * indexing rules are to be used. By default, this method simply adds the {@link AddIndexes} rule.
+     * 
+     * @param ruleStack the stack where the rules should be placed; never null
+     * @param hints the plan hints
+     */
+    protected void populateIndexingRules( LinkedList<OptimizerRule> ruleStack,
+                                          PlanHints hints ) {
+        ruleStack.addLast(AddIndexes.implicitIndexes());
     }
 }

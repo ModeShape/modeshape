@@ -25,6 +25,7 @@ import org.modeshape.jcr.query.model.DescendantNodeJoinCondition;
 import org.modeshape.jcr.query.model.DynamicOperand;
 import org.modeshape.jcr.query.model.EquiJoinCondition;
 import org.modeshape.jcr.query.model.JoinCondition;
+import org.modeshape.jcr.query.model.NullOrder;
 import org.modeshape.jcr.query.model.Order;
 import org.modeshape.jcr.query.model.Ordering;
 import org.modeshape.jcr.query.model.PropertyValue;
@@ -197,10 +198,10 @@ public class ChooseJoinAlgorithm implements OptimizerRule {
 
             // Create the Ordering for the first selector/property pair ...
             DynamicOperand operand1 = new PropertyValue(selector1, property1);
-            Ordering ordering1 = new Ordering(operand1, Order.ASCENDING);
+            Ordering ordering1 = new Ordering(operand1, Order.ASCENDING, NullOrder.NULLS_LAST);
             // Create the Ordering for the second selector/property pair ...
             DynamicOperand operand2 = new PropertyValue(selector2, property2);
-            Ordering ordering2 = new Ordering(operand2, Order.ASCENDING);
+            Ordering ordering2 = new Ordering(operand2, Order.ASCENDING, NullOrder.NULLS_LAST);
 
             if (leftSelectors.contains(selector1)) {
                 leftSortBy.add(ordering1);

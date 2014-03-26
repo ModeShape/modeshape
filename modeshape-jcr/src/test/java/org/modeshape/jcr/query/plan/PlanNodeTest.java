@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +30,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.query.model.SelectorName;
+import org.modeshape.jcr.query.plan.PlanNode.Traversal;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
 
 /**
@@ -545,5 +547,41 @@ public class PlanNodeTest {
         assertThat(node5.hasAncestorOfType(Type.DUP_REMOVE), is(true));
         assertThat(node5.hasAncestorOfType(Type.DUP_REMOVE, Type.SELECT), is(true));
         assertThat(node5.hasAncestorOfType(Type.DUP_REMOVE, Type.SELECT, Type.SOURCE), is(true));
+    }
+
+    @Test
+    public void shouldFindAllNodesInSubtreeUsingPreorder() {
+        PlanNode root = new PlanNode(Type.SELECT);
+        PlanNode node1 = new PlanNode(Type.JOIN, root);
+        PlanNode node11 = new PlanNode(Type.ACCESS, node1);
+        PlanNode node12 = new PlanNode(Type.DUP_REMOVE, node11);
+        PlanNode node21 = new PlanNode(Type.ACCESS, node1);
+        PlanNode node22 = new PlanNode(Type.DUP_REMOVE, node21);
+        List<PlanNode> nodes = root.findAllAtOrBelow(Traversal.PRE_ORDER);
+        assertThat(nodes.remove(0), is(sameInstance(root)));
+        assertThat(nodes.remove(0), is(sameInstance(node1)));
+        assertThat(nodes.remove(0), is(sameInstance(node11)));
+        assertThat(nodes.remove(0), is(sameInstance(node12)));
+        assertThat(nodes.remove(0), is(sameInstance(node21)));
+        assertThat(nodes.remove(0), is(sameInstance(node22)));
+        assertTrue(nodes.isEmpty());
+    }
+
+    @Test
+    public void shouldFindAllNodesInSubtreeUsingPostorder() {
+        PlanNode root = new PlanNode(Type.SELECT);
+        PlanNode node1 = new PlanNode(Type.JOIN, root);
+        PlanNode node11 = new PlanNode(Type.ACCESS, node1);
+        PlanNode node111 = new PlanNode(Type.DUP_REMOVE, node11);
+        PlanNode node21 = new PlanNode(Type.ACCESS, node1);
+        PlanNode node211 = new PlanNode(Type.DUP_REMOVE, node21);
+        List<PlanNode> nodes = root.findAllAtOrBelow(Traversal.POST_ORDER);
+        assertThat(nodes.remove(0), is(sameInstance(node211)));
+        assertThat(nodes.remove(0), is(sameInstance(node21)));
+        assertThat(nodes.remove(0), is(sameInstance(node111)));
+        assertThat(nodes.remove(0), is(sameInstance(node11)));
+        assertThat(nodes.remove(0), is(sameInstance(node1)));
+        assertThat(nodes.remove(0), is(sameInstance(root)));
+        assertTrue(nodes.isEmpty());
     }
 }

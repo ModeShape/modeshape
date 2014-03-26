@@ -146,4 +146,9 @@ public class FederatedDocumentReader implements DocumentReader {
     public Integer getCacheTtlSeconds() {
         return federatedDocument.getInteger(DocumentTranslator.CACHE_TTL_SECONDS);
     }
+
+    @Override
+    public boolean isQueryable() {
+        return federatedDocument.getBoolean(DocumentTranslator.QUERYABLE_FIELD, true);
+    }
 }

@@ -26,6 +26,10 @@ import java.util.Set;
  */
 public class Collections {
 
+    public static <T> Iterator<T> emptyIterator() {
+        return new EmptyIterator<T>();
+    }
+
     public static <T> Set<T> unmodifiableSet( @SuppressWarnings( "unchecked" ) T... values ) {
         return unmodifiableSet(Arrays.asList(values));
     }

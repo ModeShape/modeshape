@@ -18,6 +18,7 @@ package org.modeshape.jcr.query.plan;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,7 @@ import java.util.Set;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ObjectUtil;
+import org.modeshape.jcr.query.engine.IndexPlan;
 import org.modeshape.jcr.query.model.Column;
 import org.modeshape.jcr.query.model.Constraint;
 import org.modeshape.jcr.query.model.JoinCondition;
@@ -36,7 +38,6 @@ import org.modeshape.jcr.query.model.JoinType;
 import org.modeshape.jcr.query.model.Ordering;
 import org.modeshape.jcr.query.model.Readable;
 import org.modeshape.jcr.query.model.SelectorName;
-import org.modeshape.jcr.query.model.SetQuery.Operation;
 import org.modeshape.jcr.query.model.Visitable;
 import org.modeshape.jcr.query.model.Visitors;
 
@@ -76,7 +77,9 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
         /** A node the performs set operations on two sets of tuples, including UNION */
         SET_OPERATION("SetOperation"),
         /** A node that contains two nodes, where the left side must be done before the right */
-        DEPENDENT_QUERY("DependentQuery");
+        DEPENDENT_QUERY("DependentQuery"),
+        /** A node that defines an index that can be used for the parent SOURCE node */
+        INDEX("Index");
 
         private static final Map<String, Type> TYPE_BY_SYMBOL;
         static {
@@ -135,7 +138,10 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
         /** For SELECT nodes, the criteria object that is to be applied. Value is a {@link Constraint} object. */
         SELECT_CRITERIA,
 
-        /** For SET_OPERATION nodes, the type of set operation to be performed. Value is a {@link Operation} object. */
+        /**
+         * For SET_OPERATION nodes, the type of set operation to be performed. Value is a
+         * {@link org.modeshape.jcr.query.model.SetQuery.Operation} object.
+         */
         SET_OPERATION,
         /** For SET_OPERATION nodes, whether the 'all' clause is used. Value is a {@link Boolean} object. */
         SET_USE_ALL,
@@ -194,7 +200,16 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
         ACCESS_NO_RESULTS,
 
         /** For dependenty queries, defines the variable where the results will be placed. */
-        VARIABLE_NAME
+        VARIABLE_NAME,
+
+        /** The specification of the index on an INDEX node. Value is a {@link IndexPlan} instance or subclass. */
+        INDEX_SPECIFICATION,
+        /** Flag specifying whether the index has been used in the query. Value is a {@link Boolean} value. */
+        INDEX_USED,
+    }
+
+    public static interface Operation {
+        void apply( PlanNode node );
     }
 
     private Type type;
@@ -743,7 +758,14 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     public <ValueType> List<ValueType> getPropertyAsList( Property propertyId,
                                                           Class<ValueType> type ) {
         if (nodeProperties == null) return null;
-        return (List<ValueType>)nodeProperties.get(propertyId);
+        Object property = nodeProperties.get(propertyId);
+        if (property instanceof List) {
+            return (List<ValueType>)property;
+        }
+        if (property == null) return null;
+        List<ValueType> result = new ArrayList<ValueType>();
+        result.add((ValueType)property);
+        return result;
     }
 
     /**
@@ -1010,10 +1032,10 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
                 Object value = entry.getValue();
                 if (value instanceof Visitable) {
                     str.append(Visitors.readable((Visitable)value));
-                } else if (value instanceof Collection<?>) {
+                } else if (value instanceof Iterable<?>) {
                     boolean firstItem = true;
                     str.append('[');
-                    for (Object item : (Collection<?>)value) {
+                    for (Object item : (Iterable<?>)value) {
                         if (firstItem) firstItem = false;
                         else str.append(", ");
                         if (item instanceof Visitable) {
@@ -1023,6 +1045,20 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
                         }
                     }
                     str.append(']');
+                } else if (value instanceof IndexPlan) {
+                    IndexPlan index = (IndexPlan)value;
+                    str.append(index.getName());
+                    if (index.getProviderName() != null) {
+                        str.append(", provider=").append(index.getProviderName());
+                    }
+                    str.append(", cost=").append(index.getCostEstimate());
+                    str.append(", cardinality=").append(index.getCardinalityEstimate());
+                    if (!index.getConstraints().isEmpty()) {
+                        str.append(", constraints=").append(index.getConstraints());
+                    }
+                    for (Map.Entry<String, Object> param : index.getParameters().entrySet()) {
+                        str.append(", ").append(param.getKey()).append('=').append(param.getValue());
+                    }
                 } else {
                     str.append(value);
                 }
@@ -1094,8 +1130,127 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     }
 
     public static enum Traversal {
+        /** Traverse all of the children before traversing the plan nodes under the children. */
         LEVEL_ORDER,
-        PRE_ORDER;
+        /**
+         * Traverse the plan nodes by visiting the parent before the children. This means traversing a child (and everything below
+         * the child) before moving to the next child.
+         */
+        PRE_ORDER,
+
+        /**
+         * Traverse the plan nodes by visiting the children before visiting the parent.
+         */
+        POST_ORDER;
+    }
+
+    /**
+     * Walk the plan tree starting in the specified traversal order, and apply the supplied operation to every plan node with a
+     * type that matches the given type.
+     * 
+     * @param order the order in which the subtree should be traversed; may not be null
+     * @param operation the operation that should be applied; may not be null
+     * @param type the type of node to which the operation should be applied; may not be null
+     */
+    public void apply( Traversal order,
+                       final Operation operation,
+                       final Type type ) {
+        apply(order, new Operation() {
+            @Override
+            public void apply( PlanNode node ) {
+                if (node.getType() == type) operation.apply(node);
+            }
+        });
+    }
+
+    /**
+     * Walk the plan tree starting in the specified traversal order, and apply the supplied operation to every plan node that is
+     * one of the supplied types.
+     * 
+     * @param order the order in which the subtree should be traversed; may not be null
+     * @param operation the operation that should be applied; may not be null
+     * @param firstType the first type of node to which the operation should be applied; may not be null
+     * @param additionalTypes the additional types of nodes to which the operation should be applied; may not be null
+     */
+    public void apply( Traversal order,
+                       Operation operation,
+                       Type firstType,
+                       Type... additionalTypes ) {
+        apply(order, operation, EnumSet.of(firstType, additionalTypes));
+    }
+
+    /**
+     * Walk the plan tree starting in the specified traversal order, and apply the supplied operation to every plan node that is
+     * one of the supplied types.
+     * 
+     * @param order the order in which the subtree should be traversed; may not be null
+     * @param operation the operation that should be applied; may not be null
+     * @param types the types of nodes to which the operation should be applied; may not be null
+     */
+    public void apply( Traversal order,
+                       final Operation operation,
+                       final Set<Type> types ) {
+        apply(order, new Operation() {
+            @Override
+            public void apply( PlanNode node ) {
+                if (types.contains(node.getType())) operation.apply(node);
+            }
+        });
+    }
+
+    /**
+     * Walk the plan tree starting in the specified traversal order, and apply the supplied operation to every plan node.
+     * 
+     * @param order the order in which the subtree should be traversed; may not be null
+     * @param operation the operation that should be applied; may not be null
+     */
+    public void apply( Traversal order,
+                       Operation operation ) {
+        assert order != null;
+        switch (order) {
+            case LEVEL_ORDER:
+                operation.apply(this);
+                applyLevelOrder(order, operation);
+                break;
+            case PRE_ORDER:
+                operation.apply(this);
+                for (PlanNode child : this) {
+                    child.apply(order, operation);
+                }
+                break;
+            case POST_ORDER:
+                for (PlanNode child : this) {
+                    child.apply(order, operation);
+                }
+                operation.apply(this);
+                break;
+        }
+    }
+
+    protected void applyLevelOrder( Traversal order,
+                                    Operation operation ) {
+        for (PlanNode child : this) {
+            operation.apply(child);
+        }
+        for (PlanNode child : this) {
+            child.applyLevelOrder(order, operation);
+        }
+    }
+
+    /**
+     * Apply the operation to all ancestor nodes below a node of the given type.
+     * 
+     * @param stopType the type of node that should not be included in the results; may not be null
+     * @param operation the operation to apply to each of the ancestor nodes below the given type; may not be null
+     */
+    public void applyToAncestorsUpTo( Type stopType,
+                                      Operation operation ) {
+        PlanNode ancestor = getParent();
+        while (ancestor != null) {
+            if (ancestor.getType() == stopType) return;
+            operation.apply(ancestor);
+            ancestor = ancestor.getParent();
+        }
     }
 
     /**
@@ -1115,17 +1270,23 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
      */
     public List<PlanNode> findAllAtOrBelow( Traversal order ) {
         assert order != null;
-        List<PlanNode> results = new LinkedList<PlanNode>();
+        LinkedList<PlanNode> results = new LinkedList<PlanNode>();
         LinkedList<PlanNode> queue = new LinkedList<PlanNode>();
         queue.add(this);
         while (!queue.isEmpty()) {
             PlanNode aNode = queue.poll();
             switch (order) {
                 case LEVEL_ORDER:
+                    results.add(aNode);
                     queue.addAll(aNode.getChildren());
                     break;
                 case PRE_ORDER:
+                    results.add(aNode);
                     queue.addAll(0, aNode.getChildren());
+                    break;
+                case POST_ORDER:
+                    queue.addAll(0, aNode.getChildren());
+                    results.addFirst(aNode);
                     break;
             }
         }
@@ -1206,20 +1367,29 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     public List<PlanNode> findAllAtOrBelow( Traversal order,
                                             Set<Type> typesToFind ) {
         assert order != null;
-        List<PlanNode> results = new LinkedList<PlanNode>();
+        LinkedList<PlanNode> results = new LinkedList<PlanNode>();
         LinkedList<PlanNode> queue = new LinkedList<PlanNode>();
         queue.add(this);
         while (!queue.isEmpty()) {
             PlanNode aNode = queue.poll();
-            if (typesToFind.contains(aNode.getType())) {
-                results.add(aNode);
-            }
             switch (order) {
                 case LEVEL_ORDER:
+                    if (typesToFind.contains(aNode.getType())) {
+                        results.add(aNode);
+                    }
                     queue.addAll(aNode.getChildren());
                     break;
                 case PRE_ORDER:
+                    if (typesToFind.contains(aNode.getType())) {
+                        results.add(aNode);
+                    }
                     queue.addAll(0, aNode.getChildren());
+                    break;
+                case POST_ORDER:
+                    queue.addAll(0, aNode.getChildren());
+                    if (typesToFind.contains(aNode.getType())) {
+                        results.addFirst(aNode);
+                    }
                     break;
             }
         }
@@ -1297,19 +1467,49 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
         queue.add(this);
         while (!queue.isEmpty()) {
             PlanNode aNode = queue.poll();
-            if (typesToFind.contains(aNode.getType())) {
-                return aNode;
-            }
             switch (order) {
                 case LEVEL_ORDER:
+                    if (typesToFind.contains(aNode.getType())) {
+                        return aNode;
+                    }
                     queue.addAll(aNode.getChildren());
                     break;
                 case PRE_ORDER:
+                    if (typesToFind.contains(aNode.getType())) {
+                        return aNode;
+                    }
                     queue.addAll(0, aNode.getChildren());
+                    break;
+                case POST_ORDER:
+                    queue.addAll(0, aNode.getChildren());
+                    if (typesToFind.contains(aNode.getType())) {
+                        return aNode;
+                    }
                     break;
             }
         }
         return null;
     }
 
+    public void orderChildren( Comparator<PlanNode> comparator ) {
+        Collections.sort(children, comparator);
+    }
+
+    public void orderChildren( final Type type,
+                               final Comparator<PlanNode> comparator ) {
+        Collections.sort(children, new Comparator<PlanNode>() {
+            @Override
+            public int compare( PlanNode o1,
+                                PlanNode o2 ) {
+                // nodes of the desired types are always less than other nodes
+                if (o1.getType() == type) {
+                    if (o2.getType() == type) {
+                        return comparator.compare(o1, o2);
+                    }
+                    return -1;
+                }
+                return o2.getType() == type ? 1 : 0;
+            }
+        });
+    }
 }

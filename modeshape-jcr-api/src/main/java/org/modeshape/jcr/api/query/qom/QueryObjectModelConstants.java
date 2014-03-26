@@ -65,4 +65,14 @@ public interface QueryObjectModelConstants extends javax.jcr.query.qom.QueryObje
      */
     public static final String JCR_JOIN_TYPE_CROSS = "jcr.join.type.cross";
 
+    /**
+     * Specification that NULL values should appear first in an {@link Ordering}.
+     */
+    public static final String JCR_ORDER_NULLS_FIRST = "jcr.order.nulls.first";
+
+    /**
+     * Specification that NULL values should appear last in an {@link Ordering}.
+     */
+    public static final String JCR_ORDER_NULLS_LAST = "jcr.order.nulls.last";
+
 }

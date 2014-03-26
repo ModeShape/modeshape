@@ -16,20 +16,12 @@
 package org.modeshape.jcr.query;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.Node;
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
 import javax.jcr.query.QueryResult;
-import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.jcr.query.QueryResults.Columns;
-import org.modeshape.jcr.query.QueryResults.Location;
-import org.modeshape.jcr.query.validate.Schemata;
 
 /**
  * {@link QueryResult} implementation for XPath results.
@@ -47,10 +39,11 @@ public class XPathQueryResult extends JcrQueryResult {
 
     public XPathQueryResult( JcrQueryContext context,
                              String query,
-                             QueryResults graphResults,
-                             Schemata schemata ) {
-        super(context, query, graphResults, schemata);
-        Columns resultColumns = graphResults.getColumns();
+                             QueryResults results,
+                             boolean restartable,
+                             int numRowsInMemory ) {
+        super(context, query, results, restartable, numRowsInMemory);
+        Columns resultColumns = results.getColumns();
         List<String> columnNames = new LinkedList<String>(resultColumns.getColumnNames());
         List<String> columnTypes = new LinkedList<String>(resultColumns.getColumnTypes());
         if (resultColumns.hasFullTextSearchScores() && !columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
@@ -66,12 +59,12 @@ public class XPathQueryResult extends JcrQueryResult {
     }
 
     @Override
-    public List<String> getColumnNameList() {
+    protected List<String> getColumnNameList() {
         return columnNames;
     }
 
     @Override
-    public java.util.List<String> getColumnTypeList() {
+    protected java.util.List<String> getColumnTypeList() {
         return columnTypes;
     }
 
@@ -83,51 +76,6 @@ public class XPathQueryResult extends JcrQueryResult {
 
     @Override
     public RowIterator getRows() {
-        final int numRows = results.getRowCount();
-        final List<Object[]> tuples = results.getTuples();
-        return new XPathQueryResultRowIterator(context, queryStatement, results, tuples.iterator(), numRows);
-    }
-
-    protected static class XPathQueryResultRowIterator extends SingleSelectorQueryResultRowIterator {
-
-        protected XPathQueryResultRowIterator( JcrQueryContext context,
-                                               String query,
-                                               QueryResults results,
-                                               Iterator<Object[]> tuples,
-                                               long numRows ) {
-            super(context, query, results, tuples, numRows);
-        }
-
-        @Override
-        protected Row createRow( Node node,
-                                 Object[] tuple ) {
-            return new XPathQueryResultRow(this, node, tuple);
-        }
-    }
-
-    protected static class XPathQueryResultRow extends SingleSelectorQueryResultRow {
-        protected XPathQueryResultRow( SingleSelectorQueryResultRowIterator iterator,
-                                       Node node,
-                                       Object[] tuple ) {
-            super(iterator, node, tuple);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Row#getValue(java.lang.String)
-         */
-        @Override
-        public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
-            if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
-                Location location = (Location)tuple[iterator.locationIndex];
-                return ((XPathQueryResultRowIterator)iterator).jcrPath(location.getPath());
-            }
-            if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
-                Double score = (Double)tuple[iterator.scoreIndex];
-                return ((XPathQueryResultRowIterator)iterator).jcrDouble(score);
-            }
-            return super.getValue(columnName);
-        }
+        return new SingleSelectorQueryResultRowIterator(context, queryStatement, sequence(), results.getColumns());
     }
 }

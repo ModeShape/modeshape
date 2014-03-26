@@ -35,7 +35,6 @@ import org.modeshape.jcr.query.model.Subquery;
 import org.modeshape.jcr.query.model.Visitors;
 import org.modeshape.jcr.query.parse.QueryParser;
 import org.modeshape.jcr.query.plan.PlanHints;
-import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.value.Path;
 
 /**
@@ -101,9 +100,8 @@ public class JcrQuery extends JcrAbstractQuery {
     @SuppressWarnings( "deprecation" )
     @Override
     public org.modeshape.jcr.api.query.QueryResult execute() throws RepositoryException {
-        context.isLive();
+        context.checkValid();
         final long start = System.nanoTime();
-        Schemata schemata = context.getSchemata();
         // Create an executable query and set it on this object ...
         CancellableQuery newExecutable = context.createExecutableQuery(query, hints, variables);
         CancellableQuery executable = executingQuery.getAndSet(newExecutable);
@@ -112,7 +110,7 @@ public class JcrQuery extends JcrAbstractQuery {
             executable = newExecutable;
         }
         // otherwise, some other thread called execute, so we can use it and just wait for the results ...
-        final QueryResults result = executable.getResults(); // may be cancelled
+        final QueryResults result = executable.execute(); // may be cancelled
 
         // And reset the reference to null (if not already set to something else) ...
         executingQuery.compareAndSet(executable, null);
@@ -120,17 +118,17 @@ public class JcrQuery extends JcrAbstractQuery {
         checkForProblems(result.getProblems());
         context.recordDuration(Math.abs(System.nanoTime() - start), TimeUnit.NANOSECONDS, statement, language);
         if (Query.XPATH.equals(language)) {
-            return new XPathQueryResult(context, statement, result, schemata);
+            return new XPathQueryResult(context, statement, result, hints.restartable, hints.rowsKeptInMemory);
         } else if (Query.SQL.equals(language)) {
-            return new JcrSqlQueryResult(context, statement, result, schemata);
+            return new JcrSqlQueryResult(context, statement, result, hints.restartable, hints.rowsKeptInMemory);
         }
-        return new JcrQueryResult(context, statement, result, schemata);
+        return new JcrQueryResult(context, statement, result, hints.restartable, hints.rowsKeptInMemory);
     }
 
     @SuppressWarnings( "deprecation" )
     @Override
     public org.modeshape.jcr.api.query.QueryResult explain() throws RepositoryException {
-        context.isLive();
+        context.checkValid();
 
         // Set to only compute the plan and then create an executable query ...
         PlanHints hints = this.hints.clone();
@@ -138,16 +136,15 @@ public class JcrQuery extends JcrAbstractQuery {
         CancellableQuery planOnlyExecutable = context.createExecutableQuery(query, hints, variables);
 
         // otherwise, some other thread called execute, so we can use it and just wait for the results ...
-        final QueryResults result = planOnlyExecutable.getResults(); // may be cancelled
+        final QueryResults result = planOnlyExecutable.execute(); // may be cancelled
 
         checkForProblems(result.getProblems());
-        Schemata schemata = context.getSchemata();
         if (Query.XPATH.equals(language)) {
-            return new XPathQueryResult(context, statement, result, schemata);
+            return new XPathQueryResult(context, statement, result, false, 0);
         } else if (Query.SQL.equals(language)) {
-            return new JcrSqlQueryResult(context, statement, result, schemata);
+            return new JcrSqlQueryResult(context, statement, result, false, 0);
         }
-        return new JcrQueryResult(context, statement, result, schemata);
+        return new JcrQueryResult(context, statement, result, false, 0);
     }
 
     @Override

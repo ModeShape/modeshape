@@ -73,7 +73,7 @@ public class JcrRepositoriesContainerTest extends JcrRepositoryFactoryTest {
     public void shouldNotReturnRepositoryIfNamesDontMatch() throws Exception {
         String url = "file:src/test/resources/config/simple-repo-config.json";
         Map<String, String> params = Collections.singletonMap(RepositoryFactory.URL, url);
-        Repository repository = repositoryFor("some name", params);
+        Repository repository = repositoryFor("wrong name", params);
         assertNull(repository);
     }
 

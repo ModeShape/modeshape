@@ -47,6 +47,8 @@ public final class JcrI18n {
     public static I18n repositoryWasInitializedByOtherProcess;
     public static I18n repositoryWasNeverUpgradedAfterMinutes;
     public static I18n failureDuringUpgradeOperation;
+    public static I18n errorShuttingDownIndexProvider;
+    public static I18n indexProviderMissingPlanner;
 
     public static I18n cannotConvertValue;
     public static I18n loginFailed;
@@ -98,6 +100,7 @@ public final class JcrI18n {
     public static I18n unableToInitializeSequencer;
     public static I18n unableToInitializeTextExtractor;
     public static I18n unableToInitializeConnector;
+    public static I18n unableToInitializeIndexProvider;
     public static I18n requiredFieldNotSetInConnector;
     public static I18n fileConnectorCannotWriteToDirectory;
     public static I18n fileConnectorTopLevelDirectoryMissingOrCannotBeRead;
@@ -263,6 +266,7 @@ public final class JcrI18n {
     public static I18n selectorUsedInEquiJoinCriteriaDoesNotExistInQuery;
     public static I18n multipleSelectorsAppearInQueryRequireSpecifyingSelectorName;
     public static I18n multipleSelectorsAppearInQueryUnableToCallMethod;
+    public static I18n multipleCallsToGetRowsOrNodesIsNotAllowed;
     public static I18n equiJoinWithOneJcrPathPseudoColumnIsInvalid;
     public static I18n noSuchVariableInQuery;
 

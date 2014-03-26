@@ -186,11 +186,7 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
         // Register the different functions ...
         functions = new HashMap<String, GitFunction>();
         pageableFunctions = new HashMap<String, PageableGitFunction>();
-        register(new GitRoot(this),
-                 new GitBranches(this),
-                 new GitTags(this),
-                 new GitHistory(this),
-                 new GitCommitDetails(this),
+        register(new GitRoot(this), new GitBranches(this), new GitTags(this), new GitHistory(this), new GitCommitDetails(this),
                  new GitTree(this));
 
         // Register the Git-specific node types ...
