@@ -83,9 +83,8 @@ public final class JcrRepositoriesContainer implements RepositoriesContainer {
 
         if (repositoryURL.toLowerCase().startsWith(JNDI_PROTOCOL)) {
             return new JNDIRepositoryLookup().repository(configParams, repositoryURL);
-        } else {
-            return new FileRepositoryLookup().repository(configParams, repositoryURL);
         }
+        return new FileRepositoryLookup().repository(configParams, repositoryURL);
     }
 
     @Override
@@ -347,8 +346,7 @@ public final class JcrRepositoriesContainer implements RepositoriesContainer {
                         return repository;
                     default:
                         LOG.debug("The '{0}' repository in JNDI at '{1}' is not (yet) running, but may be (re)started when needed.",
-                                  repositoryName,
-                                  jndiName);
+                                  repositoryName, jndiName);
                         return repository;
                 }
             } catch (NoSuchRepositoryException e) {

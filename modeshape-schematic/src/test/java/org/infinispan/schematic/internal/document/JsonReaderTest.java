@@ -16,6 +16,7 @@
 package org.infinispan.schematic.internal.document;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -146,7 +147,7 @@ public class JsonReaderTest {
             doc = reader.read(stream);
             fail("Expected parsing exception");
         } catch (ParsingException e) {
-            //expected
+            // expected
         }
 
         stream = getClass().getClassLoader().getResourceAsStream("json/invalid-example-with-comments2.json");
@@ -154,13 +155,14 @@ public class JsonReaderTest {
             doc = reader.read(stream);
             fail("Expected parsing exception");
         } catch (ParsingException e) {
-            //expected
+            // expected
         }
     }
 
-    private int countFields(Document doc) {
+    private int countFields( Document doc ) {
         int fieldCount = 0;
         for (Document.Field field : doc.fields()) {
+            assertThat(field, is(notNullValue()));
             fieldCount++;
         }
         return fieldCount;

@@ -437,13 +437,12 @@ public class ModelAttributes {
                                                                                                                               .setAllowNull(true)
                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                               .build();
-    public static final SimpleAttributeDefinition CHUNK_SIZE = new MappedAttributeDefinitionBuilder(
-                                                                                                             ModelKeys.CHUNK_SIZE,
-                                                                                                             ModelType.INT).setXmlName(Attribute.CHUNK_SIZE.getLocalName())
-                                                                                                                              .setAllowExpression(false)
-                                                                                                                              .setAllowNull(true)
-                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                              .build();
+    public static final SimpleAttributeDefinition CHUNK_SIZE = new MappedAttributeDefinitionBuilder(ModelKeys.CHUNK_SIZE,
+                                                                                                    ModelType.INT).setXmlName(Attribute.CHUNK_SIZE.getLocalName())
+                                                                                                                  .setAllowExpression(false)
+                                                                                                                  .setAllowNull(true)
+                                                                                                                  .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                  .build();
 
     public static final SimpleAttributeDefinition MINIMUM_BINARY_SIZE = new MappedAttributeDefinitionBuilder(
                                                                                                              ModelKeys.MINIMUM_BINARY_SIZE,
@@ -618,7 +617,7 @@ public class ModelAttributes {
     public static final SimpleAttributeDefinition PROPERTY = new SimpleAttributeDefinition(ModelKeys.PROPERTY,
                                                                                            ModelType.PROPERTY, true);
     public static final SimpleListAttributeDefinition PROPERTIES = SimpleListAttributeDefinition.Builder.of(ModelKeys.PROPERTIES,
-                                                                                                            (AttributeDefinition)PROPERTY)
+                                                                                                            PROPERTY)
                                                                                                         .setAllowNull(true)
                                                                                                         .build();
     public static final SimpleAttributeDefinition QUEUE_JNDI_NAME = new MappedAttributeDefinitionBuilder(
@@ -814,65 +813,64 @@ public class ModelAttributes {
                                                                                                                     .build();
 
     public static final SimpleAttributeDefinition JOURNALING = new MappedAttributeDefinitionBuilder(ModelKeys.JOURNALING,
-                                                                                                    ModelType.BOOLEAN)
-            .setXmlName(Attribute.JOURNALING.getLocalName())
-            .setAllowExpression(false)
-            .setAllowNull(true)
-            .setDefaultValue(new ModelNode(false))
-            .build();
+                                                                                                    ModelType.BOOLEAN).setXmlName(Attribute.JOURNALING.getLocalName())
+                                                                                                                      .setAllowExpression(false)
+                                                                                                                      .setAllowNull(true)
+                                                                                                                      .setDefaultValue(new ModelNode(
+                                                                                                                                                     false))
+                                                                                                                      .build();
 
     public static final SimpleAttributeDefinition JOURNAL_PATH = new MappedAttributeDefinitionBuilder(ModelKeys.JOURNAL_PATH,
-                                                                                                      ModelType.STRING)
-            .setXmlName(Attribute.JOURNAL_PATH.getLocalName())
-            .setAllowExpression(true)
-            .setAllowNull(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .build();
+                                                                                                      ModelType.STRING).setXmlName(Attribute.JOURNAL_PATH.getLocalName())
+                                                                                                                       .setAllowExpression(true)
+                                                                                                                       .setAllowNull(true)
+                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                       .build();
 
-    public static final SimpleAttributeDefinition JOURNAL_RELATIVE_TO = new MappedAttributeDefinitionBuilder(ModelKeys.JOURNAL_RELATIVE_TO,
-                                                                                                             ModelType.STRING)
-            .setXmlName(Attribute.JOURNAL_RELATIVE_TO.getLocalName())
-            .setAllowExpression(true)
-            .setAllowNull(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .build();
+    public static final SimpleAttributeDefinition JOURNAL_RELATIVE_TO = new MappedAttributeDefinitionBuilder(
+                                                                                                             ModelKeys.JOURNAL_RELATIVE_TO,
+                                                                                                             ModelType.STRING).setXmlName(Attribute.JOURNAL_RELATIVE_TO.getLocalName())
+                                                                                                                              .setAllowExpression(true)
+                                                                                                                              .setAllowNull(true)
+                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                              .build();
 
-    public static final SimpleAttributeDefinition MAX_DAYS_TO_KEEP_RECORDS = new MappedAttributeDefinitionBuilder(ModelKeys.MAX_DAYS_TO_KEEP_RECORDS,
-                                                                                                                  ModelType.INT)
-            .setXmlName(Attribute.MAX_DAYS_TO_KEEP_RECORDS.getLocalName())
-            .setAllowExpression(false)
-            .setAllowNull(true)
-            .setDefaultValue(new ModelNode(-1))
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .build();
+    public static final SimpleAttributeDefinition MAX_DAYS_TO_KEEP_RECORDS = new MappedAttributeDefinitionBuilder(
+                                                                                                                  ModelKeys.MAX_DAYS_TO_KEEP_RECORDS,
+                                                                                                                  ModelType.INT).setXmlName(Attribute.MAX_DAYS_TO_KEEP_RECORDS.getLocalName())
+                                                                                                                                .setAllowExpression(false)
+                                                                                                                                .setAllowNull(true)
+                                                                                                                                .setDefaultValue(new ModelNode(
+                                                                                                                                                               -1))
+                                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                                .build();
 
     public static final SimpleAttributeDefinition ASYNC_WRITES = new MappedAttributeDefinitionBuilder(ModelKeys.ASYNC_WRITES,
-                                                                                                      ModelType.BOOLEAN)
-            .setXmlName(Attribute.ASYNC_WRITES.getLocalName())
-            .setAllowExpression(false)
-            .setAllowNull(true)
-            .setDefaultValue(new ModelNode(false))
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .build();
+                                                                                                      ModelType.BOOLEAN).setXmlName(Attribute.ASYNC_WRITES.getLocalName())
+                                                                                                                        .setAllowExpression(false)
+                                                                                                                        .setAllowNull(true)
+                                                                                                                        .setDefaultValue(new ModelNode(
+                                                                                                                                                       false))
+                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                        .build();
 
     public static final SimpleAttributeDefinition JOURNAL_GC_THREAD_POOL = new MappedAttributeDefinitionBuilder(
-            ModelKeys.JOURNAL_GC_THREAD_POOL,
-            ModelType.STRING).setXmlName(Attribute.JOURNAL_GC_THREAD_POOL.getLocalName())
-                             .setAllowExpression(true)
-                             .setAllowNull(true)
-                             .setDefaultValue(new ModelNode().set("modeshape-journaling-gc"))
-                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                             .build();
+                                                                                                                ModelKeys.JOURNAL_GC_THREAD_POOL,
+                                                                                                                ModelType.STRING).setXmlName(Attribute.JOURNAL_GC_THREAD_POOL.getLocalName())
+                                                                                                                                 .setAllowExpression(true)
+                                                                                                                                 .setAllowNull(true)
+                                                                                                                                 .setDefaultValue(new ModelNode().set("modeshape-journaling-gc"))
+                                                                                                                                 .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                 .build();
 
     public static final SimpleAttributeDefinition JOURNAL_GC_INITIAL_TIME = new MappedAttributeDefinitionBuilder(
-            ModelKeys.JOURNAL_GC_INITIAL_TIME,
-            ModelType.STRING).setXmlName(Attribute.JOURNAL_GC_INITIAL_TIME.getLocalName())
-                             .setAllowExpression(true)
-                             .setAllowNull(true)
-                             .setDefaultValue(new ModelNode().set("00:00"))
-                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                             .build();
-
+                                                                                                                 ModelKeys.JOURNAL_GC_INITIAL_TIME,
+                                                                                                                 ModelType.STRING).setXmlName(Attribute.JOURNAL_GC_INITIAL_TIME.getLocalName())
+                                                                                                                                  .setAllowExpression(true)
+                                                                                                                                  .setAllowNull(true)
+                                                                                                                                  .setDefaultValue(new ModelNode().set("00:00"))
+                                                                                                                                  .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                  .build();
 
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
@@ -884,22 +882,22 @@ public class ModelAttributes {
         DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, THREAD_POOL, BATCH_SIZE,
         READER_STRATEGY, MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME,
         ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_STARTUP_MODE,
-        REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, GARBAGE_COLLECTION_THREAD_POOL,
-        GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL, DOCUMENT_OPTIMIZATION_THREAD_POOL,
-        DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
-        DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE, JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS, JOURNAL_GC_INITIAL_TIME,
-        JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING};
+        REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, GARBAGE_COLLECTION_THREAD_POOL, GARBAGE_COLLECTION_INITIAL_TIME,
+        GARBAGE_COLLECTION_INTERVAL, DOCUMENT_OPTIMIZATION_THREAD_POOL, DOCUMENT_OPTIMIZATION_INITIAL_TIME,
+        DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE,
+        JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS, JOURNAL_GC_INITIAL_TIME, JOURNAL_GC_THREAD_POOL,
+        ASYNC_WRITES, JOURNALING};
 
-    public static final AttributeDefinition[] LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES = {INDEX_FORMAT, PATH,
-        RELATIVE_TO, ACCESS_TYPE, LOCKING_STRATEGY,};
+    public static final AttributeDefinition[] LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES = {INDEX_FORMAT, PATH, RELATIVE_TO,
+        ACCESS_TYPE, LOCKING_STRATEGY,};
 
-    public static final AttributeDefinition[] MASTER_FILE_INDEX_STORAGE_ATTRIBUTES = {INDEX_FORMAT, PATH,
-        RELATIVE_TO, ACCESS_TYPE, LOCKING_STRATEGY, REFRESH_PERIOD, SOURCE_PATH, SOURCE_RELATIVE_TO,
-        CONNECTION_FACTORY_JNDI_NAME, QUEUE_JNDI_NAME,};
+    public static final AttributeDefinition[] MASTER_FILE_INDEX_STORAGE_ATTRIBUTES = {INDEX_FORMAT, PATH, RELATIVE_TO,
+        ACCESS_TYPE, LOCKING_STRATEGY, REFRESH_PERIOD, SOURCE_PATH, SOURCE_RELATIVE_TO, CONNECTION_FACTORY_JNDI_NAME,
+        QUEUE_JNDI_NAME,};
 
-    public static final AttributeDefinition[] SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES = {INDEX_FORMAT, PATH,
-        RELATIVE_TO, ACCESS_TYPE, LOCKING_STRATEGY, REFRESH_PERIOD, SOURCE_PATH, SOURCE_RELATIVE_TO,
-        CONNECTION_FACTORY_JNDI_NAME, QUEUE_JNDI_NAME, COPY_BUFFER_SIZE, RETRY_MARKER_LOOKUP, RETRY_INITIALIZE_PERIOD};
+    public static final AttributeDefinition[] SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES = {INDEX_FORMAT, PATH, RELATIVE_TO,
+        ACCESS_TYPE, LOCKING_STRATEGY, REFRESH_PERIOD, SOURCE_PATH, SOURCE_RELATIVE_TO, CONNECTION_FACTORY_JNDI_NAME,
+        QUEUE_JNDI_NAME, COPY_BUFFER_SIZE, RETRY_MARKER_LOOKUP, RETRY_INITIALIZE_PERIOD};
 
     public static final AttributeDefinition[] CUSTOM_INDEX_STORAGE_ATTRIBUTES = {INDEX_FORMAT, CLASSNAME, MODULE};
 

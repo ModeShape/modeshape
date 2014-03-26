@@ -16,7 +16,6 @@
 
 package org.modeshape.web.jcr.rest.filter;
 
-import java.io.IOException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.ext.Provider;
@@ -34,7 +33,7 @@ public class LoggingFilter implements ContainerRequestFilter {
     private static final Logger LOGGER = WebLogger.getLogger(LoggingFilter.class);
 
     @Override
-    public void filter( ContainerRequestContext requestContext ) throws IOException {
+    public void filter( ContainerRequestContext requestContext ) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Received request: {0}", requestContext.getUriInfo().getRequestUri().toString());
             LOGGER.debug("Executing method: {0}", requestContext.getMethod());

@@ -747,7 +747,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         String config = "config/repo-config-persistent-indexes-disk.json";
         // first run is empty, so no upgrades will be performed
         startRunStop(new RepositoryOperation() {
-            @SuppressWarnings( "deprecation" )
             @Override
             public Void call() throws Exception {
                 changeLastUpgradeId(repository, Upgrades.ModeShape_4_0_0.INSTANCE.getId() - 1);
@@ -777,7 +776,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
         // second run should run the upgrade
         startRunStop(new RepositoryOperation() {
-            @SuppressWarnings( "deprecation" )
             @Override
             public Void call() throws Exception {
                 // check that the upgrade function correctly added the new property
@@ -823,8 +821,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         }, config);
     }
 
-    private void changeLastUpgradeId( JcrRepository repository,
-                                      int value ) {
+    protected void changeLastUpgradeId( JcrRepository repository,
+                                        int value ) {
         // modify the repository-info document to force an upgrade on the next restart
         DocumentStore documentStore = repository.documentStore();
         EditableDocument editableDocument = documentStore.localStore().get("repository:info").editDocumentContent();
@@ -832,8 +830,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         documentStore.localStore().put("repository:info", editableDocument);
     }
 
-    private AccessControlList getACL( AccessControlManager acm,
-                                      String absPath ) throws Exception {
+    protected AccessControlList getACL( AccessControlManager acm,
+                                        String absPath ) throws Exception {
         AccessControlPolicyIterator it = acm.getApplicablePolicies(absPath);
         if (it.hasNext()) {
             return (AccessControlList)it.nextAccessControlPolicy();

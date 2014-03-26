@@ -2407,7 +2407,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         }
     }
 
-    @SuppressWarnings( "unused" )
     public void testShouldVerifyNtFileNodesHavePrimaryItem() throws Exception {
         Session session1 = getHelper().getSuperuserSession();
 
@@ -2437,7 +2436,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertThat(primary2, is(sameInstance((Item)content2)));
     }
 
-    @SuppressWarnings( "unused" )
     @FixFor( "MODE-1696" )
     public void testShouldVerifyNtResourceNodesHavePrimaryItem() throws Exception {
         Session session1 = getHelper().getSuperuserSession();
@@ -2566,13 +2564,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
                                                            String path,
                                                            int counts ) throws RepositoryException {
         CountDownListener listener = new CountDownListener(session, counts);
-        session.getWorkspace().getObservationManager().addEventListener(listener,
-                                                                        Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED,
-                                                                        path,
-                                                                        true,
-                                                                        null,
-                                                                        null,
-                                                                        false);
+        session.getWorkspace().getObservationManager()
+               .addEventListener(listener, Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED, path, true, null, null, false);
         return listener;
     }
 
@@ -2661,13 +2654,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
                 }
             }
         };
-        testRootNode.getSession().getWorkspace().getObservationManager().addEventListener(listener,
-                                                                                          eventTypes,
-                                                                                          testRootNode.getPath(),
-                                                                                          true,
-                                                                                          null,
-                                                                                          null,
-                                                                                          false);
+        testRootNode.getSession().getWorkspace().getObservationManager()
+                    .addEventListener(listener, eventTypes, testRootNode.getPath(), true, null, null, false);
 
         // setup parent nodes and first child
         Node a1 = testRootNode.addNode("a1");

@@ -67,7 +67,7 @@ import org.modeshape.web.jcr.rest.handler.AbstractHandler;
  * Test of the ModeShape JCR REST resource. Note that this test case uses a very low-level API to construct requests and
  * deconstruct the responses. Users are encouraged to use a higher-level library to communicate with the REST server (e.g., Apache
  * HTTP Commons).
- *
+ * 
  * @author ?
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -93,7 +93,7 @@ public class JcrResourcesTest {
 
     private static final UrlEncoder URL_ENCODER = new UrlEncoder().setSlashEncoded(false);
 
-    private DefaultHttpClient httpClient;
+    protected DefaultHttpClient httpClient;
 
     @Before
     public void beforeEach() throws Exception {
@@ -101,9 +101,10 @@ public class JcrResourcesTest {
         setAuthCredentials(AUTH_USERNAME, AUTH_PASSWORD);
     }
 
-    private void setAuthCredentials( String authUsername, String authPassword ) {
-        httpClient.getCredentialsProvider()
-                  .setCredentials(new AuthScope(getHost()), new UsernamePasswordCredentials(authUsername, authPassword));
+    private void setAuthCredentials( String authUsername,
+                                     String authPassword ) {
+        httpClient.getCredentialsProvider().setCredentials(new AuthScope(getHost()),
+                                                           new UsernamePasswordCredentials(authUsername, authPassword));
     }
 
     protected HttpHost getHost() {
@@ -235,8 +236,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldPostNodeToValidPathWithPrimaryType() throws Exception {
         // http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(
-                nodeWithPrimaryTypeResponse());
+        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(nodeWithPrimaryTypeResponse());
     }
 
     protected String nodeWithPrimaryTypeRequest() {
@@ -576,10 +576,8 @@ public class JcrResourcesTest {
         writer.flush();
         writer.close();
 
-        HttpPost post = newDefaultRequest(HttpPost.class,
-                                          new ByteArrayInputStream(byteArrayOutputStream.toByteArray()),
-                                          MediaType.APPLICATION_JSON,
-                                          url);
+        HttpPost post = newDefaultRequest(HttpPost.class, new ByteArrayInputStream(byteArrayOutputStream.toByteArray()),
+                                          MediaType.APPLICATION_JSON, url);
         return new Response(post);
     }
 
@@ -673,10 +671,8 @@ public class JcrResourcesTest {
         request.write(writer);
         writer.flush();
         writer.close();
-        HttpPut put = newDefaultRequest(HttpPut.class,
-                                        new ByteArrayInputStream(byteArrayOutputStream.toByteArray()),
-                                        MediaType.APPLICATION_JSON,
-                                        url);
+        HttpPut put = newDefaultRequest(HttpPut.class, new ByteArrayInputStream(byteArrayOutputStream.toByteArray()),
+                                        MediaType.APPLICATION_JSON, url);
         return new Response(put);
     }
 
@@ -698,7 +694,7 @@ public class JcrResourcesTest {
     private <T extends HttpRequestBase> T newDefaultRequest( Class<T> clazz,
                                                              InputStream inputStream,
                                                              String contentType,
-                                                             String... pathSegments ) throws IOException {
+                                                             String... pathSegments ) {
         return newRequest(clazz, inputStream, contentType, MediaType.APPLICATION_JSON, pathSegments);
     }
 
@@ -706,7 +702,7 @@ public class JcrResourcesTest {
                                                       InputStream inputStream,
                                                       String contentType,
                                                       String accepts,
-                                                      String... pathSegments ) throws IOException {
+                                                      String... pathSegments ) {
         String url = RestHelper.urlFrom(getServerContext(), pathSegments);
 
         try {
@@ -745,7 +741,7 @@ public class JcrResourcesTest {
             JSONObject expectedJSON = (JSONObject)expected;
             JSONObject actualJSON = (JSONObject)actual;
 
-            for (Iterator<?> keyIterator = expectedJSON.keys(); keyIterator.hasNext(); ) {
+            for (Iterator<?> keyIterator = expectedJSON.keys(); keyIterator.hasNext();) {
                 String key = keyIterator.next().toString();
                 assertTrue("Actual JSON object does not contain key: " + key, actualJSON.has(key));
 
@@ -835,7 +831,6 @@ public class JcrResourcesTest {
         protected String getContentTypeHeader() {
             return response.getFirstHeader("Content-Type").getValue();
         }
-
 
         protected Response hasMimeType( String mimeType ) {
             hasHeader("Content-Type", mimeType);
