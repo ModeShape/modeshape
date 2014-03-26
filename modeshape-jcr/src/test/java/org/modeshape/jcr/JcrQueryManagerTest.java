@@ -92,6 +92,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.query.JcrQueryResult;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
 /**
@@ -1929,6 +1930,41 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 lastPrimaryType = primaryType;
             }
         }).validate(query, result);
+    }
+
+    protected Predicate pathOrder() {
+        return new Predicate() {
+            private Path lastPath;
+
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                String pathStr = row.getValue("jcr:path").getString();
+                Path path = path(pathStr);
+                if (lastPath != null) {
+                    assertThat(path.compareTo(lastPath) >= 0, is(true));
+                }
+                lastPath = path;
+            }
+        };
+    }
+
+    @FixFor( "MODE-2138" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByPathPseudoColumn() throws RepositoryException {
+        String sql = "SELECT [jcr:path] from [nt:base] ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).hasColumns("jcr:path").onEachRow(pathOrder()).validate(query, result);
+    }
+
+    @FixFor( "MODE-2138" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByPath() throws RepositoryException {
+        String sql = "SELECT [jcr:path] from [nt:base] ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).hasColumns("jcr:path").onEachRow(pathOrder()).validate(query, result);
     }
 
     @FixFor( {"MODE-1277", "MODE-1485"} )
