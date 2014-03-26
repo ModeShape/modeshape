@@ -200,6 +200,11 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         return results.toString();
     }
 
+    @Override
+    public void close() {
+        sequence.close();
+    }
+
     /**
      * The {@link NodeIterator} implementation returned by the {@link JcrQueryResult}.
      * 

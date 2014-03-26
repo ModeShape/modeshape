@@ -17,12 +17,13 @@ package org.modeshape.jcr.api.query;
 
 import java.util.Collection;
 import javax.jcr.PropertyType;
+import javax.jcr.Session;
 
 /**
  * Replicates some of the methods introduced in JCR 2.0, but also provides an extension that allows accessing the JCR
  * {@link PropertyType} for each of the columns.
  */
-public interface QueryResult extends javax.jcr.query.QueryResult {
+public interface QueryResult extends javax.jcr.query.QueryResult, AutoCloseable {
 
     /**
      * Return whether the number of rows in the results is 0. This is often significantly more efficient and more accurate than
@@ -68,5 +69,13 @@ public interface QueryResult extends javax.jcr.query.QueryResult {
      * @return the collection of warnings; never null be empty when there are no warnings
      */
     public Collection<String> getWarnings();
+
+    /**
+     * Close and release all resources associated with these results. This method is optional but recommended, since it allows
+     * client applications full control over when such resources can be reclaimed. If this method is not called, then the results'
+     * resources will be reclaimed when the session's {@link Session#logout()} method is called.
+     */
+    @Override
+    public void close();
 
 }

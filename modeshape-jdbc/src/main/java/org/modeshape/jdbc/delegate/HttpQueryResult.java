@@ -98,6 +98,11 @@ public final class HttpQueryResult implements QueryResult {
     }
 
     @Override
+    public void close() {
+        // do nothing
+    }
+
+    @Override
     public String[] getColumnTypes() {
         return columns.values().toArray(new String[columns.size()]);
     }

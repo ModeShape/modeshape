@@ -235,6 +235,11 @@ public class TestUtil {
             public String[] getSelectorNames() {
                 return null;
             }
+
+            @Override
+            public void close() {
+                // nothing to do
+            }
         };
         return qr;
     }
