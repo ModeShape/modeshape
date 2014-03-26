@@ -79,8 +79,6 @@
                                         <unzip src="${project.build.directory}/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
                                                dest="${project.build.directory}/tempjars"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/jaxrs-api-${resteasy.version}.jar"
-                                               dest="${ant.jdbc.parseDirectory}"/>
                                         <unzip src="${project.build.directory}/tempjars/jcr-${jcr.version}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
 
@@ -121,27 +119,6 @@
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_jettison.txt"/>
-
-                                        <unzip src="${project.build.directory}/tempjars/resteasy-jaxrs-${resteasy.version}.jar"
-                                               dest="${ant.jdbc.parseDirectory}"/>
-                                        <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
-                                              tofile="${project.build.directory}/tempproviders/jaxrs_providers"/>
-
-                                        <unzip src="${project.build.directory}/tempjars/resteasy-jaxb-provider-${resteasy.version}.jar"
-                                               dest="${ant.jdbc.parseDirectory}"/>
-                                        <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
-                                              tofile="${project.build.directory}/tempproviders/jaxb_providers"/>
-
-                                        <unzip src="${project.build.directory}/tempjars/resteasy-jettison-provider-${resteasy.version}.jar"
-                                               dest="${ant.jdbc.parseDirectory}"/>
-                                        <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
-                                              tofile="${project.build.directory}/tempproviders/jet_providers"/>
-
-                                        <concat destfile="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers">
-                                            <fileset file="${project.build.directory}/tempproviders/jaxrs_providers"/>
-                                            <fileset file="${project.build.directory}/tempproviders/jaxb_providers"/>
-                                            <fileset file="${project.build.directory}/tempproviders/jet_providers"/>
-                                        </concat>
 
                                         <unzip src="${project.build.directory}/tempjars/modeshape-common-${project.version}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
