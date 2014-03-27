@@ -466,24 +466,24 @@
                                 <packages>org.modeshape.jcr.api:org.modeshape.jcr.api.monitor*:org.modeshape.jcr.api.nodetype*:org.modeshape.jcr.api.observation*:org.modeshape.jcr.api.query*:org.modeshape.jcr.api.value*</packages>
                               </group>
                               <group>
+                                <title>ModeShape JDBC Driver</title>
+                                <packages>org.modeshape.jdbc*</packages>
+                              </group>
+                              <group>
                                 <title>ModeShape engine</title>
                                 <packages>org.modeshape.jcr*:org.modeshape.jcr.bus*:org.modeshape.jcr.cache*:org.modeshape.jcr.clustering*:org.modeshape.jcr.query*:org.modeshape.jcr.security*:org.modeshape.jcr.sequencer*:org.modeshape.jcr.text*:org.modeshape.jcr.value*</packages>
                               </group>
                               <group>
                                 <title>ModeShape SPI for Extensions</title>
-                                <packages>org.modeshape.jcr.api.sequencer*:org.modeshape.jcr.api.mimetype*:org.modeshape.jcr.api.text*</packages>
+                                <packages>org.modeshape.jcr.spi.*:org.modeshape.jcr.federation.spi.*:org.modeshape.jcr.api.sequencer*:org.modeshape.jcr.api.mimetype*:org.modeshape.jcr.api.text*</packages>
                               </group>
                               <group>
-                                <title>ModeShape JDBC Driver</title>
-                                <packages>org.modeshape.jdbc*</packages>
+                                <title>ModeShape Provided Sequencers</title>
+                                <packages>org.modeshape.sequencer*</packages>
                               </group>
                               <group>
-                                <title>ModeShape Web services</title>
-                                <packages>org.modeshape.web*</packages>
-                              </group>
-                              <group>
-                                <title>ModeShape Subsystem for AS7</title>
-                                <packages>org.modeshape.jboss.subsystem*</packages>
+                                <title>ModeShape Provided Connectors</title>
+                                <packages>org.modeshape.connector*</packages>
                               </group>
                               <group>
                                 <title>ModeShape Provided Mime Type Detectors</title>
@@ -494,12 +494,12 @@
                                 <packages>org.modeshape.extractor*</packages>
                               </group>
                               <group>
-                                <title>ModeShape Provided Sequencers</title>
-                                <packages>org.modeshape.sequencer*</packages>
+                                <title>ModeShape Web services</title>
+                                <packages>org.modeshape.web*</packages>
                               </group>
                               <group>
-                                <title>Schematic Document Storage</title>
-                                <packages>org.infinispan.schematic*</packages>
+                                <title>ModeShape Subsystem for AS7</title>
+                                <packages>org.modeshape.jboss.*</packages>
                               </group>
                             </groups>
                             <excludePackageNames>org.modeshape.test*:org.modeshape.demo*</excludePackageNames>
