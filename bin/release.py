@@ -176,8 +176,8 @@ def copy_artifacts_to_archive_location(archive_path,version):
     pass
     
   # Copy the 'modeshape-distribution' artifacts ...
-  from_files = ['dist.zip', 'source.zip', 'jbosseap-61-dist.zip']
-  to_files = ['dist.zip', 'source.zip', 'jbosseap-61-dist.zip']
+  from_files = ['dist.zip', 'source.zip', 'jboss-wf8-dist.zip', 'javadoc.zip']
+  to_files = ['dist.zip', 'source.zip', 'jboss-wf8-dist.zip', 'javadoc.zip']
   for fsuffix,tsuffix in zip(from_files,to_files):
     shutil.copy("modeshape-distribution/target/modeshape-%s-%s" % (version,fsuffix), "%s/modeshape-%s-%s" % (archive_path,version,tsuffix))
   
