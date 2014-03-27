@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -41,6 +42,9 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionIterator;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -50,6 +54,7 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Workspace;
+import org.modeshape.jcr.security.SimplePrincipal;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
@@ -983,6 +988,58 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         assertEquals(((org.modeshape.jcr.api.Property) session.getItem("/node1/11")).getString(), "some string");
         assertEquals(((org.modeshape.jcr.api.Property) session.getItem("/node1/11a1")).getString(), "some string");
+    }
+
+    @Test
+    @FixFor( "MODE-2171" )
+    public void shouldNotExportACLsInSystemView() throws Exception {
+        Node node = session.getRootNode().addNode("node");
+        AccessControlList acl = acl("/node");
+        AccessControlManager accessControlManager = session.getAccessControlManager();
+        acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[]{ accessControlManager.privilegeFromName(
+                Privilege.JCR_ALL)});
+        accessControlManager.setPolicy("/node", acl);
+        assertTrue(hasMixin(node, AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE));
+        session.save();
+
+        //export the data
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        session.exportSystemView("/", baos, false, false);
+
+        node.remove();
+        session.save();
+
+        session.importXML("/", new ByteArrayInputStream(baos.toByteArray()),
+                          ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+        node = session.getNode("/node");
+        assertTrue(hasMixin(node, AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE));
+        assertFalse(node.getNodes().hasNext());
+    }
+
+    @Test
+    @FixFor( "MODE-2171" )
+    public void shouldNotExportACLsInDocumentView() throws Exception {
+        Node node = session.getRootNode().addNode("node");
+        AccessControlList acl = acl("/node");
+        AccessControlManager accessControlManager = session.getAccessControlManager();
+        acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[]{ accessControlManager.privilegeFromName(
+                Privilege.JCR_ALL)});
+        accessControlManager.setPolicy("/node", acl);
+        assertTrue(hasMixin(node, AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE));
+        session.save();
+
+        //export the data
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        session.exportDocumentView("/", baos, false, false);
+
+        node.remove();
+        session.save();
+
+        session.importXML("/", new ByteArrayInputStream(baos.toByteArray()),
+                          ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+        node = session.getNode("/node");
+        assertTrue(hasMixin(node, AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE));
+        assertFalse(node.getNodes().hasNext());
     }
 
     @Test

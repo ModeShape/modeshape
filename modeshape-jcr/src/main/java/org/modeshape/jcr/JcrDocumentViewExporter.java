@@ -82,6 +82,9 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                             ContentHandler contentHandler,
                             boolean skipBinary,
                             boolean noRecurse ) throws RepositoryException, SAXException {
+        if (!session.hasPermission(node.getPath(), ModeShapePermissions.READ)) {
+            return;
+        }
         ExecutionContext executionContext = session.context();
 
         JcrSharedNode sharedNode = asSharedNode(node);
@@ -140,7 +143,11 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         if (!noRecurse) {
             NodeIterator nodes = node.getNodes();
             while (nodes.hasNext()) {
-                exportNode(nodes.nextNode(), contentHandler, skipBinary, noRecurse);
+                Node child = nodes.nextNode();
+                //MODE-2171 Ignore any ACL nodes
+                if (!child.isNodeType(AccessControlManagerImpl.MODE_ACCESS_LIST_NODE)) {
+                    exportNode(child, contentHandler, skipBinary, noRecurse);
+                }
             }
         }
         endElement(contentHandler, name);

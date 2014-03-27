@@ -824,19 +824,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return node(path);
     }
 
-    /*    protected Node getAclNode( String absPath ) throws PathNotFoundException, RepositoryException {
-            checkLive();
-            CheckArg.isNotEmpty(absPath, "absolutePath");
-            Path path = absolutePathFor(absPath);
-
-            // Return root node if path is "/" ...
-            if (path.isRoot()) {
-                return getRootNode();
-            }
-
-            return node(path);
-        }
-    */
     @Override
     public AbstractJcrItem getItem( String absPath ) throws PathNotFoundException, RepositoryException {
         checkLive();

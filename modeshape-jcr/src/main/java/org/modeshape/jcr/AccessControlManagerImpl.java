@@ -57,8 +57,8 @@ import org.modeshape.jcr.value.Path;
 public class AccessControlManagerImpl implements AccessControlManager {
 
     public static final String MODE_ACCESS_CONTROLLABLE = "mode:accessControllable";
+    public static final String MODE_ACCESS_LIST_NODE = "mode:Acl";
     private static final String ACCESS_LIST_NODE = "mode:acl";
-    private static final String MODE_ACCESS_LIST_NODE = "mode:Acl";
     private static final String MODE_ACCESS_LIST_ENTRY_NODE = "mode:Permission";
     private static final String PRINCIPAL_NAME = "name";
     private static final String PRIVILEGES = "privileges";

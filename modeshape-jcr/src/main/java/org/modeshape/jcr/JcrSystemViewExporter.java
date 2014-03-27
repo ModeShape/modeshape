@@ -105,6 +105,9 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                                boolean skipBinary,
                                boolean noRecurse,
                                boolean isRoot ) throws RepositoryException, SAXException {
+        if (!session.hasPermission(node.getPath(), ModeShapePermissions.READ)) {
+            return;
+        }
 
         // start the sv:node element for this JCR node
         AttributesImpl atts = new AttributesImpl();
@@ -150,7 +153,11 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             if (!noRecurse) {
                 NodeIterator nodes = node.getNodes();
                 while (nodes.hasNext()) {
-                    exportNode(nodes.nextNode(), contentHandler, skipBinary, noRecurse, false);
+                    Node child = nodes.nextNode();
+                    //MODE-2171 Ignore any ACL nodes
+                    if (!child.isNodeType(AccessControlManagerImpl.MODE_ACCESS_LIST_NODE)) {
+                        exportNode(child, contentHandler, skipBinary, noRecurse, false);
+                    }
                 }
             }
         }
@@ -228,9 +235,8 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
         // then output a sv:value element for each of its values
         if (prop instanceof JcrMultiValueProperty) {
             Value[] values = prop.getValues();
-            for (int i = 0; i < values.length; i++) {
-
-                emitValue(values[i], contentHandler, property.getType(), skipBinary);
+            for (Value value : values) {
+                emitValue(value, contentHandler, property.getType(), skipBinary);
             }
         } else {
             emitValue(property.getValue(), contentHandler, property.getType(), skipBinary);
