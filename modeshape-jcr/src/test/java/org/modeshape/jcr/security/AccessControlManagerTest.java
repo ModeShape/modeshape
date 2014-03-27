@@ -316,7 +316,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         Node aircraft = root.addNode("aircraft");
         assertThat(aircraft, is(notNullValue()));
 
-        AccessControlList acl2 = getACL("/aircraft");
+        AccessControlList acl2 = acl("/aircraft");
         acl2.addAccessControlEntry(SimplePrincipal.newInstance("Admin"),
                                    new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
         acl2.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
@@ -324,7 +324,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
 
         acm.setPolicy("/aircraft", acl2);
 
-        AccessControlList acl = getACL("/");
+        AccessControlList acl = acl("/");
         acl.addAccessControlEntry(SimplePrincipal.newInstance("Admin"),
                                   new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
         acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
@@ -368,13 +368,6 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         session.save();
     }
 
-    private AccessControlList getACL( String path ) throws Exception {
-        AccessControlPolicyIterator it = acm.getApplicablePolicies(path);
-        if (it.hasNext()) {
-            return (AccessControlList)it.nextAccessControlPolicy();
-        }
-        return (AccessControlList)acm.getPolicies(path)[0];
-    }
 
     private boolean contains( String name,
                               Privilege[] privileges ) {
