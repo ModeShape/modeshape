@@ -16,6 +16,9 @@
     <properties>
         <arquillian.suspend>n</arquillian.suspend>
         <jboss.as.startup.timeout>240</jboss.as.startup.timeout>
+        <!--Force Ipv4 since that's how Arquillian starts -->
+        <preferIpv4>true</preferIpv4>
+        <preferIpv6>false</preferIpv6>
     </properties>
     <dependencyManagement>
         <dependencies>
