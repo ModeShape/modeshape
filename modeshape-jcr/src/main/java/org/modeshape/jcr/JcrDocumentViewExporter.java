@@ -82,9 +82,6 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                             ContentHandler contentHandler,
                             boolean skipBinary,
                             boolean noRecurse ) throws RepositoryException, SAXException {
-        if (!session.hasPermission(node.getPath(), ModeShapePermissions.READ)) {
-            return;
-        }
         ExecutionContext executionContext = session.context();
 
         JcrSharedNode sharedNode = asSharedNode(node);
@@ -141,6 +138,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         // Write out the element ...
         startElement(contentHandler, name, atts);
         if (!noRecurse) {
+            //the node iterator should check permissions and return only those nodes on which there is READ permission
             NodeIterator nodes = node.getNodes();
             while (nodes.hasNext()) {
                 Node child = nodes.nextNode();
