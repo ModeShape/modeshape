@@ -86,7 +86,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
     @Override
     public VersionIterator getAllVersions() throws RepositoryException {
-        return new JcrVersionIterator(getNodes());
+        return new JcrVersionIterator(getNodesInternal());
     }
 
     @Override

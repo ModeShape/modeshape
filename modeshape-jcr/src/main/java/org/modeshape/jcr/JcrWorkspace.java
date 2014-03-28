@@ -840,7 +840,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             JcrRootNode rootNode = removeSession.getRootNode();
 
             //first remove all the nodes via JCR, because we need validations to be performed
-            for (NodeIterator nodeIterator = rootNode.getNodes(); nodeIterator.hasNext(); ) {
+            for (NodeIterator nodeIterator = rootNode.getNodesInternal(); nodeIterator.hasNext(); ) {
                 AbstractJcrNode child = (AbstractJcrNode)nodeIterator.nextNode();
                 if (child.key().equals(systemKey)) {
                     //we don't remove the jcr:system node here, we just unlink it via the cache

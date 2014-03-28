@@ -40,6 +40,8 @@ import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -864,6 +866,21 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         try {
             ((Node) session.getNode("/testRoot/child")).addMixin("mix:versionable");
             fail("Should not allow versionable mixin on external nodes");
+        } catch (RepositoryException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void shouldNotAllowACLsOnExternalNodes() throws Exception {
+        AccessControlManager acm = session.getAccessControlManager();
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC2_LOCATION, "fed1");
+        session.getNode("/testRoot/fed1");
+        AccessControlList acl = acl("/testRoot/fed1");
+
+        try {
+            acm.setPolicy("/testRoot/fed1", acl);
+            fail("Should not allow ACLs on external nodes");
         } catch (RepositoryException e) {
             //expected
         }

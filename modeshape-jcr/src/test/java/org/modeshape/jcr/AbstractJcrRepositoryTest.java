@@ -45,6 +45,9 @@ import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicyIterator;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -87,6 +90,16 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
     protected String asString( Object value ) {
         return session().context().getValueFactories().getStringFactory().create(value);
     }
+
+    protected AccessControlList acl( String path ) throws Exception {
+        AccessControlManager acm = session().getAccessControlManager();
+        AccessControlPolicyIterator it = acm.getApplicablePolicies(path);
+        if (it.hasNext()) {
+            return (AccessControlList)it.nextAccessControlPolicy();
+        }
+        return (AccessControlList)acm.getPolicies(path)[0];
+    }
+
 
     protected void assertNoNode( String path ) throws RepositoryException {
         // Verify that the parent node does exist now ...

@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -46,6 +47,9 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.Privilege;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -53,6 +57,7 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.security.SimplePrincipal;
 
 public class JcrNodeTest extends MultiUseAbstractTest {
 
@@ -664,7 +669,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
                 session.removeItem("/node/jcr:primaryType");
                 fail("Should not allow the removal of protected properties");
             } catch (ConstraintViolationException e) {
-              //expected
+                //expected
             }
         } finally {
             node.remove();
@@ -703,5 +708,52 @@ public class JcrNodeTest extends MultiUseAbstractTest {
 
         testNode.remove();
         session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-2186" )
+    public void shouldCheckPermissionsWhenIteratingChildNodes() throws Exception {
+        AccessControlManager acm = session.getAccessControlManager();
+        Node parent = session.getRootNode().addNode("parent");
+
+        try {
+            Node child1 = parent.addNode("child1");
+            AccessControlList acl = acl("/parent/child1");
+            acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[] { acm.privilegeFromName(Privilege.JCR_READ) });
+            acm.setPolicy("/parent/child1", acl);
+
+            parent.addNode("child2");
+            acl = acl("/parent/child2");
+            acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[] { acm.privilegeFromName(Privilege.JCR_WRITE) });
+            acm.setPolicy("/parent/child2", acl);
+
+            session.save();
+
+            parent.getNode("child1");
+            try {
+                parent.getNode("child2");
+                fail("Permission not checked for child2");
+            } catch (AccessDeniedException e) {
+                //expected
+            }
+
+            NodeIterator nodeIterator = parent.getNodes();
+            assertEquals(1, nodeIterator.getSize());
+            Node iteratorNode = nodeIterator.nextNode();
+            assertEquals(child1.getIdentifier(), iteratorNode.getIdentifier());
+
+            nodeIterator = parent.getNodes("child*");
+            assertEquals(1, nodeIterator.getSize());
+            iteratorNode = nodeIterator.nextNode();
+            assertEquals(child1.getIdentifier(), iteratorNode.getIdentifier());
+
+            nodeIterator = parent.getNodes(new String[]{"child*"});
+            assertEquals(1, nodeIterator.getSize());
+            iteratorNode = nodeIterator.nextNode();
+            assertEquals(child1.getIdentifier(), iteratorNode.getIdentifier());
+        } finally {
+            parent.remove();
+            session.save();
+        }
     }
 }

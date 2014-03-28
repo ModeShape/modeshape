@@ -878,7 +878,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public NodeIterator getNodes() throws RepositoryException {
         ChildReferences childReferences = node().getChildReferences(sessionCache());
         if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
-        return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences);
+        return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences.iterator());
+    }
+
+    protected NodeIterator getNodesInternal() throws RepositoryException {
+        ChildReferences childReferences = node().getChildReferences(sessionCache());
+        if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
+        return new JcrChildNodeIterator(new ChildNodeResolver(session, key(), false), childReferences);
     }
 
     @Override
@@ -888,6 +894,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (namePattern.length() == 0) return JcrEmptyNodeIterator.INSTANCE;
         if ("*".equals(namePattern)) return getNodes();
         return getNodes(patternStringToGlobArray(namePattern));
+    }
+
+    protected NodeIterator getNodesInternal( String namePattern ) throws RepositoryException {
+        CheckArg.isNotNull(namePattern, "namePattern");
+        checkSession();
+        if (namePattern.length() == 0) return JcrEmptyNodeIterator.INSTANCE;
+        if ("*".equals(namePattern)) return getNodesInternal();
+        return getNodesInternal(patternStringToGlobArray(namePattern));
     }
 
     @Override
@@ -906,6 +920,23 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             iter = node().getChildReferences(sessionCache()).iterator(patterns, registry);
         }
         return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), iter);
+    }
+
+    protected NodeIterator getNodesInternal( String... nameGlobs ) throws RepositoryException {
+        CheckArg.isNotNull(nameGlobs, "nameGlobs");
+        if (nameGlobs.length == 0) return JcrEmptyNodeIterator.INSTANCE;
+
+        List<?> patterns = createPatternsFor(nameGlobs);
+        Iterator<ChildReference> iter = null;
+        if (patterns.size() == 1 && patterns.get(0) instanceof String) {
+            // This is a literal, so just look up by name ...
+            Name literal = nameFrom((String)patterns.get(0));
+            iter = node().getChildReferences(sessionCache()).iterator(literal);
+        } else {
+            NamespaceRegistry registry = session.namespaces();
+            iter = node().getChildReferences(sessionCache()).iterator(patterns, registry);
+        }
+        return new JcrChildNodeIterator(new ChildNodeResolver(session, key(), false), iter);
     }
 
     protected static String[] patternStringToGlobArray( String namePattern ) {
@@ -2703,7 +2734,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Check that any remaining child nodes that use the mixin type to be removed
         // match the residual definition for the node.
         // ------------------------------------------------------------------------------
-        for (NodeIterator iter = getNodes(); iter.hasNext();) {
+        for (NodeIterator iter = getNodesInternal(); iter.hasNext();) {
             AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
             int snsCount = (int)childCount(child.name());
             NodeDefinition childDefinition = child.getDefinition();
@@ -2758,7 +2789,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         for (AbstractJcrProperty prop : this.jcrProperties.values()) {
             prop.releasePropertyDefinitionId();
         }
-        for (NodeIterator iter = getNodes(); iter.hasNext();) {
+        for (NodeIterator iter = getNodesInternal(); iter.hasNext();) {
             AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
             child.releaseNodeDefinitionId();
         }
@@ -3612,17 +3643,28 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     protected static final class ChildNodeResolver implements JcrChildNodeIterator.NodeResolver {
         private final JcrSession session;
         private final NodeKey parentKey;
+        private final boolean checkPermission;
+
+        public ChildNodeResolver( JcrSession session, NodeKey parentKey, boolean checkPermission ) {
+            this.session = session;
+            this.parentKey = parentKey;
+            // we only need to check permissions if ACLs are enabled
+            this.checkPermission = checkPermission && session.repository().repositoryCache().isAccessControlEnabled();
+        }
 
         protected ChildNodeResolver( JcrSession session,
                                      NodeKey parentKey ) {
-            this.session = session;
-            this.parentKey = parentKey;
+            this(session, parentKey, true);
         }
 
         @Override
         public Node nodeFrom( ChildReference ref ) {
             try {
-                return session.node(ref.getKey(), null, parentKey);
+                AbstractJcrNode node =  session.node(ref.getKey(), null, parentKey);
+                if (checkPermission  && !node.isExternal() && !session.hasPermission(node.getPath(), ModeShapePermissions.READ)) {
+                    return null;
+                }
+                return node;
             } catch (RepositoryException e) {
                 return null;
             }

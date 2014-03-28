@@ -151,13 +151,13 @@ final class SequencingRunner implements Runnable {
                 primaryType = selectedNode.getPrimaryNodeType().getName();
             } else {
                 // Find the parent of the output if it exists, or create the node(s) along the path if not ...
-                Node parentOfOutput = null;
+                AbstractJcrNode parentOfOutput = null;
                 try {
                     parentOfOutput = outputSession.getNode(work.getOutputPath());
                 } catch (PathNotFoundException e) {
                     LOGGER.trace("Creating missing output path for {0}", logMsg);
                     JcrTools tools = new JcrTools();
-                    parentOfOutput = tools.findOrCreateNode(outputSession, work.getOutputPath());
+                    parentOfOutput = (AbstractJcrNode)tools.findOrCreateNode(outputSession, work.getOutputPath());
                 }
 
                 // Now determine the name of top node in the output, using the last segment of the selected path ...
@@ -383,7 +383,7 @@ final class SequencingRunner implements Runnable {
 
         // if the node was not new, we need to find the new sequenced nodes
         List<AbstractJcrNode> nodes = new ArrayList<AbstractJcrNode>();
-        NodeIterator childrenIt = rootOutputNode.getNodes();
+        NodeIterator childrenIt = rootOutputNode.getNodesInternal();
         while (childrenIt.hasNext()) {
             Node child = childrenIt.nextNode();
             if (child.isNew()) {
@@ -423,7 +423,7 @@ final class SequencingRunner implements Runnable {
      * @param logMsg the log message, or null if trace/debug logging is not being used (this is passed in for efficiency reasons)
      * @throws RepositoryException if there is a problem accessing the repository content
      */
-    private void removeExistingOutputNodes( Node parentOfOutput,
+    private void removeExistingOutputNodes( AbstractJcrNode parentOfOutput,
                                             String outputNodeName,
                                             String selectedPath,
                                             String logMsg ) throws RepositoryException {
@@ -431,7 +431,7 @@ final class SequencingRunner implements Runnable {
         if (TRACE) {
             LOGGER.trace("Looking under '{0}' for existing output to be removed for {1}", parentOfOutput.getPath(), logMsg);
         }
-        NodeIterator outputIter = parentOfOutput.getNodes(outputNodeName);
+        NodeIterator outputIter = parentOfOutput.getNodesInternal(outputNodeName);
         while (outputIter.hasNext()) {
             Node outputNode = outputIter.nextNode();
             // See if this is indeed the output, which should have the 'mode:derived' mixin ...
