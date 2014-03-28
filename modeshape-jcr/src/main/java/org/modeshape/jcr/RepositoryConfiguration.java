@@ -396,6 +396,7 @@ public class RepositoryConfiguration {
          */
         public static final String USE_ANONYMOUS_ON_FAILED_LOGINS = "useOnFailedLogin";
 
+        public static final String INDEX_PROVIDERS = "indexProviders";
         public static final String PROVIDERS = "providers";
         public static final String TYPE = "type";
         public static final String DIRECTORY = "directory";
@@ -1688,6 +1689,19 @@ public class RepositoryConfiguration {
     }
 
     /**
+     * Get the ordered list of index providers defined in the configuration.
+     * 
+     * @return the immutable list of provider components; never null but possibly empty
+     */
+    public List<Component> getIndexProviders() {
+        Problems problems = new SimpleProblems();
+        List<Component> components = readComponents(doc, FieldName.INDEX_PROVIDERS, FieldName.CLASSNAME, PROVIDER_ALIASES,
+                                                    problems);
+        assert !problems.hasErrors();
+        return components;
+    }
+
+    /**
      * Get the configuration for the indexes used by this repository.
      * 
      * @return the index-related configuration; never null
@@ -1707,21 +1721,6 @@ public class RepositoryConfiguration {
             this.indexes = indexes != null ? indexes : EMPTY;
         }
 
-        /**
-         * Get the ordered list of index providers defined in the configuration.
-         * 
-         * @return the immutable list of provider components; never null but possibly empty
-         */
-        public List<Component> getProviders() {
-            Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(indexes,
-                                                        FieldName.PROVIDERS,
-                                                        FieldName.CLASSNAME,
-                                                        PROVIDER_ALIASES,
-                                                        problems);
-            assert !problems.hasErrors();
-            return components;
-        }
     }
 
     /**
@@ -1829,34 +1828,26 @@ public class RepositoryConfiguration {
             setDefProp(props, FieldName.TYPE, FieldValue.INDEX_STORAGE_RAM);
             String type = props.getProperty(FieldName.TYPE);
             if (FieldValue.INDEX_STORAGE_FILESYSTEM.equalsIgnoreCase(type)) {
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_LOCKING_STRATEGY,
-                           Default.INDEX_STORAGE_LOCKING_STRATEGY.toString().toLowerCase());
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
+                                                                                                                  .toLowerCase());
+                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
                            Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
             } else if (FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER.equalsIgnoreCase(type)) {
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_LOCKING_STRATEGY,
-                           Default.INDEX_STORAGE_LOCKING_STRATEGY.toString().toLowerCase());
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
+                                                                                                                  .toLowerCase());
+                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
                            Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
                 setDefProp(props, FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, Default.INDEX_STORAGE_REFRESH_IN_SECONDS);
             } else if (FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE.equalsIgnoreCase(type)) {
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_LOCKING_STRATEGY,
-                           Default.INDEX_STORAGE_LOCKING_STRATEGY.toString().toLowerCase());
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
+                                                                                                                  .toLowerCase());
+                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
                            Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
                 setDefProp(props, FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, Default.INDEX_STORAGE_REFRESH_IN_SECONDS);
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES,
+                setDefProp(props, FieldName.INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES,
                            Default.INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES);
                 setDefProp(props, FieldName.INDEX_STORAGE_RETRY_MARKER_LOOKUP, Default.INDEX_STORAGE_RETRY_MARKER_LOOKUP);
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS,
+                setDefProp(props, FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS,
                            Default.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS);
             }
             return props;
@@ -1978,11 +1969,13 @@ public class RepositoryConfiguration {
                 this.includeSystemContent = defaultIncludeSystemContent;
                 this.mode = defaultIndexingMode;
             } else {
-                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, defaultQueryRebuild.name()).toUpperCase();
+                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, defaultQueryRebuild.name())
+                                                      .toUpperCase();
                 this.when = QueryRebuild.valueOf(when);
                 this.includeSystemContent = rebuildOnStartupDocument.getBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT,
                                                                                 defaultIncludeSystemContent.booleanValue());
-                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, defaultIndexingMode.name()).toUpperCase();
+                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, defaultIndexingMode.name())
+                                                      .toUpperCase();
                 this.mode = IndexingMode.valueOf(mode);
             }
         }
@@ -2286,11 +2279,8 @@ public class RepositoryConfiguration {
          * @return the immutable list of connectors; never null but possibly empty
          */
         public List<Component> getConnectors( Problems problems ) {
-            List<Component> components = readComponents(federation,
-                                                        FieldName.EXTERNAL_SOURCES,
-                                                        FieldName.CLASSNAME,
-                                                        CONNECTOR_ALIASES,
-                                                        problems);
+            List<Component> components = readComponents(federation, FieldName.EXTERNAL_SOURCES, FieldName.CLASSNAME,
+                                                        CONNECTOR_ALIASES, problems);
             assert !problems.hasErrors();
             return components;
         }

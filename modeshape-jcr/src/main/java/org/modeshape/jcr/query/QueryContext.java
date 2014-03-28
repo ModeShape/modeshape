@@ -28,6 +28,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
@@ -54,6 +55,7 @@ public class QueryContext {
     protected final PlanHints hints;
     protected final NodeTypes nodeTypes;
     protected final Schemata schemata;
+    protected final RepositoryIndexes indexDefns;
     protected final Problems problems;
     protected final Map<String, Object> variables;
     protected final Set<String> workspaceNames;
@@ -72,6 +74,7 @@ public class QueryContext {
      * @param overriddenNodeCachesByWorkspaceName the NodeCache instances that should be used to load results, which will be used
      *        instead of the RepositoryCache's NodeCache for a given workspace name; may be null or empty
      * @param schemata the schemata
+     * @param indexDefns the definitions for the currently-defined indexes; never null
      * @param nodeTypes the snapshot of the node types; may not be null
      * @param bufferManager the buffer manager; may not be null
      * @param hints the hints, or null if there are no hints
@@ -85,6 +88,7 @@ public class QueryContext {
                             Set<String> workspaceNames,
                             Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                             Schemata schemata,
+                            RepositoryIndexes indexDefns,
                             NodeTypes nodeTypes,
                             BufferManager bufferManager,
                             PlanHints hints,
@@ -94,6 +98,7 @@ public class QueryContext {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(workspaceNames, "workspaceNames");
         CheckArg.isNotNull(schemata, "schemata");
+        CheckArg.isNotNull(indexDefns, "indexDefns");
         CheckArg.isNotNull(nodeTypes, "nodeTypes");
         CheckArg.isNotNull(bufferManager, "bufferManager");
         this.context = context;
@@ -101,6 +106,7 @@ public class QueryContext {
         this.workspaceNames = workspaceNames;
         this.typeSystem = context.getValueFactories().getTypeSystem();
         this.hints = hints != null ? hints : new PlanHints();
+        this.indexDefns = indexDefns;
         this.schemata = schemata;
         this.nodeTypes = nodeTypes;
         this.problems = problems != null ? problems : new SimpleProblems();
@@ -126,6 +132,7 @@ public class QueryContext {
      * @param overriddenNodeCachesByWorkspaceName the NodeCache instances that should be used to load results, which will be used
      *        instead of the RepositoryCache's NodeCache for a given workspace name; may be null or empty
      * @param schemata the schemata
+     * @param indexDefns the definitions for the currently-defined indexes; never null
      * @param nodeTypes the snapshot of the node types; may not be null
      * @param bufferManager the buffer manager; may not be null
      * @param hints the hints, or null if there are no hints
@@ -138,13 +145,14 @@ public class QueryContext {
                          Set<String> workspaceNames,
                          Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                          Schemata schemata,
+                         RepositoryIndexes indexDefns,
                          NodeTypes nodeTypes,
                          BufferManager bufferManager,
                          PlanHints hints,
                          Problems problems,
                          Map<String, Object> variables ) {
-        this(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, nodeTypes, bufferManager,
-             hints, problems, variables, QUERY_COUNTER.incrementAndGet());
+        this(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, indexDefns, nodeTypes,
+             bufferManager, hints, problems, variables, QUERY_COUNTER.incrementAndGet());
     }
 
     /**
@@ -155,6 +163,7 @@ public class QueryContext {
      * @param workspaceNames the name of each workspace to be queried, or an empty set if all the workspaces should be queried;
      *        may not be null
      * @param schemata the schemata
+     * @param indexDefns the definitions for the currently-defined indexes; never null
      * @param nodeTypes the snapshot of the node types; may not be null
      * @param bufferManager the buffer manager; may not be null
      * @param hints the hints, or null if there are no hints
@@ -165,11 +174,13 @@ public class QueryContext {
                          RepositoryCache repositoryCache,
                          Set<String> workspaceNames,
                          Schemata schemata,
+                         RepositoryIndexes indexDefns,
                          NodeTypes nodeTypes,
                          BufferManager bufferManager,
                          PlanHints hints,
                          Problems problems ) {
-        this(context, repositoryCache, workspaceNames, null, schemata, nodeTypes, bufferManager, hints, problems, null);
+        this(context, repositoryCache, workspaceNames, null, schemata, indexDefns, nodeTypes, bufferManager, hints, problems,
+             null);
     }
 
     /**
@@ -180,6 +191,7 @@ public class QueryContext {
      * @param workspaceNames the name of each workspace to be queried, or an empty set if all the workspaces should be queried;
      *        may not be null
      * @param schemata the schemata
+     * @param indexDefns the definitions for the currently-defined indexes; never null
      * @param nodeTypes the snapshot of the node types; may not be null
      * @param bufferManager the buffer manager; may not be null
      * @throws IllegalArgumentException if the context, workspace name, or schemata are null
@@ -188,9 +200,10 @@ public class QueryContext {
                          RepositoryCache repositoryCache,
                          Set<String> workspaceNames,
                          Schemata schemata,
+                         RepositoryIndexes indexDefns,
                          NodeTypes nodeTypes,
                          BufferManager bufferManager ) {
-        this(context, repositoryCache, workspaceNames, null, schemata, nodeTypes, bufferManager, null, null, null);
+        this(context, repositoryCache, workspaceNames, null, schemata, indexDefns, nodeTypes, bufferManager, null, null, null);
     }
 
     /**
@@ -202,8 +215,8 @@ public class QueryContext {
      */
     protected QueryContext( QueryContext original ) {
         this(original.context, original.repositoryCache, original.workspaceNames, original.overriddenNodeCachesByWorkspaceName,
-             original.schemata, original.nodeTypes, original.bufferManager, original.hints, original.problems,
-             original.variables, original.id);
+             original.schemata, original.indexDefns, original.nodeTypes, original.bufferManager, original.hints,
+             original.problems, original.variables, original.id);
     }
 
     /**
@@ -264,6 +277,15 @@ public class QueryContext {
      */
     public RepositoryCache getRepositoryCache() {
         return repositoryCache;
+    }
+
+    /**
+     * Get the current index definitions.
+     * 
+     * @return the immutable index definitions; never null
+     */
+    public RepositoryIndexes getIndexDefinitions() {
+        return indexDefns;
     }
 
     /**
@@ -376,7 +398,7 @@ public class QueryContext {
     public QueryContext with( Schemata schemata ) {
         CheckArg.isNotNull(schemata, "schemata");
         return new QueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                nodeTypes, bufferManager, hints, problems, variables);
+                                indexDefns, nodeTypes, bufferManager, hints, problems, variables);
     }
 
     /**
@@ -389,7 +411,7 @@ public class QueryContext {
     public QueryContext with( PlanHints hints ) {
         CheckArg.isNotNull(hints, "hints");
         return new QueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                nodeTypes, bufferManager, hints, problems, variables);
+                                indexDefns, nodeTypes, bufferManager, hints, problems, variables);
     }
 
     /**
@@ -400,7 +422,7 @@ public class QueryContext {
      */
     public QueryContext with( Problems problems ) {
         return new QueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                nodeTypes, bufferManager, hints, problems, variables);
+                                indexDefns, nodeTypes, bufferManager, hints, problems, variables);
     }
 
     /**
@@ -411,7 +433,7 @@ public class QueryContext {
      */
     public QueryContext with( Map<String, Object> variables ) {
         return new QueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                nodeTypes, bufferManager, hints, problems, variables);
+                                indexDefns, nodeTypes, bufferManager, hints, problems, variables);
     }
 
 }

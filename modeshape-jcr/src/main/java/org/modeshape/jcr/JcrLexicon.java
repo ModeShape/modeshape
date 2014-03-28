@@ -75,6 +75,7 @@ public class JcrLexicon {
     public static final Name CONFIGURATION = new BasicName(Namespace.URI, "configuration");
     public static final Name COPIED_FROM = new BasicName(Namespace.URI, "copiedFrom");
     public static final Name CURRENT_LIFECYCLE_STATE = new BasicName(Namespace.URI, "currentLifecycleState");
+    public static final Name DESCRIPTION = new BasicName(Namespace.URI, "description");
     public static final Name ETAG = new BasicName(Namespace.URI, "etag");
     public static final Name FROZEN_MIXIN_TYPES = new BasicName(Namespace.URI, "frozenMixinTypes");
     public static final Name FROZEN_NODE = new BasicName(Namespace.URI, "frozenNode");
@@ -100,6 +101,7 @@ public class JcrLexicon {
     public static final Name STATEMENT = new BasicName(Namespace.URI, "statement");
     public static final Name SUCCESSORS = new BasicName(Namespace.URI, "successors");
     public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
+    public static final Name TITLE = new BasicName(Namespace.URI, "title");
     public static final Name VERSIONABLE_UUID = new BasicName(Namespace.URI, "versionableUuid");
     public static final Name VERSION_HISTORY = new BasicName(Namespace.URI, "versionHistory");
     public static final Name VERSION_LABELS = new BasicName(Namespace.URI, "versionLabels");

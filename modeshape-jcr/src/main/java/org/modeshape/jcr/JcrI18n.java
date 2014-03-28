@@ -349,6 +349,8 @@ public final class JcrI18n {
 
     public static I18n referentialIntegrityException;
 
+    public static I18n errorRefreshingIndexDefinitions;
+
     // Lock messages
     public static I18n nodeNotLockable;
     public static I18n cannotRemoveLockToken;

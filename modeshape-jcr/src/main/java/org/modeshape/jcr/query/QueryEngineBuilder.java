@@ -22,6 +22,7 @@ import org.modeshape.jcr.query.optimize.Optimizer;
 import org.modeshape.jcr.query.optimize.RuleBasedOptimizer;
 import org.modeshape.jcr.query.plan.CanonicalPlanner;
 import org.modeshape.jcr.query.plan.Planner;
+import org.modeshape.jcr.spi.index.IndexManager;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -29,6 +30,7 @@ import org.modeshape.jcr.query.plan.Planner;
 public abstract class QueryEngineBuilder {
 
     private RepositoryConfiguration config;
+    private IndexManager indexManager;
     private ExecutionContext context;
     private Planner planner;
     private Optimizer optimizer;
@@ -37,9 +39,11 @@ public abstract class QueryEngineBuilder {
     }
 
     public QueryEngineBuilder using( RepositoryConfiguration configuration,
+                                     IndexManager indexManager,
                                      ExecutionContext context ) {
         this.config = configuration;
         this.context = context;
+        this.indexManager = indexManager;
         return this;
     }
 
@@ -61,6 +65,10 @@ public abstract class QueryEngineBuilder {
 
     protected final ExecutionContext context() {
         return context;
+    }
+
+    protected final IndexManager indexManager() {
+        return indexManager;
     }
 
     protected String repositoryName() {

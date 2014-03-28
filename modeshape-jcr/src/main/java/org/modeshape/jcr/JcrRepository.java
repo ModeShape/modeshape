@@ -131,8 +131,9 @@ import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
-import org.modeshape.jcr.spi.query.QueryIndexWriter;
-import org.modeshape.jcr.spi.query.QueryIndexWriter.IndexingContext;
+import org.modeshape.jcr.spi.index.IndexManager;
+import org.modeshape.jcr.spi.index.provider.IndexWriter;
+import org.modeshape.jcr.spi.index.provider.IndexWriter.IndexingContext;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
@@ -433,6 +434,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             stateLock.unlock();
         }
         return true;
+    }
+
+    /**
+     * Get the manager for the index definitions and index providers.
+     * 
+     * @return the index manager; never null
+     */
+    public IndexManager getIndexManager() {
+        return runningState().queryManager().getIndexManager();
     }
 
     protected final DocumentStore documentStore() {
@@ -1033,7 +1043,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.txnMgr = documentStore.transactionManager();
 
                     MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                    this.transactions = createTransactions(this.cache.getName(), config.getTransactionMode(), monitorFactory, this.txnMgr);
+                    this.transactions = createTransactions(this.cache.getName(), config.getTransactionMode(), monitorFactory,
+                                                           this.txnMgr);
 
                     suspendExistingUserTransaction();
 
@@ -1272,7 +1283,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                    MonitorFactory monitorFactory,
                                                    TransactionManager txnMgr ) {
             if (txnMgr == null) {
-                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName(), cacheName));
+                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName(),
+                                                                                                                   cacheName));
             }
 
             switch (mode) {
@@ -1295,6 +1307,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             try {
                 refreshWorkspaces();
 
+                this.repositoryQueryManager.initialize();
                 this.sequencers.initialize();
 
                 // import the preconfigured node types before the initial content, in case the latter use custom types
@@ -1981,7 +1994,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                          RepositoryQueryManager queryManager ) {
             final RunningState runningState = this.runningState;
             final NodeTypeSchemata schemata = nodeTypeManager.getRepositorySchemata();
-            final QueryIndexWriter indexes = queryManager.getIndexes();
+            final IndexWriter indexes = queryManager.getIndexWriter();
 
             // a transaction will be returned only if it exists and is in ACTIVE status
             final Transaction txn = currentTransaction();

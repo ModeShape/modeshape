@@ -32,6 +32,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.QueryContext;
@@ -455,7 +456,8 @@ public class ImmutableSchemata implements Schemata {
                     hints.validateColumnExistance = false;
                     // Create a query context that queries all workspaces (we won't actually query using it) ...
                     Set<String> allWorkspaces = Collections.emptySet();
-                    QueryContext queryContext = new QueryContext(context, null, allWorkspaces, schemata, nodeTypes,
+                    RepositoryIndexes indexDefns = RepositoryIndexes.NO_INDEXES;
+                    QueryContext queryContext = new QueryContext(context, null, allWorkspaces, schemata, indexDefns, nodeTypes,
                                                                  bufferManager, hints, null);
                     CanonicalPlanner planner = new CanonicalPlanner();
                     PlanNode plan = planner.createPlan(queryContext, command);

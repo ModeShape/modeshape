@@ -72,6 +72,7 @@
 + mode:locks (mode:locks) = mode:locks autocreated mandatory protected abort
 + mode:repository (mode:repository) = mode:repository autocreated protected abort
 + mode:federation (mode:federation) = mode:federation autocreated protected abort
++ mode:indexes (mode:indexes) = mode:indexes autocreated protected abort
 + jcr:nodeTypes (mode:nodeTypes) = mode:nodeTypes autocreated mandatory protected abort
 + jcr:versionStorage (mode:versionStorage) = mode:versionStorage autocreated mandatory protected abort
 
@@ -106,3 +107,38 @@
 [mode:Permission] noquery
     - name (string) nofulltext
     - privileges (string) multiple nofulltext protected
+
+// -----------------------
+// Query index definitions
+// -----------------------
+
+// We organize the indexes by providers for several reasons. 
+// 1. It's easier to ensure that all indexes have a provider.
+// 2. The name of the indexes really needs to be unique only for a given provider
+// 3. When an index is removed, we know which provider it is for based upon the path.
+
+[mode:indexes]
++ * (mode:indexProvider) = mode:indexProvider protected ignore
+
+[mode:indexProvider]
++ * (mode:index) = mode:index protected ignore
+
+[mode:index] > mix:referenceable, mix:created, mix:lastModified
+- mode:enabled (boolean) = 'true' mandatory protected ignore
+- mode:kind (string) mandatory protected ignore
+    < 'UNIQUE', 'DUPLICATES', 'ENUMERATED', 'FULLTEXT'
+- mode:nodeTypeName (name) = 'nt:base' mandatory protected ignore
+- jcr:description (string) protected ignore
+- * (undefined) protected ignore
+- * (undefined) multiple protected ignore
++ mode:indexColumn (mode:indexColumn) = mode:indexColumn mandatory protected sns
+
+[mode:indexColumn] > mix:referenceable
+- mode:propertyName (name) mandatory protected ignore
+- mode:columnType (string) mandatory protected 
+    < 'STRING', 'URI', 'BINARY', 'LONG', 'DOUBLE', 'DECIMAL', 'BOOLEAN', 
+      'DATE', 'NAME', 'PATH', 'REFERENCE', 'WEAKREFERENCE', 'UNDEFINED'
+
+
+
+

@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
+import junit.framework.AssertionFailedError;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -877,7 +878,14 @@ public class JcrResourcesTest {
             JSONObject expectedObject = new JSONObject(expectedJSONString);
 
             JSONObject responseObject = new JSONObject(contentAsString());
-            assertJSON(expectedObject, responseObject);
+
+            try {
+                assertJSON(expectedObject, responseObject);
+            } catch (AssertionFailedError e) {
+                System.out.println("expected: " + expectedObject);
+                System.out.println("response: " + responseObject);
+                throw e;
+            }
 
             return this;
         }

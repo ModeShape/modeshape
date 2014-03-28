@@ -286,8 +286,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         Set<String> workspaceNames = repoCache.getWorkspaceNames();
         Map<String, NodeCache> overridden = null;
         NodeTypes nodeTypes = repository.nodeTypeManager().getNodeTypes();
-        CancellableQuery query = queryManager.query(context, repoCache, workspaceNames, overridden, command, schemata, nodeTypes,
-                                                    null, null);
+        RepositoryIndexes indexDefns = repository.queryManager().getIndexes();
+        CancellableQuery query = queryManager.query(context, repoCache, workspaceNames, overridden, command, schemata,
+                                                    indexDefns, nodeTypes, null, null);
         try {
             QueryResults result = query.execute();
             if (result.isEmpty()) return false;

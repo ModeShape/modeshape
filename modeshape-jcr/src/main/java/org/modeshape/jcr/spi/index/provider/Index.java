@@ -13,35 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.spi.query;
+package org.modeshape.jcr.spi.index.provider;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import javax.jcr.query.qom.Constraint;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.cache.NodeKey;
 
 /**
  * A provider-specific index used by the query system to quickly provide the set of {@link NodeKey}s that satisfy a particular
  * portion of a query.
  * <p>
- * Each time ModeShape uses this index, it calls the {@link #filter(Filter)} method to obtain an {@link Operation} instance that
+ * Each time ModeShape uses this index, it calls the {@link #filter(IndexFilter)} method to obtain an {@link Operation} instance that
  * ModeShape will then use to {@link Operation#getNextBatch(ResultWriter, int) access} the batches of node keys that satisfy the
- * given {@link Filter}. Note that once an {@link Operation} is obtained, it may not be called if the query is cancelled before
+ * given {@link IndexFilter}. Note that once an {@link Operation} is obtained, it may not be called if the query is cancelled before
  * this index is needed.
  * </p>
  * 
- * @see QueryIndexProvider#getQueryIndex(String)
+ * @see IndexProvider#getQueryIndex(String)
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public interface QueryIndex {
+public interface Index {
 
     /**
-     * Get the name of the {@link QueryIndexProvider} that owns this index.
+     * Get the name of the {@link IndexProvider} that owns this index.
      * 
-     * @return the provider's {@link QueryIndexProvider#getName() name}; never null
+     * @return the provider's {@link IndexProvider#getName() name}; never null
      */
     String getProviderName();
 
@@ -69,13 +63,13 @@ public interface QueryIndex {
      * @param filter the filter to be applied by this index; never null
      * @return the batched node keys; never null
      */
-    Operation filter( Filter filter );
+    Operation filter( IndexFilter filter );
 
     /**
      * A potentially executable stateful operation that returns the set of nodes that satisfies the constraints supplied when the
-     * operation is {@link QueryIndex#filter(Filter) created}.
+     * operation is {@link Index#filter(IndexFilter) created}.
      * <p>
-     * {@link QueryIndex} implementations should create their own implementations of this interface, and ModeShape will then
+     * {@link Index} implementations should create their own implementations of this interface, and ModeShape will then
      * periodically call {@link #getNextBatch(ResultWriter, int)} as (additional) results are needed to answer the query.
      * Generally, each {@link Operation} instance will have enough state to execute the filtering steps.
      * </p>
@@ -106,80 +100,5 @@ public interface QueryIndex {
          */
         @Override
         void close();
-    }
-
-    /**
-     * A writer passed by ModeShape to a {@link Operation} instance when the query engine needs additional results for the query.
-     * <p>
-     * Instances of this type are created by ModeShape and passed into the {@link Operation#getNextBatch(ResultWriter, int)}
-     * method. Thus, providers do not need to implement this interface (except maybe for testing purposes).
-     * </p>
-     * 
-     * @author Randall Hauch (rhauch@redhat.com)
-     */
-    @NotThreadSafe
-    interface ResultWriter {
-        /**
-         * Add to the current batch a single node key with a score.
-         * 
-         * @param nodeKey the node key; may not be null
-         * @param score the score; must be positive
-         */
-        void add( NodeKey nodeKey,
-                  float score );
-
-        /**
-         * Add to the current batch a series of node keys with the same score for each node key.
-         * 
-         * @param nodeKeys the node keys; may not be null
-         * @param score the score; must be positive
-         */
-        void add( Iterable<NodeKey> nodeKeys,
-                  float score );
-
-        /**
-         * Add to the current batch a series of node keys with the same score for each node key.
-         * 
-         * @param nodeKeys the node keys; may not be null
-         * @param score the score; must be positive
-         */
-        void add( Iterator<NodeKey> nodeKeys,
-                  float score );
-    }
-
-    /**
-     * The filter containing a set of constraints.
-     * <p>
-     * Instances of this type are created by ModeShape and passed into the {@link QueryIndex#filter(Filter)} method. Thus,
-     * providers do not need to implement this interface (except maybe for testing purposes).
-     * </p>
-     * 
-     * @see QueryIndex#filter(Filter)
-     * @author Randall Hauch (rhauch@redhat.com)
-     */
-    @Immutable
-    interface Filter {
-        /**
-         * Return whether this filter contains constraints. This is identical to calling "<code>!getConstraints().isEmpty()</code>
-         * ".
-         * 
-         * @return true if there is at least one constraint, or false if there are none
-         */
-        boolean hasConstraints();
-
-        /**
-         * Get the constraints for this filter.
-         * 
-         * @return the constraints; never null but maybe empty
-         */
-        Collection<Constraint> getConstraints();
-
-        /**
-         * Get the parameters for this filter operation, as determined during
-         * {@link QueryIndexPlanner#applyIndexes(org.modeshape.jcr.query.QueryContext, org.modeshape.jcr.query.model.SelectorName, java.util.List, org.modeshape.jcr.spi.query.IndexCollector)}
-         * 
-         * @return the parameters; never null but may be empty
-         */
-        Map<String, Object> getParameters();
     }
 }

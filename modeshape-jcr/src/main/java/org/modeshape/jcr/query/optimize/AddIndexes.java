@@ -27,19 +27,19 @@ import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.engine.IndexPlan;
-import org.modeshape.jcr.query.engine.IndexPlan.StandardIndexPlanner;
+import org.modeshape.jcr.query.engine.IndexPlanners;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.PlanNode.Operation;
 import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
-import org.modeshape.jcr.spi.query.IndexCollector;
-import org.modeshape.jcr.spi.query.QueryIndexPlanner;
+import org.modeshape.jcr.spi.index.IndexCollector;
+import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 
 /**
- * A rule that adds indexes below {@link Type#SOURCE} nodes. The rule uses an {@link QueryIndexPlanner} that will actually look at the
- * AND-ed constraints for the source (that is, the constraints in the {@link Type#SELECT} above the {@link Type#SOURCE} node but
- * below an {@link Type#ACCESS} node) and produce 0 or more indexes. These indexes are then added as {@link Type#INDEX} nodes
+ * A rule that adds indexes below {@link Type#SOURCE} nodes. The rule uses an {@link IndexPlanner} that will actually look at
+ * the AND-ed constraints for the source (that is, the constraints in the {@link Type#SELECT} above the {@link Type#SOURCE} node
+ * but below an {@link Type#ACCESS} node) and produce 0 or more indexes. These indexes are then added as {@link Type#INDEX} nodes
  * below the {@link Type#SOURCE} node.
  * 
  * @author Randall Hauch (rhauch@redhat.com)
@@ -62,17 +62,17 @@ public class AddIndexes implements OptimizerRule {
     /**
      * The instance of the rule that uses the supplied index planner.
      * 
-     * @param planner the index planner; should not be null
+     * @param planners the index planners; should not be null
      * @return the new rule; never null
      */
-    public static AddIndexes with( QueryIndexPlanner planner ) {
-        return new AddIndexes(planner);
+    public static AddIndexes with( IndexPlanners planners ) {
+        return new AddIndexes(planners);
     }
 
-    private final QueryIndexPlanner planner;
+    private final IndexPlanners planners;
 
-    protected AddIndexes( QueryIndexPlanner planner ) {
-        this.planner = planner != null ? planner : StandardIndexPlanner.INSTANCE;
+    protected AddIndexes( IndexPlanners planner ) {
+        this.planners = planner != null ? planner : IndexPlanners.implicit();
     }
 
     @Override
@@ -154,7 +154,7 @@ public class AddIndexes implements OptimizerRule {
                 // And collect the indexes from the index planner ...
                 assert source.getSelectors().size() == 1;
                 SelectorName selectorName = source.getSelectors().iterator().next();
-                planner.applyIndexes(context, selectorName, constraints.get(), collector);
+                planners.applyIndexes(context, selectorName, constraints.get(), context.getIndexDefinitions(), collector);
             }
         }
         return plan;

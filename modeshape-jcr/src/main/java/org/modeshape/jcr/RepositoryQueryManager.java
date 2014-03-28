@@ -49,8 +49,9 @@ import org.modeshape.jcr.query.engine.IndexQueryEngine;
 import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.validate.Schemata;
-import org.modeshape.jcr.spi.query.QueryIndexWriter;
-import org.modeshape.jcr.spi.query.QueryIndexWriter.IndexingContext;
+import org.modeshape.jcr.spi.index.IndexManager;
+import org.modeshape.jcr.spi.index.provider.IndexWriter;
+import org.modeshape.jcr.spi.index.provider.IndexWriter.IndexingContext;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
@@ -63,16 +64,11 @@ class RepositoryQueryManager {
     private final RunningState runningState;
     private final ExecutorService indexingExecutorService;
     private final RepositoryConfiguration repoConfig;
+    private final RepositoryIndexManager indexManager;
     private final Lock engineInitLock = new ReentrantLock();
     @GuardedBy( "engineInitLock" )
     private volatile QueryEngine queryEngine;
     private volatile Future<Void> asyncReindexingResult;
-
-    protected RepositoryQueryManager( RunningState runningState ) {
-        this.runningState = runningState;
-        this.indexingExecutorService = null;
-        this.repoConfig = null;
-    }
 
     RepositoryQueryManager( RunningState runningState,
                             ExecutorService indexingExecutorService,
@@ -80,6 +76,11 @@ class RepositoryQueryManager {
         this.runningState = runningState;
         this.indexingExecutorService = indexingExecutorService;
         this.repoConfig = config;
+        this.indexManager = new RepositoryIndexManager(runningState, config);
+    }
+
+    void initialize() {
+        indexManager.initialize();
     }
 
     void shutdown() {
@@ -125,13 +126,15 @@ class RepositoryQueryManager {
                                    Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                                    final QueryCommand query,
                                    Schemata schemata,
+                                   RepositoryIndexes indexDefns,
                                    NodeTypes nodeTypes,
                                    PlanHints hints,
                                    Map<String, Object> variables ) {
         final QueryEngine queryEngine = queryEngine();
         final QueryContext queryContext = queryEngine.createQueryContext(context, repositoryCache, workspaceNames,
                                                                          overriddenNodeCachesByWorkspaceName, schemata,
-                                                                         nodeTypes, new BufferManager(context), hints, variables);
+                                                                         indexDefns, nodeTypes, new BufferManager(context),
+                                                                         hints, variables);
         final org.modeshape.jcr.query.model.QueryCommand command = (org.modeshape.jcr.query.model.QueryCommand)query;
         return new CancellableQuery() {
             private final Lock lock = new ReentrantLock();
@@ -159,12 +162,29 @@ class RepositoryQueryManager {
     }
 
     /**
-     * Get the writer to the indexes.
+     * Get the writer to the indexes. The resulting instance will only write to the index providers that were registered at the
+     * time this method is called. Therefore, the writer should be used and discarded relatively quickly, since query index
+     * providers may be {@link RepositoryIndexManager#register(org.modeshape.jcr.spi.index.provider.IndexProvider) added} or
+     * {@link RepositoryIndexManager#unregister(String) removed} at any time.
      * 
      * @return the index writer; never null
      */
-    public QueryIndexWriter getIndexes() {
-        return queryEngine().getQueryIndexWriter();
+    public IndexWriter getIndexWriter() {
+        return indexManager.getIndexWriter();
+    }
+
+    protected IndexManager getIndexManager() {
+        return indexManager;
+    }
+
+    /**
+     * Get an immutable snapshot of the index definitions. This can be used by the query engine to determine which indexes might
+     * be usable when quering a specific selector (node type).
+     * 
+     * @return a snapshot of the index definitions at this moment; never null
+     */
+    RepositoryIndexes getIndexes() {
+        return indexManager.getIndexes();
     }
 
     /**
@@ -178,7 +198,7 @@ class RepositoryQueryManager {
                 engineInitLock.lock();
                 if (queryEngine == null) {
                     QueryEngineBuilder builder = null;
-                    if (!repoConfig.getIndexes().getProviders().isEmpty()) {
+                    if (!repoConfig.getIndexProviders().isEmpty()) {
                         // There is at least one index provider ...
                         builder = IndexQueryEngine.builder();
                         logger.debug("Queries with indexes are enabled for the '{0}' repository. Executing queries may require scanning the repository contents when the query cannot use the defined indexes.",
@@ -189,7 +209,7 @@ class RepositoryQueryManager {
                         logger.debug("Queries with no indexes are enabled for the '{0}' repository. Executing queries will always scan the repository contents.",
                                      repoConfig.getName());
                     }
-                    queryEngine = builder.using(repoConfig, runningState.context()).build();
+                    queryEngine = builder.using(repoConfig, indexManager, runningState.context()).build();
                 }
             } finally {
                 engineInitLock.unlock();
@@ -229,7 +249,7 @@ class RepositoryQueryManager {
     }
 
     protected boolean indexesEmpty() {
-        QueryIndexWriter indexes = getIndexes();
+        IndexWriter indexes = getIndexWriter();
         return indexes.initializedIndexes() && !indexes.canBeSkipped();
     }
 
@@ -239,7 +259,7 @@ class RepositoryQueryManager {
      * @param includeSystemContent true if the system content should also be indexed
      */
     private void reindexContent( boolean includeSystemContent ) {
-        if (getIndexes().canBeSkipped()) return;
+        if (getIndexWriter().canBeSkipped()) return;
         // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
         NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
         RepositoryCache repoCache = runningState.repositoryCache();
@@ -286,7 +306,7 @@ class RepositoryQueryManager {
     public void reindexContent( JcrWorkspace workspace,
                                 Path path,
                                 int depth ) {
-        if (getIndexes().canBeSkipped()) {
+        if (getIndexWriter().canBeSkipped()) {
             // There's no indexes that require updating ...
             return;
         }
@@ -323,7 +343,7 @@ class RepositoryQueryManager {
                                    CachedNode node,
                                    int depth,
                                    boolean reindexSystemContent ) {
-        final QueryIndexWriter indexes = getIndexes();
+        final IndexWriter indexes = getIndexWriter();
         if (indexes.canBeSkipped()) return;
         if (!node.isQueryable(cache)) {
             return;

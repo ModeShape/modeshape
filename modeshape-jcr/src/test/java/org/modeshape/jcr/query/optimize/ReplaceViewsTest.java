@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
@@ -63,7 +64,8 @@ public class ReplaceViewsTest extends AbstractQueryTest {
         builder.addView("v2", "SELECT t1.c11, t1.c12, t2.c23 FROM t1 JOIN t2 ON t1.c11 = t2.c21");
         schemata = builder.build();
         context = new QueryContext(new ExecutionContext(), mock(RepositoryCache.class), Collections.singleton("workspace"),
-                                   mock(Schemata.class), mock(NodeTypes.class), mock(BufferManager.class));
+                                   mock(Schemata.class), mock(RepositoryIndexes.class), mock(NodeTypes.class),
+                                   mock(BufferManager.class));
     }
 
     /**
