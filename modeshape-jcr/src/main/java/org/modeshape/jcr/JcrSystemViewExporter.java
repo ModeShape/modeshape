@@ -105,10 +105,6 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                                boolean skipBinary,
                                boolean noRecurse,
                                boolean isRoot ) throws RepositoryException, SAXException {
-        if (!session.hasPermission(node.getPath(), ModeShapePermissions.READ)) {
-            return;
-        }
-
         // start the sv:node element for this JCR node
         AttributesImpl atts = new AttributesImpl();
         String nodeName = node.getName();
@@ -151,6 +147,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             }
 
             if (!noRecurse) {
+                // the node iterator should check permissions and return only those nodes on which there is READ permission
                 NodeIterator nodes = node.getNodes();
                 while (nodes.hasNext()) {
                     Node child = nodes.nextNode();
