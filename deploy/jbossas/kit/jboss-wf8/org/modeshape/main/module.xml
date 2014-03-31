@@ -41,7 +41,7 @@
         <module name="org.infinispan.cachestore.jdbc" export="true"/>
         <module name="org.infinispan.cachestore.remote" export="true"/>
 
-        <module name="org.joda.time"/>
+        <module name="org.joda.time" export="true"/>
         <module name="org.jgroups"/>
         <module name="org.apache.tika" slot="${tika.version}" services="import"/>
         <module name="org.mapdb" slot="${mapdb.version}" services="import"/>
