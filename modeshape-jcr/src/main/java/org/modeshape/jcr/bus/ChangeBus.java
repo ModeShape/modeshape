@@ -43,4 +43,14 @@ public interface ChangeBus extends ChangeSetListener, Observable {
      * @return {@code true} if there are any registered observers, {@code false} otherwise
      */
     public boolean hasObservers();
+
+    /**
+     * Register the supplied observer which will be always notified in the same thread as the bus instance.
+     * This method does nothing if the observer reference is null.
+     *
+     * @param observer the observer to be added; may be null
+     * @return true if the observer was added, or false if the observer was null, if the observer was already registered, or if
+     *         the observer could not be added
+     */
+    boolean registerInThread( ChangeSetListener observer);
 }

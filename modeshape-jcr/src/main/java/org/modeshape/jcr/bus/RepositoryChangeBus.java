@@ -42,7 +42,6 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 @ThreadSafe
 public final class RepositoryChangeBus implements ChangeBus {
 
-    private static final String NULL_WORKSPACE_NAME = "null_workspace_name";
     protected static final Logger LOGGER = Logger.getLogger(RepositoryChangeBus.class);
 
     protected volatile boolean shutdown;
@@ -65,8 +64,8 @@ public final class RepositoryChangeBus implements ChangeBus {
     public RepositoryChangeBus( ExecutorService executor,
                                 String systemWorkspaceName ) {
         this.systemWorkspaceName = systemWorkspaceName;
-        this.workers = new HashMap<Integer, Future<?>>();
-        this.dispatchers = new ArrayList<ChangeSetDispatcher>();
+        this.workers = new HashMap<>();
+        this.dispatchers = new ArrayList<>();
         this.listenersLock = new ReentrantReadWriteLock(true);
         this.executor = executor;
         this.shutdown = false;
@@ -96,6 +95,16 @@ public final class RepositoryChangeBus implements ChangeBus {
     @GuardedBy( "listenersLock" )
     @Override
     public boolean register( ChangeSetListener listener ) {
+        return internalRegister(listener, false);
+    }
+
+    @Override
+    @GuardedBy( "listenersLock" )
+    public boolean registerInThread( ChangeSetListener listener ) {
+        return internalRegister(listener, true);
+    }
+
+    private boolean internalRegister( ChangeSetListener listener, boolean inThread ) {
         if (listener == null) {
             return false;
         }
@@ -107,7 +116,7 @@ public final class RepositoryChangeBus implements ChangeBus {
             listenersLock.writeLock().lock();
 
             if (!workers.containsKey(hashCode)) {
-                ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener);
+                ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener, inThread);
                 dispatchers.add(dispatcher);
                 workers.put(hashCode, executor.submit(dispatcher));
                 return true;
@@ -160,13 +169,9 @@ public final class RepositoryChangeBus implements ChangeBus {
             throw new IllegalStateException("Change bus has been already shut down, should not have any more observers");
         }
 
-        String workspaceName = changeSet.getWorkspaceName() != null ? changeSet.getWorkspaceName() : NULL_WORKSPACE_NAME;
-        if (workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
-            // changes in the system workspace are always submitted in the same thread because they need immediate processing
-            submitChanges(changeSet, true);
-        } else {
-            submitChanges(changeSet, false);
-        }
+        // changes in the system workspace are always submitted in the same thread because they need immediate processing
+        boolean inThread = systemWorkspaceName.equalsIgnoreCase(changeSet.getWorkspaceName());
+        submitChanges(changeSet, inThread);
     }
 
     private boolean submitChanges( ChangeSet changeSet,
@@ -174,7 +179,7 @@ public final class RepositoryChangeBus implements ChangeBus {
         try {
             listenersLock.readLock().lock();
             for (ChangeSetDispatcher dispatcher : dispatchers) {
-                if (inThread) {
+                if (inThread || dispatcher.notifyInSameThread()) {
                     dispatcher.listener().notify(changeSet);
                 } else {
                     dispatcher.submit(changeSet);
@@ -200,13 +205,15 @@ public final class RepositoryChangeBus implements ChangeBus {
     private class ChangeSetDispatcher implements Callable<Void> {
 
         private final int listenerHashCode;
+        private final boolean notifyInSameThread;
         private ChangeSetListener listener;
         private BlockingQueue<ChangeSet> queue;
 
-        protected ChangeSetDispatcher( ChangeSetListener listener ) {
+        protected ChangeSetDispatcher( ChangeSetListener listener, boolean notifyInSameThread ) {
             this.listener = listener;
             this.listenerHashCode = HashCode.compute(listener);
-            this.queue = new LinkedBlockingQueue<ChangeSet>();
+            this.queue = new LinkedBlockingQueue<>();
+            this.notifyInSameThread = notifyInSameThread;
         }
 
         @Override
@@ -238,6 +245,10 @@ public final class RepositoryChangeBus implements ChangeBus {
 
         protected ChangeSetListener listener() {
             return listener;
+        }
+
+        protected boolean notifyInSameThread() {
+            return notifyInSameThread;
         }
 
         private void shutdown() {

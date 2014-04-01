@@ -15,16 +15,18 @@
  */
 package org.modeshape.jcr;
 
-import static org.junit.Assert.assertNull;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.modeshape.jcr.api.observation.Event.ALL_EVENTS;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,6 +43,7 @@ import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventJournal;
 import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.version.Version;
@@ -49,7 +52,6 @@ import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
 import org.apache.jackrabbit.test.api.observation.GetRegisteredEventListenersTest;
-import org.apache.jackrabbit.test.api.observation.LockingTest;
 import org.apache.jackrabbit.test.api.observation.NodeAddedTest;
 import org.apache.jackrabbit.test.api.observation.NodeMovedTest;
 import org.apache.jackrabbit.test.api.observation.NodeRemovedTest;
@@ -58,18 +60,13 @@ import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableArray;
-import org.infinispan.schematic.document.EditableDocument;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
-import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.observation.PropertyEvent;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.Name;
@@ -78,9 +75,6 @@ import org.modeshape.jcr.value.Name;
  * The {@link JcrObservationManager} test class.
  */
 public final class JcrObservationManagerTest extends SingleUseAbstractTest {
-
-    private static final int ALL_EVENTS = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED
-                                          | Event.PROPERTY_REMOVED;
 
     private static final String LOCK_MIXIN = "mix:lockable"; // extends referenceable
     private static final String LOCK_OWNER = "jcr:lockOwner"; // property
@@ -106,58 +100,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         JaasTestUtil.releaseJaas();
     }
 
-    /**
-     * Creates a repository configuration that uses the specified JAAS provider and optionally enables anonymous logins.
-     * <p>
-     * The configuration for "repositoryName" as the repository name, anonymous logins disabled, and "modeshape-jcr" as the JAAS
-     * policy looks as follows:
-     * 
-     * <pre>
-     *  {
-     *      "name" : "repositoryNameParameter",
-     *      "security" : {
-     *          "anonymous" : {
-     *              "roles" : ["readonly"],
-     *              "useOnFailedLogin" : true
-     *          },
-     *          "providers" : [
-     *              {
-     *                  "classname" : "JAAS",
-     *                  "policyName" : "modeshape-jcr"
-     *              }
-     *          ]
-     *      },
-     *       "workspaces" : {
-     *            "predefined" : ["ws1","ws2"],
-     *            "default" : "default",
-     *            "allowCreation" : true
-     *        }
-     * }
-     * </pre>
-     * 
-     * @return the configuration document
-     */
-    protected Document createRepositoryConfiguration() {
-        EditableDocument doc = Schematic.newDocument("name", "ObservationTestRepo");
-
-        EditableDocument security = doc.getOrCreateDocument("security");
-        EditableDocument anonymous = security.getOrCreateDocument("anonymous");
-        anonymous.setArray("roles", "readonly");
-        anonymous.setBoolean("useOnFailedLogin", true);
-        EditableArray providers = security.getOrCreateArray("providers");
-        EditableDocument jaas = Schematic.newDocument(FieldName.CLASSNAME, "JAAS", "policyName", "modeshape-jcr");
-        providers.addDocument(jaas);
-
-        EditableDocument workspaces = doc.getOrCreateDocument("workspaces");
-        EditableArray predefined = workspaces.getOrCreateArray("predefined");
-        predefined.addString(WORKSPACE);
-        predefined.addString(WORKSPACE2);
-        workspaces.set("default", WORKSPACE);
-        workspaces.set("allowCreation", Boolean.TRUE);
-
-        return doc;
-    }
-
     @Override
     protected boolean startRepositoryAutomatically() {
         return false;
@@ -167,7 +109,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        startRepositoryWithConfiguration(createRepositoryConfiguration());
+        FileUtil.delete("target/journal");
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-observation.json"));
         session = login(WORKSPACE);
 
         this.testRootNode = this.session.getRootNode().addNode("testroot", UNSTRUCTURED);
@@ -576,28 +519,24 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         checkResults(listener);
     }
 
-    /**
-     * @see EventIteratorTest#testSkip()
-     * @throws Exception
-     */
     @Test
     public void shouldTestEventIteratorTest_testSkip() throws Exception {
         // create events
         List<Event> events = new ArrayList<Event>();
         DateTime now = session.dateFactory().create();
-        JcrEventBundle bundle = ((JcrObservationManager)getObservationManager()).new JcrEventBundle(now, "userId", null);
+        JcrEventBundle bundle = new JcrEventBundle(now, "userId", null);
         String id1 = UUID.randomUUID().toString();
         String id2 = UUID.randomUUID().toString();
         String id3 = UUID.randomUUID().toString();
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node1",
+        events.add(new JcrObservationManager.JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node1",
                                                                                  id1, nodeType(JcrNtLexicon.UNSTRUCTURED), null));
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node2", id2,
+        events.add(new JcrObservationManager.JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node2", id2,
                                                                                  nodeType(JcrNtLexicon.UNSTRUCTURED), null));
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node3", id3,
+        events.add(new JcrObservationManager.JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node3", id3,
                                                                                  nodeType(JcrNtLexicon.UNSTRUCTURED), null));
 
         // create iterator
-        EventIterator itr = ((JcrObservationManager)getObservationManager()).new JcrEventIterator(events);
+        EventIterator itr = new JcrObservationManager.JcrEventIterator(events);
 
         // tests
         itr.skip(0); // skip zero elements
@@ -737,17 +676,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     }
 
-    // ===========================================================================================================================
-    // @see org.apache.jackrabbit.test.api.observation.LockingTest
-    // ===========================================================================================================================
-
-    /**
-     * @see LockingTest#testAddLockToNode()
-     * @throws Exception
-     */
     @Test
     @FixFor( "MODE-1407" )
-    @Ignore
     public void shouldTestLockingTest_testAddLockToNode() throws Exception {
         // setup
         String node1 = "node1";
@@ -771,13 +701,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertTrue("No event created for " + LOCK_IS_DEEP, containsPath(listener, lockable.getPath() + '/' + LOCK_IS_DEEP));
     }
 
-    /**
-     * @see LockingTest#testRemoveLockFromNode()
-     * @throws Exception
-     */
     @Test
     @FixFor( "MODE-1407" )
-    @Ignore
     public void shouldTestLockingTest_testRemoveLockFromNode() throws Exception {
         // setup
         String node1 = "node1";
@@ -2177,6 +2102,108 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         for (String receivedUserData : listener.userData) {
             assertThat(receivedUserData, is(nullValue()));
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2019" )
+    public void shouldProvideFullEventJournal() throws Exception {
+        // add node
+        Node node1 = getRoot().addNode("node1");
+        node1.setProperty("prop1", "value");
+        node1.setProperty("prop2", "value2");
+        Node node2 = getRoot().addNode("node2");
+        session.save();
+        Thread.sleep(100);
+
+        node1.setProperty("prop2", "edited value");
+        node1.setProperty("prop1", (String) null);
+        node2.remove();
+        session.save();
+        Thread.sleep(100);
+
+        EventJournal eventJournal = getObservationManager().getEventJournal();
+        assertPathsInJournal(eventJournal, false,
+                             "/testroot/node1", "/testroot/node1/jcr:primaryType", "/testroot/node1/prop1",
+                             "/testroot/node1/prop2", "/testroot/node2/jcr:primaryType", "/testroot/node2/jcr:primaryType",
+                             "/testroot/node1/prop2", "/testroot/node1/prop1", "/testroot/node1/prop2");
+
+    }
+
+    @Test
+    @FixFor( "MODE-2019" )
+    public void shouldProvideFilteredEventJournal() throws Exception {
+        // add node
+        Node node1 = getRoot().addNode("node1");
+        getRoot().addNode("node2");
+        Node node3 = getRoot().addNode("node3");
+        session.save();
+        Thread.sleep(200);
+
+
+        EventJournal eventJournal = getObservationManager().getEventJournal(org.modeshape.jcr.api.observation.Event.ALL_EVENTS,
+                                                                            null, true, new String[]{node1.getIdentifier(),
+                                                                                                     node3.getIdentifier()},
+                                                                            null);
+        assertPathsInJournal(eventJournal, true,
+                             "/testroot/node1", "/testroot/node1/jcr:primaryType",
+                             "/testroot/node3", "/testroot/node3/jcr:primaryType");
+    }
+
+    @Test
+    @FixFor( "MODE-2019" )
+    public void shouldSkipToEventsInJournal() throws Exception {
+        long startingDate = System.currentTimeMillis();
+        getRoot().addNode("node1");
+        session.save();
+        Thread.sleep(100);
+        long afterNode1 = System.currentTimeMillis();
+
+        getRoot().addNode("node2");
+        session.save();
+        Thread.sleep(100);
+        long afterNode2 = System.currentTimeMillis();
+
+        getRoot().addNode("node3");
+        session.save();
+        Thread.sleep(100);
+        long afterNode3 = System.currentTimeMillis();
+
+        EventJournal journal = getObservationManager().getEventJournal();
+        journal.skipTo(startingDate);
+        assertPathsInJournal(journal, true,
+                             "/testroot/node1", "/testroot/node1/jcr:primaryType",
+                             "/testroot/node2", "/testroot/node2/jcr:primaryType",
+                             "/testroot/node3", "/testroot/node3/jcr:primaryType");
+
+        journal = getObservationManager().getEventJournal();
+        journal.skipTo(afterNode1);
+        assertPathsInJournal(journal, true,
+                             "/testroot/node2", "/testroot/node2/jcr:primaryType",
+                             "/testroot/node3", "/testroot/node3/jcr:primaryType");
+
+        journal = getObservationManager().getEventJournal();
+        journal.skipTo(afterNode2);
+        assertPathsInJournal(journal, true,
+                             "/testroot/node3", "/testroot/node3/jcr:primaryType");
+
+        journal = getObservationManager().getEventJournal();
+        journal.skipTo(afterNode3);
+        assertFalse(journal.hasNext());
+    }
+
+    protected void assertPathsInJournal(EventJournal journal, boolean assertSize, String...expectedPaths) throws RepositoryException {
+        assertNotNull("Event journal not configured", journal);
+        assertEquals("Event journal size not known upfront", -1, journal.getSize());
+        List<String> eventPaths = new ArrayList<>();
+        while (journal.hasNext()) {
+            Event event = journal.nextEvent();
+            eventPaths.add(event.getPath());
+        }
+        if (assertSize) {
+            assertEquals("Incorrect number of events in journal", eventPaths.size(), expectedPaths.length);
+        }
+
+        assertTrue(eventPaths.containsAll(Arrays.asList(expectedPaths)));
     }
 
     protected void assertNoRepositoryNamespace( String uri,

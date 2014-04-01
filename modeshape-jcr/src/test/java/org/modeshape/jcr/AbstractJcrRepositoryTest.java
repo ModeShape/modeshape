@@ -41,9 +41,6 @@ import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicyIterator;
 import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrTools;
@@ -52,9 +49,6 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
 public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTest {
-
-    @Rule
-    public TestRule skipTestRule = new SkipTestRule();
 
     protected boolean print;
 

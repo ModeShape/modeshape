@@ -130,6 +130,15 @@ public final class JournalRecord implements Serializable, Iterable<Change> {
         return content.getJournalId();
     }
 
+    /**
+     * Returns the underlying change set.
+     *
+     * @return {@link org.modeshape.jcr.cache.change.ChangeSet} instance; never null
+     */
+    public ChangeSet getChangeSet() {
+        return this.content;
+    }
+
     @Override
     public Iterator<Change> iterator() {
         return content.iterator();

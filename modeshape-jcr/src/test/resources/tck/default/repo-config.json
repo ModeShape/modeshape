@@ -15,6 +15,10 @@
             }
         }
     },
+    "journaling": {
+        "location": "target/journal",
+        "asyncWritesEnabled": false
+    },
     "security" : {
         "anonymous" : {
             "roles" : ["readonly","readwrite","admin"],
