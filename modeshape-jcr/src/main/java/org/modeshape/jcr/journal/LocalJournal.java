@@ -121,7 +121,6 @@ public class LocalJournal implements ChangeJournal {
             DBMaker dbMaker = DBMaker.newFileDB(new File(journalFileLocation, RECORDS_FIELD))
                                      .compressionEnable()
                                      .checksumEnable()
-                                     .closeOnJvmShutdown()
                                      .mmapFileEnableIfSupported()
                                      .snapshotEnable();
             if (asyncWritesEnabled) {
@@ -162,9 +161,8 @@ public class LocalJournal implements ChangeJournal {
 
     @Override
     public void notify( ChangeSet changeSet ) {
-        //do not store records from jcr:system from other journals because that would wreak havoc for delta calculation.
-        //If stored, these changes would be received in a cluster when a foreign node comes up.
-        boolean systemWorkspaceChanges = changeSet.getWorkspaceName().equalsIgnoreCase(RepositoryConfiguration.SYSTEM_WORKSPACE_NAME);
+        //do not store records from jcr:system
+        boolean systemWorkspaceChanges = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME.equalsIgnoreCase(changeSet.getWorkspaceName());
         if (changeSet.isEmpty() || systemWorkspaceChanges) {
             return;
         }

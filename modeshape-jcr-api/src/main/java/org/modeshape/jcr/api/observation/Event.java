@@ -101,6 +101,18 @@ public interface Event extends javax.jcr.observation.Event {
     }
 
     /**
+     * Event code representing all the JCR events: {@link javax.jcr.observation.Event} together with all the custom
+     * ModeShape events: {@link org.modeshape.jcr.api.observation.Event}
+     */
+    public static final int ALL_EVENTS = javax.jcr.observation.Event.NODE_ADDED |
+                                         javax.jcr.observation.Event.NODE_MOVED |
+                                         javax.jcr.observation.Event.NODE_REMOVED |
+                                         javax.jcr.observation.Event.PROPERTY_ADDED |
+                                         javax.jcr.observation.Event.PROPERTY_CHANGED |
+                                         javax.jcr.observation.Event.PROPERTY_REMOVED |
+                                         Sequencing.ALL;
+
+    /**
      * If this <code>Event</code> is of type <code>NODE_ADDED</code>, <code>NODE_REMOVED</code> or <code>NODE_MOVED</code>
      * then this method returns the declared primary node type of the node at (or formerly at) the
      * path returned by <code>getPath()</code>. If this <code>Event</code> is of type <code>PROPERTY_ADDED</code>, <code>PROPERTY_REMOVED</code> or <code>PROPERTY_CHANGED</code>

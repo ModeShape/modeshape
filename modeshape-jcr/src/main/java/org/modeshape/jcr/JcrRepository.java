@@ -520,6 +520,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return runningState().journalId();
     }
 
+    protected final ChangeJournal journal() {
+        return runningState().journal();
+    }
+
     protected final void completeRestore() throws ExecutionException, Exception {
         if (getState() == State.RESTORING) {
             logger.debug("Shutting down '{0}' after content has been restored", getName());
@@ -825,7 +829,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.OPTION_ACTIVITIES_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_BASELINES_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_ACCESS_CONTROL_SUPPORTED, valueFor(factories, true));
-        descriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, valueFor(factories, false));
+        JcrValue journalingValue = valueFor(factories, repositoryConfiguration().getJournaling().isEnabled());
+        descriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, journalingValue);
         descriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
@@ -1100,11 +1105,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Set up the event journal
                     RepositoryConfiguration.Journaling journaling = config.getJournaling();
                     if (journaling.isEnabled()) {
-                        LocalJournal localJournal = new LocalJournal(journaling.location(), journaling.asyncWritesEnabled(),
+                        boolean asyncWritesEnabled = journaling.asyncWritesEnabled();
+                        LocalJournal localJournal = new LocalJournal(journaling.location(), asyncWritesEnabled,
                                                                      journaling.maxDaysToKeepRecords());
                         this.journal = clusteringService != null ? new ClusteredJournal(localJournal, clusteringService) : localJournal;
                         this.journal.start();
-                        this.changeBus.register(journal);
+                        if (asyncWritesEnabled) {
+                            this.changeBus.register(journal);
+                        } else {
+                            this.changeBus.registerInThread(journal);
+                        }
                     } else {
                         this.journal = null;
                     }

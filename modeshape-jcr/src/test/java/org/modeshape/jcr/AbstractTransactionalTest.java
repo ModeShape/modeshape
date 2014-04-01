@@ -18,6 +18,9 @@ package org.modeshape.jcr;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.modeshape.common.junit.SkipTestRule;
 
 /**
  * Abstract test class which should be extended whenever there are tests which use JBoss JTA, to properly configure the output
@@ -27,6 +30,10 @@ import org.junit.BeforeClass;
  * @author Horia Chiorean
  */
 public abstract class AbstractTransactionalTest {
+
+    @Rule
+    public TestRule skipTestRule = new SkipTestRule();
+
     @BeforeClass
     public static void beforeSuite() {
         JTATestUtil.setJBossJTADefaultStoreLocations();

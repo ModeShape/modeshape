@@ -37,19 +37,13 @@ import javax.jcr.Session;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestRule;
 import org.modeshape.common.junit.SkipLongRunning;
-import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.cache.ChildReferences;
 
 public class ConcurrentNodeLoadTest extends AbstractTransactionalTest {
-
-    @Rule
-    public TestRule skipTestRule = new SkipTestRule();
 
     private RepositoryConfiguration config;
     private ModeShapeEngine engine;
