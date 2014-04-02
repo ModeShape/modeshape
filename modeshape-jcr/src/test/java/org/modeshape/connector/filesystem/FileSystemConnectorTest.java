@@ -30,6 +30,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -449,16 +452,18 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-2040" )
-    public void shouldReceiveFSNotificationsWhenCreatingFiles() throws Exception {
+    @FixFor( {"MODE-2040", "MODE-2189"} )
+    public void shouldReceiveNotificationsWhenCreatingFiles() throws Exception {
+        //print = true;
         File rootFolder = new File("target/federation/monitoring");
         assertTrue(rootFolder.exists() && rootFolder.isDirectory());
 
         ObservationManager observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
-        int expectedEventCount = 5;
+        //for each file we expect 7 events; for each folder 3 events (see below)
+        int expectedEventCount = 31;
         CountDownLatch latch = new CountDownLatch(expectedEventCount);
         FSListener listener = new FSListener(latch);
-        observationManager.addEventListener(listener, Event.NODE_ADDED, null, true, null, null, false);
+        observationManager.addEventListener(listener, Event.NODE_ADDED | Event.PROPERTY_ADDED, "/testRoot/monitoring", true, null, null, false);
         Thread.sleep(300);
         addFile(rootFolder, "testfile1", "data/simple.json");
         Thread.sleep(300);
@@ -478,26 +483,80 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
         Map<Integer, List<String>> receivedEvents = listener.getReceivedEventTypeAndPaths();
         assertFalse(receivedEvents.isEmpty());
-        List<String> receivedPaths = receivedEvents.get(Event.NODE_ADDED);
-        assertNotNull(receivedPaths);
-        assertEquals(expectedEventCount, receivedPaths.size());
+        List<String> nodeAddedPaths = receivedEvents.get(Event.NODE_ADDED);
+        assertFalse("Expected NODE_ADDED events", nodeAddedPaths.isEmpty());
+        List<String> propertyAddedPaths = receivedEvents.get(Event.PROPERTY_ADDED);
+        assertFalse("Expected PROPERTY_ADDED events", propertyAddedPaths.isEmpty());
+
         // the root paths are defined in the monitoring projection
-        assertTrue(receivedPaths.contains("/testRoot/monitoring/testfile1"));
-        assertTrue(receivedPaths.contains("/testRoot/monitoring/testfile2"));
-        assertTrue(receivedPaths.contains("/testRoot/monitoring/folder1"));
-        assertTrue(receivedPaths.contains("/testRoot/monitoring/folder1/testfile11"));
-        assertTrue(receivedPaths.contains("/testRoot/monitoring/dir1/testfile11"));
+        assertEventsFiredOnCreate("/testRoot/monitoring/testfile1", true, nodeAddedPaths, propertyAddedPaths);
+        assertEventsFiredOnCreate("/testRoot/monitoring/testfile2", true, nodeAddedPaths, propertyAddedPaths);
+        assertEventsFiredOnCreate("/testRoot/monitoring/folder1", false, nodeAddedPaths, propertyAddedPaths);
+        assertEventsFiredOnCreate("/testRoot/monitoring/folder1/testfile11", true, nodeAddedPaths, propertyAddedPaths);
+        assertEventsFiredOnCreate("/testRoot/monitoring/dir1/testfile11", true, nodeAddedPaths, propertyAddedPaths);
     }
 
-    @Ignore( "Doesn't work correctly on OSX" )
+    private void assertEventsFiredOnCreate(String fileAbsPath, boolean isFile, List<String> actualNodePaths,
+                                           List<String> actualPropertyPaths) {
+        assertTrue(actualNodePaths.contains(fileAbsPath));
+        assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:createdBy"));
+        assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:created"));
+
+        if (isFile) {
+            assertTrue(actualNodePaths.contains(fileAbsPath + "/jcr:content"));
+
+            assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:data"));
+//            assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:mimeType"));
+            assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:lastModified"));
+            assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:lastModifiedBy"));
+        }
+    }
+
     @Test
-    @FixFor( "MODE-2040" )
-    public void shouldReceiveFSNotificationsWhenChangingFileContent() throws Exception {
+    @FixFor("MODE-2189")
+    public void shouldSequenceFilesAddedExternally() throws Exception {
+        //print = true;
+        FileUtil.delete("target/federation/monitoring/images.cnd");
         File rootFolder = new File("target/federation/monitoring");
         assertTrue(rootFolder.exists() && rootFolder.isDirectory());
 
         ObservationManager observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
-        int expectedEventCount = 2;
+        //for each file we expect 7 events + 1 sequencing event
+        //on Windows, both an ENTRY_CREATED & ENTRY_MODIFIED is fired when creating the file, so it will really be sequenced twice
+        int expectedEventCount = 8;
+        CountDownLatch latch = new CountDownLatch(expectedEventCount);
+        FSListener listener = new FSListener(latch);
+        observationManager.addEventListener(listener,  org.modeshape.jcr.api.observation.Event.ALL_EVENTS,
+                                            "/testRoot/monitoring" , true, null, null, false);
+        addFile(rootFolder, "images.cnd", "sequencer/cnd/images.cnd");
+        Thread.sleep(300);
+
+
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            fail("Events not received from connector");
+        }
+
+        Map<Integer, List<String>> receivedEvents = listener.getReceivedEventTypeAndPaths();
+        List<String> nodeAddedPaths = receivedEvents.get(Event.NODE_ADDED);
+        assertFalse("Expected NODE_ADDED events", nodeAddedPaths.isEmpty());
+        List<String> propertyAddedPaths = receivedEvents.get(Event.PROPERTY_ADDED);
+        assertFalse("Expected PROPERTY_ADDED events", propertyAddedPaths.isEmpty());
+
+        assertEventsFiredOnCreate("/testRoot/monitoring/images.cnd", true, nodeAddedPaths, propertyAddedPaths);
+        //verify that the CND sequencer has fired
+        Node sequencedRoot = session.getNode("/testRoot/sequenced/images.cnd"); //configured as such
+        assertTrue(sequencedRoot.getNodes().hasNext());
+    }
+
+    @Ignore( "Doesn't work correctly on OSX" )
+    @Test
+    @FixFor( {"MODE-2040", "MODE-2189"} )
+    public void shouldReceiveNotificationsWhenChangingFileContent() throws Exception {
+        File rootFolder = new File("target/federation/monitoring");
+        assertTrue(rootFolder.exists() && rootFolder.isDirectory());
+
+        ObservationManager observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
+        int expectedEventCount = 3;
         CountDownLatch latch = new CountDownLatch(expectedEventCount);
         FSListener listener = new FSListener(latch);
         observationManager.addEventListener(listener, Event.PROPERTY_CHANGED, null, true, null, null, false);
@@ -513,18 +572,23 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
         Map<Integer, List<String>> receivedEvents = listener.getReceivedEventTypeAndPaths();
         assertFalse(receivedEvents.isEmpty());
-        List<String> receivedPaths = receivedEvents.get(Event.PROPERTY_CHANGED);
-        assertNotNull(receivedPaths);
+        List<String> propertyChangedPaths = receivedEvents.get(Event.PROPERTY_CHANGED);
+        assertEventsFiredOnModify("/testRoot/monitoring/dir3/simple.txt", true, propertyChangedPaths);
+    }
 
-        // don't assert the size because the count of MODIFIED events is OS dependent
-        // assertEquals(expectedEventCount, receivedPaths.size());
-        assertTrue(receivedPaths.contains("/testRoot/monitoring/dir3/simple.txt/jcr:content/jcr:lastModified"));
-        assertTrue(receivedPaths.contains("/testRoot/monitoring/dir3/simple.txt/jcr:content/jcr:data"));
+    private void assertEventsFiredOnModify(String fileAbsPath, boolean isFile, List<String> actualPropertyPaths) {
+        if (!isFile) {
+            return;
+        }
+        assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:data"));
+        assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:lastModified"));
+        assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:lastModifiedBy"));
+        //assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:mimeType"));
     }
 
     @Test
     @FixFor( "MODE-2040" )
-    public void shouldReceiveFSNotificationsWhenRemovingFiles() throws Exception {
+    public void shouldReceiveNotificationsWhenRemovingFiles() throws Exception {
         File rootFolder = new File("target/federation/monitoring");
         assertTrue(rootFolder.exists() && rootFolder.isDirectory());
 
@@ -604,28 +668,33 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     protected void assertFolder( Node node,
-                                 File dir ) throws RepositoryException {
+                                 File dir ) throws Exception {
         assertThat(dir.exists(), is(true));
         assertThat(dir.canRead(), is(true));
         assertThat(dir.isDirectory(), is(true));
         assertThat(node.getName(), is(dir.getName()));
         assertThat(node.getIndex(), is(1));
         assertThat(node.getPrimaryNodeType().getName(), is("nt:folder"));
-        assertThat(node.getProperty("jcr:created").getLong(), is(dir.lastModified()));
+        assertThat(node.getProperty("jcr:created").getLong(), is(createdTimeFor(dir)));
+    }
+
+    protected long createdTimeFor(File file) throws IOException {
+        Path path = java.nio.file.Paths.get(file.toURI());
+        BasicFileAttributes basicFileAttributes = Files.readAttributes(path, BasicFileAttributes.class);
+        return basicFileAttributes.creationTime().toMillis();
     }
 
     protected void assertFile( Node node,
-                               File file ) throws RepositoryException {
-        long lastModified = file.lastModified();
+                               File file ) throws Exception {
         assertThat(node.getName(), is(file.getName()));
         assertThat(node.getIndex(), is(1));
         assertThat(node.getPrimaryNodeType().getName(), is("nt:file"));
-        assertThat(node.getProperty("jcr:created").getLong(), is(lastModified));
+        assertThat(node.getProperty("jcr:created").getLong(), is(createdTimeFor(file)));
         Node content = node.getNode("jcr:content");
         assertThat(content.getName(), is("jcr:content"));
         assertThat(content.getIndex(), is(1));
         assertThat(content.getPrimaryNodeType().getName(), is("nt:resource"));
-        assertThat(content.getProperty("jcr:lastModified").getLong(), is(lastModified));
+        assertThat(content.getProperty("jcr:lastModified").getLong(), is(file.lastModified()));
     }
 
     private void assertPathNotFound( String path ) throws Exception {
@@ -666,7 +735,9 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
                         paths = new ArrayList<>();
                         receivedEventTypeAndPaths.put(type, paths);
                     }
-
+                    if (print) {
+                        System.out.println("Received event of type: " + type + " on path:" + event.getPath());
+                    }
                     paths.add(event.getPath());
                     latch.countDown();
                 } catch (RepositoryException e) {
@@ -724,7 +795,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         }
 
         public void testContent( Node federatedNode,
-                                 String childName ) throws RepositoryException {
+                                 String childName ) throws Exception {
             Session session = (Session)federatedNode.getSession();
             String path = federatedNode.getPath() + "/" + childName;
 
