@@ -45,6 +45,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.ProjectionConfiguration;
@@ -88,7 +89,7 @@ public final class Connectors {
     private final Logger logger;
 
     private boolean initialized = false;
-    private final AtomicReference<Snapshot> snapshot = new AtomicReference<Snapshot>();
+    private final AtomicReference<Snapshot> snapshot = new AtomicReference<>();
 
     protected Connectors( JcrRepository.RunningState repository,
                           Collection<Component> components,
@@ -107,13 +108,12 @@ public final class Connectors {
 
         // initialize the configured connectors
         initializeConnectors();
-        // load the projection -> node mappings from the system area
-        loadStoredProjections();
+        // load the projection -> node mappings from the system area, without validating them
+        loadStoredProjections(false);
         // creates any preconfigured projections
         createPreconfiguredProjections();
-        // load the projections, but with all pre-configured projections
-        loadStoredProjections();
-
+        // load the projections, but with all pre-configured projections and validating each projection
+        loadStoredProjections(true);
         initialized = true;
     }
 
@@ -159,14 +159,14 @@ public final class Connectors {
         }
     }
 
-    private void loadStoredProjections() {
+    private void loadStoredProjections(boolean validate) {
         assert !initialized;
-        SessionCache systemSession = repository.createSystemSession(repository.context(), true);
+        SessionCache systemSession = repository.createSystemSession(repository.context(), false);
 
         CachedNode systemNode = getSystemNode(systemSession);
         ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
         if (federationNodeRef != null) {
-            Collection<Projection> newProjections = loadStoredProjections(systemSession, federationNodeRef);
+            Collection<Projection> newProjections = loadStoredProjections(systemSession, federationNodeRef, validate);
             Snapshot current = this.snapshot.get();
             Snapshot updated = current.withProjections(newProjections);
             this.snapshot.compareAndSet(current, updated);
@@ -174,34 +174,65 @@ public final class Connectors {
     }
 
     private Collection<Projection> loadStoredProjections( SessionCache systemSession,
-                                                          ChildReference federationNodeRef ) {
-        CachedNode federationNode = systemSession.getNode(federationNodeRef.getKey());
+                                                          ChildReference federationNodeRef,
+                                                          boolean validate) {
+        MutableCachedNode federationNode = systemSession.mutable(federationNodeRef.getKey());
         ChildReferences federationChildRefs = federationNode.getChildReferences(systemSession);
-        // the stored projection mappings use SNS
-        int projectionsCount = federationChildRefs.getChildCount(ModeShapeLexicon.PROJECTION);
-        Collection<Projection> projections = new ArrayList<Projection>(projectionsCount);
+
+        Collection<Projection> result = new ArrayList<>();
+        Collection<Projection> invalidProjections = new ArrayList<>();
+
+        Map<String, String> workspaceNameByKey = workspaceNamesByKey();
 
         Iterator<ChildReference> iter = federationChildRefs.iterator(ModeShapeLexicon.PROJECTION);
         while (iter.hasNext()) {
             ChildReference projectionRef = iter.next();
             NodeKey projectionRefKey = projectionRef.getKey();
-            CachedNode projection = systemSession.getNode(projectionRefKey);
-            String externalNodeKey = projection.getProperty(ModeShapeLexicon.EXTERNAL_NODE_KEY, systemSession)
+            CachedNode projectionNode = systemSession.getNode(projectionRefKey);
+            String externalNodeKeyString = projectionNode.getProperty(ModeShapeLexicon.EXTERNAL_NODE_KEY, systemSession)
                                                .getFirstValue()
                                                .toString();
-            assert externalNodeKey != null;
+            assert externalNodeKeyString != null;
 
-            String projectedNodeKey = projection.getProperty(ModeShapeLexicon.PROJECTED_NODE_KEY, systemSession)
+            String projectedNodeKeyString = projectionNode.getProperty(ModeShapeLexicon.PROJECTED_NODE_KEY, systemSession)
                                                 .getFirstValue()
                                                 .toString();
-            assert projectedNodeKey != null;
+            assert projectedNodeKeyString != null;
 
-            String alias = projection.getProperty(ModeShapeLexicon.PROJECTION_ALIAS, systemSession).getFirstValue().toString();
+            String alias = projectionNode.getProperty(ModeShapeLexicon.PROJECTION_ALIAS, systemSession).getFirstValue().toString();
             assert alias != null;
 
-            projections.add(new Projection(externalNodeKey, projectedNodeKey, alias));
+            Projection projection = new Projection(externalNodeKeyString, projectedNodeKeyString, alias);
+
+            if (!validate || repository.documentStore().containsKey(externalNodeKeyString)) {
+                result.add(projection);
+            } else {
+                //we have a projection that is not valid anymore
+                invalidProjections.add(projection);
+
+                // remove the projection from the system area first
+                federationNode.removeChild(systemSession, projectionRefKey);
+                systemSession.destroy(projectionRefKey);
+
+                //then update the internal (parent) node and remove its external child
+                NodeKey projectedNodeKey = new NodeKey(projectedNodeKeyString);
+
+                String wsName = workspaceNameByKey.get(projectedNodeKey.getWorkspaceKey());
+                if (!StringUtil.isBlank(wsName)) {
+                    SessionCache sessionCache = repository.repositoryCache().createSession(repository.context(), wsName, false);
+                    MutableCachedNode parentNode = sessionCache.mutable(projectedNodeKey);
+                    parentNode.removeFederatedSegment(externalNodeKeyString);
+                    sessionCache.save();
+                }
+            }
         }
-        return projections;
+
+        if (!invalidProjections.isEmpty()) {
+            Snapshot current = this.snapshot.get();
+            Snapshot updated = current.withoutProjections(invalidProjections.toArray(new Projection[invalidProjections.size()]));
+            this.snapshot.compareAndSet(current, updated);
+        }
+        return result;
     }
 
     private CachedNode getSystemNode( SessionCache systemSession ) {
@@ -228,7 +259,7 @@ public final class Connectors {
 
             // Initialize each connector using the supplied session ...
             Snapshot current = this.snapshot.get();
-            Collection<Connector> connectorsWithErrors = new ArrayList<Connector>();
+            Collection<Connector> connectorsWithErrors = new ArrayList<>();
             for (Connector connector : current.getConnectors()) {
                 try {
                     initializeConnector(connector, registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
@@ -493,6 +524,16 @@ public final class Connectors {
         return this.snapshot.get().getWorkspacesWithProjectionsFor(connector);
     }
 
+    protected final Map<String, String> workspaceNamesByKey() {
+        // Get the map of workspace names by their key (since projections do not contain the workspace names) ...
+        final RepositoryCache repositoryCache = repository.repositoryCache();
+        final Map<String, String> workspaceNamesByKey = new HashMap<>();
+        for (String workspaceName : repository.repositoryCache().getWorkspaceNames()) {
+            workspaceNamesByKey.put(NodeKey.keyForWorkspaceName(workspaceName), workspaceName);
+        }
+        return workspaceNamesByKey;
+    }
+
     protected synchronized void shutdown() {
         if (!initialized || !hasConnectors()) {
             return;
@@ -624,7 +665,7 @@ public final class Connectors {
         /**
          * A list connectors that have been replaced and are not used anymore
          */
-        private final List<Connector> unusedConnectors = new LinkedList<Connector>();
+        private final List<Connector> unusedConnectors = new LinkedList<>();
 
         /**
          * The set of path mappings for a given connector. Because the connector instance might change, we key these by the
@@ -640,17 +681,17 @@ public final class Connectors {
         protected Snapshot( Collection<Component> components,
                             Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
             this.preconfiguredProjections = preconfiguredProjections;
-            this.projections = new HashMap<String, Connectors.Projection>();
-            this.sourceKeyToConnectorMap = new HashMap<String, Connector>();
-            this.projectedInternalNodeKeys = new HashSet<String>();
+            this.projections = new HashMap<>();
+            this.sourceKeyToConnectorMap = new HashMap<>();
+            this.projectedInternalNodeKeys = new HashSet<>();
             registerConnectors(components);
         }
 
         protected Snapshot( Snapshot original ) {
-            this.projections = new HashMap<String, Connectors.Projection>(original.projections);
-            this.sourceKeyToConnectorMap = new HashMap<String, Connector>(original.sourceKeyToConnectorMap);
-            this.preconfiguredProjections = new HashMap<String, List<ProjectionConfiguration>>(original.preconfiguredProjections);
-            this.projectedInternalNodeKeys = new HashSet<String>(original.projectedInternalNodeKeys);
+            this.projections = new HashMap<>(original.projections);
+            this.sourceKeyToConnectorMap = new HashMap<>(original.sourceKeyToConnectorMap);
+            this.preconfiguredProjections = new HashMap<>(original.preconfiguredProjections);
+            this.projectedInternalNodeKeys = new HashSet<>(original.projectedInternalNodeKeys);
             this.hasReadonlyConnectors = original.hasReadonlyConnectors;
         }
 
@@ -744,7 +785,7 @@ public final class Connectors {
          */
         public Set<String> getWorkspacesWithProjectionsFor( Connector connector ) {
             String connectorSrcName = connector.getSourceName();
-            Set<String> workspaceNames = new HashSet<String>();
+            Set<String> workspaceNames = new HashSet<>();
             for (Map.Entry<String, List<RepositoryConfiguration.ProjectionConfiguration>> entry : preconfiguredProjections.entrySet()) {
                 for (ProjectionConfiguration config : entry.getValue()) {
                     if (config.getSourceName().equals(connectorSrcName)) {
@@ -855,8 +896,10 @@ public final class Connectors {
          */
         protected Snapshot withoutProjection( String externalNodeKey ) {
             if (this.projections.containsKey(externalNodeKey)) {
+                Projection projection = this.projections.get(externalNodeKey);
                 Snapshot clone = new Snapshot(this);
                 clone.projections.remove(externalNodeKey);
+                clone.projectedInternalNodeKeys.remove(projection.getProjectedNodeKey());
                 return clone;
             }
             return this;
@@ -892,6 +935,24 @@ public final class Connectors {
             Snapshot clone = new Snapshot(this);
             clone.projections.put(projection.getExternalNodeKey(), projection);
             clone.projectedInternalNodeKeys.add(projection.getProjectedNodeKey());
+            return clone;
+        }
+
+        /**
+         * Create a new snapshot that is a copy of this snapshot but without the supplied projections.
+         *
+         * @param projections the projection
+         * @return the new snapshot
+         */
+        protected Snapshot withoutProjections( Projection... projections ) {
+            if (projections.length == 0) {
+                return this;
+            }
+            Snapshot clone = new Snapshot(this);
+            for (Projection projection : projections) {
+                clone.projections.remove(projection.getExternalNodeKey());
+                clone.projectedInternalNodeKeys.remove(projection.getProjectedNodeKey());
+            }
             return clone;
         }
 
@@ -937,14 +998,9 @@ public final class Connectors {
                     if (mappingsByConnectorSourceName == null) {
                         final RunningState repository = repository();
                         final PathFactory pathFactory = repository().context().getValueFactories().getPathFactory();
-                        // Get the map of workspace names by their key (since projections do not contain the workspace names) ...
-                        final Map<String, String> workspaceNamesByKey = new HashMap<String, String>();
-                        final RepositoryCache repositoryCache = repository.repositoryCache();
-                        for (String workspaceName : repository.repositoryCache().getWorkspaceNames()) {
-                            workspaceNamesByKey.put(NodeKey.keyForWorkspaceName(workspaceName), workspaceName);
-                        }
 
-                        Map<String, BasicPathMappings> mappingsByConnectorSourceName = new HashMap<String, BasicPathMappings>();
+                        Map<String, BasicPathMappings> mappingsByConnectorSourceName = new HashMap<>();
+                        Map<String, String> workspaceNamesByKey = workspaceNamesByKey();
                         // Iterate through the projections ...
                         for (Projection projection : this.projections.values()) {
                             final String alias = projection.getAlias();
@@ -976,7 +1032,7 @@ public final class Connectors {
                             String workspaceName = workspaceNamesByKey.get(projectedKey.getWorkspaceKey());
                             if (workspaceName == null) continue;
                             try {
-                                WorkspaceCache cache = repositoryCache.getWorkspaceCache(workspaceName);
+                                WorkspaceCache cache = repository.repositoryCache().getWorkspaceCache(workspaceName);
                                 AllPathsCache allPathsCache = new AllPathsCache(cache, null, pathFactory);
                                 CachedNode node = cache.getNode(projectedKey);
                                 for (Path nodePath : allPathsCache.getPaths(node)) {
@@ -1108,7 +1164,7 @@ public final class Connectors {
         protected BasicPathMappings( String connectorSourceName,
                                      PathFactory pathFactory ) {
             super(connectorSourceName, pathFactory);
-            this.mappings = new HashSet<PathMapping>();
+            this.mappings = new HashSet<>();
         }
 
         @Override
@@ -1126,7 +1182,7 @@ public final class Connectors {
                         first = resolved;
                     } else {
                         if (results == null) {
-                            results = new LinkedList<WorkspaceAndPath>();
+                            results = new LinkedList<>();
                             results.add(first);
                         }
                         results.add(resolved);
@@ -1285,7 +1341,7 @@ public final class Connectors {
                 return NO_PROPERTIES;
             }
             Document doc = entry.getContentAsDocument();
-            Map<Name, Property> props = new HashMap<Name, Property>();
+            Map<Name, Property> props = new HashMap<>();
             translator.getProperties(doc, props);
             return props;
         }

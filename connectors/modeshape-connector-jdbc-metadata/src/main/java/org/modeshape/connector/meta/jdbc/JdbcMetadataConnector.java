@@ -281,6 +281,11 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
 
     @Override
     public boolean hasDocument( String id ) {
+        for (AbstractMetadataRetriever metadataRetriever : metadataRetrievers) {
+            if (metadataRetriever.canHandle(id)) {
+                return true;
+            }
+        }
         return false;
     }
 

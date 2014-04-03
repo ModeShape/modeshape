@@ -24,6 +24,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +53,7 @@ import org.infinispan.schematic.document.Editor;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.connector.mock.MockConnector;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
@@ -819,6 +823,53 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, config);
+    }
+
+    @Test
+    @FixFor( "MODE-2176" )
+    public void shouldAllowExternalSourceChangesBetweenRestarts() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+
+        prepareExternalDirectory("target/federation_persistent_1");
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                assertNotNull(session.getNode("/fs1"));
+                assertNotNull(session.getNode("/fs1/file.txt"));
+                assertNotNull(session.getNode("/fs2"));
+                assertNotNull(session.getNode("/fs2/file.txt"));
+                return null;
+            }
+        }, "config/repo-config-persistent-cache-fs-connector1.json");
+
+        FileUtil.delete("target/federation_persistent_1");
+        prepareExternalDirectory("target/federation_persistent_2");
+        //restart with a configuration file which a) has a new external source, b) has changed the directory path of "fs2" and
+        // c) has removed the fs1 projection
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                try {
+                    session.getNode("/fs1");
+                    fail("The projection should not have been found");
+                } catch (PathNotFoundException e) {
+                    //expected
+                }
+                assertNotNull(session.getNode("/fs2"));
+                assertNotNull(session.getNode("/fs2/file.txt"));
+                return null;
+            }
+        }, "config/repo-config-persistent-cache-fs-connector2.json");
+    }
+
+    private void prepareExternalDirectory(String dirpath) throws IOException {
+        FileUtil.delete(dirpath);
+        new File(dirpath).mkdir();
+        File file = new File(dirpath + "/file.txt");
+        IoUtil.write(JcrRepositoryStartupTest.class.getClassLoader().getResourceAsStream("io/file1.txt"),
+                     new FileOutputStream(file));
     }
 
     protected void changeLastUpgradeId( JcrRepository repository,
