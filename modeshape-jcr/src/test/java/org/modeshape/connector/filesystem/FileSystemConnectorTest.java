@@ -454,16 +454,17 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     @Test
     @FixFor( {"MODE-2040", "MODE-2189"} )
     public void shouldReceiveNotificationsWhenCreatingFiles() throws Exception {
-        //print = true;
+        // print = true;
         File rootFolder = new File("target/federation/monitoring");
         assertTrue(rootFolder.exists() && rootFolder.isDirectory());
 
         ObservationManager observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
-        //for each file we expect 7 events; for each folder 3 events (see below)
+        // for each file we expect 7 events; for each folder 3 events (see below)
         int expectedEventCount = 31;
         CountDownLatch latch = new CountDownLatch(expectedEventCount);
         FSListener listener = new FSListener(latch);
-        observationManager.addEventListener(listener, Event.NODE_ADDED | Event.PROPERTY_ADDED, "/testRoot/monitoring", true, null, null, false);
+        observationManager.addEventListener(listener, Event.NODE_ADDED | Event.PROPERTY_ADDED, "/testRoot/monitoring", true,
+                                            null, null, false);
         Thread.sleep(300);
         addFile(rootFolder, "testfile1", "data/simple.json");
         Thread.sleep(300);
@@ -496,8 +497,10 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertEventsFiredOnCreate("/testRoot/monitoring/dir1/testfile11", true, nodeAddedPaths, propertyAddedPaths);
     }
 
-    private void assertEventsFiredOnCreate(String fileAbsPath, boolean isFile, List<String> actualNodePaths,
-                                           List<String> actualPropertyPaths) {
+    private void assertEventsFiredOnCreate( String fileAbsPath,
+                                            boolean isFile,
+                                            List<String> actualNodePaths,
+                                            List<String> actualPropertyPaths ) {
         assertTrue(actualNodePaths.contains(fileAbsPath));
         assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:createdBy"));
         assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:created"));
@@ -506,31 +509,31 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             assertTrue(actualNodePaths.contains(fileAbsPath + "/jcr:content"));
 
             assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:data"));
-//            assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:mimeType"));
+            // assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:mimeType"));
             assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:lastModified"));
             assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:lastModifiedBy"));
         }
     }
 
     @Test
-    @FixFor("MODE-2189")
+    @FixFor( "MODE-2189" )
     public void shouldSequenceFilesAddedExternally() throws Exception {
-        //print = true;
+        // print = true;
         FileUtil.delete("target/federation/monitoring/images.cnd");
         File rootFolder = new File("target/federation/monitoring");
         assertTrue(rootFolder.exists() && rootFolder.isDirectory());
 
         ObservationManager observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
-        //for each file we expect 7 events + 1 sequencing event
-        //on Windows, both an ENTRY_CREATED & ENTRY_MODIFIED is fired when creating the file, so it will really be sequenced twice
+        // for each file we expect 7 events + 1 sequencing event
+        // on Windows, both an ENTRY_CREATED & ENTRY_MODIFIED is fired when creating the file, so it will really be sequenced
+        // twice
         int expectedEventCount = 8;
         CountDownLatch latch = new CountDownLatch(expectedEventCount);
         FSListener listener = new FSListener(latch);
-        observationManager.addEventListener(listener,  org.modeshape.jcr.api.observation.Event.ALL_EVENTS,
-                                            "/testRoot/monitoring" , true, null, null, false);
+        observationManager.addEventListener(listener, org.modeshape.jcr.api.observation.Event.ALL_EVENTS, "/testRoot/monitoring",
+                                            true, null, null, false);
         addFile(rootFolder, "images.cnd", "sequencer/cnd/images.cnd");
         Thread.sleep(300);
-
 
         if (!latch.await(10, TimeUnit.SECONDS)) {
             fail("Events not received from connector");
@@ -543,8 +546,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertFalse("Expected PROPERTY_ADDED events", propertyAddedPaths.isEmpty());
 
         assertEventsFiredOnCreate("/testRoot/monitoring/images.cnd", true, nodeAddedPaths, propertyAddedPaths);
-        //verify that the CND sequencer has fired
-        Node sequencedRoot = session.getNode("/testRoot/sequenced/images.cnd"); //configured as such
+        // verify that the CND sequencer has fired
+        Node sequencedRoot = session.getNode("/testRoot/sequenced/images.cnd"); // configured as such
         assertTrue(sequencedRoot.getNodes().hasNext());
     }
 
@@ -576,14 +579,16 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertEventsFiredOnModify("/testRoot/monitoring/dir3/simple.txt", true, propertyChangedPaths);
     }
 
-    private void assertEventsFiredOnModify(String fileAbsPath, boolean isFile, List<String> actualPropertyPaths) {
+    private void assertEventsFiredOnModify( String fileAbsPath,
+                                            boolean isFile,
+                                            List<String> actualPropertyPaths ) {
         if (!isFile) {
             return;
         }
         assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:data"));
         assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:lastModified"));
         assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:lastModifiedBy"));
-        //assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:mimeType"));
+        // assertTrue(actualPropertyPaths.contains(fileAbsPath + "/jcr:content/jcr:mimeType"));
     }
 
     @Test
@@ -678,7 +683,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertThat(node.getProperty("jcr:created").getLong(), is(createdTimeFor(dir)));
     }
 
-    protected long createdTimeFor(File file) throws IOException {
+    protected long createdTimeFor( File file ) throws IOException {
         Path path = java.nio.file.Paths.get(file.toURI());
         BasicFileAttributes basicFileAttributes = Files.readAttributes(path, BasicFileAttributes.class);
         return basicFileAttributes.creationTime().toMillis();
@@ -723,6 +728,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             this.receivedEventTypeAndPaths = new HashMap<>();
         }
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void onEvent( EventIterator events ) {
             while (events.hasNext()) {
@@ -735,9 +741,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
                         paths = new ArrayList<>();
                         receivedEventTypeAndPaths.put(type, paths);
                     }
-                    if (print) {
-                        System.out.println("Received event of type: " + type + " on path:" + event.getPath());
-                    }
+                    printMessage("Received event of type: " + type + " on path:" + event.getPath());
                     paths.add(event.getPath());
                     latch.countDown();
                 } catch (RepositoryException e) {

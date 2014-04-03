@@ -88,9 +88,9 @@ import org.modeshape.jcr.value.PathFactory;
  * @author Horia Chiorean
  */
 @ThreadSafe
-class JcrObservationManager implements ObservationManager, ChangeSetListener {
+final class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
-    private static final Logger LOGGER = Logger.getLogger(JcrObservationManager.class);
+    protected static final Logger LOGGER = Logger.getLogger(JcrObservationManager.class);
 
     /**
      * The key for storing the {@link JcrObservationManager#setUserData(String) observation user data} in the
@@ -123,7 +123,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     /**
      * The associated session.
      */
-    private final JcrSession session;
+    protected final JcrSession session;
 
     /**
      * An object recording various metrics
@@ -225,7 +225,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
     }
 
-    private void decrementEventQueueStatistic( ChangeSet changeSet ) {
+    protected void decrementEventQueueStatistic( ChangeSet changeSet ) {
 
         try {
             changesLock.lock();
@@ -311,7 +311,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     /**
      * {@inheritDoc}
      * <p>
-     * ModeShape supports journaled observation only  if journaling is configured as such in the repository configuration.
+     * ModeShape supports journaled observation only if journaling is configured as such in the repository configuration.
      * </p>
      * 
      * @see javax.jcr.observation.ObservationManager#getEventJournal(int, java.lang.String, boolean, java.lang.String[],
@@ -324,9 +324,9 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                                          boolean isDeep,
                                          String[] uuid,
                                          String[] nodeTypeName ) {
-        return session.repository().journalId() != null ? new JcrEventJournal(absPath, eventTypes, isDeep, nodeTypeName, uuid)
-                                                        : null;
+        return session.repository().journalId() != null ? new JcrEventJournal(absPath, eventTypes, isDeep, nodeTypeName, uuid) : null;
     }
+
     /**
      * The <code>JcrListener</code> class wraps JCR {@link EventListener} and is responsible for converting
      * {@link org.modeshape.jcr.cache.change.Change events} into JCR {@link Event events}.
@@ -367,8 +367,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         public void notify( ChangeSet changeSet ) {
             decrementEventQueueStatistic(changeSet);
 
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            Collection<Event> events = (Collection) changeSetConverter.convert(changeSet);
+            Collection<Event> events = changeSetConverter.convert(changeSet);
 
             // notify delegate
             if (!events.isEmpty()) {
@@ -689,12 +688,14 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     return sb.toString();
                 case NODE_SEQUENCED:
                     sb.append("Node sequenced");
-                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:").append(info.get(SEQUENCED_NODE_PATH));
+                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:")
+                      .append(info.get(SEQUENCED_NODE_PATH));
                     sb.append(" ,output node:").append(getIdentifier()).append(" at path:").append(getPath());
                     return sb.toString();
                 case NODE_SEQUENCING_FAILURE: {
                     sb.append("Node sequencing failure");
-                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:").append(info.get(SEQUENCED_NODE_PATH));
+                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:")
+                      .append(info.get(SEQUENCED_NODE_PATH));
                     sb.append(" ,cause: ").append(getInfo().get(SEQUENCING_FAILURE_CAUSE));
                     return sb.toString();
                 }
@@ -842,7 +843,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             this(null, org.modeshape.jcr.api.observation.Event.ALL_EVENTS, true, null, false, null);
         }
 
-        protected List<Event> convert(ChangeSet changeSet) {
+        protected List<Event> convert( ChangeSet changeSet ) {
             List<Event> events = new ArrayList<>();
 
             if (shouldRejectChangeSet(changeSet)) {
@@ -928,12 +929,14 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Path propertyPath = pathFactory().create(newPath, stringFor(propertyName));
 
                 boolean isMultiValue = propertyChanged.getNewProperty().isMultiple();
-                Object currentValue = isMultiValue ? propertyChanged.getNewProperty().getValuesAsArray() : propertyChanged.getNewProperty().getFirstValue();
+                Object currentValue = isMultiValue ? propertyChanged.getNewProperty().getValuesAsArray() : propertyChanged.getNewProperty()
+                                                                                                                          .getFirstValue();
 
                 Object oldValue = null;
                 if (propertyChanged.getOldProperty() != null) {
                     boolean wasMultiValue = propertyChanged.getOldProperty().isMultiple();
-                    oldValue = wasMultiValue ? propertyChanged.getOldProperty().getValuesAsArray() : propertyChanged.getOldProperty().getFirstValue();
+                    oldValue = wasMultiValue ? propertyChanged.getOldProperty().getValuesAsArray() : propertyChanged.getOldProperty()
+                                                                                                                    .getFirstValue();
                 }
 
                 events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_CHANGED, stringFor(propertyPath), nodeId, currentValue,
@@ -944,7 +947,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Path propertyPath = pathFactory().create(newPath, stringFor(propertyName));
 
                 boolean isMultiValue = propertyAdded.getProperty().isMultiple();
-                Object currentValue = isMultiValue ? propertyAdded.getProperty().getValuesAsArray() : propertyAdded.getProperty().getFirstValue();
+                Object currentValue = isMultiValue ? propertyAdded.getProperty().getValuesAsArray() : propertyAdded.getProperty()
+                                                                                                                   .getFirstValue();
 
                 events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_ADDED, stringFor(propertyPath), nodeId, currentValue,
                                                 primaryType, mixinTypes));
@@ -956,7 +960,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Path propertyPath = pathFactory().create(newPath, propertyName);
 
                 boolean isMultiValue = propertyRemoved.getProperty().isMultiple();
-                Object currentValue = isMultiValue ? propertyRemoved.getProperty().getValuesAsArray() : propertyRemoved.getProperty().getFirstValue();
+                Object currentValue = isMultiValue ? propertyRemoved.getProperty().getValuesAsArray() : propertyRemoved.getProperty()
+                                                                                                                       .getFirstValue();
 
                 events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId, currentValue,
                                                 primaryType, mixinTypes));
@@ -1026,18 +1031,15 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
 
         private boolean shouldRejectChange( AbstractNodeChange nodeChange ) {
-            return !acceptBasedOnUuid(nodeChange) ||
-                   !acceptBasedOnPath(nodeChange) ||
-                   !acceptBasedOnPermission(nodeChange) ||
-                   !acceptIfLockChange(nodeChange) ||
-                   !acceptBasedOnNodeTypeName(nodeChange);
+            return !acceptBasedOnUuid(nodeChange) || !acceptBasedOnPath(nodeChange) || !acceptBasedOnPermission(nodeChange)
+                   || !acceptIfLockChange(nodeChange) || !acceptBasedOnNodeTypeName(nodeChange);
         }
 
         /**
          * In case of changes involving locks from the system workspace, the TCK expects that the only property changes be for
          * lock owner and lock isDeep, which will be fired from the locked node. Therefore, we should exclude property
          * notifications from the lock node from the system workspace.
-         *
+         * 
          * @param nodeChange the internal event
          * @return true if the change should be accepted/propagated
          */
@@ -1064,7 +1066,6 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @return <code>true</code> if the {@link JcrSession#checkPermission(org.modeshape.jcr.value.Path, String...)} returns
          *         true for a {@link ModeShapePermissions#READ} permission on the node from the change
          */
-        @SuppressWarnings( "synthetic-access" )
         private boolean acceptBasedOnPermission( AbstractNodeChange nodeChange ) {
             try {
                 session.checkPermission(parentNodePathOfChange(nodeChange), ModeShapePermissions.READ);
@@ -1092,7 +1093,6 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @param change the change being processed
          * @return <code>true</code> if all node types should be processed or if changed node type name matches a specified type
          */
-        @SuppressWarnings( "synthetic-access" )
         private boolean acceptBasedOnNodeTypeName( AbstractNodeChange change ) {
             // JSR 283#12.5.3.4.3
             if (nodeTypeNames != null && nodeTypeNames.length == 0) {
@@ -1114,10 +1114,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     primaryTypeName = stringFor(parentNode.getPrimaryTypeName());
                     return getNodeTypeManager().isDerivedFrom(this.nodeTypeNames, primaryTypeName, mixinStrings);
                 } catch (RepositoryException e) {
-                    LOGGER.error(e,
-                                 JcrI18n.cannotPerformNodeTypeCheck,
-                                 primaryTypeName,
-                                 Arrays.toString(mixinStrings),
+                    LOGGER.error(e, JcrI18n.cannotPerformNodeTypeCheck, primaryTypeName, Arrays.toString(mixinStrings),
                                  this.nodeTypeNames);
                     return false;
                 }
@@ -1130,7 +1127,6 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @param change the change being processed
          * @return <code>true</code> if there is no absolute path or if change path matches or optionally is a deep match
          */
-        @SuppressWarnings( "synthetic-access" )
         private boolean acceptBasedOnPath( AbstractNodeChange change ) {
             if (!StringUtil.isBlank(absPath)) {
                 Path matchPath = session.pathFactory().create(this.absPath);
@@ -1224,7 +1220,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         private Iterator<JournalRecord> recordsIterator = null;
         private org.joda.time.DateTime laterThanDate = null;
 
-        protected JcrEventJournal( ) {
+        protected JcrEventJournal() {
             this.changeSetConverter = new ChangeSetConverter();
         }
 
@@ -1239,7 +1235,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         @Override
         public void skipTo( long date ) {
             laterThanDate = new org.joda.time.DateTime(date);
-            //reset the position and the internal iterator
+            // reset the position and the internal iterator
             position = -1;
             eventsIterator = null;
         }
@@ -1293,14 +1289,14 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 return true;
             }
             if (position == -1) {
-                //we haven't advanced in this iterator yet, so always get the latest journal entries
+                // we haven't advanced in this iterator yet, so always get the latest journal entries
                 ChangeJournal journal = session.repository().journal();
                 recordsIterator = laterThanDate != null ? journal.recordsNewerThan(new org.joda.time.DateTime(laterThanDate),
-                                                                                   true, false).iterator()
-                                                        : journal.allRecords(false).iterator();
+                                                                                   true, false).iterator() : journal.allRecords(false)
+                                                                                                                    .iterator();
             }
             while (recordsIterator.hasNext()) {
-                //navigate to the next "valid" record
+                // navigate to the next "valid" record
                 JournalRecord record = recordsIterator.next();
                 eventsIterator = this.changeSetConverter.convert(record.getChangeSet()).iterator();
                 if (eventsIterator.hasNext()) {
