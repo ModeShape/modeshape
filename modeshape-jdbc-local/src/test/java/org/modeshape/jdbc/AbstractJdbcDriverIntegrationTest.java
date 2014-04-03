@@ -65,8 +65,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
         // make sure system nodes are avoided
         executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] "
                      + "WHERE [jcr:path] NOT LIKE '/jcr:*' AND [jcr:path] NOT LIKE '/jcr:*/%' AND [jcr:path] NOT LIKE '/jcr:*/%/%' ORDER BY [jcr:path]",
-                     expected,
-                     23);
+                     expected, 23);
     }
 
     @Test
@@ -88,8 +87,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "IS350", "LR2", "LR3", "Prius"};
 
         executeQuery("SELECT car.[car:model] FROM [car:Car] As car WHERE car.[car:model] IS NOT NULL ORDER BY car.[car:model] ASC",
-                     expected,
-                     12);
+                     expected, 12);
 
     }
 
@@ -108,8 +106,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
         executeQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%' ORDER BY [car:msrp]",
-                     expected,
-                     3);
+                     expected, 3);
 
     }
 
@@ -122,8 +119,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
         executeQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid' ORDER BY car.[car:msrp]",
-                     expected,
-                     3);
+                     expected, 3);
 
     }
 
@@ -155,8 +151,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "nt:unstructured    null    /Other/NodeA[3]    NodeA    NodeA    2",};
         // SELECT * FROM ... except the [jcr:score] column ...
         executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:unstructured] WHERE [jcr:path] NOT LIKE '/jcr:*' ORDER BY [jcr:primaryType], [jcr:path]",
-                     expected,
-                     22);
+                     expected, 22);
     }
 
     private String carColumns() {
@@ -203,8 +198,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "nt:unstructured    null    /Cars/Utility    Utility    Utility    2"};
 
         executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] WHERE [jcr:path] LIKE '/Cars/%' AND DEPTH() = 2 ORDER BY [jcr:path]",
-                     expected,
-                     4);
+                     expected, 4);
 
     }
 
@@ -252,6 +246,10 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "cars    NULL    mode:derived    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    mode:federation    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    mode:hashed    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "cars    NULL    mode:index    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "cars    NULL    mode:indexColumn    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "cars    NULL    mode:indexProvider    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "cars    NULL    mode:indexes    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    mode:lock    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    mode:locks    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    mode:namespace    VIEW    Is Mixin: false    NULL    NULL    NULL    mode:uri    DERIVED",

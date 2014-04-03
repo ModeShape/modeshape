@@ -71,7 +71,7 @@ public class ModeShapeLexicon {
     /**
      * The name of the node which is used for running 1-time operations
      */
-    public static final Name REPOSITORY= new BasicName(Namespace.URI, "repository");
+    public static final Name REPOSITORY = new BasicName(Namespace.URI, "repository");
 
     /**
      * Federation related items
@@ -84,6 +84,19 @@ public class ModeShapeLexicon {
     public static final Name PROJECTION_ALIAS = new BasicName(Namespace.URI, "alias");
 
     /**
+     * Index-related items
+     */
+    public static final Name INDEXES = new BasicName(Namespace.URI, "indexes");
+    public static final Name INDEX = new BasicName(Namespace.URI, "index");
+    public static final Name INDEX_COLUMN = new BasicName(Namespace.URI, "indexColumn");
+    public static final Name INDEX_PROVIDER = new BasicName(Namespace.URI, "indexProvider");
+    public static final Name ENABLED = new BasicName(Namespace.URI, "enabled");
+    public static final Name KIND = new BasicName(Namespace.URI, "kind");
+    public static final Name NODE_TYPE_NAME = new BasicName(Namespace.URI, "nodeTypeName");
+    public static final Name PROPERTY_NAME = new BasicName(Namespace.URI, "propertyName");
+    public static final Name COLUMN_TYPE_NAME = new BasicName(Namespace.URI, "columnTypeName");
+
+    /**
      * ACL related
      */
     public static final Name ACCESS_CONTROLLABLE = new BasicName(Namespace.URI, "accessControllable");
@@ -92,14 +105,14 @@ public class ModeShapeLexicon {
     public static final Name ACL_COUNT = new BasicName(Namespace.URI, "aclCount");
 
     /**
-     * Deprecated names because of originally invalid node types in modeshape_builtins.cnd.
-     * DO NOT USE outside of upgrade functions & tests.
+     * Deprecated names because of originally invalid node types in modeshape_builtins.cnd. DO NOT USE outside of upgrade
+     * functions & tests.
      */
     @Deprecated
-    public static final Name LOCKED_KEY =  new BasicName(Namespace.URI, "lockedKey");
+    public static final Name LOCKED_KEY = new BasicName(Namespace.URI, "lockedKey");
     @Deprecated
-    public static final Name SESSION_SCOPE =  new BasicName(Namespace.URI, "sessionScope");
+    public static final Name SESSION_SCOPE = new BasicName(Namespace.URI, "sessionScope");
     @Deprecated
-    public static final Name IS_DEEP =  new BasicName(Namespace.URI, "isDeep");
+    public static final Name IS_DEEP = new BasicName(Namespace.URI, "isDeep");
 
 }

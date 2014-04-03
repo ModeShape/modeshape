@@ -20,13 +20,13 @@ import java.util.Set;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.QueryCancelledException;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.validate.Schemata;
-import org.modeshape.jcr.spi.query.QueryIndexWriter;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -56,6 +56,7 @@ public interface QueryEngine {
      * @param overriddenNodeCachesByWorkspaceName the NodeCache instances that should be used to load results, which will be used
      *        instead of the RepositoryCache's NodeCache for a given workspace name; may be null or empty
      * @param schemata the schemata
+     * @param indexDefns the definitions for the currently-defined indexes; never null
      * @param nodeTypes the snapshot of node types; may not be null
      * @param bufferManager the buffer manager; may not be null
      * @param hints the hints, or null if there are no hints
@@ -68,17 +69,11 @@ public interface QueryEngine {
                                      Set<String> workspaceNames,
                                      Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                                      Schemata schemata,
+                                     RepositoryIndexes indexDefns,
                                      NodeTypes nodeTypes,
                                      BufferManager bufferManager,
                                      PlanHints hints,
                                      Map<String, Object> variables );
-
-    /**
-     * Get the interface for updating the indexes.
-     * 
-     * @return the indexing interface; never null
-     */
-    QueryIndexWriter getQueryIndexWriter();
 
     /**
      * Signal that the engine is no longer needed and should clean up and/or close any resources.

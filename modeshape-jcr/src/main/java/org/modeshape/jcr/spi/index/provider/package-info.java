@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.query.engine;
-
-import java.util.LinkedList;
-import org.modeshape.jcr.query.QueryContext;
-import org.modeshape.jcr.query.optimize.OptimizerRule;
-import org.modeshape.jcr.query.plan.PlanNode;
-
 /**
- * 
+ * This package contains the Service Provider Interface (SPI) for custom index providers, which are components that encapsulate
+ * how ModeShape updates and uses a set of particular indexes. To integrate your own indexing technology into ModeShape,
+ * start by create a concrete subclass of {@link org.modeshape.jcr.spi.index.provider.IndexProvider}, as well as the necessary 
+ * {@link org.modeshape.jcr.spi.index.provider.IndexWriter}, {@link org.modeshape.jcr.spi.index.provider.Index}, and 
+ * {@link org.modeshape.jcr.spi.index.provider.IndexPlanner} interfaces.
  */
-class CostingRule implements OptimizerRule {
 
-    @Override
-    public PlanNode execute( QueryContext context,
-                             PlanNode plan,
-                             LinkedList<OptimizerRule> ruleStack ) {
-        return null;
-    }
-
-}
+package org.modeshape.jcr.spi.index.provider;

@@ -109,9 +109,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     private static final String[] INDEXED_SYSTEM_NODES_PATHS = new String[] {"/jcr:system/jcr:nodeTypes",
         "/jcr:system/mode:namespaces", "/jcr:system/mode:repository"};
 
-    private static final String[] NON_INDEXED_SYSTEM_NODES_PATHS = new String[] {"/", "/jcr:system/mode:locks",
-        "/jcr:system/jcr:versionStorage"};
-
     private static final boolean WRITE_INDEXES_TO_FILE = false;
 
     /** The total number of nodes excluding '/jcr:system' */
@@ -285,8 +282,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         JcrSession session = repository.login();
         try {
             NodeCache systemSession = repository.createSystemSession(session.context(), true);
-            totalSystemNodeCount = countAllNodesBelow(systemSession.getRootKey(), systemSession)
-                                   - NON_INDEXED_SYSTEM_NODES_PATHS.length;
+            totalSystemNodeCount = countAllNodesBelow(systemSession.getRootKey(), systemSession) - 1; // not root
             totalNodeCount = totalSystemNodeCount + TOTAL_NON_SYSTEM_NODE_COUNT;
         } finally {
             session.logout();
@@ -295,8 +291,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     private static int countAllNodesBelow( NodeKey nodeKey,
                                            NodeCache cache ) throws RepositoryException {
-        int result = 1;
         CachedNode node = cache.getNode(nodeKey);
+        if (!node.isQueryable(cache)) return 0;
+        int result = 1;
         ChildReferences childReferences = node.getChildReferences(cache);
         for (Iterator<NodeKey> nodeKeyIterator = childReferences.getAllKeys(); nodeKeyIterator.hasNext();) {
             NodeKey childKey = nodeKeyIterator.next();

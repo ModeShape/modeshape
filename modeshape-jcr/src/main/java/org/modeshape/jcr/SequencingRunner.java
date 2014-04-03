@@ -87,12 +87,8 @@ final class SequencingRunner implements Runnable {
             if (sequencer == null) {
                 if (DEBUG) {
                     LOGGER.debug("Unable to find sequencer with ID '{0}' in repository '{1}'; skipping input '{3}:{2}' and output '{5}:{4}'",
-                                 work.getSequencerId(),
-                                 repository.name(),
-                                 work.getInputPath(),
-                                 work.getInputWorkspaceName(),
-                                 work.getOutputPath(),
-                                 work.getOutputWorkspaceName());
+                                 work.getSequencerId(), repository.name(), work.getInputPath(), work.getInputWorkspaceName(),
+                                 work.getOutputPath(), work.getOutputWorkspaceName());
                 }
                 return;
             }
@@ -163,15 +159,13 @@ final class SequencingRunner implements Runnable {
                 // Create the output node
                 if (parentOfOutput.isNew() && parentOfOutput.getName().equals(outputNodeName)) {
                     // avoid creating a duplicate path with the same name
-                    outputNode = (AbstractJcrNode)parentOfOutput;
+                    outputNode = parentOfOutput;
                 } else {
                     if (TRACE) {
-                        LOGGER.trace("Creating output node '{0}' under parent '{1}' for {2}",
-                                     outputNodeName,
-                                     parentOfOutput.getPath(),
-                                     logMsg);
+                        LOGGER.trace("Creating output node '{0}' under parent '{1}' for {2}", outputNodeName,
+                                     parentOfOutput.getPath(), logMsg);
                     }
-                    outputNode = (AbstractJcrNode)parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
+                    outputNode = parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
                 }
 
                 // and make sure the output node has the 'mode:derived' mixin ...
@@ -216,9 +210,7 @@ final class SequencingRunner implements Runnable {
                         payload.put("sequencerName", sequencer.getClass().getName());
                         payload.put("sequencedPath", changedProperty.getPath());
                         payload.put("outputPath", outputNode.getPath());
-                        stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME,
-                                             durationInNanos,
-                                             TimeUnit.NANOSECONDS,
+                        stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS,
                                              payload);
                     }
                 } catch (Throwable t) {
@@ -230,22 +222,12 @@ final class SequencingRunner implements Runnable {
         } catch (Throwable t) {
             Logger logger = Logger.getLogger(getClass());
             if (work.getOutputWorkspaceName() != null) {
-                logger.error(t,
-                             RepositoryI18n.errorWhileSequencingNodeIntoWorkspace,
-                             sequencerName,
-                             repository.name(),
-                             work.getInputPath(),
-                             work.getInputWorkspaceName(),
-                             work.getOutputPath(),
+                logger.error(t, RepositoryI18n.errorWhileSequencingNodeIntoWorkspace, sequencerName, repository.name(),
+                             work.getInputPath(), work.getInputWorkspaceName(), work.getOutputPath(),
                              work.getOutputWorkspaceName());
             } else {
-                logger.error(t,
-                             RepositoryI18n.errorWhileSequencingNode,
-                             sequencerName,
-                             repository.name(),
-                             work.getInputPath(),
-                             work.getInputWorkspaceName(),
-                             work.getOutputPath());
+                logger.error(t, RepositoryI18n.errorWhileSequencingNode, sequencerName, repository.name(), work.getInputPath(),
+                             work.getInputWorkspaceName(), work.getOutputPath());
             }
         } finally {
             stats.increment(ValueMetric.SEQUENCED_COUNT);
@@ -311,12 +293,8 @@ final class SequencingRunner implements Runnable {
         // set by the system session when it saves and it will default to "modeshape-worker"
         for (AbstractJcrNode node : outputNodes) {
             if (node.isNodeType(JcrMixLexicon.CREATED)) {
-                node.setProperty(JcrLexicon.CREATED_BY,
-                                 outputSession.getValueFactory().createValue(work.getUserId()),
-                                 true,
-                                 true,
-                                 false,
-                                 false);
+                node.setProperty(JcrLexicon.CREATED_BY, outputSession.getValueFactory().createValue(work.getUserId()), true,
+                                 true, false, false);
             }
         }
     }
@@ -328,20 +306,15 @@ final class SequencingRunner implements Runnable {
 
         RecordingChanges sequencingChanges = new RecordingChanges(outputSession.context().getProcessId(),
                                                                   outputSession.getRepository().repositoryKey(),
-                                                                  outputSession.workspaceName(),
-                                                                  outputSession.getRepository().journalId());
+                                                                  outputSession.workspaceName(), outputSession.getRepository()
+                                                                                                              .journalId());
         Name primaryType = sequencedNode.getPrimaryTypeName();
         Set<Name> mixinTypes = sequencedNode.getMixinTypeNames();
         for (AbstractJcrNode outputNode : outputNodes) {
 
-            sequencingChanges.nodeSequenced(sequencedNode.key(),
-                                            sequencedNode.path(),
-                                            primaryType,
-                                            mixinTypes,
-                                            outputNode.key(),
-                                            outputNode.path(),
-                                            work.getOutputPath(),
-                                            work.getUserId(), work.getSelectedPath(), sequencerName);
+            sequencingChanges.nodeSequenced(sequencedNode.key(), sequencedNode.path(), primaryType, mixinTypes, outputNode.key(),
+                                            outputNode.path(), work.getOutputPath(), work.getUserId(), work.getSelectedPath(),
+                                            sequencerName);
         }
 
         repository.changeBus().notify(sequencingChanges);
@@ -357,15 +330,11 @@ final class SequencingRunner implements Runnable {
         Set<Name> mixinTypes = sequencedNode.getMixinTypeNames();
         RecordingChanges sequencingChanges = new RecordingChanges(inputSession.context().getProcessId(),
                                                                   inputSession.getRepository().repositoryKey(),
-                                                                  inputSession.workspaceName(),
-                                                                  inputSession.getRepository().journalId());
-        sequencingChanges.nodeSequencingFailure(sequencedNode.key(),
-                                                sequencedNode.path(),
-                                                primaryType,
-                                                mixinTypes,
-                                                work.getOutputPath(),
-                                                work.getUserId(),
-                                                work.getSelectedPath(), sequencerName, cause);
+                                                                  inputSession.workspaceName(), inputSession.getRepository()
+                                                                                                            .journalId());
+        sequencingChanges.nodeSequencingFailure(sequencedNode.key(), sequencedNode.path(), primaryType, mixinTypes,
+                                                work.getOutputPath(), work.getUserId(), work.getSelectedPath(), sequencerName,
+                                                cause);
         repository.changeBus().notify(sequencingChanges);
     }
 

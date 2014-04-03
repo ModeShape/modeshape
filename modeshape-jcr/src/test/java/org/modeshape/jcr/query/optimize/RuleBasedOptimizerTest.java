@@ -30,6 +30,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
@@ -97,7 +98,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
                         "SELECT all.a3, all.a4 FROM all WHERE all.primaryType IN ('t2','t0') AND all.mixins IN ('t4','t5')");
         Schemata schemata = builder.build();
         context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"), schemata,
-                                   mock(NodeTypes.class), mock(BufferManager.class));
+                                   mock(RepositoryIndexes.class), mock(NodeTypes.class), mock(BufferManager.class));
 
         node = new PlanNode(Type.ACCESS);
 

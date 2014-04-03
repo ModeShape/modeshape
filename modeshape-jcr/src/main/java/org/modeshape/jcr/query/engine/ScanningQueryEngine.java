@@ -45,6 +45,7 @@ import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.QueryCancelledException;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.CachedNode;
@@ -126,7 +127,6 @@ import org.modeshape.jcr.query.plan.PlanNode.Traversal;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
 import org.modeshape.jcr.query.plan.Planner;
 import org.modeshape.jcr.query.validate.Schemata;
-import org.modeshape.jcr.spi.query.QueryIndexWriter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
@@ -413,12 +413,14 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                             Set<String> workspaceNames,
                                             Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                                             Schemata schemata,
+                                            RepositoryIndexes indexDefns,
                                             NodeTypes nodeTypes,
                                             BufferManager bufferManager,
                                             PlanHints hints,
                                             Map<String, Object> variables ) {
         return new ScanQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                    nodeTypes, bufferManager, hints, null, variables, new HashMap<PlanNode, Columns>());
+                                    indexDefns, nodeTypes, bufferManager, hints, null, variables,
+                                    new HashMap<PlanNode, Columns>());
     }
 
     /**
@@ -474,11 +476,6 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         final String planDesc = context.getHints().showPlan ? plan.getString() : null;
         CachedNodeSupplier cachedNodes = context.getNodeCache(workspaceName);
         return new Results(columns, statistics, rows, cachedNodes, context.getProblems(), planDesc);
-    }
-
-    @Override
-    public QueryIndexWriter getQueryIndexWriter() {
-        return NoOpQueryIndexWriter.INSTANCE;
     }
 
     /**
@@ -2736,13 +2733,14 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                     Set<String> workspaceNames,
                                     Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                                     Schemata schemata,
+                                    RepositoryIndexes indexDefns,
                                     NodeTypes nodeTypes,
                                     BufferManager bufferManager,
                                     PlanHints hints,
                                     Problems problems,
                                     Map<String, Object> variables,
                                     Map<PlanNode, Columns> columnsByPlanNode ) {
-            super(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, nodeTypes,
+            super(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, indexDefns, nodeTypes,
                   bufferManager, hints, problems, variables);
             this.columnsByPlanNode = columnsByPlanNode;
         }
@@ -2771,25 +2769,25 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         @Override
         public ScanQueryContext with( Map<String, Object> variables ) {
             return new ScanQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                        nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode);
+                                        indexDefns, nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode);
         }
 
         @Override
         public ScanQueryContext with( PlanHints hints ) {
             return new ScanQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                        nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode);
+                                        indexDefns, nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode);
         }
 
         @Override
         public ScanQueryContext with( Problems problems ) {
             return new ScanQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                        nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode);
+                                        indexDefns, nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode);
         }
 
         @Override
         public ScanQueryContext with( Schemata schemata ) {
             return new ScanQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                        nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode);
+                                        indexDefns, nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode);
         }
     }
 }

@@ -23,8 +23,9 @@ import javax.transaction.Transaction;
 import org.modeshape.jcr.NodeTypeSchemata;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.spi.query.QueryIndexProvider;
-import org.modeshape.jcr.spi.query.QueryIndexWriter;
+import org.modeshape.jcr.query.engine.NoOpQueryIndexWriter;
+import org.modeshape.jcr.spi.index.provider.IndexProvider;
+import org.modeshape.jcr.spi.index.provider.IndexWriter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
@@ -32,7 +33,20 @@ import org.modeshape.jcr.value.Property;
 /**
  * A composition of multiple QueryIndexWriter instances.
  */
-public class CompositeIndexWriter implements QueryIndexWriter {
+public class CompositeIndexWriter implements IndexWriter {
+
+    public static IndexWriter create( Iterable<IndexProvider> providers ) {
+        final List<IndexWriter> writers = new ArrayList<>();
+        for (IndexProvider provider : providers) {
+            if (provider != null) {
+                IndexWriter writer = provider.getQueryIndexWriter();
+                if (writer != null && !writer.canBeSkipped()) writers.add(writer);
+            }
+        }
+        if (writers.isEmpty()) return NoOpQueryIndexWriter.INSTANCE;
+        if (writers.size() == 1) return writers.get(0);
+        return new CompositeIndexWriter(writers);
+    }
 
     protected static final class Context implements IndexingContext {
         private final Transaction txn;
@@ -47,15 +61,10 @@ public class CompositeIndexWriter implements QueryIndexWriter {
         }
     }
 
-    private final List<QueryIndexWriter> writers = new ArrayList<>();
+    private final List<IndexWriter> writers;
 
-    public CompositeIndexWriter( Iterable<QueryIndexProvider> providers ) {
-        for (QueryIndexProvider provider : providers) {
-            if (provider != null) {
-                QueryIndexWriter writer = provider.getQueryIndexWriter();
-                if (writer != null && !writer.canBeSkipped()) this.writers.add(writer);
-            }
-        }
+    protected CompositeIndexWriter( List<IndexWriter> writers ) {
+        this.writers = writers;
     }
 
     @Override
@@ -65,7 +74,7 @@ public class CompositeIndexWriter implements QueryIndexWriter {
 
     @Override
     public boolean initializedIndexes() {
-        for (QueryIndexWriter writer : writers) {
+        for (IndexWriter writer : writers) {
             if (!writer.initializedIndexes()) return false;
         }
         return true;
@@ -85,7 +94,7 @@ public class CompositeIndexWriter implements QueryIndexWriter {
                             Iterator<Property> propertiesIterator,
                             NodeTypeSchemata schemata,
                             IndexingContext txnCtx ) {
-        for (QueryIndexWriter writer : writers) {
+        for (IndexWriter writer : writers) {
             writer.addToIndex(workspace, key, path, primaryType, mixinTypes, propertiesIterator, schemata, txnCtx);
         }
     }
@@ -99,7 +108,7 @@ public class CompositeIndexWriter implements QueryIndexWriter {
                              Iterator<Property> properties,
                              NodeTypeSchemata schemata,
                              IndexingContext txnCtx ) {
-        for (QueryIndexWriter writer : writers) {
+        for (IndexWriter writer : writers) {
             writer.updateIndex(workspace, key, path, primaryType, mixinTypes, properties, schemata, txnCtx);
         }
     }
@@ -108,7 +117,7 @@ public class CompositeIndexWriter implements QueryIndexWriter {
     public void removeFromIndex( String workspace,
                                  Iterable<NodeKey> keys,
                                  IndexingContext txnCtx ) {
-        for (QueryIndexWriter writer : writers) {
+        for (IndexWriter writer : writers) {
             writer.removeFromIndex(workspace, keys, txnCtx);
         }
     }
@@ -116,7 +125,7 @@ public class CompositeIndexWriter implements QueryIndexWriter {
     @Override
     public void addBinaryToIndex( Binary binary,
                                   IndexingContext txnCtx ) {
-        for (QueryIndexWriter writer : writers) {
+        for (IndexWriter writer : writers) {
             writer.addBinaryToIndex(binary, txnCtx);
         }
     }
@@ -124,7 +133,7 @@ public class CompositeIndexWriter implements QueryIndexWriter {
     @Override
     public void removeBinariesFromIndex( Iterable<String> sha1s,
                                          IndexingContext txnCtx ) {
-        for (QueryIndexWriter writer : writers) {
+        for (IndexWriter writer : writers) {
             writer.removeBinariesFromIndex(sha1s, txnCtx);
         }
     }

@@ -34,7 +34,9 @@ import org.modeshape.jcr.cache.document.NodeCacheIterator;
 import org.modeshape.jcr.cache.document.NodeCacheIterator.NodeFilter;
 import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.NodeSequence.Batch;
-import org.modeshape.jcr.spi.query.QueryIndex;
+import org.modeshape.jcr.spi.index.provider.IndexFilter;
+import org.modeshape.jcr.spi.index.provider.Index;
+import org.modeshape.jcr.spi.index.provider.ResultWriter;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
@@ -222,11 +224,11 @@ public class QuerySources {
      * @param batchSize the ideal number of nodes that are to be included in each batch; always positive
      * @return the sequence of nodes; never null
      */
-    public NodeSequence fromIndex( final QueryIndex index,
+    public NodeSequence fromIndex( final Index index,
                                    final Collection<Constraint> constraints,
                                    final Map<String, Object> parameters,
                                    final int batchSize ) {
-        final QueryIndex.Operation operation = index.filter(new QueryIndex.Filter() {
+        final Index.Operation operation = index.filter(new IndexFilter() {
 
             @Override
             public boolean hasConstraints() {
@@ -304,7 +306,7 @@ public class QuerySources {
         };
     }
 
-    protected static class BatchWriter implements QueryIndex.ResultWriter {
+    protected static class BatchWriter implements ResultWriter {
         private List<NodeKey> keys;
         private List<Float> scores;
         private Float lastScore;
@@ -356,7 +358,7 @@ public class QuerySources {
             return keys.size();
         }
 
-        protected boolean consumeOperation( QueryIndex.Operation operation ) {
+        protected boolean consumeOperation( Index.Operation operation ) {
             if (!keys.isEmpty()) {
                 // We've already read some, but have to get ready to read more ...
                 preloadedBatches.add(convertToBatch(false));

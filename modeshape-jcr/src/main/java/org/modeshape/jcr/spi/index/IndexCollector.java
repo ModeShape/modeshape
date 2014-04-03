@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.spi.query;
+package org.modeshape.jcr.spi.index;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.query.QueryContext;
-import org.modeshape.jcr.query.model.SelectorName;
+import org.modeshape.jcr.spi.index.provider.Index;
+import org.modeshape.jcr.spi.index.provider.IndexPlanner;
+import org.modeshape.jcr.spi.index.provider.IndexProvider;
 
 /**
- * A collector implemented by ModeShape and supplied to the
- * {@link QueryIndexPlanner#applyIndexes(QueryContext, SelectorName, List, IndexCollector)} method so that the
- * {@link QueryIndexPlanner} can add indexes to the query plan.
+ * A collector implemented by ModeShape and supplied to the {@link IndexPlanner#applyIndexes} method so that the
+ * {@link IndexPlanner} can add indexes to the query plan.
  * <p>
  * The cardinality estimate is an esimate of the number of nodes that will be returned by this index given the constraints. For
  * example, an index that will return one node should have a cardinality of 1. When possible, the actual cardinality should be
@@ -35,9 +34,9 @@ import org.modeshape.jcr.query.model.SelectorName;
  * </p>
  * <p>
  * Return an estimate of the cost of using the index for the query in question. An index that is expensive to use will have a
- * higher cost than another index that is less expensive to use. For example, if a {@link QueryIndexProvider} that owns the index
- * is in a remote process, then the cost estimate will need to take into account the cost of transmitting the request with the
- * criteria and the response with all of the node that meet the criteria of the index.
+ * higher cost than another index that is less expensive to use. For example, if a {@link IndexProvider} that owns the index is in
+ * a remote process, then the cost estimate will need to take into account the cost of transmitting the request with the criteria
+ * and the response with all of the node that meet the criteria of the index.
  * </p>
  * <p>
  * Indexes with lower costs and lower cardinalities will be favored over other indexes.
@@ -72,10 +71,10 @@ public interface IndexCollector {
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
      * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
      *        must be non-negative
-     * @param parameterName the name of a parameter that is to be supplied back to the {@link QueryIndex} if/when this index is
-     *        {@link QueryIndex#filter(org.modeshape.jcr.spi.query.QueryIndex.Filter)} called; may not be null
-     * @param parameterValue the value of a parameter that is to be supplied back to the {@link QueryIndex} if/when this index is
-     *        {@link QueryIndex#filter(org.modeshape.jcr.spi.query.QueryIndex.Filter)} called; may not be null
+     * @param parameterName the name of a parameter that is to be supplied back to the {@link Index} if/when this index is
+     *        {@link Index#filter(org.modeshape.jcr.spi.index.provider.IndexFilter)} called; may not be null
+     * @param parameterValue the value of a parameter that is to be supplied back to the {@link Index} if/when this index is
+     *        {@link Index#filter(org.modeshape.jcr.spi.index.provider.IndexFilter)} called; may not be null
      */
     void addIndex( String name,
                    String providerName,

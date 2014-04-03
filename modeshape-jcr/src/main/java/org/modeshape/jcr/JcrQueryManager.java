@@ -260,6 +260,7 @@ class JcrQueryManager implements QueryManager {
             // Submit immediately to the workspace graph ...
             Schemata schemata = session.workspace().nodeTypeManager().schemata();
             NodeTypes nodeTypes = session.repository().nodeTypeManager().getNodeTypes();
+            RepositoryIndexes indexDefns = session.repository().queryManager().getIndexes();
             ExecutionContext context = session.context();
             String workspaceName = session.workspaceName();
             JcrRepository.RunningState state = session.repository().runningState();
@@ -276,8 +277,8 @@ class JcrQueryManager implements QueryManager {
             } else {
                 workspaceNames = Collections.singleton(workspaceName);
             }
-            return queryManager.query(context, repoCache, workspaceNames, overriddenNodeCaches, query, schemata, nodeTypes,
-                                      hints, variables);
+            return queryManager.query(context, repoCache, workspaceNames, overriddenNodeCaches, query, schemata, indexDefns,
+                                      nodeTypes, hints, variables);
         }
 
         @Override

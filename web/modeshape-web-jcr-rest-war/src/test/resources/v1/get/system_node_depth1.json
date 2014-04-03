@@ -61,6 +61,10 @@
                 "mode:accessControllable",
                 "mode:Acl",
                 "mode:Permission",
+                "mode:indexes",
+                "mode:indexProvider",
+                "mode:index",
+                "mode:indexColumn",
             ]
         },
         "jcr:versionStorage":{

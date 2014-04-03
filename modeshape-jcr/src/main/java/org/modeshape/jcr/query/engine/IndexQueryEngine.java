@@ -15,34 +15,23 @@
  */
 package org.modeshape.jcr.query.engine;
 
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
-import javax.jcr.RepositoryException;
-import org.infinispan.commons.util.ReflectionUtil;
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.collection.Problems;
+import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
-import org.modeshape.jcr.ExtensionLogger;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.NodeTypes;
-import org.modeshape.jcr.RepositoryConfiguration.Component;
-import org.modeshape.jcr.cache.NodeCache;
-import org.modeshape.jcr.cache.RepositoryCache;
-import org.modeshape.jcr.query.BufferManager;
-import org.modeshape.jcr.query.CompositeIndexWriter;
 import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryEngine;
 import org.modeshape.jcr.query.QueryResults.Columns;
-import org.modeshape.jcr.query.engine.IndexPlan.StandardIndexPlanner;
 import org.modeshape.jcr.query.model.QueryCommand;
+import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.optimize.AddIndexes;
 import org.modeshape.jcr.query.optimize.Optimizer;
 import org.modeshape.jcr.query.optimize.OptimizerRule;
@@ -50,11 +39,12 @@ import org.modeshape.jcr.query.optimize.RuleBasedOptimizer;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.Planner;
-import org.modeshape.jcr.query.validate.Schemata;
-import org.modeshape.jcr.spi.query.QueryIndex;
-import org.modeshape.jcr.spi.query.QueryIndexPlanner;
-import org.modeshape.jcr.spi.query.QueryIndexProvider;
-import org.modeshape.jcr.spi.query.QueryIndexWriter;
+import org.modeshape.jcr.spi.index.IndexCollector;
+import org.modeshape.jcr.spi.index.IndexDefinition;
+import org.modeshape.jcr.spi.index.IndexManager;
+import org.modeshape.jcr.spi.index.provider.Index;
+import org.modeshape.jcr.spi.index.provider.IndexPlanner;
+import org.modeshape.jcr.spi.index.provider.IndexProvider;
 
 /**
  * A {@link QueryEngine} implementation that uses available indexes to more quickly produce query results.
@@ -72,7 +62,7 @@ import org.modeshape.jcr.spi.query.QueryIndexWriter;
  * results.
  * </p>
  * <p>
- * Indexes are access from the repository's {@link QueryIndexProvider} instances.
+ * Indexes are access from the repository's {@link IndexProvider} instances.
  */
 public class IndexQueryEngine extends ScanningQueryEngine {
 
@@ -85,54 +75,32 @@ public class IndexQueryEngine extends ScanningQueryEngine {
 
         @Override
         public QueryEngine build() {
-            // Instantiate the query index providers ...
-            final Map<String, QueryIndexProvider> providersByName = new HashMap<String, QueryIndexProvider>();
-            List<Component> components = config().getIndexes().getProviders();
-            QueryIndexPlanner indexPlanner = StandardIndexPlanner.INSTANCE;
-            for (Component component : components) {
-                try {
-                    QueryIndexProvider provider = component.createInstance(ScanningQueryEngine.class.getClassLoader());
-                    // Set the repository name field ...
-                    ReflectionUtil.setValue(provider, "repositoryName", repositoryName());
-
-                    // Set the logger instance
-                    ReflectionUtil.setValue(provider, "logger", ExtensionLogger.getLogger(provider.getClass()));
-
-                    // Initialize it ...
-                    provider.initialize();
-
-                    // If successful, call the 'postInitialize' method reflectively (due to inability to call directly) ...
-                    Method postInitialize = ReflectionUtil.findMethod(QueryIndexProvider.class, "postInitialize");
-                    ReflectionUtil.invokeAccessibly(provider, postInitialize, new Object[] {});
-                    if (DEBUG) {
-                        LOGGER.debug("Successfully initialized index provider '{0}' in repository '{1}'", provider.getName(),
-                                     repositoryName());
-                    }
-                    providersByName.put(provider.getName(), provider);
-
-                    // Collect/combine the index planners ...
-                    QueryIndexPlanner providerPlanner = provider.getIndexPlanner();
-                    if (providerPlanner == null) {
-                        throw new IllegalStateException(JcrI18n.indexProviderMissingPlanner.text(provider.getName(),
-                                                                                                 repositoryName()));
-                    }
-                    indexPlanner = QueryIndexPlanner.both(indexPlanner, providerPlanner);
-                } catch (Throwable t) {
-                    if (t.getCause() != null) {
-                        t = t.getCause();
-                    }
-                    LOGGER.error(t, JcrI18n.unableToInitializeIndexProvider, component, repositoryName(), t.getMessage());
-                }
-            }
-            if (providersByName.isEmpty()) {
-                // There are no indexes, so there's no reason to use this engine ...
+            // Determine the names of the query index providers ...
+            Set<String> providerNames = indexManager().getProviderNames();
+            if (providerNames.isEmpty()) {
+                // There are no providers and thus we're not using any explicit indexes. There's no reason to use this engine ...
                 return super.build();
             }
 
+            // Get the planner for each provider ...
+            Map<String, IndexPlanner> plannersByProviderName = new HashMap<>();
+            for (String providerName : indexManager().getProviderNames()) {
+                IndexProvider provider = indexManager().getProvider(providerName);
+                if (provider != null) {
+                    IndexPlanner planner = provider.getIndexPlanner();
+                    if (planner == null) {
+                        throw new IllegalStateException(JcrI18n.indexProviderMissingPlanner.text(providerName, repositoryName()));
+                    }
+                    plannersByProviderName.put(providerName, planner);
+                }
+            }
+
+            // Create the optimizer for the query engine ...
+            IndexPlanners indexPlanners = IndexPlanners.withProviders(plannersByProviderName);
             Optimizer optimizer = optimizer();
             if (optimizer == null) {
                 // Create a single indexing rule that will use the index planner from all the providers ...
-                final OptimizerRule indexingRule = AddIndexes.with(indexPlanner);
+                final OptimizerRule indexingRule = AddIndexes.with(indexPlanners);
                 // Create the optimizer that will add the providers' indexes using the same IndexingRule instance
                 optimizer = new RuleBasedOptimizer() {
                     @Override
@@ -143,12 +111,80 @@ public class IndexQueryEngine extends ScanningQueryEngine {
                     }
                 };
             }
-            return new IndexQueryEngine(context(), repositoryName(), planner(), optimizer, providersByName);
+            // Finally create the query engine ...
+            return new IndexQueryEngine(context(), repositoryName(), planner(), optimizer, indexManager());
         }
 
         @Override
-        protected Optimizer defaultOptimizer() {
+        protected final Optimizer defaultOptimizer() {
             return null;
+        }
+    }
+
+    /**
+     * A {@link IndexPlanner} implementation that passes through only those indexes that are owned by the named provider.
+     * 
+     * @author Randall Hauch (rhauch@redhat.com)
+     */
+    protected static class ProviderIndexPlanner extends IndexPlanner {
+        protected final String providerName;
+        private final IndexPlanner providerPlanner;
+
+        protected ProviderIndexPlanner( String providerName,
+                                        IndexPlanner providerPlanner ) {
+            this.providerName = providerName;
+            this.providerPlanner = providerPlanner;
+        }
+
+        @Override
+        public void applyIndexes( QueryContext context,
+                                  SelectorName selector,
+                                  List<Constraint> andedConstraints,
+                                  Iterable<IndexDefinition> indexesOnSelector,
+                                  IndexCollector indexes ) {
+            if (indexesOnSelector == null) return;
+            final Iterator<IndexDefinition> iterator = indexesOnSelector.iterator();
+            if (!iterator.hasNext()) return;
+            Iterable<IndexDefinition> filtered = new Iterable<IndexDefinition>() {
+                @Override
+                public Iterator<IndexDefinition> iterator() {
+                    return new Iterator<IndexDefinition>() {
+                        private IndexDefinition next;
+
+                        @Override
+                        public boolean hasNext() {
+                            return moveToNext();
+                        }
+
+                        @Override
+                        public IndexDefinition next() {
+                            if (!moveToNext()) throw new NoSuchElementException();
+                            return next;
+                        }
+
+                        @Override
+                        public void remove() {
+                            throw new UnsupportedOperationException();
+                        }
+
+                        protected boolean moveToNext() {
+                            if (next != null) return true;
+                            while (iterator.hasNext()) {
+                                next = iterator.next();
+                                if (providerName.equals(next.getProviderName())) return true;
+                            }
+                            next = null;
+                            return false;
+                        }
+                    };
+                }
+            };
+            providerPlanner.applyIndexes(context, selector, andedConstraints, filtered, indexes);
+        }
+
+        @Override
+        public String toString() {
+            return providerPlanner.toString();
         }
     }
 
@@ -161,56 +197,15 @@ public class IndexQueryEngine extends ScanningQueryEngine {
         return new Builder();
     }
 
-    private final Map<String, QueryIndexProvider> indexProvidersByName;
-    private final QueryIndexWriter indexWriter;
+    private final IndexManager indexManager;
 
     protected IndexQueryEngine( ExecutionContext context,
                                 String repositoryName,
                                 Planner planner,
                                 Optimizer optimizer,
-                                Map<String, QueryIndexProvider> indexProvidersByName ) {
+                                IndexManager indexManager ) {
         super(context, repositoryName, planner, optimizer);
-        this.indexProvidersByName = Collections.unmodifiableMap(indexProvidersByName);
-
-        // And create a single composite writer ...
-        if (this.indexProvidersByName.isEmpty()) {
-            this.indexWriter = NoOpQueryIndexWriter.INSTANCE;
-        } else if (this.indexProvidersByName.size() == 1) {
-            this.indexWriter = this.indexProvidersByName.values().iterator().next().getQueryIndexWriter();
-        } else {
-            this.indexWriter = new CompositeIndexWriter(this.indexProvidersByName.values());
-        }
-    }
-
-    @Override
-    public void shutdown() {
-        for (QueryIndexProvider provider : indexProvidersByName.values()) {
-            try {
-                provider.shutdown();
-            } catch (RepositoryException e) {
-                LOGGER.error(e, JcrI18n.errorShuttingDownIndexProvider, repositoryName, provider.getName(), e.getMessage());
-            }
-        }
-    }
-
-    @Override
-    public QueryContext createQueryContext( ExecutionContext context,
-                                            RepositoryCache repositoryCache,
-                                            Set<String> workspaceNames,
-                                            Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
-                                            Schemata schemata,
-                                            NodeTypes nodeTypes,
-                                            BufferManager bufferManager,
-                                            PlanHints hints,
-                                            Map<String, Object> variables ) {
-        return new IndexQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                     nodeTypes, bufferManager, hints, null, variables, new HashMap<PlanNode, Columns>(),
-                                     indexProvidersByName);
-    }
-
-    @Override
-    public QueryIndexWriter getQueryIndexWriter() {
-        return indexWriter;
+        this.indexManager = indexManager;
     }
 
     @Override
@@ -220,87 +215,20 @@ public class IndexQueryEngine extends ScanningQueryEngine {
                                                         IndexPlan indexPlan,
                                                         Columns columns,
                                                         QuerySources sources ) {
+        // First let the supertype try to determine a node sequence. This will find the native indexes ...
         NodeSequence sequence = super.createNodeSequenceForSource(originalQuery, context, sourceNode, indexPlan, columns, sources);
         if (sequence != null) return sequence;
 
         // Look up the index by name ...
         String providerName = indexPlan.getProviderName();
-        QueryIndexProvider provider = indexProvidersByName.get(providerName);
+        IndexProvider provider = indexManager.getProvider(providerName);
         if (provider != null) {
             // Use the index to get a NodeSequence ...
-            QueryIndex index = provider.getQueryIndex(indexPlan.getName());
+            Index index = provider.getQueryIndex(indexPlan.getName());
             if (index != null) {
                 return sources.fromIndex(index, indexPlan.getConstraints(), indexPlan.getParameters(), 100);
             }
         }
-
         return null;
     }
-
-    @ThreadSafe
-    static class IndexQueryContext extends ScanQueryContext {
-
-        private final Map<String, QueryIndexProvider> providersByName;
-
-        protected IndexQueryContext( ExecutionContext context,
-                                     RepositoryCache repositoryCache,
-                                     Set<String> workspaceNames,
-                                     Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
-                                     Schemata schemata,
-                                     NodeTypes nodeTypes,
-                                     BufferManager bufferManager,
-                                     PlanHints hints,
-                                     Problems problems,
-                                     Map<String, Object> variables,
-                                     Map<PlanNode, Columns> columnsByPlanNode,
-                                     Map<String, QueryIndexProvider> indexProvidersByName ) {
-            super(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, nodeTypes,
-                  bufferManager, hints, problems, variables, columnsByPlanNode);
-            this.providersByName = indexProvidersByName;
-        }
-
-        /**
-         * Get the query index providers.
-         * 
-         * @return the providers; never null but possibly empty
-         */
-        public Collection<QueryIndexProvider> getQueryIndexProviders() {
-            return providersByName.values();
-        }
-
-        /**
-         * Get a specific query index provider by name.
-         * 
-         * @param name the name of the query index provider; may not be null
-         * @return the query index provider, or null if there is no provider with the given name
-         */
-        public QueryIndexProvider getQueryIndexProvider( String name ) {
-            return providersByName.get(name);
-        }
-
-        @Override
-        public IndexQueryContext with( Map<String, Object> variables ) {
-            return new IndexQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                         nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode, providersByName);
-        }
-
-        @Override
-        public IndexQueryContext with( PlanHints hints ) {
-            return new IndexQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                         nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode, providersByName);
-        }
-
-        @Override
-        public IndexQueryContext with( Problems problems ) {
-            return new IndexQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                         nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode, providersByName);
-        }
-
-        @Override
-        public IndexQueryContext with( Schemata schemata ) {
-            return new IndexQueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata,
-                                         nodeTypes, bufferManager, hints, problems, variables, columnsByPlanNode, providersByName);
-        }
-    }
-
 }

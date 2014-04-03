@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
 import org.modeshape.jcr.query.BufferManager;
@@ -44,7 +45,8 @@ public class AddAccessNodesTest extends AbstractQueryTest {
     @Before
     public void beforeEach() {
         context = new QueryContext(new ExecutionContext(), mock(RepositoryCache.class), Collections.singleton("workspace"),
-                                   mock(Schemata.class), mock(NodeTypes.class), mock(BufferManager.class));
+                                   mock(Schemata.class), mock(RepositoryIndexes.class), mock(NodeTypes.class),
+                                   mock(BufferManager.class));
         rule = AddAccessNodes.INSTANCE;
     }
 

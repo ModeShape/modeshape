@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.spi.query;
+package org.modeshape.jcr.spi.index.provider;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -28,10 +28,10 @@ import org.modeshape.jcr.value.Property;
 /**
  * Interface used to record in the indexes the changes to content.
  * 
- * @see QueryIndexProvider#getQueryIndexWriter()
+ * @see IndexProvider#getQueryIndexWriter()
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public interface QueryIndexWriter {
+public interface IndexWriter {
 
     /**
      * The context of a set of indexing operations, typically aligned with and part of a single transaction.

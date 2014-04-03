@@ -22,7 +22,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.NodeTypeSchemata;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.spi.query.QueryIndexWriter;
+import org.modeshape.jcr.spi.index.provider.IndexWriter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
@@ -31,7 +31,7 @@ import org.modeshape.jcr.value.Property;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 @Immutable
-public final class NoOpQueryIndexWriter implements QueryIndexWriter {
+public final class NoOpQueryIndexWriter implements IndexWriter {
 
     public static final NoOpQueryIndexWriter INSTANCE = new NoOpQueryIndexWriter();
 

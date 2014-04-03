@@ -30,6 +30,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.BufferManager;
@@ -69,6 +70,7 @@ public class CanonicalPlannerTest {
     private PlanNode plan;
     private Problems problems;
     private Schemata schemata;
+    private RepositoryIndexes indexDefns;
     private NodeTypes nodeTypes;
     private ImmutableSchemata.Builder schemataBuilder;
     private QueryContext queryContext;
@@ -88,6 +90,7 @@ public class CanonicalPlannerTest {
         builder = new QueryBuilder(typeSystem);
         problems = new SimpleProblems();
         nodeTypes = mock(NodeTypes.class);
+        indexDefns = mock(RepositoryIndexes.class);
         schemataBuilder = ImmutableSchemata.createBuilder(executionContext, nodeTypes);
         bufferMgr = new BufferManager(executionContext);
         print = false;
@@ -146,7 +149,8 @@ public class CanonicalPlannerTest {
     }
 
     protected QueryContext initQueryContext() {
-        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, nodeTypes, bufferMgr, hints, problems);
+        queryContext = new QueryContext(executionContext, repoCache, workspaces, schemata, indexDefns, nodeTypes, bufferMgr,
+                                        hints, problems);
         return queryContext;
     }
 
