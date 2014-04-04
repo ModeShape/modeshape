@@ -36,21 +36,18 @@ import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
-/**
- * {@link Service} implementation which exposes ModeShape's text extraction feature.
- */
-public class TextExtractorService implements Service<JcrRepository> {
+public class IndexProviderService implements Service<JcrRepository> {
 
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
 
-    private final Properties extractorProperties;
+    private final Properties providerProperties;
     private final String repositoryName;
 
-    public TextExtractorService( String repositoryName,
-                                 Properties extractorProperties ) {
+    public IndexProviderService( String repositoryName,
+                                 Properties sequencerProperties ) {
         this.repositoryName = repositoryName;
-        this.extractorProperties = extractorProperties;
+        this.providerProperties = sequencerProperties;
     }
 
     @Override
@@ -75,30 +72,30 @@ public class TextExtractorService implements Service<JcrRepository> {
 
         RepositoryConfiguration repositoryConfig = repository.getConfiguration();
 
-        Editor configEditor = repositoryConfig.edit();
-        EditableDocument textExtracting = configEditor.getOrCreateDocument(FieldName.TEXT_EXTRACTION);
-        EditableDocument extractors = textExtracting.getOrCreateDocument(FieldName.EXTRACTORS);
+        Editor editor = repositoryConfig.edit();
 
-        EditableDocument extractor = Schematic.newDocument();
-        String extractorName = extractorProperties.getProperty(FieldName.NAME);
-        for (Object key : extractorProperties.keySet()) {
+        EditableDocument providers = editor.getOrCreateDocument(FieldName.INDEX_PROVIDERS);
+
+        EditableDocument provider = Schematic.newDocument();
+        String providerName = providerProperties.getProperty(FieldName.NAME);
+        for (Object key : providerProperties.keySet()) {
             String keyStr = (String)key;
             if (FieldName.NAME.equals(keyStr)) continue;
-            Object value = extractorProperties.get(keyStr);
+            Object value = providerProperties.get(keyStr);
             if (value instanceof List<?>) {
                 for (Object val : (List<?>)value) {
-                    extractor.getOrCreateArray(keyStr).addValue(val);
+                    provider.getOrCreateArray(keyStr).addValue(val);
                 }
             } else {
                 // Just set the value as a field
-                extractor.set(keyStr, value);
+                provider.set(keyStr, value);
             }
         }
 
-        extractors.set(extractorName, extractor);
+        providers.set(providerName, provider);
 
         // Get the changes and validate them ...
-        Changes changes = configEditor.getChanges();
+        Changes changes = editor.getChanges();
         Problems validationResults = repositoryConfig.validate(changes);
 
         if (validationResults.hasErrors()) {
@@ -123,16 +120,10 @@ public class TextExtractorService implements Service<JcrRepository> {
     public void stop( StopContext arg0 ) {
     }
 
-    /**
-     * @return the injector
-     */
     public InjectedValue<ModeShapeEngine> getModeShapeEngineInjector() {
         return engineInjector;
     }
 
-    /**
-     * @return the jcrRepositoryInjector
-     */
     public InjectedValue<JcrRepository> getJcrRepositoryInjector() {
         return jcrRepositoryInjector;
     }

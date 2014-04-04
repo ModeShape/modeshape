@@ -38,29 +38,11 @@
             }
         ]
     },
-    "query" : {
-        "enabled" : true,
-        "rebuildUponStartup" : "if_missing",
-        "indexStorage" : {
-            "type" : "ram"
-        },
-        "indexing" : {
-            "indexFormat" : "LUCENE_34",
-            "analyzer" : "org.foo.MyAnalyzer",
-            "similarity" : "org.foo.MySimilarity",
-            "batchSize" : 1,
-            "readerStrategy" : "shared",
-            "mode" : "sync",
-            "backend" : {
-                "type" : "lucene"
-            }
-        },
-        "textExtracting": {
-            "extractors" : {
-                "tikaExtractor":{
-                    "name" : "Tika content-based extractor",
-                    "classname" : "tika"
-                }
+    "textExtraction": {
+        "extractors" : {
+            "tikaExtractor":{
+                "name" : "Tika content-based extractor",
+                "classname" : "tika"
             }
         }
     },

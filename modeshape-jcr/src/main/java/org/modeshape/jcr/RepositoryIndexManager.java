@@ -17,11 +17,13 @@
 package org.modeshape.jcr;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -178,6 +180,22 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
         return indexWriter;
     }
 
+    /**
+     * Get the query index writer that will delegate to only those registered providers that also need to be
+     * {@link IndexProvider#isReindexingRequired() reindexed}.
+     * 
+     * @return a query index writer instance; never null
+     */
+    IndexWriter getIndexWriterForProvidersNeedingReindexing() {
+        List<IndexProvider> reindexProviders = new LinkedList<>();
+        for (IndexProvider provider : providers.values()) {
+            if (provider.isReindexingRequired()) {
+                reindexProviders.add(provider);
+            }
+        }
+        return CompositeIndexWriter.create(reindexProviders);
+    }
+
     @Override
     public synchronized void register( IndexProvider provider ) throws RepositoryException {
         if (providers.containsKey(provider.getName())) {
@@ -218,6 +236,10 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
     @Override
     public Set<String> getProviderNames() {
         return Collections.unmodifiableSet(new HashSet<>(providers.keySet()));
+    }
+
+    protected Iterable<IndexProvider> getProviders() {
+        return new ArrayList<>(providers.values());
     }
 
     @Override

@@ -15,35 +15,30 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.Arrays;
 import java.util.List;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.naming.deployment.ContextNames;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
-class RemoveRepository extends AbstractModeShapeRemoveStepHandler {
+class RemoveIndexProvider extends AbstractModeShapeRemoveStepHandler {
 
-    static final RemoveRepository INSTANCE = new RemoveRepository();
+    static final RemoveIndexProvider INSTANCE = new RemoveIndexProvider();
 
-    private RemoveRepository() {
+    private RemoveIndexProvider() {
     }
 
     @Override
     List<ServiceName> servicesToRemove( OperationContext context,
                                         ModelNode operation,
                                         ModelNode model ) throws OperationFailedException {
-        String repositoryName = repositoryName(operation);
+        // Get the service addresses ...
+        final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final String providerName = serviceAddress.getLastElement().getValue();
 
-        final String jndiName = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
-        ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(jndiName);
-
-        return Arrays.asList(ModeShapeServiceNames.referenceFactoryServiceName(repositoryName),
-                             bindInfo.getBinderServiceName(),
-                             ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
-                             ModeShapeServiceNames.dataDirectoryServiceName(repositoryName),
-                             ModeShapeServiceNames.monitorServiceName(repositoryName),
-                             ModeShapeServiceNames.repositoryServiceName(repositoryName));
+        return Arrays.asList(ModeShapeServiceNames.indexProviderServiceName(repositoryName(operation), providerName));
     }
 }

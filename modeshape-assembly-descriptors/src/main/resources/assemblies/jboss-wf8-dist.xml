@@ -77,15 +77,6 @@
     </files>
 
     <dependencySets>
-        <!--Hibernate Search's EAP kit -->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.kit.modules.location}</outputDirectory>
-            <includes>
-                <include>org.hibernate:hibernate-search-modules</include>
-            </includes>
-            <unpack>true</unpack>
-        </dependencySet>
 
 		<!-- Module for the standard JCR API -->
 		<dependencySet>

@@ -283,7 +283,7 @@
                 </replicated-cache>
             </cache-container>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+        <subsystem xmlns="urn:jboss:domain:modeshape:2.0">
             <!--The list of web applications that is packaged inside the kit and should be deployed when the subsystem starts up-->
             <webapp name="modeshape-rest.war"/>
             <webapp name="modeshape-webdav.war"/>
@@ -292,14 +292,10 @@
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
             <repository name="sample" cache-name="sample" cache-container="modeshape">
-                <local-file-index-storage path="modeshape/indexes/sample-${jboss.node.name}"/>
                 <cache-binary-storage data-cache-name="sample-binary-fs" metadata-cache-name="sample-binary-fs-meta" cache-container="modeshape-binary-cache-container"/>
-                <indexing rebuild-upon-startup="if_missing"/>
             </repository>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts" cache-name="artifacts" cache-container="modeshape">
-                <indexing rebuild-upon-startup="if_missing"/>
-                <local-file-index-storage path="modeshape/indexes/artifacts-${jboss.node.name}"/>
                 <cache-binary-storage data-cache-name="artifacts-binary-fs" metadata-cache-name="artifacts-binary-fs-meta" cache-container="modeshape-binary-cache-container"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">

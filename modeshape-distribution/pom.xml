@@ -130,13 +130,6 @@
             <artifactId>modeshape-jbossas-subsystem</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-search-modules</artifactId>
-            <version>${hibernate.search.version}</version>
-            <classifier>jbossas-72-dist</classifier>
-            <type>zip</type>
-        </dependency>
     </dependencies>
 
     <profiles>

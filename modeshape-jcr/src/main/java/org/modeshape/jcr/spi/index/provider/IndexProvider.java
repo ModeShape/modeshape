@@ -96,6 +96,14 @@ public abstract class IndexProvider {
     }
 
     /**
+     * Determine whether the indexes owned by this provider must be rebuilt. This method is normally called by ModeShape upon
+     * repository startup, although it may be called at other times.
+     * 
+     * @return true if the repository should be re-indexed and this provider's {@link #getIndexWriter() writer} be called
+     */
+    public abstract boolean isReindexingRequired();
+
+    /**
      * Signal this provider that it is no longer needed and can release any resources that are being held.
      * 
      * @throws RepositoryException if there is a problem shutting down the provider
@@ -109,7 +117,7 @@ public abstract class IndexProvider {
      * 
      * @return the index writer; may be null if the indexes are updated outside of ModeShape
      */
-    public abstract IndexWriter getQueryIndexWriter();
+    public abstract IndexWriter getIndexWriter();
 
     /**
      * Get the queryable index with the given name.
@@ -117,7 +125,7 @@ public abstract class IndexProvider {
      * @param indexName the name of the index in this provider; never null
      * @return the queryable index, or null if there is no such index
      */
-    public abstract Index getQueryIndex( String indexName );
+    public abstract Index getIndex( String indexName );
 
     /**
      * Get the planner that, during the query planning/optimization phase, evaluates for a single source the AND-ed query

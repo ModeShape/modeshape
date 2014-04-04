@@ -9,9 +9,6 @@
         "cacheName" : "persistentRepository",
         "cacheConfiguration" : "config/infinispan-clustered-persistent-1.xml"
     },
-    "query" : {
-        "enabled" : false
-    },
     "journaling" : {
         "location" : "target/clustered/journal2"
     }

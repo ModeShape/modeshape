@@ -133,18 +133,8 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithDisabledQueries() throws Exception {
-        parse(readResource("modeshape-disabled-queries.xml"));
-    }
-
-    @Test
     public void testOutputPersistenceOfConfigurationWithGarbageCollectionSpecified() throws Exception {
         parse(readResource("modeshape-garbage-collection.xml"));
-    }
-
-    @Test
-    public void testOutputPersistenceOfConfigurationWithCustomIndexRebuildOptions() throws Exception {
-        parse(readResource("modeshape-index-rebuilding-config.xml"));
     }
 
     @Test
@@ -263,7 +253,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     private void validate( String marshalled ) throws SAXException, IOException {
-        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_1_0.xsd");
+        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_2_0.xsd");
         // System.out.println(marshalled);
 
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");

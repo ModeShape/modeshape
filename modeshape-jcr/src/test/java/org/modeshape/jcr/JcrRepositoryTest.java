@@ -1134,7 +1134,7 @@ public class JcrRepositoryTest {
                                                                       "Deprecated config");
         repository = new JcrRepository(config);
         Problems problems = repository.getStartupProblems();
-        assertEquals("Expected 2 startup warnings:" + problems.toString(), 2, problems.warningCount());
+        assertEquals("Expected 2 startup warnings:" + problems.toString(), 1, problems.warningCount());
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
     }
 
@@ -1147,10 +1147,10 @@ public class JcrRepositoryTest {
                                                                       "Deprecated config");
         repository = new JcrRepository(config);
         Problems problems = repository.getStartupProblems();
-        assertEquals("Invalid startup problems:" + problems.toString(), 4, problems.size());
+        assertEquals("Invalid startup problems:" + problems.toString(), 3, problems.size());
         repository.shutdown().get();
         problems = repository.getStartupProblems();
-        assertEquals("Invalid startup problems:" + problems.toString(), 4, problems.size());
+        assertEquals("Invalid startup problems:" + problems.toString(), 3, problems.size());
     }
 
     @FixFor( "MODE-2033" )
@@ -1163,7 +1163,7 @@ public class JcrRepositoryTest {
         repository = new JcrRepository(config);
         repository.start();
         Problems problems = repository.getStartupProblems();
-        assertEquals("Expected 2 startup warnings:" + problems.toString(), 2, problems.warningCount());
+        assertEquals("Expected 2 startup warnings:" + problems.toString(), 1, problems.warningCount());
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
     }
 
@@ -1228,7 +1228,7 @@ public class JcrRepositoryTest {
         shutdownDefaultRepository();
         FileUtil.delete("target/indexes");
         RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResource("config/repoc-config-query-placeholder.json"));
+                                                                                .getResource("config/repo-config-query-placeholder.json"));
         repository = new JcrRepository(config);
         String namespaceName = "admb";
         String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";

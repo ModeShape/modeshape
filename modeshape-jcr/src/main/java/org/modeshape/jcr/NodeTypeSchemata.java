@@ -28,14 +28,10 @@ import javax.jcr.PropertyType;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
-import org.apache.lucene.document.Field.Store;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
-import org.modeshape.jcr.query.IndexRules;
 import org.modeshape.jcr.query.model.AllNodes;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.TypeSystem;
@@ -65,7 +61,6 @@ public class NodeTypeSchemata implements Schemata {
     private final boolean includePseudoColumnsInSelectStar;
     private final NodeTypes nodeTypes;
     private final Map<JcrNodeType, Collection<JcrNodeType>> subtypesByName = new HashMap<JcrNodeType, Collection<JcrNodeType>>();
-    private final IndexRules indexRules;
     private final List<JcrPropertyDefinition> pseudoProperties = new ArrayList<JcrPropertyDefinition>();
 
     NodeTypeSchemata( ExecutionContext context,
@@ -121,10 +116,7 @@ public class NodeTypeSchemata implements Schemata {
         pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.DEPTH, PropertyType.LONG));
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
-        IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(IndexRules.DEFAULT_RULES);
-        indexRulesBuilder.defaultTo(Field.Store.NO, Field.Index.ANALYZED, DEFAULT_CAN_CONTAIN_REFERENCES,
-                                    DEFAULT_FULL_TEXT_SEARCHABLE);
-        addAllNodesTable(builder, indexRulesBuilder, context, pseudoProperties);
+        addAllNodesTable(builder, context, pseudoProperties);
 
         // Define a view for each node type ...
         for (JcrNodeType nodeType : nodeTypes.getAllNodeTypes()) {
@@ -132,7 +124,6 @@ public class NodeTypeSchemata implements Schemata {
         }
 
         schemata = builder.build();
-        indexRules = indexRulesBuilder.build();
     }
 
     protected JcrPropertyDefinition pseudoProperty( ExecutionContext context,
@@ -153,21 +144,11 @@ public class NodeTypeSchemata implements Schemata {
                                          queryOperators);
     }
 
-    /**
-     * Get the index rules ...
-     * 
-     * @return indexRules
-     */
-    public IndexRules getIndexRules() {
-        return indexRules;
-    }
-
     protected JcrNodeType getNodeType( Name nodeTypeName ) {
         return nodeTypes.getNodeType(nodeTypeName);
     }
 
     protected final void addAllNodesTable( ImmutableSchemata.Builder builder,
-                                           IndexRules.Builder indexRuleBuilder,
                                            ExecutionContext context,
                                            List<JcrPropertyDefinition> additionalProperties ) {
         NamespaceRegistry registry = context.getNamespaceRegistry();
@@ -186,18 +167,13 @@ public class NodeTypeSchemata implements Schemata {
                 builder.addTable(tableName, columnName);
                 first = false;
             }
-            boolean canBeReference = false;
-            boolean isStrongReference = false;
             org.modeshape.jcr.value.PropertyType requiredType = PropertyTypeUtil.modePropertyTypeFor(defn.getRequiredType());
             switch (defn.getRequiredType()) {
                 case PropertyType.REFERENCE:
-                    canBeReference = true;
-                    isStrongReference = true;
                     break;
                 case PropertyType.WEAKREFERENCE:
                 case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
                 case PropertyType.UNDEFINED:
-                    canBeReference = true;
                     requiredType = org.modeshape.jcr.value.PropertyType.STRING;
                     break;
             }
@@ -220,13 +196,8 @@ public class NodeTypeSchemata implements Schemata {
             Object maximum = defn.getMaximumValue();
             builder.addColumn(tableName, columnName, type, requiredType, fullTextSearchable, orderable, minimum, maximum,
                               operators);
-            // And build an indexing rule for this type ...
-            if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder, defn, type, typeSystem, canBeReference,
-                                                       isStrongReference);
         }
         if (additionalProperties != null) {
-            boolean canBeReference = false;
-            boolean isStrongReference = false;
             boolean fullTextSearchable = false;
             for (JcrPropertyDefinition defn : additionalProperties) {
                 Name name = defn.getInternalName();
@@ -251,10 +222,6 @@ public class NodeTypeSchemata implements Schemata {
                 if (!includePseudoColumnsInSelectStar) {
                     builder.excludeFromSelectStar(tableName, columnName);
                 }
-
-                // And build an indexing rule for this type ...
-                if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder, defn, type, typeSystem, canBeReference,
-                                                           isStrongReference);
             }
         }
     }
@@ -269,57 +236,6 @@ public class NodeTypeSchemata implements Schemata {
             result.add(op);
         }
         return result;
-    }
-
-    /**
-     * Add an index rule for the given property definition and the type in the {@link TypeSystem}.
-     * 
-     * @param builder the index rule builder; never null
-     * @param defn the property definition; never null
-     * @param type the TypeSystem type, which may be a more general type than dictated by the definition, since multiple
-     *        definitions with the same name require the index rule to use the common base type; never null
-     * @param typeSystem the type system; never null
-     * @param canBeReference true if the property described the rule can hold reference values, or false otherwise
-     * @param isStrongReference true if the index rule can be a reference and it should be included in referential integrity
-     *        checks
-     */
-    protected final void addIndexRule( IndexRules.Builder builder,
-                                       JcrPropertyDefinition defn,
-                                       String type,
-                                       TypeSystem typeSystem,
-                                       boolean canBeReference,
-                                       boolean isStrongReference ) {
-        Store store = Store.YES;
-        Index index = defn.isFullTextSearchable() ? Index.ANALYZED : Index.NO;
-        if (typeSystem.getStringFactory().getTypeName().equals(type)) {
-            builder.stringField(defn.getInternalName(), store, index, canBeReference, defn.isFullTextSearchable());
-        } else if (typeSystem.getDateTimeFactory().getTypeName().equals(type)) {
-            Long minimum = typeSystem.getLongFactory().create(defn.getMinimumValue());
-            Long maximum = typeSystem.getLongFactory().create(defn.getMaximumValue());
-            builder.dateField(defn.getInternalName(), store, index, minimum, maximum);
-        } else if (typeSystem.getLongFactory().getTypeName().equals(type)) {
-            Long minimum = typeSystem.getLongFactory().create(defn.getMinimumValue());
-            Long maximum = typeSystem.getLongFactory().create(defn.getMaximumValue());
-            builder.longField(defn.getInternalName(), store, index, minimum, maximum);
-        } else if (typeSystem.getDoubleFactory().getTypeName().equals(type)) {
-            Double minimum = typeSystem.getDoubleFactory().create(defn.getMinimumValue());
-            Double maximum = typeSystem.getDoubleFactory().create(defn.getMaximumValue());
-            builder.doubleField(defn.getInternalName(), store, index, minimum, maximum);
-        } else if (typeSystem.getBooleanFactory().getTypeName().equals(type)) {
-            builder.booleanField(defn.getInternalName(), store, index);
-        } else if (typeSystem.getBinaryFactory().getTypeName().equals(type)) {
-            store = Store.NO;
-            builder.binaryField(defn.getInternalName(), store, index, defn.isFullTextSearchable());
-        } else if (typeSystem.getReferenceFactory().getTypeName().equals(type)) {
-            store = Store.NO;
-            builder.referenceField(defn.getInternalName(), store, index);
-        } else if (typeSystem.getPathFactory().getTypeName().equals(type)) {
-            builder.pathField(defn.getInternalName(), store, index);
-        } else {
-            // Everything else gets stored as a string ...
-            builder.stringField(defn.getInternalName(), store, index, canBeReference, defn.isFullTextSearchable());
-        }
-
     }
 
     protected final void addView( ImmutableSchemata.Builder builder,
@@ -507,7 +423,7 @@ public class NodeTypeSchemata implements Schemata {
             this.nameFactory = context.getValueFactories().getNameFactory();
             this.builder = ImmutableSchemata.createBuilder(context, session.nodeTypes());
             // Add the "AllNodes" table ...
-            addAllNodesTable(builder, null, context, null);
+            addAllNodesTable(builder, context, null);
             this.schemata = builder.build();
         }
 

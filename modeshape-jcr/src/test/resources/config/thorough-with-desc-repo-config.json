@@ -43,53 +43,39 @@
             }
         ]
     },
-    "query" : {
-        "description" : "Queries are enabled, and indexes should be rebuilt if they are not found",
-        "enabled" : true,
-        "rebuildUponStartup" : "if_missing",
-        "textExtracting": {
-            "threadPool" : "test",
+    "indexes": {
+        "primaryTypes" : {
+            "providerName" : "files",
+            "kind" : "ENUMERATED",
+            "nodeTypeName" : "nt:base",
+            "description" : "Index for quickly identifying nodes by node type",
+            "columns" : "jcr:primaryType(STRING)"
+        },
+        "fileMimeTypes" : {
+            "providerName" : "files",
+            "nodeTypeName" : "nt:resource",
+            "columns" : "jcr:mimeType(STRING)"
+        }
+    },
+    "indexProviders" : {
+        "files" : {
+            "description" : "More descriptions",
+            "classname" : "org.modeshape.index.provider.FileBasedIndexProvider",
+            "directory" : "/a/b/c/foo",
+        }
+    },
+    "textExtraction": {
+        "threadPool" : "test",
             "extractors" : {
                 "customExtractor": {
+                    "description" : "More descriptions",
                     "name" : "MyFileType extractor",
                     "classname" : "com.example.myfile.MyExtractor",
-                    "description" : "Extracts bits of text"
-                 },
+                },
                 "tikaExtractor":{
                     "name" : "General content-based extractor",
                     "classname" : "tika",
-                    "description" : "Uses Tika to extract text"
                 }
-            }
-        },
-        "indexStorage" : {
-            "description" : "Indexes will be stored on the file system at the relative path 'Thorough/indexes', with a locking strategy that uses native OS locks and which automatically determines the type of file system based Directory implementation..",
-            "type" : "filesystem",
-            "location" : "Thorough/indexes",
-            "lockingStrategy" : "native",
-            "fileSystemAccessType" : "auto"
-        },
-        "indexing" : {
-            "description" : "Indexes will be updated synchronously when changes are persisted (either in Session.save or transaction commit if used), and index readers can be shared. The indexes will use the 'LUCENE_35' format; changing this after indexes exist may cause problems and require re-indexing.",
-            "threadPool" : "modeshape-workers",
-            "analyzer" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
-            "similarity" : "org.apache.lucene.search.DefaultSimilarity",
-            "batchSize" : -1,
-            "indexFormat" : "LUCENE_35",
-            "readerStrategy" : "shared",
-            "mode" : "sync",
-            "rebuildOnStartup" : {
-                "includeSystemContent" : false,
-                "mode" : "async"
-            },
-            "asyncThreadPoolSize" : 1,
-            "asyncMaxQueueSize" : 0,
-            "backend" : {
-                "type" : "lucene",
-                "description" : "The changes to the indexes are written directly to the Lucene indexes. If this were clustered, then a different backend should be used (e.g., to have one process do all the writing to the indexes and allow all processes to read/query).",
-                
-            },
-            "hibernate.search.custom.overridden.property" : "value",
         }
     },
     "sequencing" : {

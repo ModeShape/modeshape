@@ -1,0 +1,7 @@
+{
+    "name" : "query_custom",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    }
+}

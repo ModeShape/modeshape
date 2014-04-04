@@ -9,10 +9,5 @@
             "minimumBinarySizeInBytes" : 40
         }
     },
-    "query" : {
-        "indexStorage" : {
-            "type" : "ram",
-        }
-    },
     "node-types" : ["cnd/cars.cnd"]
 }

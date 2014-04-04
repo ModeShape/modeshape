@@ -15,13 +15,10 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
@@ -41,8 +38,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
-import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicyIterator;
@@ -311,43 +306,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-1785" )
-    public void shouldRebuildIndexesIfConfiguredTo() throws Exception {
-        FileUtil.delete("target/persistent_repository");
-
-        String repositoryConfigFile = "config/repo-config-persistent-always-rebuild-indexes.json";
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
-                session.getRootNode().addNode("testNode");
-                session.save();
-
-                QueryManager queryManager = session.getWorkspace().getQueryManager();
-                Query query = queryManager.createQuery("select * from [nt:base] where [jcr:path] like '/testNode'",
-                                                       Query.JCR_SQL2);
-                assertEquals(1, query.execute().getNodes().getSize());
-
-                return null;
-            }
-        }, repositoryConfigFile);
-
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
-
-                QueryManager queryManager = session.getWorkspace().getQueryManager();
-                Query query = queryManager.createQuery("select * from [nt:unstructured] where [jcr:path] like '/testNode'",
-                                                       Query.JCR_SQL2);
-                assertEquals(1, query.execute().getNodes().getSize());
-
-                return null;
-            }
-        }, repositoryConfigFile);
-    }
-
-    @Test
     @FixFor( "MODE-1844" )
     public void shouldNotRemainInInconsistentStateIfErrorsOccurOnStartup() throws Exception {
         FileUtil.delete("target/persistent_repository_initial_content");
@@ -382,23 +340,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         Executors.newSingleThreadExecutor().submit(restartRunnable);
         // wait the repo to restart or fail
         assertTrue("Repository did not restart in the expected amount of time", restartLatch.await(1, TimeUnit.MINUTES));
-    }
-
-    @Test
-    @FixFor( "MODE-1872" )
-    public void asyncReindexingWithoutSystemContentShouldNotCorruptSystemBranch() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
-                JcrSession session = repository.login();
-
-                javax.jcr.Node root = session.getRootNode();
-                AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
-                assertThat(system, is(notNullValue()));
-                return null;
-            }
-        }, "config/repo-config-persistent-indexes-always-async-without-system.json");
     }
 
     @Test
@@ -748,7 +689,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @FixFor( "MODE-2167" )
     public void shouldRun4_0_0_Alpha1_UpgradeFunction() throws Exception {
         FileUtil.delete("target/persistent_repository/");
-        String config = "config/repo-config-persistent-indexes-disk.json";
+        String config = "config/repo-config-persistent-no-indexes.json";
         // first run is empty, so no upgrades will be performed
         startRunStop(new RepositoryOperation() {
             @Override
@@ -845,7 +786,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
         FileUtil.delete("target/federation_persistent_1");
         prepareExternalDirectory("target/federation_persistent_2");
-        //restart with a configuration file which a) has a new external source, b) has changed the directory path of "fs2" and
+        // restart with a configuration file which a) has a new external source, b) has changed the directory path of "fs2" and
         // c) has removed the fs1 projection
         startRunStop(new RepositoryOperation() {
             @Override
@@ -855,7 +796,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                     session.getNode("/fs1");
                     fail("The projection should not have been found");
                 } catch (PathNotFoundException e) {
-                    //expected
+                    // expected
                 }
                 assertNotNull(session.getNode("/fs2"));
                 assertNotNull(session.getNode("/fs2/file.txt"));
@@ -864,7 +805,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         }, "config/repo-config-persistent-cache-fs-connector2.json");
     }
 
-    private void prepareExternalDirectory(String dirpath) throws IOException {
+    private void prepareExternalDirectory( String dirpath ) throws IOException {
         FileUtil.delete(dirpath);
         new File(dirpath).mkdir();
         File file = new File(dirpath + "/file.txt");

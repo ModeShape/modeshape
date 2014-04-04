@@ -51,20 +51,6 @@
             <groupId>org.mapdb</groupId>
             <artifactId>mapdb</artifactId>
         </dependency>
-        <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-search-engine</artifactId>
-        </dependency>
-        <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-regex</artifactId>
-        </dependency>
         <dependency>
             <groupId>javax.jms</groupId>
             <artifactId>javax.jms-api</artifactId>

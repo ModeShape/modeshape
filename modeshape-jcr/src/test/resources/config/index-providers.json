@@ -1,0 +1,23 @@
+{
+    "name" : "Test Repository",
+    "indexProviders" : {
+        "providerA" : {
+            "classname" : "org.modeshape.nonexistant.IndexProvider",
+            "directory" : "target/something",
+        }
+    },
+    "indexes": {
+        "primaryTypes" : {
+            "providerName" : "providerA",
+            "kind" : "ENUMERATED",
+            "nodeTypeName" : "nt:base",
+            "description" : "Index for quickly identifying nodes by node type",
+            "columns" : "jcr:primaryType(STRING)"
+        },
+        "fileMimeTypes" : {
+            "providerName" : "providerA",
+            "nodeTypeName" : "nt:resource",
+            "columns" : "jcr:mimeType(STRING)"
+        }
+    },
+}

@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+<subsystem xmlns="urn:jboss:domain:modeshape:2.0">
   <repository name="sample"
               cache-name="sample" cache-container="modeshape"
               jndi-name="jcr/local/sample"
@@ -12,13 +12,14 @@
       <workspace name="predefinedWorkspace2" />
       <workspace name="predefinedWorkspace3" />
     </workspaces>
-    <local-file-index-storage 
-              format="LUCENE_34"
-              path="modeshape/sample/indexes" 
+    <index-providers>
+        <!--
+        <index-provider name="local-indexes" classname="local"
+              path="modeshape/sample/indexes/"
               relative-to="jboss.server.data.dir"
-              access-type="auto" 
-              locking-strategy="native">
-    </local-file-index-storage>
+              />
+        -->
+    </index-providers>
     <sequencers>
       <sequencer name="modeshape-sequencer-ddl" classname="ddl" path-expression="//a/b" />
       <sequencer name="modeshape-sequencer-java" classname="java" path-expression="//a/b" />

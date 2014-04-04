@@ -224,7 +224,7 @@ public class IndexQueryEngine extends ScanningQueryEngine {
         IndexProvider provider = indexManager.getProvider(providerName);
         if (provider != null) {
             // Use the index to get a NodeSequence ...
-            Index index = provider.getQueryIndex(indexPlan.getName());
+            Index index = provider.getIndex(indexPlan.getName());
             if (index != null) {
                 return sources.fromIndex(index, indexPlan.getConstraints(), indexPlan.getParameters(), 100);
             }

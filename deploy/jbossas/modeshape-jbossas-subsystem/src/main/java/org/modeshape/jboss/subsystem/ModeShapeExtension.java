@@ -40,21 +40,10 @@ public class ModeShapeExtension implements Extension {
     static final PathElement WEBAPP_PATH = PathElement.pathElement(ModelKeys.WEBAPP);
     static final PathElement REPOSITORY_PATH = PathElement.pathElement(ModelKeys.REPOSITORY);
     static final PathElement SEQUENCER_PATH = PathElement.pathElement(ModelKeys.SEQUENCER);
+    static final PathElement INDEX_PROVIDER_PATH = PathElement.pathElement(ModelKeys.INDEX_PROVIDER);
     static final PathElement SOURCE_PATH = PathElement.pathElement(ModelKeys.SOURCE);
     static final PathElement TEXT_EXTRACTOR_PATH = PathElement.pathElement(ModelKeys.TEXT_EXTRACTOR);
     static final PathElement AUTHENTICATOR_PATH = PathElement.pathElement(ModelKeys.AUTHENTICATOR);
-
-    // Index storage PathElements
-    static final PathElement INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE);
-    static final PathElement RAM_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.RAM_INDEX_STORAGE);
-    static final PathElement LOCAL_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                     ModelKeys.LOCAL_FILE_INDEX_STORAGE);
-    static final PathElement MASTER_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                      ModelKeys.MASTER_FILE_INDEX_STORAGE);
-    static final PathElement SLAVE_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                     ModelKeys.SLAVE_FILE_INDEX_STORAGE);
-    static final PathElement CUSTOM_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                 ModelKeys.CUSTOM_INDEX_STORAGE);
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver( final String... keyPrefix ) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
@@ -75,7 +64,7 @@ public class ModeShapeExtension implements Extension {
         // ModeShape system, with children repositories.
         final ManagementResourceRegistration modeShapeSubsystem = registration.registerSubsystemModel(ModeShapeRootResource.INSTANCE);
 
-        //Webapp submodel
+        // Webapp submodel
         modeShapeSubsystem.registerSubModel(ModeShapeWebAppResource.INSTANCE);
 
         // Repository submodel
@@ -83,6 +72,9 @@ public class ModeShapeExtension implements Extension {
 
         // Sequencer submodel
         repositorySubmodel.registerSubModel(ModeShapeSequencerResource.INSTANCE);
+
+        // Index provider submodel
+        repositorySubmodel.registerSubModel(ModeShapeIndexProviderResource.INSTANCE);
 
         // External sources submodel
         repositorySubmodel.registerSubModel(ModeShapeSourceResource.INSTANCE);
@@ -92,14 +84,6 @@ public class ModeShapeExtension implements Extension {
 
         // Authenticator submodel
         repositorySubmodel.registerSubModel(ModeShapeAuthenticatorResource.INSTANCE);
-
-        // Index storage submodel
-        final ManagementResourceRegistration indexStorageSubmodel = repositorySubmodel.registerSubModel(ModeShapeIndexStorageResource.INSTANCE);
-        indexStorageSubmodel.registerSubModel(ModeShapeRamIndexStorageResource.INSTANCE);
-        indexStorageSubmodel.registerSubModel(ModeShapeMasterFileIndexStorageResource.INSTANCE);
-        indexStorageSubmodel.registerSubModel(ModeShapeSlaveFileIndexStorageResource.INSTANCE);
-        indexStorageSubmodel.registerSubModel(ModeShapeCustomIndexStorageResource.INSTANCE);
-        indexStorageSubmodel.registerSubModel(ModeShapeLocalFileIndexStorageResource.INSTANCE);
 
         // Binary storage submodel and type submodels
         final ManagementResourceRegistration binaryStorageSubmodel = repositorySubmodel.registerSubModel(ModeShapeBinaryStorageResource.INSTANCE);
