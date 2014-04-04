@@ -33,7 +33,6 @@ import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.AbstractTransactionalTest;
 import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
@@ -43,7 +42,7 @@ import org.modeshape.jcr.value.BinaryValue;
 /**
  * Use this abstract class to realize test cases which can easily executed on different BinaryStores
  */
-public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest {
+public abstract class AbstractBinaryStoreTest {
 
     /**
      * We need to generate the test byte arrays based on the minimum binary size, because that controls the distinction between

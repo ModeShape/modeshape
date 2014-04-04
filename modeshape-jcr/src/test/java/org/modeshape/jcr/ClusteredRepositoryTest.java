@@ -55,7 +55,7 @@ import org.modeshape.jcr.api.observation.Event;
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class ClusteredRepositoryTest extends AbstractTransactionalTest {
+public class ClusteredRepositoryTest {
 
     private static final Random RANDOM = new Random();
 
