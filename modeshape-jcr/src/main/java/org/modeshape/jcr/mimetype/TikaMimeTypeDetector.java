@@ -107,8 +107,12 @@ public final class TikaMimeTypeDetector implements MimeTypeDetector {
             if (name == null) {
                 return null;
             }
-            // Otherwise there is a name and no content ...
-            autoDetectedMimeType = nameOnlyDetector.detect(null, metadata);
+            try {
+                // Otherwise there is a name and no content ...
+                autoDetectedMimeType = nameOnlyDetector.detect(null, metadata);
+            } catch (IOException e) {
+                LOGGER.debug(e, "Unable to extract mime-type");
+            }
         } else {
             InputStream stream = binaryValue.getStream();
             TemporaryResources tmp = new TemporaryResources();
@@ -116,6 +120,8 @@ public final class TikaMimeTypeDetector implements MimeTypeDetector {
                 TikaInputStream tikaInputStream = TikaInputStream.get(stream, tmp);
                 // There is content and possibly a name ...
                 autoDetectedMimeType = allDetectors.detect(tikaInputStream, metadata);
+            } catch (Exception e) {
+                LOGGER.debug(e, "Unable to extract mime-type");
             } finally {
                 try {
                     tmp.close();

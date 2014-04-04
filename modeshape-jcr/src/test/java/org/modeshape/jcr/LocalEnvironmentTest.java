@@ -30,7 +30,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.transaction.lookup.AtomikosStandaloneJTAManagerLookup;
 
-public class LocalEnvironmentTest extends AbstractTransactionalTest {
+public class LocalEnvironmentTest {
 
     @Test
     public void shouldStartRepositoryUsingLocalEnvironment() throws Exception {

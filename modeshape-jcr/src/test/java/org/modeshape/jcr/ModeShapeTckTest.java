@@ -65,11 +65,11 @@ import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
-import junit.framework.Test;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrTools;
+import junit.framework.Test;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -90,12 +90,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     public static Test suite() {
         return JcrTckSuites.someTestsInline(ModeShapeTckTest.class);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        AbstractTransactionalTest.beforeSuite();
-        super.setUp();
     }
 
     @Override
@@ -126,8 +120,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
                 session.logout();
             }
         }
-
-        AbstractTransactionalTest.afterSuite();
     }
 
     protected Node getTestRoot( Session session ) throws Exception {

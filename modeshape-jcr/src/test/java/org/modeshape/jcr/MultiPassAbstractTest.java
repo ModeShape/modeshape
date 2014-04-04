@@ -17,6 +17,9 @@ package org.modeshape.jcr;
 
 import java.net.URL;
 import java.util.concurrent.Callable;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.modeshape.common.junit.SkipTestRule;
 
 /**
  * Abstract test class for tests that repeatedly starting/stopping repositories.
@@ -28,7 +31,9 @@ import java.util.concurrent.Callable;
  * @author rhauch
  * @author hchiorean
  */
-public abstract class MultiPassAbstractTest extends AbstractTransactionalTest {
+public abstract class MultiPassAbstractTest {
+    @Rule
+    public TestRule skipTestRule = new SkipTestRule();
 
     protected void startRunStop( RepositoryOperation operation,
                                  String repositoryConfigFile ) throws Exception {

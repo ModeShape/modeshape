@@ -32,6 +32,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.JcrTools;
@@ -43,12 +44,16 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
 
     @Test
     public void shouldPersistBinariesAcrossRestart() throws Exception {
+        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
         File persistentFolder = new File("target/persistent_repository");
         // remove all persisted content ...
         FileUtil.delete(persistentFolder);
+        assertDataPersistenceAcrossRestarts(repositoryConfigFile);
+    }
 
-        final List<File> testFiles = new ArrayList<File>();
-        final Map<String, Long> testFileSizesInBytes = new HashMap<String, Long>();
+    private void assertDataPersistenceAcrossRestarts( String repositoryConfigFile ) throws Exception {
+        final List<File> testFiles = new ArrayList<>();
+        final Map<String, Long> testFileSizesInBytes = new HashMap<>();
         testFiles.add(getFile("mimetype/test.xml"));
         testFiles.add(getFile("mimetype/modeshape.doc"));
         testFiles.add(getFile("mimetype/log4j.properties"));
@@ -59,7 +64,7 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
             testFileSizesInBytes.put(testFile.getName(), testFile.length());
         }
 
-        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
+
         final JcrTools tools = new JcrTools();
 
         startRunStop(new RepositoryOperation() {
@@ -133,7 +138,13 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
                 return null;
             }
         }, repositoryConfigFile);
+    }
 
+    @Test
+    @Ignore("Should only be used manually when needed")
+    public void shouldPersistDataInSQLServer2008() throws Exception {
+        //make sure the DB is clean (empty) when running this test; there is no effective teardown
+        assertDataPersistenceAcrossRestarts("config/repo-config-sqlserver2008.json");
     }
 
     protected File getFile( String resourcePath ) throws URISyntaxException {

@@ -134,6 +134,11 @@
             <artifactId>infinispan-cachestore-jdbc</artifactId>
         </dependency>
         <dependency>
+            <groupId>c3p0</groupId>
+            <artifactId>c3p0</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-leveldb</artifactId>
         </dependency>

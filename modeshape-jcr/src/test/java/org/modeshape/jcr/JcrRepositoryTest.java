@@ -75,7 +75,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.journal.JournalRecord;
 import org.modeshape.jcr.journal.LocalJournal;
 
-public class JcrRepositoryTest extends AbstractTransactionalTest {
+public class JcrRepositoryTest {
 
     private Environment environment;
     private RepositoryConfiguration config;
