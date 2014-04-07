@@ -82,6 +82,8 @@ public final class JdbcLocalI18n {
     public static I18n unableToGetNodeType;
     public static I18n noSuchNodeType;
 
+    public static I18n cannotConvertJcrValue;
+
     public static I18n repositoryNameInUse;
 
     /*
