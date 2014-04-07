@@ -26,20 +26,6 @@ public class BlobTransform implements Transform {
     @SuppressWarnings( "unused" )
     @Override
     public Object transform( Value value ) throws ValueFormatException, RepositoryException {
-        return new BlobTransfom(value, 0L);
+        return new JcrBlob(value.getBinary());
     }
-
-    class BlobTransfom extends JcrBlob {
-
-        /**
-         * @param value
-         * @param length
-         */
-        protected BlobTransfom( Value value,
-                                long length ) {
-            super(value, length);
-
-        }
-    }
-
 }
