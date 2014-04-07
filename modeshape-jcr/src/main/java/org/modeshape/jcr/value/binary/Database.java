@@ -574,20 +574,21 @@ public class Database {
         }
     }
 
-    /**
-     * Provides access to query data
-     * 
-     * @param rs retrieved single value
-     * @return result as input stream.
-     * @throws BinaryStoreException
-     */
-    public static InputStream asStream( ResultSet rs ) throws BinaryStoreException {
+    protected InputStream readStream( ResultSet rs ) throws BinaryStoreException {
         boolean error = false;
         try {
             if (!rs.next()) {
                 return null;
             }
-            return rs.getBinaryStream(1);
+            switch (databaseType) {
+                case SQLSERVER: {
+                    //see https://issues.jboss.org/browse/MODE-2179
+                    return rs.getBlob(1).getBinaryStream();
+                }
+                default: {
+                    return rs.getBinaryStream(1);
+                }
+            }
         } catch (SQLException e) {
             error = true;
             throw new BinaryStoreException(e);

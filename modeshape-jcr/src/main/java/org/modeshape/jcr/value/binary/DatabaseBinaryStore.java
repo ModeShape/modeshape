@@ -178,7 +178,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
         ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, true));
-        InputStream inputStream = Database.asStream(rs); // closes result set
+        InputStream inputStream = database.readStream(rs); // closes result set
         if (inputStream == null) {
             try {
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getConnection().getCatalog()));

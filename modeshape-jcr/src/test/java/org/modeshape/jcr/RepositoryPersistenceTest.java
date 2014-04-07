@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.io.File;
@@ -43,6 +44,7 @@ import javax.jcr.query.QueryResult;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.JcrTools;
 
 /**
@@ -97,7 +99,9 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
                     Node fileNode = testNode.getNode(name);
                     assertThat(fileNode, is(notNullValue()));
                     Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
-                    assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
+                    byte[] expectedBytes = IoUtil.readBytes(testFile);
+                    byte[] actualBytes = IoUtil.readBytes(binary.getStream());
+                    assertArrayEquals(expectedBytes, actualBytes);
                 }
 
                 Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:file]", Query.JCR_SQL2);
