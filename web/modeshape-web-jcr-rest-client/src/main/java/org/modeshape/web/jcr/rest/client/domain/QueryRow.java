@@ -31,11 +31,6 @@ public class QueryRow {
         return queryTypes.get(columnName);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return values.toString();

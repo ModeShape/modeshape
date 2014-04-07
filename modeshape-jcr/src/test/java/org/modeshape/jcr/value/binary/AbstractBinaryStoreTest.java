@@ -39,7 +39,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.AbstractTransactionalTest;
 import org.modeshape.jcr.TextExtractors;
@@ -52,6 +55,9 @@ import org.modeshape.jcr.value.BinaryValue;
  * Use this abstract class to realize test cases which can easily executed on different BinaryStores
  */
 public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest {
+
+    @Rule
+    public TestRule skipTestRule = new SkipTestRule();
 
     /**
      * We need to generate the test byte arrays based on the minimum binary size, because that controls the distinction between

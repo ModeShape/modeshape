@@ -21,41 +21,58 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.modeshape.jdbc;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import javax.jcr.Binary;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.util.Calendar;
-import java.util.Date;
 
 /**
- * A factory class which creates {@link javax.jcr.Value} instances from arbitrary objects (avoiding the dependency on the
- * real {@link javax.jcr.ValueFactory} implementations from other modules).
- *
+ * A factory class which creates {@link javax.jcr.Value} instances from arbitrary objects (avoiding the dependency on the real
+ * {@link javax.jcr.ValueFactory} implementations from other modules).
+ * 
  * @author Horia Chiorean
  */
 public final class JdbcJcrValueFactory {
 
+    private static final SimpleDateFormat ISO8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
     private JdbcJcrValueFactory() {
     }
 
-    public static Value createValue(Object value) {
-        return value == null ? null : new JdbcJcrValue(value);
+    /**
+     * Creates a new {@link javax.jcr.Value} instance to be used by the JDBC driver.
+     *
+     * @param value an actual value which will be wrapped by the JCR value; may be null
+     * @return either a {@link javax.jcr.Value} instance or {@code null} if the given argument is {@code null} or is the
+     * string {@code NULL}
+     */
+    public static Value createValue( Object value ) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String && ((String) value).equalsIgnoreCase("NULL")) {
+            return null;
+        }
+        return new JdbcJcrValue(value);
     }
 
     private static class JdbcJcrValue implements Value {
 
-        private Object value;
+        private final Object value;
 
         protected JdbcJcrValue( Object value ) {
+            assert value != null;
             this.value = value;
         }
 
@@ -64,7 +81,7 @@ public final class JdbcJcrValueFactory {
             if (value instanceof Boolean) {
                 return (Boolean)value;
             }
-            throw new ValueFormatException("Value not a Boolean");
+            return Boolean.parseBoolean(value.toString());
         }
 
         @Override
@@ -73,39 +90,53 @@ public final class JdbcJcrValueFactory {
                 Calendar c = Calendar.getInstance();
                 c.setTime((Date)value);
                 return c;
+            } else if (value instanceof Calendar) {
+                return (Calendar)value;
             }
-            throw new ValueFormatException("Value not instance of Date");
+
+            try {
+                Date iso8601Format = ISO8601.parse(value.toString());
+                Calendar c = Calendar.getInstance();
+                c.setTime(iso8601Format);
+                return c;
+            } catch (ParseException e) {
+                throw new ValueFormatException("Value not instance of Date", e);
+            }
         }
 
         @Override
         public double getDouble() throws ValueFormatException, IllegalStateException, RepositoryException {
-            if (value instanceof Double) {
-                return ((Double)value);
+            if (value instanceof Number) {
+                return ((Number) value).doubleValue();
             }
 
-            throw new ValueFormatException("Value not a Double");
+            try {
+                return Double.parseDouble(value.toString());
+            } catch (NumberFormatException e) {
+                throw new ValueFormatException("Value not a Double", e);
+            }
         }
 
         @Override
         public long getLong() throws ValueFormatException, IllegalStateException, RepositoryException {
-            if (value instanceof Long) {
-                return ((Long)value);
+            if (value instanceof Number) {
+                return ((Number) value).longValue();
             }
-            throw new ValueFormatException("Value not a Long");
+
+            try {
+                return Long.parseLong(value.toString());
+            } catch (NumberFormatException e) {
+                throw new ValueFormatException("Value not a Long");
+            }
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @see javax.jcr.Value#getBinary()
-         */
         @Override
         public Binary getBinary() throws RepositoryException {
             if (value instanceof Binary) {
                 return ((Binary)value);
             }
             if (value instanceof byte[]) {
-                final byte[] bytes = (byte[]) value;
+                final byte[] bytes = (byte[])value;
                 return new Binary() {
                     @Override
                     public void dispose() {
@@ -145,7 +176,7 @@ public final class JdbcJcrValueFactory {
                                 try {
                                     stream.close();
                                 } catch (Exception e) {
-                                    //ignore
+                                    // ignore
                                 }
                             }
                         }
@@ -161,7 +192,11 @@ public final class JdbcJcrValueFactory {
             if (value instanceof BigDecimal) {
                 return ((BigDecimal)value);
             }
-            throw new ValueFormatException("Value not a Decimal");
+            try {
+                return new BigDecimal(value.toString());
+            } catch (NumberFormatException e) {
+                throw new ValueFormatException("Value not a Decimal");
+            }
         }
 
         @Override
@@ -171,6 +206,9 @@ public final class JdbcJcrValueFactory {
             }
             if (value instanceof InputStream) {
                 return ((InputStream)value);
+            }
+            if (value instanceof byte[]) {
+                return new ByteArrayInputStream((byte[]) value);
             }
             throw new ValueFormatException("Value not an InputStream");
         }
@@ -191,13 +229,13 @@ public final class JdbcJcrValueFactory {
             if (value instanceof Boolean) {
                 return PropertyType.BOOLEAN;
             }
-            if (value instanceof Date) {
+            if (value instanceof Date || value instanceof Calendar) {
                 return PropertyType.DATE;
             }
-            if (value instanceof Double) {
+            if (value instanceof Double || value instanceof Float) {
                 return PropertyType.DOUBLE;
             }
-            if (value instanceof Long) {
+            if (value instanceof Long || value instanceof Integer) {
                 return PropertyType.LONG;
             }
             if (value instanceof BigDecimal) {

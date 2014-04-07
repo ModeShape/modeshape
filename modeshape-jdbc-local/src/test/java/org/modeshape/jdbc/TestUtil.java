@@ -24,9 +24,6 @@
 package org.modeshape.jdbc;
 
 import static org.mockito.Mockito.when;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -38,19 +35,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.TimeZone;
-import javax.jcr.Binary;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.mockito.Mockito;
-import org.modeshape.jcr.InMemoryTestBinary;
 
 /**
  * This provides common result set metadata used by various tests
@@ -255,11 +249,6 @@ class QueryResultNodeIterator implements NodeIterator {
         this.size = nodes.size();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NodeIterator#nextNode()
-     */
     @Override
     public Node nextNode() {
         Node node = nodes.next();
@@ -267,62 +256,32 @@ class QueryResultNodeIterator implements NodeIterator {
         return node;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
     @Override
     public long getPosition() {
         return position;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
     @Override
     public long getSize() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
     @Override
     public void skip( long skipNum ) {
         for (long i = 0L; i != skipNum; ++i)
             nextNode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
     @Override
     public boolean hasNext() {
         return nodes.hasNext();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
     @Override
     public Object next() {
         return nextNode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
@@ -348,15 +307,6 @@ class QueryResultRowIterator implements RowIterator {
 
     }
 
-    public boolean hasSelector( String selectorName ) {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.RowIterator#nextRow()
-     */
     @Override
     public Row nextRow() {
         if (nextRow == null) {
@@ -372,31 +322,16 @@ class QueryResultRowIterator implements RowIterator {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
     @Override
     public long getPosition() {
         return position;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
     @Override
     public long getSize() {
         return numRows;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
     @Override
     public void skip( long skipNum ) {
         for (long i = 0L; i != skipNum; ++i) {
@@ -405,11 +340,6 @@ class QueryResultRowIterator implements RowIterator {
         position += skipNum;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
     @Override
     public boolean hasNext() {
         if (nextRow != null) {
@@ -430,30 +360,15 @@ class QueryResultRowIterator implements RowIterator {
         return false;
     }
 
-    /**
-     * @param tuple
-     * @return Row
-     * @throws RepositoryException
-     */
     private Row getNextRow( Object[] tuple ) throws RepositoryException {
         return new QueryResultRow(this, nodes, tuple);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
     @Override
     public Object next() {
         return nextRow();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
@@ -473,11 +388,6 @@ class QueryResultRow implements javax.jcr.query.Row {
         this.nodes = nodes;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getNode()
-     */
     @Override
     public Node getNode() throws RepositoryException {
         if (nodes.length == 1) return nodes[0];
@@ -494,22 +404,12 @@ class QueryResultRow implements javax.jcr.query.Row {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getPath()
-     */
     @Override
     public String getPath() throws RepositoryException {
         if (nodes.length == 1) return nodes[0].getPath();
         throw new RepositoryException("More than one selector");
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getPath(java.lang.String)
-     */
     @Override
     public String getPath( String selectorName ) throws RepositoryException {
         for (int i = 0; i < nodes.length; i++) {
@@ -520,159 +420,34 @@ class QueryResultRow implements javax.jcr.query.Row {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getScore()
-     */
     @Override
     public double getScore() /*throws RepositoryException*/{
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Row#getScore(java.lang.String)
-     */
     @Override
     public double getScore( String selectorName ) /* throws RepositoryException */{
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * @throws ItemNotFoundException
-     */
     @Override
     public Value getValue( String arg0 ) throws ItemNotFoundException {
         for (int i = 0; i < TestUtil.COLUMN_NAMES.length; i++) {
             if (TestUtil.COLUMN_NAMES[i].equals(arg0)) {
-                return createValue(tuple[i]);
+                return JdbcJcrValueFactory.createValue(tuple[i]);
             }
         }
 
         throw new ItemNotFoundException("Item " + arg0 + " not found");
     }
 
-    /**
-     * @throws RepositoryException
-     */
     @Override
     public Value[] getValues() throws RepositoryException {
         Value[] values = new Value[tuple.length];
         for (int i = 0; i < tuple.length; i++) {
-            values[i] = createValue(tuple[i]);
+            values[i] =  JdbcJcrValueFactory.createValue(tuple[i]);
 
         }
         return values;
-    }
-
-    private Value createValue( final Object value ) {
-
-        if (value == null) return null;
-
-        Value rtnvalue = new Value() {
-            final Object valueObject = value;
-
-            @Override
-            public boolean getBoolean() throws ValueFormatException, IllegalStateException, RepositoryException {
-                if (value instanceof Boolean) {
-                    return ((Boolean)valueObject).booleanValue();
-                }
-                throw new ValueFormatException("Value not a Boolean");
-            }
-
-            @Override
-            public Calendar getDate() throws ValueFormatException, IllegalStateException, RepositoryException {
-                if (value instanceof Date) {
-
-                    Calendar t = new GregorianCalendar();
-                    t.clear();
-                    t.setTimeZone(TimeZone.getTimeZone(TestUtil.TIME_ZONE));
-                    t.setTimeInMillis(((Date)value).getTime());
-                    return t;
-
-                } else if (value instanceof Calendar) {
-
-                    return (Calendar)value;
-
-                }
-                throw new ValueFormatException("Value not instance of Date");
-            }
-
-            @Override
-            public double getDouble() throws ValueFormatException, IllegalStateException, RepositoryException {
-                if (value instanceof Double) {
-                    return ((Double)valueObject).doubleValue();
-                }
-
-                throw new ValueFormatException("Value not a Double");
-            }
-
-            @Override
-            public long getLong() throws ValueFormatException, IllegalStateException, RepositoryException {
-                if (value instanceof Long) {
-                    return ((Long)valueObject).longValue();
-                }
-                throw new ValueFormatException("Value not a Long");
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see javax.jcr.Value#getBinary()
-             */
-            @Override
-            public Binary getBinary() throws RepositoryException {
-                if (value instanceof Binary) {
-                    return ((Binary)valueObject);
-                }
-                if (value instanceof byte[]) {
-                    return new InMemoryTestBinary((byte[])value);
-                }
-                throw new ValueFormatException("Value not a Binary");
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see javax.jcr.Value#getDecimal()
-             */
-            @Override
-            public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
-                if (value instanceof BigDecimal) {
-                    return ((BigDecimal)valueObject);
-                }
-                throw new ValueFormatException("Value not a Decimal");
-            }
-
-            @Override
-            public InputStream getStream() throws IllegalStateException, RepositoryException {
-                if (value instanceof Binary) {
-                    return ((Binary)valueObject).getStream();
-                }
-                if (value instanceof InputStream) {
-                    return ((InputStream)valueObject);
-                }
-                throw new ValueFormatException("Value not an InputStream");
-            }
-
-            @Override
-            public String getString() throws IllegalStateException {
-                if (value instanceof String) {
-                    return (String)valueObject;
-                }
-                return valueObject.toString();
-            }
-
-            @Override
-            public int getType() {
-                return 1;
-            }
-
-        };
-
-        return rtnvalue;
-
     }
 }

@@ -30,9 +30,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Map;
@@ -49,8 +51,7 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jdbc.util.TimestampWithTimezone;
 
 /**
- * 
- *
+ *  Unit test for {@link org.modeshape.jdbc.JcrResultSet}
  */
 public class JcrResultSetTest {
 
@@ -480,7 +481,11 @@ public class JcrResultSetTest {
             Object[] tuple = TestUtil.TUPLES.get(i);
             // need to start at 1 because ResultSet is 1 based.
             for (int x = 1; x <= numCols; x++) {
-                assertThat(resultSet.getBytes(x), is((tuple[x - 1] != null ? (tuple[x - 1].toString()).getBytes() : null)));
+                Object expectedValue = tuple[x - 1];
+                if (expectedValue != null && !(expectedValue instanceof byte[])) {
+                    expectedValue = expectedValue.toString().getBytes();
+                }
+                assertThat(resultSet.getBytes(x), is(expectedValue));
             }
         }
     }
@@ -493,8 +498,12 @@ public class JcrResultSetTest {
             Object[] tuple = TestUtil.TUPLES.get(i);
 
             for (int x = 0; x < numCols; x++) {
+                Object expectedValue = tuple[x];
+                if (expectedValue != null && !(expectedValue instanceof byte[])) {
+                    expectedValue = expectedValue.toString().getBytes();
+                }
                 assertThat(resultSet.getBytes(TestUtil.COLUMN_NAMES[x]),
-                           is((tuple[x] != null ? (tuple[x].toString()).getBytes() : null)));
+                           is(expectedValue));
             }
         }
     }
@@ -521,7 +530,7 @@ public class JcrResultSetTest {
     }
 
     @Test
-    public void shouldCallGetObjectUsingColumnName() throws SQLException {
+    public void shouldCallGetObjectUsingColumnName() throws Exception {
         int numCols = TestUtil.COLUMN_NAMES.length;
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
@@ -529,9 +538,15 @@ public class JcrResultSetTest {
 
             for (int x = 0; x < numCols; x++) {
                 Object o = resultSet.getObject(TestUtil.COLUMN_NAMES[x]);
-                // doing .toString() to compare the Object value to the TestQueryResultMetaData
-                // which has primitives
-                assertThat((o != null ? o.toString() : null), is((tuple[x] != null ? tuple[x].toString() : null)));
+                Object expectedValue = tuple[x];
+                if (expectedValue instanceof Calendar) {
+                    expectedValue = new Timestamp(((Calendar) expectedValue).getTimeInMillis());
+                }
+                if (expectedValue instanceof byte[]) {
+                    assertThat(o instanceof Blob, is(true));
+                    o = IoUtil.readBytes(((Blob)o).getBinaryStream());
+                }
+                assertThat((o != null ? o: null), is((expectedValue != null ? expectedValue : null)));
             }
         }
     }
@@ -910,70 +925,6 @@ public class JcrResultSetTest {
      * @throws SQLException
      */
     @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetBigDecimalIdx() throws SQLException {
-        resultSet.getBigDecimal(1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetBigDecimalColName() throws SQLException {
-        resultSet.getBigDecimal("colname");
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetBigDecimalIdxScale() throws SQLException {
-        resultSet.getBigDecimal(1, 1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetBigDecimalColNameScale() throws SQLException {
-        resultSet.getBigDecimal("colname", 1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetBlobIdx() throws SQLException {
-        resultSet.getBlob(1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetBlobColName() throws SQLException {
-        resultSet.getBlob("colname");
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetByteIdx() throws SQLException {
-        resultSet.getByte(1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetByteColName() throws SQLException {
-        resultSet.getByte("colname");
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetCharacterStreamIdx() throws SQLException {
         resultSet.getCharacterStream(1);
     }
@@ -1000,22 +951,6 @@ public class JcrResultSetTest {
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetClobColName() throws SQLException {
         resultSet.getClob("colname");
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetFloatIdx() throws SQLException {
-        resultSet.getFloat(1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetFloatColNameCal() throws SQLException {
-        resultSet.getFloat("colname");
     }
 
     /**
@@ -1128,38 +1063,6 @@ public class JcrResultSetTest {
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetSQLXMLColName() throws SQLException {
         resultSet.getSQLXML("colname");
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetShortIdx() throws SQLException {
-        resultSet.getShort(1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetShortColName() throws SQLException {
-        resultSet.getShort("colname");
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetURLIdx() throws SQLException {
-        resultSet.getURL(1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetURLColName() throws SQLException {
-        resultSet.getURL("colname");
     }
 
     /**

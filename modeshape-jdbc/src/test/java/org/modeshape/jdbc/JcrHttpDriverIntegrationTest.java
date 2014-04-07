@@ -23,13 +23,9 @@
  */
 package org.modeshape.jdbc;
 
-import org.junit.After;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.FixFor;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -37,6 +33,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 /**
  * Integration test with the http protocol of the {@link JcrDriver}.
@@ -78,10 +78,71 @@ public class JcrHttpDriverIntegrationTest  {
     }
 
     @Test
+    @FixFor( "MODE-2125" )
     public void shouldRetrieveMetaData() throws SQLException {
         Connection connection = connectToRemoteRepository();
-        DatabaseMetaData metaData = connection.getMetaData();
-        assertNotNull(metaData);
+        DatabaseMetaData metadata = connection.getMetaData();
+        assertNotNull(metadata);
+
+        //reads tables and columns
+        readTables(metadata);
+    }
+
+    private void readTables( DatabaseMetaData metadata ) throws SQLException {
+        ResultSet tables = metadata.getTables(null, null, null, null);
+        try {
+            while (tables.next()) {
+                String tableCatalog = tables.getString(1);
+                String tableSchema = tables.getString(2);
+                String tableName = tables.getString(3);
+                String tableType = tables.getString(4);
+                String remarks = tables.getString(5);
+                String typeCat = tables.getString(6);
+                String typeSchema = tables.getString(7);
+                String typeName = tables.getString(8);
+                String selfRefColumnName = tables.getString(9);
+                String refGeneration = tables.getString(10);
+
+                readColumns(metadata, tableCatalog, tableSchema, tableName);
+            }
+        } finally {
+            tables.close();
+        }
+    }
+
+    private void readColumns( DatabaseMetaData metadata, String catalog, String schema, String table )
+            throws SQLException {
+        ResultSet columns = metadata.getColumns(catalog, schema, table, null);
+        try {
+            while (columns.next()) {
+                String tableCatalog = columns.getString(1);
+                String tableSchema = columns.getString(2);
+                String tableName = columns.getString(3);
+                String columnName = columns.getString(4);
+                int type = columns.getInt(5);
+                String typeName = columns.getString(6);
+                int columnSize = columns.getInt(7);
+                int bufferLength = columns.getInt(8);
+                int decimalDigits = columns.getInt(9);
+                int radix = columns.getInt(10);
+                int nullable = columns.getInt(11);
+                String remarks = columns.getString(12);
+                String columnDef = columns.getString(13);
+                int sqlDataType = columns.getInt(14);
+                int sqlDataTimeSub = columns.getInt(15);
+                int charOctetLength = columns.getInt(16);
+                int ordinalPost = columns.getInt(17);
+                String isNullable = columns.getString(18);
+                String scopeCat = columns.getString(19);
+                String scopeSchema = columns.getString(20);
+                String scopeTable = columns.getString(21);
+                short scopeDataType = columns.getShort(22);
+//                String isAutoIncrement = columns.getString(23);
+//                String isGenerated = columns.getString(24);
+            }
+        } finally {
+            columns.close();
+        }
     }
 
     @Test

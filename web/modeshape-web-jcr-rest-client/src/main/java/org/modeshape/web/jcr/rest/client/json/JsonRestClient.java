@@ -340,26 +340,10 @@ public final class JsonRestClient implements IRestClient {
         // because the http://<url> needs the workspace when it appends the depth option
         // this logic must be used to obtain one.
         Collection<Workspace> workspaces = getWorkspaces(repository);
-        Workspace workspace = null;
-        Workspace systemWs = null;
-        for (Workspace wspace : workspaces) {
-            if (wspace.getName().equalsIgnoreCase("default")) {
-                workspace = wspace;
-                break;
-            }
-            if (workspace == null && !wspace.getName().equalsIgnoreCase("system")) {
-                workspace = wspace;
-            }
-
-            if (wspace.getName().equalsIgnoreCase("system")) {
-                systemWs = wspace;
-            }
+        if (workspaces.isEmpty()) {
+            return Collections.emptyMap();
         }
-        assert systemWs != null;
-        if (workspace == null) {
-            workspace = systemWs;
-        }
-
+        Workspace workspace = workspaces.iterator().next();
         NodeTypeNode nodetypeNode = new NodeTypeNode(workspace);
         HttpClientConnection connection = connect(workspace.getServer(), nodetypeNode.getUrl(), RequestMethod.GET);
 
