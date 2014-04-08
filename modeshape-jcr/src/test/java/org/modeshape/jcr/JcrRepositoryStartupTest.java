@@ -746,14 +746,14 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
     @Test
     @FixFor( "MODE-2167" )
-    public void shouldRun4_0_0UpgradeFunction() throws Exception {
+    public void shouldRun4_0_0_Alpha1_UpgradeFunction() throws Exception {
         FileUtil.delete("target/persistent_repository/");
         String config = "config/repo-config-persistent-indexes-disk.json";
         // first run is empty, so no upgrades will be performed
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
-                changeLastUpgradeId(repository, Upgrades.ModeShape_4_0_0.INSTANCE.getId() - 1);
+                changeLastUpgradeId(repository, Upgrades.ModeShape_4_0_0_Alpha1.INSTANCE.getId() - 1);
 
                 // modify some ACLs
                 JcrSession session = repository.login();
@@ -791,7 +791,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 assertEquals(1, Long.valueOf(aclCountProp.getFirstValue().toString()).longValue());
 
                 // force a 2nd upgrade
-                changeLastUpgradeId(repository, Upgrades.ModeShape_4_0_0.INSTANCE.getId() - 1);
+                changeLastUpgradeId(repository, Upgrades.ModeShape_4_0_0_Alpha1.INSTANCE.getId() - 1);
 
                 // remove all ACLs
                 JcrSession session = repository.login();

@@ -64,7 +64,7 @@ public class Upgrades {
     public static final Upgrades STANDARD_UPGRADES;
 
     static {
-        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE, ModeShape_4_0_0.INSTANCE);
+        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE, ModeShape_4_0_0_Alpha1.INSTANCE);
     }
 
     private final List<UpgradeOperation> operations = new ArrayList<>();
@@ -236,20 +236,20 @@ public class Upgrades {
 
 
     /**
-     * Upgrade operation handling moving to ModeShape 4.0.0.Final. This consists of making sure that the access control metadata
+     * Upgrade operation handling moving to ModeShape 4.0.0.Alpha1. This consists of making sure that the access control metadata
      * information is correctly stored in the repository metadata and that the {@link ModeShapeLexicon#ACL_COUNT} property
      * correctly reflects this.
      */
-    protected static class ModeShape_4_0_0 extends UpgradeOperation {
-        protected static final UpgradeOperation INSTANCE = new ModeShape_4_0_0();
+    protected static class ModeShape_4_0_0_Alpha1 extends UpgradeOperation {
+        protected static final UpgradeOperation INSTANCE = new ModeShape_4_0_0_Alpha1();
 
-        protected ModeShape_4_0_0() {
-            super(2);
+        protected ModeShape_4_0_0_Alpha1() {
+            super(401);
         }
 
         @Override
         public void apply( Context resources ) {
-            LOGGER.info(JcrI18n.upgrade4_0_0Running);
+            LOGGER.info(JcrI18n.upgrade4_0_0_Alpha1_Running);
             RunningState runningState = resources.getRepository();
             RepositoryCache repositoryCache = runningState.repositoryCache();
 
@@ -278,7 +278,7 @@ public class Upgrades {
                 systemNode.setProperty(systemSession, context.getPropertyFactory().create(ModeShapeLexicon.ACL_COUNT, nodesWithAccessControl));
                 systemSession.save();
             } catch (RepositoryException e) {
-               LOGGER.error(e, JcrI18n.upgrade4_0_0Failed, e.getMessage());
+               LOGGER.error(e, JcrI18n.upgrade4_0_0_Alpha1_Failed, e.getMessage());
             }
         }
     }
