@@ -483,9 +483,8 @@
             <!--Clustered cache container-->
             <cache-container name="modeshape-repository-clustered" default-cache="clustered-repo" module="org.modeshape">
                 <transport lock-timeout="60000"/>
-                <replicated-cache name="repo-clustered" mode="SYNC" batching="true">
-                    <!--//TODO author=Horia Chiorean date=1/29/14 description=Enable once its working !!!-->
-                    <!--<transaction mode="NON_XA"/>-->
+                <replicated-cache name="repo-clustered" mode="SYNC">
+                    <transaction mode="NON_XA"/>
                     <file-store path="modeshape/store/repo-clustered" passivation="false" purge="false"/>
                 </replicated-cache>
             </cache-container>

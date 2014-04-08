@@ -254,30 +254,30 @@
             </cache-container>
             <cache-container name="modeshape" aliases="modeshape modeshape-cluster" default-cache="sample" module="org.modeshape">
                 <transport lock-timeout="60000"/>
-                <replicated-cache name="sample" mode="SYNC" batching="true">
+                <replicated-cache name="sample" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/store/sample-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
-                <replicated-cache name="artifacts" mode="SYNC" batching="true">
+                <replicated-cache name="artifacts" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/store/artifacts-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
             </cache-container>
             <cache-container name="modeshape-binary-cache-container" aliases="modeshape-binary-cache" default-cache="binary-fs" module="org.modeshape">
                 <transport lock-timeout="60000"/>
-                <replicated-cache name="sample-binary-fs" mode="SYNC" batching="true">
+                <replicated-cache name="sample-binary-fs" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/binary-store/sample-binary-data-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
-                <replicated-cache name="sample-binary-fs-meta" mode="SYNC" batching="true">
+                <replicated-cache name="sample-binary-fs-meta" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/binary-store/sample-binary-metadata-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
-                <replicated-cache name="artifacts-binary-fs" mode="SYNC" batching="true">
+                <replicated-cache name="artifacts-binary-fs" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/binary-store/artifacts-binary-data-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
-                <replicated-cache name="artifacts-binary-fs-meta" mode="SYNC" batching="true">
+                <replicated-cache name="artifacts-binary-fs-meta" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/binary-store/artifacts-binary-metadata-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
