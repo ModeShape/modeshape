@@ -526,8 +526,8 @@ public final class JcrI18n {
     public static I18n upgrade3_6_0Running;
     public static I18n upgrade3_6_0CannotUpdateNodeTypes;
     public static I18n upgrade3_6_0CannotUpdateLocks;
-    public static I18n upgrade4_0_0Running;
-    public static I18n upgrade4_0_0Failed;
+    public static I18n upgrade4_0_0_Alpha1_Running;
+    public static I18n upgrade4_0_0_Alpha1_Failed;
 
     public static I18n cannotStartJournal;
     public static I18n cannotStopJournal;
