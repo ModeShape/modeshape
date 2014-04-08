@@ -22,6 +22,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
+import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -29,6 +30,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.spi.index.IndexDefinition.IndexKind;
 
 /**
  * Attributes used in setting up ModeShape configurations. To mark an attribute as required, mark it as not allowing null.
@@ -57,6 +59,10 @@ public class ModelAttributes {
     private static final ParameterValidator PATH_EXPRESSION_VALIDATOR = new PathExpressionValidator(false);
 
     private static final ParameterValidator PROJECTION_VALIDATOR = new ProjectionValidator(false);
+
+    private static final ParameterValidator COLUMNS_VALIDATOR = new IndexColumnsValidator(false);
+
+    private static final ParameterValidator INDEX_KIND_VALIDATOR = new EnumValidator<>(IndexKind.class, false, true);
 
     public static final SimpleAttributeDefinition ALLOW_WORKSPACE_CREATION = new MappedAttributeDefinitionBuilder(
                                                                                                                   ModelKeys.ALLOW_WORKSPACE_CREATION,
@@ -267,6 +273,15 @@ public class ModelAttributes {
                                                                                                                                                                                           FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE)
                                                                                                                                                    .build();
 
+    public static final SimpleAttributeDefinition INDEX_KIND = new MappedAttributeDefinitionBuilder(ModelKeys.INDEX_KIND,
+                                                                                                    ModelType.STRING).setXmlName(Attribute.INDEX_KIND.getLocalName())
+                                                                                                                     .setAllowExpression(true)
+                                                                                                                     .setAllowNull(true)
+                                                                                                                     .setDefaultValue(new ModelNode().set(IndexKind.DUPLICATES.toString()))
+                                                                                                                     .setValidator(INDEX_KIND_VALIDATOR)
+                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                     .build();
+
     public static final SimpleAttributeDefinition INDEX_PROVIDER_CLASSNAME = new MappedAttributeDefinitionBuilder(
                                                                                                                   ModelKeys.INDEX_PROVIDER_CLASSNAME,
                                                                                                                   ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
@@ -341,6 +356,29 @@ public class ModelAttributes {
                                                                                                                                .setAllowNull(false)
                                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                                .build();
+
+    public static final SimpleAttributeDefinition NODE_TYPE_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.NODE_TYPE_NAME,
+                                                                                                        ModelType.STRING).setXmlName(Attribute.NODE_TYPE.getLocalName())
+                                                                                                                         .setAllowExpression(true)
+                                                                                                                         .setAllowNull(false)
+                                                                                                                         .setValidator(NODE_TYPE_VALIDATOR)
+                                                                                                                         .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                         .build();
+
+    public static final SimpleAttributeDefinition INDEX_COLUMNS = new MappedAttributeDefinitionBuilder(ModelKeys.INDEX_COLUMNS,
+                                                                                                       ModelType.STRING).setXmlName(Attribute.COLUMNS.getLocalName())
+                                                                                                                        .setAllowExpression(true)
+                                                                                                                        .setAllowNull(false)
+                                                                                                                        .setValidator(COLUMNS_VALIDATOR)
+                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                        .build();
+
+    public static final SimpleAttributeDefinition PROVIDER_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.PROVIDER_NAME,
+                                                                                                       ModelType.STRING).setXmlName(Attribute.PROVIDER_NAME.getLocalName())
+                                                                                                                        .setAllowExpression(true)
+                                                                                                                        .setAllowNull(true)
+                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                        .build();
 
     public static final SimpleAttributeDefinition PATH = new MappedAttributeDefinitionBuilder(ModelKeys.PATH, ModelType.STRING).setXmlName(Attribute.PATH.getLocalName())
                                                                                                                                .setAllowExpression(true)
@@ -640,6 +678,9 @@ public class ModelAttributes {
 
     public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
         CLASSNAME, MODULE, STORE_NAME};
+
+    public static final AttributeDefinition[] INDEX_DEFINITION_ATTRIBUTES = {INDEX_KIND, PROVIDER_NAME, NODE_TYPE_NAME,
+        INDEX_COLUMNS, PROPERTIES};
 
     public static final AttributeDefinition[] INDEX_PROVIDER_ATTRIBUTES = {CLASSNAME, MODULE, PROPERTIES};
 

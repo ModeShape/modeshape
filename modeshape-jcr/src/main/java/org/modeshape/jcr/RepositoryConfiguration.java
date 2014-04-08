@@ -146,6 +146,27 @@ public class RepositoryConfiguration {
     public final static Pattern PROJECTION_PATH_EXPRESSION_PATTERN = Pattern.compile(PROJECTION_PATH_EXPRESSION_STRING);
 
     /**
+     * The regexp pattern used to parse & validate index column definitions. The expression for a single column definition is of
+     * the form "{@code name(type)}" where "{@code name}" is the name of the property and "{@code type}" is the type of that
+     * property. The expression is:
+     * 
+     * <pre>
+     * (([^:/]+):)?([^:]*)(\(\w{1,}\))
+     * </pre>
+     * 
+     * The full expression really represents a comma-separated list of one or more of these index definitions. where:
+     * <ul>
+     * <li>Group 1 is the workspace name</li>
+     * <li>Group 2 is the path of the existing node</li>
+     * <li>Group 7 is the path in the external source</li>
+     * </ul>
+     */
+    private final static String INDEX_COLUMN_DEFINITION_STRING = "(([^:/]+):)?([^:]*)(\\(\\w{1,}\\))";
+    private final static String INDEX_COLUMN_DEFINITIONS_STRING = INDEX_COLUMN_DEFINITION_STRING + "(,"
+                                                                  + INDEX_COLUMN_DEFINITION_STRING + ")*";
+    public final static Pattern INDEX_COLUMN_DEFINITIONS_PATTERN = Pattern.compile(INDEX_COLUMN_DEFINITIONS_STRING);
+
+    /**
      * The process of garbage collecting locks and binary values runs periodically, and this value controls how often it runs. The
      * value is currently set to 5 minutes.
      */

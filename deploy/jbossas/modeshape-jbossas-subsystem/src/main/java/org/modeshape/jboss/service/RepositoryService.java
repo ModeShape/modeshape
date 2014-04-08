@@ -297,6 +297,55 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     }
 
     /**
+     * Immediately change and apply the specified index definition field in the current repository configuration to the new value.
+     * 
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @param indexDefinitionName the name of the index definition
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changeIndexDefinitionField( MappedAttributeDefinition defn,
+                                            ModelNode newValue,
+                                            String indexDefinitionName ) throws RepositoryException, OperationFailedException {
+        ModeShapeEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+
+        // Find the array of sequencer documents ...
+        List<String> pathToContainer = defn.getPathToContainerOfField();
+        EditableDocument indexes = editor.getOrCreateDocument(pathToContainer.get(0));
+
+        // The container should be an array ...
+        for (String configuredIndexName : indexes.keySet()) {
+            // Look for the entry with a name that matches our sequencer name ...
+            if (indexDefinitionName.equals(configuredIndexName)) {
+                // All these entries should be nested documents ...
+                EditableDocument provider = (EditableDocument)indexes.get(configuredIndexName);
+
+                // Change the field ...
+                String fieldName = defn.getFieldName();
+                // Get the raw value from the model node ...
+                Object rawValue = defn.getTypedValue(newValue);
+                // And update the field ...
+                provider.set(fieldName, rawValue);
+                break;
+            }
+        }
+
+        // Get and apply the changes to the current configuration. Note that the 'update' call asynchronously
+        // updates the configuration, and returns a Future<JcrRepository> that we could use if we wanted to
+        // wait for the changes to take place. But we don't want/need to wait, so we'll not use the Future ...
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
+    }
+
+    /**
      * Immediately change and apply the specified sequencer field in the current repository configuration to the new value.
      * 
      * @param defn the attribute definition for the value; may not be null

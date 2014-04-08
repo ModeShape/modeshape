@@ -50,6 +50,11 @@ public class ModeShapeServiceNames {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexProviders", providerName);
     }
 
+    public static ServiceName indexDefinitionServiceName( String repositoryName,
+                                                          String indexName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexes", indexName);
+    }
+
     public static ServiceName dataDirectoryServiceName( String name ) {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "data");
     }

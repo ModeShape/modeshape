@@ -197,6 +197,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
         ModelNode binaryStorage = null;
         List<ModelNode> sequencers = new ArrayList<ModelNode>();
         List<ModelNode> indexProviders = new ArrayList<ModelNode>();
+        List<ModelNode> indexes = new ArrayList<ModelNode>();
         List<ModelNode> externalSources = new ArrayList<ModelNode>();
         List<ModelNode> textExtractors = new ArrayList<ModelNode>();
         List<ModelNode> authenticators = new ArrayList<ModelNode>();
@@ -247,9 +248,14 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                     sequencers = parseSequencers(reader, address, repositoryName);
                     break;
 
-                // Sequencing ...
+                // Index providers ...
                 case INDEX_PROVIDERS:
                     indexProviders = parseIndexProviders(reader, address, repositoryName);
+                    break;
+
+                // Indexes ...
+                case INDEXES:
+                    indexes = parseIndexes(reader, address, repositoryName);
                     break;
 
                 // External sources ...
@@ -271,6 +277,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
         repositories.addAll(multipleStorageNodes);
         repositories.addAll(sequencers);
         repositories.addAll(indexProviders);
+        repositories.addAll(indexes);
         repositories.addAll(externalSources);
         repositories.addAll(textExtractors);
         repositories.addAll(authenticators);
@@ -893,6 +900,72 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                 .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                 .add(ModelKeys.REPOSITORY, repositoryName)
                 .add(ModelKeys.INDEX_PROVIDER, name);
+
+    }
+
+    private List<ModelNode> parseIndexes( final XMLExtendedStreamReader reader,
+                                          final ModelNode parentAddress,
+                                          final String repositoryName ) throws XMLStreamException {
+        requireNoAttributes(reader);
+
+        List<ModelNode> indexes = new ArrayList<ModelNode>();
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case INDEXES:
+                    parseIndex(reader, repositoryName, indexes);
+                    break;
+                default:
+                    throw ParseUtils.unexpectedElement(reader);
+            }
+        }
+
+        return indexes;
+    }
+
+    private void parseIndex( XMLExtendedStreamReader reader,
+                             String repositoryName,
+                             final List<ModelNode> indexes ) throws XMLStreamException {
+
+        final ModelNode index = new ModelNode();
+        index.get(OP).set(ADD);
+        String name = null;
+
+        indexes.add(index);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case NAME:
+                        name = attrValue;
+                        break;
+                    case PROVIDER_NAME:
+                        ModelAttributes.PROVIDER_NAME.parseAndSetParameter(attrValue, index, reader);
+                        break;
+                    case INDEX_KIND:
+                        ModelAttributes.INDEX_KIND.parseAndSetParameter(attrValue, index, reader);
+                        break;
+                    case NODE_TYPE:
+                        ModelAttributes.NODE_TYPE_NAME.parseAndSetParameter(attrValue, index, reader);
+                        break;
+                    case COLUMNS:
+                        ModelAttributes.INDEX_COLUMNS.parseAndSetParameter(attrValue, index, reader);
+                        break;
+                    default:
+                        // extra attributes are allowed to set sequencer-specific properties ...
+                        index.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        break;
+                }
+            }
+        }
+
+        index.get(OP_ADDR)
+             .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+             .add(ModelKeys.REPOSITORY, repositoryName)
+             .add(ModelKeys.INDEX, name);
 
     }
 

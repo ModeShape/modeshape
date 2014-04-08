@@ -99,6 +99,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writeJournaling(writer, repository);
         writeAuthenticators(writer, repository);
         writeIndexProviders(writer, repository);
+        writeIndexes(writer, repository);
         writeBinaryStorage(writer, repository);
         writeSequencing(writer, repository);
         writeExternalSources(writer, repository);
@@ -383,6 +384,34 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 ModelNode prop = provider.getValue();
                 ModelAttributes.INDEX_PROVIDER_CLASSNAME.marshallAsAttribute(prop, writer);
                 ModelAttributes.MODULE.marshallAsAttribute(prop, writer);
+
+                // Write out the extra properties ...
+                if (has(prop, ModelKeys.PROPERTIES)) {
+                    ModelNode properties = prop.get(ModelKeys.PROPERTIES);
+                    for (Property property : properties.asPropertyList()) {
+                        writer.writeAttribute(property.getName(), property.getValue().asString());
+                    }
+                }
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+        }
+
+    }
+
+    private void writeIndexes( XMLExtendedStreamWriter writer,
+                               ModelNode repository ) throws XMLStreamException {
+        if (has(repository, ModelKeys.INDEX)) {
+            writer.writeStartElement(Element.INDEXES.getLocalName());
+            ModelNode providerNode = repository.get(ModelKeys.INDEX);
+            for (Property index : providerNode.asPropertyList()) {
+                writer.writeStartElement(Element.INDEX.getLocalName());
+                writer.writeAttribute(Attribute.NAME.getLocalName(), index.getName());
+                ModelNode prop = index.getValue();
+                ModelAttributes.PROVIDER_NAME.marshallAsAttribute(prop, writer);
+                ModelAttributes.INDEX_KIND.marshallAsAttribute(prop, writer);
+                ModelAttributes.NODE_TYPE_NAME.marshallAsAttribute(prop, writer);
+                ModelAttributes.INDEX_COLUMNS.marshallAsAttribute(prop, writer);
 
                 // Write out the extra properties ...
                 if (has(prop, ModelKeys.PROPERTIES)) {

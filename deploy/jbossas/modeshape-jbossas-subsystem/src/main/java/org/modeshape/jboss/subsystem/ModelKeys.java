@@ -89,6 +89,12 @@ public class ModelKeys {
     static final String SOURCE = "source";
     static final String TEXT_EXTRACTOR = "text-extractor";
 
+    static final String INDEX = "index";
+    static final String INDEX_KIND = "index-kind";
+    static final String PROVIDER_NAME = "provider-name";
+    static final String NODE_TYPE_NAME = "node-type-name";
+    static final String INDEX_COLUMNS = "index-columns";
+
     static final String INDEX_PROVIDER = "index-provider";
     static final String INDEX_PROVIDER_CLASSNAME = "classname";
 

@@ -41,6 +41,7 @@ public class ModeShapeExtension implements Extension {
     static final PathElement REPOSITORY_PATH = PathElement.pathElement(ModelKeys.REPOSITORY);
     static final PathElement SEQUENCER_PATH = PathElement.pathElement(ModelKeys.SEQUENCER);
     static final PathElement INDEX_PROVIDER_PATH = PathElement.pathElement(ModelKeys.INDEX_PROVIDER);
+    static final PathElement INDEX_DEFINITION_PATH = PathElement.pathElement(ModelKeys.INDEX);
     static final PathElement SOURCE_PATH = PathElement.pathElement(ModelKeys.SOURCE);
     static final PathElement TEXT_EXTRACTOR_PATH = PathElement.pathElement(ModelKeys.TEXT_EXTRACTOR);
     static final PathElement AUTHENTICATOR_PATH = PathElement.pathElement(ModelKeys.AUTHENTICATOR);

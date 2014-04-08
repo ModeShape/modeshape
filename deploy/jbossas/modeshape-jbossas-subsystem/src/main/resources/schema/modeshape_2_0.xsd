@@ -88,6 +88,12 @@
                 </xs:annotation>
             </xs:element>
 
+            <xs:element name="indexes" type="indexes" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the indexes.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
             <xs:element name="text-extractors" type="text-extractors" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>The definition of the custom text extractors.</xs:documentation>
@@ -460,6 +466,49 @@
         <xs:anyAttribute namespace="##any" processContents="lax"/>
     </xs:complexType>
 
+    <xs:complexType name="indexes">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="index" type="index-definition" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The definition of an index.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="index-definition">
+        <xs:attribute name="name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the index.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="provider-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the index provider. If there is no provider with the given name, then this
+                  index will be disabled.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="kind" type="index-kind-enum" default="duplicates">
+            <xs:annotation>
+                <xs:documentation>The kind of the index.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="node-type" type="xs:string" default="nt:base">
+            <xs:annotation>
+                <xs:documentation>The name of the node type to which this index applies. This index will include only those
+                   nodes of this type.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="columns" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>A comma-separated list of column definitions, where each column definition consists of a 
+                   property name and in parentheses the property type. For example, 'jcr:mixin(STRING)' is a column definition 
+                   that specifies the 'jcr:mixin' property and 'STRING' type.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
+
     <xs:complexType name="sequencers">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="sequencer" type="sequencer" minOccurs="0" maxOccurs="unbounded">
@@ -775,6 +824,15 @@
             <xs:documentation>A list of role names.</xs:documentation>
         </xs:annotation>
         <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+    <xs:simpleType name="index-kind-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="duplicates"/>
+            <xs:enumeration value="unique"/>
+            <xs:enumeration value="enumerated"/>
+            <xs:enumeration value="fulltextsearch"/>
+            <xs:enumeration value="nodetype"/>
+        </xs:restriction>
     </xs:simpleType>
 </xs:schema>
    

@@ -34,6 +34,8 @@ public enum Element {
     FILE_BINARY_STORAGE("file-binary-storage"),
     INDEX_PROVIDER("index-provider"),
     INDEX_PROVIDERS("index-providers"),
+    INDEX("index"),
+    INDEXES("indexes"),
     NAMED_BINARY_STORE("named-binary-store"),
     PATH_EXPRESSION("path-expression"),
     PROPERTY("property"),

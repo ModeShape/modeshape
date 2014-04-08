@@ -36,18 +36,18 @@ import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
-public class IndexProviderService implements Service<JcrRepository> {
+public class IndexDefinitionService implements Service<JcrRepository> {
 
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
 
-    private final Properties providerProperties;
+    private final Properties definitionProperties;
     private final String repositoryName;
 
-    public IndexProviderService( String repositoryName,
-                                 Properties providerProperties ) {
+    public IndexDefinitionService( String repositoryName,
+                                   Properties definitionProperties ) {
         this.repositoryName = repositoryName;
-        this.providerProperties = providerProperties;
+        this.definitionProperties = definitionProperties;
     }
 
     @Override
@@ -74,25 +74,25 @@ public class IndexProviderService implements Service<JcrRepository> {
 
         Editor editor = repositoryConfig.edit();
 
-        EditableDocument providers = editor.getOrCreateDocument(FieldName.INDEX_PROVIDERS);
+        EditableDocument indexes = editor.getOrCreateDocument(FieldName.INDEXES);
 
-        EditableDocument provider = Schematic.newDocument();
-        String providerName = providerProperties.getProperty(FieldName.NAME);
-        for (Object key : providerProperties.keySet()) {
+        EditableDocument indexDefinition = Schematic.newDocument();
+        String definitionName = definitionProperties.getProperty(FieldName.NAME);
+        for (Object key : definitionProperties.keySet()) {
             String keyStr = (String)key;
             if (FieldName.NAME.equals(keyStr)) continue;
-            Object value = providerProperties.get(keyStr);
+            Object value = definitionProperties.get(keyStr);
             if (value instanceof List<?>) {
                 for (Object val : (List<?>)value) {
-                    provider.getOrCreateArray(keyStr).addValue(val);
+                    indexDefinition.getOrCreateArray(keyStr).addValue(val);
                 }
             } else {
                 // Just set the value as a field
-                provider.set(keyStr, value);
+                indexDefinition.set(keyStr, value);
             }
         }
 
-        providers.set(providerName, provider);
+        indexes.set(definitionName, indexDefinition);
 
         // Get the changes and validate them ...
         Changes changes = editor.getChanges();
