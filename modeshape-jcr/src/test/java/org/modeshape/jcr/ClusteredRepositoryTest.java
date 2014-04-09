@@ -152,41 +152,6 @@ public class ClusteredRepositoryTest {
         assertThat(session.getWorkspace().getNodeTypeManager().getNodeType("air:Aircraft"), is(notNullValue()));
     }
 
-    /**
-     * Each Infinispan configuration persists data in a separate location, we use replication mode and the indexes are clustered
-     * via JGroups.
-     * 
-     * @throws Exception
-     */
-    @Test
-    @FixFor( "MODE-1897" )
-    public void shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcessAndClusteringJGroupsIndexing()
-        throws Exception {
-        FileUtil.delete("target/clustered");
-        JcrRepository repository1 = null;
-        JcrRepository repository2 = null;
-        try {
-            // Start the master process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig("config/repo-config-clustered-indexes-1.json");
-            Session session1 = repository1.login();
-
-            // Start the slave process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig("config/repo-config-clustered-indexes-2.json");
-            Session session2 = repository2.login();
-
-            // in this setup, index changes clustered, so they *should be* be sent across to other nodes
-            assertChangesArePropagatedInCluster(session1, session2, "node1");
-
-            session1.logout();
-            session2.logout();
-        } finally {
-            Logger.getLogger(getClass())
-                  .debug("Killing repositories in shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcessAndClusteringJGroupsIndexing");
-            TestingUtil.killRepositories(repository1, repository2);
-            FileUtil.delete("target/clustered");
-        }
-    }
-
     @Test
     @FixFor("MODE-1683")
     public void shouldClusterJournals() throws Exception {

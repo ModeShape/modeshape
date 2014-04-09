@@ -73,13 +73,6 @@
             "enableEvents" : true
         }
     },
-    "query" : {
-        "indexing" : {
-            "rebuildOnStartup" : {
-                "when" : "never"
-            }
-        }
-    },
     "sequencing" : {
         //configure a sequencer from the modeshape-jcr package to test in conjunction with event notifications
         "sequencers" : {

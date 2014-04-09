@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+<subsystem xmlns="urn:jboss:domain:modeshape:2.0">
     <repository  name="sample">
         <node-types>
             <node-type>custom.cnd</node-type>
@@ -12,9 +12,13 @@
             <initial-content>initial-content-default.xml</initial-content>
         </workspaces>
         <journaling max-days-to-keep-records="15"/>
-        <indexing analyzer-module="something" systemContentMode="ASYNC" thread-pool="modeshape-workers"/>
-        <local-file-index-storage path="indexing"/>
         <file-binary-storage path="modeshape/compositeBinaryStoreRepository/binaries/fs1"/>
+        <!--index-providers>
+            <index-provider name="local-indexes" classname="local"
+                  path="modeshape/sample/indexes/"
+                  relative-to="jboss.server.data.dir"
+                  />
+        </index-providers-->
         <sequencers>
             <sequencer classname="ddl" name="modeshape-sequencer-ddl" path-expression="//a/b"/>
             <sequencer classname="java" name="modeshape-sequencer-java" path-expression="//a/b"/>

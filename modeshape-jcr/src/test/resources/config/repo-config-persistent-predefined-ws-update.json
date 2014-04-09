@@ -8,8 +8,5 @@
         "predefined" : ["ws1", "ws2"],
         "default": "default",
         "allowCreation": true
-    },
-    "query": {
-        "enabled": false
     }
 }

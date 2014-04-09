@@ -49,6 +49,10 @@ public final class NoOpQueryIndexWriter implements IndexWriter {
     }
 
     @Override
+    public void clearAllIndexes() {
+    }
+
+    @Override
     public void addToIndex( String workspace,
                             NodeKey key,
                             Path path,
@@ -68,11 +72,6 @@ public final class NoOpQueryIndexWriter implements IndexWriter {
                              Iterator<Property> properties,
                              NodeTypeSchemata schemata,
                              IndexingContext txnCtx ) {
-    }
-
-    @Override
-    public boolean initializedIndexes() {
-        return false;
     }
 
     @Override

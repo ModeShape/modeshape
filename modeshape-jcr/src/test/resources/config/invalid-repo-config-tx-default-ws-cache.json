@@ -5,8 +5,5 @@
         "default" : "default",
         "allowCreation" : true,
         "cacheConfiguration" : "config/infinispan-tx-default-ws-cache.xml"
-    },
-    "query" : {
-        "enabled" : false
     }
 }

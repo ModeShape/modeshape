@@ -202,7 +202,7 @@ public abstract class AbstractBinaryStoreTest {
 
     @Test
     public void shouldExtractAndStoreTextWhenExtractorConfigured() throws Exception {
-        TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(), true,
+        TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(),
                                                        Arrays.<TextExtractor>asList(new DummyTextExtractor()));
         BinaryStore binaryStore = getBinaryStore();
         binaryStore.setTextExtractors(extractors);

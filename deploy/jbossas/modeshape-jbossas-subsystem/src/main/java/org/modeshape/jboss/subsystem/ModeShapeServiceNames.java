@@ -17,7 +17,6 @@ package org.modeshape.jboss.subsystem;
 
 import org.jboss.msc.service.ServiceName;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jboss.service.IndexStorage;
 
 public class ModeShapeServiceNames {
     public static ServiceName ENGINE = ServiceName.JBOSS.append("modeshape", "engine");
@@ -46,26 +45,18 @@ public class ModeShapeServiceNames {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "authenticators", authenticatorName);
     }
 
+    public static ServiceName indexProviderServiceName( String repositoryName,
+                                                        String providerName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexProviders", providerName);
+    }
+
+    public static ServiceName indexDefinitionServiceName( String repositoryName,
+                                                          String indexName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexes", indexName);
+    }
+
     public static ServiceName dataDirectoryServiceName( String name ) {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "data");
-    }
-
-    /**
-     * Obtain the name of the service for the {@link IndexStorage} for the given repository name
-     * 
-     * @param repositoryName the repository name
-     * @return the service name
-     */
-    public static ServiceName indexStorageServiceName( String repositoryName ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexes");
-    }
-
-    public static ServiceName indexStorageDirectoryServiceName( String repositoryName ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexes","dir");
-    }
-
-    public static ServiceName indexSourceStorageDirectoryServiceName( String repositoryName ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexes", "source-dir");
     }
 
     public static ServiceName binaryStorageDefaultServiceName( String repositoryName ) {
@@ -78,11 +69,12 @@ public class ModeShapeServiceNames {
     }
 
     public static ServiceName binaryStorageDirectoryServiceName( String repositoryName ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "binaries","dir");
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "binaries", "dir");
     }
 
-    public static ServiceName binaryStorageDirectoryServiceName( String repositoryName, String binaryStoreName ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, binaryStoreName, "binaries","dir");
+    public static ServiceName binaryStorageDirectoryServiceName( String repositoryName,
+                                                                 String binaryStoreName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, binaryStoreName, "binaries", "dir");
     }
 
     public static ServiceName referenceFactoryServiceName( String repositoryName ) {

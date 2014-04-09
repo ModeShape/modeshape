@@ -1,11 +1,5 @@
 {
     "name" : "Test Repository",
-    "query" : {
-        "indexing": {
-            "rebuildOnStartup": {
-                "includeSystemContent": true,
-                "mode" : "sync"
-            }
-        }
+    "indexes" : {
     }
 }

@@ -31,6 +31,13 @@ public interface Query extends javax.jcr.query.Query {
     public static final String FULL_TEXT_SEARCH = "search";
 
     /**
+     * Specify whether the system content should be included in the query results.
+     * 
+     * @param includeSystemContent true if the system content should be included, or false if it should be excluded
+     */
+    public void includeSystemContent( boolean includeSystemContent );
+
+    /**
      * Signal that the query, if currently {@link Query#execute() executing}, should be cancelled and stopped (with an exception).
      * This method does not block until the query is actually stopped.
      * 

@@ -27,7 +27,7 @@ import org.modeshape.jcr.cache.NodeKey;
  * this index is needed.
  * </p>
  * 
- * @see IndexProvider#getQueryIndex(String)
+ * @see IndexProvider#getIndex(String)
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public interface Index {

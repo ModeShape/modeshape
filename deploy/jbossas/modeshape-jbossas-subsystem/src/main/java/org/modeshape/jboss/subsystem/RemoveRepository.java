@@ -41,7 +41,6 @@ class RemoveRepository extends AbstractModeShapeRemoveStepHandler {
 
         return Arrays.asList(ModeShapeServiceNames.referenceFactoryServiceName(repositoryName),
                              bindInfo.getBinderServiceName(),
-                             ModeShapeServiceNames.indexStorageServiceName(repositoryName),
                              ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
                              ModeShapeServiceNames.dataDirectoryServiceName(repositoryName),
                              ModeShapeServiceNames.monitorServiceName(repositoryName),

@@ -38,7 +38,8 @@ public interface IndexDefinition extends Iterable<IndexColumnDefinition> {
         DUPLICATES,
         UNIQUE,
         ENUMERATED,
-        FULLTEXTSEARCH;
+        FULLTEXTSEARCH,
+        NODETYPE,
     }
 
     /**

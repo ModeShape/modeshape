@@ -15,7 +15,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.modeshape.jcr.RepositoryConfiguration.QueryRebuild.FAIL_IF_MISSING;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -89,7 +88,6 @@ import org.modeshape.jcr.RepositoryConfiguration.DocumentOptimization;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.GarbageCollection;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
-import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 import org.modeshape.jcr.api.AnonymousCredentials;
@@ -547,7 +545,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             start();
             logger.debug("Started '{0}' after content has been restored; beginning indexing of content", getName());
             // Reindex all content ...
-            queryManager().reindexContent(true, false, false);
+            queryManager().cleanAndReindex(false);
             logger.debug("Completed reindexing all content in '{0}' after restore.", getName());
         }
     }
@@ -729,9 +727,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected static class ConfigurationChange implements org.infinispan.schematic.document.Editor.Observer {
 
         private final Path SECURITY_PATH = Paths.path(FieldName.SECURITY);
-        private final Path QUERY_PATH = Paths.path(FieldName.QUERY);
         private final Path SEQUENCING_PATH = Paths.path(FieldName.SEQUENCING);
-        private final Path EXTRACTORS_PATH = Paths.path(FieldName.QUERY, FieldName.EXTRACTORS);
+        private final Path EXTRACTORS_PATH = Paths.path(FieldName.TEXT_EXTRACTION, FieldName.EXTRACTORS);
+        private final Path INDEXES_PATH = Paths.path(FieldName.INDEXES);
+        private final Path INDEX_PROVIDERS_PATH = Paths.path(FieldName.INDEX_PROVIDERS);
         private final Path STORAGE_PATH = Paths.path(FieldName.STORAGE);
         private final Path BINARY_STORAGE_PATH = Paths.path(FieldName.STORAGE, FieldName.BINARY_STORAGE);
         private final Path WORKSPACES_PATH = Paths.path(FieldName.WORKSPACES);
@@ -750,7 +749,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected boolean extractorsChanged = false;
         protected boolean storageChanged = false;
         protected boolean binaryStorageChanged = false;
-        protected boolean indexingChanged = false;
+        protected boolean indexProvidersChanged = false;
+        protected boolean indexesChanged = false;
         protected boolean workspacesChanged = false;
         protected boolean predefinedWorkspacesChanged = false;
         protected boolean jndiChanged = false;
@@ -808,7 +808,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (!securityChanged && path.startsWith(SECURITY_PATH)) securityChanged = true;
             if (!workspacesChanged && path.startsWith(WORKSPACES_PATH) && !path.startsWith(PREDEFINED_PATH)) workspacesChanged = true;
             if (!predefinedWorkspacesChanged && path.startsWith(PREDEFINED_PATH)) predefinedWorkspacesChanged = true;
-            if (!indexingChanged && path.startsWith(QUERY_PATH) && !path.startsWith(EXTRACTORS_PATH)) indexingChanged = true;
+            if (!indexesChanged && path.startsWith(INDEXES_PATH)) indexesChanged = true;
+            if (!indexProvidersChanged && path.startsWith(INDEX_PROVIDERS_PATH)) indexProvidersChanged = true;
             if (!jndiChanged && path.equals(JNDI_PATH)) jndiChanged = true;
             if (!transactionMode && path.equals(TRANSACTION_MODE_PATH)) transactionMode = true;
             if (!nameChanged && path.equals(NAME_PATH)) nameChanged = true;
@@ -969,7 +970,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
         private final Connectors connectors;
-        private final RepositoryConfiguration.IndexRebuildOptions indexRebuildOptions;
         private final List<ScheduledFuture<?>> backgroundProcesses = new ArrayList<ScheduledFuture<?>>();
         private final Problems problems;
         private final ChangeJournal journal;
@@ -1131,15 +1131,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
 
                     // Set up the repository cache ...
-                    QuerySystem query = config.getQuery();
-                    boolean indexingClustered = query.queriesEnabled() && query.indexingClustered();
-
-                    final SessionEnvironment sessionEnv = this.journal == null ? new RepositorySessionEnvironment(
-                                                                                                                  this.transactions,
-                                                                                                                  indexingClustered) : new RepositorySessionEnvironment(
-                                                                                                                                                                        this.transactions,
-                                                                                                                                                                        indexingClustered,
-                                                                                                                                                                        this.journal.journalId());
+                    String journalId = this.journal != null ? this.journal.journalId() : null;
+                    final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions, journalId);
                     CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
                     this.cache = new RepositoryCache(context, documentStore, clusteringService, config, systemContentInitializer,
                                                      sessionEnv, changeBus, workspaceCacheContainer, Upgrades.STANDARD_UPGRADES);
@@ -1190,9 +1183,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
 
                 if (other != null && !change.extractorsChanged) {
-                    this.extractors = new TextExtractors(this, other.config.getQuery().getTextExtracting());
+                    this.extractors = new TextExtractors(this, other.config.getTextExtraction());
                 } else {
-                    this.extractors = new TextExtractors(this, config.getQuery().getTextExtracting());
+                    this.extractors = new TextExtractors(this, config.getTextExtraction());
                 }
                 this.binaryStore.setMimeTypeDetector(this.mimeTypeDetector);
                 this.binaryStore.setTextExtractors(this.extractors);
@@ -1205,19 +1198,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.sequencers = new Sequencers(this, config, cache.getWorkspaceNames());
                 }
 
-                if (other != null && !change.indexingChanged) {
-                    this.indexingExecutor = other.indexingExecutor;
-                    this.queryParsers = other.queryParsers;
-                } else {
-                    String indexThreadPoolName = config.getQuery().getThreadPoolName();
-                    this.indexingExecutor = this.context.getThreadPool(indexThreadPoolName);
-                    this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
-                                                         new FullTextSearchParser(), new JcrSqlQueryParser(),
-                                                         new JcrQomQueryParser());
-                }
-                QuerySystem query = config.getQuery();
+                this.indexingExecutor = this.context.getThreadPool("modeshape-reindexing");
+                this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
+                                                     new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
                 this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, config);
-                this.indexRebuildOptions = query.getIndexRebuildOptions();
 
                 // Check that we have parsers for all the required languages ...
                 assert this.queryParsers.getParserFor(Query.XPATH) != null;
@@ -1360,35 +1344,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
          */
         protected final void postInitialize() throws Exception {
             try {
-                // check the re-indexing options and do the re-indexing (this must be done after all of the above have finished)
-                if (indexRebuildOptions != null) {
-                    RepositoryConfiguration.QueryRebuild when = indexRebuildOptions.getWhen();
-                    boolean includeSystemContent = indexRebuildOptions.includeSystemContent();
-                    boolean async = indexRebuildOptions.getMode() == RepositoryConfiguration.IndexingMode.ASYNC;
-
-                    switch (when) {
-                        case ALWAYS: {
-                            this.repositoryQueryManager.reindexContent(includeSystemContent, async, false);
-                            break;
-                        }
-                        case IF_MISSING: {
-                            this.repositoryQueryManager.reindexContent(includeSystemContent, async, true);
-                            break;
-                        }
-                        case NEVER: {
-                            logger.debug(JcrI18n.noReindex.text(getName()));
-                            break;
-                        }
-                        case FAIL_IF_MISSING: {
-                            if (this.repositoryQueryManager.indexesEmpty()) {
-                                throw new RepositoryException(JcrI18n.noIndexesExist.text(getName(), FAIL_IF_MISSING.name()));
-                            }
-                            logger.debug("Index rebuild mode is '{0}' and there are some indexes present. Nothing will be reindexed.",
-                                         FAIL_IF_MISSING.name());
-                            break;
-                        }
-                    }
-                }
+                // Have the query manager tell the providers to initialize the indexes. This may cause a background reindexing ...
+                queryManager().reindexIfNeeded(true);
 
                 // Register the background processes.
                 // Do this last since we want the repository running before these are started ...
@@ -1561,10 +1518,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final String repositoryKey() {
             return cache.getKey();
-        }
-
-        protected final boolean isFullTextSearchEnabled() {
-            return config.getQuery().fullTextSearchEnabled();
         }
 
         protected final BackupService backupService() {
@@ -1925,20 +1878,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected static class RepositorySessionEnvironment implements SessionEnvironment {
         private final Transactions transactions;
         private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory;
-        private final boolean indexingClustered;
         private final String journalId;
 
-        protected RepositorySessionEnvironment( Transactions transactions,
-                                                boolean indexingClustered ) {
-            this(transactions, indexingClustered, null);
+        protected RepositorySessionEnvironment( Transactions transactions ) {
+            this(transactions, null);
         }
 
         protected RepositorySessionEnvironment( Transactions transactions,
-                                                boolean indexingClustered,
                                                 String journalId ) {
             this.transactions = transactions;
             this.transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(transactions);
-            this.indexingClustered = indexingClustered;
             this.journalId = journalId;
         }
 
@@ -1950,11 +1899,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         @Override
         public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
             return transactionalWorkspaceCacheFactory;
-        }
-
-        @Override
-        public boolean indexingClustered() {
-            return indexingClustered;
         }
 
         @Override

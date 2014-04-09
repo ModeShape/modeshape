@@ -124,9 +124,8 @@
 + * (mode:index) = mode:index protected ignore
 
 [mode:index] > mix:referenceable, mix:created, mix:lastModified
-- mode:enabled (boolean) = 'true' mandatory protected ignore
 - mode:kind (string) mandatory protected ignore
-    < 'UNIQUE', 'DUPLICATES', 'ENUMERATED', 'FULLTEXT'
+    < 'UNIQUE', 'DUPLICATES', 'ENUMERATED', 'FULLTEXT', 'NODETYPE'
 - mode:nodeTypeName (name) = 'nt:base' mandatory protected ignore
 - jcr:description (string) protected ignore
 - * (undefined) protected ignore

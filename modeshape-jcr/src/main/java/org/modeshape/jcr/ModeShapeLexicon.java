@@ -90,7 +90,6 @@ public class ModeShapeLexicon {
     public static final Name INDEX = new BasicName(Namespace.URI, "index");
     public static final Name INDEX_COLUMN = new BasicName(Namespace.URI, "indexColumn");
     public static final Name INDEX_PROVIDER = new BasicName(Namespace.URI, "indexProvider");
-    public static final Name ENABLED = new BasicName(Namespace.URI, "enabled");
     public static final Name KIND = new BasicName(Namespace.URI, "kind");
     public static final Name NODE_TYPE_NAME = new BasicName(Namespace.URI, "nodeTypeName");
     public static final Name PROPERTY_NAME = new BasicName(Namespace.URI, "propertyName");

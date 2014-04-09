@@ -17,11 +17,13 @@
 package org.modeshape.jcr;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -178,10 +180,26 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
         return indexWriter;
     }
 
+    /**
+     * Get the query index writer that will delegate to only those registered providers that also need to be
+     * {@link IndexProvider#isReindexingRequired() reindexed}.
+     * 
+     * @return a query index writer instance; never null
+     */
+    IndexWriter getIndexWriterForProvidersNeedingReindexing() {
+        List<IndexProvider> reindexProviders = new LinkedList<>();
+        for (IndexProvider provider : providers.values()) {
+            if (provider.isReindexingRequired()) {
+                reindexProviders.add(provider);
+            }
+        }
+        return CompositeIndexWriter.create(reindexProviders);
+    }
+
     @Override
     public synchronized void register( IndexProvider provider ) throws RepositoryException {
         if (providers.containsKey(provider.getName())) {
-            throw new IndexProviderExistsException("Index provider already exists with name '{0}'");
+            throw new IndexProviderExistsException(JcrI18n.indexProviderAlreadyExists.text(provider.getName(), repository.name()));
         }
 
         // Set the repository name field ...
@@ -198,8 +216,13 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
         // Do this last so that it doesn't show up in the list of providers before it's properly initialized ...
         IndexProvider existing = providers.putIfAbsent(provider.getName(), provider);
         if (existing != null) {
-            throw new IndexProviderExistsException("Index provider already exists with name '{0}'");
+            throw new IndexProviderExistsException(JcrI18n.indexProviderAlreadyExists.text(provider.getName(), repository.name()));
         }
+
+        // Re-read the index definitions in case there were disabled index definitions that used the now-available provider ...
+        readIndexDefinitions();
+
+        // Refresh the index writer ...
         refreshIndexWriter();
     }
 
@@ -207,17 +230,26 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
     public void unregister( String providerName ) throws RepositoryException {
         IndexProvider provider = providers.remove(providerName);
         if (provider == null) {
-            throw new NoSuchProviderException("There is no index provider with the name '{0}'");
+            throw new NoSuchProviderException(JcrI18n.indexProviderDoesNotExist.text(providerName, repository.name()));
         }
         if (initialized.get()) {
             provider.shutdown();
         }
+
+        // Re-read the index definitions in case there were disabled index definitions that used the now-available provider ...
+        readIndexDefinitions();
+
+        // Refresh the index writer ...
         refreshIndexWriter();
     }
 
     @Override
     public Set<String> getProviderNames() {
         return Collections.unmodifiableSet(new HashSet<>(providers.keySet()));
+    }
+
+    protected Iterable<IndexProvider> getProviders() {
+        return new ArrayList<>(providers.values());
     }
 
     @Override
@@ -257,9 +289,15 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
         for (IndexDefinition defn : indexDefinitions) {
             String name = defn.getName();
             String providerName = defn.getProviderName();
-            if (indexes.getIndexDefinitions().containsKey(name)) throw new IndexExistsException("The index '{0}' already exists");
-            if (name == null) throw new InvalidIndexDefinitionException("The index name may not be null");
-            if (providerName == null) throw new InvalidIndexDefinitionException("The index provider name may not be null");
+            if (indexes.getIndexDefinitions().containsKey(name)) {
+                throw new IndexExistsException(JcrI18n.indexAlreadyExists.text(name, repository.name()));
+            }
+            if (name == null) {
+                throw new InvalidIndexDefinitionException(JcrI18n.indexMustHaveName.text(defn, repository.name()));
+            }
+            if (providerName == null) {
+                throw new InvalidIndexDefinitionException(JcrI18n.indexMustHaveProviderName.text(name, repository.name()));
+            }
 
             // Determine if the index should be enabled ...
             defn = RepositoryIndexDefinition.createFrom(defn, providers.containsKey(providerName));
@@ -276,7 +314,7 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
     public void unregisterIndex( String indexName ) throws NoSuchIndexException, RepositoryException {
         IndexDefinition defn = indexes.getIndexDefinitions().get(indexName);
         if (defn == null) {
-            throw new NoSuchIndexException("The index '{0}' does not exist");
+            throw new NoSuchIndexException(JcrI18n.indexDoesNotExist.text(indexName, repository.name()));
         }
 
         // Remove the definition from the system area ...
@@ -396,7 +434,7 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
             try {
                 provider.notify(changes);
             } catch (RuntimeException e) {
-                logger.error(e, JcrI18n.errorRefreshingIndexDefinitions, repository.name());
+                logger.error(e, JcrI18n.errorNotifyingProviderOfIndexChanges, providerName, repository.name(), e.getMessage());
             }
         }
 
@@ -471,7 +509,7 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
             // Read the affected index definitions ...
             SessionCache systemCache = repository.createSystemSession(context, false);
             SystemContent system = new SystemContent(systemCache);
-            Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions();
+            Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions(providers.keySet());
             return new Indexes(indexDefns, nodeTypes);
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingIndexDefinitions, repository.name());

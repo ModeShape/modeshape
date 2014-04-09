@@ -43,14 +43,8 @@ public interface SessionEnvironment {
     TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory();
 
     /**
-     * Indicates if indexing is configured in a clustered mode of not.
-     *
-     * @return {@code true} if indexing is configured clustered, {@code false} otherwise
-     */
-    boolean indexingClustered();
-
-    /**
      * Returns the id of the repository's {@link org.modeshape.jcr.journal.ChangeJournal}
+     * 
      * @return either a {@link String} or {@code null} if no journal is configured.
      */
     String journalId();
@@ -58,7 +52,7 @@ public interface SessionEnvironment {
     public static interface Monitor {
         /**
          * Add to the index the information about a node.
-         *
+         * 
          * @param workspace the workspace in which the node information should be available; may not be null
          * @param key the unique key for the node; may not be null
          * @param path the path of the node; may not be null

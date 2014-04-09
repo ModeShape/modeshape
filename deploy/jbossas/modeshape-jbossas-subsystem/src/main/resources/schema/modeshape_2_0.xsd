@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="urn:jboss:domain:modeshape:1.0"
-           xmlns="urn:jboss:domain:modeshape:1.0"
+           targetNamespace="urn:jboss:domain:modeshape:2.0"
+           xmlns="urn:jboss:domain:modeshape:2.0"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified"
-           version="1.0">
+           version="2.0">
 
     <!-- The subsystem root element -->
     <xs:element name="subsystem" type="subsystem">
@@ -82,6 +82,18 @@
                 </xs:annotation>
             </xs:element>
 
+            <xs:element name="index-providers" type="index-providers" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the index providers.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="indexes" type="indexes" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the indexes.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
             <xs:element name="text-extractors" type="text-extractors" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>The definition of the custom text extractors.</xs:documentation>
@@ -94,52 +106,11 @@
                 </xs:annotation>
             </xs:element>
 
-            <xs:element name="indexing" type="indexing" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>The definition of the indexing mechanism.</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-
             <xs:element name="journaling" type="journaling" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>The definition of the journaling mechanism.</xs:documentation>
                 </xs:annotation>
             </xs:element>
-
-            <xs:choice minOccurs="0" maxOccurs="1">
-                <xs:element name="local-file-index-storage" type="local-file-index-storage">
-                    <xs:annotation>
-                        <xs:documentation>The indexes are stored on the local file system.</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="master-file-index-storage" type="master-file-index-storage">
-                    <xs:annotation>
-                        <xs:documentation>The indexes are stored on the local file system and are considered the master indexes
-                            that will be
-                            periodically copied.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="slave-file-index-storage" type="slave-file-index-storage">
-                    <xs:annotation>
-                        <xs:documentation>The indexes are stored on the local file system and are considered the slave indexes
-                            that will be
-                            periodically updated from the master.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="ram-index-storage" type="ram-index-storage">
-                    <xs:annotation>
-                        <xs:documentation>The indexes are stored only in memory. This option is not appropriate in a cluster.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="custom-index-storage" type="custom-index-storage">
-                    <xs:annotation>
-                        <xs:documentation>A custom storage option for the indexes.</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-            </xs:choice>
 
             <xs:choice minOccurs="0" maxOccurs="1">
                 <xs:element name="file-binary-storage" type="file-binary-storage">
@@ -207,15 +178,6 @@
                 <xs:documentation>Specifies whether the repository is to maintain the metrics that can be used
                     to monitor the performance and activities. The default value is 'true', meaning monitoring is
                     enabled.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="enable-queries" type="xs:boolean" default="true">
-            <xs:annotation>
-                <xs:documentation>Specifies whether the repository is to enable the query system and text extractors
-                    as configured. The default value is 'true', meaning queries are enabled. If 'false', then all
-                    indexing related attributes, index storage configuration, and text extract configurations are
-                    ignored, while JDBC access and direct queries will not work or will return no data.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -484,6 +446,69 @@
         <xs:anyAttribute namespace="##any" processContents="lax"/>
     </xs:complexType>
 
+    <xs:complexType name="index-providers">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="index-provider" type="index-provider" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The definition of an index provider.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="index-provider">
+        <xs:attributeGroup ref="implementation-class-attributes"/>
+        <xs:attribute name="name" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the index-provider.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
+
+    <xs:complexType name="indexes">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="index" type="index-definition" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The definition of an index.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="index-definition">
+        <xs:attribute name="name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the index.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="provider-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the index provider. If there is no provider with the given name, then this
+                  index will be disabled.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="kind" type="index-kind-enum" default="duplicates">
+            <xs:annotation>
+                <xs:documentation>The kind of the index.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="node-type" type="xs:string" default="nt:base">
+            <xs:annotation>
+                <xs:documentation>The name of the node type to which this index applies. This index will include only those
+                   nodes of this type.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="columns" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>A comma-separated list of column definitions, where each column definition consists of a 
+                   property name and in parentheses the property type. For example, 'jcr:mixin(STRING)' is a column definition 
+                   that specifies the 'jcr:mixin' property and 'STRING' type.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
+
     <xs:complexType name="sequencers">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="sequencer" type="sequencer" minOccurs="0" maxOccurs="unbounded">
@@ -592,68 +617,6 @@
                 <xs:documentation>The name of the extractor.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:anyAttribute namespace="##any" processContents="lax"/>
-    </xs:complexType>
-
-    <xs:complexType name="indexing">
-        <xs:attributeGroup ref="indexing-attributes"/>
-        <xs:anyAttribute namespace="##any" processContents="lax"/>
-    </xs:complexType>
-
-    <xs:complexType name="local-file-index-storage">
-        <xs:attributeGroup ref="persisted-indexing-attributes"/>
-        <xs:attributeGroup ref="file-storage-attributes"/>
-        <xs:attributeGroup ref="file-index-storage-attributes"/>
-    </xs:complexType>
-
-    <xs:complexType name="master-file-index-storage">
-        <xs:attributeGroup ref="persisted-indexing-attributes"/>
-        <xs:attributeGroup ref="file-storage-attributes"/>
-        <xs:attributeGroup ref="file-index-storage-attributes"/>
-        <xs:attributeGroup ref="file-master-slave-storage-attributes"/>
-        <xs:attributeGroup ref="jms-backend-attributes"/>
-    </xs:complexType>
-
-    <xs:complexType name="slave-file-index-storage">
-        <xs:attributeGroup ref="persisted-indexing-attributes"/>
-        <xs:attributeGroup ref="file-storage-attributes"/>
-        <xs:attributeGroup ref="file-index-storage-attributes"/>
-        <xs:attributeGroup ref="file-master-slave-storage-attributes"/>
-        <xs:attributeGroup ref="jms-backend-attributes"/>
-        <xs:attribute name="copy-buffer-size" type="xs:int" default="16">
-            <xs:annotation>
-                <xs:documentation>The number of megabytes to move in a single low level copy instruction.
-                    The default is '16' (or 16MB).
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="retry-marker-lookup" type="xs:int" default="0">
-            <xs:annotation>
-                <xs:documentation>The number of times to look for the marker files in the source
-                    directory before failing, waiting 5 seconds between each try. The default is '0'.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="retry-initialize-period" type="xs:int" default="0">
-            <xs:annotation>
-                <xs:documentation>The number of seconds before retrying initialization.
-                    If the slave can't find the master index, it will try again (in the background)
-                    until it's found, without preventing the application to start. Queries performed
-                    before the index is initialized are not blocked but will return empty results.
-                    A value of '0' is used by default, signaling that initialization will fail with
-                    an exception rather than trying in the background. To prevent the application
-                    from starting without an invalid index but still control an initialization timeout,
-                    use 'retry-marker-lookup' instead.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="ram-index-storage"/>
-
-    <xs:complexType name="custom-index-storage">
-        <xs:attributeGroup ref="persisted-indexing-attributes"/>
-        <xs:attributeGroup ref="implementation-class-attributes"/>
         <xs:anyAttribute namespace="##any" processContents="lax"/>
     </xs:complexType>
 
@@ -845,235 +808,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:attributeGroup>
-
-    <xs:attributeGroup name="persisted-indexing-attributes">
-        <xs:attribute name="format" type="index-format" use="optional" default="LUCENE_CURRENT">
-            <xs:annotation>
-                <xs:documentation>Specifies the Lucene version defining the format of the indexes.
-                    The default value is 'LUCENE_CURRENT', but for production uses it should be explicitly
-                    set to the specific Lucene version used when first creating the versions; changing this
-                    value will require a manual rebuilt of all indexes.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:attributeGroup>
-
-    <xs:attributeGroup name="indexing-attributes">
-        <xs:attribute name="rebuild-upon-startup" type="rebuild-upon-startup-enum" use="optional" default="if_missing">
-            <xs:annotation>
-                <xs:documentation>Specifies whether the indexes need to be rebuilt immediately when
-                    each ModeShape process starts up.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="async">
-            <xs:annotation>
-                <xs:documentation>Specifies whether the rebuild process should be done synchronously or asynchronously
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="rebuild-upon-startup-include-system-content" type="xs:boolean" use="optional" default="false">
-            <xs:annotation>
-                <xs:documentation>Specifies whether the index rebuild process should take system content into account or not
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="thread-pool" type="xs:string" use="optional" default="modeshape-workers">
-            <xs:annotation>
-                <xs:documentation>Name of the thread pool that should be used for background re-indexing.
-                    Thread pools are named globally within a single ModeShape engine, and by default all
-                    repositories use the same thread pool for sequencing and indexing.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="batch-size" type="xs:int" use="optional" default="-1">
-            <xs:annotation>
-                <xs:documentation>Advanced setting that specifies the maximum number of indexing
-                    operation batched per transaction. Once the limit is reached indexing will be
-                    triggered even though the context has not ended yet. A value of '-1' implies no maximum size.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="reader-strategy" type="reader-strategy-enum" use="optional" default="shared">
-            <xs:annotation>
-                <xs:documentation>Advanced setting that defines whether Lucene index readers can be shared.
-                    With the 'shared' strategy, the same IndexReader will be used (for a given Lucene index)
-                    across multiple queries and threads, provided that the IndexReader is still up-to-date.
-                    If the IndexReader is not up-to-date, a new one is opened and provided.
-                    With the 'not-shared' strategy, a new IndexReader is opened every time a query is executed,
-                    which can be expensive.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="mode" type="synchronous-enum" use="optional" default="sync">
-            <xs:annotation>
-                <xs:documentation>Specifies whether to apply the index changes synchronously or
-                    asynchronously (in separate threads). Synchronous updates have the advantage that the
-                    index is at all times in sync with the storec content. Asynchronous updates, on the
-                    other hand, can help to minimize Session.save() times since index updates are executed
-                    in the background, but may result in potential discrepancies between the saved changes
-                    and query results.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="systemContentMode" type="systemContentIndexing-enum" use="optional" default="disabled">
-            <xs:annotation>
-                <xs:documentation>DEPRECATED. Use the [rebuild-upon-startup-mode, rebuild-upon-startup-include-system-content]
-                    attributes
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="async-thread-pool-size" type="xs:int" use="optional" default="1">
-            <xs:annotation>
-                <xs:documentation>Specifies the number of threads that may be used for asynchronous
-                    application of updates. Defaults to '1', and is not used for synchronous updates.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="async-max-queue-size" type="xs:int" use="optional" default="0">
-            <xs:annotation>
-                <xs:documentation>Specifies the maximum size of the queue used for making asynchronous
-                    updates. When the queue is filled, updates block until the queue catches up.
-                    A value of '0' is the default and implies no limit to the queue size.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="analyzer-classname" type="xs:string" use="optional"
-                      default="org.apache.lucene.analysis.standard.StandardAnalyzer">
-            <xs:annotation>
-                <xs:documentation>The full-qualified name of the Java implementation class. By default, the
-                    'org.apache.lucene.analysis.standard.StandardAnalyzer' class will be used.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="analyzer-module" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>The name of the module containing the implementation class, or
-                    a blank module for the built-in analyzers.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:attributeGroup>
-    <xs:attributeGroup name="file-index-storage-attributes">
-        <xs:attribute name="access-type" type="file-system-access-type-enum" default="auto">
-            <xs:annotation>
-                <xs:documentation>Specifies the exact type of Lucene FSDirectory implementation to be used.
-                    If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and
-                    SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory
-                    will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap',
-                    then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory
-                    implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory
-                    can bring substantial performace boosts they also have constraints and limitations.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="locking-strategy" type="file-system-locking-strategy-enum" default="native">
-            <xs:annotation>
-                <xs:documentation>Species the type of locking used to prevent concurrent writes to the
-                    indexes. The default locking strategy works well for most cases. If set to 'simple',
-                    a marker file will be created using the Java File API (this file may need to be manually
-                    removed if the process is terminated abormally). If set to 'native' (the default), a
-                    marker file will be created using native OS file locks (which will never need to be
-                    cleaned up). If set to 'single', an in-memory Java object is used for the lock, and
-                    therefore not useful in a clustered repository. If 'none' is used, no locking is used
-                    to prevent concurrent writes (use with caution).
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:attributeGroup>
-
-    <xs:attributeGroup name="file-master-slave-storage-attributes">
-        <xs:attribute name="refresh-period" type="xs:int" default="3600">
-            <xs:annotation>
-                <xs:documentation>The number of seconds specifying the frequency of copying the master
-                    index into the 'source-path' directory. The copy is incremental, so it only copies the
-                    changes since the last copy. The recommended value for the refresh period is (at least)
-                    50% higher that the time to copy the information, and defaults to 3600 seconds - 60 minutes.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="source-relative-to" type="xs:string" default="jboss.server.data.dir">
-            <xs:annotation>
-                <xs:documentation>The base directory in which to store the copy of the indexes for master/slave refreshing.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="source-path" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The path within "source-relative-to" in which to store the copy of the indexes for master/slave refreshing.
-                    If undefined, the path defaults to 'modeshape/{repositoryName}/master_indexes'.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:attributeGroup>
-
-    <xs:attributeGroup name="jms-backend-attributes">
-        <xs:attribute name="connection-factory-jndi-name" type="xs:string" default="/ConnectionFactory">
-            <xs:annotation>
-                <xs:documentation>Defines the name in JNDI where the JMS connection factory can be found.
-                    The default value is '/ConnectionFactory', which is the default in JBoss AS.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="queue-jndi-name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>Defines the name in JNDI where JMS queue can be found.
-                    The queue will be used to post work messages.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:attributeGroup>
-
     <!-- Global simple types -->
-    <xs:simpleType name="index-format">
-        <xs:restriction base="xs:string">
-            <xs:pattern value="LUCENE_(3[0-9]{1,2}|CURRENT)"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="reader-strategy-enum">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="shared"/>
-            <xs:enumeration value="not-shared"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="synchronous-enum">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="sync"/>
-            <xs:enumeration value="async"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="systemContentIndexing-enum">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="sync"/>
-            <xs:enumeration value="async"/>
-            <xs:enumeration value="disabled"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="rebuild-upon-startup-enum">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="if_missing"/>
-            <xs:enumeration value="always"/>
-            <xs:enumeration value="never"/>
-            <xs:enumeration value="fail_if_missing"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="file-system-access-type-enum">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="auto"/>
-            <xs:enumeration value="simple"/>
-            <xs:enumeration value="nio"/>
-            <xs:enumeration value="mmap"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="file-system-locking-strategy-enum">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="simple"/>
-            <xs:enumeration value="native"/>
-            <xs:enumeration value="single"/>
-            <xs:enumeration value="none"/>
-        </xs:restriction>
-    </xs:simpleType>
     <xs:simpleType name="garbage-collection-initial-time-type">
         <xs:restriction base="xs:string">
             <xs:pattern value="(([0-1]\d)|([2][0-3])):[0-5]\d"/>
@@ -1089,6 +824,15 @@
             <xs:documentation>A list of role names.</xs:documentation>
         </xs:annotation>
         <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+    <xs:simpleType name="index-kind-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="duplicates"/>
+            <xs:enumeration value="unique"/>
+            <xs:enumeration value="enumerated"/>
+            <xs:enumeration value="fulltextsearch"/>
+            <xs:enumeration value="nodetype"/>
+        </xs:restriction>
     </xs:simpleType>
 </xs:schema>
    

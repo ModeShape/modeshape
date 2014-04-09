@@ -298,12 +298,6 @@
                         </entries>
                     </connection-factory>
                 </jms-connection-factories>
-                <jms-destinations>
-                    <jms-queue name="ModeShapeIndexing">
-                        <entry name="jms/ModeShapeIndexing"/>
-                        <entry name="java:jboss/exported/jms/ModeShapeIndexing"/>
-                    </jms-queue>
-                </jms-destinations>
             </hornetq-server>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:infinispan:2.0">
@@ -364,12 +358,6 @@
                 <local-cache name="federatedRepository">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
-                </local-cache>
-                <local-cache name="noQueryRepository">
-                    <!-- ModeShape requires transactions -->
-                    <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/noQueryRepository" purge="false"/>
                 </local-cache>
                 <local-cache name="infinispanRepository">
                     <!-- ModeShape requires transactions -->
@@ -495,14 +483,13 @@
             <!--Clustered cache container-->
             <cache-container name="modeshape-repository-clustered" default-cache="clustered-repo" module="org.modeshape">
                 <transport lock-timeout="60000"/>
-                <replicated-cache name="repo-clustered" mode="SYNC" batching="true">
-                    <!--//TODO author=Horia Chiorean date=1/29/14 description=Enable once its working !!!-->
-                    <!--<transaction mode="NON_XA"/>-->
+                <replicated-cache name="repo-clustered" mode="SYNC">
+                    <transaction mode="NON_XA"/>
                     <file-store path="modeshape/store/repo-clustered" passivation="false" purge="false"/>
                 </replicated-cache>
             </cache-container>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+        <subsystem xmlns="urn:jboss:domain:modeshape:2.0">
             <!--The list of web applications that is packaged inside the kit and should be deployed when the subsystem starts up-->
             <webapp name="modeshape-rest.war"/>
             <webapp name="modeshape-webdav.war"/>
@@ -511,11 +498,9 @@
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
             <repository name="sample">
-                <indexing rebuild-upon-startup-include-system-content="true" rebuild-upon-startup-mode="sync"/>
             </repository>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts">
-                <indexing rebuild-upon-startup="never"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default">
@@ -600,7 +585,6 @@
                 </text-extractors>
             </repository>
             <repository name="preconfiguredRepository">
-                <indexing rebuild-upon-startup="never"/>
                 <workspaces>
                     <workspace name="default"/>
                     <workspace name="other"/>
@@ -616,12 +600,8 @@
                 <node-types>
                     <node-type>custom.cnd</node-type>
                 </node-types>
-                <local-file-index-storage/>
             </repository>
             <repository name="federatedRepository">
-                <!--Turn off initial indexing for performance reasons-->
-                <indexing rebuild-upon-startup="never" rebuild-upon-startup-include-system-content="false"
-                          rebuild-upon-startup-mode="sync"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <workspace name="other"/>
@@ -642,7 +622,6 @@
                     </source>
                 </external-sources>
             </repository>
-            <repository name="noQueryRepository" enable-queries="false"/>
             <repository name="jdbcRepository">
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
@@ -665,27 +644,19 @@
                                       min-string-size="10"
                                       min-value-size="1024"
                                       chunk-size="1000"/>
-                <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
-            <repository name="binaryJDBCRepository" enable-queries="false">
+            <repository name="binaryJDBCRepository">
                 <cache-binary-storage cache-container="jdbc-binary-cache-container"/>
             </repository>
             <repository name="binaryIndexingJDBCRepository">
-                <indexing rebuild-upon-startup-mode="sync"/>
                 <cache-binary-storage cache-container="jdbc-binary-cache-container"
                                       data-cache-name="binaryJDBCRepository-binary-data-wb"
                                       metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"/>
             </repository>
             <repository name="repo-clustered" cache-container="modeshape-repository-clustered" cache-name="repo-clustered">
-                <indexing rebuild-upon-startup="never"/>
-                <master-file-index-storage source-path="modeshape/clustered-repo/master-indexes"
-                                           path="modeshape/clustered-repo/indexes/repo-clustered"
-                                           queue-jndi-name="jms/ModeShapeIndexing"
-                                           connection-factory-jndi-name="java:/RemoteConnectionFactory"
-                                           refresh-period="1"/>
             </repository>
 
-            <repository name="compositeBinaryStoreRepository" cache-container="modeshape" enable-queries="false">
+            <repository name="compositeBinaryStoreRepository" cache-container="modeshape">
                 <composite-binary-storage min-value-size="100">
                     <file-binary-storage store-name="fs1"
                                          path="modeshape/compositeBinaryStoreRepository/binaries/fs1"
@@ -700,7 +671,6 @@
                 </composite-binary-storage>
             </repository>
             <repository name="journalingRepository" cache-name="sample">
-                <indexing rebuild-upon-startup="never"/>
                 <journaling max-days-to-keep-records="15" async-writes="false"/>
             </repository>
             <!--These should be deployed after the repositories, because they use servlet context listeners to load all repositories-->

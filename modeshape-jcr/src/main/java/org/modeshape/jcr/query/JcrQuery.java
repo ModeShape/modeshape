@@ -74,6 +74,11 @@ public class JcrQuery extends JcrAbstractQuery {
         this.variables = new HashMap<String, Object>();
     }
 
+    @Override
+    public void includeSystemContent( boolean includeSystemContent ) {
+        this.hints.includeSystemContent = includeSystemContent;
+    }
+
     protected QueryCommand query() {
         return query;
     }

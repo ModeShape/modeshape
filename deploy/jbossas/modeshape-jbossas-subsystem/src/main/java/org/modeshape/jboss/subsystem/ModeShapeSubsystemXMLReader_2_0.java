@@ -15,11 +15,11 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
@@ -31,7 +31,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
-public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
+public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
 
     @Override
     public void readElement( final XMLExtendedStreamReader reader,
@@ -56,7 +56,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
             if (reader.isStartElement()) {
                 // elements
                 switch (Namespace.forUri(reader.getNamespaceURI())) {
-                    case MODESHAPE_1_0:
+                    case MODESHAPE_2_0:
                         Element element = Element.forName(reader.getLocalName());
                         switch (element) {
                             case REPOSITORY:
@@ -146,9 +146,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case ENABLE_MONITORING:
                         ModelAttributes.ENABLE_MONITORING.parseAndSetParameter(attrValue, repository, reader);
                         break;
-                    case ENABLE_QUERIES:
-                        ModelAttributes.ENABLE_QUERIES.parseAndSetParameter(attrValue, repository, reader);
-                        break;
                     case SECURITY_DOMAIN:
                         ModelAttributes.SECURITY_DOMAIN.parseAndSetParameter(attrValue, repository, reader);
                         break;
@@ -197,9 +194,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
             }
         }
 
-        ModelNode indexStorage = null;
         ModelNode binaryStorage = null;
         List<ModelNode> sequencers = new ArrayList<ModelNode>();
+        List<ModelNode> indexProviders = new ArrayList<ModelNode>();
+        List<ModelNode> indexes = new ArrayList<ModelNode>();
         List<ModelNode> externalSources = new ArrayList<ModelNode>();
         List<ModelNode> textExtractors = new ArrayList<ModelNode>();
         List<ModelNode> authenticators = new ArrayList<ModelNode>();
@@ -216,31 +214,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 }
                 case NODE_TYPES:
                     parseNodeTypes(reader, repository);
-                    break;
-                case INDEXING:
-                    parseIndexing(reader, address, repository);
-                    break;
-
-                // Index storage ...
-                case RAM_INDEX_STORAGE:
-                    addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseRamIndexStorage(reader, repositoryName);
-                    break;
-                case LOCAL_FILE_INDEX_STORAGE:
-                    addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseFileIndexStorage(reader, repositoryName, ModelKeys.LOCAL_FILE_INDEX_STORAGE);
-                    break;
-                case MASTER_FILE_INDEX_STORAGE:
-                    addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseFileIndexStorage(reader, repositoryName, ModelKeys.MASTER_FILE_INDEX_STORAGE);
-                    break;
-                case SLAVE_FILE_INDEX_STORAGE:
-                    addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseFileIndexStorage(reader, repositoryName, ModelKeys.SLAVE_FILE_INDEX_STORAGE);
-                    break;
-                case CUSTOM_INDEX_STORAGE:
-                    addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseCustomIndexStorage(reader, repositoryName);
                     break;
 
                 // Binary storage ...
@@ -265,7 +238,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     binaryStorage = parseCustomBinaryStorage(reader, repositoryName, false);
                     break;
 
-                // Sequencing ...
+                // Authenticators ...
                 case AUTHENTICATORS:
                     authenticators = parseAuthenticators(reader, repositoryName);
                     break;
@@ -273,6 +246,16 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 // Sequencing ...
                 case SEQUENCERS:
                     sequencers = parseSequencers(reader, address, repositoryName);
+                    break;
+
+                // Index providers ...
+                case INDEX_PROVIDERS:
+                    indexProviders = parseIndexProviders(reader, address, repositoryName);
+                    break;
+
+                // Indexes ...
+                case INDEXES:
+                    indexes = parseIndexes(reader, address, repositoryName);
                     break;
 
                 // External sources ...
@@ -290,10 +273,11 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
             }
         }
 
-        if (indexStorage != null) repositories.add(indexStorage);
         if (binaryStorage != null) repositories.add(binaryStorage);
         repositories.addAll(multipleStorageNodes);
         repositories.addAll(sequencers);
+        repositories.addAll(indexProviders);
+        repositories.addAll(indexes);
         repositories.addAll(externalSources);
         repositories.addAll(textExtractors);
         repositories.addAll(authenticators);
@@ -326,17 +310,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         repositories.add(configuration);
     }
 
-    private void addIndexStorageConfiguration( final List<ModelNode> repositories,
-                                               String repositoryName ) {
-        ModelNode configuration = new ModelNode();
-        configuration.get(OP).set(ADD);
-        configuration.get(OP_ADDR)
-                     .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                     .add(ModelKeys.REPOSITORY, repositoryName)
-                     .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE);
-        repositories.add(configuration);
-    }
-
     private void parseWorkspaces( final XMLExtendedStreamReader reader,
                                   final ModelNode parentAddress,
                                   final ModelNode repository ) throws XMLStreamException {
@@ -346,7 +319,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 String attrValue = reader.getAttributeValue(i);
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
-                    // Set these as properties on the repository ModelNode ...
+                // Set these as properties on the repository ModelNode ...
                     case ALLOW_WORKSPACE_CREATION:
                         ModelAttributes.ALLOW_WORKSPACE_CREATION.parseAndSetParameter(attrValue, repository, reader);
                         break;
@@ -390,7 +363,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 String attrValue = reader.getAttributeValue(i);
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
-                    // Set these as properties on the repository ModelNode ...
+                // Set these as properties on the repository ModelNode ...
                     case JOURNAL_PATH:
                         ModelAttributes.JOURNAL_PATH.parseAndSetParameter(attrValue, repository, reader);
                         break;
@@ -454,276 +427,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         }
     }
 
-    @SuppressWarnings( "deprecation" )
-    private void parseIndexing( final XMLExtendedStreamReader reader,
-                                final ModelNode parentAddress,
-                                final ModelNode repository ) throws XMLStreamException {
-        if (reader.getAttributeCount() > 0) {
-            for (int i = 0; i < reader.getAttributeCount(); i++) {
-                String attrName = reader.getAttributeLocalName(i);
-                String attrValue = reader.getAttributeValue(i);
-                Attribute element = Attribute.forName(attrName);
-                switch (element) {
-                    case REBUILD_UPON_STARTUP:
-                        ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case REBUILD_UPON_STARTUP_MODE:
-                        ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT:
-                        ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue,
-                                                                                                                 repository,
-                                                                                                                 reader);
-                        break;
-                    case THREAD_POOL:
-                        ModelAttributes.THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case BATCH_SIZE:
-                        ModelAttributes.BATCH_SIZE.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case READER_STRATEGY:
-                        ModelAttributes.READER_STRATEGY.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case MODE:
-                        ModelAttributes.MODE.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case SYSTEM_CONTENT_MODE:
-                        ModelAttributes.SYSTEM_CONTENT_MODE.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case ASYNC_THREAD_POOL_SIZE:
-                        ModelAttributes.ASYNC_THREAD_POOL_SIZE.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case ASYNC_MAX_QUEUE_SIZE:
-                        ModelAttributes.ASYNC_MAX_QUEUE_SIZE.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case ANALYZER_CLASSNAME:
-                        ModelAttributes.ANALYZER_CLASSNAME.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case ANALYZER_MODULE:
-                        ModelAttributes.ANALYZER_MODULE.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    default:
-                        if (attrName.startsWith("hibernate")) {
-                            repository.get(attrName).set(attrValue);
-                        } else {
-                            throw ParseUtils.unexpectedAttribute(reader, i);
-                        }
-                }
-            }
-        }
-
-        requireNoElements(reader);
-
-    }
-
-    private ModelNode parseRamIndexStorage( final XMLExtendedStreamReader reader,
-                                            final String repositoryName ) throws XMLStreamException {
-        final ModelNode storageType = new ModelNode();
-        storageType.get(OP).set(ADD);
-        storageType.get(OP_ADDR)
-                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                   .add(ModelKeys.REPOSITORY, repositoryName)
-                   .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
-                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.RAM_INDEX_STORAGE);
-
-        if (reader.getAttributeCount() > 0) {
-            for (int i = 0; i < reader.getAttributeCount(); i++) {
-                String attrName = reader.getAttributeLocalName(i);
-                String attrValue = reader.getAttributeValue(i);
-                Attribute element = Attribute.forName(attrName);
-                switch (element) {
-                    case THREAD_POOL:
-                        ModelAttributes.THREAD_POOL.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case BATCH_SIZE:
-                        ModelAttributes.BATCH_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case READER_STRATEGY:
-                        ModelAttributes.READER_STRATEGY.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case MODE:
-                        ModelAttributes.MODE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ASYNC_THREAD_POOL_SIZE:
-                        ModelAttributes.ASYNC_THREAD_POOL_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ASYNC_MAX_QUEUE_SIZE:
-                        ModelAttributes.ASYNC_MAX_QUEUE_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ANALYZER_CLASSNAME:
-                        ModelAttributes.ANALYZER_CLASSNAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ANALYZER_MODULE:
-                        ModelAttributes.ANALYZER_MODULE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    default:
-                        storageType.get(attrName).set(attrValue);
-                        break;
-                }
-            }
-        }
-
-        requireNoElements(reader);
-
-        return storageType;
-    }
-
-    private ModelNode parseFileIndexStorage( final XMLExtendedStreamReader reader,
-                                             final String repositoryName,
-                                             String name ) throws XMLStreamException {
-        final ModelNode storageType = new ModelNode();
-        storageType.get(OP).set(ADD);
-        storageType.get(OP_ADDR)
-                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                   .add(ModelKeys.REPOSITORY, repositoryName)
-                   .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
-                   .add(ModelKeys.STORAGE_TYPE, name);
-
-        if (reader.getAttributeCount() > 0) {
-            for (int i = 0; i < reader.getAttributeCount(); i++) {
-                String attrName = reader.getAttributeLocalName(i);
-                String attrValue = reader.getAttributeValue(i);
-                Attribute attribute = Attribute.forName(attrName);
-                switch (attribute) {
-                    // Set these as properties on the storage ModelNode ...
-                    case FORMAT:
-                        ModelAttributes.INDEX_FORMAT.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case REBUILD_UPON_STARTUP:
-                        ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case THREAD_POOL:
-                        ModelAttributes.THREAD_POOL.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case BATCH_SIZE:
-                        ModelAttributes.BATCH_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case READER_STRATEGY:
-                        ModelAttributes.READER_STRATEGY.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case MODE:
-                        ModelAttributes.MODE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ASYNC_THREAD_POOL_SIZE:
-                        ModelAttributes.ASYNC_THREAD_POOL_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ASYNC_MAX_QUEUE_SIZE:
-                        ModelAttributes.ASYNC_MAX_QUEUE_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ANALYZER_CLASSNAME:
-                        ModelAttributes.ANALYZER_CLASSNAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ANALYZER_MODULE:
-                        ModelAttributes.ANALYZER_MODULE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    // These are file-related
-                    case RELATIVE_TO:
-                        ModelAttributes.RELATIVE_TO.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case PATH:
-                        ModelAttributes.PATH.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ACCESS_TYPE:
-                        ModelAttributes.ACCESS_TYPE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case LOCKING_STRATEGY:
-                        ModelAttributes.LOCKING_STRATEGY.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case REFRESH_PERIOD:
-                        ModelAttributes.REFRESH_PERIOD.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case COPY_BUFFER_SIZE:
-                        ModelAttributes.COPY_BUFFER_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case SOURCE_PATH:
-                        ModelAttributes.SOURCE_PATH.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case SOURCE_RELATIVE_TO:
-                        ModelAttributes.SOURCE_RELATIVE_TO.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    // These are JMS-related
-                    case CONNECTION_FACTORY_JNDI_NAME:
-                        ModelAttributes.CONNECTION_FACTORY_JNDI_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case QUEUE_JNDI_NAME:
-                        ModelAttributes.QUEUE_JNDI_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    default:
-                        storageType.get(attrName).set(attrValue);
-                        break;
-                }
-            }
-        }
-        requireNoElements(reader);
-
-        return storageType;
-    }
-
-    private ModelNode parseCustomIndexStorage( final XMLExtendedStreamReader reader,
-                                               final String repositoryName ) throws XMLStreamException {
-        final ModelNode storageType = new ModelNode();
-        storageType.get(OP).set(ADD);
-        storageType.get(OP_ADDR)
-                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                   .add(ModelKeys.REPOSITORY, repositoryName)
-                   .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
-                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_INDEX_STORAGE);
-
-        if (reader.getAttributeCount() > 0) {
-            for (int i = 0; i < reader.getAttributeCount(); i++) {
-                String attrName = reader.getAttributeLocalName(i);
-                String attrValue = reader.getAttributeValue(i);
-                Attribute attribute = Attribute.forName(attrName);
-                switch (attribute) {
-                    // Set these as properties on the repository ModelNode ...
-                    case FORMAT:
-                        ModelAttributes.INDEX_FORMAT.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case REBUILD_UPON_STARTUP:
-                        ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case THREAD_POOL:
-                        ModelAttributes.THREAD_POOL.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case BATCH_SIZE:
-                        ModelAttributes.BATCH_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case READER_STRATEGY:
-                        ModelAttributes.READER_STRATEGY.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case MODE:
-                        ModelAttributes.MODE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ASYNC_THREAD_POOL_SIZE:
-                        ModelAttributes.ASYNC_THREAD_POOL_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ASYNC_MAX_QUEUE_SIZE:
-                        ModelAttributes.ASYNC_MAX_QUEUE_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ANALYZER_CLASSNAME:
-                        ModelAttributes.ANALYZER_CLASSNAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case ANALYZER_MODULE:
-                        ModelAttributes.ANALYZER_MODULE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    // The rest go on the ModelNode for the type ...
-                    case CLASSNAME:
-                        ModelAttributes.CLASSNAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case MODULE:
-                        ModelAttributes.MODULE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    default:
-                        storageType.get(attrName).set(attrValue);
-                        break;
-                }
-            }
-        }
-        requireNoElements(reader);
-
-        return storageType;
-    }
-
     private ModelNode parseFileBinaryStorage( final XMLExtendedStreamReader reader,
                                               final String repositoryName,
                                               boolean nested ) throws XMLStreamException {
@@ -742,7 +445,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 String attrValue = reader.getAttributeValue(i);
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
-                    // The rest go on the ModelNode for the type ...
+                // The rest go on the ModelNode for the type ...
                     case RELATIVE_TO:
                         ModelAttributes.RELATIVE_TO.parseAndSetParameter(attrValue, storageType, reader);
                         break;
@@ -794,7 +497,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 String attrValue = reader.getAttributeValue(i);
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
-                    // The rest go on the ModelNode for the type ...
+                // The rest go on the ModelNode for the type ...
                     case DATA_CACHE_NAME:
                         ModelAttributes.DATA_CACHE_NAME.parseAndSetParameter(attrValue, storageType, reader);
                         break;
@@ -852,7 +555,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 String attrValue = reader.getAttributeValue(i);
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
-                    // The rest go on the ModelNode for the type ...
+                // The rest go on the ModelNode for the type ...
                     case DATA_SOURCE_JNDI_NAME:
                         ModelAttributes.DATA_SOURCE_JNDI_NAME.parseAndSetParameter(attrValue, storageType, reader);
                         break;
@@ -1136,6 +839,133 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                  .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                  .add(ModelKeys.REPOSITORY, repositoryName)
                  .add(ModelKeys.SEQUENCER, name);
+
+    }
+
+    private List<ModelNode> parseIndexProviders( final XMLExtendedStreamReader reader,
+                                                 final ModelNode parentAddress,
+                                                 final String repositoryName ) throws XMLStreamException {
+        requireNoAttributes(reader);
+
+        List<ModelNode> providers = new ArrayList<ModelNode>();
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case INDEX_PROVIDER:
+                    parseIndexProvider(reader, repositoryName, providers);
+                    break;
+                default:
+                    throw ParseUtils.unexpectedElement(reader);
+            }
+        }
+
+        return providers;
+    }
+
+    private void parseIndexProvider( XMLExtendedStreamReader reader,
+                                     String repositoryName,
+                                     final List<ModelNode> providers ) throws XMLStreamException {
+
+        final ModelNode provider = new ModelNode();
+        provider.get(OP).set(ADD);
+        String name = null;
+
+        providers.add(provider);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case NAME:
+                        name = attrValue;
+                        break;
+                    case CLASSNAME:
+                        ModelAttributes.INDEX_PROVIDER_CLASSNAME.parseAndSetParameter(attrValue, provider, reader);
+                        if (name == null) name = attrValue;
+                        break;
+                    case MODULE:
+                        ModelAttributes.MODULE.parseAndSetParameter(attrValue, provider, reader);
+                        break;
+                    default:
+                        // extra attributes are allowed to set sequencer-specific properties ...
+                        provider.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        break;
+                }
+            }
+        }
+
+        provider.get(OP_ADDR)
+                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                .add(ModelKeys.REPOSITORY, repositoryName)
+                .add(ModelKeys.INDEX_PROVIDER, name);
+
+    }
+
+    private List<ModelNode> parseIndexes( final XMLExtendedStreamReader reader,
+                                          final ModelNode parentAddress,
+                                          final String repositoryName ) throws XMLStreamException {
+        requireNoAttributes(reader);
+
+        List<ModelNode> indexes = new ArrayList<ModelNode>();
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case INDEXES:
+                    parseIndex(reader, repositoryName, indexes);
+                    break;
+                default:
+                    throw ParseUtils.unexpectedElement(reader);
+            }
+        }
+
+        return indexes;
+    }
+
+    private void parseIndex( XMLExtendedStreamReader reader,
+                             String repositoryName,
+                             final List<ModelNode> indexes ) throws XMLStreamException {
+
+        final ModelNode index = new ModelNode();
+        index.get(OP).set(ADD);
+        String name = null;
+
+        indexes.add(index);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case NAME:
+                        name = attrValue;
+                        break;
+                    case PROVIDER_NAME:
+                        ModelAttributes.PROVIDER_NAME.parseAndSetParameter(attrValue, index, reader);
+                        break;
+                    case INDEX_KIND:
+                        ModelAttributes.INDEX_KIND.parseAndSetParameter(attrValue, index, reader);
+                        break;
+                    case NODE_TYPE:
+                        ModelAttributes.NODE_TYPE_NAME.parseAndSetParameter(attrValue, index, reader);
+                        break;
+                    case COLUMNS:
+                        ModelAttributes.INDEX_COLUMNS.parseAndSetParameter(attrValue, index, reader);
+                        break;
+                    default:
+                        // extra attributes are allowed to set sequencer-specific properties ...
+                        index.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        break;
+                }
+            }
+        }
+
+        index.get(OP_ADDR)
+             .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+             .add(ModelKeys.REPOSITORY, repositoryName)
+             .add(ModelKeys.INDEX, name);
 
     }
 

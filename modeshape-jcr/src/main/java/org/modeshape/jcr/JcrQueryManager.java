@@ -74,7 +74,6 @@ class JcrQueryManager implements QueryManager {
 
     public static final int MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES = Integer.MAX_VALUE;
 
-    private final boolean querySystemContent;
     private final JcrSession session;
     private final JcrQueryContext context;
     private final JcrTypeSystem typeSystem;
@@ -82,7 +81,6 @@ class JcrQueryManager implements QueryManager {
 
     JcrQueryManager( JcrSession session ) {
         this.session = session;
-        this.querySystemContent = this.session.repository().getConfiguration().getQuery().querySystemContent();
         this.context = new SessionQueryContext(this.session);
         this.typeSystem = new SessionTypeSystem(this.session);
         this.factory = new QueryObjectModelFactory(this.context);
@@ -135,7 +133,6 @@ class JcrQueryManager implements QueryManager {
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
             hints.hasFullTextSearch = true; // always include the score
-            hints.includeSystemContent = this.querySystemContent;
             hints.validateColumnExistance = false; // see MODE-1055
             if (parser.getLanguage().equals(QueryLanguage.JCR_SQL2)) {
                 hints.qualifyExpandedColumnNames = true;
@@ -175,7 +172,6 @@ class JcrQueryManager implements QueryManager {
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
             hints.hasFullTextSearch = true; // always include the score
-            hints.includeSystemContent = this.querySystemContent;
             hints.qualifyExpandedColumnNames = true; // always qualify expanded names with the selector name in JCR-SQL2
             return resultWith(expression, QueryLanguage.JCR_SQL2, command, hints, null);
         } catch (org.modeshape.jcr.query.parse.InvalidQueryException e) {

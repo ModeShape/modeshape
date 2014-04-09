@@ -161,8 +161,7 @@ public class RepositoryCache implements Observable {
         // if we're running in a cluster, try to acquire a global cluster lock to perform initialization
         if (clusteringService != null) {
             int minutesToWait = 10;
-            LOGGER.debug("Waiting at most for {0} minutes while verifying the status of the '{1}' repository",
-                         minutesToWait,
+            LOGGER.debug("Waiting at most for {0} minutes while verifying the status of the '{1}' repository", minutesToWait,
                          name);
             if (!clusteringService.tryLock(minutesToWait, TimeUnit.MINUTES)) {
                 throw new SystemFailureException(JcrI18n.repositoryWasNeverInitializedAfterMinutes.text(name, minutesToWait));
@@ -209,8 +208,7 @@ public class RepositoryCache implements Observable {
             // Get the repository key and source key from the repository info document ...
             Document info = repositoryInfo.getContentAsDocument();
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Repository '{0}' already initialized at '{1}'",
-                             name,
+                LOGGER.debug("Repository '{0}' already initialized at '{1}'", name,
                              info.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME));
             }
             String repoName = info.getString(REPOSITORY_NAME_FIELD_NAME, this.name);
@@ -657,9 +655,7 @@ public class RepositoryCache implements Observable {
 
         initOperation.call();
         Property primaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.REPOSITORY);
-        systemNode.createChild(systemSession,
-                               systemNode.getKey().withId("mode:repository"),
-                               ModeShapeLexicon.REPOSITORY,
+        systemNode.createChild(systemSession, systemNode.getKey().withId("mode:repository"), ModeShapeLexicon.REPOSITORY,
                                primaryType);
         systemSession.save();
     }
@@ -689,14 +685,6 @@ public class RepositoryCache implements Observable {
                         // changeset (and we don't want to do it again)...
                         cache.notify(changeSet);
                     }
-                }
-                if (sessionContext().indexingClustered()) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("Process {0} ignoring {1} because indexing is configured in clustered mode",
-                                     processKey(),
-                                     changeSet);
-                    }
-                    return;
                 }
                 // process index changes for remote events
                 if (!isLocalEvent) {
@@ -766,22 +754,16 @@ public class RepositoryCache implements Observable {
                     if (node != null) {
                         NodeKey nodeKey = node.getKey();
                         if (change instanceof NodeAdded) {
-                            monitor.recordAdd(workspaceName,
-                                              nodeKey,
-                                              node.getPath(workspaceCache),
-                                              node.getPrimaryType(workspaceCache),
-                                              node.getMixinTypes(workspaceCache),
+                            monitor.recordAdd(workspaceName, nodeKey, node.getPath(workspaceCache),
+                                              node.getPrimaryType(workspaceCache), node.getMixinTypes(workspaceCache),
                                               node.getProperties(workspaceCache));
                         } else if (shouldUpdateIndexes && !nodesWithUpdatedIndexes.contains(nodeKey)) {
                             nodesWithUpdatedIndexes.add(nodeKey);
                             // since for an updated node any number of property change events can be received, we only want to
                             // update the indexes once
                             // because the persistent state should already have been updated
-                            monitor.recordUpdate(workspaceName,
-                                                 nodeKey,
-                                                 node.getPath(workspaceCache),
-                                                 node.getPrimaryType(workspaceCache),
-                                                 node.getMixinTypes(workspaceCache),
+                            monitor.recordUpdate(workspaceName, nodeKey, node.getPath(workspaceCache),
+                                                 node.getPrimaryType(workspaceCache), node.getMixinTypes(workspaceCache),
                                                  node.getProperties(workspaceCache));
                         }
                     } else {

@@ -8,8 +8,5 @@
     "storage" : {
         "cacheName" : "repo_cache",
         "cacheConfiguration" : "config/clustered-repo-config-ispn.xml"
-    },
-    "query": {
-        "enabled" : false
     }
 }

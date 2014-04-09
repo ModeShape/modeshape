@@ -113,6 +113,15 @@ public final class JcrI18n {
     public static I18n couldNotGetMimeType;
     public static I18n connectorIsReadOnly;
 
+    public static I18n indexProviderAlreadyExists;
+    public static I18n indexProviderDoesNotExist;
+    public static I18n indexAlreadyExists;
+    public static I18n indexDoesNotExist;
+    public static I18n indexMustHaveName;
+    public static I18n indexMustHaveProviderName;
+    public static I18n errorRefreshingIndexDefinitions;
+    public static I18n errorNotifyingProviderOfIndexChanges;
+
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;
     public static I18n childNodeAlreadyExists;
@@ -348,8 +357,6 @@ public final class JcrI18n {
     public static I18n warningsParsingStreamOfNodeTypeDefinitions;
 
     public static I18n referentialIntegrityException;
-
-    public static I18n errorRefreshingIndexDefinitions;
 
     // Lock messages
     public static I18n nodeNotLockable;

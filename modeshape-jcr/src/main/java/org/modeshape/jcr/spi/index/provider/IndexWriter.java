@@ -28,7 +28,7 @@ import org.modeshape.jcr.value.Property;
 /**
  * Interface used to record in the indexes the changes to content.
  * 
- * @see IndexProvider#getQueryIndexWriter()
+ * @see IndexProvider#getIndexWriter()
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public interface IndexWriter {
@@ -62,12 +62,9 @@ public interface IndexWriter {
     IndexingContext createIndexingContext( Transaction txn );
 
     /**
-     * Retrieve whether the indexes were initialized and empty upon startup.
-     * 
-     * @return true if the index(es) initially had no content, or false if there was already at least some content in the indexes
-     *         upon startup
+     * Clear all indexes of content. This method is typically called prior to a re-indexing operation.
      */
-    boolean initializedIndexes();
+    void clearAllIndexes();
 
     /**
      * Add to the index the information about a node.

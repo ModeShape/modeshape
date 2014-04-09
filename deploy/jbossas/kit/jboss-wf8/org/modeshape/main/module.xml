@@ -45,8 +45,6 @@
         <module name="org.jgroups"/>
         <module name="org.apache.tika" slot="${tika.version}" services="import"/>
         <module name="org.mapdb" slot="${mapdb.version}" services="import"/>
-        <module name="org.apache.lucene" slot="3.6.2"/>
-        <module name="org.hibernate.search.engine" export="true"/>
         <!-- For naming ... -->
         <module name="javax.api" export="true"/>
         <module name="org.jboss.as.naming"/>

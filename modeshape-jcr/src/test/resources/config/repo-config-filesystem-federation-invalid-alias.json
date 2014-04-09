@@ -18,11 +18,4 @@
             ]
         }
     },
-    "query" : {
-        "indexing" : {
-            "rebuildOnStartup" : {
-                "when" : "never"
-            }
-        }
-    }
 }

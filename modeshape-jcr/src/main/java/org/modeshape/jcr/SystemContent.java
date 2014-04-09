@@ -504,33 +504,9 @@ public class SystemContent {
         }
     }
 
-    /**
-     * Read from system storage the index definitions with the supplied names.
-     * 
-     * @param indexDefinitionsToRefresh the set of names of the indexes to be refreshed and re-read.
-     * @return the index definitions as read from the system storage
-     */
-    public List<IndexDefinition> readIndexDefinitions( Set<Name> indexDefinitionsToRefresh ) {
-        CachedNode indexes = indexesNode();
-        List<IndexDefinition> defns = new ArrayList<>();
-        for (ChildReference ref : indexes.getChildReferences(system)) {
-            CachedNode provider = system.getNode(ref);
-            Name providerName = provider.getName(system);
-            for (ChildReference indexRef : provider.getChildReferences(system)) {
-                CachedNode indexDefn = system.getNode(indexRef);
-                IndexDefinition defn = readIndexDefinition(indexDefn, providerName);
-                if (indexDefinitionsToRefresh == null || indexDefinitionsToRefresh.contains(defn.getName())) {
-                    defns.add(defn);
-                }
-            }
-        }
-        return defns;
-    }
-
     public IndexDefinition readIndexDefinition( CachedNode indexDefn,
                                                 Name providerName ) {
         String name = strings.create(indexDefn.getName(system));
-        boolean enabled = booleans.create(first(indexDefn, ModeShapeLexicon.ENABLED));
         String desc = strings.create(first(indexDefn, JcrLexicon.DESCRIPTION));
         String providerNameStr = strings.create(providerName);
         String kindStr = strings.create(first(indexDefn, ModeShapeLexicon.KIND));
@@ -541,7 +517,6 @@ public class SystemContent {
             Property prop = props.next();
             extendedProps.put(prop.getName(), prop);
         }
-        extendedProps.remove(ModeShapeLexicon.ENABLED);
         extendedProps.remove(ModeShapeLexicon.KIND);
         extendedProps.remove(JcrLexicon.DESCRIPTION);
 
@@ -551,7 +526,7 @@ public class SystemContent {
             IndexColumnDefinition defn = readIndexColumnDefinition(indexColumnDefn);
             columnDefns.add(defn);
         }
-        return new RepositoryIndexDefinition(name, providerNameStr, kind, nodeTypeName, columnDefns, extendedProps, desc, enabled);
+        return new RepositoryIndexDefinition(name, providerNameStr, kind, nodeTypeName, columnDefns, extendedProps, desc, true);
     }
 
     public IndexColumnDefinition readIndexColumnDefinition( CachedNode indexColumnDefn ) {
@@ -562,12 +537,31 @@ public class SystemContent {
     }
 
     /**
-     * Read from system storage the index definitions.
+     * Read from system storage the index definitions. If the names of the providers are providers, then the resulting index
+     * definitions will each be {@link IndexDefinition#isEnabled() enabled} only if the definition's named provider is in the
+     * supplied set; otherwise, the definition will be marked as disabled.
      * 
+     * @param providerNames the names of the providers that should be used to determine which index definitions are
+     *        {@link IndexDefinition#isEnabled() enabled}; may be null if not known and all index definitions will be
+     *        {@link IndexDefinition#isEnabled() enabled}
      * @return the index definitions as read from the system storage
      */
-    public List<IndexDefinition> readAllIndexDefinitions() {
-        return readIndexDefinitions(null);
+    public List<IndexDefinition> readAllIndexDefinitions( Set<String> providerNames ) {
+        CachedNode indexes = indexesNode();
+        List<IndexDefinition> defns = new ArrayList<>();
+        for (ChildReference ref : indexes.getChildReferences(system)) {
+            CachedNode provider = system.getNode(ref);
+            Name providerName = provider.getName(system);
+            for (ChildReference indexRef : provider.getChildReferences(system)) {
+                CachedNode indexDefn = system.getNode(indexRef);
+                IndexDefinition defn = readIndexDefinition(indexDefn, providerName);
+                if (!providerNames.contains(defn.getProviderName())) {
+                    // There is no provider by this name, so mark it as not enabled ...
+                    defn = RepositoryIndexDefinition.createFrom(defn, false);
+                }
+            }
+        }
+        return defns;
     }
 
     private final NodeKey nodeKey( NodeKey prototype,
@@ -664,7 +658,6 @@ public class SystemContent {
         properties.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.INDEX));
         properties.add(propertyFactory.create(JcrLexicon.DESCRIPTION, indexDefn.getDescription()));
         properties.add(propertyFactory.create(ModeShapeLexicon.KIND, indexDefn.getKind().name()));
-        properties.add(propertyFactory.create(ModeShapeLexicon.ENABLED, indexDefn.isEnabled()));
         properties.add(propertyFactory.create(ModeShapeLexicon.NODE_TYPE_NAME, indexDefn.getNodeTypeName()));
 
         // Now make or adjust the node for the node type ...

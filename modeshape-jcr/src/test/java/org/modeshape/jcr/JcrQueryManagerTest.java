@@ -30,7 +30,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -78,7 +77,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ValidateQuery.Predicate;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
@@ -108,8 +106,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     private static final String[] INDEXED_SYSTEM_NODES_PATHS = new String[] {"/jcr:system/jcr:nodeTypes",
         "/jcr:system/mode:namespaces", "/jcr:system/mode:repository"};
-
-    private static final boolean WRITE_INDEXES_TO_FILE = false;
 
     /** The total number of nodes excluding '/jcr:system' */
     protected static final int TOTAL_NON_SYSTEM_NODE_COUNT = 25;
@@ -190,12 +186,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
-        if (WRITE_INDEXES_TO_FILE) {
-            File dir = new File("target/querytest/indexes");
-            if (dir.exists()) FileUtil.delete(dir);
-        }
-        String simpleName = JcrQueryManagerTest.class.getSimpleName();
-        String configFileName = WRITE_INDEXES_TO_FILE ? simpleName + "Disk.json" : simpleName + ".json";
+        String configFileName = JcrQueryManagerTest.class.getSimpleName() + ".json";
 
         String configFilePath = "config/" + configFileName;
         InputStream configStream = JcrQueryManagerTest.class.getClassLoader().getResourceAsStream(configFilePath);

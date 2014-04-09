@@ -39,7 +39,7 @@ public class CompositeIndexWriter implements IndexWriter {
         final List<IndexWriter> writers = new ArrayList<>();
         for (IndexProvider provider : providers) {
             if (provider != null) {
-                IndexWriter writer = provider.getQueryIndexWriter();
+                IndexWriter writer = provider.getIndexWriter();
                 if (writer != null && !writer.canBeSkipped()) writers.add(writer);
             }
         }
@@ -73,16 +73,19 @@ public class CompositeIndexWriter implements IndexWriter {
     }
 
     @Override
-    public boolean initializedIndexes() {
+    public void clearAllIndexes() {
         for (IndexWriter writer : writers) {
-            if (!writer.initializedIndexes()) return false;
+            writer.clearAllIndexes();
         }
-        return true;
     }
 
     @Override
     public boolean canBeSkipped() {
-        return writers.isEmpty();
+        if (writers.isEmpty()) return true;
+        for (IndexWriter writer : writers) {
+            if (!writer.canBeSkipped()) return false;
+        }
+        return true;
     }
 
     @Override
