@@ -32,8 +32,8 @@ import javax.sql.DataSource;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
-import org.modeshape.jcr.federation.spi.ReadOnlyConnector;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
+import org.modeshape.jcr.spi.federation.ReadOnlyConnector;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 /**

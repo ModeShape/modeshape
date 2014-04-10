@@ -21,7 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.JcrNtLexicon;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
 
 /**
  * Class which converts column metadata to connector documents.

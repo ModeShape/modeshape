@@ -16,7 +16,7 @@
 package org.modeshape.connector.meta.jdbc;
 
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.jcr.federation.spi.ConnectorException;
+import org.modeshape.jcr.spi.federation.ConnectorException;
 
 /**
  * Thrown to indicate that there was a failure while attempting to retrieve metadata

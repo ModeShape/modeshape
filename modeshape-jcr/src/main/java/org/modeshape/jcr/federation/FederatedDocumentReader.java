@@ -25,12 +25,12 @@ import java.util.Set;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.spi.DocumentReader;
+import org.modeshape.jcr.spi.federation.DocumentReader;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 
 /**
- * Implementation of a {@link org.modeshape.jcr.federation.spi.DocumentReader} that be used to obtain "semantic" information from
+ * Implementation of a {@link org.modeshape.jcr.spi.federation.DocumentReader} that be used to obtain "semantic" information from
  * a federated document
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)

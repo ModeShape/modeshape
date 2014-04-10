@@ -28,7 +28,7 @@ import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.RecordingChanges;
-import org.modeshape.jcr.federation.spi.ConnectorChangeSet;
+import org.modeshape.jcr.spi.federation.ConnectorChangeSet;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;

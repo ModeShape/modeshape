@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.federation.spi;
+package org.modeshape.jcr.spi.federation;
 
 /**
  * A specialized abstract {@link Connector} class that is support both reads and writes. In addition, this class has a {@code readonly}

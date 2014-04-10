@@ -30,12 +30,12 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.federation.spi.DocumentChanges;
-import org.modeshape.jcr.federation.spi.DocumentReader;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
-import org.modeshape.jcr.federation.spi.PageKey;
-import org.modeshape.jcr.federation.spi.Pageable;
-import org.modeshape.jcr.federation.spi.WritableConnector;
+import org.modeshape.jcr.spi.federation.DocumentChanges;
+import org.modeshape.jcr.spi.federation.DocumentReader;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
+import org.modeshape.jcr.spi.federation.PageKey;
+import org.modeshape.jcr.spi.federation.Pageable;
+import org.modeshape.jcr.spi.federation.WritableConnector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 

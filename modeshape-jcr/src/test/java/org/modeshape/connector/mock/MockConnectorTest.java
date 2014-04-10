@@ -51,7 +51,7 @@ import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.api.query.QueryManager;
-import org.modeshape.jcr.federation.spi.ConnectorException;
+import org.modeshape.jcr.spi.federation.ConnectorException;
 
 /**
  * Unit test for the {@link org.modeshape.connector.mock.MockConnector} which validates several areas around the connector SPI and

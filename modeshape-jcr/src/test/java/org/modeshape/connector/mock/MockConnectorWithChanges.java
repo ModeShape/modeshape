@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Map;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.JcrNtLexicon;
-import org.modeshape.jcr.federation.spi.ConnectorChangeSet;
-import org.modeshape.jcr.federation.spi.DocumentReader;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.spi.federation.ConnectorChangeSet;
+import org.modeshape.jcr.spi.federation.DocumentReader;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
