@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.federation.spi.DocumentChanges;
+import org.modeshape.jcr.spi.federation.DocumentChanges;
 import org.modeshape.jcr.value.Name;
 
 /**

@@ -24,7 +24,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.infinispan.schematic.document.Document;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
 
 /**
  * A {@link GitFunction} that returns the list of tags in this repository. The structure of this area of the repository is as

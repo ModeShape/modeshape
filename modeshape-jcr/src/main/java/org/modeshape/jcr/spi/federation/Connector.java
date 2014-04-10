@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.federation.spi;
+package org.modeshape.jcr.spi.federation;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -36,7 +36,6 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.ConnectorChangeSetFactory;
 import org.modeshape.jcr.federation.FederatedDocumentReader;
 import org.modeshape.jcr.federation.FederatedDocumentWriter;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
@@ -456,7 +455,7 @@ public abstract class Connector {
     /**
      * Updates a document using the provided changes.
      * 
-     * @param documentChanges a {@code non-null} {@link org.modeshape.jcr.federation.spi.DocumentChanges} object which contains
+     * @param documentChanges a {@code non-null} {@link DocumentChanges} object which contains
      *        granular information about all the changes.
      */
     public abstract void updateDocument( DocumentChanges documentChanges );

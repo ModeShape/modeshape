@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.filesystem.FileSystemConnector;
 import org.modeshape.jcr.Connectors.PathMappings;
-import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.spi.federation.Connector;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.WorkspaceAndPath;
 

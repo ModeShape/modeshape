@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.federation.spi;
+package org.modeshape.jcr.spi.federation;
 
 /**
  * The key used to uniquely identify a page of children. A page key

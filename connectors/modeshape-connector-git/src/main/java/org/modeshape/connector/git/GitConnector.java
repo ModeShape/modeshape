@@ -37,12 +37,12 @@ import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentStoreException;
-import org.modeshape.jcr.federation.spi.Connector;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
-import org.modeshape.jcr.federation.spi.PageKey;
-import org.modeshape.jcr.federation.spi.PageWriter;
-import org.modeshape.jcr.federation.spi.Pageable;
-import org.modeshape.jcr.federation.spi.ReadOnlyConnector;
+import org.modeshape.jcr.spi.federation.Connector;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
+import org.modeshape.jcr.spi.federation.PageKey;
+import org.modeshape.jcr.spi.federation.PageWriter;
+import org.modeshape.jcr.spi.federation.Pageable;
+import org.modeshape.jcr.spi.federation.ReadOnlyConnector;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**

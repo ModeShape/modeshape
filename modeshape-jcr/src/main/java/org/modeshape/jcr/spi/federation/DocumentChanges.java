@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.federation.spi;
+package org.modeshape.jcr.spi.federation;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,7 +46,7 @@ public interface DocumentChanges {
     /**
      * Returns the changes to the children.
      * 
-     * @return a {@link org.modeshape.jcr.federation.spi.DocumentChanges.ChildrenChanges} instance; never null
+     * @return a {@link DocumentChanges.ChildrenChanges} instance; never null
      */
     ChildrenChanges getChildrenChanges();
 
