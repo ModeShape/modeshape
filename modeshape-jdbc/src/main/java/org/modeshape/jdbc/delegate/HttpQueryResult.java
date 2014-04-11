@@ -78,6 +78,11 @@ public final class HttpQueryResult implements QueryResult {
     }
 
     @Override
+    public boolean isEmpty() {
+        return rows.isEmpty();
+    }
+
+    @Override
     public RowIterator getRows() {
         return new HttpRowIterator();
     }
@@ -90,6 +95,11 @@ public final class HttpQueryResult implements QueryResult {
     @Override
     public String[] getSelectorNames() {
         throw new UnsupportedOperationException("Method getSelectorNames() not supported");
+    }
+
+    @Override
+    public void close() {
+        // do nothing
     }
 
     @Override

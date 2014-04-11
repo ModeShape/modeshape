@@ -160,6 +160,18 @@
                     "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3alocks",
                     "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
                 },
+                "mode:indexes":{
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aindexes",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
+                },
+                "mode:index":{
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aindex",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
+                },
+                "mode:indexColumn":{
+                    "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aindexColumn",
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"
+                },
                 "mode:versionHistoryFolder":{
                     "self":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes/mode%3aversionHistoryFolder",
                     "up":"http://localhost:8090/resources/repo/default/items/jcr%3asystem/jcr%3anodeTypes"

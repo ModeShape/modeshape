@@ -18,7 +18,6 @@ package org.infinispan.schematic;
 import java.util.Collection;
 import java.util.Map;
 import org.infinispan.Cache;
-import org.infinispan.commons.util.concurrent.NotifyingFuture;
 import org.infinispan.lifecycle.Lifecycle;
 import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.document.Binary;
@@ -234,101 +233,5 @@ public interface SchematicDb extends Lifecycle {
      * @return true if explicit locking is enabled, or false otherwise
      */
     boolean isExplicitLockingEnabled();
-
-    /**
-     * Asynchronous version of {@link #get(String)}. This method does not block on remote calls, even if the library cache mode is
-     * synchronous.
-     * 
-     * @param key the key or identifier for the document
-     * @return a future containing the entry at the given key; never null
-     */
-    NotifyingFuture<SchematicEntry> getAsync( String key );
-
-    /**
-     * Asynchronous version of {@link #put(String, Document, Document)}. This method does not block on remote calls, even if the
-     * library cache mode is synchronous.
-     * 
-     * @param key the key or identifier for the document
-     * @param document the document that is to be stored
-     * @param metadata the metadata that is to be stored; may be null if there is no metadata
-     * @return a future containing the old document that was previously stored at this key; never null
-     */
-    NotifyingFuture<SchematicEntry> putAsync( String key,
-                                              Document document,
-                                              Document metadata );
-
-    /**
-     * Asynchronous version of {@link #put(String, Binary, Document)}. This method does not block on remote calls, even if the
-     * library cache mode is synchronous.
-     * 
-     * @param key the key or identifier for the document
-     * @param binaryContent the binary content that is to be stored
-     * @param metadata the metadata that is to be stored; may be null if there is no metadata
-     * @return a future containing the old document that was previously stored at this key; never null
-     */
-    NotifyingFuture<SchematicEntry> putAsync( String key,
-                                              Binary binaryContent,
-                                              Document metadata );
-
-    /**
-     * Asynchronous version of {@link #putIfAbsent(String, Document, Document)}. This method does not block on remote calls, even
-     * 
-     * @param key the key or identifier for the document
-     * @param document the document that is to be stored
-     * @param metadata the metadata that is to be stored; may be null if there is no metadata
-     * @return a future containing the existing document, or the null if there was no existing document at the supplied key
-     */
-    NotifyingFuture<SchematicEntry> putIfAbsentAsync( String key,
-                                                      Document document,
-                                                      Document metadata );
-
-    /**
-     * Asynchronous version of {@link #putIfAbsent(String, Binary, Document)}. This method does not block on remote calls, even
-     * 
-     * @param key the key or identifier for the document
-     * @param binaryContent the binary content that is to be stored
-     * @param metadata the metadata that is to be stored; may be null if there is no metadata
-     * @return a future containing the existing document, or the null if there was no existing document at the supplied key
-     */
-    NotifyingFuture<SchematicEntry> putIfAbsentAsync( String key,
-                                                      Binary binaryContent,
-                                                      Document metadata );
-
-    /**
-     * Asynchronous version of {@link #replace(String, Document, Document)}. This method does not block on remote calls, even if
-     * the library cache mode is synchronous.
-     * 
-     * @param key the key or identifier for the document
-     * @param document the new document that is to replace the existing document (or binary content)
-     * @param metadata the metadata that is to be stored with the replacement document; may be null if there is no metadata for
-     *        the replacement
-     * @return a future containing the entry that was replaced; never null
-     */
-    NotifyingFuture<SchematicEntry> replaceAsync( String key,
-                                                  Document document,
-                                                  Document metadata );
-
-    /**
-     * Asynchronous version of {@link #replace(String, Binary, Document)}. This method does not block on remote calls, even if the
-     * library cache mode is synchronous.
-     * 
-     * @param key the key or identifier for the document
-     * @param binaryContent the new binary content that is to replace the existing content (or document)
-     * @param metadata the metadata that is to be stored with the replacement document; may be null if there is no metadata for
-     *        the replacement
-     * @return a future containing the entry that was replaced; never null
-     */
-    NotifyingFuture<SchematicEntry> replaceAsync( String key,
-                                                  Binary binaryContent,
-                                                  Document metadata );
-
-    /**
-     * Asynchronous version of {@link #remove(String)}. This method does not block on remote calls, even if the library cache mode
-     * is synchronous.
-     * 
-     * @param key the key or identifier for the document
-     * @return a future containing the old entry that was removed; never null
-     */
-    NotifyingFuture<SchematicEntry> removeAsync( String key );
 
 }

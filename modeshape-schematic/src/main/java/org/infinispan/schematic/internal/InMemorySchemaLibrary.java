@@ -15,7 +15,6 @@
  */
 package org.infinispan.schematic.internal;
 
-import org.infinispan.commons.util.concurrent.NotifyingFuture;
 import org.infinispan.lifecycle.Lifecycle;
 import org.infinispan.schematic.DocumentLibrary;
 import org.infinispan.schematic.SchemaLibrary;
@@ -81,42 +80,6 @@ public class InMemorySchemaLibrary implements SchemaLibrary, Lifecycle {
     @Override
     public Document remove( String key ) {
         Document result = documents.remove(key);
-        schemaDocuments.remove(key);
-        return result;
-    }
-
-    @Override
-    public NotifyingFuture<Document> getAsync( String key ) {
-        return documents.getAsync(key);
-    }
-
-    @Override
-    public NotifyingFuture<Document> putAsync( String key,
-                                               Document document ) {
-        NotifyingFuture<Document> result = documents.putAsync(key, document);
-        schemaDocuments.remove(key);
-        return result;
-    }
-
-    @Override
-    public NotifyingFuture<Document> putIfAbsentAsync( String key,
-                                                       Document document ) {
-        NotifyingFuture<Document> result = documents.putIfAbsentAsync(key, document);
-        schemaDocuments.remove(key);
-        return result;
-    }
-
-    @Override
-    public NotifyingFuture<Document> replaceAsync( String key,
-                                                   Document document ) {
-        NotifyingFuture<Document> result = documents.replaceAsync(key, document);
-        schemaDocuments.remove(key);
-        return result;
-    }
-
-    @Override
-    public NotifyingFuture<Document> removeAsync( String key ) {
-        NotifyingFuture<Document> result = documents.removeAsync(key);
         schemaDocuments.remove(key);
         return result;
     }

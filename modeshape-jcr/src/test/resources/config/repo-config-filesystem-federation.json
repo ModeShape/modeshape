@@ -73,10 +73,12 @@
             "enableEvents" : true
         }
     },
-    "query" : {
-        "indexing" : {
-            "rebuildOnStartup" : {
-                "when" : "never"
+    "sequencing" : {
+        //configure a sequencer from the modeshape-jcr package to test in conjunction with event notifications
+        "sequencers" : {
+            "CND Sequencer" : {
+                "classname" : "CNDSequencer",
+                "pathExpression" : "default://testRoot/monitoring/(*.cnd)/jcr:content[@jcr:data] => default://testRoot/sequenced"
             }
         }
     }

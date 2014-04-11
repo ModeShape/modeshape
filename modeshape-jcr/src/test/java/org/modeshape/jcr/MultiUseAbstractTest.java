@@ -17,7 +17,9 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -32,8 +34,6 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.modeshape.jcr.api.query.QueryManager;
@@ -167,7 +167,8 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
 
         List<String> expectedNodePaths = Arrays.asList(expectedNodesPaths);
 
-        assertEquals(expectedNodePaths.toString() + ":" + actualNodePaths.toString(), expectedNodePaths.size(), actualNodePaths.size());
+        assertEquals(expectedNodePaths.toString() + ":" + actualNodePaths.toString(), expectedNodePaths.size(),
+                     actualNodePaths.size());
         for (String expectedPath : expectedNodePaths) {
             assertTrue(expectedPath + " not found", actualNodePaths.remove(expectedPath.toLowerCase()));
         }

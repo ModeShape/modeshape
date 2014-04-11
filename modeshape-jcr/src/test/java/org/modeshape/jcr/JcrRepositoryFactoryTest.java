@@ -15,6 +15,11 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,17 +32,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * Unit test for {@link JcrRepositoryFactory}
  */
 @SuppressWarnings( "deprecation" )
-public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
+public class JcrRepositoryFactoryTest {
 
     private String url;
     private Map<String, String> params;

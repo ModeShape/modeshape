@@ -26,10 +26,10 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NamespaceRegistry;
@@ -76,7 +77,9 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.ValidateQuery.Predicate;
+import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
 import org.modeshape.jcr.api.query.QueryManager;
 import org.modeshape.jcr.api.query.qom.Limit;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelFactory;
@@ -87,6 +90,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.query.JcrQueryResult;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
 /**
@@ -102,11 +106,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     private static final String[] INDEXED_SYSTEM_NODES_PATHS = new String[] {"/jcr:system/jcr:nodeTypes",
         "/jcr:system/mode:namespaces", "/jcr:system/mode:repository"};
-
-    private static final String[] NON_INDEXED_SYSTEM_NODES_PATHS = new String[] {"/", "/jcr:system/mode:locks",
-        "/jcr:system/jcr:versionStorage"};
-
-    private static final boolean WRITE_INDEXES_TO_FILE = false;
 
     /** The total number of nodes excluding '/jcr:system' */
     protected static final int TOTAL_NON_SYSTEM_NODE_COUNT = 25;
@@ -187,12 +186,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
-        if (WRITE_INDEXES_TO_FILE) {
-            File dir = new File("target/querytest/indexes");
-            if (dir.exists()) FileUtil.delete(dir);
-        }
-        String simpleName = JcrQueryManagerTest.class.getSimpleName();
-        String configFileName = WRITE_INDEXES_TO_FILE ? simpleName + "Disk.json" : simpleName + ".json";
+        String configFileName = JcrQueryManagerTest.class.getSimpleName() + ".json";
 
         String configFilePath = "config/" + configFileName;
         InputStream configStream = JcrQueryManagerTest.class.getClassLoader().getResourceAsStream(configFilePath);
@@ -279,8 +273,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         JcrSession session = repository.login();
         try {
             NodeCache systemSession = repository.createSystemSession(session.context(), true);
-            totalSystemNodeCount = countAllNodesBelow(systemSession.getRootKey(), systemSession)
-                                   - NON_INDEXED_SYSTEM_NODES_PATHS.length;
+            totalSystemNodeCount = countAllNodesBelow(systemSession.getRootKey(), systemSession) - 1; // not root
             totalNodeCount = totalSystemNodeCount + TOTAL_NON_SYSTEM_NODE_COUNT;
         } finally {
             session.logout();
@@ -289,8 +282,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     private static int countAllNodesBelow( NodeKey nodeKey,
                                            NodeCache cache ) throws RepositoryException {
-        int result = 1;
         CachedNode node = cache.getNode(nodeKey);
+        if (!node.isQueryable(cache)) return 0;
+        int result = 1;
         ChildReferences childReferences = node.getChildReferences(cache);
         for (Iterator<NodeKey> nodeKeyIterator = childReferences.getAllKeys(); nodeKeyIterator.hasNext();) {
             NodeKey childKey = nodeKeyIterator.next();
@@ -334,6 +328,66 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         return result;
     }
 
+    protected ValidationBuilder validateQuery() {
+        return ValidateQuery.validateQuery().printDetail(print);
+    }
+
+    protected static class ResultPrinter {
+        private final NodeIterator iter;
+        private int rowNumber = 0;
+
+        protected ResultPrinter( NodeIterator iter ) {
+            this.iter = iter;
+        }
+
+        protected void printRow() throws RepositoryException {
+            Node node = iter.nextNode();
+            System.out.println(rowNumberStr() + " " + node.getPath());
+        }
+
+        protected void printRows() throws RepositoryException {
+            while (iter.hasNext()) {
+                printRow();
+            }
+        }
+
+        protected String rowNumberStr() {
+            return StringUtil.justifyRight("" + (++rowNumber), 4, ' ');
+        }
+    }
+
+    protected static class ResultRowPrinter {
+        private final RowIterator iter;
+        private final String[] selectorNames;
+        private int rowNumber = 0;
+
+        protected ResultRowPrinter( RowIterator iter,
+                                    String[] selectorNames ) {
+            this.iter = iter;
+            this.selectorNames = selectorNames;
+        }
+
+        protected void printRow() throws RepositoryException {
+            Row row = iter.nextRow();
+            System.out.print(rowNumberStr());
+            for (String selectorName : selectorNames) {
+                System.out.print(" ");
+                System.out.print(row.getPath(selectorName));
+            }
+            System.out.println();
+        }
+
+        protected void printRows() throws RepositoryException {
+            while (iter.hasNext()) {
+                printRow();
+            }
+        }
+
+        protected String rowNumberStr() {
+            return StringUtil.justifyRight("" + (++rowNumber), 4, ' ');
+        }
+    }
+
     protected void assertResults( Query query,
                                   QueryResult result,
                                   long numberOfResults ) throws RepositoryException {
@@ -347,12 +401,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
         if (result.getSelectorNames().length == 1) {
             NodeIterator iter = result.getNodes();
-            if (iter.getSize() != numberOfResults && !print) {
+            ResultPrinter resultPrinter = new ResultPrinter(iter);
+            if (print || iter.getSize() != numberOfResults) {
                 // print anyway since this is an error
                 System.out.println();
-                System.out.println(query);
                 System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
                 System.out.println(result);
+                System.out.println(query);
+                resultPrinter.printRows();
             }
             assertThat(iter.getSize(), is(numberOfResults));
         } else {
@@ -361,16 +417,26 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 if (!print) {
                     // print anyway since this is an error
                     System.out.println();
-                    System.out.println(query);
                     System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
                     System.out.println(result);
+                    System.out.println(query);
                 }
                 fail("should not be able to call this method when the query has multiple selectors");
             } catch (RepositoryException e) {
                 // expected; can't call this when the query uses multiple selectors ...
             }
+            RowIterator iter = result.getRows();
+            ResultRowPrinter resultPrinter = new ResultRowPrinter(iter, result.getSelectorNames());
+            if (print || iter.getSize() != numberOfResults) {
+                // print anyway since this is an error
+                System.out.println();
+                System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
+                System.out.println(query);
+                System.out.println(result);
+                resultPrinter.printRows();
+            }
+            assertThat(iter.getSize(), is(numberOfResults));
         }
-        assertThat(result.getRows().getSize(), is(numberOfResults));
     }
 
     protected void assertResultsHaveColumns( QueryResult result,
@@ -396,6 +462,24 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         while (iter.hasNext()) {
             Row row = iter.nextRow();
             assertThat(row.getValue(columnName).getString(), is(rowValuesAsStrings[i++]));
+        }
+    }
+
+    protected void assertValueIsNonNullReference( Row row,
+                                                  String refColumnName ) throws RepositoryException {
+        assertValueIsReference(row, refColumnName, false);
+    }
+
+    protected void assertValueIsReference( Row row,
+                                           String refColumnName,
+                                           boolean mayBeNull ) throws RepositoryException {
+        Value value = row.getValue(refColumnName);
+        if (!mayBeNull) {
+            assertThat(value, is(notNullValue()));
+            String ref = value.getString();
+            Node referenced = session.getNodeByIdentifier(ref);
+            assertThat(referenced, is(notNullValue()));
+            assertEquals(ref, referenced.getIdentifier());
         }
     }
 
@@ -551,19 +635,111 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     // JCR-SQL2 Queries
     // ----------------------------------------------------------------------------------------------------------------
 
+    @Ignore
+    @Test
+    public void shouldFailIfGetNodesOrGetRowsIsCalledAfterGetRowsCalledOncePerQueryResult() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertNotNull(result.getRows());
+        try {
+            result.getRows();
+            fail();
+        } catch (RepositoryException e) {
+            // expected
+        }
+        try {
+            result.getNodes();
+            fail();
+        } catch (RepositoryException e) {
+            // expected
+        }
+    }
+
+    @Ignore
+    @Test
+    public void shouldFailIfGetNodesOrGetRowsIsCalledAfterGetNodesCalledOncePerQueryResult() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertNotNull(result.getNodes());
+        try {
+            result.getRows();
+            fail();
+        } catch (RepositoryException e) {
+            // expected
+        }
+        try {
+            result.getNodes();
+            fail();
+        } catch (RepositoryException e) {
+            // expected
+        }
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldFindNodeByUuid() throws RepositoryException {
+        // Find one of the car nodes ...
+        Node nodeA = session.getNode("/Other/NodeA[2]");
+        assertThat(nodeA, is(notNullValue()));
+        String uuid = nodeA.getUUID(); // throws exception if not referenceable ...
+
+        String sql = "SELECT * FROM [nt:unstructured] WHERE [jcr:uuid] = '" + uuid + "'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns(allColumnNames("nt:unstructured")).validate(query, result);
+
+        sql = "SELECT * FROM nt:unstructured WHERE jcr:uuid = '" + uuid + "'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        result = query.execute();
+        validateQuery().rowCount(1).validate(query, result);
+    }
+
+    @Test
+    public void shouldFailToSkipBeyondSize() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:base] WHERE [car:year] < 2009";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        final int count = 13;
+        validateQuery().rowCount(count).warnings(1).hasColumns(allColumnNames("nt:base")).validate(query, result);
+
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        NodeIterator iter = result.getNodes();
+        assertTrue(iter.hasNext());
+        assertThat(iter.next(), is(notNullValue()));
+        iter.skip(count - 2);
+        assertTrue(iter.hasNext());
+        assertThat(iter.next(), is(notNullValue()));
+        // we're at the next one ...
+        assertThat(iter.hasNext(), is(false));
+        try {
+            iter.skip(3);
+            fail("Expected NoSuchElementException if skipping past end");
+        } catch (NoSuchElementException e) {
+            // expected
+        }
+        // Do it again and skip past the end ...
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        iter = result.getNodes();
+        try {
+            iter.skip(count + 1);
+            fail("Expected NoSuchElementException if skipping past end");
+        } catch (NoSuchElementException e) {
+            // expected
+        }
+    }
+
     @FixFor( "MODE-1901" )
     @Test
     public void shouldExplainQueryWithoutExecutingQuery() throws RepositoryException {
         String sql = "SELECT * FROM [nt:file]";
-        org.modeshape.jcr.api.query.Query query = (org.modeshape.jcr.api.query.Query)session.getWorkspace()
-                                                                                            .getQueryManager()
+        org.modeshape.jcr.api.query.Query query = (org.modeshape.jcr.api.query.Query)session.getWorkspace().getQueryManager()
                                                                                             .createQuery(sql, Query.JCR_SQL2);
         org.modeshape.jcr.api.query.QueryResult result = query.explain();
-        // print = true;
-        printMessage(result.getWarnings());
-        assertThat(result.getWarnings().size(), is(0));
-        assertResults(query, result, 0L);
-        assertThat(result.getPlan().trim().length() != 0, is(true));
+        validateQuery().rowCount(0).warnings(0).onlyQueryPlan().validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
@@ -571,11 +747,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldCaptureWarningsAboutPotentialTypos() throws RepositoryException {
         String sql = "SELECT [jcr.uuid] FROM [nt:file]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
-        // print = true;
-        printMessage(result.getWarnings());
-        assertThat(result.getWarnings().size(), is(1));
-        assertResults(query, result, 0L);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(0).warnings(1).hasColumns("jcr.uuid").validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
@@ -583,11 +756,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldCaptureWarningsAboutUsingMisspelledColumnOnWrongSelector() throws RepositoryException {
         String sql = "SELECT file.[jcr.uuid] FROM [nt:file] AS file JOIN [mix:referenceable] AS ref ON ISSAMENODE(file,ref)";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
-        // print = true;
-        printMessage(result.getWarnings());
-        assertThat(result.getWarnings().size(), is(1));
-        assertResults(query, result, 0L);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(0).warnings(1).hasColumns("file.jcr.uuid").validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
@@ -595,11 +765,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldCaptureWarningsAboutUsingColumnOnWrongSelector() throws RepositoryException {
         String sql = "SELECT file.[jcr:uuid] FROM [nt:file] AS file JOIN [mix:referenceable] AS ref ON ISSAMENODE(file,ref)";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
-        // print = true;
-        printMessage(result.getWarnings());
-        assertThat(result.getWarnings().size(), is(1));
-        assertResults(query, result, 0L);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(0).warnings(1).hasColumns("file.jcr:uuid").validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
@@ -607,11 +774,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldCaptureWarningAboutUseOfResidualProperties() throws RepositoryException {
         String sql = "SELECT [foo_bar] FROM [nt:unstructured]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
-        assertThat(result.getWarnings().size(), is(1));
-        // print = true;
-        printMessage(result.getWarnings());
-        assertResults(query, result, 24L);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).warnings(1).hasColumns("foo_bar").validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
@@ -619,11 +783,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldNotCaptureWarningAboutUseOfPseudoColumns() throws RepositoryException {
         String sql = "SELECT [jcr:path] FROM [nt:unstructured]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
-        assertThat(result.getWarnings().size(), is(0));
-        // print = true;
-        printMessage(result.getWarnings());
-        assertResults(query, result, 24L);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).noWarnings().hasColumns("jcr:path").validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
@@ -631,11 +792,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldCaptureWarningAboutUseOfPseudoColumnWithPeriodInsteadOfColonDelimiter() throws RepositoryException {
         String sql = "SELECT [jcr.path] FROM [nt:unstructured]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
-        assertThat(result.getWarnings().size(), is(1));
-        // print = true;
-        printMessage(result.getWarnings());
-        assertResults(query, result, 24L);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).warnings(1).validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
@@ -643,11 +801,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldCaptureWarningAboutUseOfPseudoColumnWithUnderscoreInsteadOfColonDelimiter() throws RepositoryException {
         String sql = "SELECT [jcr_path] FROM [nt:unstructured]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
-        assertThat(result.getWarnings().size(), is(1));
-        // print = true;
-        printMessage(result.getWarnings());
-        assertResults(query, result, 24L);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).warnings(1).hasColumns("jcr_path").validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
@@ -655,203 +810,331 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldCaptureWarningAboutUseOfNonPluralJcrMixinTypeColumn() throws RepositoryException {
         String sql = "SELECT [jcr:mixinType] FROM [nt:unstructured]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
-        assertThat(result.getWarnings().size(), is(1));
-        // print = true;
-        printMessage(result.getWarnings());
-        assertResults(query, result, 24L);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).warnings(1).hasColumns("jcr:mixinType").validate(query, result);
     }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [nt:base]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, allColumnNames("nt:base"));
+        String[] columnNames = allColumnNames("nt:base");
+        validateQuery().rowCount(totalNodeCount).noWarnings().hasColumns(columnNames).validate(query, result);
     }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithOrderByPath() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [nt:base] ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, allColumnNames("nt:base"));
+        String[] columnNames = allColumnNames("nt:base");
+        validateQuery().rowCount(totalNodeCount).noWarnings().hasColumns(columnNames).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithOrderByPathUsingAlias() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:base] AS all ORDER BY all.[jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        String[] columnNames = allColumnNames("all");
+        validateQuery().rowCount(totalNodeCount).noWarnings().hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-1095" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByUsingPseudoColumnWithSelectStar() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM [car:Car] WHERE [car:year] < 2009 ORDER BY [jcr:path]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [car:Car] WHERE [car:year] < 2009 ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, carColumnNames("car:Car"));
+        String[] columnNames = carColumnNames("car:Car");
+        validateQuery().rowCount(13).noWarnings().hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-1095" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByUsingColumnWithSelectStar() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM [car:Car] WHERE [car:year] < 2009 ORDER BY [car:year]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [car:Car] WHERE [car:year] < 2009 ORDER BY [car:year]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, carColumnNames("car:Car"));
+        String[] columnNames = carColumnNames("car:Car");
+        validateQuery().rowCount(13).noWarnings().hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-1095" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByUsingColumnNotInSelect() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT [car:model], [car:maker] FROM [car:Car] WHERE [car:year] <= 2012 ORDER BY [car:year] DESC",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT [car:model], [car:maker] FROM [car:Car] WHERE [car:year] <= 2012 ORDER BY [car:year] DESC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, "car:model", "car:maker", "car:year");
+        String[] columnNames = {"car:model", "car:maker", "car:year"};
+        validateQuery().rowCount(13).noWarnings().hasColumns(columnNames).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByOnResidualColumn() throws RepositoryException {
+        String sql = "SELECT x.* FROM [nt:unstructured] AS x ORDER BY x.propC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).warnings(1).hasColumns(allOf(allColumnNames("x"), new String[] {"propC"}))
+                       .validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByOnResidualColumnAndNoAlias() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:unstructured] ORDER BY propC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        String[] columnNames = allOf(allColumnNames("nt:unstructured"), new String[] {"propC"});
+        validateQuery().rowCount(24).warnings(1).hasColumns(columnNames).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2Query() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        String[] columnNames = allColumnNames("nt:unstructured");
+        validateQuery().rowCount(24).warnings(0).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-1095" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinCriteriaOnColumnsInSelect() throws RepositoryException {
+        String sql = "SELECT x.*, x.somethingElse, y.*, y.propC FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.somethingElse = y.propC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        String[] columnNames = allOf(allColumnNames("x"), allColumnNames("y"), new String[] {"x.somethingElse", "y.propC"});
+        validateQuery().rowCount(1).warnings(2).withRows().withRow("/Other/NodeA", "/Other/NodeA[2]").endRows()
+                       .hasColumns(columnNames).validate(query, result);
+    }
+
+    @FixFor( "MODE-1095" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinCriteriaOnColumnsInSelectAndOrderBy()
+        throws RepositoryException {
         String sql = "SELECT x.*, y.* FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.somethingElse = y.propC ORDER BY x.propC";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, allOf(allColumnNames("x"), allColumnNames("y"), new String[] {"x.propC"}));
-        RowIterator rows = result.getRows();
-        Row row1 = rows.nextRow();
-        assertThat(row1.getNode("x").getPath(), is("/Other/NodeA"));
-        assertThat(row1.getNode("y").getPath(), is("/Other/NodeA[2]"));
+        String[] columnNames = allOf(allColumnNames("x"), allColumnNames("y"), new String[] {"x.propC"});
+        validateQuery().rowCount(1).warnings(3).withRows().withRow("/Other/NodeA", "/Other/NodeA[2]").endRows()
+                       .hasColumns(columnNames).validate(query, result);
+    }
+
+    @FixFor( "MODE-1095" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinCriteriaOnSomeColumnsInSelect() throws RepositoryException {
+        String sql = "SELECT y.*, y.propC FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.somethingElse = y.propC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        String[] columnNames = allOf(allColumnNames("y"), new String[] {"y.propC"});
+        validateQuery().rowCount(1).warnings(2).withRows().withRow("/Other/NodeA[2]").endRows().hasColumns(columnNames)
+                       .validate(query, result);
     }
 
     @FixFor( {"MODE-1095", "MODE-1680"} )
     @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinCriteriaOnColumnsNotInSelect() throws RepositoryException {
-        String sql = "SELECT y.* FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.somethingElse = y.propC ORDER BY x.propC";
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByAndJoinCriteriaOnColumnsNotInSelect()
+        throws RepositoryException {
+        String sql = "SELECT y.*, y.propC FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.somethingElse = y.propC ORDER BY x.propC";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, allOf(allColumnNames("y")));
-        RowIterator rows = result.getRows();
-        Row row1 = rows.nextRow();
-        assertThat(row1.getNode().getPath(), is("/Other/NodeA[2]"));
+        String[] columnNames = allOf(allColumnNames("y"), new String[] {"y.propC"});
+        validateQuery().rowCount(1).warnings(3).hasColumns(columnNames).hasNodesAtPaths("/Other/NodeA[2]")
+                       .validate(query, result);
     }
 
     @FixFor( "MODE-1055" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithCriteria() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM [nt:base] WHERE [car:year] < 2009", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [nt:base] WHERE [car:year] < 2009";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, allColumnNames("nt:base"));
+        validateQuery().rowCount(13).warnings(1).hasColumns(allColumnNames("nt:base")).validate(query, result);
     }
 
     @FixFor( "MODE-1055" )
     @Test
     public void shouldReturnNullValuesForNonExistantPropertiesInSelectClauseOfJcrSql2Query() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT bogus, laughable, [car:year] FROM [nt:base] WHERE [car:year] < 2009",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT bogus, laughable, [car:year] FROM [nt:base] WHERE [car:year] < 2009";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, "bogus", "laughable", "car:year");
-        RowIterator rows = result.getRows();
-        while (rows.hasNext()) {
-            Row row = rows.nextRow();
-            assertThat(row.getValue("bogus"), is(nullValue()));
-            assertThat(row.getValue("laughable"), is(nullValue()));
-            assertThat(row.getValue("car:year"), is(not(nullValue())));
-        }
+        String[] columnNames = {"bogus", "laughable", "car:year"};
+        validateQuery().rowCount(13).warnings(3).hasColumns(columnNames).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertThat(row.getValue("bogus"), is(nullValue()));
+                assertThat(row.getValue("laughable"), is(nullValue()));
+                assertThat(row.getValue("car:year"), is(not(nullValue())));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1055" )
     @Test
     public void shouldNotMatchNodesWhenQueryUsesNonExistantPropertyInCriteriaInSelectClauseOfJcrSql2Query()
         throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT bogus, laughable, [car:year] FROM [nt:base] WHERE argle < 2009", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT bogus, laughable, [car:year] FROM [nt:base] WHERE argle < 2009";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 0);
-        assertResultsHaveColumns(result, "bogus", "laughable", "car:year");
+        String[] columnNames = {"bogus", "laughable", "car:year"};
+        validateQuery().rowCount(0).warnings(4).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-1055" )
     @Test
     public void shouldNotOrderByNonExistantPropertyInCriteriaInSelectClauseOfJcrSql2Query() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT bogus, laughable, [car:year] FROM [nt:base] ORDER BY argle", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT bogus, laughable, [car:year] FROM [nt:base] ORDER BY argle";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, "bogus", "laughable", "argle", "car:year");
+        String[] columnNames = {"bogus", "laughable", "car:year", "argle"};
+        validateQuery().rowCount(totalNodeCount).warnings(4).hasColumns(columnNames).validate(query, result);
     }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [car:Car]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, carColumnNames("car:Car"));
+        validateQuery().rowCount(13).hasColumns(carColumnNames("car:Car")).validate(query, result);
     }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByYear() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM [car:Car] ORDER BY [car:year]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [car:Car] ORDER BY [car:year]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, carColumnNames("car:Car"));
+        validateQuery().rowCount(13).hasColumns(carColumnNames("car:Car")).validate(query, result);
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByMsrp() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByDescendingLexicographicalPriceAndNullsFirst()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC NULLS FIRST";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, carColumnNames("car:Car"));
-        // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
-        assertRow(result, 1).has("car:model", "LR3").and("car:msrp", "$48,525").and("car:mpgCity", 12);
-        assertRow(result, 2).has("car:model", "IS350").and("car:msrp", "$36,305").and("car:mpgCity", 18);
-        assertRow(result, 10).has("car:model", "DB9").and("car:msrp", "$171,600").and("car:mpgCity", 12);
+        validateQuery().rowCount(13).hasColumns(carColumnNames("car:Car")).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
+                if (rowNumber == 1) {
+                    assertThat(row.getValue("car:model").getString(), is("DTS"));
+                    assertThat(row.getValue("car:msrp"), is(nullValue()));
+                    assertThat(row.getValue("car:mpgCity"), is(nullValue()));
+                } else if (rowNumber == 2) {
+                    assertThat(row.getValue("car:model").getString(), is("LR3"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$48,525"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(12L));
+                } else if (rowNumber == 3) {
+                    assertThat(row.getValue("car:model").getString(), is("IS350"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$36,305"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(18L));
+                } else if (rowNumber == 11) {
+                    assertThat(row.getValue("car:model").getString(), is("DB9"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$171,600"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(12L));
+                }
+            }
+        }).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByDescendingLexicographicalPriceAndNullsLast()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC NULLS LAST";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns(carColumnNames("car:Car")).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
+                if (rowNumber == 1) {
+                    assertThat(row.getValue("car:model").getString(), is("LR3"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$48,525"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(12L));
+                } else if (rowNumber == 2) {
+                    assertThat(row.getValue("car:model").getString(), is("IS350"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$36,305"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(18L));
+                } else if (rowNumber == 10) {
+                    assertThat(row.getValue("car:model").getString(), is("DB9"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$171,600"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(12L));
+                } else if (rowNumber == 13) {
+                    assertThat(row.getValue("car:model").getString(), is("DTS"));
+                    assertThat(row.getValue("car:msrp"), is(nullValue()));
+                    assertThat(row.getValue("car:mpgCity"), is(nullValue()));
+                }
+            }
+        }).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByAscendingLexicographicalPriceAndNullsFirst()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] ORDER BY [car:msrp] ASC NULLS FIRST";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns(carColumnNames("car:Car")).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
+                if (rowNumber == 1) {
+                    assertThat(row.getValue("car:model").getString(), is("DTS"));
+                    assertThat(row.getValue("car:msrp"), is(nullValue()));
+                    assertThat(row.getValue("car:mpgCity"), is(nullValue()));
+                } else if (rowNumber == 13) {
+                    assertThat(row.getValue("car:model").getString(), is("LR3"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$48,525"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(12L));
+                } else if (rowNumber == 12) {
+                    assertThat(row.getValue("car:model").getString(), is("IS350"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$36,305"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(18L));
+                } else if (rowNumber == 12) {
+                    assertThat(row.getValue("car:model").getString(), is("DB9"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$171,600"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(12L));
+                }
+            }
+        }).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByAscendingLexicographicalPriceAndNullsLast()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] ORDER BY [car:msrp] ASC NULLS LAST";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        // print = true;
+        validateQuery().rowCount(13).hasColumns(carColumnNames("car:Car")).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
+                if (rowNumber == 3) {
+                    assertThat(row.getValue("car:model").getString(), is("DB9"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$171,600"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(12L));
+                } else if (rowNumber == 11) {
+                    assertThat(row.getValue("car:model").getString(), is("IS350"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$36,305"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(18L));
+                } else if (rowNumber == 12) {
+                    assertThat(row.getValue("car:model").getString(), is("LR3"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$48,525"));
+                    assertThat(row.getValue("car:mpgCity").getLong(), is(12L));
+                } else if (rowNumber == 13) {
+                    assertThat(row.getValue("car:model").getString(), is("DTS"));
+                    assertThat(row.getValue("car:msrp"), is(nullValue()));
+                    assertThat(row.getValue("car:mpgCity"), is(nullValue()));
+                }
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1234" )
@@ -891,11 +1174,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String[] columnNames = {"notion:booleanProperty", "notion:booleanProperty2"};
         String queryStr = "SELECT [notion:booleanProperty], [notion:booleanProperty2] FROM [notion:typed] AS node " + criteria;
         Query query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, numResults);
-        assertResultsHaveColumns(result, columnNames);
+        validateQuery().rowCount(numResults).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-1611" )
@@ -954,10 +1234,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = qomFactory.createQuery(selector, constraint, orderings, columns);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, numResults);
         String[] columnNames = {"notion:booleanProperty", "notion:booleanProperty2"};
-        assertResultsHaveColumns(result, columnNames);
+        validateQuery().rowCount(numResults).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-1611" )
@@ -974,13 +1252,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // Build and execute the query ...
         Query query = qomFactory.createQuery(selector, constraint, orderings, columns);
         assertThat(query.getStatement(), is("SELECT * FROM [nt:base] AS category WHERE ISCHILDNODE(category,'/Cars')"));
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4L); // just 4 children below "/Cars"
-        String[] expectedColumns = {"category.jcr:primaryType", "category.jcr:mixinTypes", "category.jcr:name",
-            "category.jcr:path", "category.jcr:score", "category.mode:depth", "category.mode:localName"};
-        assertResultsHaveColumns(result, expectedColumns);
+        validateQuery().rowCount(4).hasColumns(allColumnNames("category")).validate(query, result);
     }
 
     @FixFor( "MODE-1057" )
@@ -1014,27 +1287,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String[] columnNames = {"car:maker", "car:model", "car:year", "car:userRating"};
         String queryStr = "SELECT [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] AS car " + criteria;
         Query query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, numResults);
-        assertResultsHaveColumns(result, columnNames);
-    }
-
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybrid() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3L);
-        assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:msrp");
-        assertRow(result).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
-        assertRow(result).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
-        assertRow(result).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
+        validateQuery().rowCount(numResults).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-1824" )
@@ -1044,17 +1298,138 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryObjectModelFactory factory = queryManager.getQOMFactory();
         Selector car1Selector = factory.selector("car:Car", "car1");
         Selector car2Selector = factory.selector("car:Car", "car2");
-        Join join = factory.join(car1Selector,
-                                 car2Selector,
-                                 QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
+        Join join = factory.join(car1Selector, car2Selector, QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
                                  factory.equiJoinCondition("car1", "car:maker", "car2", "car:maker"));
         Column[] columns = new Column[] {factory.column("car1", "car:maker", "maker"),
             factory.column("car2", "car:model", "model")};
         Query query = factory.createQuery(join, null, null, columns);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 21L);
+        String[] columnNames = {columns[0].getColumnName(), columns[1].getColumnName()}; // the aliases
+        validateQuery().rowCount(21).hasColumns(columnNames).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToQueryWithLimitOfZeroOnNonJoin() throws RepositoryException {
+        // Try with the LIMIT expression ...
+        String sql = "SELECT [jcr:path] FROM [car:Car] LIMIT 0";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(0).hasColumns("jcr:path").validate(query, result);
+
+        // Try with the method ...
+        sql = "SELECT [jcr:path] FROM [car:Car]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        query.setLimit(0);
+        result = query.execute();
+        validateQuery().rowCount(0).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToQueryWithTooLargeLimitOnNonJoin() throws RepositoryException {
+        // Try with the LIMIT expression ...
+        String sql = "SELECT [jcr:path] FROM [car:Car] LIMIT 100";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("jcr:path").validate(query, result);
+
+        // Try with the method ...
+        sql = "SELECT [jcr:path] FROM [car:Car]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        query.setLimit(100);
+        result = query.execute();
+        validateQuery().rowCount(13).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToQueryWithLimitOnNonJoin() throws RepositoryException {
+        // Try with the LIMIT expression ...
+        String sql = "SELECT [jcr:path] FROM [car:Car] LIMIT 2";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(2).hasColumns("jcr:path").validate(query, result);
+
+        // Try with the method ...
+        sql = "SELECT [jcr:path] FROM [car:Car]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        query.setLimit(2);
+        result = query.execute();
+        validateQuery().rowCount(2).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToQueryWithOffsetOnNonJoin() throws RepositoryException {
+        // Try with the OFFSET expression ...
+        String sql = "SELECT [jcr:path] FROM [car:Car] OFFSET 2";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(11).hasColumns("jcr:path").validate(query, result);
+
+        // Try with the method ...
+        sql = "SELECT [jcr:path] FROM [car:Car]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        query.setOffset(2);
+        result = query.execute();
+        validateQuery().rowCount(11).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToQueryWithZeroOffsetOnNonJoin() throws RepositoryException {
+        // Try with the OFFSET expression ...
+        String sql = "SELECT [jcr:path] FROM [car:Car] OFFSET 0";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("jcr:path").validate(query, result);
+
+        // Try with the method ...
+        sql = "SELECT [jcr:path] FROM [car:Car]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        query.setOffset(0);
+        result = query.execute();
+        validateQuery().rowCount(13).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToQueryWithTooLargeOffsetOnNonJoin() throws RepositoryException {
+        // Try with the OFFSET expression ...
+        String sql = "SELECT [jcr:path] FROM [car:Car] OFFSET 100";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(0).hasColumns("jcr:path").validate(query, result);
+
+        // Try with the method ...
+        sql = "SELECT [jcr:path] FROM [car:Car]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        query.setOffset(100);
+        result = query.execute();
+        validateQuery().rowCount(0).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToQueryWithLimitAndOffsetOnNonJoin() throws RepositoryException {
+        // Try with the OFFSET expression ...
+        String sql = "SELECT [jcr:path] FROM [car:Car] ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        final String[] allCarPaths = {"/Cars/Hybrid/Nissan Altima", "/Cars/Hybrid/Toyota Highlander",
+            "/Cars/Hybrid/Toyota Prius", "/Cars/Luxury/Bentley Continental", "/Cars/Luxury/Cadillac DTS",
+            "/Cars/Luxury/Lexus IS350", "/Cars/Sports/Aston Martin DB9", "/Cars/Sports/Infiniti G37", "/Cars/Utility/Ford F-150",
+            "/Cars/Utility/Hummer H3", "/Cars/Utility/Land Rover LR2", "/Cars/Utility/Land Rover LR3",
+            "/Cars/Utility/Toyota Land Cruiser"};
+        validateQuery().rowCount(13).hasColumns("jcr:path").hasNodesAtPaths(allCarPaths).validate(query, result);
+
+        // Try with the OFFSET expression ...
+        sql = "SELECT [jcr:path] FROM [car:Car] ORDER BY [jcr:path] LIMIT 2 OFFSET 2";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(2).hasColumns("jcr:path").hasNodesAtPaths(allCarPaths[2], allCarPaths[3])
+                       .validate(query, result);
+
+        // Try with the method ...
+        sql = "SELECT [jcr:path] FROM [car:Car]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        query.setOffset(2);
+        result = query.execute();
+        validateQuery().rowCount(11).hasColumns("jcr:path").validate(query, result);
     }
 
     @FixFor( "MODE-1865" )
@@ -1075,21 +1450,27 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             String sql = "SELECT p.* AS parent FROM [modetest:parent] AS p INNER JOIN [modetest:child] AS c ON ISDESCENDANTNODE(c,p) WHERE p.[modetest:parentField] = CAST('5' AS LONG) AND c.[modetest:childField] = 'bar'";
             Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
             QueryResult result = query.execute();
-            assertThat(result, is(notNullValue()));
-            assertResults(query, result, 5);
+            validateQuery().rowCount(5).onEachRow(new Predicate() {
+                @Override
+                public void validate( int rowNumber,
+                                      Row row ) throws RepositoryException {
+                    // Path of all rows should have an even digit at the end ...
+                    String path = row.getPath();
+                    int lastIntValue = Integer.parseInt(path.substring(path.length() - 1));
+                    assertTrue(lastIntValue % 2 == 0);
+                }
+            }).validate(query, result);
 
             // Try again but with LIMIT 1 (via method)...
             query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
             query.setLimit(1L);
             result = query.execute();
-            assertThat(result, is(notNullValue()));
-            assertResults(query, result, 1);
+            validateQuery().rowCount(1).validate(query, result);
 
             // Try again but with LIMIT 1 (via statement)...
             query = session.getWorkspace().getQueryManager().createQuery(sql + " LIMIT 1", Query.JCR_SQL2);
             result = query.execute();
-            assertThat(result, is(notNullValue()));
-            assertResults(query, result, 1);
+            validateQuery().rowCount(1).validate(query, result);
         } finally {
             top.remove();
             session.save();
@@ -1097,35 +1478,99 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybridWithOrderBy() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%' ORDER BY [jcr:name]",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybrid() throws RepositoryException {
+        String sql = "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp], car.[jcr:path] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%' ORDER BY [car:model]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3L);
-        assertResultsHaveColumns(result, "car:maker", "jcr:name", "car:model", "car:year", "car:msrp");
-        assertRow(result, 1).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
-        assertRow(result, 2).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
-        assertRow(result, 3).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
+        String[] columnNames = {"car:maker", "car:model", "car:year", "car:msrp", "jcr:path"};
+        validateQuery().rowCount(3).hasColumns(columnNames).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                if (rowNumber == 1) {
+                    assertThat(row.getValue("car:model").getString(), is("Altima"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$18,260"));
+                    assertThat(row.getValue("car:year").getLong(), is(2008L));
+                } else if (rowNumber == 2) {
+                    assertThat(row.getValue("car:model").getString(), is("Highlander"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$34,200"));
+                    assertThat(row.getValue("car:year").getLong(), is(2008L));
+                } else if (rowNumber == 3) {
+                    assertThat(row.getValue("car:model").getString(), is("Prius"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$21,500"));
+                    assertThat(row.getValue("car:year").getLong(), is(2008L));
+                }
+            }
+        }).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithPathCriteria() throws RepositoryException {
+        String sql = "SELECT [jcr:path] FROM [nt:unstructured] WHERE PATH() = '/Cars/Hybrid/Toyota Highlander'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertThat(row.getNode().getPath(), is("/Cars/Hybrid/Toyota Highlander"));
+            }
+        }).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryForNodeNamedHybrid() throws RepositoryException {
+        String sql = "SELECT [jcr:path] FROM [nt:unstructured] AS hybrid WHERE NAME(hybrid) = 'Hybrid'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertThat(row.getNode().getName(), is("Hybrid"));
+            }
+        }).validate(query, result);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryForNodeLocalNamedHybrid() throws RepositoryException {
+        String sql = "SELECT [jcr:path] FROM [nt:unstructured] AS hybrid WHERE LOCALNAME(hybrid) = 'Hybrid'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertThat(row.getNode().getName(), is("Hybrid"));
+            }
+        }).validate(query, result);
     }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryUsingJoinToFindAllCarsUnderHybrid() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid' ORDER BY NAME(car)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3L);
-        assertResultsHaveColumns(result, "car.car:maker", "car.car:model", "car.car:year", "car.car:msrp");
-        assertRow(result).has("car:model", "Altima").and("car.car:msrp", "$18,260").and("car.car:year", 2008);
-        assertRow(result).has("car:model", "Highlander").and("car.car:msrp", "$34,200").and("car.car:year", 2008);
-        assertRow(result).has("car:model", "Prius").and("car.car:msrp", "$21,500").and("car.car:year", 2008);
+        String[] columnNames = {"car.car:maker", "car.car:model", "car.car:year", "car.car:msrp"};
+        validateQuery().rowCount(3).hasColumns(columnNames).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                if (rowNumber == 1) {
+                    assertThat(row.getValue("car:model").getString(), is("Altima"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$18,260"));
+                    assertThat(row.getValue("car:year").getLong(), is(2008L));
+                } else if (rowNumber == 2) {
+                    assertThat(row.getValue("car:model").getString(), is("Highlander"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$34,200"));
+                    assertThat(row.getValue("car:year").getLong(), is(2008L));
+                } else if (rowNumber == 3) {
+                    assertThat(row.getValue("car:model").getString(), is("Prius"));
+                    assertThat(row.getValue("car:msrp").getString(), is("$21,500"));
+                    assertThat(row.getValue("car:year").getLong(), is(2008L));
+                }
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1825" )
@@ -1135,9 +1580,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryObjectModelFactory factory = queryManager.getQOMFactory();
         Selector car1Selector = factory.selector("car:Car", "car1");
         Selector car2Selector = factory.selector("car:Car", "car2");
-        Join join = factory.join(car1Selector,
-                                 car2Selector,
-                                 QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
+        Join join = factory.join(car1Selector, car2Selector, QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
                                  factory.equiJoinCondition("car1", "car:maker", "car2", "car:maker"));
         Column[] columns = new Column[] {factory.column("car1", null, null)};
         Constraint constraint = factory.comparison(factory.propertyValue("car1", "car:maker"),
@@ -1145,10 +1588,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                                                    factory.literal(session.getValueFactory().createValue("Toyota")));
         Ordering[] orderings = new Ordering[] {factory.descending(factory.propertyValue("car1", "car:year"))};
         Query query = factory.createQuery(join, constraint, orderings, columns);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 9L);
+        validateQuery().rowCount(9).hasColumns(carColumnNames("car1")).validate(query, result);
     }
 
     @FixFor( "MODE-1833" )
@@ -1156,24 +1597,18 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToQueryAllColumnsOnSimpleType() throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         QueryObjectModelFactory factory = queryManager.getQOMFactory();
-        Query query = factory.createQuery(factory.selector("modetest:simpleType", "type1"),
-                                          null,
-                                          null,
+        Query query = factory.createQuery(factory.selector("modetest:simpleType", "type1"), null, null,
                                           new Column[] {factory.column("type1", null, null)});
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 0L);
+        validateQuery().rowCount(0).validate(query, result);
     }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllUnstructuredNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:unstructured]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
-        assertResultsHaveColumns(result, allColumnNames("nt:unstructured"));
+        validateQuery().rowCount(24).hasColumns(allColumnNames("nt:unstructured")).validate(query, result);
     }
 
     @FixFor( "MODE-1309" )
@@ -1181,25 +1616,23 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryUsingResidualPropertiesForJoinCriteria() throws RepositoryException {
         String sql = "SELECT x.propA AS pa, y.propB as pb FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.propA = y.propB WHERE x.propA = 'value1'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2);
-        assertResultsHaveColumns(result, "pa", "pb");
-        RowIterator rows = result.getRows();
-        Row row1 = rows.nextRow();
-        Set<String> expectedPaths = new HashSet<String>();
+        final Set<String> expectedPaths = new HashSet<String>();
         expectedPaths.add("/Other/NodeA[2]");
         expectedPaths.add("/Other/NodeA[3]");
-        assertThat(row1.getValue("pa").getString(), is("value1")); // same value from either row
-        assertThat(row1.getValue("pb").getString(), is("value1")); // same value from either row
-        assertThat(row1.getNode("x").getPath(), is("/Other/NodeA"));
-        assertThat(expectedPaths.remove(row1.getNode("y").getPath()), is(true));
-        Row row2 = rows.nextRow();
-        assertThat(row2.getValue("pa").getString(), is("value1")); // same value from either row
-        assertThat(row2.getValue("pb").getString(), is("value1")); // same value from either row
-        assertThat(row2.getNode("x").getPath(), is("/Other/NodeA"));
-        assertThat(expectedPaths.remove(row2.getNode("y").getPath()), is(true));
+        validateQuery().rowCount(2).hasColumns("pa", "pb").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // All the rows are identical ...
+                assertThat(row.getValue("pa").getString(), is("value1"));
+                assertThat(row.getValue("pb").getString(), is("value1"));
+                // The path of the first column is the same ...
+                assertThat(row.getNode("x").getPath(), is("/Other/NodeA"));
+                // The path of the second selector will vary in each row ...
+                assertThat(expectedPaths.remove(row.getNode("y").getPath()), is(true));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1309" )
@@ -1207,13 +1640,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QuerySelectingResidualProperty() throws RepositoryException {
         String sql = "SELECT a.propB FROM [nt:unstructured] AS a WHERE a.propB = 'value1'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2);
-        assertResultsHaveColumns(result, "propB");
-        Row row1 = result.getRows().nextRow();
-        assertThat(row1.getValue("propB").getString(), is("value1")); // same value from either row
+        validateQuery().rowCount(2).hasColumns("propB").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // All the rows are identical ...
+                assertThat(row.getValue("propB").getString(), is("value1"));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1309" )
@@ -1221,13 +1656,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QuerySelectingResidualPropertyWithAlias() throws RepositoryException {
         String sql = "SELECT a.propB AS foo FROM [nt:unstructured] AS a WHERE a.propB = 'value1'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2);
-        assertResultsHaveColumns(result, "foo");
-        Row row1 = result.getRows().nextRow();
-        assertThat(row1.getValue("foo").getString(), is("value1")); // same value from either row
+        validateQuery().rowCount(2).hasColumns("foo").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // All the rows are identical ...
+                assertThat(row.getValue("foo").getString(), is("value1"));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1309" )
@@ -1236,13 +1673,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT a.propB AS foo FROM [nt:unstructured] AS a WHERE a.foo = 'value1'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2);
-        assertResultsHaveColumns(result, "foo");
-        Row row1 = result.getRows().nextRow();
-        assertThat(row1.getValue("foo").getString(), is("value1")); // same value from either row
+        validateQuery().rowCount(2).hasColumns("foo").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // All the rows are identical ...
+                assertThat(row.getValue("foo").getString(), is("value1"));
+            }
+        }).validate(query, result);
     }
 
     @Test
@@ -1250,12 +1689,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:unstructured] WHERE something = 'white dog' and something = 'black dog'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, allColumnNames("nt:unstructured"));
+        validateQuery().rowCount(1).hasColumns(allColumnNames("nt:unstructured")).validate(query, result);
     }
 
     @Test
@@ -1263,12 +1699,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:unstructured] WHERE something LIKE 'white%' and something LIKE 'black%'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, allColumnNames("nt:unstructured"));
+        validateQuery().rowCount(1).hasColumns(allColumnNames("nt:unstructured")).validate(query, result);
     }
 
     @Test
@@ -1277,9 +1710,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 5);
-        assertResultsHaveColumns(result, carColumnNames("car"));
+        validateQuery().rowCount(5).hasColumns(carColumnNames("car")).validate(query, result);
     }
 
     @Test
@@ -1287,11 +1718,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT car.*, category.[jcr:primaryType] from [car:Car] as car JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 5L);
-        assertResultsHaveColumns(result, allOf(carColumnNames("car"), new String[] {"category.jcr:primaryType"}));
+        String[] columnNames = allOf(carColumnNames("car"), new String[] {"category.jcr:primaryType"});
+        validateQuery().rowCount(5).hasColumns(columnNames).validate(query, result);
     }
 
     @Test
@@ -1302,33 +1731,26 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // actually not repeats (since the columns from 'all' will be different).
         String sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as all ON ISDESCENDANTNODE(car,all)";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 26L);
-        assertResultsHaveColumns(result, allOf(carColumnNames("car"), allColumnNames("all")));
+        String[] columnNames = allOf(carColumnNames("car"), allColumnNames("all"));
+        validateQuery().rowCount(26).hasColumns(columnNames).validate(query, result);
     }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinWithDepthCriteria() throws RepositoryException {
         String sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE DEPTH(category) = 2";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
-        assertResultsHaveColumns(result, allOf(carColumnNames("car"), allColumnNames("category")));
+        String[] columnNames = allOf(carColumnNames("car"), allColumnNames("category"));
+        validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
     }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoin() throws RepositoryException {
         String sql = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 5);
-        assertResultsHaveColumns(result, carColumnNames("car"));
+        validateQuery().rowCount(5).hasColumns(carColumnNames("car")).validate(query, result);
     }
 
     @FixFor( "MODE-1809" )
@@ -1337,12 +1759,20 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String sql1 = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
         String sql2 = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Sports'";
         String sql = sql1 + " UNION " + sql2;
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+
+        String[] columnNames = carColumnNames("car");
+        // print = true;
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 7);
-        assertResultsHaveColumns(result, carColumnNames("car"));
+        validateQuery().rowCount(5).hasColumns(columnNames).validate(query, result);
+
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(2).hasColumns(columnNames).validate(query, result);
+
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(7).hasColumns(columnNames).validate(query, result);
     }
 
     @Test
@@ -1350,11 +1780,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT car.*, category.[jcr:primaryType] from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 5L);
-        assertResultsHaveColumns(result, allOf(carColumnNames("car"), new String[] {"category.jcr:primaryType"}));
+        String[] columnNames = allOf(carColumnNames("car"), new String[] {"category.jcr:primaryType"});
+        validateQuery().rowCount(5).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-829" )
@@ -1362,16 +1790,12 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinUsingNtBase() throws RepositoryException {
         String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
-        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
+        String[] columnNames = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
             "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
             "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
             "category.mode:localName"};
-
-        assertResultsHaveColumns(result, expectedColumns);
+        validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-829" )
@@ -1380,15 +1804,12 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND NAME(cars) LIKE 'Toyota%'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3L);
-        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
+        String[] columnNames = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
             "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
             "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
             "category.mode:localName"};
-        assertResultsHaveColumns(result, expectedColumns);
+        validateQuery().rowCount(3).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-829" )
@@ -1397,15 +1818,13 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:unstructured] AS category JOIN [nt:unstructured] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND cars.name = 'd2'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 0L); // no nodes have a 'name' property (strictly speaking)
-        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
+        String[] columnNames = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
             "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
             "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
             "category.mode:localName"};
-        assertResultsHaveColumns(result, expectedColumns);
+        // no nodes have a 'name' property (strictly speaking)
+        validateQuery().rowCount(0).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-829" )
@@ -1414,226 +1833,234 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND cars.name = 'd2'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 0); // no results, because it is a join on an invalid column
-        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
+        String[] columnNames = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
             "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
             "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
             "category.mode:localName"};
-        assertResultsHaveColumns(result, expectedColumns);
+        // no results, because one side of the join has criteria on a non-existant column
+        validateQuery().rowCount(0).hasColumns(columnNames).validate(query, result);
     }
 
     @FixFor( "MODE-869" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSubqueryInCriteria() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM [car:Car] WHERE [car:maker] IN (SELECT [car:maker] FROM [car:Car] WHERE [car:year] >= 2008)",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT * FROM [car:Car] WHERE [car:maker] IN (SELECT [car:maker] FROM [car:Car] WHERE [car:year] >= 2008)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13); // the 13 types of cars made by makers that made cars in 2008
-        assertResultsHaveColumns(result, carColumnNames("car:Car"));
+        // there are 13 cars made by makers that made cars in or after 2008
+        // The only car made before 2008 is Toyota Land Rover, but Toyota also makes the Highlander and Prius in 2008.
+        validateQuery().rowCount(13).hasColumns(carColumnNames("car:Car")).validate(query, result);
     }
 
     @FixFor( "MODE-869" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSubqueryInCriteria2() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM [car:Car] WHERE [car:maker] IN (SELECT [car:maker] FROM [car:Car] WHERE PATH() LIKE '%/Hybrid/%')",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT [car:maker] FROM [car:Car] WHERE PATH() LIKE '%/Hybrid/%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4); // the 4 types of cars made by makers that make hybrids
-        assertResultsHaveColumns(result, carColumnNames("car:Car"));
+        validateQuery().rowCount(3).hasColumns("car:maker").validate(query, result);
+
+        sql = "SELECT * FROM [car:Car] WHERE [car:maker] IN ('Toyota','Nissan')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        // the 4 kinds of cars made by makers that make hybrids
+        validateQuery().rowCount(4).hasColumns(carColumnNames("car:Car")).validate(query, result);
+
+        sql = "SELECT * FROM [car:Car] WHERE [car:maker] IN (SELECT [car:maker] FROM [car:Car] WHERE PATH() LIKE '%/Hybrid/%')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        // the 4 kinds of cars made by makers that make hybrids
+        validateQuery().rowCount(4).hasColumns(carColumnNames("car:Car")).validate(query, result);
     }
 
     @FixFor( "MODE-1873" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSubqueryInCriteriaWhenSubquerySelectsPseudoColumn()
         throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT [jcr:path] FROM [nt:unstructured] WHERE [pathProperty] IN (SELECT [jcr:path] FROM [nt:unstructured] WHERE PATH() LIKE '/Other/%')",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
+        String sql = "SELECT [jcr:path] FROM [nt:unstructured] WHERE PATH() LIKE '/Other/%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1); // the 4 types of cars made by makers that make hybrids
-        assertResultsHaveColumns(result, new String[] {"jcr:path"});
+        validateQuery().rowCount(4).hasColumns("jcr:path").validate(query, result);
+
+        sql = "SELECT [jcr:path],[pathProperty] FROM [nt:unstructured] WHERE [pathProperty] = '/Other/NodeA'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path", "pathProperty").validate(query, result);
+
+        sql = "SELECT [jcr:path],[pathProperty] FROM [nt:unstructured] WHERE [pathProperty] IN ('/Other/NodeA[2]', '/Other/NodeA', '/Other/NodeC', '/Other/NodeA[3]')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path", "pathProperty").validate(query, result);
+
+        sql = "SELECT [jcr:path] FROM [nt:unstructured] WHERE [pathProperty] IN (SELECT [jcr:path] FROM [nt:unstructured] WHERE PATH() LIKE '/Other/%')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
     }
 
     @FixFor( "MODE-909" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderBy() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT [jcr:primaryType] from [nt:base] ORDER BY [jcr:primaryType]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
+        String sql = "SELECT [jcr:primaryType] from [nt:base] ORDER BY [jcr:primaryType]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType"});
-        RowIterator iter = result.getRows();
-        String primaryType = "";
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            String nextPrimaryType = row.getValues()[0].getString();
-            assertThat(nextPrimaryType.compareTo(primaryType) >= 0, is(true));
-            primaryType = nextPrimaryType;
-        }
+        validateQuery().rowCount(totalNodeCount).hasColumns("jcr:primaryType").onEachRow(new Predicate() {
+            private String lastPrimaryType;
+
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                String primaryType = row.getValue("jcr:primaryType").getString();
+                if (lastPrimaryType != null) {
+                    assertThat(primaryType.compareTo(lastPrimaryType) >= 0, is(true));
+                }
+                lastPrimaryType = primaryType;
+            }
+        }).validate(query, result);
+    }
+
+    protected Predicate pathOrder() {
+        return new Predicate() {
+            private Path lastPath;
+
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                String pathStr = row.getValue("jcr:path").getString();
+                Path path = path(pathStr);
+                if (lastPath != null) {
+                    assertThat(path.compareTo(lastPath) >= 0, is(true));
+                }
+                lastPath = path;
+            }
+        };
+    }
+
+    @FixFor( "MODE-2138" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByPathPseudoColumn() throws RepositoryException {
+        String sql = "SELECT [jcr:path] from [nt:base] ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).hasColumns("jcr:path").onEachRow(pathOrder()).validate(query, result);
+    }
+
+    @FixFor( "MODE-2138" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByPath() throws RepositoryException {
+        String sql = "SELECT [jcr:path] from [nt:base] ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).hasColumns("jcr:path").onEachRow(pathOrder()).validate(query, result);
     }
 
     @FixFor( {"MODE-1277", "MODE-1485"} )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullOuterJoin() throws RepositoryException {
-        String sql = "SELECT car.[jcr:name], category.[jcr:primaryType] from [car:Car] as car FULL OUTER JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(car) LIKE 'Toyota*'";
+        String sql = "SELECT car.[jcr:name], category.[jcr:primaryType], car.[jcr:path], category.[jcr:path] from [car:Car] as car FULL OUTER JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(car) LIKE 'Toyota*'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 72L);
-        assertResultsHaveColumns(result, new String[] {"car.jcr:name", "category.jcr:primaryType"});
+        String[] columnNames = {"car.jcr:name", "category.jcr:primaryType", "car.jcr:path", "category.jcr:path"};
+        // Because every "Toyota" car has a parent, there will be no 'car' nodes that don't have a category. However,
+        // we'll see every category node, and there are 25 of them. Therefore, we'll see 25 nodes.
+        validateQuery().rowCount(25).hasColumns(columnNames).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                // Every row should have a category ...
+                assertNotNull(row.getNode("category"));
+                // Every non-null car should be a Toyota ...
+                Node car = row.getNode("car");
+                if (car != null) assertTrue(car.getName().contains("Toyota"));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1750" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinOnNullCondition() throws RepositoryException {
-        // given
-        final String sql = "SELECT car1.[jcr:name] from [car:Car] as car1 LEFT OUTER JOIN [car:Car] as car2 ON car1.[car:alternateModesl] = car2.[UUID]";
-        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-
-        // when
-        final QueryResult result = query.execute();
-
-        // then
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
-        assertResultsHaveColumns(result, new String[] {"car1.jcr:name"});
+        String sql = "SELECT car1.[jcr:name] from [car:Car] as car1 LEFT OUTER JOIN [car:Car] as car2 ON car1.[car:alternateModesl] = car2.[UUID]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("car1.jcr:name").validate(query, result);
     }
 
     @FixFor( "MODE-1750" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithRightOuterJoinOnNullCondition() throws RepositoryException {
-        // given
-        final String sql = "SELECT car2.[jcr:name] from [car:Car] as car1 RIGHT OUTER JOIN [car:Car] as car2 ON car1.[car:alternateModesl] = car2.[UUID]";
-        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-
-        // when
-        final QueryResult result = query.execute();
-
-        // then
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
-        assertResultsHaveColumns(result, new String[] {"car2.jcr:name"});
+        String sql = "SELECT car2.[jcr:name] from [car:Car] as car1 RIGHT OUTER JOIN [car:Car] as car2 ON car1.[car:alternateModesl] = car2.[UUID]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("car2.jcr:name").validate(query, result);
     }
 
     @FixFor( "MODE-2450" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinAndNoCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category)";
-        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-
-        final QueryResult result = query.execute();
-
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
-        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
     @FixFor( "MODE-2450" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinAndDepthCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE DEPTH(category) = 2";
-        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-
-        final QueryResult result = query.execute();
-
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
-        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
     @FixFor( "MODE-2450" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinAndDepthCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE DEPTH(category) = 2";
-        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-
-        final QueryResult result = query.execute();
-
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 17L);
-        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(17).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
-    @FixFor( "MODE-2450" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinWithFullTextSearch() throws RepositoryException {
-        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
-        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-
-        final QueryResult result = query.execute();
-
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
-    }
-
-    @FixFor( "MODE-2450" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinWithFullTextSearch() throws RepositoryException {
-        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
-        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-
-        final QueryResult result = query.execute();
-
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, new String[] {"category.jcr:path", "cars.jcr:path"});
-    }
-
-    @FixFor( "MODE-2450" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithUnionAndFullTextSearch() throws RepositoryException {
-        String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE contains(category.*, 'Utility')"
-                     + "UNION "
-                     + "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(cars.*, 'Toyota') ";
-        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-
-        final QueryResult result = query.execute();
-
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2L);
-        assertResultsHaveColumns(result, new String[] {"p"});
-    }
+    // @FixFor( "MODE-2450" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinWithFullTextSearch() throws RepositoryException {
+    // String sql =
+    // "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-2450" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinWithFullTextSearch() throws RepositoryException {
+    // String sql =
+    // "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-2450" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithUnionAndFullTextSearch() throws RepositoryException {
+    // String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE contains(category.*, 'Utility')"
+    // + "UNION "
+    // +
+    // "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(cars.*, 'Toyota') ";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(2).hasColumns("p").validate(query, result);
+    // }
 
     @FixFor( "MODE-1679" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindReferenceableNodes() throws RepositoryException {
         String sql = "SELECT [jcr:uuid] FROM [mix:referenceable]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4L);
-        assertResultsHaveColumns(result, new String[] {"jcr:uuid"});
+        validateQuery().rowCount(4).hasColumns("jcr:uuid").validate(query, result);
     }
 
     @FixFor( "MODE-1679" )
@@ -1641,12 +2068,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindJcrUuidOfNodeWithPathCriteria() throws RepositoryException {
         String sql = "SELECT [jcr:uuid] FROM [mix:referenceable] AS node WHERE PATH(node) = '/Other/NodeA[2]'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, new String[] {"jcr:uuid"});
+        validateQuery().rowCount(1).hasColumns("jcr:uuid").validate(query, result);
     }
 
     @FixFor( "MODE-1679" )
@@ -1654,12 +2077,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindNodesOfParticularPrimaryType() throws RepositoryException {
         String sql = "SELECT [notion:singleReference], [notion:multipleReferences] FROM [notion:typed]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, "notion:singleReference", "notion:multipleReferences");
+        validateQuery().rowCount(1).hasColumns("notion:singleReference", "notion:multipleReferences").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertValueIsNonNullReference(row, "notion:singleReference");
+                assertValueIsNonNullReference(row, "notion:multipleReferences");
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1679" )
@@ -1667,12 +2093,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSingleReferenceConstraintUsingSubquery() throws RepositoryException {
         String sql = "SELECT [notion:singleReference] FROM [notion:typed] WHERE [notion:singleReference] IN ( SELECT [jcr:uuid] FROM [mix:referenceable] AS node WHERE PATH(node) = '/Other/NodeA')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, "notion:singleReference");
+        validateQuery().rowCount(1).hasColumns("notion:singleReference").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertValueIsNonNullReference(row, "notion:singleReference");
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1679" )
@@ -1683,12 +2111,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(id, is(notNullValue()));
         String sql = "SELECT [notion:singleReference] FROM [notion:typed] AS typed WHERE [notion:singleReference] = '" + id + "'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, "notion:singleReference");
+        validateQuery().rowCount(1).hasColumns("notion:singleReference").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertValueIsNonNullReference(row, "notion:singleReference");
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1679" )
@@ -1696,12 +2126,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSingleReferenceConstraintUsingJoin() throws RepositoryException {
         String sql = "SELECT typed.* FROM [notion:typed] AS typed JOIN [mix:referenceable] AS target ON typed.[notion:singleReference] = target.[jcr:uuid] WHERE PATH(target) = '/Other/NodeA'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, typedColumnNames("typed"));
+        validateQuery().rowCount(1).hasColumns(typedColumnNames("typed")).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertValueIsNonNullReference(row, "typed.notion:singleReference");
+                assertValueIsNonNullReference(row, "typed.notion:multipleReferences");
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1679" )
@@ -1710,12 +2143,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         throws RepositoryException {
         String sql = "SELECT [notion:multipleReferences] FROM [notion:typed] WHERE [notion:multipleReferences] IN ( SELECT [jcr:uuid] FROM [mix:referenceable] AS node WHERE PATH(node) = '/Other/NodeA[2]')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, "notion:multipleReferences");
+        validateQuery().rowCount(1).hasColumns("notion:multipleReferences").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertValueIsNonNullReference(row, "notion:multipleReferences");
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1679" )
@@ -1727,12 +2162,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String sql = "SELECT [notion:multipleReferences] FROM [notion:typed] AS typed WHERE [notion:multipleReferences] = '" + id
                      + "'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, "notion:multipleReferences");
+        validateQuery().rowCount(1).hasColumns("notion:multipleReferences").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertValueIsNonNullReference(row, "notion:multipleReferences");
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-1679" )
@@ -1741,113 +2178,86 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String sql = "SELECT typed.* FROM [notion:typed] AS typed JOIN [mix:referenceable] AS target ON typed.[notion:multipleReferences] = target.[jcr:uuid] WHERE PATH(target) = '/Other/NodeA[2]'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, typedColumnNames("typed"));
+        validateQuery().rowCount(1).hasColumns(typedColumnNames("typed")).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertValueIsNonNullReference(row, "typed.notion:singleReference");
+                assertValueIsNonNullReference(row, "typed.notion:multipleReferences");
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelectOfJcrSql2Query() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base]", Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
+        String sql = "select [jcr:primaryType], [jcr:path] FROM [nt:base]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
+        validateQuery().rowCount(totalNodeCount).hasColumns("jcr:primaryType", "jcr:path").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertNotNull(row.getValue("jcr:primaryType"));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelectAndCriteriaOfJcrSql2Query() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [jcr:path] LIKE '/Cars/%'",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
+        String sql = "select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [jcr:path] LIKE '/Cars/%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 17);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
+        validateQuery().rowCount(17).hasColumns("jcr:primaryType", "jcr:path").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertNotNull(row.getValue("jcr:primaryType"));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelectAndUnqualifiedNameInCriteriaOfJcrSql2Query()
         throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [jcr:name] LIKE '%3%'",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
+        String sql = "select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [jcr:name] LIKE '%3%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
+        validateQuery().rowCount(4).hasColumns("jcr:primaryType", "jcr:path").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertNotNull(row.getValue("jcr:primaryType"));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelectAndUnqualifiedLocalNameInCriteriaOfJcrSql2Query()
         throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [mode:localName] LIKE '%3%'",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
+        String sql = "select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [mode:localName] LIKE '%3%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
+        validateQuery().rowCount(4).hasColumns("jcr:primaryType", "jcr:path").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertNotNull(row.getValue("jcr:primaryType"));
+            }
+        }).validate(query, result);
     }
 
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithJcrPathInJoinCriteriaOfJcrSql2Query() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select base.[jcr:primaryType], base.[jcr:path], car.[car:year] "
-                                          + "FROM [nt:base] AS base JOIN [car:Car] AS car ON car.[jcr:path] = base.[jcr:path]",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
+        String sql = "select base.[jcr:primaryType], base.[jcr:path], car.[car:year] FROM [nt:base] AS base JOIN [car:Car] AS car ON car.[jcr:path] = base.[jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, new String[] {"base.jcr:primaryType", "base.jcr:path", "car.car:year"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
+        validateQuery().rowCount(13).hasColumns("base.jcr:primaryType", "base.jcr:path", "car.car:year").validate(query, result);
     }
 
     @FixFor( "MODE-934" )
@@ -1855,16 +2265,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldNotIncludePseudoColumnsInSelectStarOfJcrSql2Query() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("select * FROM [nt:base]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, allColumnNames("nt:base"));
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
+        validateQuery().rowCount(totalNodeCount).hasColumns(allColumnNames("nt:base")).validate(query, result);
     }
 
     @FixFor( "MODE-1738" )
@@ -1872,12 +2274,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldSupportJoinWithOrderByOnPseudoColumn() throws RepositoryException {
         String sql = "SELECT category.[jcr:path], cars.[car:maker], cars.[car:lengthInInches] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') ORDER BY cars.[mode:localName]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
         String[] expectedColumns = {"category.jcr:path", "cars.car:maker", "cars.mode:localName", "cars.car:lengthInInches"};
-        assertResultsHaveColumns(result, expectedColumns);
+        validateQuery().rowCount(13).hasColumns(expectedColumns).validate(query, result);
     }
 
     @FixFor( "MODE-1738" )
@@ -1885,12 +2284,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldSupportJoinWithOrderByOnActualColumn() throws RepositoryException {
         String sql = "SELECT category.[jcr:path], cars.[car:maker], cars.[car:lengthInInches] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') ORDER BY cars.[car:maker]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
         String[] expectedColumns = {"category.jcr:path", "cars.car:maker", "cars.car:lengthInInches"};
-        assertResultsHaveColumns(result, expectedColumns);
+        validateQuery().rowCount(13).hasColumns(expectedColumns).validate(query, result);
     }
 
     @FixFor( "MODE-1737" )
@@ -1898,12 +2294,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldSupportSelectDistinct() throws RepositoryException {
         String sql = "SELECT DISTINCT cars.[car:maker], cars.[car:lengthInInches] FROM [car:Car] AS cars";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
         String[] expectedColumns = {"car:maker", "car:lengthInInches"};
-        assertResultsHaveColumns(result, expectedColumns);
+        validateQuery().rowCount(13).hasColumns(expectedColumns).validate(query, result);
     }
 
     @FixFor( "MODE-1737" )
@@ -1911,12 +2304,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldSupportJoinWithSelectDistinct() throws RepositoryException {
         String sql = "SELECT DISTINCT category.[jcr:path], cars.[car:maker], cars.[car:lengthInInches] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13L);
         String[] expectedColumns = {"category.jcr:path", "cars.car:maker", "cars.car:lengthInInches"};
-        assertResultsHaveColumns(result, expectedColumns);
+        validateQuery().rowCount(13).hasColumns(expectedColumns).validate(query, result);
     }
 
     @FixFor( "MODE-1020" )
@@ -1924,17 +2314,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldFindAllPublishAreas() throws Exception {
         String sql = "SELECT [jcr:path], [jcr:title], [jcr:description] FROM [mode:publishArea]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 0L); // currently no records
-        assertResultsHaveColumns(result, new String[] {"jcr:path", "jcr:title", "jcr:description"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
+        validateQuery().rowCount(0).hasColumns("jcr:path", "jcr:title", "jcr:description").validate(query, result);
     }
 
     @FixFor( "MODE-1052" )
@@ -1943,206 +2324,146 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // Find all nodes that are children of '/Cars' ... there should be 4 ...
         String sql = "SELECT [jcr:path] FROM [nt:base] WHERE ISCHILDNODE([nt:base],'/Cars') ORDER BY [jcr:path]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4L);
-        assertResultsHaveColumns(result, new String[] {"jcr:path"});
-        assertResultsHaveRows(result, "jcr:path", "/Cars/Hybrid", "/Cars/Luxury", "/Cars/Sports", "/Cars/Utility");
+        String[] paths = {"/Cars/Hybrid", "/Cars/Luxury", "/Cars/Sports", "/Cars/Utility"};
+        validateQuery().rowCount(4).hasColumns("jcr:path").hasNodesAtPaths(paths).validate(query, result);
 
         // Find all nodes ... there should be 24 ...
         sql = "SELECT [jcr:path] FROM [nt:base] ORDER BY [jcr:path]";
         query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
+        validateQuery().rowCount(totalNodeCount).hasColumns("jcr:path").validate(query, result);
 
         // Find all nodes that are NOT children of '/Cars' (and not under '/jcr:system') ...
         sql = "SELECT [jcr:path] FROM [nt:base] WHERE NOT(ISCHILDNODE([nt:base],'/Cars')) AND NOT(ISDESCENDANTNODE([nt:base],'/jcr:system')) ORDER BY [jcr:path]";
         query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 22L);
-        assertResultsHaveColumns(result, new String[] {"jcr:path"});
-        assertResultsHaveRows(result,
-                              "jcr:path",
-                              "/",
-                              "/Cars",
-                              "/Cars/Hybrid/Nissan Altima",
-                              "/Cars/Hybrid/Toyota Highlander",
-                              "/Cars/Hybrid/Toyota Prius",
-                              "/Cars/Luxury/Bentley Continental",
-                              "/Cars/Luxury/Cadillac DTS",
-                              "/Cars/Luxury/Lexus IS350",
-                              "/Cars/Sports/Aston Martin DB9",
-                              "/Cars/Sports/Infiniti G37",
-                              "/Cars/Utility/Ford F-150",
-                              "/Cars/Utility/Hummer H3",
-                              "/Cars/Utility/Land Rover LR2",
-                              "/Cars/Utility/Land Rover LR3",
-                              "/Cars/Utility/Toyota Land Cruiser",
-                              "/NodeB",
-                              "/Other",
-                              "/Other/NodeA",
-                              "/Other/NodeA[2]",
-                              "/Other/NodeA[3]",
-                              "/Other/NodeC",
-                              "/jcr:system");
+        paths = new String[] {"/", "/Cars", "/Cars/Hybrid/Nissan Altima", "/Cars/Hybrid/Toyota Highlander",
+            "/Cars/Hybrid/Toyota Prius", "/Cars/Luxury/Bentley Continental", "/Cars/Luxury/Cadillac DTS",
+            "/Cars/Luxury/Lexus IS350", "/Cars/Sports/Aston Martin DB9", "/Cars/Sports/Infiniti G37", "/Cars/Utility/Ford F-150",
+            "/Cars/Utility/Hummer H3", "/Cars/Utility/Land Rover LR2", "/Cars/Utility/Land Rover LR3",
+            "/Cars/Utility/Toyota Land Cruiser", "/NodeB", "/Other", "/Other/NodeA", "/Other/NodeA[2]", "/Other/NodeA[3]",
+            "/Other/NodeC", "/jcr:system"};
+        validateQuery().rowCount(22).hasColumns("jcr:path").validate(query, result);
     }
 
     @FixFor( "MODE-1110" )
     @Test
     public void shouldExecuteQueryWithThreeInnerJoinsAndCriteriaOnDifferentSelectors() throws Exception {
-        String sql = "SELECT * from [nt:base] as myfirstnodetypes INNER JOIN [nt:base] as mysecondnodetypes "
-                     + "        ON ISDESCENDANTNODE(myfirstnodetypes, mysecondnodetypes) "
-                     + "INNER JOIN [nt:base] as mythirdnodetypes "
-                     + "        ON ISDESCENDANTNODE (mysecondnodetypes, mythirdnodetypes) "
-                     + " WHERE ISDESCENDANTNODE( mythirdnodetypes, '/') OR " + "myfirstnodetypes.[jcr:primaryType] IS NOT NULL";
+        String sql = "SELECT * from [nt:base] as car INNER JOIN [nt:base] as categories ON ISDESCENDANTNODE(car, categories) "
+                     + " INNER JOIN [nt:base] as carsNode ON ISDESCENDANTNODE (categories, carsNode) "
+                     + " WHERE PATH(carsNode) = '/Cars' AND ISDESCENDANTNODE( categories, '/Cars') OR car.[jcr:primaryType] IS NOT NULL";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, new String[] {"myfirstnodetypes.jcr:path", "mythirdnodetypes.mode:depth",
-            "mysecondnodetypes.mode:depth", "mythirdnodetypes.jcr:path", "mysecondnodetypes.jcr:path",
-            "mythirdnodetypes.jcr:mixinTypes", "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score",
-            "mythirdnodetypes.jcr:name", "mysecondnodetypes.jcr:mixinTypes", "mysecondnodetypes.jcr:score",
-            "mythirdnodetypes.mode:localName", "myfirstnodetypes.jcr:primaryType", "mysecondnodetypes.jcr:primaryType",
-            "mysecondnodetypes.jcr:name", "myfirstnodetypes.jcr:name", "mythirdnodetypes.jcr:primaryType",
-            "myfirstnodetypes.jcr:mixinTypes", "myfirstnodetypes.mode:localName", "myfirstnodetypes.mode:depth",
-            "mysecondnodetypes.mode:localName"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
+        String[] columnNames = allOf(allColumnNames("car"), allColumnNames("categories"), allColumnNames("carsNode"));
+        validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
     }
 
-    @FixFor( "MODE-1418" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
-        throws RepositoryException {
-        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'cat wearing')";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-    }
-
-    @FixFor( "MODE-1418" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndAllProperties()
-        throws RepositoryException {
-        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.*, 'cat wearing')";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-    }
-
-    @FixFor( "MODE-1418" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithNoSelectorAndOneProperty()
-        throws RepositoryException {
-        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveRows(result, "jcr:path", "/Other/NodeA[2]");
-    }
-
-    @FixFor( "MODE-1829" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingLeadingWildcard() throws RepositoryException {
-        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing')";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing*')";
-        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-    }
-
-    @FixFor( "MODE-1829" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingTrailingWildcard() throws RepositoryException {
-        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'wea*')";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-    }
-
-    @Test
-    @FixFor( "MODE-1547" )
-    public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeStopWords() throws Exception {
-        String propertyText = "the quick Brown fox jumps over to the dog in at the gate";
-        Node ftsNode = session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText).getParent();
-        try {
-            session.save();
-
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'"
-                                             + propertyText + "')");
-
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
-                                             + propertyText + "')");
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText
-                                             + "')");
-
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
-                                             + propertyText.toUpperCase() + "')");
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
-                                             + propertyText.toUpperCase() + "')");
-
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
-
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
-
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
-            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
-        } finally {
-            // Try to remove the node (which messes up the expected results from subsequent tests) ...
-            ftsNode.remove();
-            session.save();
-        }
-    }
-
-    private void executeJcrSQL2AndExpectOneResult( String sql ) throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, JcrRepository.QueryLanguage.JCR_SQL2);
-        QueryResult result = query.execute();
-        assertResults(query, result, 1);
-    }
-
-    @FixFor( "MODE-1840" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithBindVariableInsideContains() throws RepositoryException {
-        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, $expression)";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        query.bindValue("expression", session.getValueFactory().createValue("cat wearing"));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
-        assertResultsHaveColumns(result, new String[] {"jcr:path"});
-        assertResultsHaveRows(result, "jcr:path", "/Other/NodeA[2]");
-    }
+    // @FixFor( "MODE-1418" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
+    // throws RepositoryException {
+    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'cat wearing')";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-1418" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndAllProperties()
+    // throws RepositoryException {
+    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.*, 'cat wearing')";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-1418" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithNoSelectorAndOneProperty()
+    // throws RepositoryException {
+    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Other/NodeA[2]").validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-1829" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingLeadingWildcard() throws RepositoryException {
+    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing')";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    //
+    // sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing*')";
+    // query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-1829" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingTrailingWildcard() throws RepositoryException
+    // {
+    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'wea*')";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    // }
+    //
+    // @Test
+    // @FixFor( "MODE-1547" )
+    // public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeStopWords() throws Exception {
+    // String propertyText = "the quick Brown fox jumps over to the dog in at the gate";
+    // Node ftsNode = session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText).getParent();
+    // try {
+    // session.save();
+    //
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'"
+    // + propertyText + "')");
+    //
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText
+    // + "')");
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText
+    // + "')");
+    //
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
+    // + propertyText.toUpperCase() + "')");
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
+    // + propertyText.toUpperCase() + "')");
+    //
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
+    //
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
+    //
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
+    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
+    // } finally {
+    // // Try to remove the node (which messes up the expected results from subsequent tests) ...
+    // ftsNode.remove();
+    // session.save();
+    // }
+    // }
+    //
+    // private void executeQueryWithSingleResult( String sql ) throws RepositoryException {
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, JcrRepository.QueryLanguage.JCR_SQL2);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-1840" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithBindVariableInsideContains() throws RepositoryException {
+    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, $expression)";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // query.bindValue("expression", session.getValueFactory().createValue("cat wearing"));
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Other/NodeA[2]").validate(query, result);
+    // }
 
     @FixFor( "MODE-1840" )
     @Test( expected = InvalidQueryException.class )
@@ -2156,967 +2477,23 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         query.execute();
     }
 
-    // ----------------------------------------------------------------------------------------------------------------
-    // Full-text Search Queries
-    // ----------------------------------------------------------------------------------------------------------------
-
-    @FixFor( "MODE-1418" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryOfPhrase() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("cat wearing", JcrRepository.QueryLanguage.SEARCH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        // print = true;
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, searchColumnNames());
-    }
-
-    @FixFor( "MODE-905" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteFullTextSearchQuery() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("land", JcrRepository.QueryLanguage.SEARCH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        // print = true;
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3);
-        assertResultsHaveColumns(result, searchColumnNames());
-    }
-
-    @FixFor( "MODE-905" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryWithName() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("highlander", JcrRepository.QueryLanguage.SEARCH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, searchColumnNames());
-    }
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // JCR-SQL Queries
-    // ----------------------------------------------------------------------------------------------------------------
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithOrderByClause() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithOrderByPathClause() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY PATH() ASC",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithPathCriteriaAndOrderByClause() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT car:model FROM car:Car WHERE jcr:path LIKE '/Cars/%' ORDER BY car:model ASC",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
-    }
-
-    /**
-     * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
-     * @throws RepositoryException
-     */
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithChildAxisCriteria() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4); // the 4 types of cars
-        assertResultsHaveColumns(result, allColumnNames());
-    }
-
-    /**
-     * Tests that the child nodes (but no grandchild nodes) are returned.
-     *
-     * @throws RepositoryException
-     */
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithContainsCriteria() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4); // the 4 types of cars
-        assertResultsHaveColumns(result, allColumnNames());
-    }
-
-    @Test
-    @FixFor( "MODE-791" )
-    @SuppressWarnings( "deprecation" )
-    public void shouldReturnNodesWithPropertyConstrainedByTimestamp() throws Exception {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT car:model, car:maker FROM car:Car " + "WHERE jcr:path LIKE '/Cars/%' "
-                                          + "AND (car:msrp LIKE '$3%' OR car:msrp LIKE '$2') "
-                                          + "AND (car:year LIKE '2008' OR car:year LIKE '2009') " + "AND car:valueRating > '1' "
-                                          + "AND jcr:created > TIMESTAMP '1974-07-10T00:00:00.000-05:00' "
-                                          + "AND jcr:created < TIMESTAMP '3074-07-10T00:00:00.000-05:00'",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 5);
-
-        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
-            assertThat(iter.nextNode().hasProperty("car:model"), is(true));
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @FixFor( "MODE-934" )
-    @Test
-    public void shouldParseQueryWithUnqualifiedPathInSelectOfJcrSqlQuery() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select jcr:primaryType, jcr:path FROM nt:base", Query.SQL);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "jcr:score"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @FixFor( "MODE-934" )
-    @Test
-    public void shouldParseQueryWithUnqualifiedPathInSelectAndCriteriaOfJcrSqlQuery() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select jcr:primaryType, jcr:path FROM nt:base WHERE jcr:path LIKE '/Cars/%'",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 17);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "jcr:score"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @FixFor( "MODE-934" )
-    @Test
-    public void shouldParseQueryWithUnqualifiedPathInSelectAndUnqualifiedNameInCriteriaOfJcrSqlQuery() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select jcr:primaryType, jcr:path FROM nt:base WHERE jcr:name LIKE '%3%'", Query.SQL);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "jcr:score"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @FixFor( "MODE-934" )
-    @Test
-    public void shouldParseQueryWithUnqualifiedPathInSelectAndUnqualifiedLocalNameInCriteriaOfJcrSqlQuery()
-        throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select jcr:primaryType, jcr:path FROM nt:base WHERE mode:localName LIKE '%3%'",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "jcr:score"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @FixFor( "MODE-934" )
-    @Test
-    public void shouldParseQueryWithJcrPathInJoinCriteriaOfJcrSqlQuery() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select nt:base.jcr:primaryType, nt:base.jcr:path, car:Car.car:year "
-                                          + "FROM nt:base, car:Car WHERE car:Car.jcr:path = nt:base.jcr:path",
-                                          Query.SQL);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, new String[] {"nt:base.jcr:primaryType", "nt:base.jcr:path", "car:Car.car:year",
-            "jcr:path", "jcr:score"});
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @FixFor( "MODE-934" )
-    @Test
-    public void shouldNotIncludePseudoColumnsInSelectStarOfJcrSqlQuery() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("select * FROM nt:base", Query.SQL);
-        assertThat(query, is(notNullValue()));
-        // print = true;
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, allColumnNames());
-        RowIterator iter = result.getRows();
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            assertThat(row, is(notNullValue()));
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // XPath Queries
-    // ----------------------------------------------------------------------------------------------------------------
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToCreateXPathQuery() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        assertResults(query, query.execute(), 13);
-
-        query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        assertResults(query, query.execute(), 24);
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindAllNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:base)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, allColumnNames());
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindAllNodesOrderingByPath() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("//element(*,nt:base) order by @jcr:path", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, allColumnNames());
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindAllNodesOrderingByAttribute() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("//element(*,car:Car) order by @car:maker", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        // print = true;
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result, "car:maker", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 24);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, allColumnNames());
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByPropertyValue() throws RepositoryException {
-        QueryManager manager = session.getWorkspace().getQueryManager();
-        Query query = manager.createQuery("//element(*,nt:unstructured) order by @jcr:primaryType", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 24);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-
-        query = manager.createQuery("//element(*,car:Car) order by @car:year", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        result = query.execute();
-        assertResults(query, result, 13);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNode() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars/Hybrid/*", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 3);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNodeAndWithProperty() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars/Hybrid/*[@car:year]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 3);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNodeAndWithPropertyOrderedByProperty() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery(" /jcr:root/Cars/Hybrid/*[@car:year] order by @car:year ascending", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 3);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPath() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        // print = true;
-        assertResults(query, result, 17);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodesWithAllSnsIndexesUnderPath() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root//NodeA", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        // print = true;
-        assertResults(query, result, 3);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPathAndWithProperty() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*[@car:year]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 13);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPathAndWithPropertyOrderedByProperty() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery(" /jcr:root/Cars//*[@car:year] order by @car:year ascending", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 13);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByScore() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("//element(*,nt:unstructured) order by jcr:score()", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 24);
-        assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, allColumnNames());
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindSameNameSiblingsByIndex() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 3);
-        assertThat(result, is(notNullValue()));
-        // assertThat(result.getNodes().nextNode().getIndex(), is(1));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-
-        query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA[2]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        result = query.execute();
-        assertResults(query, result, 1);
-        assertThat(result, is(notNullValue()));
-        assertThat(result.getNodes().nextNode().getIndex(), is(2));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindAllCarNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 13);
-        assertResultsHaveColumns(result,
-                                 "jcr:primaryType",
-                                 "jcr:mixinTypes",
-                                 "jcr:path",
-                                 "jcr:score",
-                                 "jcr:created",
-                                 "jcr:createdBy",
-                                 "jcr:name",
-                                 "mode:localName",
-                                 "mode:depth",
-                                 "car:mpgCity",
-                                 "car:userRating",
-                                 "car:mpgHighway",
-                                 "car:engine",
-                                 "car:model",
-                                 "car:year",
-                                 "car:maker",
-                                 "car:lengthInInches",
-                                 "car:valueRating",
-                                 "car:wheelbaseInInches",
-                                 "car:msrp",
-                                 "car:alternateModels");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindRootNode() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNode() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNodeWithTypeCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars[@jcr:primaryType]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodeWithPathAndAttrbuteCriteria() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root/Cars/Sports/Infiniti_x0020_G37[@car:year='2008']", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodeWithAttrbuteCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//Infiniti_x0020_G37[@car:year='2008']", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        // print = true;
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodeWithPathUnderRootAndAttrbuteCriteria() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root/NodeB[@myUrl='http://www.acme.com/foo/bar']", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindAnywhereNodeWithNameAndAttrbuteCriteriaMatchingUrl()
-        throws RepositoryException {
-        // See MODE-686
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("//NodeB[@myUrl='http://www.acme.com/foo/bar']", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryToFindNodeWithNameMatch() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//NodeB", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    /*
-     * Adding this test case since its primarily a test of integration between the RNTM and the query engine
-     */
-    @Test( expected = InvalidNodeTypeDefinitionException.class )
-    public void shouldNotAllowUnregisteringUsedPrimaryType() throws Exception {
-        Session adminSession = null;
-
-        try {
-            adminSession = repository.login();
-            adminSession.setNamespacePrefix("cars", "http://www.modeshape.org/examples/cars/1.0");
-
-            JcrNodeTypeManager nodeTypeManager = (JcrNodeTypeManager)adminSession.getWorkspace().getNodeTypeManager();
-            nodeTypeManager.unregisterNodeTypes(Collections.singletonList("cars:Car"));
-        } finally {
-            if (adminSession != null) adminSession.logout();
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., 'liter')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithContainsCriteriaAndPluralWord() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., 'liters')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"liters V 12\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphen() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"5-speed\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNumberAndWildcard()
-        throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"spee*\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"heavy duty\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNoWildcard() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"heavy-duty\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndWildcard() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"heavy du*\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndLeadingWildcard()
-        throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"*avy duty\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndWildcard() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"heavy-du*\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @Ignore
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndLeadingWildcard()
-        throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"*-speed\"')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @FixFor( "MODE-790" )
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithCompoundCriteria() throws Exception {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liters V 12\"')]",
-                                          Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result,
-                                 "jcr:primaryType",
-                                 "jcr:mixinTypes",
-                                 "jcr:path",
-                                 "jcr:score",
-                                 "jcr:created",
-                                 "jcr:createdBy",
-                                 "jcr:name",
-                                 "mode:localName",
-                                 "mode:depth",
-                                 "car:mpgCity",
-                                 "car:userRating",
-                                 "car:mpgHighway",
-                                 "car:engine",
-                                 "car:model",
-                                 "car:year",
-                                 "car:maker",
-                                 "car:lengthInInches",
-                                 "car:valueRating",
-                                 "car:wheelbaseInInches",
-                                 "car:msrp",
-                                 "car:alternateModels");
-
-        // Query again with a different criteria that should return no nodes ...
-        query = session.getWorkspace()
-                       .getQueryManager()
-                       .createQuery("/jcr:root/Cars//element(*,car:Car)[@car:year='2007' and jcr:contains(., '\"liter V 12\"')]",
-                                    Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 0);
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildrenOfRoot() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/element()", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4L);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithElementTestForAllNodesBelowRoot() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element()", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, totalNodeCount);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildOfRootWithName() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/element(Cars)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithElementTestForSingleNodeBelowRootWithName() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element(Utility)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildrenOfRootWithName() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/element(NodeA)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithElementTestForMultipleNodesBelowRootWithName() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element(NodeA)", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @Ignore
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root/Other/*[@somethingElse <= 'value2' and @somethingElse > 'value1']",
-                                          Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldBeAbleToExecuteXPathQueryWithNewlyRegisteredNamespace() throws RepositoryException {
-        NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
-        namespaceRegistry.registerNamespace("newPrefix", "newUri");
-
-        try {
-            // We don't have any elements that use this yet, but let's at least verify that it can execute.
-            Query query = session.getWorkspace()
-                                 .getQueryManager()
-                                 .createQuery("//*[@newPrefix:someColumn = 'someValue']", Query.XPATH);
-            query.execute();
-        } finally {
-            namespaceRegistry.unregisterNamespace("newPrefix");
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldNotReturnNodesWithNoPropertyForPropertyCriterion() throws Exception {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root/Cars//*[@car:wheelbaseInInches]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-
-        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
-            assertThat(iter.nextNode().hasProperty("car:wheelbaseInInches"), is(true));
-        }
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldNotReturnNodesWithNoPropertyForLikeCriterion() throws Exception {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("/jcr:root/Cars//*[jcr:like(@car:wheelbaseInInches, '%')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-
-        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
-            assertThat(iter.nextNode().hasProperty("car:wheelbaseInInches"), is(true));
-        }
-    }
-
-    @FixFor( "MODE-1144" )
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldParseMagnoliaXPathQuery() throws Exception {
-
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("//*[@jcr:primaryType='mgnl:content']//*[jcr:contains(., 'paragraph')]", Query.XPATH);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-
-        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
-            assertThat(iter.nextNode().hasProperty("car:wheelbaseInInches"), is(true));
-        }
-    }
-
     @FixFor( "MODE-1145" )
     @Test
     public void shouldParseFincayraQuery() throws Exception {
-        String sql = "SELECT post.\"jcr:uuid\", post.\"text\", post.\"user\" FROM [fincayra.Post] AS post JOIN [fincayra.User] AS u ON post.\"user\"=u.\"jcr:uuid\" WHERE u.email='test1@innobuilt.com'";
+        String sql = "SELECT * FROM [fincayra.Post] AS post";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
-            assertThat(iter.nextNode().hasProperty("jcr:uuid"), is(true));
-            assertThat(iter.nextNode().hasProperty("text"), is(true));
-            assertThat(iter.nextNode().hasProperty("user"), is(true));
-        }
+        validateQuery().rowCount(0).validate(query, result);
+
+        sql = "SELECT * FROM [fincayra.User] AS u WHERE u.email='test1@innobuilt.com'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(0).validate(query, result);
+
+        sql = "SELECT post.\"jcr:uuid\", post.\"text\", post.\"user\" FROM [fincayra.Post] AS post JOIN [fincayra.User] AS u ON post.\"user\"=u.\"jcr:uuid\" WHERE u.email='test1@innobuilt.com'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(0).hasColumns("post.jcr:uuid", "post.text", "post.user").validate(query, result);
     }
 
     @FixFor( "MODE-1145" )
@@ -3124,13 +2501,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldParseFincayraQuery2() throws Exception {
         String sql = "SELECT post.\"jcr:uuid\", post.\"text\", post.\"user\" FROM [fincayra.UnstrPost] AS post JOIN [fincayra.UnstrUser] AS u ON post.\"user\"=u.\"jcr:uuid\" WHERE u.email='test1@innobuilt.com'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
-            assertThat(iter.nextNode().hasProperty("jcr:uuid"), is(true));
-            assertThat(iter.nextNode().hasProperty("text"), is(true));
-            assertThat(iter.nextNode().hasProperty("user"), is(true));
-        }
+        validateQuery().rowCount(0).hasColumns("post.jcr:uuid", "post.text", "post.user").validate(query, result);
     }
 
     @FixFor( "MODE-1145" )
@@ -3140,90 +2512,13 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result.getRows().getSize(), is(2L));
-        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
-            assertThat(iter.nextNode().hasProperty("something"), is(true));
-        }
-    }
-
-    @FixFor( "MODE-1468" )
-    @Test
-    public void shouldAllowCreationAndExecutionOfQueryObjectModel() throws Exception {
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        QueryObjectModelFactory qomFactory = queryManager.getQOMFactory();
-        Selector selector = qomFactory.selector("car:Car", "car");
-        PropertyValue propValue = qomFactory.propertyValue("car", "car:userRating");
-        Literal literal = qomFactory.literal(session.getValueFactory().createValue("4")); // use a String since it's LIKE
-        Constraint constraint = qomFactory.comparison(propValue, JCR_OPERATOR_LIKE, literal);
-        Column[] columns = new Column[4];
-        columns[0] = qomFactory.column("car", "car:maker", "maker");
-        columns[1] = qomFactory.column("car", "car:model", "car:model");
-        columns[2] = qomFactory.column("car", "car:year", "car:year");
-        columns[3] = qomFactory.column("car", "car:userRating", "car:userRating");
-        Ordering[] orderings = null;
-
-        // Build and execute the query ...
-        Query query1 = qomFactory.createQuery(selector, constraint, orderings, columns);
-        assertThat(query1, is(notNullValue()));
-        QueryResult result1 = query1.execute();
-        assertThat(result1, is(notNullValue()));
-        assertResults(query1, result1, 4L);
-        assertResultsHaveColumns(result1, "maker", "car:model", "car:year", "car:userRating");
-
-        // Now get the JCR-SQL2 statement from the QOM ...
-        String expectedExpr = "SELECT car.[car:maker] AS maker, car.[car:model], car.[car:year], car.[car:userRating] FROM [car:Car] AS car WHERE car.[car:userRating] LIKE '4'";
-        String expr = query1.getStatement();
-        assertThat(expr, is(expectedExpr));
-
-        // Now execute it ...
-        Query query2 = queryManager.createQuery(expr, Query.JCR_SQL2);
-        assertThat(query2, is(notNullValue()));
-        QueryResult result2 = query2.execute();
-        assertThat(result2, is(notNullValue()));
-        assertResults(query2, result2, 4L);
-        assertResultsHaveColumns(result2, "maker", "car:model", "car:year", "car:userRating");
-
-    }
-
-    @FixFor( "MODE-1468" )
-    @Test
-    public void shouldAllowCreationAndExecutionOfQueryObjectModelWithLimit() throws Exception {
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        QueryObjectModelFactory qomFactory = queryManager.getQOMFactory();
-        Selector selector = qomFactory.selector("car:Car", "car");
-        PropertyValue propValue = qomFactory.propertyValue("car", "car:userRating");
-        Literal literal = qomFactory.literal(session.getValueFactory().createValue("4")); // use a String since it's LIKE
-        Constraint constraint = qomFactory.comparison(propValue, JCR_OPERATOR_LIKE, literal);
-        Column[] columns = new Column[4];
-        columns[0] = qomFactory.column("car", "car:maker", "maker");
-        columns[1] = qomFactory.column("car", "car:model", "car:model");
-        columns[2] = qomFactory.column("car", "car:year", "car:year");
-        columns[3] = qomFactory.column("car", "car:userRating", "car:userRating");
-        Ordering[] orderings = null;
-        Limit limit = qomFactory.limit(2, 0);
-        boolean isDistinct = false;
-
-        // Build and execute the query ...
-        SelectQuery selectQuery = qomFactory.select(selector, constraint, orderings, columns, limit, isDistinct);
-        Query query1 = qomFactory.createQuery(selectQuery);
-        assertThat(query1, is(notNullValue()));
-        QueryResult result1 = query1.execute();
-        assertThat(result1, is(notNullValue()));
-        assertResults(query1, result1, 2L);
-        assertResultsHaveColumns(result1, "maker", "car:model", "car:year", "car:userRating");
-
-        // Now get the JCR-SQL2 statement from the QOM ...
-        String expectedExpr = "SELECT car.[car:maker] AS maker, car.[car:model], car.[car:year], car.[car:userRating] FROM [car:Car] AS car WHERE car.[car:userRating] LIKE '4' LIMIT 2";
-        String expr = query1.getStatement();
-        assertThat(expr, is(expectedExpr));
-
-        // Now execute it ...
-        Query query2 = queryManager.createQuery(expr, Query.JCR_SQL2);
-        assertThat(query2, is(notNullValue()));
-        QueryResult result2 = query2.execute();
-        assertThat(result2, is(notNullValue()));
-        assertResults(query2, result2, 2L);
-        assertResultsHaveColumns(result2, "maker", "car:model", "car:year", "car:userRating");
+        validateQuery().rowCount(2).hasColumns("jcr:path", "something").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertThat(row.getNode().hasProperty("something"), is(true));
+            }
+        }).validate(query, result);
     }
 
     @Test
@@ -3244,8 +2539,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
         QueryResult result = query.execute();
-
-        assertEquals(session.getWorkspace().getNodeTypeManager().getAllNodeTypes().getSize(), result.getNodes().getSize());
+        long numNodetypes = session.getWorkspace().getNodeTypeManager().getAllNodeTypes().getSize();
+        validateQuery().rowCount(numNodetypes).validate(query, result);
     }
 
     @Test
@@ -3384,17 +2679,43 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             relationship.setProperty("test:target", new JcrValue[] {nodeBRef, nodeCRef});
 
             session.save();
-
-            String queryString = "SELECT DISTINCT target.* " + "   FROM [test:node] AS node "
-                                 + "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) "
-                                 + "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] "
-                                 + "   WHERE node.[test:name] = 'A'";
             QueryManager queryManager = session.getWorkspace().getQueryManager();
-            QueryResult queryResult = queryManager.createQuery(queryString, Query.JCR_SQL2).execute();
-            if (print) {
-                System.out.println("queryResult = " + queryResult);
-            }
-            assertEquals(2, queryResult.getNodes().getSize());
+
+            // Find the reference in the node ...
+            String queryString = "SELECT relationship.[test:target] FROM [test:relationship] AS relationship";
+            Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            validateQuery().rowCount(1).validate(query, query.execute());
+
+            // Find the UUIDs of the 'test:node' (which are all 'mix:referenceable') ...
+            queryString = "SELECT [jcr:uuid], [jcr:path] FROM [test:node]";
+            query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            validateQuery().rowCount(3).onEachRow(new Predicate() {
+                @Override
+                public void validate( int rowNumber,
+                                      Row row ) throws RepositoryException {
+                    assertNotNull(row.getValue("jcr:uuid"));
+                }
+            }).validate(query, query.execute());
+
+            queryString = "SELECT relationship.[test:target], target.[jcr:path] "
+                          + "   FROM [test:relationship] AS relationship "
+                          + "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] ";
+            query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            validateQuery().rowCount(2).validate(query, query.execute());
+
+            queryString = "SELECT node.[jcr:path], relationship.[test:target], target.[jcr:path] FROM [test:node] AS node "
+                          + "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) "
+                          + "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] "
+                          + "   WHERE node.[test:name] = 'A'";
+            query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            validateQuery().rowCount(2).validate(query, query.execute());
+
+            queryString = "SELECT DISTINCT target.* FROM [test:node] AS node "
+                          + "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) "
+                          + "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] "
+                          + "   WHERE node.[test:name] = 'A'";
+            query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            validateQuery().rowCount(2).validate(query, query.execute());
         } finally {
             nodeA.remove();
             nodeB.remove();
@@ -3425,15 +2746,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             QueryManager queryManager = session.getWorkspace().getQueryManager();
             Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
             QueryResult result = query.execute();
+            final List<String> resultIds = new ArrayList<String>();
+            validateQuery().rowCount(2).onEachRow(new Predicate() {
+                @Override
+                public void validate( int rowNumber,
+                                      Row row ) throws RepositoryException {
+                    resultIds.add(row.getNode().getIdentifier());
+                }
+            }).validate(query, result);
 
-            NodeIterator nodes = result.getNodes();
-            assertEquals(2, nodes.getSize());
-            List<String> resultIds = new ArrayList<String>();
-            while (nodes.hasNext()) {
-                resultIds.add(nodes.nextNode().getIdentifier());
-            }
             Collections.sort(resultIds);
-
             assertEquals(referrerIds, resultIds);
         } finally {
             nodeA.remove();
@@ -3466,15 +2788,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             QueryManager queryManager = session.getWorkspace().getQueryManager();
             Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
             QueryResult result = query.execute();
+            final List<String> resultIds = new ArrayList<String>();
+            validateQuery().rowCount(2).onEachRow(new Predicate() {
+                @Override
+                public void validate( int rowNumber,
+                                      Row row ) throws RepositoryException {
+                    resultIds.add(row.getNode().getIdentifier());
+                }
+            }).validate(query, result);
 
-            NodeIterator nodes = result.getNodes();
-            assertEquals(2, nodes.getSize());
-            List<String> resultIds = new ArrayList<String>();
-            while (nodes.hasNext()) {
-                resultIds.add(nodes.nextNode().getIdentifier());
-            }
             Collections.sort(resultIds);
-
             assertEquals(referrerIds, resultIds);
         } finally {
             nodeA.remove();
@@ -3508,14 +2831,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
             QueryResult result = query.execute();
 
-            NodeIterator nodes = result.getNodes();
-            assertEquals(2, nodes.getSize());
-            List<String> resultIds = new ArrayList<String>();
-            while (nodes.hasNext()) {
-                resultIds.add(nodes.nextNode().getIdentifier());
-            }
-            Collections.sort(resultIds);
+            final List<String> resultIds = new ArrayList<String>();
+            validateQuery().rowCount(2).onEachRow(new Predicate() {
+                @Override
+                public void validate( int rowNumber,
+                                      Row row ) throws RepositoryException {
+                    resultIds.add(row.getNode().getIdentifier());
+                }
+            }).validate(query, result);
 
+            Collections.sort(resultIds);
             assertEquals(referrerIds, resultIds);
 
         } finally {
@@ -3552,14 +2877,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
             QueryResult result = query.execute();
 
-            NodeIterator nodes = result.getNodes();
-            assertEquals(3, nodes.getSize());
-            List<String> resultIds = new ArrayList<String>();
-            while (nodes.hasNext()) {
-                resultIds.add(nodes.nextNode().getIdentifier());
-            }
-            Collections.sort(resultIds);
+            final List<String> resultIds = new ArrayList<String>();
+            validateQuery().rowCount(3).onEachRow(new Predicate() {
+                @Override
+                public void validate( int rowNumber,
+                                      Row row ) throws RepositoryException {
+                    resultIds.add(row.getNode().getIdentifier());
+                }
+            }).validate(query, result);
 
+            Collections.sort(resultIds);
             assertEquals(referrerIds, resultIds);
         } finally {
             nodeA.remove();
@@ -3590,27 +2917,65 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    @FixFor( "MODE-2027" )
-    @Test
-    public void shouldSearchAllPropertiesUsingDotSelectorJCRSql2FullTextSearch() throws RepositoryException {
-        String sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(., 'Toyota') ";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        NodeIterator nodes = query.execute().getNodes();
-        List<Node> actual = new ArrayList<Node>();
-        while (nodes.hasNext()) {
-            actual.add(nodes.nextNode());
-        }
-
-        sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(cars.*, 'Toyota')";
-        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        nodes = query.execute().getNodes();
-        List<Node> expected = new ArrayList<Node>();
-        while (nodes.hasNext()) {
-            expected.add(nodes.nextNode());
-        }
-
-        assertEquals(expected, actual);
-    }
+    //
+    // @FixFor( "MODE-2027" )
+    // @Test
+    // public void shouldSearchAllPropertiesUsingDotSelectorJCRSql2FullTextSearch() throws RepositoryException {
+    // String sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(., 'Toyota') ";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // final List<String> actual = new ArrayList<String>();
+    // validateQuery().onEachRow(new Predicate() {
+    // @Override
+    // public void validate( int rowNumber,
+    // Row row ) throws RepositoryException {
+    // actual.add(row.getNode().getIdentifier());
+    // }
+    // }).validate(query, query.execute());
+    //
+    // sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(cars.*, 'Toyota')";
+    // query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+    // final List<String> expected = new ArrayList<String>();
+    // validateQuery().rowCount(actual.size()).onEachRow(new Predicate() {
+    // @Override
+    // public void validate( int rowNumber,
+    // Row row ) throws RepositoryException {
+    // expected.add(row.getNode().getIdentifier());
+    // }
+    // }).validate(query, query.execute());
+    //
+    // assertEquals(expected, actual);
+    // }
+    //
+    // @FixFor( "MODE-2062" )
+    // @Test
+    // public void fullTextShouldWorkWithBindVar() throws Exception {
+    // Node n1 = session.getRootNode().addNode("n1");
+    // n1.setProperty("n1-prop-1", "wow");
+    // n1.setProperty("n1-prop-2", "any");
+    //
+    // Node n2 = session.getRootNode().addNode("n2");
+    // n2.setProperty("n2-prop-1", "test");
+    //
+    // try {
+    // session.save();
+    //
+    // // test with literal
+    // String queryString = "select * from [nt:unstructured] as a where contains(a.*, 'wow')";
+    // assertNodesAreFound(queryString, Query.JCR_SQL2, "/n1");
+    //
+    // // test with bind
+    // String queryStringWithBind = "select * from [nt:unstructured] as a where contains(a.*, $text)";
+    // QueryManager queryManager = session.getWorkspace().getQueryManager();
+    // Query query = queryManager.createQuery(queryStringWithBind, Query.JCR_SQL2);
+    // query.bindValue("text", session.getValueFactory().createValue("wow"));
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasNodesAtPaths("/n1").validate(query, result);
+    // } finally {
+    // n1.remove();
+    // n2.remove();
+    // session.save();
+    // }
+    // }
 
     @FixFor( "MODE-2095" )
     @Test
@@ -3623,8 +2988,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         session.save();
 
         try {
-            String queryString = "select * from [nt:unstructured] as node where " +
-                                 "node.now <= CAST('2999-10-21T00:00:00.000' AS DATE) and node.now >= CAST('1999-10-21T00:00:00.000' AS DATE)";
+            String queryString = "select * from [nt:unstructured] as node where "
+                                 + "node.now <= CAST('2999-10-21T00:00:00.000' AS DATE) and node.now >= CAST('1999-10-21T00:00:00.000' AS DATE)";
             assertNodesAreFound(queryString, Query.JCR_SQL2, "/date_parent/date_node1", "/date_parent/date_node2");
         } finally {
             testParent.remove();
@@ -3632,43 +2997,750 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    @FixFor( "MODE-2062" )
+    // // ----------------------------------------------------------------------------------------------------------------
+    // // Full-text Search Queries
+    // // ----------------------------------------------------------------------------------------------------------------
+    //
+    // @FixFor( "MODE-1418" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryOfPhrase() throws RepositoryException {
+    // Query query = session.getWorkspace().getQueryManager().createQuery("cat wearing", JcrRepository.QueryLanguage.SEARCH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns(searchColumnNames()).validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-905" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteFullTextSearchQuery() throws RepositoryException {
+    // Query query = session.getWorkspace().getQueryManager().createQuery("land", JcrRepository.QueryLanguage.SEARCH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(3).hasColumns(searchColumnNames()).validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-905" )
+    // @Test
+    // public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryWithName() throws RepositoryException {
+    // Query query = session.getWorkspace().getQueryManager().createQuery("highlander", JcrRepository.QueryLanguage.SEARCH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns(searchColumnNames()).validate(query, result);
+    // }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // JCR-SQL Queries
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @SuppressWarnings( "deprecation" )
     @Test
-    public void fullTextShouldWorkWithBindVar() throws Exception {
-        Node n1 = session.getRootNode().addNode("n1");
-        n1.setProperty("n1-prop-1", "wow");
-        n1.setProperty("n1-prop-2", "any");
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithOrderByClause() throws RepositoryException {
+        String sql = "SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("jcr:path", "jcr:score", "car:model").validate(query, result);
+    }
 
-        Node n2 = session.getRootNode().addNode("n2");
-        n2.setProperty("n2-prop-1", "test");
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithOrderByPathClause() throws RepositoryException {
+        String sql = "SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY PATH() ASC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("jcr:path", "jcr:score", "car:model").validate(query, result);
+    }
 
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithPathCriteriaAndOrderByClause() throws RepositoryException {
+        String sql = "SELECT car:model FROM car:Car WHERE jcr:path LIKE '/Cars/%' ORDER BY car:model ASC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("jcr:path", "jcr:score", "car:model").validate(query, result);
+    }
+
+    /**
+     * Tests that the child nodes (but no grandchild nodes) are returned.
+     * 
+     * @throws RepositoryException
+     */
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithChildAxisCriteria() throws RepositoryException {
+        String sql = "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(4).hasColumns(allColumnNames()).validate(query, result);
+    }
+
+    /**
+     * Tests that the child nodes (but no grandchild nodes) are returned.
+     * 
+     * @throws RepositoryException
+     */
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithContainsCriteria() throws RepositoryException {
+        String sql = "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(4).hasColumns(allColumnNames()).validate(query, result);
+    }
+
+    @Test
+    @FixFor( "MODE-791" )
+    @SuppressWarnings( "deprecation" )
+    public void shouldReturnNodesWithPropertyConstrainedByTimestamp() throws Exception {
+        String sql = "SELECT car:model, car:year, car:maker FROM car:Car " + "WHERE jcr:path LIKE '/Cars/%' "
+                     + "AND (car:msrp LIKE '$3%' OR car:msrp LIKE '$2') " + "AND (car:year LIKE '2008' OR car:year LIKE '2009') "
+                     + "AND car:valueRating > '1' " + "AND jcr:created > TIMESTAMP '1974-07-10T00:00:00.000-05:00' "
+                     + "AND jcr:created < TIMESTAMP '3074-07-10T00:00:00.000-05:00'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        String[] columnNames = {"car:model", "car:year", "car:maker", "jcr:path", "jcr:score"};
+        validateQuery().rowCount(5).hasColumns(columnNames).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertTrue(row.getNode().hasProperty("car:model"));
+            }
+        }).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelectOfJcrSqlQuery() throws RepositoryException {
+        String sql = "select jcr:primaryType, jcr:path FROM nt:base";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        String[] columnNames = {"jcr:primaryType", "jcr:path", "jcr:score"};
+        validateQuery().rowCount(totalNodeCount).hasColumns(columnNames).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelectAndCriteriaOfJcrSqlQuery() throws RepositoryException {
+        String sql = "select jcr:primaryType, jcr:path FROM nt:base WHERE jcr:path LIKE '/Cars/%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        String[] columnNames = {"jcr:primaryType", "jcr:path", "jcr:score"};
+        validateQuery().rowCount(17).hasColumns(columnNames).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelectAndUnqualifiedNameInCriteriaOfJcrSqlQuery() throws RepositoryException {
+        String sql = "select jcr:primaryType, jcr:path FROM nt:base WHERE jcr:name LIKE '%3%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        String[] columnNames = {"jcr:primaryType", "jcr:path", "jcr:score"};
+        validateQuery().rowCount(4).hasColumns(columnNames).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelectAndUnqualifiedLocalNameInCriteriaOfJcrSqlQuery()
+        throws RepositoryException {
+        String sql = "select jcr:primaryType, jcr:path FROM nt:base WHERE mode:localName LIKE '%3%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        String[] columnNames = {"jcr:primaryType", "jcr:path", "jcr:score"};
+        validateQuery().rowCount(4).hasColumns(columnNames).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithJcrPathInJoinCriteriaOfJcrSqlQuery() throws RepositoryException {
+        String sql = "select nt:base.jcr:primaryType, nt:base.jcr:path, car:Car.car:year "
+                     + "FROM nt:base, car:Car WHERE car:Car.jcr:path = nt:base.jcr:path";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        String[] columnNames = {"nt:base.jcr:primaryType", "nt:base.jcr:path", "car:Car.car:year", "jcr:path", "jcr:score"};
+        validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldNotIncludePseudoColumnsInSelectStarOfJcrSqlQuery() throws RepositoryException {
+        String sql = "select * FROM nt:base";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.SQL);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).hasColumns(allColumnNames()).validate(query, result);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // XPath Queries
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToCreateXPathQuery() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car)", Query.XPATH);
+        validateQuery().rowCount(13).validate(query, query.execute());
+
+        query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
+        validateQuery().rowCount(24).validate(query, query.execute());
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllNodes() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:base)", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).hasColumns(allColumnNames()).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllNodesOrderingByPath() throws RepositoryException {
+        String xpath = "//element(*,nt:base) order by @jcr:path";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).hasColumns(allColumnNames()).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllNodesOrderingByAttribute() throws RepositoryException {
+        String xpath = "//element(*,car:Car) order by @car:maker";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("car:maker", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodes() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).hasColumns(allColumnNames()).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByPropertyValue() throws RepositoryException {
+        QueryManager manager = session.getWorkspace().getQueryManager();
+        Query query = manager.createQuery("//element(*,nt:unstructured) order by @jcr:primaryType", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+
+        query = manager.createQuery("//element(*,car:Car) order by @car:year", Query.XPATH);
+        result = query.execute();
+        validateQuery().rowCount(13).hasColumns("car:year", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNode() throws RepositoryException {
+        String xpath = " /jcr:root/Cars/Hybrid/*";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(3).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNodeAndWithProperty() throws RepositoryException {
+        String xpath = " /jcr:root/Cars/Hybrid/*[@car:year]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(3).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNodeAndWithPropertyOrderedByProperty() throws RepositoryException {
+        String xpath = " /jcr:root/Cars/Hybrid/*[@car:year] order by @car:year ascending";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(3).hasColumns("car:year", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPath() throws RepositoryException {
+        String xpath = " /jcr:root/Cars//*";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(17).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodesWithAllSnsIndexesUnderPath() throws RepositoryException {
+        String xpath = " /jcr:root//NodeA";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(3).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPathAndWithProperty() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*[@car:year]", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPathAndWithPropertyOrderedByProperty() throws RepositoryException {
+        String xpath = " /jcr:root/Cars//*[@car:year] order by @car:year ascending";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(13).hasColumns("car:year", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByScore() throws RepositoryException {
+        String xpath = "//element(*,nt:unstructured) order by jcr:score()";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).hasColumns(allColumnNames()).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindSameNameSiblingsByIndex() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(3).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+
+        query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA[2]", Query.XPATH);
+        result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").hasNodesAtPaths("/Other/NodeA[2]")
+                       .validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllCarNodes() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car)", Query.XPATH);
+        QueryResult result = query.execute();
+        String[] columnNames = {"jcr:primaryType", "jcr:mixinTypes", "jcr:path", "jcr:score", "jcr:created", "jcr:createdBy",
+            "jcr:name", "mode:localName", "mode:depth", "car:mpgCity", "car:userRating", "car:mpgHighway", "car:engine",
+            "car:model", "car:year", "car:maker", "car:lengthInInches", "car:valueRating", "car:wheelbaseInInches", "car:msrp",
+            "car:alternateModels"};
+        validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindRootNode() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNode() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNodeWithTypeCriteria() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars[@jcr:primaryType]", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodeWithPathAndAttrbuteCriteria() throws RepositoryException {
+        String xpath = "/jcr:root/Cars/Sports/Infiniti_x0020_G37[@car:year='2008']";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodeWithAttrbuteCriteria() throws RepositoryException {
+        String xpath = "//Infiniti_x0020_G37[@car:year='2008']";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodeWithPathUnderRootAndAttrbuteCriteria() throws RepositoryException {
+        String xpath = "/jcr:root/NodeB[@myUrl='http://www.acme.com/foo/bar']";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @FixFor( "MODE-686" )
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAnywhereNodeWithNameAndAttrbuteCriteriaMatchingUrl()
+        throws RepositoryException {
+        String xpath = "//NodeB[@myUrl='http://www.acme.com/foo/bar']";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodeWithNameMatch() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("//NodeB", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    /*
+     * Adding this test case since its primarily a test of integration between the RNTM and the query engine
+     */
+    @Test( expected = InvalidNodeTypeDefinitionException.class )
+    public void shouldNotAllowUnregisteringUsedPrimaryType() throws Exception {
+        Session adminSession = null;
         try {
-            session.save();
+            adminSession = repository.login();
+            assertThat(adminSession.getNamespaceURI("car"), is("http://www.modeshape.org/examples/cars/1.0"));
+            // Re-register one of the used namespaces in a session ...
+            adminSession.setNamespacePrefix("cars", "http://www.modeshape.org/examples/cars/1.0");
 
-            // test with literal
-            String queryString = "select * from [nt:unstructured] as a where contains(a.*, 'wow')";
-            assertNodesAreFound(queryString, Query.JCR_SQL2, "/n1");
-
-            // test with bind
-            String queryStringWithBind = "select * from [nt:unstructured] as a where contains(a.*, $text)";
-            QueryManager queryManager = session.getWorkspace().getQueryManager();
-            Query query = queryManager.createQuery(queryStringWithBind, Query.JCR_SQL2);
-            query.bindValue("text", session.getValueFactory().createValue("wow"));
-            QueryResult result = query.execute();
-
-            NodeIterator nit = result.getNodes();
-            assertTrue(nit.hasNext());
-            Node n11 = nit.nextNode();
-            assertEquals("n1", n11.getName());
-            assertTrue(!nit.hasNext());
+            JcrNodeTypeManager nodeTypeManager = (JcrNodeTypeManager)adminSession.getWorkspace().getNodeTypeManager();
+            nodeTypeManager.unregisterNodeTypes(Collections.singletonList("cars:Car"));
         } finally {
-            n1.remove();
-            n2.remove();
-            session.save();
+            if (adminSession != null) adminSession.logout();
         }
     }
 
-    private String idList(Node...nodes) throws RepositoryException {
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., 'liter')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // assertThat(query, is(notNullValue()));
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithContainsCriteriaAndPluralWord() throws RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., 'liters')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // assertThat(query, is(notNullValue()));
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"liters V 12\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // assertThat(query, is(notNullValue()));
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphen() throws RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"5-speed\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNumberAndWildcard()
+    // throws RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"spee*\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(2).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws
+    // RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"heavy duty\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNoWildcard() throws RepositoryException
+    // {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"heavy-duty\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndWildcard() throws RepositoryException
+    // {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"heavy du*\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndLeadingWildcard()
+    // throws RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"*avy duty\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndWildcard() throws RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"heavy-du*\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @Ignore
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndLeadingWildcard()
+    // throws RepositoryException {
+    // String xpath = "/jcr:root//*[jcr:contains(., '\"*-speed\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(2).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    // }
+    //
+    // @FixFor( "MODE-790" )
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldBeAbleToExecuteXPathQueryWithCompoundCriteria() throws Exception {
+    // String xpath = "/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liters V 12\"')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // String[] columnNames = {"jcr:primaryType", "jcr:mixinTypes", "jcr:path", "jcr:score", "jcr:created",
+    // "jcr:createdBy", "jcr:name", "mode:localName", "mode:depth", "car:mpgCity", "car:userRating",
+    // "car:mpgHighway", "car:engine", "car:model", "car:year", "car:maker", "car:lengthInInches",
+    // "car:valueRating", "car:wheelbaseInInches", "car:msrp", "car:alternateModels"};
+    // validateQuery().rowCount(1).hasColumns(columnNames).validate(query, result);
+    //
+    // // Query again with a different criteria that should return no nodes ...
+    // xpath = "/jcr:root/Cars//element(*,car:Car)[@car:year='2007' and jcr:contains(., '\"liter V 12\"')]";
+    // query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // result = query.execute();
+    // validateQuery().rowCount(0).hasColumns(columnNames).validate(query, result);
+    // }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildrenOfRoot() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/element()", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(4).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithElementTestForAllNodesBelowRoot() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element()", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildOfRootWithName() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/element(Cars)", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithElementTestForSingleNodeBelowRootWithName() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element(Utility)", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildrenOfRootWithName() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/element(NodeA)", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(3).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithElementTestForMultipleNodesBelowRootWithName() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element(NodeA)", Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(3).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @Ignore
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {
+        String xpath = "/jcr:root/Other/*[@somethingElse <= 'value2' and @somethingElse > 'value1']";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithNewlyRegisteredNamespace() throws RepositoryException {
+        NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
+        namespaceRegistry.registerNamespace("newPrefix", "newUri");
+
+        try {
+            // We don't have any elements that use this yet, but let's at least verify that it can execute.
+            Query query = session.getWorkspace().getQueryManager()
+                                 .createQuery("//*[@newPrefix:someColumn = 'someValue']", Query.XPATH);
+            query.execute();
+        } finally {
+            namespaceRegistry.unregisterNamespace("newPrefix");
+        }
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldNotReturnNodesWithNoPropertyForPropertyCriterion() throws Exception {
+        String xpath = "/jcr:root/Cars//*[@car:wheelbaseInInches]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertThat(row.getNode().hasProperty("car:wheelbaseInInches"), is(true));
+            }
+        }).validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldNotReturnNodesWithNoPropertyForLikeCriterion() throws Exception {
+        String xpath = "/jcr:root/Cars//*[jcr:like(@car:wheelbaseInInches, '%')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                assertThat(row.getNode().hasProperty("car:wheelbaseInInches"), is(true));
+            }
+        }).validate(query, result);
+    }
+
+    // @FixFor( "MODE-1144" )
+    // @SuppressWarnings( "deprecation" )
+    // @Test
+    // public void shouldParseMagnoliaXPathQuery() throws Exception {
+    // String xpath = "//*[@jcr:primaryType='mgnl:content']//*[jcr:contains(., 'paragraph')]";
+    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+    // QueryResult result = query.execute();
+    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").onEachRow(new Predicate() {
+    // @Override
+    // public void validate( int rowNumber,
+    // Row row ) throws RepositoryException {
+    // assertThat(row.getNode().hasProperty("car:wheelbaseInInches"), is(true));
+    // }
+    // }).validate(query, result);
+    // }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // QOM Queries
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @FixFor( "MODE-1468" )
+    @Test
+    public void shouldAllowCreationAndExecutionOfQueryObjectModel() throws Exception {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryObjectModelFactory qomFactory = queryManager.getQOMFactory();
+        Selector selector = qomFactory.selector("car:Car", "car");
+        PropertyValue propValue = qomFactory.propertyValue("car", "car:userRating");
+        Literal literal = qomFactory.literal(session.getValueFactory().createValue("4")); // use a String since it's LIKE
+        Constraint constraint = qomFactory.comparison(propValue, JCR_OPERATOR_LIKE, literal);
+        Column[] columns = new Column[4];
+        columns[0] = qomFactory.column("car", "car:maker", "maker");
+        columns[1] = qomFactory.column("car", "car:model", "car:model");
+        columns[2] = qomFactory.column("car", "car:year", "car:year");
+        columns[3] = qomFactory.column("car", "car:userRating", "car:userRating");
+        Ordering[] orderings = null;
+
+        // Build and execute the query ...
+        Query query1 = qomFactory.createQuery(selector, constraint, orderings, columns);
+        QueryResult result1 = query1.execute();
+        String[] columnNames = {"maker", "car:model", "car:year", "car:userRating"};
+        validateQuery().rowCount(4).hasColumns(columnNames).validate(query1, result1);
+
+        // Now get the JCR-SQL2 statement from the QOM ...
+        String expectedExpr = "SELECT car.[car:maker] AS maker, car.[car:model], car.[car:year], car.[car:userRating] FROM [car:Car] AS car WHERE car.[car:userRating] LIKE '4'";
+        String expr = query1.getStatement();
+        assertThat(expr, is(expectedExpr));
+
+        // Now execute it ...
+        Query query2 = queryManager.createQuery(expr, Query.JCR_SQL2);
+        QueryResult result2 = query2.execute();
+        validateQuery().rowCount(4).hasColumns(columnNames).validate(query2, result2);
+    }
+
+    @FixFor( "MODE-1468" )
+    @Test
+    public void shouldAllowCreationAndExecutionOfQueryObjectModelWithLimit() throws Exception {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryObjectModelFactory qomFactory = queryManager.getQOMFactory();
+        Selector selector = qomFactory.selector("car:Car", "car");
+        PropertyValue propValue = qomFactory.propertyValue("car", "car:userRating");
+        Literal literal = qomFactory.literal(session.getValueFactory().createValue("4")); // use a String since it's LIKE
+        Constraint constraint = qomFactory.comparison(propValue, JCR_OPERATOR_LIKE, literal);
+        Column[] columns = new Column[4];
+        columns[0] = qomFactory.column("car", "car:maker", "maker");
+        columns[1] = qomFactory.column("car", "car:model", "car:model");
+        columns[2] = qomFactory.column("car", "car:year", "car:year");
+        columns[3] = qomFactory.column("car", "car:userRating", "car:userRating");
+        Ordering[] orderings = null;
+        Limit limit = qomFactory.limit(2, 0);
+        boolean isDistinct = false;
+
+        // Build and execute the query ...
+        SelectQuery selectQuery = qomFactory.select(selector, constraint, orderings, columns, limit, isDistinct);
+        Query query1 = qomFactory.createQuery(selectQuery);
+        QueryResult result1 = query1.execute();
+        String[] columnNames = {"maker", "car:model", "car:year", "car:userRating"};
+        validateQuery().rowCount(2).hasColumns(columnNames).validate(query1, result1);
+
+        // Now get the JCR-SQL2 statement from the QOM ...
+        String expectedExpr = "SELECT car.[car:maker] AS maker, car.[car:model], car.[car:year], car.[car:userRating] FROM [car:Car] AS car WHERE car.[car:userRating] LIKE '4' LIMIT 2";
+        String expr = query1.getStatement();
+        assertThat(expr, is(expectedExpr));
+
+        // Now execute it ...
+        Query query2 = queryManager.createQuery(expr, Query.JCR_SQL2);
+        QueryResult result2 = query2.execute();
+        validateQuery().rowCount(2).hasColumns(columnNames).validate(query2, result2);
+    }
+
+    private String idList( Node... nodes ) throws RepositoryException {
         StringBuilder builder = new StringBuilder("(");
         for (int i = 0; i < nodes.length - 1; i++) {
             builder.append("'").append(nodes[i].getIdentifier()).append("'").append(",");

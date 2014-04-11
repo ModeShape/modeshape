@@ -254,36 +254,36 @@
             </cache-container>
             <cache-container name="modeshape" aliases="modeshape modeshape-cluster" default-cache="sample" module="org.modeshape">
                 <transport lock-timeout="60000"/>
-                <replicated-cache name="sample" mode="SYNC" batching="true">
+                <replicated-cache name="sample" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/store/sample-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
-                <replicated-cache name="artifacts" mode="SYNC" batching="true">
+                <replicated-cache name="artifacts" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/store/artifacts-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
             </cache-container>
             <cache-container name="modeshape-binary-cache-container" aliases="modeshape-binary-cache" default-cache="binary-fs" module="org.modeshape">
                 <transport lock-timeout="60000"/>
-                <replicated-cache name="sample-binary-fs" mode="SYNC" batching="true">
+                <replicated-cache name="sample-binary-fs" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/binary-store/sample-binary-data-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
-                <replicated-cache name="sample-binary-fs-meta" mode="SYNC" batching="true">
+                <replicated-cache name="sample-binary-fs-meta" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/binary-store/sample-binary-metadata-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
-                <replicated-cache name="artifacts-binary-fs" mode="SYNC" batching="true">
+                <replicated-cache name="artifacts-binary-fs" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/binary-store/artifacts-binary-data-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
-                <replicated-cache name="artifacts-binary-fs-meta" mode="SYNC" batching="true">
+                <replicated-cache name="artifacts-binary-fs-meta" mode="SYNC">
                     <transaction mode="NON_XA"/>
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/binary-store/artifacts-binary-metadata-${jboss.node.name}" passivation="false" purge="false"/>
                 </replicated-cache>
             </cache-container>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+        <subsystem xmlns="urn:jboss:domain:modeshape:2.0">
             <!--The list of web applications that is packaged inside the kit and should be deployed when the subsystem starts up-->
             <webapp name="modeshape-rest.war"/>
             <webapp name="modeshape-webdav.war"/>
@@ -292,14 +292,10 @@
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
             <repository name="sample" cache-name="sample" cache-container="modeshape">
-                <local-file-index-storage path="modeshape/indexes/sample-${jboss.node.name}"/>
                 <cache-binary-storage data-cache-name="sample-binary-fs" metadata-cache-name="sample-binary-fs-meta" cache-container="modeshape-binary-cache-container"/>
-                <indexing rebuild-upon-startup="if_missing"/>
             </repository>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts" cache-name="artifacts" cache-container="modeshape">
-                <indexing rebuild-upon-startup="if_missing"/>
-                <local-file-index-storage path="modeshape/indexes/artifacts-${jboss.node.name}"/>
                 <cache-binary-storage data-cache-name="artifacts-binary-fs" metadata-cache-name="artifacts-binary-fs-meta" cache-container="modeshape-binary-cache-container"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">

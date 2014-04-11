@@ -16,33 +16,37 @@
 package org.modeshape.jcr;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.query.QueryManager;
+import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.CancellableQuery;
 import org.modeshape.jcr.query.JcrQuery;
 import org.modeshape.jcr.query.JcrQueryContext;
 import org.modeshape.jcr.query.JcrTypeSystem;
-import org.modeshape.jcr.query.QueryResults.Location;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.QueryObjectModel;
 import org.modeshape.jcr.query.model.QueryObjectModelFactory;
@@ -55,9 +59,11 @@ import org.modeshape.jcr.query.parse.QueryParser;
 import org.modeshape.jcr.query.parse.QueryParsers;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFactories;
 
 /**
@@ -227,14 +233,19 @@ class JcrQueryManager implements QueryManager {
         }
 
         @Override
-        public Value createValue( int propertyType,
-                                  Object value ) {
-            return new JcrValue(factories, propertyType, value);
+        public BufferManager getBufferManager() {
+            return session.bufferManager();
         }
 
         @Override
-        public NodeIterator emptyNodeIterator() {
-            return JcrEmptyNodeIterator.INSTANCE;
+        public String getWorkspaceName() {
+            return session.workspaceName();
+        }
+
+        @Override
+        public Value createValue( int propertyType,
+                                  Object value ) {
+            return value == null ? null : new JcrValue(factories, propertyType, value);
         }
 
         @Override
@@ -244,6 +255,8 @@ class JcrQueryManager implements QueryManager {
             session.checkLive();
             // Submit immediately to the workspace graph ...
             Schemata schemata = session.workspace().nodeTypeManager().schemata();
+            NodeTypes nodeTypes = session.repository().nodeTypeManager().getNodeTypes();
+            RepositoryIndexes indexDefns = session.repository().queryManager().getIndexes();
             ExecutionContext context = session.context();
             String workspaceName = session.workspaceName();
             JcrRepository.RunningState state = session.repository().runningState();
@@ -252,10 +265,16 @@ class JcrQueryManager implements QueryManager {
             NodeCache nodeCache = hints.useSessionContent ? session.cache() : session.cache().getWorkspace();
             Map<String, NodeCache> overriddenNodeCaches = new HashMap<String, NodeCache>();
             overriddenNodeCaches.put(workspaceName, nodeCache);
-            Set<String> workspaceNames = new HashSet<String>();
-            workspaceNames.add(workspaceName);
-            if (hints.includeSystemContent) workspaceNames.add(repoCache.getSystemWorkspaceName());
-            return queryManager.query(context, repoCache, workspaceNames, overriddenNodeCaches, query, schemata, hints, variables);
+            Set<String> workspaceNames = null;
+            if (hints.includeSystemContent) {
+                workspaceNames = new LinkedHashSet<String>();
+                workspaceNames.add(workspaceName);
+                workspaceNames.add(repoCache.getSystemWorkspaceName());
+            } else {
+                workspaceNames = Collections.singleton(workspaceName);
+            }
+            return queryManager.query(context, repoCache, workspaceNames, overriddenNodeCaches, query, schemata, indexDefns,
+                                      nodeTypes, hints, variables);
         }
 
         @Override
@@ -264,32 +283,53 @@ class JcrQueryManager implements QueryManager {
         }
 
         @Override
-        public Node getNode( Location location ) {
-            if (location != null) {
+        public void checkValid() throws RepositoryException {
+            session.checkLive();
+        }
+
+        @Override
+        public Node getNode( CachedNode node ) {
+            assert node != null;
+            return session.node(node, (Type)null);
+        }
+
+        @SuppressWarnings( "deprecation" )
+        @Override
+        public String getUuid( CachedNode node ) {
+            Node jcrNode = getNode(node);
+            if (jcrNode != null) {
                 try {
-                    return session.node(location.getKey(), null);
-                } catch (ItemNotFoundException e) {
-                    // Must have been deleted from storage but not yet from the indexes ...
+                    return jcrNode.getUUID();
+                } catch (UnsupportedRepositoryOperationException e) {
+                    return null; // it's not referenceable
+                } catch (RepositoryException e) {
+                    Logger.getLogger(getClass()).debug(e, "Error obtaining UUID from node");
                 }
             }
             return null;
         }
 
         @Override
-        public Schemata getSchemata() {
-            return session.nodeTypeManager().schemata();
+        public Path getPath( CachedNode node ) {
+            return node.getPath(session.cache());
         }
 
         @Override
-        public boolean isLive() {
-            return session.isLive();
+        public Name getName( CachedNode node ) {
+            return node.getName(session.cache());
         }
 
         @Override
-        public Node store( String absolutePath,
-                           Name nodeType,
-                           String language,
-                           String statement ) throws RepositoryException {
+        public long getDepth( CachedNode node ) {
+            assert node != null;
+            return node.getDepth(session.cache());
+        }
+
+        @Override
+        public Node storeQuery( String absolutePath,
+                                Name nodeType,
+                                String language,
+                                String statement ) throws RepositoryException {
             session.checkLive();
             NamespaceRegistry namespaces = session.namespaces();
 
@@ -329,7 +369,7 @@ class JcrQueryManager implements QueryManager {
 
     }
 
-    protected static class SessionTypeSystem implements JcrTypeSystem {
+    protected static class SessionTypeSystem extends JcrTypeSystem {
         protected final JcrSession session;
         protected final TypeSystem delegate;
 
@@ -359,13 +399,23 @@ class JcrQueryManager implements QueryManager {
         }
 
         @Override
-        public TypeFactory<?> getReferenceFactory() {
+        public TypeFactory<Reference> getReferenceFactory() {
             return delegate.getReferenceFactory();
         }
 
         @Override
-        public TypeFactory<?> getPathFactory() {
+        public TypeFactory<Path> getPathFactory() {
             return delegate.getPathFactory();
+        }
+
+        @Override
+        public TypeFactory<Name> getNameFactory() {
+            return delegate.getNameFactory();
+        }
+
+        @Override
+        public TypeFactory<NodeKey> getNodeKeyFactory() {
+            return delegate.getNodeKeyFactory();
         }
 
         @Override
@@ -405,12 +455,18 @@ class JcrQueryManager implements QueryManager {
         }
 
         @Override
+        public TypeFactory<?> getCompatibleType( TypeFactory<?> type1,
+                                                 TypeFactory<?> type2 ) {
+            return delegate.getCompatibleType(type1, type2);
+        }
+
+        @Override
         public TypeFactory<Boolean> getBooleanFactory() {
             return delegate.getBooleanFactory();
         }
 
         @Override
-        public TypeFactory<?> getBinaryFactory() {
+        public TypeFactory<BinaryValue> getBinaryFactory() {
             return delegate.getBinaryFactory();
         }
 

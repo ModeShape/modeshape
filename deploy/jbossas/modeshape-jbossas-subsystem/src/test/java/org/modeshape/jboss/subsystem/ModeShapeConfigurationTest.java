@@ -15,17 +15,17 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.modeshape.jboss.subsystem.ModeShapeExtension.SUBSYSTEM_NAME;
+import static org.modeshape.jboss.subsystem.ModelKeys.REPOSITORY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.modeshape.jboss.subsystem.ModeShapeExtension.SUBSYSTEM_NAME;
-import static org.modeshape.jboss.subsystem.ModelKeys.REPOSITORY;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -55,7 +55,7 @@ import org.xml.sax.SAXParseException;
 /**
  * Unit test for the ModeShape AS7 subsystem.
  */
-@SuppressWarnings("nls")
+@SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     public ModeShapeConfigurationTest() {
@@ -133,18 +133,8 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithDisabledQueries() throws Exception {
-        parse(readResource("modeshape-disabled-queries.xml"));
-    }
-
-    @Test
     public void testOutputPersistenceOfConfigurationWithGarbageCollectionSpecified() throws Exception {
         parse(readResource("modeshape-garbage-collection.xml"));
-    }
-
-    @Test
-    public void testOutputPersistenceOfConfigurationWithCustomIndexRebuildOptions() throws Exception {
-        parse(readResource("modeshape-index-rebuilding-config.xml"));
     }
 
     @Test
@@ -170,13 +160,17 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         assertEquals(repo1.get(ModelKeys.JNDI_NAME).asString(), "jcr/local/modeshape_repo1");
 
         ModelNode seq1 = nodes.get(2);
-        assertNode(seq1.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample1"),
+        assertNode(seq1.get(OP_ADDR),
+                   new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME),
+                   new KeyValue(REPOSITORY, "sample1"),
                    new KeyValue("sequencer", "modeshape-sequencer-ddl"));
         assertEquals(seq1.get(ModelKeys.CLASSNAME).asString(), "ddl");
         assertEquals(seq1.get(ModelKeys.PATH_EXPRESSIONS).asList().get(0).asString(), "//a/b");
 
         ModelNode seq2 = nodes.get(3);
-        assertNode(seq2.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample1"),
+        assertNode(seq2.get(OP_ADDR),
+                   new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME),
+                   new KeyValue(REPOSITORY, "sample1"),
                    new KeyValue("sequencer", "modeshape-sequencer-java"));
         assertEquals(seq2.get(ModelKeys.CLASSNAME).asString(), "java");
         assertEquals(seq2.get(ModelKeys.PATH_EXPRESSIONS).asList().get(0).asString(), "//a/b");
@@ -186,29 +180,21 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         assertNode(repo2.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample2"));
 
         ModelNode seq3 = nodes.get(5);
-        assertNode(seq3.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample2"),
+        assertNode(seq3.get(OP_ADDR),
+                   new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME),
+                   new KeyValue(REPOSITORY, "sample2"),
                    new KeyValue("sequencer", "modeshape-sequencer-ddl"));
         assertEquals(seq3.get(ModelKeys.CLASSNAME).asString(), "ddl");
         assertEquals(seq3.get(ModelKeys.PATH_EXPRESSIONS).asList().get(0).asString(), "//a/b/");
         assertEquals(seq3.get(ModelKeys.PATH_EXPRESSIONS).asList().get(1).asString(), "//a/b2/");
 
         ModelNode seq4 = nodes.get(6);
-        assertNode(seq4.get(OP_ADDR), new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME), new KeyValue(REPOSITORY, "sample2"),
+        assertNode(seq4.get(OP_ADDR),
+                   new KeyValue(SUBSYSTEM, SUBSYSTEM_NAME),
+                   new KeyValue(REPOSITORY, "sample2"),
                    new KeyValue("sequencer", "modeshape-sequencer-java"));
         assertEquals(seq4.get(ModelKeys.CLASSNAME).asString(), "java");
         assertEquals(seq4.get(ModelKeys.PATH_EXPRESSIONS).asList().get(0).asString(), "//a/b");
-    }
-
-    @Test
-    public void testSchema() throws Exception {
-        String subsystemXml = readResource("modeshape-sample-config.xml");
-        validate(subsystemXml);
-        KernelServices services = initKernel(subsystemXml);
-
-        // Get the model and the persisted xml from the controller
-        services.readWholeModel();
-        String marshalled = services.getPersistedSubsystemXml();
-        validate(marshalled);
     }
 
     @Test
@@ -254,8 +240,20 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         return super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(subsystemXml).build();
     }
 
+    @Test
+    public void testSchema() throws Exception {
+        String subsystemXml = readResource("modeshape-sample-config.xml");
+        validate(subsystemXml);
+        KernelServices services = initKernel(subsystemXml);
+
+        // Get the model and the persisted xml from the controller
+        services.readWholeModel();
+        String marshalled = services.getPersistedSubsystemXml();
+        validate(marshalled);
+    }
+
     private void validate( String marshalled ) throws SAXException, IOException {
-        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_1_0.xsd");
+        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_2_0.xsd");
         // System.out.println(marshalled);
 
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
@@ -303,7 +301,8 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         return list;
     }
 
-    private void assertNode(ModelNode node, KeyValue...values) {
+    private void assertNode( ModelNode node,
+                             KeyValue... values ) {
         assertTrue(values.length > 0);
         if (node.getType() == ModelType.LIST) {
             List<ModelNode> modelNodes = node.asList();
@@ -321,17 +320,20 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         private Object value;
         private ModelType type;
 
-        private KeyValue( String key, Object value, ModelType type ) {
+        protected KeyValue( String key,
+                            Object value,
+                            ModelType type ) {
             this.key = key;
             this.value = value;
             this.type = type;
         }
 
-        private KeyValue( String key, Object value ) {
+        protected KeyValue( String key,
+                            Object value ) {
             this(key, value, ModelType.STRING);
         }
 
-        private void assertEquals(ModelNode node) {
+        protected void assertEquals( ModelNode node ) {
             Object actualInstance = null;
             assertTrue(key + " not present on ModelNode", node.has(key));
             switch (type) {

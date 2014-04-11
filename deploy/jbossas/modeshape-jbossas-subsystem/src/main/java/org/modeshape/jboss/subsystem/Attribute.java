@@ -31,15 +31,9 @@ public enum Attribute {
     ANALYZER_MODULE("analyzer-module"),
     ANONYMOUS_ROLES("anonymous-roles"),
     ANONYMOUS_USERNAME("anonymous-username"),
-    ASYNC_THREAD_POOL_SIZE("async-thread-pool-size"),
-    ASYNC_MAX_QUEUE_SIZE("async-max-queue-size"),
-    BATCH_SIZE("batch-size"),
     CACHE_CONTAINER("cache-container"),
     CACHE_NAME("cache-name"),
-    CHANNEL_NAME("channel-name"),
     CLASSNAME("classname"),
-    CONNECTION_FACTORY_JNDI_NAME("connection-factory-jndi-name"),
-    COPY_BUFFER_SIZE("copy-buffer-size"),
     DATA_CACHE_NAME("data-cache-name"),
     DATA_SOURCE_JNDI_NAME("data-source-jndi-name"),
     DEFAULT_WORKSPACE("default-workspace"),
@@ -49,7 +43,6 @@ public enum Attribute {
     DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET("document-optimization-child-count-target"),
     DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE("document-optimization-child-count-tolerance"),
     ENABLE_MONITORING("enable-monitoring"),
-    ENABLE_QUERIES("enable-queries"),
     GARBAGE_COLLECTION_THREAD_POOL("garbage-collection-thread-pool"),
     GARBAGE_COLLECTION_INITIAL_TIME("garbage-collection-initial-time"),
     GARBAGE_COLLECTION_INTERVAL("garbage-collection-interval"),
@@ -61,30 +54,15 @@ public enum Attribute {
     CHUNK_SIZE("chunk-size"),
     MIN_VALUE_SIZE("min-value-size"),
     MIN_STRING_SIZE("min-string-size"),
-    MODE("mode"),
-    /**
-     * @deprecated use the REBUILD_UPON_STARTUP, REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, REBUILD_UPON_STARTUP_MODE attributes
-     */
-    @Deprecated
-    SYSTEM_CONTENT_MODE("systemContentMode"),
     MODULE("module"),
     NAME("name"),
     PATH("path"),
     PATH_EXPRESSION("path-expression"),
-    QUEUE_JNDI_NAME("queue-jndi-name"),
-    READER_STRATEGY("reader-strategy"),
-    REBUILD_UPON_STARTUP("rebuild-upon-startup"),
-    REBUILD_UPON_STARTUP_MODE("rebuild-upon-startup-mode"),
-    REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT("rebuild-upon-startup-include-system-content"),
-    REFRESH_PERIOD("refresh-period"),
     RELATIVE_TO("relative-to"),
-    RETRY_MARKER_LOOKUP("retry-marker-lookup"),
-    RETRY_INIT_PERIOD("retry-initialize-period"),
     SECURITY_DOMAIN("security-domain"),
     SOURCE_PATH("source-path"),
     SOURCE_RELATIVE_TO("source-relative-to"),
     STORE_NAME("store-name"),
-    THREAD_POOL("thread-pool"),
     USE_ANONYMOUS_IF_AUTH_FAILED("use-anonymous-upon-failed-authentication"),
     WORKSPACE_NAMES("workspace-names"),
     CACHE_TTL_SECONDS("cacheTtlSeconds"),
@@ -98,7 +76,12 @@ public enum Attribute {
     JOURNAL_GC_THREAD_POOL("journal-gc-thread-pool"),
     JOURNAL_GC_INITIAL_TIME("journal-gc-initial-time"),
     JOURNAL_PATH("journal-path"),
-    JOURNAL_RELATIVE_TO("journal-relative-to");
+    JOURNAL_RELATIVE_TO("journal-relative-to"),
+
+    INDEX_KIND("index-kind"),
+    PROVIDER_NAME("provider-name"),
+    NODE_TYPE("node-type"),
+    COLUMNS("columns");
 
     private final String name;
 

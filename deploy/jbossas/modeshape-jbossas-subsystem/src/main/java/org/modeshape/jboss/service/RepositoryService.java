@@ -64,7 +64,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<CacheContainer> cacheManagerInjector = new InjectedValue<CacheContainer>();
     private final InjectedValue<CacheContainer> workspacesCacheContainerInjector = new InjectedValue<CacheContainer>();
-    private final InjectedValue<IndexStorage> indexStorageConfigInjector = new InjectedValue<IndexStorage>();
     private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<BinaryStorage>();
     private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
     private final InjectedValue<ModuleLoader> moduleLoaderInjector = new InjectedValue<ModuleLoader>();
@@ -155,25 +154,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         try {
             final String repositoryName = repositoryName();
 
-            // Get the index storage configuration ...
-            IndexStorage indexStorageConfig = indexStorageConfigInjector.getValue();
-            assert indexStorageConfig != null;
-            if (indexStorageConfig.isEnabled()) {
-                // if there's a cache container, validate that it's different from the repository's
-                CacheContainer indexStorageCacheContainer = indexStorageConfig.getCacheContainer();
-                if (indexStorageCacheContainer != null) {
-                    CacheContainer repositoryCacheContainer = getCacheContainer(null);
-                    if (indexStorageCacheContainer == repositoryCacheContainer) {
-                        throw new StartException(
-                                                 "The repository cache container and the index storage cannot container cannot be the same");
-                    }
-                }
-            } else {
-                LOG.warnv("Queries are disabled for the {0} repository", repositoryName);
-            }
-            Document queryConfig = indexStorageConfig.getQueryConfiguration();
-            assert queryConfig != null;
-
             // Get the binary storage configuration ...
             BinaryStorage binaryStorageConfig = binaryStorageInjector.getValue();
             assert binaryStorageConfig != null;
@@ -183,7 +163,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             // Create a new configuration document ...
             EditableDocument config = Schematic.newDocument(repositoryConfiguration.getDocument());
 
-            config.setDocument(FieldName.QUERY, queryConfig);
             config.getOrCreateDocument(FieldName.STORAGE).setDocument(FieldName.BINARY_STORAGE, binaryConfig);
 
             if (config.containsField(FieldName.JOURNALING)) {
@@ -264,6 +243,104 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         fieldContainer.set(fieldName, rawValue);
 
         // Apply the changes to the current configuration ...
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
+    }
+
+    /**
+     * Immediately change and apply the specified index provider field in the current repository configuration to the new value.
+     * 
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @param indexProviderName the name of the index provider
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changeIndexProviderField( MappedAttributeDefinition defn,
+                                          ModelNode newValue,
+                                          String indexProviderName ) throws RepositoryException, OperationFailedException {
+        ModeShapeEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+
+        // Find the array of sequencer documents ...
+        List<String> pathToContainer = defn.getPathToContainerOfField();
+        EditableDocument providers = editor.getOrCreateDocument(pathToContainer.get(0));
+
+        // The container should be an array ...
+        for (String configuredProviderName : providers.keySet()) {
+            // Look for the entry with a name that matches our sequencer name ...
+            if (indexProviderName.equals(configuredProviderName)) {
+                // All these entries should be nested documents ...
+                EditableDocument provider = (EditableDocument)providers.get(configuredProviderName);
+
+                // Change the field ...
+                String fieldName = defn.getFieldName();
+                // Get the raw value from the model node ...
+                Object rawValue = defn.getTypedValue(newValue);
+                // And update the field ...
+                provider.set(fieldName, rawValue);
+                break;
+            }
+        }
+
+        // Get and apply the changes to the current configuration. Note that the 'update' call asynchronously
+        // updates the configuration, and returns a Future<JcrRepository> that we could use if we wanted to
+        // wait for the changes to take place. But we don't want/need to wait, so we'll not use the Future ...
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
+    }
+
+    /**
+     * Immediately change and apply the specified index definition field in the current repository configuration to the new value.
+     * 
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @param indexDefinitionName the name of the index definition
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changeIndexDefinitionField( MappedAttributeDefinition defn,
+                                            ModelNode newValue,
+                                            String indexDefinitionName ) throws RepositoryException, OperationFailedException {
+        ModeShapeEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+
+        // Find the array of sequencer documents ...
+        List<String> pathToContainer = defn.getPathToContainerOfField();
+        EditableDocument indexes = editor.getOrCreateDocument(pathToContainer.get(0));
+
+        // The container should be an array ...
+        for (String configuredIndexName : indexes.keySet()) {
+            // Look for the entry with a name that matches our sequencer name ...
+            if (indexDefinitionName.equals(configuredIndexName)) {
+                // All these entries should be nested documents ...
+                EditableDocument provider = (EditableDocument)indexes.get(configuredIndexName);
+
+                // Change the field ...
+                String fieldName = defn.getFieldName();
+                // Get the raw value from the model node ...
+                Object rawValue = defn.getTypedValue(newValue);
+                // And update the field ...
+                provider.set(fieldName, rawValue);
+                break;
+            }
+        }
+
+        // Get and apply the changes to the current configuration. Note that the 'update' call asynchronously
+        // updates the configuration, and returns a Future<JcrRepository> that we could use if we wanted to
+        // wait for the changes to take place. But we don't want/need to wait, so we'll not use the Future ...
         Changes changes = editor.getChanges();
         engine.update(repositoryName, changes);
     }
@@ -471,13 +548,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     }
 
     /**
-     * @return the injector used to set the configuration details for the index storage
-     */
-    public InjectedValue<IndexStorage> getIndexStorageConfigInjector() {
-        return indexStorageConfigInjector;
-    }
-
-    /**
      * @return the injector used to set the configuration details for the binaries storage
      */
     public InjectedValue<BinaryStorage> getBinaryStorageInjector() {
@@ -532,7 +602,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     /**
      * Sets the path (relative) of the journal.
-     *
+     * 
      * @param journalPath a {@link String}, may not be null
      */
     public void setJournalPath( String journalPath ) {
@@ -541,7 +611,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     /**
      * Sets the base folder of the journal
-     *
+     * 
      * @param journalRelativeTo a {@link String}, may not be null
      */
     public void setJournalRelativeTo( String journalRelativeTo ) {

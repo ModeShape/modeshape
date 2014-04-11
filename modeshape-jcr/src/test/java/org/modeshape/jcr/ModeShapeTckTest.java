@@ -65,11 +65,11 @@ import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
-import junit.framework.Test;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrTools;
+import junit.framework.Test;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -90,12 +90,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     public static Test suite() {
         return JcrTckSuites.someTestsInline(ModeShapeTckTest.class);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        AbstractTransactionalTest.beforeSuite();
-        super.setUp();
     }
 
     @Override
@@ -126,8 +120,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
                 session.logout();
             }
         }
-
-        AbstractTransactionalTest.afterSuite();
     }
 
     protected Node getTestRoot( Session session ) throws Exception {
@@ -2407,7 +2399,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         }
     }
 
-    @SuppressWarnings( "unused" )
     public void testShouldVerifyNtFileNodesHavePrimaryItem() throws Exception {
         Session session1 = getHelper().getSuperuserSession();
 
@@ -2437,7 +2428,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertThat(primary2, is(sameInstance((Item)content2)));
     }
 
-    @SuppressWarnings( "unused" )
     @FixFor( "MODE-1696" )
     public void testShouldVerifyNtResourceNodesHavePrimaryItem() throws Exception {
         Session session1 = getHelper().getSuperuserSession();
@@ -2566,13 +2556,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
                                                            String path,
                                                            int counts ) throws RepositoryException {
         CountDownListener listener = new CountDownListener(session, counts);
-        session.getWorkspace().getObservationManager().addEventListener(listener,
-                                                                        Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED,
-                                                                        path,
-                                                                        true,
-                                                                        null,
-                                                                        null,
-                                                                        false);
+        session.getWorkspace().getObservationManager()
+               .addEventListener(listener, Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED, path, true, null, null, false);
         return listener;
     }
 
@@ -2661,13 +2646,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
                 }
             }
         };
-        testRootNode.getSession().getWorkspace().getObservationManager().addEventListener(listener,
-                                                                                          eventTypes,
-                                                                                          testRootNode.getPath(),
-                                                                                          true,
-                                                                                          null,
-                                                                                          null,
-                                                                                          false);
+        testRootNode.getSession().getWorkspace().getObservationManager()
+                    .addEventListener(listener, eventTypes, testRootNode.getPath(), true, null, null, false);
 
         // setup parent nodes and first child
         Node a1 = testRootNode.addNode("a1");

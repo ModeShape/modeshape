@@ -904,8 +904,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         PathCache workspacePaths = new PathCache(workspaceCache);
 
         Set<NodeKey> removedNodes = null;
-        Set<BinaryKey> unusedBinaryKeys = new HashSet<BinaryKey>();
-        Set<NodeKey> renamedExternalNodes = new HashSet<NodeKey>();
+        Set<BinaryKey> unusedBinaryKeys = new HashSet<>();
+        Set<NodeKey> renamedExternalNodes = new HashSet<>();
         for (NodeKey key : changedNodesInOrder) {
             SessionNode node = changedNodes.get(key);
             String keyStr = key.toString();
@@ -916,7 +916,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 if (persisted != null) {
                     // This was a persistent node, so we have to generate an event and deal with the remove ...
                     if (removedNodes == null) {
-                        removedNodes = new HashSet<NodeKey>();
+                        removedNodes = new HashSet<>();
                     }
                     try {
                         Name primaryType = persisted.getPrimaryType(this);

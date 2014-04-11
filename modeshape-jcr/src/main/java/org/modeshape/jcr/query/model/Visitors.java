@@ -69,6 +69,29 @@ public class Visitors {
     }
 
     /**
+     * Visit all objects in the supplied {@link Visitable object} using a {@link NavigationVisitor} (specifically a
+     * {@link WalkAllVisitor}), and with each of these visited objects calling the appropriate {@code visit(...)} method on the
+     * supplied {@link Visitor}.
+     * 
+     * @param <StrategyVisitor> the type of strategy visitor
+     * @param visitables the top-level collection of visitable objects to be visited
+     * @param strategyVisitor the visitor that is to be called for each visited objects, but that does <i>not</i> call
+     *        {@link Visitable#accept(Visitor)}
+     * @return the strategy visitor, allowing the caller to easily invoke operations on the visitor after visitation has completed
+     */
+    public static <StrategyVisitor extends Visitor> StrategyVisitor visitAll( Iterable<? extends Visitable> visitables,
+                                                                              StrategyVisitor strategyVisitor ) {
+        if (visitables != null) {
+            for (Visitable visitable : visitables) {
+                if (visitable != null) {
+                    visitable.accept(new WalkAllVisitor(strategyVisitor));
+                }
+            }
+        }
+        return strategyVisitor;
+    }
+
+    /**
      * Visit the supplied {@link Visitable object} using the supplied {@link Visitor}, which must be responsible for navigation as
      * well as any business logic.
      * 
@@ -509,7 +532,7 @@ public class Visitors {
         }
 
         @Override
-        public void visit(Relike obj) {
+        public void visit( Relike obj ) {
         }
     }
 
@@ -636,9 +659,9 @@ public class Visitors {
             enqueue(comparison.getOperand2());
             visitNext();
         }
-        
+
         @Override
-        public void visit(Relike relike) {
+        public void visit( Relike relike ) {
             strategy.visit(relike);
             enqueue(relike.getOperand1());
             enqueue(relike.getOperand2());
@@ -988,7 +1011,8 @@ public class Visitors {
             } else {
                 String propertyName = column.getPropertyName();
                 append('.').appendPropertyName(propertyName);
-                if (!propertyName.equals(column.getColumnName()) && !propertyName.equals(column.getColumnName())) {
+                if (!propertyName.equals(column.getColumnName()) && !propertyName.equals(column.getColumnName())
+                    && !(column.selectorName() + "." + propertyName).equals(column.getColumnName())) {
                     append(" AS ").appendAlias(column.getColumnName());
                 }
             }
@@ -1002,14 +1026,14 @@ public class Visitors {
         }
 
         @Override
-        public void visit(Relike relike) {
+        public void visit( Relike relike ) {
             append("RELIKE(");
             relike.getOperand1().accept(this);
             append(',');
             relike.getOperand2().accept(this);
             append(')');
         }
-        
+
         @Override
         public void visit( DescendantNode descendant ) {
             append("ISDESCENDANTNODE(");
@@ -1191,7 +1215,7 @@ public class Visitors {
             lowerCase.getOperand().accept(this);
             append(')');
         }
-        
+
         @Override
         public void visit( NodeDepth depth ) {
             append("DEPTH(").append(depth.selectorName()).append(')');
@@ -1255,10 +1279,12 @@ public class Visitors {
 
         @Override
         public void visit( ReferenceValue value ) {
+            append("REFERENCE(");
             append(value.selectorName());
             if (value.getPropertyName() != null) {
                 append('.').appendPropertyName(value.getPropertyName());
             }
+            append(")");
         }
 
         @Override
@@ -1414,6 +1440,13 @@ public class Visitors {
         protected ReadableVisitor append( SelectorName name ) {
             appendQuoted(OPEN_SQUARE, name.name(), CLOSE_SQUARE);
             return this;
+        }
+
+        @Override
+        public void visit( Ordering ordering ) {
+            ordering.getOperand().accept(this);
+            append(' ').append(ordering.order().symbol());
+            append(' ').append(ordering.nullOrder().symbol());
         }
     }
 }

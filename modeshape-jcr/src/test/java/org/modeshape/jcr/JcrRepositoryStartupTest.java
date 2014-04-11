@@ -15,15 +15,15 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,14 +38,17 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
-import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicyIterator;
+import javax.jcr.security.Privilege;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.connector.mock.MockConnector;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
@@ -55,12 +58,14 @@ import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.document.DocumentStore;
+import org.modeshape.jcr.security.SimplePrincipal;
+import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
  * methods).
- *
+ * 
  * @author rhauch
  * @author hchiorean
  */
@@ -191,7 +196,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                     session.getWorkspace().createWorkspace("ws1");
                     fail("It should not be possible to create a workspace which has a transactional cache configured");
                 } catch (ConfigurationException e) {
-                    //expected
+                    // expected
                 }
                 return null;
             }
@@ -213,14 +218,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
                 FederationManager federationManager = ((Workspace)session.getWorkspace()).getFederationManager();
 
-                federationManager.createProjection("/testRoot",
-                                                   "mock-source",
-                                                   MockConnector.DOC1_LOCATION,
-                                                   "federated1");
-                federationManager.createProjection("/testRoot",
-                                                   "mock-source",
-                                                   MockConnector.DOC2_LOCATION,
-                                                   null);
+                federationManager.createProjection("/testRoot", "mock-source", MockConnector.DOC1_LOCATION, "federated1");
+                federationManager.createProjection("/testRoot", "mock-source", MockConnector.DOC2_LOCATION, null);
                 Node doc1Federated = session.getNode("/testRoot/federated1");
                 assertNotNull(doc1Federated);
                 assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
@@ -278,14 +277,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 session.save();
 
                 FederationManager federationManager = ((Workspace)session.getWorkspace()).getFederationManager();
-                federationManager.createProjection("/testRoot",
-                                                   "mock-source",
-                                                   MockConnector.DOC1_LOCATION,
-                                                   "federated1");
-                federationManager.createProjection("/testRoot",
-                                                   "mock-source",
-                                                   MockConnector.DOC2_LOCATION,
-                                                   "federated2");
+                federationManager.createProjection("/testRoot", "mock-source", MockConnector.DOC1_LOCATION, "federated1");
+                federationManager.createProjection("/testRoot", "mock-source", MockConnector.DOC2_LOCATION, "federated2");
                 Node projection = session.getNode("/testRoot/federated1");
                 assertNotNull(projection);
 
@@ -299,49 +292,14 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             @Override
             public Void call() throws Exception {
                 Session session = repository.login();
-                //check the 2nd projection
+                // check the 2nd projection
                 assertNotNull(session.getNode("/testRoot/federated2"));
                 try {
                     session.getNode("/testRoot/federated1");
                     fail("Projection has not been cleaned up");
                 } catch (PathNotFoundException e) {
-                    //expected
+                    // expected
                 }
-                return null;
-            }
-        }, repositoryConfigFile);
-    }
-
-    @Test
-    @FixFor( "MODE-1785" )
-    public void shouldRebuildIndexesIfConfiguredTo() throws Exception {
-        FileUtil.delete("target/persistent_repository");
-
-        String repositoryConfigFile = "config/repo-config-persistent-always-rebuild-indexes.json";
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
-                session.getRootNode().addNode("testNode");
-                session.save();
-
-                QueryManager queryManager = session.getWorkspace().getQueryManager();
-                Query query = queryManager.createQuery("select * from [nt:base] where [jcr:path] like '/testNode'", Query.JCR_SQL2);
-                assertEquals(1, query.execute().getNodes().getSize());
-
-                return null;
-            }
-        }, repositoryConfigFile);
-
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
-
-                QueryManager queryManager = session.getWorkspace().getQueryManager();
-                Query query = queryManager.createQuery("select * from [nt:unstructured] where [jcr:path] like '/testNode'", Query.JCR_SQL2);
-                assertEquals(1, query.execute().getNodes().getSize());
-
                 return null;
             }
         }, repositoryConfigFile);
@@ -351,7 +309,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @FixFor( "MODE-1844" )
     public void shouldNotRemainInInconsistentStateIfErrorsOccurOnStartup() throws Exception {
         FileUtil.delete("target/persistent_repository_initial_content");
-        //try and start with a config that will produce an exception
+        // try and start with a config that will produce an exception
         String repositoryConfigFile = "config/invalid-repo-config-persistent-initial-content.json";
         try {
             startRunStop(new RepositoryOperation() {
@@ -362,7 +320,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             }, repositoryConfigFile);
             fail("Expected a repository exception");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
 
         final CountDownLatch restartLatch = new CountDownLatch(1);
@@ -380,29 +338,12 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             }
         };
         Executors.newSingleThreadExecutor().submit(restartRunnable);
-        //wait the repo to restart or fail
+        // wait the repo to restart or fail
         assertTrue("Repository did not restart in the expected amount of time", restartLatch.await(1, TimeUnit.MINUTES));
     }
 
     @Test
-    @FixFor( "MODE-1872" )
-    public void asyncReindexingWithoutSystemContentShouldNotCorruptSystemBranch() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
-                JcrSession session = repository.login();
-
-                javax.jcr.Node root = session.getRootNode();
-                AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
-                assertThat(system, is(notNullValue()));
-                return null;
-            }
-        }, "config/repo-config-persistent-indexes-always-async-without-system.json");
-    }
-
-    @Test
-    @FixFor("MODE-2031")
+    @FixFor( "MODE-2031" )
     public void shouldRestartWithModifiedCNDFile() throws Exception {
         FileUtil.delete("target/persistent_repository/");
         startRunStop(new RepositoryOperation() {
@@ -441,21 +382,18 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-2044")
+    @FixFor( "MODE-2044" )
     public void shouldRun3_6_0UpgradeFunction() throws Exception {
         FileUtil.delete("target/persistent_repository/");
-        //first run is empty, so no upgrades will be performed
+        // first run is empty, so no upgrades will be performed
         startRunStop(new RepositoryOperation() {
             @SuppressWarnings( "deprecation" )
             @Override
             public Void call() throws Exception {
-                //modify the repository-info document to force an upgrade on the next restart
-                DocumentStore documentStore =  repository.documentStore();
-                EditableDocument editableDocument = documentStore.localStore().get("repository:info").editDocumentContent();
-                editableDocument.set("lastUpgradeId", Upgrades.ModeShape_3_6_0.INSTANCE.getId() - 1);
-                documentStore.localStore().put("repository:info", editableDocument);
+                // modify the repository-info document to force an upgrade on the next restart
+                changeLastUpgradeId(repository, Upgrades.ModeShape_3_6_0.INSTANCE.getId() - 1);
 
-                //create a non-session lock on a node
+                // create a non-session lock on a node
                 JcrSession session = repository.login();
                 PropertyFactory propertyFactory = session.context().getPropertyFactory();
                 AbstractJcrNode node = session.getRootNode().addNode("/test");
@@ -463,7 +401,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 session.save();
                 session.lockManager().lock(node, true, false, Long.MAX_VALUE, null);
 
-                //manipulate that lock using the system cache to simulate corrupt data
+                // manipulate that lock using the system cache to simulate corrupt data
                 SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), false);
                 SystemContent systemContent = new SystemContent(systemSession);
                 ChildReferences childReferences = systemContent.locksNode().getChildReferences(systemSession);
@@ -477,14 +415,14 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 systemSession.save();
                 return null;
             }
-        }, "config/repo-config-persistent-no-query.json");
+        }, "config/repo-config-persistent-no-indexes.json");
 
-        //second run should run the upgrade
+        // second run should run the upgrade
         startRunStop(new RepositoryOperation() {
             @SuppressWarnings( "deprecation" )
             @Override
             public Void call() throws Exception {
-                //manipulate that lock using the system cache to simulate corrupt data
+                // manipulate that lock using the system cache to simulate corrupt data
                 SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), true);
                 SystemContent systemContent = new SystemContent(systemSession);
                 ChildReferences childReferences = systemContent.locksNode().getChildReferences(systemSession);
@@ -497,7 +435,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 }
                 return null;
             }
-        }, "config/repo-config-persistent-no-query.json");
+        }, "config/repo-config-persistent-no-indexes.json");
     }
 
     @Test
@@ -517,7 +455,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     public void shouldAppendJournalEntriesBetweenRestarts() throws Exception {
         FileUtil.delete("target/journal/");
         final List<Integer> recordsOnStartup = new ArrayList<Integer>(2);
-        startRunStop( new RepositoryOperation() {
+        startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
                 Session session = repository.login();
@@ -532,7 +470,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             }
         }, "config/repo-config-journaling.json");
 
-        startRunStop( new RepositoryOperation() {
+        startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
                 Session session = repository.login();
@@ -561,7 +499,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
-                JcrSession session  = repository.login("default");
+                JcrSession session = repository.login("default");
                 session.logout();
                 session = repository.login("ws1");
                 session.getWorkspace().createWorkspace("ws2");
@@ -573,7 +511,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         }, config);
 
         final Editor editor = config.edit();
-        EditableArray predefinedWs = editor.getDocument(RepositoryConfiguration.FieldName.WORKSPACES).getArray(RepositoryConfiguration.FieldName.PREDEFINED);
+        EditableArray predefinedWs = editor.getDocument(RepositoryConfiguration.FieldName.WORKSPACES)
+                                           .getArray(RepositoryConfiguration.FieldName.PREDEFINED);
         predefinedWs.add("ws3");
         predefinedWs.add("ws4");
 
@@ -582,7 +521,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             public Void call() throws Exception {
                 repository.apply(editor.getChanges());
 
-                JcrSession session  = repository.login("default");
+                JcrSession session = repository.login("default");
                 session.logout();
                 session = repository.login("ws1");
                 session.logout();
@@ -604,7 +543,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
-                JcrSession session  = repository.login("ws1");
+                JcrSession session = repository.login("ws1");
                 session.getWorkspace().createWorkspace("ws3");
                 session.logout();
                 session = repository.login("ws3");
@@ -612,7 +551,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, "config/repo-config-persistent-predefined-ws.json");
-
 
         startRunStop(new RepositoryOperation() {
             @Override
@@ -687,4 +625,210 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             }
         }, repositoryConfigFile);
     }
+
+    @Test
+    @FixFor( "MODE-2167" )
+    public void shouldDisableACLsIfAllPoliciesAreRemoved() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+
+        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                Node testNode = session.getRootNode().addNode("testNode");
+                testNode.addNode("node1");
+                testNode.addNode("node2");
+                session.save();
+
+                AccessControlManager acm = session.getAccessControlManager();
+
+                AccessControlList aclNode1 = getACL(acm, "/testNode/node1");
+                aclNode1.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                               new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+                acm.setPolicy("/testNode/node1", aclNode1);
+
+                AccessControlList aclNode2 = getACL(acm, "/testNode/node2");
+                aclNode2.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                               new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+                acm.setPolicy("/testNode/node2", aclNode2);
+
+                // access control should not be enabled yet because we haven't saved the session
+                assertFalse(repository.runningState().repositoryCache().isAccessControlEnabled());
+
+                session.save();
+                assertTrue(repository.runningState().repositoryCache().isAccessControlEnabled());
+
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                assertTrue(repository.runningState().repositoryCache().isAccessControlEnabled());
+
+                Session session = repository.login();
+                AccessControlManager acm = session.getAccessControlManager();
+                // TODO author=Horia Chiorean date=25-Mar-14 description=Why null here !?!
+                acm.removePolicy("/testNode/node1", null);
+                acm.removePolicy("/testNode/node2", null);
+                session.save();
+
+                assertFalse(repository.runningState().repositoryCache().isAccessControlEnabled());
+
+                session.getNode("/testNode").remove();
+                session.save();
+                return null;
+            }
+        }, repositoryConfigFile);
+    }
+
+    @Test
+    @FixFor( "MODE-2167" )
+    public void shouldRun4_0_0_Alpha1_UpgradeFunction() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+        String config = "config/repo-config-persistent-no-indexes.json";
+        // first run is empty, so no upgrades will be performed
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                changeLastUpgradeId(repository, Upgrades.ModeShape_4_0_0_Alpha1.INSTANCE.getId() - 1);
+
+                // modify some ACLs
+                JcrSession session = repository.login();
+                session.getRootNode().addNode("testNode");
+                session.save();
+
+                AccessControlManager acm = session.getAccessControlManager();
+
+                AccessControlList acl = getACL(acm, "/testNode");
+                acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                          new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+                acm.setPolicy("/testNode", acl);
+                session.save();
+
+                // remove the new property from 4.0 which actually stores the ACL count to simulate a pre 4.0 repository
+                SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), false);
+                SystemContent systemContent = new SystemContent(systemSession);
+                MutableCachedNode systemNode = systemContent.mutableSystemNode();
+                systemNode.removeProperty(systemSession, ModeShapeLexicon.ACL_COUNT);
+                systemSession.save();
+                return null;
+            }
+        }, config);
+
+        // second run should run the upgrade
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                // check that the upgrade function correctly added the new property
+                SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), false);
+                SystemContent systemContent = new SystemContent(systemSession);
+                MutableCachedNode systemNode = systemContent.mutableSystemNode();
+                Property aclCountProp = systemNode.getProperty(ModeShapeLexicon.ACL_COUNT, systemSession);
+                assertNotNull("ACL count property not found after upgrade", aclCountProp);
+                assertEquals(1, Long.valueOf(aclCountProp.getFirstValue().toString()).longValue());
+
+                // force a 2nd upgrade
+                changeLastUpgradeId(repository, Upgrades.ModeShape_4_0_0_Alpha1.INSTANCE.getId() - 1);
+
+                // remove all ACLs
+                JcrSession session = repository.login();
+                AccessControlManager acm = session.getAccessControlManager();
+                // TODO author=Horia Chiorean date=25-Mar-14 description=Why null ?!
+                acm.removePolicy("/testNode", null);
+                session.save();
+
+                // remove the new property from 4.0 which actually stores the ACL count to simulate a pre 4.0 repository
+                systemNode.removeProperty(systemSession, ModeShapeLexicon.ACL_COUNT);
+                systemSession.save();
+                return null;
+            }
+        }, config);
+
+        // check that the upgrade disabled ACLs
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+
+                SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), true);
+                SystemContent systemContent = new SystemContent(systemSession);
+                CachedNode systemNode = systemContent.systemNode();
+                Property aclCountProp = systemNode.getProperty(ModeShapeLexicon.ACL_COUNT, systemSession);
+                assertNotNull("ACL count property not found after upgrade", aclCountProp);
+                assertEquals(0, Long.valueOf(aclCountProp.getFirstValue().toString()).longValue());
+
+                assertFalse(repository.runningState().repositoryCache().isAccessControlEnabled());
+                return null;
+            }
+        }, config);
+    }
+
+    @Test
+    @FixFor( "MODE-2176" )
+    public void shouldAllowExternalSourceChangesBetweenRestarts() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+
+        prepareExternalDirectory("target/federation_persistent_1");
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                assertNotNull(session.getNode("/fs1"));
+                assertNotNull(session.getNode("/fs1/file.txt"));
+                assertNotNull(session.getNode("/fs2"));
+                assertNotNull(session.getNode("/fs2/file.txt"));
+                return null;
+            }
+        }, "config/repo-config-persistent-cache-fs-connector1.json");
+
+        FileUtil.delete("target/federation_persistent_1");
+        prepareExternalDirectory("target/federation_persistent_2");
+        // restart with a configuration file which a) has a new external source, b) has changed the directory path of "fs2" and
+        // c) has removed the fs1 projection
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                try {
+                    session.getNode("/fs1");
+                    fail("The projection should not have been found");
+                } catch (PathNotFoundException e) {
+                    // expected
+                }
+                assertNotNull(session.getNode("/fs2"));
+                assertNotNull(session.getNode("/fs2/file.txt"));
+                return null;
+            }
+        }, "config/repo-config-persistent-cache-fs-connector2.json");
+    }
+
+    private void prepareExternalDirectory( String dirpath ) throws IOException {
+        FileUtil.delete(dirpath);
+        new File(dirpath).mkdir();
+        File file = new File(dirpath + "/file.txt");
+        IoUtil.write(JcrRepositoryStartupTest.class.getClassLoader().getResourceAsStream("io/file1.txt"),
+                     new FileOutputStream(file));
+    }
+
+    protected void changeLastUpgradeId( JcrRepository repository,
+                                        int value ) {
+        // modify the repository-info document to force an upgrade on the next restart
+        DocumentStore documentStore = repository.documentStore();
+        EditableDocument editableDocument = documentStore.localStore().get("repository:info").editDocumentContent();
+        editableDocument.set("lastUpgradeId", value);
+        documentStore.localStore().put("repository:info", editableDocument);
+    }
+
+    protected AccessControlList getACL( AccessControlManager acm,
+                                        String absPath ) throws Exception {
+        AccessControlPolicyIterator it = acm.getApplicablePolicies(absPath);
+        if (it.hasNext()) {
+            return (AccessControlList)it.nextAccessControlPolicy();
+        }
+        return (AccessControlList)acm.getPolicies(absPath)[0];
+    }
+
 }

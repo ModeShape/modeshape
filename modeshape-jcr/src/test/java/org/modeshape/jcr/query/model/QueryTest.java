@@ -113,10 +113,11 @@ public class QueryTest extends AbstractQueryObjectTest {
         source = new NamedSelector(selector("nt:unstructured"));
         columns = Collections.singletonList(new Column(selector("selector1")));
         constraint = new PropertyExistence(selector("selector1"), "jcr:uuid");
-        orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
+        orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING,
+                                                           NullOrder.NULLS_LAST));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
         assertThat(Visitors.readable(query),
-                   is("SELECT selector1.* FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC"));
+                   is("SELECT selector1.* FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC NULLS LAST"));
     }
 
     @Test
@@ -124,11 +125,12 @@ public class QueryTest extends AbstractQueryObjectTest {
         source = new NamedSelector(selector("nt:unstructured"));
         columns = Collections.singletonList(new Column(selector("selector1")));
         constraint = new PropertyExistence(selector("selector1"), "jcr:uuid");
-        orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
+        orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING,
+                                                           NullOrder.NULLS_LAST));
         limits = new Limit(10, 100);
         query = new Query(source, constraint, orderings, columns, limits, distinct);
         assertThat(Visitors.readable(query),
-                   is("SELECT selector1.* FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC LIMIT 10 OFFSET 100"));
+                   is("SELECT selector1.* FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC NULLS LAST LIMIT 10 OFFSET 100"));
     }
 
     @Test
@@ -136,10 +138,11 @@ public class QueryTest extends AbstractQueryObjectTest {
         source = new NamedSelector(selector("nt:unstructured"));
         columns = Collections.emptyList();
         constraint = new PropertyExistence(selector("selector1"), "jcr:uuid");
-        orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
+        orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING,
+                                                           NullOrder.NULLS_LAST));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
         assertThat(Visitors.readable(query),
-                   is("SELECT * FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC"));
+                   is("SELECT * FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC NULLS LAST"));
     }
 
     @Test
@@ -158,9 +161,11 @@ public class QueryTest extends AbstractQueryObjectTest {
         source = new NamedSelector(selector("nt:unstructured"));
         columns = Collections.singletonList(new Column(selector("selector1")));
         constraint = null;
-        orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
+        orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING,
+                                                           NullOrder.NULLS_LAST));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query), is("SELECT selector1.* FROM [nt:unstructured] ORDER BY NAME(selector1) ASC"));
+        assertThat(Visitors.readable(query),
+                   is("SELECT selector1.* FROM [nt:unstructured] ORDER BY NAME(selector1) ASC NULLS LAST"));
     }
 
     @Test

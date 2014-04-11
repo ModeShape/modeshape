@@ -31,9 +31,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.AbstractTransactionalTest;
 import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
@@ -43,7 +45,10 @@ import org.modeshape.jcr.value.BinaryValue;
 /**
  * Use this abstract class to realize test cases which can easily executed on different BinaryStores
  */
-public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest {
+public abstract class AbstractBinaryStoreTest {
+
+    @Rule
+    public TestRule skipTestRule = new SkipTestRule();
 
     /**
      * We need to generate the test byte arrays based on the minimum binary size, because that controls the distinction between
@@ -197,7 +202,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
 
     @Test
     public void shouldExtractAndStoreTextWhenExtractorConfigured() throws Exception {
-        TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(), true,
+        TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(),
                                                        Arrays.<TextExtractor>asList(new DummyTextExtractor()));
         BinaryStore binaryStore = getBinaryStore();
         binaryStore.setTextExtractors(extractors);

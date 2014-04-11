@@ -1,0 +1,24 @@
+{
+    "name": "Observation repository",
+    "workspaces": {
+        "predefined": ["ws1", "ws2"],
+        "default": "default",
+        "allowCreation": true
+    },
+    "security": {
+        "anonymous": {
+            "roles": ["readonly"],
+            "useOnFailedLogin": true
+        },
+        "providers": [
+            {
+                "classname": "JAAS",
+                "policyName": "modeshape-jcr"
+            }
+        ]
+    },
+    "journaling": {
+        "location": "target/journal",
+        "asyncWritesEnabled": false
+    }
+}

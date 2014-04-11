@@ -87,12 +87,8 @@ final class SequencingRunner implements Runnable {
             if (sequencer == null) {
                 if (DEBUG) {
                     LOGGER.debug("Unable to find sequencer with ID '{0}' in repository '{1}'; skipping input '{3}:{2}' and output '{5}:{4}'",
-                                 work.getSequencerId(),
-                                 repository.name(),
-                                 work.getInputPath(),
-                                 work.getInputWorkspaceName(),
-                                 work.getOutputPath(),
-                                 work.getOutputWorkspaceName());
+                                 work.getSequencerId(), repository.name(), work.getInputPath(), work.getInputWorkspaceName(),
+                                 work.getOutputPath(), work.getOutputWorkspaceName());
                 }
                 return;
             }
@@ -145,13 +141,13 @@ final class SequencingRunner implements Runnable {
                 primaryType = selectedNode.getPrimaryNodeType().getName();
             } else {
                 // Find the parent of the output if it exists, or create the node(s) along the path if not ...
-                Node parentOfOutput = null;
+                AbstractJcrNode parentOfOutput = null;
                 try {
                     parentOfOutput = outputSession.getNode(work.getOutputPath());
                 } catch (PathNotFoundException e) {
                     LOGGER.trace("Creating missing output path for {0}", logMsg);
                     JcrTools tools = new JcrTools();
-                    parentOfOutput = tools.findOrCreateNode(outputSession, work.getOutputPath());
+                    parentOfOutput = (AbstractJcrNode)tools.findOrCreateNode(outputSession, work.getOutputPath());
                 }
 
                 // Now determine the name of top node in the output, using the last segment of the selected path ...
@@ -163,15 +159,13 @@ final class SequencingRunner implements Runnable {
                 // Create the output node
                 if (parentOfOutput.isNew() && parentOfOutput.getName().equals(outputNodeName)) {
                     // avoid creating a duplicate path with the same name
-                    outputNode = (AbstractJcrNode)parentOfOutput;
+                    outputNode = parentOfOutput;
                 } else {
                     if (TRACE) {
-                        LOGGER.trace("Creating output node '{0}' under parent '{1}' for {2}",
-                                     outputNodeName,
-                                     parentOfOutput.getPath(),
-                                     logMsg);
+                        LOGGER.trace("Creating output node '{0}' under parent '{1}' for {2}", outputNodeName,
+                                     parentOfOutput.getPath(), logMsg);
                     }
-                    outputNode = (AbstractJcrNode)parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
+                    outputNode = parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
                 }
 
                 // and make sure the output node has the 'mode:derived' mixin ...
@@ -216,9 +210,7 @@ final class SequencingRunner implements Runnable {
                         payload.put("sequencerName", sequencer.getClass().getName());
                         payload.put("sequencedPath", changedProperty.getPath());
                         payload.put("outputPath", outputNode.getPath());
-                        stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME,
-                                             durationInNanos,
-                                             TimeUnit.NANOSECONDS,
+                        stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS,
                                              payload);
                     }
                 } catch (Throwable t) {
@@ -230,22 +222,12 @@ final class SequencingRunner implements Runnable {
         } catch (Throwable t) {
             Logger logger = Logger.getLogger(getClass());
             if (work.getOutputWorkspaceName() != null) {
-                logger.error(t,
-                             RepositoryI18n.errorWhileSequencingNodeIntoWorkspace,
-                             sequencerName,
-                             repository.name(),
-                             work.getInputPath(),
-                             work.getInputWorkspaceName(),
-                             work.getOutputPath(),
+                logger.error(t, RepositoryI18n.errorWhileSequencingNodeIntoWorkspace, sequencerName, repository.name(),
+                             work.getInputPath(), work.getInputWorkspaceName(), work.getOutputPath(),
                              work.getOutputWorkspaceName());
             } else {
-                logger.error(t,
-                             RepositoryI18n.errorWhileSequencingNode,
-                             sequencerName,
-                             repository.name(),
-                             work.getInputPath(),
-                             work.getInputWorkspaceName(),
-                             work.getOutputPath());
+                logger.error(t, RepositoryI18n.errorWhileSequencingNode, sequencerName, repository.name(), work.getInputPath(),
+                             work.getInputWorkspaceName(), work.getOutputPath());
             }
         } finally {
             stats.increment(ValueMetric.SEQUENCED_COUNT);
@@ -311,12 +293,8 @@ final class SequencingRunner implements Runnable {
         // set by the system session when it saves and it will default to "modeshape-worker"
         for (AbstractJcrNode node : outputNodes) {
             if (node.isNodeType(JcrMixLexicon.CREATED)) {
-                node.setProperty(JcrLexicon.CREATED_BY,
-                                 outputSession.getValueFactory().createValue(work.getUserId()),
-                                 true,
-                                 true,
-                                 false,
-                                 false);
+                node.setProperty(JcrLexicon.CREATED_BY, outputSession.getValueFactory().createValue(work.getUserId()), true,
+                                 true, false, false);
             }
         }
     }
@@ -328,20 +306,15 @@ final class SequencingRunner implements Runnable {
 
         RecordingChanges sequencingChanges = new RecordingChanges(outputSession.context().getProcessId(),
                                                                   outputSession.getRepository().repositoryKey(),
-                                                                  outputSession.workspaceName(),
-                                                                  outputSession.getRepository().journalId());
+                                                                  outputSession.workspaceName(), outputSession.getRepository()
+                                                                                                              .journalId());
         Name primaryType = sequencedNode.getPrimaryTypeName();
         Set<Name> mixinTypes = sequencedNode.getMixinTypeNames();
         for (AbstractJcrNode outputNode : outputNodes) {
 
-            sequencingChanges.nodeSequenced(sequencedNode.key(),
-                                            sequencedNode.path(),
-                                            primaryType,
-                                            mixinTypes,
-                                            outputNode.key(),
-                                            outputNode.path(),
-                                            work.getOutputPath(),
-                                            work.getUserId(), work.getSelectedPath(), sequencerName);
+            sequencingChanges.nodeSequenced(sequencedNode.key(), sequencedNode.path(), primaryType, mixinTypes, outputNode.key(),
+                                            outputNode.path(), work.getOutputPath(), work.getUserId(), work.getSelectedPath(),
+                                            sequencerName);
         }
 
         repository.changeBus().notify(sequencingChanges);
@@ -357,15 +330,11 @@ final class SequencingRunner implements Runnable {
         Set<Name> mixinTypes = sequencedNode.getMixinTypeNames();
         RecordingChanges sequencingChanges = new RecordingChanges(inputSession.context().getProcessId(),
                                                                   inputSession.getRepository().repositoryKey(),
-                                                                  inputSession.workspaceName(),
-                                                                  inputSession.getRepository().journalId());
-        sequencingChanges.nodeSequencingFailure(sequencedNode.key(),
-                                                sequencedNode.path(),
-                                                primaryType,
-                                                mixinTypes,
-                                                work.getOutputPath(),
-                                                work.getUserId(),
-                                                work.getSelectedPath(), sequencerName, cause);
+                                                                  inputSession.workspaceName(), inputSession.getRepository()
+                                                                                                            .journalId());
+        sequencingChanges.nodeSequencingFailure(sequencedNode.key(), sequencedNode.path(), primaryType, mixinTypes,
+                                                work.getOutputPath(), work.getUserId(), work.getSelectedPath(), sequencerName,
+                                                cause);
         repository.changeBus().notify(sequencingChanges);
     }
 
@@ -384,7 +353,7 @@ final class SequencingRunner implements Runnable {
 
         // if the node was not new, we need to find the new sequenced nodes
         List<AbstractJcrNode> nodes = new ArrayList<AbstractJcrNode>();
-        NodeIterator childrenIt = rootOutputNode.getNodes();
+        NodeIterator childrenIt = rootOutputNode.getNodesInternal();
         while (childrenIt.hasNext()) {
             Node child = childrenIt.nextNode();
             if (child.isNew()) {
@@ -424,7 +393,7 @@ final class SequencingRunner implements Runnable {
      * @param logMsg the log message, or null if trace/debug logging is not being used (this is passed in for efficiency reasons)
      * @throws RepositoryException if there is a problem accessing the repository content
      */
-    private void removeExistingOutputNodes( Node parentOfOutput,
+    private void removeExistingOutputNodes( AbstractJcrNode parentOfOutput,
                                             String outputNodeName,
                                             String selectedPath,
                                             String logMsg ) throws RepositoryException {
@@ -432,7 +401,7 @@ final class SequencingRunner implements Runnable {
         if (TRACE) {
             LOGGER.trace("Looking under '{0}' for existing output to be removed for {1}", parentOfOutput.getPath(), logMsg);
         }
-        NodeIterator outputIter = parentOfOutput.getNodes(outputNodeName);
+        NodeIterator outputIter = parentOfOutput.getNodesInternal(outputNodeName);
         while (outputIter.hasNext()) {
             Node outputNode = outputIter.nextNode();
             // See if this is indeed the output, which should have the 'mode:derived' mixin ...

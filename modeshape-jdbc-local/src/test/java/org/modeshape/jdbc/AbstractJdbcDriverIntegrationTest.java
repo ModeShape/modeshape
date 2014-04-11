@@ -65,8 +65,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
         // make sure system nodes are avoided
         executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] "
                      + "WHERE [jcr:path] NOT LIKE '/jcr:*' AND [jcr:path] NOT LIKE '/jcr:*/%' AND [jcr:path] NOT LIKE '/jcr:*/%/%' ORDER BY [jcr:path]",
-                     expected,
-                     23);
+                     expected, 23);
     }
 
     @Test
@@ -88,8 +87,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "IS350", "LR2", "LR3", "Prius"};
 
         executeQuery("SELECT car.[car:model] FROM [car:Car] As car WHERE car.[car:model] IS NOT NULL ORDER BY car.[car:model] ASC",
-                     expected,
-                     12);
+                     expected, 12);
 
     }
 
@@ -108,8 +106,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
         executeQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%' ORDER BY [car:msrp]",
-                     expected,
-                     3);
+                     expected, 3);
 
     }
 
@@ -122,8 +119,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
         executeQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid' ORDER BY car.[car:msrp]",
-                     expected,
-                     3);
+                     expected, 3);
 
     }
 
@@ -155,8 +151,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "nt:unstructured    null    /Other/NodeA[3]    NodeA    NodeA    2",};
         // SELECT * FROM ... except the [jcr:score] column ...
         executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:unstructured] WHERE [jcr:path] NOT LIKE '/jcr:*' ORDER BY [jcr:primaryType], [jcr:path]",
-                     expected,
-                     22);
+                     expected, 22);
     }
 
     private String carColumns() {
@@ -203,8 +198,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "nt:unstructured    null    /Cars/Utility    Utility    Utility    2"};
 
         executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] WHERE [jcr:path] LIKE '/Cars/%' AND DEPTH() = 2 ORDER BY [jcr:path]",
-                     expected,
-                     4);
+                     expected, 4);
 
     }
 
@@ -234,58 +228,62 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    TABLE_TYPE[String]    REMARKS[String]    TYPE_CAT[String]    TYPE_SCHEM[String]    TYPE_NAME[String]    SELF_REFERENCING_COL_NAME[String]    REF_GENERATION[String]",
-            "cars    NULL    car:Car    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:created    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:etag    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:language    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:lastModified    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:lifecycle    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:lockable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:managedRetention    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:mimeType    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:referenceable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:shareable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:simpleVersionable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:title    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mix:versionable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:accessControllable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:derived    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:federation    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:hashed    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:lock    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:locks    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:namespace    VIEW    Is Mixin: false    NULL    NULL    NULL    mode:uri    DERIVED",
-            "cars    NULL    mode:namespaces    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:nodeTypes    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:projection    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:publishArea    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:repository    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
-            "cars    NULL    mode:root    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:share    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:system    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:versionHistoryFolder    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    mode:versionStorage    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:activity    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:address    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:base    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:childNodeDefinition    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:configuration    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:file    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:content    DERIVED",
-            "cars    NULL    nt:folder    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:frozenNode    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:hierarchyNode    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:linkedFile    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:content    DERIVED",
-            "cars    NULL    nt:naturalText    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:nodeType    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:propertyDefinition    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:query    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
-            "cars    NULL    nt:unstructured    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:version    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:versionHistory    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:versionLabels    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:versionedChild    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED"};
+            "cars    null    car:Car    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mix:created    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:etag    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:language    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:lastModified    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:lifecycle    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:lockable    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:managedRetention    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:mimeType    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:referenceable    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:shareable    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:simpleVersionable    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:title    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mix:versionable    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mode:accessControllable    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mode:derived    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mode:federation    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:hashed    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mode:index    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:indexColumn    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:indexProvider    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:indexes    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:lock    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:locks    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:namespace    VIEW    Is Mixin: false    null    null    null    mode:uri    DERIVED",
+            "cars    null    mode:namespaces    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:nodeTypes    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:projection    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:publishArea    VIEW    Is Mixin: true    null    null    null    null    DERIVED",
+            "cars    null    mode:repository    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:resource    VIEW    Is Mixin: false    null    null    null    jcr:data    DERIVED",
+            "cars    null    mode:root    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:share    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:system    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:versionHistoryFolder    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    mode:versionStorage    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:activity    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:address    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:base    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:childNodeDefinition    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:configuration    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:file    VIEW    Is Mixin: false    null    null    null    jcr:content    DERIVED",
+            "cars    null    nt:folder    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:frozenNode    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:hierarchyNode    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:linkedFile    VIEW    Is Mixin: false    null    null    null    jcr:content    DERIVED",
+            "cars    null    nt:naturalText    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:nodeType    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:propertyDefinition    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:query    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:resource    VIEW    Is Mixin: false    null    null    null    jcr:data    DERIVED",
+            "cars    null    nt:unstructured    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:version    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:versionHistory    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:versionLabels    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:versionedChild    VIEW    Is Mixin: false    null    null    null    null    DERIVED"};
 
         ResultSet rs = dbmd.getTables("%", "%", "%", new String[] {});
         assertResultsSetEquals(rs, expected);
@@ -299,26 +297,26 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    TABLE_TYPE[String]    REMARKS[String]    TYPE_CAT[String]    TYPE_SCHEM[String]    TYPE_NAME[String]    SELF_REFERENCING_COL_NAME[String]    REF_GENERATION[String]",
-            "cars    NULL    nt:activity    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:address    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:base    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:childNodeDefinition    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:configuration    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:file    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:content    DERIVED",
-            "cars    NULL    nt:folder    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:frozenNode    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:hierarchyNode    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:linkedFile    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:content    DERIVED",
-            "cars    NULL    nt:naturalText    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:nodeType    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:propertyDefinition    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:query    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
-            "cars    NULL    nt:unstructured    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:version    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:versionHistory    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:versionLabels    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:versionedChild    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED"};
+            "cars    null    nt:activity    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:address    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:base    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:childNodeDefinition    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:configuration    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:file    VIEW    Is Mixin: false    null    null    null    jcr:content    DERIVED",
+            "cars    null    nt:folder    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:frozenNode    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:hierarchyNode    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:linkedFile    VIEW    Is Mixin: false    null    null    null    jcr:content    DERIVED",
+            "cars    null    nt:naturalText    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:nodeType    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:propertyDefinition    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:query    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:resource    VIEW    Is Mixin: false    null    null    null    jcr:data    DERIVED",
+            "cars    null    nt:unstructured    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:version    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:versionHistory    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:versionLabels    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:versionedChild    VIEW    Is Mixin: false    null    null    null    null    DERIVED"};
 
         ResultSet rs = dbmd.getTables("%", "%", "nt:%", new String[] {});
         assertResultsSetEquals(rs, expected);
@@ -331,8 +329,8 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    TABLE_TYPE[String]    REMARKS[String]    TYPE_CAT[String]    TYPE_SCHEM[String]    TYPE_NAME[String]    SELF_REFERENCING_COL_NAME[String]    REF_GENERATION[String]",
-            "cars    NULL    mode:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
-            "cars    NULL    nt:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED"};
+            "cars    null    mode:resource    VIEW    Is Mixin: false    null    null    null    jcr:data    DERIVED",
+            "cars    null    nt:resource    VIEW    Is Mixin: false    null    null    null    jcr:data    DERIVED"};
 
         ResultSet rs = dbmd.getTables("%", "%", "%:resource", new String[] {});
         assertResultsSetEquals(rs, expected);
@@ -345,8 +343,8 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    TABLE_TYPE[String]    REMARKS[String]    TYPE_CAT[String]    TYPE_SCHEM[String]    TYPE_NAME[String]    SELF_REFERENCING_COL_NAME[String]    REF_GENERATION[String]",
-            "cars    NULL    mode:nodeTypes    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-            "cars    NULL    nt:nodeType    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED"};
+            "cars    null    mode:nodeTypes    VIEW    Is Mixin: false    null    null    null    null    DERIVED",
+            "cars    null    nt:nodeType    VIEW    Is Mixin: false    null    null    null    null    DERIVED"};
 
         ResultSet rs = dbmd.getTables("%", "%", "%nodeType%", new String[] {});
         assertResultsSetEquals(rs, expected);
@@ -359,23 +357,23 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "cars    NULL    car:Car    car:engine    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:lengthInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:maker    12    STRING    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:model    12    STRING    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:mpgCity    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:mpgHighway    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:userRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:valueRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:wheelbaseInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:year    12    STRING    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:name    12    STRING    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:path    12    STRING    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:primaryType    12    STRING    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+            "cars    null    car:Car    car:engine    12    STRING    50    null    0    0    2        null    0    0    0    1    YES    null    null    null    0",
+            "cars    null    car:Car    car:lengthInInches    8    DOUBLE    20    null    0    0    2        null    0    0    0    2    YES    null    null    null    0",
+            "cars    null    car:Car    car:maker    12    STRING    50    null    0    0    2        null    0    0    0    3    YES    null    null    null    0",
+            "cars    null    car:Car    car:model    12    STRING    50    null    0    0    2        null    0    0    0    4    YES    null    null    null    0",
+            "cars    null    car:Car    car:mpgCity    -5    LONG    20    null    0    0    2        null    0    0    0    5    YES    null    null    null    0",
+            "cars    null    car:Car    car:mpgHighway    -5    LONG    20    null    0    0    2        null    0    0    0    6    YES    null    null    null    0",
+            "cars    null    car:Car    car:msrp    12    STRING    50    null    0    0    2        null    0    0    0    7    YES    null    null    null    0",
+            "cars    null    car:Car    car:userRating    -5    LONG    20    null    0    0    2        null    0    0    0    8    YES    null    null    null    0",
+            "cars    null    car:Car    car:valueRating    -5    LONG    20    null    0    0    2        null    0    0    0    9    YES    null    null    null    0",
+            "cars    null    car:Car    car:wheelbaseInInches    8    DOUBLE    20    null    0    0    2        null    0    0    0    10    YES    null    null    null    0",
+            "cars    null    car:Car    car:year    12    STRING    50    null    0    0    2        null    0    0    0    11    YES    null    null    null    0",
+            "cars    null    car:Car    jcr:name    12    STRING    20    null    0    0    2        null    0    0    0    12    YES    null    null    null    0",
+            "cars    null    car:Car    jcr:path    12    STRING    50    null    0    0    2        null    0    0    0    13    YES    null    null    null    0",
+            "cars    null    car:Car    jcr:primaryType    12    STRING    20    null    0    0    1        null    0    0    0    14    NO    null    null    null    0",
+            "cars    null    car:Car    jcr:score    8    DOUBLE    20    null    0    0    2        null    0    0    0    15    YES    null    null    null    0",
+            "cars    null    car:Car    mode:depth    -5    LONG    20    null    0    0    2        null    0    0    0    16    YES    null    null    null    0",
+            "cars    null    car:Car    mode:localName    12    STRING    50    null    0    0    2        null    0    0    0    17    YES    null    null    null    0"};
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
 
         assertResultsSetEquals(rs, expected);
@@ -389,23 +387,23 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "cars    NULL    car:Car    car:engine    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:lengthInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:maker    12    STRING    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:model    12    STRING    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:mpgCity    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:mpgHighway    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:userRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:valueRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:wheelbaseInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:year    12    STRING    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:name    12    STRING    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:path    12    STRING    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:primaryType    12    STRING    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+            "cars    null    car:Car    car:engine    12    STRING    50    null    0    0    2        null    0    0    0    1    YES    null    null    null    0",
+            "cars    null    car:Car    car:lengthInInches    8    DOUBLE    20    null    0    0    2        null    0    0    0    2    YES    null    null    null    0",
+            "cars    null    car:Car    car:maker    12    STRING    50    null    0    0    2        null    0    0    0    3    YES    null    null    null    0",
+            "cars    null    car:Car    car:model    12    STRING    50    null    0    0    2        null    0    0    0    4    YES    null    null    null    0",
+            "cars    null    car:Car    car:mpgCity    -5    LONG    20    null    0    0    2        null    0    0    0    5    YES    null    null    null    0",
+            "cars    null    car:Car    car:mpgHighway    -5    LONG    20    null    0    0    2        null    0    0    0    6    YES    null    null    null    0",
+            "cars    null    car:Car    car:msrp    12    STRING    50    null    0    0    2        null    0    0    0    7    YES    null    null    null    0",
+            "cars    null    car:Car    car:userRating    -5    LONG    20    null    0    0    2        null    0    0    0    8    YES    null    null    null    0",
+            "cars    null    car:Car    car:valueRating    -5    LONG    20    null    0    0    2        null    0    0    0    9    YES    null    null    null    0",
+            "cars    null    car:Car    car:wheelbaseInInches    8    DOUBLE    20    null    0    0    2        null    0    0    0    10    YES    null    null    null    0",
+            "cars    null    car:Car    car:year    12    STRING    50    null    0    0    2        null    0    0    0    11    YES    null    null    null    0",
+            "cars    null    car:Car    jcr:name    12    STRING    20    null    0    0    2        null    0    0    0    12    YES    null    null    null    0",
+            "cars    null    car:Car    jcr:path    12    STRING    50    null    0    0    2        null    0    0    0    13    YES    null    null    null    0",
+            "cars    null    car:Car    jcr:primaryType    12    STRING    20    null    0    0    1        null    0    0    0    14    NO    null    null    null    0",
+            "cars    null    car:Car    jcr:score    8    DOUBLE    20    null    0    0    2        null    0    0    0    15    YES    null    null    null    0",
+            "cars    null    car:Car    mode:depth    -5    LONG    20    null    0    0    2        null    0    0    0    16    YES    null    null    null    0",
+            "cars    null    car:Car    mode:localName    12    STRING    50    null    0    0    2        null    0    0    0    17    YES    null    null    null    0"};
 
         ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");
 
@@ -420,7 +418,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "cars    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0"};
+            "cars    null    car:Car    car:msrp    12    STRING    50    null    0    0    2        null    0    0    0    1    YES    null    null    null    0"};
 
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "car:msrp");
         assertResultsSetEquals(rs, expected);

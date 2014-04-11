@@ -37,6 +37,9 @@ import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicyIterator;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -48,7 +51,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
-public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTest {
+public abstract class AbstractJcrRepositoryTest {
 
     @Rule
     public TestRule skipTestRule = new SkipTestRule();
@@ -78,6 +81,15 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
 
     protected String asString( Object value ) {
         return session().context().getValueFactories().getStringFactory().create(value);
+    }
+
+    protected AccessControlList acl( String path ) throws Exception {
+        AccessControlManager acm = session().getAccessControlManager();
+        AccessControlPolicyIterator it = acm.getApplicablePolicies(path);
+        if (it.hasNext()) {
+            return (AccessControlList)it.nextAccessControlPolicy();
+        }
+        return (AccessControlList)acm.getPolicies(path)[0];
     }
 
     protected void assertNoNode( String path ) throws RepositoryException {
@@ -203,9 +215,7 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         Query query = session().getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult results = query.execute();
         printMessage(query.getStatement());
-        printResults(results);
-        printMessage("");
-        assertThat(results.getRows().getSize(), is(expectedRowCount));
+        ValidateQuery.validateQuery().printDetail(print).rowCount(expectedRowCount).validate(query, results);
         return results;
     }
 

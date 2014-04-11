@@ -15,6 +15,11 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,13 +35,8 @@ import org.modeshape.common.FixFor;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.basic.BasicName;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
-public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
+public class RepositoryNodeTypeManagerTest {
 
     private RepositoryConfiguration config;
     private JcrRepository repository;

@@ -5,15 +5,9 @@
         "default" : "default",
         "allowCreation" : true
     },
-    "query" : {
-        "enabled" : true,
-        "enableFullTextSearch" : true,
-        "indexing": {
-            "rebuildOnStartup": {
-                "includeSystemContent": true,
-                "mode" : "sync"
-            }
-        }
+    "journaling": {
+        "location": "target/journal",
+        "asyncWritesEnabled": false
     },
     "security" : {
         "anonymous" : {

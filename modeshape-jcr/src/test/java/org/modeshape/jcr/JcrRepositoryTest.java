@@ -75,7 +75,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.journal.JournalRecord;
 import org.modeshape.jcr.journal.LocalJournal;
 
-public class JcrRepositoryTest extends AbstractTransactionalTest {
+public class JcrRepositoryTest {
 
     private Environment environment;
     private RepositoryConfiguration config;
@@ -938,16 +938,14 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     @Test
     public void shouldAllowNodeTypeChangeAfterWrite() throws Exception {
         session = createSession();
-        session.workspace()
-               .getNodeTypeManager()
+        session.workspace().getNodeTypeManager()
                .registerNodeTypes(getClass().getResourceAsStream("/cnd/nodeTypeChange-initial.cnd"), true);
 
         Node testRoot = session.getRootNode().addNode("/testRoot", "test:nodeTypeA");
         testRoot.setProperty("fieldA", "foo");
         session.save();
 
-        session.workspace()
-               .getNodeTypeManager()
+        session.workspace().getNodeTypeManager()
                .registerNodeTypes(getClass().getResourceAsStream("/cnd/nodeTypeChange-next.cnd"), true);
 
         testRoot = session.getNode("/testRoot");
@@ -1104,54 +1102,8 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         }
     }
 
-    @FixFor( "MODE-1805" )
     @Test
-    public void shouldCreateRepositoryInstanceWithQueriesDisabled() throws Exception {
-        shutdownDefaultRepository();
-
-        RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' : 'noQueries', 'query' : { 'enabled' : false } }");
-        repository = new JcrRepository(config);
-        repository.start();
-        try {
-            Session session = repository.login();
-            assertThat(session, is(notNullValue()));
-
-            // Add some content ...
-            Node testNode = session.getRootNode().addNode("repos");
-            session.save();
-            session.logout();
-
-            session = repository.login();
-            Node testNode2 = session.getNode("/repos");
-            assertTrue(testNode.isSame(testNode2));
-            session.logout();
-
-            // Queries return nothing ...
-            session = repository.login();
-            Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
-            QueryResult results = query.execute();
-            assertTrue(results.getNodes().getSize() == 0);
-            session.logout();
-        } finally {
-            repository.shutdown().get(3L, TimeUnit.SECONDS);
-            JTATestUtil.clearJBossJTADefaultStoreLocation();
-        }
-    }
-
-    @FixFor( "MODE-1902" )
-    @Test( expected = RepositoryException.class )
-    public void shouldFailToStartWhenNoIndexesExistAndRebuildOptionFailIfMissing() throws Exception {
-        shutdownDefaultRepository();
-
-        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResourceAsStream("config/repo-config-fail-if-missing-indexes.json"),
-                                                                      "Fail if missing indexes");
-        repository = new JcrRepository(config);
-        repository.start();
-    }
-
-    @Test
-    @FixFor( "MODE-2056")
+    @FixFor( "MODE-2056" )
     public void shouldReturnActiveSessions() throws Exception {
         shutdownDefaultRepository();
 
@@ -1177,11 +1129,12 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     @Test
     public void shouldStartAndReturnStartupProblems() throws Exception {
         shutdownDefaultRepository();
-        RepositoryConfiguration config = RepositoryConfiguration.read(
-                getClass().getClassLoader().getResourceAsStream("config/repo-config-with-startup-problems.json"), "Deprecated config");
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
+                                                                                .getResourceAsStream("config/repo-config-with-startup-problems.json"),
+                                                                      "Deprecated config");
         repository = new JcrRepository(config);
         Problems problems = repository.getStartupProblems();
-        assertEquals("Expected 2 startup warnings:" + problems.toString(), 2, problems.warningCount());
+        assertEquals("Expected 2 startup warnings:" + problems.toString(), 1, problems.warningCount());
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
     }
 
@@ -1189,26 +1142,28 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     @Test
     public void shouldClearStartupProblemsOnRestart() throws Exception {
         shutdownDefaultRepository();
-        RepositoryConfiguration config = RepositoryConfiguration.read(
-                getClass().getClassLoader().getResourceAsStream("config/repo-config-with-startup-problems.json"), "Deprecated config");
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
+                                                                                .getResourceAsStream("config/repo-config-with-startup-problems.json"),
+                                                                      "Deprecated config");
         repository = new JcrRepository(config);
         Problems problems = repository.getStartupProblems();
-        assertEquals("Invalid startup problems:" + problems.toString(), 4, problems.size());
+        assertEquals("Invalid startup problems:" + problems.toString(), 3, problems.size());
         repository.shutdown().get();
         problems = repository.getStartupProblems();
-        assertEquals("Invalid startup problems:" + problems.toString(), 4, problems.size());
+        assertEquals("Invalid startup problems:" + problems.toString(), 3, problems.size());
     }
 
     @FixFor( "MODE-2033" )
     @Test
     public void shouldReturnStartupProblemsAfterStarting() throws Exception {
         shutdownDefaultRepository();
-        RepositoryConfiguration config = RepositoryConfiguration.read(
-                getClass().getClassLoader().getResourceAsStream("config/repo-config-with-startup-problems.json"), "Deprecated config");
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
+                                                                                .getResourceAsStream("config/repo-config-with-startup-problems.json"),
+                                                                      "Deprecated config");
         repository = new JcrRepository(config);
         repository.start();
         Problems problems = repository.getStartupProblems();
-        assertEquals("Expected 2 startup warnings:" + problems.toString(), 2, problems.warningCount());
+        assertEquals("Expected 2 startup warnings:" + problems.toString(), 1, problems.warningCount());
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
     }
 
@@ -1217,12 +1172,13 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     public void shouldStartupWithJournalingEnabled() throws Exception {
         FileUtil.delete("target/journal");
         shutdownDefaultRepository();
-        RepositoryConfiguration config = RepositoryConfiguration.read(
-                getClass().getClassLoader().getResourceAsStream("config/repo-config-journaling.json"), "Deprecated config");
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
+                                                                                .getResourceAsStream("config/repo-config-journaling.json"),
+                                                                      "Deprecated config");
         repository = new JcrRepository(config);
         repository.start();
 
-        //add some nodes
+        // add some nodes
         JcrSession session1 = repository.login();
         int nodeCount = 10;
         for (int i = 0; i < nodeCount; i++) {
@@ -1231,19 +1187,19 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         }
         session1.save();
 
-        //give the events a change to reach the journal
+        // give the events a change to reach the journal
         Thread.sleep(300);
 
-        //edit some nodes
+        // edit some nodes
         for (int i = 0; i < nodeCount / 2; i++) {
             session1.getNode("/testNode_" + i).setProperty("int_prop2", 2 * i);
         }
         session1.save();
 
-        //give the events a change to reach the journal
+        // give the events a change to reach the journal
         Thread.sleep(300);
 
-        //remove the nodes
+        // remove the nodes
         Set<NodeKey> expectedJournalKeys = new TreeSet<NodeKey>();
         for (int i = 0; i < nodeCount; i++) {
             AbstractJcrNode node = session1.getNode("/testNode_" + i);
@@ -1253,10 +1209,10 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         expectedJournalKeys.add(session1.getRootNode().key());
         session1.save();
 
-        //give the events a change to reach the journal
+        // give the events a change to reach the journal
         Thread.sleep(300);
 
-        //check the journal has entries
+        // check the journal has entries
         LocalJournal.Records journalRecordsReversed = repository.runningState().journal().allRecords(true);
 
         assertTrue(journalRecordsReversed.size() > 0);
@@ -1271,8 +1227,8 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     public void shouldNotAllowNodeTypeRemovalWithQueryPlaceholderConfiguration() throws Exception {
         shutdownDefaultRepository();
         FileUtil.delete("target/indexes");
-        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader().getResource(
-                "config/repoc-config-query-placeholder.json"));
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
+                                                                                .getResource("config/repo-config-query-placeholder.json"));
         repository = new JcrRepository(config);
         String namespaceName = "admb";
         String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";
@@ -1295,14 +1251,14 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         Node newNode = rootNode.addNode("testNode");
         newNode.addMixin(nodeType.getName());
         session.save();
-        //sleep to make sure the node is indexed
+        // sleep to make sure the node is indexed
         Thread.sleep(100);
 
         try {
             nodeTypeManager.unregisterNodeType(nodeType.getName());
             fail("Should not be able to remove node type");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
         session.logout();
     }
@@ -1360,14 +1316,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
                                 String[] uuids,
                                 String[] nodeTypeNames,
                                 boolean noLocal ) throws Exception {
-        return addListener(this.session,
-                           expectedEventsCount,
-                           numIterators,
-                           eventTypes,
-                           absPath,
-                           isDeep,
-                           uuids,
-                           nodeTypeNames,
+        return addListener(this.session, expectedEventsCount, numIterators, eventTypes, absPath, isDeep, uuids, nodeTypeNames,
                            noLocal);
     }
 
@@ -1381,8 +1330,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
                                 String[] nodeTypeNames,
                                 boolean noLocal ) throws Exception {
         SimpleListener listener = new SimpleListener(expectedEventsCount, numIterators, eventTypes);
-        session.getWorkspace()
-               .getObservationManager()
+        session.getWorkspace().getObservationManager()
                .addEventListener(listener, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
         return listener;
     }

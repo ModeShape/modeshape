@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.query.QueryContext;
@@ -249,11 +250,12 @@ public class CanonicalPlanner implements Planner {
         }
         if (source instanceof Join) {
             Join join = (Join)source;
+            JoinCondition joinCondition = join.getJoinCondition();
             // Set up new join node corresponding to this join predicate
             PlanNode node = new PlanNode(Type.JOIN);
             node.setProperty(Property.JOIN_TYPE, join.type());
             node.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
-            node.setProperty(Property.JOIN_CONDITION, join.getJoinCondition());
+            node.setProperty(Property.JOIN_CONDITION, joinCondition);
 
             context.getHints().hasJoin = true;
             if (join.type() == JoinType.LEFT_OUTER) {
@@ -265,11 +267,11 @@ public class CanonicalPlanner implements Planner {
             for (int i = 0; i < 2; i++) {
                 PlanNode sourceNode = createPlanNode(context, clauses[i], usedSelectors);
                 node.addLastChild(sourceNode);
+            }
 
-                // Add selectors to the joinNode
-                for (PlanNode child : node.getChildren()) {
-                    node.addSelectors(child.getSelectors());
-                }
+            // Add selectors to the joinNode
+            for (PlanNode child : node.getChildren()) {
+                node.addSelectors(child.getSelectors());
             }
             return node;
         }

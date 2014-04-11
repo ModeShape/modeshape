@@ -14,12 +14,5 @@
         "providers" : [
             { "classname" : "servlet" }
         ]
-    } ,
-    "query" : {
-        "indexing": {
-            "rebuildOnStartup": {
-                "includeSystemContent": true
-            }
-        }
     }
 }

@@ -69,7 +69,6 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
-import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
@@ -453,12 +452,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Figure out the JCR property type ...
         boolean single = property.isSingle();
         boolean skipProtected = false;
-        JcrPropertyDefinition defn = findBestPropertyDefinition(primaryType,
-                                                                mixinTypes,
-                                                                property,
-                                                                single,
-                                                                skipProtected,
-                                                                false,
+        JcrPropertyDefinition defn = findBestPropertyDefinition(primaryType, mixinTypes, property, single, skipProtected, false,
                                                                 nodeTypes);
         if (defn != null) return defn;
 
@@ -509,13 +503,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // Create a value for the ModeShape property value ...
             Object value = property.getFirstValue();
             Value jcrValue = new JcrValue(factories, propertyType, value);
-            definition = nodeTypes.findPropertyDefinition(session,
-                                                          primaryTypeNameOfParent,
-                                                          mixinTypeNamesOfParent,
-                                                          property.getName(),
-                                                          jcrValue,
-                                                          true,
-                                                          skipProtected);
+            definition = nodeTypes.findPropertyDefinition(session, primaryTypeNameOfParent, mixinTypeNamesOfParent,
+                                                          property.getName(), jcrValue, true, skipProtected);
         } else {
             // Create values for the ModeShape property value ...
             Value[] jcrValues = new Value[property.size()];
@@ -523,12 +512,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             for (Object value : property) {
                 jcrValues[index++] = new JcrValue(factories, propertyType, value);
             }
-            definition = nodeTypes.findPropertyDefinition(session,
-                                                          primaryTypeNameOfParent,
-                                                          mixinTypeNamesOfParent,
-                                                          property.getName(),
-                                                          jcrValues,
-                                                          skipProtected);
+            definition = nodeTypes.findPropertyDefinition(session, primaryTypeNameOfParent, mixinTypeNamesOfParent,
+                                                          property.getName(), jcrValues, skipProtected);
         }
 
         if (definition != null) return definition;
@@ -551,7 +536,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     boolean isReferenceable() throws RepositoryException {
-        return isNodeType(JcrMixLexicon.REFERENCEABLE);
+        SessionCache cache = sessionCache();
+        NodeTypes nodeTypes = session().nodeTypes();
+        try {
+            CachedNode node = node();
+            return nodeTypes.isReferenceable(node.getPrimaryType(cache), node.getMixinTypes(cache));
+        } catch (ItemNotFoundException e) {
+            // The node has been removed, so do nothing
+        }
+        return false;
     }
 
     boolean isLockable() throws RepositoryException {
@@ -602,9 +595,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new RepositoryException(JcrI18n.nodeNotInTheSameSession.text(node.path()));
         }
         NodeKey key = ((AbstractJcrNode)value).key();
-        Reference ref = session.context()
-                               .getValueFactories()
-                               .getReferenceFactory()
+        Reference ref = session.context().getValueFactories().getReferenceFactory()
                                .create(key, ((AbstractJcrNode)value).isForeign());
         return valueFrom(PropertyType.REFERENCE, ref);
     }
@@ -761,40 +752,38 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public AbstractJcrNode getNode( String relativePath ) throws PathNotFoundException, RepositoryException {
         return getNode(relativePath, false);
     }
-    
+
     /**
-     * Gets access to the node with given relative path with enabled or disabled 
-     * permission testing.
+     * Gets access to the node with given relative path with enabled or disabled permission testing.
      * 
      * @param relativePath the relative path of the node to access
      * @param aclScope true to disable permissions testing and false otherwise
      * @return the node under relative path
-     * @throws PathNotFoundException 
-     * @throws RepositoryException 
-     * @throws AccessControlException in case of negative results of permission 
-     * check procedure.
-     * 
+     * @throws PathNotFoundException
+     * @throws RepositoryException
+     * @throws AccessControlException in case of negative results of permission check procedure.
      */
-    protected AbstractJcrNode getNode( String relativePath, boolean aclScope ) throws PathNotFoundException, RepositoryException {
+    protected AbstractJcrNode getNode( String relativePath,
+                                       boolean aclScope ) throws PathNotFoundException, RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
         checkSession();
         if (relativePath.equals(".")) {
             return this;
         }
-        
+
         if (relativePath.equals("..")) {
             if (!aclScope) {
                 session().checkPermission(this.getParent().path(), ModeShapePermissions.READ);
             }
             return this.getParent();
         }
-        
+
         int indexOfFirstSlash = relativePath.indexOf('/');
         if (indexOfFirstSlash == 0 || relativePath.startsWith("[")) {
             // Not a relative path ...
             throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath, "relativePath"));
         }
-        
+
         Path.Segment segment = null;
         if (indexOfFirstSlash != -1) {
             // We know it's a relative path with more than one segment ...
@@ -803,7 +792,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 if (path.getLastSegment().isSelfReference()) {
                     return this;
                 }
-                
+
                 if (path.getLastSegment().isParentReference()) {
                     if (!aclScope) {
                         session().checkPermission(this.getParent().path(), ModeShapePermissions.READ);
@@ -864,7 +853,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public NodeIterator getNodes() throws RepositoryException {
         ChildReferences childReferences = node().getChildReferences(sessionCache());
         if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
-        return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences);
+        return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences.iterator());
+    }
+
+    protected NodeIterator getNodesInternal() throws RepositoryException {
+        ChildReferences childReferences = node().getChildReferences(sessionCache());
+        if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
+        return new JcrChildNodeIterator(new ChildNodeResolver(session, key(), false), childReferences);
     }
 
     @Override
@@ -874,6 +869,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (namePattern.length() == 0) return JcrEmptyNodeIterator.INSTANCE;
         if ("*".equals(namePattern)) return getNodes();
         return getNodes(patternStringToGlobArray(namePattern));
+    }
+
+    protected NodeIterator getNodesInternal( String namePattern ) throws RepositoryException {
+        CheckArg.isNotNull(namePattern, "namePattern");
+        checkSession();
+        if (namePattern.length() == 0) return JcrEmptyNodeIterator.INSTANCE;
+        if ("*".equals(namePattern)) return getNodesInternal();
+        return getNodesInternal(patternStringToGlobArray(namePattern));
     }
 
     @Override
@@ -894,8 +897,25 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), iter);
     }
 
+    protected NodeIterator getNodesInternal( String... nameGlobs ) throws RepositoryException {
+        CheckArg.isNotNull(nameGlobs, "nameGlobs");
+        if (nameGlobs.length == 0) return JcrEmptyNodeIterator.INSTANCE;
+
+        List<?> patterns = createPatternsFor(nameGlobs);
+        Iterator<ChildReference> iter = null;
+        if (patterns.size() == 1 && patterns.get(0) instanceof String) {
+            // This is a literal, so just look up by name ...
+            Name literal = nameFrom((String)patterns.get(0));
+            iter = node().getChildReferences(sessionCache()).iterator(literal);
+        } else {
+            NamespaceRegistry registry = session.namespaces();
+            iter = node().getChildReferences(sessionCache()).iterator(patterns, registry);
+        }
+        return new JcrChildNodeIterator(new ChildNodeResolver(session, key(), false), iter);
+    }
+
     protected static String[] patternStringToGlobArray( String namePattern ) {
-        List<String> globs = new ArrayList<String>();
+        List<String> globs = new ArrayList<>();
         for (String glob : namePattern.split("\\|")) {
             String trimmedGlob = glob.trim();
             if (trimmedGlob.length() > 0) {
@@ -919,7 +939,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 for (int i = 0; i != length; i++) {
                     char c = stringPattern.charAt(i);
                     switch (c) {
-                        //the following characters must be escaped when used in regular expressions ...
+                    // the following characters must be escaped when used in regular expressions ...
                         case '\'':
                         case '|':
                         case '/':
@@ -1133,8 +1153,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (desiredKey == null) {
             String documentStoreKey = null;
             try {
-                documentStoreKey = session().repository()
-                                            .documentStore()
+                documentStoreKey = session().repository().documentStore()
                                             .newDocumentKey(key().toString(), childName, childPrimaryNodeTypeName);
             } catch (Exception e) {
                 throw new RepositoryException(e);
@@ -1222,8 +1241,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             if (INTERNAL_NODE_TYPE_NAMES.contains(childPrimaryNodeTypeName)) {
                 String workspaceName = workspaceName();
                 String childPath = readable(session.pathFactory().create(path(), childName, numExistingSns + 1));
-                String msg = JcrI18n.unableToCreateNodeWithInternalPrimaryType.text(childPrimaryNodeTypeName,
-                                                                                    childPath,
+                String msg = JcrI18n.unableToCreateNodeWithInternalPrimaryType.text(childPrimaryNodeTypeName, childPath,
                                                                                     workspaceName);
                 throw new ConstraintViolationException(msg);
             }
@@ -1246,23 +1264,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         int sns = numExistingSns + 1;
-        JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName,
-                                                                        mixins,
-                                                                        childName,
-                                                                        childPrimaryNodeTypeName,
-                                                                        sns,
-                                                                        skipProtected);
+        JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName, mixins, childName,
+                                                                        childPrimaryNodeTypeName, sns, skipProtected);
         if (childDefn == null) {
             // Failed to find an appropriate child node definition. But we need more information to throw the correct error.
             String childPath = readable(session.pathFactory().create(path(), childName, sns));
             if (numExistingSns > 0) {
                 // There was already at least one existing node with the same name, so see if there is a child node definition
                 // that does not allow same-name-siblings ...
-                childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName,
-                                                              mixins,
-                                                              childName,
-                                                              childPrimaryNodeTypeName,
-                                                              0,
+                childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName, mixins, childName, childPrimaryNodeTypeName, 0,
                                                               skipProtected);
 
                 // This failed, so start getting the info required to throw an exception ...
@@ -1509,12 +1519,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name),
-                           valuesFrom(PropertyType.STRING, values),
-                           PropertyType.UNDEFINED,
-                           false,
-                           false,
-                           false,
+        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, false, false, false,
                            false);
     }
 
@@ -1524,12 +1529,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name),
-                           valuesFrom(PropertyType.STRING, values),
-                           PropertyType.UNDEFINED,
-                           true,
-                           true,
-                           true,
+        return setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values), PropertyType.UNDEFINED, true, true, true,
                            false);
     }
 
@@ -1732,10 +1732,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 String defnName = propertyDefinition.getName();
                 String nodeTypeName = propertyDefinition.getDeclaringNodeType().getName();
                 I18n msg = JcrI18n.valueViolatesConstraintsOnDefinition;
-                throw new ConstraintViolationException(msg.text(existing.getName(),
-                                                                value.getString(),
-                                                                location(),
-                                                                defnName,
+                throw new ConstraintViolationException(msg.text(existing.getName(), value.getString(), location(), defnName,
                                                                 nodeTypeName));
             }
 
@@ -1943,23 +1940,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Set<Name> mixinTypes = node.getMixinTypes(cache);
         NodeTypes nodeTypes = session.nodeTypes();
         JcrPropertyDefinition defn = null;
-        defn = nodeTypes.findPropertyDefinition(session,
-                                                primaryType,
-                                                mixinTypes,
-                                                name,
-                                                values,
-                                                !skipProtectedValidation,
+        defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, values, !skipProtectedValidation,
                                                 skipReferenceValidation);
 
         if (defn == null) {
             // Failed to find a valid property definition,
             // so figure out if there's a definition that would work if it had no constraints ...
-            defn = nodeTypes.findPropertyDefinition(session,
-                                                    primaryType,
-                                                    mixinTypes,
-                                                    name,
-                                                    values,
-                                                    !skipProtectedValidation,
+            defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, values, !skipProtectedValidation,
                                                     false);
 
             String propName = readable(name);
@@ -2076,8 +2063,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 String msg = JcrI18n.allPropertyValuesMustHaveSameType.text(readable(name),
                                                                             values,
                                                                             org.modeshape.jcr.api.PropertyType.nameFromValue(valueType),
-                                                                            location(),
-                                                                            workspaceName());
+                                                                            location(), workspaceName());
                 throw new javax.jcr.ValueFormatException(msg);
             }
         }
@@ -2478,12 +2464,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Set<Name> mixins = parent.getMixinTypes(cache);
         int numExistingSns = parent.getChildReferences(cache).getChildCount(nodeName);
         boolean skipProtected = true;
-        JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(primaryType,
-                                                                        mixins,
-                                                                        nodeName,
-                                                                        newPrimaryTypeName,
-                                                                        numExistingSns,
-                                                                        skipProtected);
+        JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(primaryType, mixins, nodeName, newPrimaryTypeName,
+                                                                        numExistingSns, skipProtected);
         if (childDefn == null) {
             String ptype = readable(primaryType);
             String mtypes = readable(parent.getMixinTypes(cache));
@@ -2659,25 +2641,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 // Only the residual definition would work - if there were any other definition for this name,
                 // the mixin type would not have been added due to the conflict
                 if (propertyDefinition.isMultiple()) {
-                    match = nodeTypes.findPropertyDefinition(session,
-                                                             primaryTypeName,
-                                                             newMixinNames,
-                                                             JcrNodeType.RESIDUAL_NAME,
-                                                             property.getValues(),
-                                                             true);
+                    match = nodeTypes.findPropertyDefinition(session, primaryTypeName, newMixinNames, JcrNodeType.RESIDUAL_NAME,
+                                                             property.getValues(), true);
                 } else {
-                    match = nodeTypes.findPropertyDefinition(session,
-                                                             primaryTypeName,
-                                                             newMixinNames,
-                                                             JcrNodeType.RESIDUAL_NAME,
-                                                             property.getValue(),
-                                                             true,
-                                                             true);
+                    match = nodeTypes.findPropertyDefinition(session, primaryTypeName, newMixinNames, JcrNodeType.RESIDUAL_NAME,
+                                                             property.getValue(), true, true);
                 }
 
                 if (match == null) {
-                    throw new ConstraintViolationException(JcrI18n.noPropertyDefinition.text(property.getName(),
-                                                                                             location(),
+                    throw new ConstraintViolationException(JcrI18n.noPropertyDefinition.text(property.getName(), location(),
                                                                                              readable(primaryTypeName),
                                                                                              readable(newMixinNames)));
                 }
@@ -2689,7 +2661,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Check that any remaining child nodes that use the mixin type to be removed
         // match the residual definition for the node.
         // ------------------------------------------------------------------------------
-        for (NodeIterator iter = getNodes(); iter.hasNext();) {
+        for (NodeIterator iter = getNodesInternal(); iter.hasNext();) {
             AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
             int snsCount = (int)childCount(child.name());
             NodeDefinition childDefinition = child.getDefinition();
@@ -2705,16 +2677,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             if (mixinType.isNodeType(childDeclaredNodeType)) {
                 // Only the residual definition would work - if there were any other definition for this name,
                 // the mixin type would not have been added due to the conflict
-                JcrNodeDefinition match = nodeTypes.findChildNodeDefinition(primaryTypeName,
-                                                                            newMixinNames,
-                                                                            JcrNodeType.RESIDUAL_NAME,
-                                                                            child.getPrimaryNodeType().getInternalName(),
-                                                                            snsCount,
-                                                                            true);
+                JcrNodeDefinition match = nodeTypes.findChildNodeDefinition(primaryTypeName, newMixinNames,
+                                                                            JcrNodeType.RESIDUAL_NAME, child.getPrimaryNodeType()
+                                                                                                            .getInternalName(),
+                                                                            snsCount, true);
 
                 if (match == null) {
-                    throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(child.getName(),
-                                                                                              location(),
+                    throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(child.getName(), location(),
                                                                                               readable(primaryTypeName),
                                                                                               readable(newMixinNames)));
                 }
@@ -2744,7 +2713,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         for (AbstractJcrProperty prop : this.jcrProperties.values()) {
             prop.releasePropertyDefinitionId();
         }
-        for (NodeIterator iter = getNodes(); iter.hasNext();) {
+        for (NodeIterator iter = getNodesInternal(); iter.hasNext();) {
             AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
             child.releaseNodeDefinitionId();
         }
@@ -2808,12 +2777,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 CachedNode child = cache.getNode(ref);
                 Name childPrimaryType = child.getPrimaryType(cache);
                 boolean skipProtected = true;
-                JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(mixinType.getInternalName(),
-                                                                                null,
-                                                                                nodeName,
-                                                                                childPrimaryType,
-                                                                                snsCount,
-                                                                                skipProtected);
+                JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(mixinType.getInternalName(), null, nodeName,
+                                                                                childPrimaryType, snsCount, skipProtected);
                 if (childDefn == null) {
                     return false;
                 }
@@ -2865,15 +2830,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             Set<Name> parentMixins = parent.getMixinTypes(cache);
             int numExistingSnsInParent = parent.getChildReferences(cache).getChildCount(nodeName);
             boolean skipProtected = true;
-            JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(parentPrimaryType,
-                                                                            parentMixins,
-                                                                            nodeName,
-                                                                            primaryType,
-                                                                            numExistingSnsInParent,
-                                                                            skipProtected);
+            JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(parentPrimaryType, parentMixins, nodeName,
+                                                                            primaryType, numExistingSnsInParent, skipProtected);
             if (childDefn == null) {
-                throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(nodeName,
-                                                                                          getParent().location(),
+                throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(nodeName, getParent().location(),
                                                                                           readable(parentPrimaryType),
                                                                                           readable(parentMixins)));
             }
@@ -2906,15 +2866,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             Set<Name> parentMixins = parent.getMixinTypes(cache);
             int numExistingSnsInParent = parent.getChildReferences(cache).getChildCount(nodeName);
             boolean skipProtected = false;
-            JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(parentPrimaryType,
-                                                                            parentMixins,
-                                                                            nodeName,
-                                                                            primaryType,
-                                                                            numExistingSnsInParent,
-                                                                            skipProtected);
+            JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(parentPrimaryType, parentMixins, nodeName,
+                                                                            primaryType, numExistingSnsInParent, skipProtected);
             if (childDefn == null) {
-                throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(nodeName,
-                                                                                          getParent().location(),
+                throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(nodeName, getParent().location(),
                                                                                           readable(parentPrimaryType),
                                                                                           readable(parentMixins)));
             }
@@ -3156,7 +3111,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         internalRemove(false);
     }
 
-    void internalRemove(boolean skipVersioningValidation) throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+    void internalRemove( boolean skipVersioningValidation )
+        throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
 
         // A node that is locked by one session can be removed by another session as long as there is no lock
@@ -3598,17 +3554,28 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     protected static final class ChildNodeResolver implements JcrChildNodeIterator.NodeResolver {
         private final JcrSession session;
         private final NodeKey parentKey;
+        private final boolean checkPermission;
+
+        public ChildNodeResolver( JcrSession session, NodeKey parentKey, boolean checkPermission ) {
+            this.session = session;
+            this.parentKey = parentKey;
+            // we only need to check permissions if ACLs are enabled
+            this.checkPermission = checkPermission && session.repository().repositoryCache().isAccessControlEnabled();
+        }
 
         protected ChildNodeResolver( JcrSession session,
                                      NodeKey parentKey ) {
-            this.session = session;
-            this.parentKey = parentKey;
+            this(session, parentKey, true);
         }
 
         @Override
         public Node nodeFrom( ChildReference ref ) {
             try {
-                return session.node(ref.getKey(), null, parentKey);
+                AbstractJcrNode node =  session.node(ref.getKey(), null, parentKey);
+                if (checkPermission  && !node.isExternal() && !session.hasPermission(node.getPath(), ModeShapePermissions.READ)) {
+                    return null;
+                }
+                return node;
             } catch (RepositoryException e) {
                 return null;
             }

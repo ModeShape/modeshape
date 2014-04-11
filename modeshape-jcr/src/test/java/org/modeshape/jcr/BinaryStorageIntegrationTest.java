@@ -39,7 +39,7 @@ import org.modeshape.jcr.value.binary.BinaryStore;
 /**
  * Test suite that should include test cases which verify that a repository configured with various binary stores, correctly
  * stores the binary values.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
@@ -55,7 +55,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-2051")
+    @FixFor( "MODE-2051" )
     public void shouldStoreBinariesIntoCacheBinaryStoreWithTransientRepository() throws Exception {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
         byte[] smallData = randomBytes(100);
@@ -65,11 +65,10 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-2051")
+    @FixFor( "MODE-2051" )
     public void shouldStoreBinariesIntoSameCacheBinaryStoreAsRepository() throws Exception {
         FileUtil.delete("target/persistent_repository");
-        startRepositoryWithConfiguration(resourceStream(
-                "config/repo-config-cache-persistent-binary-storage-same-location.json"));
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-persistent-binary-storage-same-location.json"));
         byte[] smallData = randomBytes(100);
         storeAndAssert(smallData, "smallNode");
         byte[] largeData = randomBytes(3 * 1024);
@@ -77,10 +76,10 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-1752")
+    @FixFor( "MODE-1752" )
     public void shouldCorrectlySkipBytesFromCacheBinaryStoreStream() throws Exception {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
-        //chunk size is configured to 1000
+        // chunk size is configured to 1000
         byte[] data = randomBytes(3003);
         InputStream inputStream = storeBinaryProperty(data, "skipNode1");
         assertEquals(2, inputStream.skip(2));
@@ -106,10 +105,10 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-1752")
+    @FixFor( "MODE-1752" )
     public void shouldCorrectlyReadBytesAfterSkippingFromCacheBinaryStoreStream() throws Exception {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
-        //chunk size is configured to 1000
+        // chunk size is configured to 1000
         byte[] data = randomBytes(3003);
         InputStream inputStream = storeBinaryProperty(data, "skipNode1");
         assertEquals(2, inputStream.skip(2));
@@ -163,30 +162,30 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
             node3.setProperty("binary", session.getValueFactory().createBinary(resourceStream("io/file3.txt")));
             session.save();
 
-            //verify the mime-type has been extracted for the 2 nt:resources
+            // verify the mime-type has been extracted for the 2 nt:resources
             Binary file1Binary = (Binary)session.getNode("/file1.txt/jcr:content").getProperty("jcr:data").getBinary();
             assertEquals("Invalid mime-type", "text/plain", file1Binary.getMimeType());
 
             Binary file2Binary = (Binary)session.getNode("/file2.txt/jcr:content").getProperty("jcr:data").getBinary();
             assertEquals("Invalid mime-type", "text/plain", file2Binary.getMimeType());
 
-            //expect 3 binaries
+            // expect 3 binaries
             assertEquals("Incorrect number of binaries in store", 3, binariesCount());
 
             session.removeItem("/file1.txt");
             session.removeItem("/file2.txt");
             session.save();
-            //sleep to give the binary change listener to mark the binaries as unused
+            // sleep to give the binary change listener to mark the binaries as unused
             Thread.sleep(100);
             binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
 
-            //expect 1 binary
+            // expect 1 binary
             assertEquals("Incorrect number of binaries in store", 1, binariesCount());
 
             session.removeItem("/file3/binary");
             session.save();
 
-            //sleep to give the binary change listener to mark the binaries as unused
+            // sleep to give the binary change listener to mark the binaries as unused
             Thread.sleep(100);
             binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
 
@@ -199,7 +198,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     private int binariesCount() throws Exception {
         int count = 0;
         for (BinaryKey binaryKey : binaryStore().getAllBinaryKeys()) {
-            count++;
+            if (binaryKey != null) count++;
         }
         return count;
     }
@@ -208,13 +207,14 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         return repository.runningState().binaryStore();
     }
 
-    private byte[] randomBytes(int size) {
+    private byte[] randomBytes( int size ) {
         byte[] data = new byte[size];
         RANDOM.nextBytes(data);
         return data;
     }
 
-    private void storeAndAssert(byte[] data, String nodeName) throws RepositoryException, IOException {
+    private void storeAndAssert( byte[] data,
+                                 String nodeName ) throws RepositoryException, IOException {
         InputStream stream = storeBinaryProperty(data, nodeName);
         byte[] storedData = IoUtil.readBytes(stream);
         assertArrayEquals("Data retrieved does not match data stored", data, storedData);

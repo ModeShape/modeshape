@@ -224,7 +224,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
         if (cachedNode instanceof MutableCachedNode) {
             // There are at least some changes. See if the node is newly versionable ...
             MutableCachedNode mutable = (MutableCachedNode)cachedNode;
-            RepositoryNodeTypeManager.NodeTypes nodeTypeCapabilities = repository().nodeTypeManager().getNodeTypes();
+            NodeTypes nodeTypeCapabilities = repository().nodeTypeManager().getNodeTypes();
             Name primaryType = mutable.getPrimaryType(cache);
             Set<Name> mixinTypes = mutable.getAddedMixins(cache);
             if (nodeTypeCapabilities.isVersionable(primaryType, mixinTypes)) {
@@ -1066,7 +1066,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
             }
         }
 
-        NodeIterator nodeIterator = node.getNodes();
+        NodeIterator nodeIterator = node.getNodesInternal();
         while (nodeIterator.hasNext()) {
             removeHistories((AbstractJcrNode)nodeIterator.nextNode(), systemSession);
         }
@@ -1762,7 +1762,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
          */
         private void doLeave( AbstractJcrNode targetNode ) throws RepositoryException {
             if (!isShallow) {
-                for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
+                for (NodeIterator iter = targetNode.getNodesInternal(); iter.hasNext();) {
                     doMerge((AbstractJcrNode)iter.nextNode());
                 }
             }
@@ -1791,7 +1791,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
             Set<AbstractJcrNode> targetNodesPresentInBoth = new LinkedHashSet<AbstractJcrNode>();
             Set<AbstractJcrNode> sourceNodesPresentInBoth = new LinkedHashSet<AbstractJcrNode>();
 
-            for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
+            for (NodeIterator iter = targetNode.getNodesInternal(); iter.hasNext();) {
                 AbstractJcrNode targetChild = (AbstractJcrNode)iter.nextNode();
                 try {
                     Path srcPath = targetChild.correspondingNodePath(sourceWorkspaceName);
@@ -1804,7 +1804,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
                     targetOnly.add(targetChild);
                 }
             }
-            for (NodeIterator iter = sourceNode.getNodes(); iter.hasNext();) {
+            for (NodeIterator iter = sourceNode.getNodesInternal(); iter.hasNext();) {
                 AbstractJcrNode sourceChild = (AbstractJcrNode)iter.nextNode();
                 if (!sourceNodesPresentInBoth.contains(sourceChild)) {
                     sourceOnly.add(sourceChild);
@@ -1873,7 +1873,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
             failures.add(targetNode);
 
             if (!isShallow) {
-                for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
+                for (NodeIterator iter = targetNode.getNodesInternal(); iter.hasNext();) {
                     AbstractJcrNode childNode = (AbstractJcrNode)iter.nextNode();
 
                     if (childNode.isNodeType(JcrMixLexicon.VERSIONABLE)) {

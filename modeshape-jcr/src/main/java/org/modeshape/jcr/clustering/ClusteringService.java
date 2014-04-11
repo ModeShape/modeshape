@@ -109,12 +109,12 @@ public final class ClusteringService {
     /**
      * The service used for cluster-wide locking
      */
-    private LockService lockService;
+    protected LockService lockService;
 
     /**
      * A list of message consumers which register themselves with this service.
      */
-    private final Set<MessageConsumer<Serializable>> consumers;
+    protected final Set<MessageConsumer<Serializable>> consumers;
 
     /**
      * Creates an empty, not started clustering service.
@@ -130,12 +130,13 @@ public final class ClusteringService {
 
     /**
      * Starts a standalone clustering service which in turn will start & connect its own JGroup channel.
-     *
+     * 
      * @param clusterName the name of the cluster to which the JGroups channel should connect.
      * @param jgroupsConfig either the path or the XML content of a JGroups configuration file; may be null
      * @return this instance
      */
-    public synchronized ClusteringService startStandalone(String clusterName, String jgroupsConfig) {
+    public synchronized ClusteringService startStandalone( String clusterName,
+                                                           String jgroupsConfig ) {
         if (StringUtil.isBlank(clusterName)) {
             clusterName = "modeshape-cluster";
         }
@@ -154,15 +155,15 @@ public final class ClusteringService {
 
     /**
      * Starts a new clustering service by forking a channel of an existing JGroups channel.
-     *
+     * 
      * @param mainChannel a {@link org.jgroups.Channel} instance; may not be null.
      * @return this instance
      */
-    public synchronized ClusteringService startForked(Channel mainChannel) {
+    public synchronized ClusteringService startForked( Channel mainChannel ) {
         CheckArg.isNotNull(mainChannel, "mainChannel");
         try {
             Protocol topProtocol = mainChannel.getProtocolStack().getTopProtocol();
-            //add the fork at the top of the stack (the bottom should be either TCP/UDP) to preserve the default configuration
+            // add the fork at the top of the stack (the bottom should be either TCP/UDP) to preserve the default configuration
             this.channel = new ForkChannel(mainChannel, "modeshape-stack", "modeshape-fork-channel", true, ProtocolStack.ABOVE,
                                            topProtocol.getClass());
             initChannel("modeshape-fork-channel");
@@ -177,19 +178,17 @@ public final class ClusteringService {
     private void initLockService( Channel mainChannel ) throws Exception {
         Protocol bottomProtocol = mainChannel.getProtocolStack().getBottomProtocol();
         this.lockChannel = new ForkChannel(mainChannel, "modeshape-lock-stack", "modeshape-lock-channel", true,
-                                           ProtocolStack.ABOVE,
-                                           bottomProtocol.getClass(),
-                                           new CENTRAL_LOCK());
+                                           ProtocolStack.ABOVE, bottomProtocol.getClass(), new CENTRAL_LOCK());
         this.lockChannel.setReceiver(new ReceiverAdapter() {
             @Override
             public void viewAccepted( View view ) {
-               if (view instanceof MergeView) {
-                   //see JGroups docs in case of a cluster split-merge case
-                   lockService.unlockAll();
-               }
+                if (view instanceof MergeView) {
+                    // see JGroups docs in case of a cluster split-merge case
+                    lockService.unlockAll();
+                }
             }
         });
-        //channel name is ignored for fork channels
+        // channel name is ignored for fork channels
         this.lockChannel.connect("ignored");
 
         this.lockService = new LockService(this.lockChannel);
@@ -213,13 +212,13 @@ public final class ClusteringService {
         }
 
         ProtocolStackConfigurator configurator = null;
-        //check if it points to a file accessible via the class loader
+        // check if it points to a file accessible via the class loader
         InputStream stream = ClusteringService.class.getClassLoader().getResourceAsStream(jgroupsConfig);
         try {
             configurator = XmlConfigurator.getInstance(stream);
         } catch (IOException e) {
             LOGGER.debug(e, "Channel configuration is not a classpath resource");
-            //check if the configuration is valid xml content
+            // check if the configuration is valid xml content
             stream = new ByteArrayInputStream(jgroupsConfig.getBytes());
             try {
                 configurator = XmlConfigurator.getInstance(stream);
@@ -287,18 +286,19 @@ public final class ClusteringService {
 
     /**
      * Acquires a cluster-wide lock, waiting a maximum amount of time for it.
-     *
+     * 
      * @param time an amount of time
      * @param unit a {@link java.util.concurrent.TimeUnit}; may not be null
      * @return {@code true} if the lock was successfully acquired, {@code false} otherwise
-     *
      * @see java.util.concurrent.locks.Lock#tryLock(long, java.util.concurrent.TimeUnit)
      */
-    public boolean tryLock(long time, TimeUnit unit) {
+    public boolean tryLock( long time,
+                            TimeUnit unit ) {
         try {
             return lockService.getLock(GLOBAL_LOCK).tryLock(time, unit);
         } catch (InterruptedException e) {
-            LOGGER.debug("Thread " + Thread.currentThread().getName() + " received interrupt request while waiting to acquire lock '{0}'", GLOBAL_LOCK);
+            LOGGER.debug("Thread " + Thread.currentThread().getName()
+                         + " received interrupt request while waiting to acquire lock '{0}'", GLOBAL_LOCK);
             Thread.interrupted();
             return false;
         }
@@ -306,7 +306,7 @@ public final class ClusteringService {
 
     /**
      * Unlocks a previously acquired cluster-wide lock.
-     *
+     * 
      * @see java.util.concurrent.locks.Lock#unlock()
      */
     public void unlock() {
@@ -442,9 +442,7 @@ public final class ClusteringService {
 
         @Override
         public void viewAccepted( View newView ) {
-            LOGGER.trace("Members of '{0}' cluster have changed: {1}, total count: {2}",
-                         clusterName(),
-                         newView,
+            LOGGER.trace("Members of '{0}' cluster have changed: {1}, total count: {2}", clusterName(), newView,
                          newView.getMembers().size());
             membersInCluster.set(newView.getMembers().size());
             if (membersInCluster.get() > 1) {

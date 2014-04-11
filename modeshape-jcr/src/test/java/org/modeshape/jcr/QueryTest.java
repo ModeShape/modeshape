@@ -93,6 +93,7 @@ public class QueryTest extends SingleUseAbstractTest {
         session.save();
 
         // print = true;
+        tools.setDebug(print);
         if (print) {
             tools.printSubgraph(artifactA);
             tools.printSubgraph(artifactB);
@@ -109,7 +110,8 @@ public class QueryTest extends SingleUseAbstractTest {
         session = repository.login();
 
         // Show that we have the 'relatesTo' relationship set up for Artifact A (with two targets)
-        query = "SELECT relationship.[sramp:target] AS target_jcr_uuid FROM [sramp:artifact] AS artifact"
+        query = "SELECT relationship.[sramp:target] AS target_jcr_uuid, relationship.[sramp:type] "
+                + " FROM [sramp:artifact] AS artifact"
                 + " JOIN [sramp:relationship] AS relationship ON ISCHILDNODE(relationship, artifact)"
                 + " WHERE artifact.[sramp:name] = 'A' AND relationship.[sramp:type] = 'relatesTo'";
         jcrQueryResult = assertJcrSql2Query(query, 1);

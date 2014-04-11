@@ -31,7 +31,7 @@ public interface CancellableQuery {
      * @throws QueryCancelledException if the query was cancelled
      * @throws RepositoryException if there was a problem executing the query
      */
-    QueryResults getResults() throws QueryCancelledException, RepositoryException;
+    QueryResults execute() throws QueryCancelledException, RepositoryException;
 
     /**
      * Cancel the query if it is currently running. Note that this method does not block until the query is cancelled; it merely

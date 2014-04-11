@@ -47,6 +47,8 @@ public final class JcrI18n {
     public static I18n repositoryWasInitializedByOtherProcess;
     public static I18n repositoryWasNeverUpgradedAfterMinutes;
     public static I18n failureDuringUpgradeOperation;
+    public static I18n errorShuttingDownIndexProvider;
+    public static I18n indexProviderMissingPlanner;
 
     public static I18n cannotConvertValue;
     public static I18n loginFailed;
@@ -98,6 +100,7 @@ public final class JcrI18n {
     public static I18n unableToInitializeSequencer;
     public static I18n unableToInitializeTextExtractor;
     public static I18n unableToInitializeConnector;
+    public static I18n unableToInitializeIndexProvider;
     public static I18n requiredFieldNotSetInConnector;
     public static I18n fileConnectorCannotWriteToDirectory;
     public static I18n fileConnectorTopLevelDirectoryMissingOrCannotBeRead;
@@ -109,6 +112,15 @@ public final class JcrI18n {
     public static I18n couldNotStoreProperty;
     public static I18n couldNotGetMimeType;
     public static I18n connectorIsReadOnly;
+
+    public static I18n indexProviderAlreadyExists;
+    public static I18n indexProviderDoesNotExist;
+    public static I18n indexAlreadyExists;
+    public static I18n indexDoesNotExist;
+    public static I18n indexMustHaveName;
+    public static I18n indexMustHaveProviderName;
+    public static I18n errorRefreshingIndexDefinitions;
+    public static I18n errorNotifyingProviderOfIndexChanges;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;
@@ -205,6 +217,7 @@ public final class JcrI18n {
     public static I18n unableToCopySourceNotExternal;
     public static I18n unableToCloneSameWsContainsExternalNode;
     public static I18n unableToCloneExternalNodesRequireRoot;
+    public static I18n aclsOnExternalNodesNotAllowed;
 
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;
@@ -263,6 +276,7 @@ public final class JcrI18n {
     public static I18n selectorUsedInEquiJoinCriteriaDoesNotExistInQuery;
     public static I18n multipleSelectorsAppearInQueryRequireSpecifyingSelectorName;
     public static I18n multipleSelectorsAppearInQueryUnableToCallMethod;
+    public static I18n multipleCallsToGetRowsOrNodesIsNotAllowed;
     public static I18n equiJoinWithOneJcrPathPseudoColumnIsInvalid;
     public static I18n noSuchVariableInQuery;
 
@@ -519,6 +533,8 @@ public final class JcrI18n {
     public static I18n upgrade3_6_0Running;
     public static I18n upgrade3_6_0CannotUpdateNodeTypes;
     public static I18n upgrade3_6_0CannotUpdateLocks;
+    public static I18n upgrade4_0_0_Alpha1_Running;
+    public static I18n upgrade4_0_0_Alpha1_Failed;
 
     public static I18n cannotStartJournal;
     public static I18n cannotStopJournal;

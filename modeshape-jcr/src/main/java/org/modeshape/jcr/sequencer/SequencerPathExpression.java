@@ -112,17 +112,11 @@ public class SequencerPathExpression implements Serializable {
         return this.outputExpression;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return this.hc;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -135,9 +129,6 @@ public class SequencerPathExpression implements Serializable {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return this.selectExpression + "=>" + this.outputExpression;
@@ -298,17 +289,11 @@ public class SequencerPathExpression implements Serializable {
             return this.outputPath != null ? this.outputPath.workspaceName : null;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public int hashCode() {
             return this.hc;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
@@ -320,9 +305,6 @@ public class SequencerPathExpression implements Serializable {
             return false;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public String toString() {
             return inputMatcher + " => " + this.outputPath;

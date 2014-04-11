@@ -141,12 +141,17 @@ public final class ClusteredRepositoryChangeBus extends MessageConsumer<ChangeSe
     }
 
     @Override
-    public boolean register( ChangeSetListener observer ) {
-        return delegate.register(observer);
+    public boolean register( ChangeSetListener listener ) {
+        return delegate.register(listener);
     }
 
     @Override
-    public boolean unregister( ChangeSetListener observer ) {
-        return delegate.unregister(observer);
+    public boolean registerInThread( ChangeSetListener listener ) {
+        return delegate.registerInThread(listener);
+    }
+
+    @Override
+    public boolean unregister( ChangeSetListener listener ) {
+        return delegate.unregister(listener);
     }
 }

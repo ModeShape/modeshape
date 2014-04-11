@@ -18,16 +18,4 @@
             "useOnFailedLogin" : false
         }
     },
-    "query" : {
-        "enabled" : true,
-        "indexStorage" : {
-            "type" : "filesystem",
-            "location" : "target/persistent_repository_initial_content/index"
-        } ,
-        "indexing" : {
-            "rebuildOnStartup" : {
-                "when" : "never"
-            }
-        }
-    }
 }

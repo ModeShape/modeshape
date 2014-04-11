@@ -35,49 +35,6 @@
             }
         ]
     },
-    "query" : {
-        "enabled" : true,
-        "rebuildUponStartup" : "if_missing",
-        "textExtracting": {
-            "threadPool" : "test",
-                "extractors" : {
-                    "customExtractor": {
-                        "name" : "MyFileType extractor",
-                        "classname" : "com.example.myfile.MyExtractor",
-                    },
-                    "tikaExtractor":{
-                        "name" : "General content-based extractor",
-                        "classname" : "tika",
-                    }
-                }
-        },
-        "indexStorage" : {
-            "type" : "filesystem",
-            "location" : "Thorough/indexes",
-            "lockingStrategy" : "native",
-            "fileSystemAccessType" : "auto"
-        },
-        "indexing" : {
-            "threadPool" : "modeshape-workers",
-            "analyzer" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
-            "similarity" : "org.apache.lucene.search.DefaultSimilarity",
-            "batchSize" : -1,
-            "indexFormat" : "LUCENE_35",
-            "readerStrategy" : "shared",
-            "mode" : "sync",
-            "rebuildOnStartup" : {
-                "includeSystemContent" : false,
-                "mode" : "async"
-            },
-            "asyncThreadPoolSize" : 1,
-            "asyncMaxQueueSize" : 0,
-            "backend" : {
-                "type" : "lucene",
-                
-            },
-            "hibernate.search.custom.overridden.property" : "value",
-        }
-    },
     "sequencing" : {
         "threadPool" : "modeshape-workers",
         "sequencers" : [

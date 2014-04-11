@@ -104,7 +104,7 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldSuccessfullyValidateSampleRepositoryConfiguration() {
-        RepositoryConfiguration config = assertHasWarnings(1, "sample-repo-config.json");
+        RepositoryConfiguration config = assertHasWarnings(0, "sample-repo-config.json");
         assertThat(config.getTransactionMode(), is(TransactionMode.AUTO));
     }
 
@@ -116,32 +116,17 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageInRam() {
-        assertValid("config/index-storage-config-ram.json");
-    }
-
-    @Test
-    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystem() {
-        assertValid("config/index-storage-config-filesystem.json");
-    }
-
-    @Test
-    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystemMaster() {
-        assertValid("config/index-storage-config-filesystem-master.json");
-    }
-
-    @Test
-    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystemSlave() {
-        assertValid("config/index-storage-config-filesystem-slave.json");
+        assertValid("config/index-providers.json");
     }
 
     @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfiguration() {
-        assertHasWarnings(1, "config/thorough-repo-config.json");
+        assertHasWarnings(0, "config/thorough-repo-config.json");
     }
 
     @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfigurationWithDescriptions() {
-        assertHasWarnings(1, "config/thorough-with-desc-repo-config.json");
+        assertHasWarnings(0, "config/thorough-with-desc-repo-config.json");
     }
 
     @Test
@@ -177,11 +162,6 @@ public class RepositoryConfigurationTest {
     @Test
     public void shouldNotSuccessfullyValidateRepositoryConfigurationWithOldStyleSequencersArray() {
         assertNotValid(1, "config/invalid-old-style-sequencers-config.json");
-    }
-
-    @Test
-    public void shouldNotSuccessfullyValidateRepositoryConfigurationWithOldStyleExtractorsArray() {
-        assertNotValid(1, "config/invalid-old-style-extractors-config.json");
     }
 
     @Test
@@ -268,9 +248,15 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
-    public void shouldAlwaysReturnNonNullQueryComponent() {
+    public void shouldAlwaysReturnNonNullIndexesComponent() {
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
-        assertThat(config.getQuery(), is(notNullValue()));
+        assertThat(config.getIndexes(), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldAlwaysReturnNonNullIndexProvidersList() {
+        RepositoryConfiguration config = new RepositoryConfiguration("repoName");
+        assertThat(config.getIndexProviders(), is(notNullValue()));
     }
 
     @Test
@@ -338,9 +324,7 @@ public class RepositoryConfigurationTest {
     @FixFor( "MODE-1988" )
     @Test
     public void shouldEnableDocumentOptimizationWithEmptyDocumentOptimizationField() {
-        Document doc = Schematic.newDocument(FieldName.NAME,
-                                             "repoName",
-                                             FieldName.STORAGE,
+        Document doc = Schematic.newDocument(FieldName.NAME, "repoName", FieldName.STORAGE,
                                              Schematic.newDocument(FieldName.DOCUMENT_OPTIMIZATION, Schematic.newDocument()));
         RepositoryConfiguration config = new RepositoryConfiguration(doc, "repoName");
         DocumentOptimization opt = config.getDocumentOptimization();
@@ -351,13 +335,9 @@ public class RepositoryConfigurationTest {
     @FixFor( "MODE-1988" )
     @Test
     public void shouldEnableDocumentOptimizationWithValidChildCountTargetAndToleranceValues() {
-        Document docOpt = Schematic.newDocument(FieldName.OPTIMIZATION_CHILD_COUNT_TARGET,
-                                                500,
-                                                FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE,
-                                                10);
-        Document doc = Schematic.newDocument(FieldName.NAME,
-                                             "repoName",
-                                             FieldName.STORAGE,
+        Document docOpt = Schematic.newDocument(FieldName.OPTIMIZATION_CHILD_COUNT_TARGET, 500,
+                                                FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE, 10);
+        Document doc = Schematic.newDocument(FieldName.NAME, "repoName", FieldName.STORAGE,
                                              Schematic.newDocument(FieldName.DOCUMENT_OPTIMIZATION, docOpt));
         RepositoryConfiguration config = new RepositoryConfiguration(doc, "repoName");
         DocumentOptimization opt = config.getDocumentOptimization();
@@ -372,9 +352,7 @@ public class RepositoryConfigurationTest {
     @Test
     public void shouldDisableDocumentOptimizationWithoutValidChildCountTargetValue() {
         Document docOpt = Schematic.newDocument(FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE, 10);
-        Document doc = Schematic.newDocument(FieldName.NAME,
-                                             "repoName",
-                                             FieldName.STORAGE,
+        Document doc = Schematic.newDocument(FieldName.NAME, "repoName", FieldName.STORAGE,
                                              Schematic.newDocument(FieldName.DOCUMENT_OPTIMIZATION, docOpt));
         RepositoryConfiguration config = new RepositoryConfiguration(doc, "repoName");
         DocumentOptimization opt = config.getDocumentOptimization();
@@ -398,7 +376,9 @@ public class RepositoryConfigurationTest {
         return assertValid(assertRead(configContent));
 
     }
-    protected RepositoryConfiguration assertHasWarnings( int numberOfWarnings, String configContent ) {
+
+    protected RepositoryConfiguration assertHasWarnings( int numberOfWarnings,
+                                                         String configContent ) {
         return assertHasWarnings(numberOfWarnings, assertRead(configContent));
     }
 
@@ -414,13 +394,10 @@ public class RepositoryConfigurationTest {
     }
 
     protected RepositoryConfiguration assertHasWarnings( int numberOfWarnings,
-                                      RepositoryConfiguration config ) {
+                                                         RepositoryConfiguration config ) {
         Problems results = config.validate();
-        assertThat(results.toString(), results.hasProblems(), is(true));
-        assertThat(results.toString(), results.hasErrors(), is(false));
-        assertThat(results.toString(), results.hasWarnings(), is(true));
-        assertThat(results.toString(), results.errorCount(), is(0));
         assertThat(results.toString(), results.warningCount(), is(numberOfWarnings));
+        assertThat(results.toString(), results.hasWarnings(), is(numberOfWarnings != 0));
         if (print) {
             System.out.println(results);
         }

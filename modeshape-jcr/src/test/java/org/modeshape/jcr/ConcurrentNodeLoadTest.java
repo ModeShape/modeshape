@@ -46,7 +46,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.cache.ChildReferences;
 
-public class ConcurrentNodeLoadTest extends AbstractTransactionalTest {
+public class ConcurrentNodeLoadTest {
 
     @Rule
     public TestRule skipTestRule = new SkipTestRule();

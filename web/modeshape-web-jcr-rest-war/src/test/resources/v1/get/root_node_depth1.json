@@ -13,6 +13,7 @@
                 "jcr:versionStorage",
                 "mode:namespaces",
                 "mode:locks",
+                "mode:indexes",
                 "mode:repository"
             ]
         }

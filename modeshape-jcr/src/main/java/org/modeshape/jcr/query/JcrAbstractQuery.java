@@ -87,13 +87,13 @@ public abstract class JcrAbstractQuery implements org.modeshape.jcr.api.query.Qu
         if (storedAtPath == null) {
             throw new ItemNotFoundException(JcrI18n.notStoredQuery.text(getStatement()));
         }
-        return storedAtPath.getString(context.getExecutionContext().getNamespaceRegistry());
+        return this.context.getExecutionContext().getValueFactories().getStringFactory().create(storedAtPath);
     }
 
     @Override
     public Node storeAsNode( String absPath ) throws PathNotFoundException, ConstraintViolationException, RepositoryException {
-        context.isLive();
-        Node queryNode = context.store(absPath, JcrNtLexicon.QUERY, this.language, this.statement);
+        context.checkValid();
+        Node queryNode = context.storeQuery(absPath, JcrNtLexicon.QUERY, this.language, this.statement);
         this.storedAtPath = pathFor(queryNode.getPath());
         return queryNode;
     }

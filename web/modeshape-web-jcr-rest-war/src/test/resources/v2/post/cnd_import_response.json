@@ -35,6 +35,10 @@
                 "http://localhost:8090/resources/repo/default/nodetypes/mode%3aAcl",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode%3aPermission",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode%3afederation",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aindex",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aindexColumn",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aindexProvider",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aindexes",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode%3alock",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode%3alocks",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode%3anamespace",
@@ -136,8 +140,9 @@
                 }
             ],
             "subTypes":[
+                "http://localhost:8090/resources/repo/default/nodetypes/mode%3aindex",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode%3arepository",
-                "http://localhost:8090/resources/repo/default/nodetypes/nt%3ahierarchyNode"
+                "http://localhost:8090/resources/repo/default/nodetypes/nt%3ahierarchyNode",
             ]
         }
     }

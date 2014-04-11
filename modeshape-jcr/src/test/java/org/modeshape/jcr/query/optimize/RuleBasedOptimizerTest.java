@@ -29,9 +29,12 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.GraphI18n;
+import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
+import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.ArithmeticOperand;
 import org.modeshape.jcr.query.model.ArithmeticOperator;
@@ -44,6 +47,7 @@ import org.modeshape.jcr.query.model.FullTextSearch;
 import org.modeshape.jcr.query.model.FullTextSearchScore;
 import org.modeshape.jcr.query.model.JoinType;
 import org.modeshape.jcr.query.model.Literal;
+import org.modeshape.jcr.query.model.NullOrder;
 import org.modeshape.jcr.query.model.Order;
 import org.modeshape.jcr.query.model.Ordering;
 import org.modeshape.jcr.query.model.PropertyValue;
@@ -78,7 +82,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     @Before
     public void beforeEach() {
         ExecutionContext executionContext = new ExecutionContext();
-        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(executionContext);
+        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(executionContext, mock(NodeTypes.class));
         builder.addTable("t1", "c11", "c12", "c13");
         builder.addTable("t2", "c21", "c22", "c23");
         builder.addTable("all", "a1", "a2", "a3", "a4", "primaryType", "mixins");
@@ -93,7 +97,8 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         builder.addView("type2",
                         "SELECT all.a3, all.a4 FROM all WHERE all.primaryType IN ('t2','t0') AND all.mixins IN ('t4','t5')");
         Schemata schemata = builder.build();
-        context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"), schemata);
+        context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"), schemata,
+                                   mock(RepositoryIndexes.class), mock(NodeTypes.class), mock(BufferManager.class));
 
         node = new PlanNode(Type.ACCESS);
 
@@ -539,9 +544,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode access = new PlanNode(Type.ACCESS, selector("type1"));
         PlanNode project = new PlanNode(Type.PROJECT, access, selector("type1"));
         project.setProperty(Property.PROJECT_COLUMNS,
-                            columns(column("type1", "a1", "a"),
-                                    column("type1", "a2", "b"),
-                                    column("type1", "a3", "c"),
+                            columns(column("type1", "a1", "a"), column("type1", "a2", "b"), column("type1", "a3", "c"),
                                     column("type1", "a4", "d")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("type1"));
         select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("type1"), "a2", "something"));
@@ -574,9 +577,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         // Create the expected plan ...
         PlanNode project = new PlanNode(Type.PROJECT, selector("type1"), selector("type2"));
         project.setProperty(Property.PROJECT_COLUMNS,
-                            columns(column("type1", "a1", "a"),
-                                    column("type1", "a2", "b"),
-                                    column("type2", "a3", "c"),
+                            columns(column("type1", "a1", "a"), column("type1", "a2", "b"), column("type2", "a3", "c"),
                                     column("type2", "a4", "d")));
         PlanNode join = new PlanNode(Type.JOIN, project, selector("type1"), selector("type2"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
@@ -626,9 +627,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode access = new PlanNode(Type.ACCESS, selector("type1"));
         PlanNode project = new PlanNode(Type.PROJECT, access, selector("type1"));
         project.setProperty(Property.PROJECT_COLUMNS,
-                            columns(column("type1", "a1", "a"),
-                                    column("type1", "a2", "b"),
-                                    column("type1", "a3", "c"),
+                            columns(column("type1", "a1", "a"), column("type1", "a2", "b"), column("type1", "a3", "c"),
                                     column("type1", "a4", "d")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("type1"));
         select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("type1"), "a2", "something"));
@@ -953,20 +952,20 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     protected Ordering ascending( String table,
                                   String columnName ) {
-        return new Ordering(new PropertyValue(new SelectorName(table), columnName), Order.ASCENDING);
+        return new Ordering(new PropertyValue(new SelectorName(table), columnName), Order.ASCENDING, NullOrder.NULLS_LAST);
     }
 
     protected Ordering descending( String table,
                                    String columnName ) {
-        return new Ordering(new PropertyValue(new SelectorName(table), columnName), Order.DESCENDING);
+        return new Ordering(new PropertyValue(new SelectorName(table), columnName), Order.DESCENDING, NullOrder.NULLS_LAST);
     }
 
     protected Ordering ascendingScore( String... tableNames ) {
-        return new Ordering(score(tableNames), Order.ASCENDING);
+        return new Ordering(score(tableNames), Order.ASCENDING, NullOrder.NULLS_LAST);
     }
 
     protected Ordering descendingScore( String... tableNames ) {
-        return new Ordering(score(tableNames), Order.DESCENDING);
+        return new Ordering(score(tableNames), Order.DESCENDING, NullOrder.NULLS_LAST);
     }
 
     protected DynamicOperand score( String... tableNames ) {

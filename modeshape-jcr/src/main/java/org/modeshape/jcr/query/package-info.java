@@ -16,10 +16,7 @@
 /**
  * <p>The Query API provides a mechanism for building and executing queries.  The framework
  * provides a reusable and extensible query engine that is capable of planning, validating, optimizing, and executing queries
- * against a generic back-end system.  Simply subclass the {@link org.modeshape.jcr.query.process.QueryProcessor}
- * that creates a {@link org.modeshape.jcr.query.process.ProcessingComponent}
- * to operates against the back-end system, and assemble a {@link org.modeshape.jcr.query.process.QueryEngine} that can be used to provide a rich
- * query capability.
+ * against a generic back-end system.  
  * </p>
  * <h3>Abstract query model</h3>
  * <p>
@@ -45,7 +42,7 @@
  * </p>
  * <h3>QueryEngine</h3>
  * <p>
- * The {@link org.modeshape.jcr.query.process.QueryEngine} is the component that accepts and executes queries expressed as abstract query models.
+ * The {@link org.modeshape.jcr.query.QueryEngine} is the component that accepts and executes queries expressed as abstract query models.
  * Each submitted query is planned, validated, optimized, and then processed to compute and return the final 
  * {@link org.modeshape.jcr.query.QueryResults query results}.
  * </p>
@@ -95,19 +92,9 @@
  * </p>
  * <h4>Processing</h4>
  * <p>
- * In the <i>processing</i> stage, the optimized query plan is used to construct and assemble the 
- * {@link org.modeshape.jcr.query.process.ProcessingComponent} that correspond to the various parts of the
- * quer plan.  The resulting components form the basic processing engine for that query.  At the bottom are
- * the "access" components that perform the low-level access of the tuples from the graph container.
- * Above these are the other components that implement various operations, such as limits, joins (using merge and 
- * nested loop algorithms), unions, intersects, distinct, sorts, and even column projections.  At the top is
- * a single component that produces tuples that represent the results of the query.
- * </p>
- * <p>
- * Once the {@link org.modeshape.jcr.query.process.QueryProcessor} creates the ProcessingComponent assembly,
- * the top-level component is executed.  Execution involves requesting from the child processing component(s) the next batch of results,
- * processing each of the tuples according to the specific ProcessingComponent algorithm, and finally returning
- * the processed tuples.  
+ * In the <i>processing</i> stage, the optimized query plan is used to construct and assemble a {@link org.modeshape.jcr.query.NodeSequence} 
+ * that abstractly represents the nodes that satisfy the query. When the sequence is accessed, the processing logic of the 
+ * query engine dynamically performs the necessary operations to return the correct nodes.
  * </p>
  * <h3>QueryResults</h3>
  * <p>
@@ -119,4 +106,3 @@
  */
 
 package org.modeshape.jcr.query;
-

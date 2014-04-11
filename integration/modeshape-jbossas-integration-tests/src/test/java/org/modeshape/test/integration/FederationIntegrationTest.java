@@ -28,6 +28,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.connector.meta.jdbc.JdbcMetadataLexicon;
@@ -83,6 +84,8 @@ public class FederationIntegrationTest {
         }
     }
 
+    // TODO MODE-2178
+    @Ignore
     @Test
     public void shouldHaveGitSourceConfigured() throws Exception {
         Session session = repository.login();

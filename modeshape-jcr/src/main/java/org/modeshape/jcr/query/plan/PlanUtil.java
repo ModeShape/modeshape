@@ -131,14 +131,14 @@ public class PlanUtil {
         do {
             switch (node.getType()) {
                 case JOIN:
-                    Constraint criteria = node.getProperty(Property.JOIN_CONSTRAINTS, Constraint.class);
+                    List<Constraint> criteria = node.getPropertyAsList(Property.JOIN_CONSTRAINTS, Constraint.class);
                     JoinCondition joinCondition = node.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
                     Visitors.visitAll(criteria, collectionVisitor);
                     Visitors.visitAll(joinCondition, collectionVisitor);
                     break;
                 case SELECT:
-                    criteria = node.getProperty(Property.SELECT_CRITERIA, Constraint.class);
-                    Visitors.visitAll(criteria, collectionVisitor);
+                    Constraint constraint = node.getProperty(Property.SELECT_CRITERIA, Constraint.class);
+                    Visitors.visitAll(constraint, collectionVisitor);
                     break;
                 case SORT:
                     List<Object> orderBys = node.getPropertyAsList(Property.SORT_ORDER_BY, Object.class);
@@ -380,6 +380,7 @@ public class PlanUtil {
             case NULL:
             case DEPENDENT_QUERY:
             case ACCESS:
+            case INDEX:
                 // None of these have to be changed ...
                 break;
         }
@@ -719,7 +720,7 @@ public class PlanUtil {
                         DynamicOperand operand = ordering.getOperand();
                         DynamicOperand newOperand = replaceViewReferences(context, operand, mappings, node);
                         if (newOperand != operand) {
-                            ordering = new Ordering(newOperand, ordering.order());
+                            ordering = new Ordering(newOperand, ordering.order(), ordering.nullOrder());
                         }
                         node.addSelectors(Visitors.getSelectorsReferencedBy(ordering));
                         newOrderings.add(ordering);
@@ -732,6 +733,7 @@ public class PlanUtil {
                 case DEPENDENT_QUERY:
                 case DUP_REMOVE:
                 case LIMIT:
+                case INDEX:
                 case NULL:
                     break;
             }

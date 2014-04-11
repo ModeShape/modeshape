@@ -44,8 +44,6 @@ import org.modeshape.jboss.metric.ModelMetrics;
 import org.modeshape.jboss.metric.MonitorService;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.BinaryStorageService;
-import org.modeshape.jboss.service.IndexStorage;
-import org.modeshape.jboss.service.IndexStorageService;
 import org.modeshape.jboss.service.ReferenceFactoryService;
 import org.modeshape.jboss.service.RepositoryService;
 import org.modeshape.jcr.JcrRepository;
@@ -115,7 +113,6 @@ public class AddRepository extends AbstractAddStepHandler {
         final String repositoryName = pathAddress.getLastElement().getValue();
         final String cacheName = attribute(context, model, ModelAttributes.CACHE_NAME, repositoryName);
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
-        final boolean enableQueries = attribute(context, model, ModelAttributes.ENABLE_QUERIES).asBoolean();
         final String gcThreadPool = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL, null);
         final String gcInitialTime = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME, null);
         final int gcIntervalInHours = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_INTERVAL).asInt();
@@ -155,16 +152,6 @@ public class AddRepository extends AbstractAddStepHandler {
         // Set the storage information (that was set on the repository ModelNode) ...
         setRepositoryStorageConfiguration(cacheName, configDoc);
 
-        // Indexing ...
-        EditableDocument query = null;
-        if (enableQueries) {
-            LOG.debugv("**** Queries are ENABLED for {0} *****", repositoryName);
-            query = parseIndexing(context, model, configDoc);
-        } else {
-            LOG.debugv("**** Queries are DISABLED for {0} *****", repositoryName);
-            query = Schematic.newDocument(FieldName.QUERY_ENABLED, false);
-        }
-
         // security
         parseSecurity(context, model, configDoc);
 
@@ -181,7 +168,9 @@ public class AddRepository extends AbstractAddStepHandler {
         ServiceBuilder<JcrRepository> repositoryServiceBuilder = target.addService(repositoryServiceName, repositoryService);
 
         // Add dependency to the ModeShape engine service ...
-        repositoryServiceBuilder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, repositoryService.getEngineInjector());
+        repositoryServiceBuilder.addDependency(ModeShapeServiceNames.ENGINE,
+                                               ModeShapeEngine.class,
+                                               repositoryService.getEngineInjector());
         repositoryServiceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         // Add garbage collection information ...
@@ -212,33 +201,28 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add dependency to the Infinispan cache container used for content ...
         repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("infinispan", namedContainer),
-                              CacheContainer.class,
-                              repositoryService.getCacheManagerInjector());
+                                               CacheContainer.class,
+                                               repositoryService.getCacheManagerInjector());
 
         // Add dependency, if necessary, to the workspaces cache container
         String workspacesCacheContainer = attribute(context, model, ModelAttributes.WORKSPACES_CACHE_CONTAINER, null);
         if (workspacesCacheContainer != null && !workspacesCacheContainer.toLowerCase().equalsIgnoreCase(namedContainer)) {
             // there is a different ISPN container configured for the ws caches
             repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("infinispan", workspacesCacheContainer),
-                                  CacheContainer.class,
-                                  repositoryService.getWorkspacesCacheContainerInjector());
+                                                   CacheContainer.class,
+                                                   repositoryService.getWorkspacesCacheContainerInjector());
             // the name is a constant which will be resolved later by the RepositoryService
             workspacesDoc.set(FieldName.WORKSPACE_CACHE_CONFIGURATION, RepositoryService.WORKSPACES_CONTAINER_NAME);
         }
 
         repositoryServiceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER,
-                              ModuleLoader.class,
-                              repositoryService.getModuleLoaderInjector());
-
-        // Add dependency to the index storage service, which captures the properties for the index storage
-        repositoryServiceBuilder.addDependency(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
-                              IndexStorage.class,
-                              repositoryService.getIndexStorageConfigInjector());
+                                               ModuleLoader.class,
+                                               repositoryService.getModuleLoaderInjector());
 
         // Add dependency to the binaries storage service, which captures the properties for the binaries storage
         repositoryServiceBuilder.addDependency(ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
-                              BinaryStorage.class,
-                              repositoryService.getBinaryStorageInjector());
+                                               BinaryStorage.class,
+                                               repositoryService.getBinaryStorageInjector());
 
         // Set up the JNDI binder service ...
         final ReferenceFactoryService<JcrRepository> referenceFactoryService = new ReferenceFactoryService<JcrRepository>();
@@ -255,16 +239,13 @@ public class AddRepository extends AbstractAddStepHandler {
             ServiceName alias = aliasInfo.getBinderServiceName();
             binderBuilder.addAliases(alias);
             LOG.debugv("Binding repository {0} to JNDI name {1} and {2}",
-                                               repositoryName,
-                                               bindInfo.getAbsoluteJndiName(),
-                                               aliasInfo.getAbsoluteJndiName());
+                       repositoryName,
+                       bindInfo.getAbsoluteJndiName(),
+                       aliasInfo.getAbsoluteJndiName());
         } else {
-            LOG.debugv("Binding repository {0} to JNDI name {1}",
-                                               repositoryName,
-                                               bindInfo.getAbsoluteJndiName());
+            LOG.debugv("Binding repository {0} to JNDI name {1}", repositoryName, bindInfo.getAbsoluteJndiName());
         }
-        binderBuilder.addDependency(referenceFactoryServiceName, ManagedReferenceFactory.class,
-                                    binder.getManagedObjectInjector());
+        binderBuilder.addDependency(referenceFactoryServiceName, ManagedReferenceFactory.class, binder.getManagedObjectInjector());
         binderBuilder.addDependency(bindInfo.getParentContextServiceName(),
                                     ServiceBasedNamingStore.class,
                                     binder.getNamingStoreInjector());
@@ -278,13 +259,6 @@ public class AddRepository extends AbstractAddStepHandler {
                                                                                             target);
         newControllers.add(dataDirServiceController);
         repositoryServiceBuilder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
-
-        // Add the default index storage service which will provide the indexing configuration
-        IndexStorageService defaultIndexService = new IndexStorageService(query);
-        ServiceBuilder<IndexStorage> indexBuilder = target.addService(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
-                                                                      defaultIndexService);
-        indexBuilder.addDependency(dataDirServiceName, String.class, defaultIndexService.getDataDirectoryPathInjector());
-        indexBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         // Add the default binary storage service which will provide the binary configuration
         BinaryStorageService defaultBinaryService = new BinaryStorageService(repositoryName);
@@ -306,14 +280,13 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(repositoryServiceBuilder.install());
         newControllers.add(referenceBuilder.install());
         newControllers.add(binderBuilder.install());
-        newControllers.add(indexBuilder.install());
         newControllers.add(binaryStorageBuilder.install());
         newControllers.add(monitorBuilder.install());
     }
 
     @Override
     protected boolean requiresRuntime( OperationContext context ) {
-        //always require the performRuntime method to be called
+        // always require the performRuntime method to be called
         return true;
     }
 
@@ -344,94 +317,6 @@ public class AddRepository extends AbstractAddStepHandler {
         EditableDocument servlet = Schematic.newDocument();
         servlet.set(FieldName.CLASSNAME, "servlet");
         providers.add(servlet);
-    }
-
-    private EditableDocument parseIndexing( OperationContext context,
-                                            ModelNode model,
-                                            EditableDocument configDoc ) throws OperationFailedException {
-        EditableDocument query = configDoc.getOrCreateDocument(FieldName.QUERY);
-        EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
-
-        parseIndexRebuildOptions(context, model, indexing);
-
-        EditableDocument backend = indexing.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING_BACKEND);
-        backend.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
-
-        String analyzerClassname = ModelAttributes.ANALYZER_CLASSNAME.resolveModelAttribute(context, model).asString();
-        indexing.set(FieldName.INDEXING_ANALYZER, analyzerClassname);
-
-        if (model.hasDefined(ModelKeys.ANALYZER_MODULE)) {
-            String analyzerClasspath = ModelAttributes.ANALYZER_MODULE.resolveModelAttribute(context, model).asString();
-            indexing.set(FieldName.INDEXING_ANALYZER_CLASSPATH, analyzerClasspath);
-        }
-
-        String indexThreadPool = ModelAttributes.THREAD_POOL.resolveModelAttribute(context, model).asString();
-        indexing.set(FieldName.THREAD_POOL, indexThreadPool);
-
-        int indexBatchSize = ModelAttributes.BATCH_SIZE.resolveModelAttribute(context, model).asInt();
-        indexing.set(FieldName.INDEXING_BATCH_SIZE, indexBatchSize);
-
-        String indexReaderStrategy = ModelAttributes.READER_STRATEGY.resolveModelAttribute(context, model).asString();
-        indexing.set(FieldName.INDEXING_READER_STRATEGY, indexReaderStrategy);
-
-        String indexMode = ModelAttributes.MODE.resolveModelAttribute(context, model).asString();
-        indexing.set(FieldName.INDEXING_MODE, indexMode);
-
-        int indexAsyncThreadPoolSize = ModelAttributes.ASYNC_THREAD_POOL_SIZE.resolveModelAttribute(context, model).asInt();
-        indexing.set(FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, indexAsyncThreadPoolSize);
-
-        int indexAsyncMaxQueueSize = ModelAttributes.ASYNC_MAX_QUEUE_SIZE.resolveModelAttribute(context, model).asInt();
-        indexing.set(FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, indexAsyncMaxQueueSize);
-
-        for (String key : model.keys()) {
-            if (key.startsWith("hibernate")) {
-                indexing.set(key, model.get(key).asString());
-            }
-        }
-        return query;
-    }
-
-    @SuppressWarnings( "deprecation" )
-    private void parseIndexRebuildOptions( OperationContext context,
-                                           ModelNode model,
-                                           EditableDocument indexing ) throws OperationFailedException {
-        EditableDocument rebuildIndexingOptions = indexing.getOrCreateDocument(FieldName.REBUILD_ON_STARTUP);
-
-        if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP)) {
-            String rebuildWhen = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, model).asString();
-            rebuildIndexingOptions.set(FieldName.REBUILD_WHEN, rebuildWhen);
-        }
-
-        if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE)) {
-            String rebuildMode = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.resolveModelAttribute(context, model)
-                                                                                  .asString();
-            rebuildIndexingOptions.set(FieldName.REBUILD_MODE, rebuildMode);
-        }
-
-        if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT)) {
-            boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context,
-                                                                                                                                            model)
-                                                                                                                     .asBoolean();
-            rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, rebuildIncludeSystemContent);
-        }
-
-        if (model.hasDefined(ModelKeys.SYSTEM_CONTENT_MODE)) {
-            String deprecatedSystemContentMode = ModelAttributes.SYSTEM_CONTENT_MODE.resolveModelAttribute(context, model)
-                                                                                    .asString();
-            boolean deprecatedBooleanIncludesSystemContent = deprecatedSystemContentMode.equalsIgnoreCase(RepositoryConfiguration.IndexingMode.SYNC.name())
-                                                             || deprecatedSystemContentMode.equalsIgnoreCase(RepositoryConfiguration.IndexingMode.ASYNC.name());
-            String deprecatedRebuildMode = !RepositoryConfiguration.IndexingMode.DISABLED.name()
-                                                                                         .equalsIgnoreCase(deprecatedSystemContentMode) ? deprecatedSystemContentMode : RepositoryConfiguration.IndexingMode.SYNC.name();
-
-            if (!rebuildIndexingOptions.containsField(FieldName.REBUILD_MODE)) {
-                rebuildIndexingOptions.set(FieldName.REBUILD_MODE, deprecatedRebuildMode);
-            }
-
-            if (!rebuildIndexingOptions.containsField(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT)) {
-                rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT,
-                                                  deprecatedBooleanIncludesSystemContent);
-            }
-        }
     }
 
     private void setRepositoryStorageConfiguration( String cacheName,
@@ -478,13 +363,13 @@ public class AddRepository extends AbstractAddStepHandler {
         if (model.hasDefined(ModelKeys.JOURNALING)) {
             EditableDocument journaling = configDoc.getOrCreateDocument(FieldName.JOURNALING);
 
-            //set it temporarily on the repository service because the final location needs to be resolved later
+            // set it temporarily on the repository service because the final location needs to be resolved later
             if (model.hasDefined(ModelKeys.JOURNAL_RELATIVE_TO)) {
                 String relativeTo = attribute(context, model, ModelAttributes.JOURNAL_RELATIVE_TO).asString();
                 repositoryService.setJournalRelativeTo(relativeTo);
             }
 
-            //set it temporarily on the repository service because the final location needs to be resolved later
+            // set it temporarily on the repository service because the final location needs to be resolved later
             if (model.hasDefined(ModelKeys.JOURNAL_PATH)) {
                 String path = attribute(context, model, ModelAttributes.JOURNAL_PATH).asString();
                 repositoryService.setJournalPath(path);

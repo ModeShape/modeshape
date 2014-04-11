@@ -17,52 +17,57 @@ package org.modeshape.jcr.query;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.CachedNodeSupplier;
+import org.modeshape.jcr.query.NodeSequence.Batch;
 import org.modeshape.jcr.query.model.Column;
-import org.modeshape.jcr.value.Path;
 
 /**
  * The resulting output of a query.
  */
 @Immutable
-public interface QueryResults extends Serializable {
+public interface QueryResults {
 
     /**
-     * Get the description of the columns contained in these results. These columns can be used to discover the indexes of the
-     * corresponding values from the arrays representing the {@link #getTuples() tuples}.
+     * Get the description of the columns contained in these results.
      * 
      * @return the column descriptions; never null
      */
     public Columns getColumns();
 
     /**
-     * Get a cursor that can be used to walk through the results.
+     * Get the rows that make up these query results.
      * 
-     * @return the cursor; never null, though possibly empty (meaning {@link Cursor#hasNext()} may return true)
+     * @return the sequence of rows; never null
      */
-    public Cursor getCursor();
+    public NodeSequence getRows();
 
     /**
-     * Get the actual tuples that contain the results. Each element in the list represents a tuple, and each tuple corresponds to
-     * the column definitions.
+     * Get the supplier with which a node can be found by key.
      * 
-     * @return the list of tuples; never null but possibly empty
+     * @return the supplier of {@link CachedNode} instances; never null
      */
-    public List<Object[]> getTuples();
+    public CachedNodeSupplier getCachedNodes();
 
     /**
-     * Get the number of rows in the results.
+     * Get the number of rows in the results, if that information is available.
      * 
-     * @return the number of rows; never negative
+     * @return the number of rows; may be equal to -1 if the number of rows is not known without significant overhead
      */
-    public int getRowCount();
+    public long getRowCount();
+
+    /**
+     * Determine whether this results is known to be empty.
+     * 
+     * @return the true if there are no results, or false if there is at least some rows or if the number of rows is not known
+     */
+    public boolean isEmpty();
 
     /**
      * Get a description of the query plan, if requested.
@@ -100,217 +105,30 @@ public interface QueryResults extends Serializable {
     public Statistics getStatistics();
 
     /**
-     * An interface used to walk through the results.
-     */
-    public interface Cursor {
-        /**
-         * Determine whether this cursor can be moved from its current position to the next row.
-         * 
-         * @return true if there is another row, or false otherwise
-         */
-        boolean hasNext();
-
-        /**
-         * Move this cursor position to the next row. obtained for
-         * 
-         * @throws NoSuchElementException if there is no next row that the cursor can point to.
-         */
-        void next();
-
-        /**
-         * Get the 0-based index of the current row.
-         * 
-         * @return the index of the current row; never negative
-         * @exception IllegalStateException if the <tt>next()</tt> method has not yet been called
-         */
-        int getRowIndex();
-
-        /**
-         * Get from the current row the location of the node from which the value in the given column was taken.
-         * 
-         * @param columnNumber the column number (0-based)
-         * @return the location of the node; never null
-         * @throws IndexOutOfBoundsException if the column number is negative or larger than the number of columns
-         * @throws IllegalStateException if the <tt>next()</tt> method has not yet been called, or if there are no results
-         */
-        Location getLocation( int columnNumber );
-
-        /**
-         * Get from the current row the location of the node that was produced by the named selector.
-         * 
-         * @param selectorName the name of the selector that resulted in a node appearing in the current row
-         * @return the location of the node; or null if there is no node corresponding to the named selector for the current row
-         * @throws NoSuchElementException if the selector name does not correspond to an available selector
-         * @throws IllegalStateException if the <tt>next()</tt> method has not yet been called, or if there are no results
-         */
-        Location getLocation( String selectorName );
-
-        /**
-         * Get from the current row the value in the given column.
-         * 
-         * @param columnNumber the column number (0-based)
-         * @return the value; possibly null
-         * @throws IndexOutOfBoundsException if the column number is negative or larger than the number of columns
-         * @throws IllegalStateException if the <tt>next()</tt> method has not yet been called, or if there are no results
-         */
-        Object getValue( int columnNumber );
-
-        /**
-         * Get the value in the named column.
-         * 
-         * @param columnName the name of the column
-         * @return the value; possibly null
-         * @throws NoSuchElementException if the column name does not correspond to an available column
-         * @throws IllegalStateException if the <tt>next()</tt> method has not yet been called, or if there are no results
-         */
-        Object getValue( String columnName );
-    }
-
-    /**
-     * Definition of the columns that are available in the results, which outline the structure of the
-     * {@link QueryResults#getTuples() tuples} in the results, and which can be used to access the individual values in each of
-     * the tuples.
+     * Definition of the columns that are available in the results.
      */
     @Immutable
     public interface Columns extends Serializable, Iterable<Column> {
         /**
          * Get the columns.
          * 
-         * @return the immutable list of columns, with size equal to {@link #getColumnCount()}; never null
+         * @return the immutable list of columns; never null
          */
         public List<? extends Column> getColumns();
 
         /**
          * Get the names of the columns.
          * 
-         * @return the immutable list of column names, with size equal to {@link #getColumnCount()}; never null
+         * @return the immutable list of column names, with size equal to the number of {@link #getColumns() columns}; never null
          */
         public List<String> getColumnNames();
 
         /**
          * Get the type name for each column.
          * 
-         * @return the immutable list of type names, with size equal to {@link #getColumnCount()}; never null
+         * @return the immutable list of type names, with size equal to the number of {@link #getColumns() columns}; never null
          */
         public List<String> getColumnTypes();
-
-        /**
-         * Get the number of columns in each tuple.
-         * 
-         * @return the number of columns; always positive
-         */
-        public int getColumnCount();
-
-        /**
-         * Get the number of {@link Location} objects in each tuple.
-         * 
-         * @return the number of Location objects; always positive
-         */
-        public int getLocationCount();
-
-        /**
-         * Get the names of the selectors that are associated with these results. These results contain a single {@link Location}
-         * object for each of the selectors.
-         * 
-         * @return the immutable list of selector names, with size equal to {@link #getLocationCount()}; never null
-         */
-        public List<String> getSelectorNames();
-
-        /**
-         * Get the size of the tuple arrays.
-         * 
-         * @return the length of each tuple array
-         */
-        public int getTupleSize();
-
-        /**
-         * Get the names of the all of the tuple values.
-         * 
-         * @return the immutable list of names
-         */
-        public List<String> getTupleValueNames();
-
-        /**
-         * Get the index of a tuple's correct Location object given the column index.
-         * 
-         * @param columnIndex the column index
-         * @return the Location index that corresponds to the supplied column; never negative
-         * @throws IndexOutOfBoundsException if the column index is invalid
-         */
-        public int getLocationIndexForColumn( int columnIndex );
-
-        /**
-         * Get the index of a tuple's correct Location object given the column index.
-         * 
-         * @param columnName the column name
-         * @return the Location index that corresponds to the supplied column; never negative
-         * @throws NoSuchElementException if the column name is invalid
-         */
-        public int getLocationIndexForColumn( String columnName );
-
-        /**
-         * Get the index of a tuple's correct Location object given the name of the selector used in the query.
-         * 
-         * @param selectorName the selector name
-         * @return the Location index that corresponds to the supplied column; never negative
-         * @throws NoSuchElementException if the selector name is invalid
-         */
-        public int getLocationIndex( String selectorName );
-
-        /**
-         * Determine if these results contain values from the selector with the supplied name.
-         * 
-         * @param selectorName the selector name
-         * @return true if the results have values from the supplied selector, or false otherwise
-         */
-        public boolean hasSelector( String selectorName );
-
-        /**
-         * Get the name of the property that corresponds to the supplied column in each tuple.
-         * 
-         * @param columnIndex the column index
-         * @return the property name; never null
-         * @throws IndexOutOfBoundsException if the column index is invalid
-         */
-        public String getPropertyNameForColumn( int columnIndex );
-
-        /**
-         * Get the name of the property that corresponds to the named column in each tuple.
-         * 
-         * @param columnName the column name
-         * @return the property name, or the supplied column name if there is no property for it
-         */
-        public String getPropertyNameForColumnName( String columnName );
-
-        /**
-         * Get the index of the column given the column name.
-         * 
-         * @param columnName the column name
-         * @return the column index
-         * @throws NoSuchElementException if the column name is invalid or doesn't match an existing column
-         */
-        public int getColumnIndexForName( String columnName );
-
-        /**
-         * Get the name of the selector that produced the column with the given name.
-         * 
-         * @param columnName the column name
-         * @return the selector name
-         * @throws NoSuchElementException if the column name is invalid or doesn't match an existing column
-         */
-        public String getSelectorNameForColumnName( String columnName );
-
-        /**
-         * Get the index of the column given the name of the selector and the property name from where the column should be
-         * obtained.
-         * 
-         * @param selectorName the selector name
-         * @param propertyName the name of the property
-         * @return the column index that corresponds to the supplied column; never negative
-         * @throws NoSuchElementException if the selector name or the property name are invalid
-         */
-        public int getColumnIndexForProperty( String selectorName,
-                                              String propertyName );
 
         /**
          * Get the type of the column given the name of the selector and the property name from where the column should be
@@ -325,14 +143,36 @@ public interface QueryResults extends Serializable {
                                                 String propertyName );
 
         /**
-         * Get the index of the tuple value containing the full-text search score for the node taken from the named selector.
+         * Get the index of the nodes for this selector in each of the {@link Batch node sequence batches}.
          * 
          * @param selectorName the selector name
-         * @return the index that corresponds to the {@link Double} full-text search score, or -1 if there is no full-text search
-         *         score for the named selector
-         * @throws NoSuchElementException if the selector name is invalid
+         * @return the index of the node for the named selector, or negative if the selector is not known
          */
-        public int getFullTextSearchScoreIndexFor( String selectorName );
+        public int getSelectorIndex( String selectorName );
+
+        /**
+         * Get the names of the selectors that are associated with these results.
+         * 
+         * @return the immutable list of selector names; never null
+         */
+        public List<String> getSelectorNames();
+
+        /**
+         * Get the name of the property that corresponds to the named column in each tuple.
+         * 
+         * @param columnName the column name
+         * @return the property name, or the supplied column name if there is no property for it
+         */
+        public String getPropertyNameForColumnName( String columnName );
+
+        /**
+         * Get the name of the selector that produced the column with the given name.
+         * 
+         * @param columnName the column name
+         * @return the selector name
+         * @throws NoSuchElementException if the column name is invalid or doesn't match an existing column
+         */
+        public String getSelectorNameForColumnName( String columnName );
 
         /**
          * Determine whether these results include full-text search scores.
@@ -340,14 +180,6 @@ public interface QueryResults extends Serializable {
          * @return true if the full-text search scores are included in the results, or false otherwise
          */
         public boolean hasFullTextSearchScores();
-
-        /**
-         * Determine whether this mapping includes all of the columns (and locations) in the supplied mapping.
-         * 
-         * @param other the other mapping; may not be null
-         * @return true if all of the other mapping's columns and locations are included in this mapping, or false otherwise
-         */
-        public boolean includes( Columns other );
 
         /**
          * Determine whether this column and the other are <i>union-compatible</i> (that is, having the same columns).
@@ -358,47 +190,12 @@ public interface QueryResults extends Serializable {
         public boolean isUnionCompatible( Columns other );
 
         /**
-         * Obtain a new definition for the query results that can be used to reference the same tuples that use this columns
-         * definition, but that defines a subset of the columns in this definition. This is useful in a PROJECT operation, since
-         * that reduces the number of columns.
+         * Return a new Columns that is a superset combination of both this Columns and the supplied Columns.
          * 
-         * @param columns the new columns, which must be a subset of the columns in this definition; may not be null
-         * @return the new columns definition; never null
+         * @param other the other columns; may not be null
+         * @return a new Columns instance that is a superset of {@code this} and {@code other}; never null
          */
-        public Columns subSelect( List<Column> columns );
-
-        /**
-         * Obtain a new definition for the query results that can be used to reference the same tuples that use this columns
-         * definition, but that defines a subset of the columns in this definition. This is useful in a PROJECT operation, since
-         * that reduces the number of columns.
-         * 
-         * @param columns the new columns, which must be a subset of the columns in this definition; may not be null
-         * @return the new columns definition; never null
-         */
-        public Columns subSelect( Column... columns );
-
-        /**
-         * Obtain a new definition for the query results that is a combination of the these columns and the supplied columns,
-         * where the columns from this object appear first, followed by columns from the supplied set. This is useful in a JOIN
-         * operation.
-         * 
-         * @param columns the new columns, which must be a subset of the columns in this definition; may not be null
-         * @return the new columns definition; never null
-         */
-        public Columns joinWith( Columns columns );
-
-        /**
-         * Get the reducer that converts a tuple of the form described by the wrapped columns format to this columns format.
-         * 
-         * @return the reformatter, or null if none is needed (e.g., if this columns is not a subselect of another)
-         */
-        public TupleReformatter getTupleReformatter();
-    }
-
-    public static interface TupleReformatter {
-        public Object[] reformat( Object[] input );
-
-        public Columns getColumns();
+        public Columns with( Columns other );
     }
 
     @Immutable
@@ -628,9 +425,9 @@ public interface QueryResults extends Serializable {
                     first = false;
                     sb.append(" (");
                 } else {
-                    sb.append(" ,");
+                    sb.append(", ");
                 }
-                sb.append("opt=");
+                sb.append("optim=");
                 readable(optimizationNanos, sb);
             }
             if (resultFormulationNanos != 0L) {
@@ -638,9 +435,9 @@ public interface QueryResults extends Serializable {
                     first = false;
                     sb.append(" (");
                 } else {
-                    sb.append(" ,");
+                    sb.append(", ");
                 }
-                sb.append("res=");
+                sb.append("resultform=");
                 readable(resultFormulationNanos, sb);
             }
             if (executionNanos != 0L) {
@@ -648,7 +445,7 @@ public interface QueryResults extends Serializable {
                     first = false;
                     sb.append(" (");
                 } else {
-                    sb.append(" ,");
+                    sb.append(", ");
                 }
                 sb.append("exec=");
                 readable(executionNanos, sb);
@@ -685,73 +482,4 @@ public interface QueryResults extends Serializable {
             return new DecimalFormat("###,###,##0.0##");
         }
     };
-
-    public static final class Location implements Comparable<Location> {
-        static Comparator<Location> COMPARATOR = new Comparator<Location>() {
-            @Override
-            public int compare( Location o1,
-                                Location o2 ) {
-                if (o1 == o2) return 0;
-                if (o1 == null) return -1;
-                if (o2 == null) return 1;
-                return o1.compareTo(o2);
-            }
-        };
-
-        public static Comparator<Location> getComparator() {
-            return COMPARATOR;
-        }
-
-        private final Path path;
-        private final NodeKey key;
-
-        public Location( Path path ) {
-            this.path = path;
-            this.key = null;
-        }
-
-        public Location( Path path,
-                         NodeKey key ) {
-            this.path = path;
-            this.key = key;
-        }
-
-        public Path getPath() {
-            return path;
-        }
-
-        public NodeKey getKey() {
-            return key;
-        }
-
-        public boolean isSame( Location that ) {
-            return compareTo(that) == 0;
-        }
-
-        @Override
-        public int compareTo( Location that ) {
-            if (this == that) return 0;
-            return this.getPath().compareTo(that.getPath());
-        }
-
-        @Override
-        public int hashCode() {
-            return path.hashCode();
-        }
-
-        @Override
-        public boolean equals( Object obj ) {
-            if (obj == this) return true;
-            if (obj instanceof Location) {
-                Location that = (Location)obj;
-                return this.getPath().equals(that.getPath());
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return path + " @ " + key;
-        }
-    }
 }

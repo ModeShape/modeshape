@@ -20,10 +20,10 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.query.RowIterator;
-import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.query.QueryResults.Columns;
 
 /**
- * 
+ * A specialization of {@link JcrQueryResult} that addresses the JCR-SQL specific columns.
  */
 public class JcrSqlQueryResult extends JcrQueryResult {
 
@@ -38,11 +38,13 @@ public class JcrSqlQueryResult extends JcrQueryResult {
 
     public JcrSqlQueryResult( JcrQueryContext context,
                               String query,
-                              QueryResults graphResults,
-                              Schemata schemata ) {
-        super(context, query, graphResults, schemata);
-        List<String> columnNames = new LinkedList<String>(graphResults.getColumns().getColumnNames());
-        List<String> columnTypes = new LinkedList<String>(graphResults.getColumns().getColumnTypes());
+                              QueryResults results,
+                              boolean restartable,
+                              int numRowsInMemory ) {
+        super(context, query, results, restartable, numRowsInMemory);
+        Columns resultColumns = results.getColumns();
+        List<String> columnNames = new LinkedList<String>(resultColumns.getColumnNames());
+        List<String> columnTypes = new LinkedList<String>(resultColumns.getColumnTypes());
         if (!columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
             columnNames.add(0, JCR_SCORE_COLUMN_NAME);
             columnTypes.add(0, JCR_SCORE_COLUMN_TYPE);
@@ -56,19 +58,17 @@ public class JcrSqlQueryResult extends JcrQueryResult {
     }
 
     @Override
-    public List<String> getColumnNameList() {
+    protected List<String> getColumnNameList() {
         return columnNames;
     }
 
     @Override
-    public java.util.List<String> getColumnTypeList() {
+    protected java.util.List<String> getColumnTypeList() {
         return columnTypes;
     }
 
     @Override
     public RowIterator getRows() {
-        final int numRows = results.getRowCount();
-        final List<Object[]> tuples = results.getTuples();
-        return new SingleSelectorQueryResultRowIterator(context, queryStatement, results, tuples.iterator(), numRows);
+        return new SingleSelectorQueryResultRowIterator(context, queryStatement, sequence(), results.getColumns());
     }
 }

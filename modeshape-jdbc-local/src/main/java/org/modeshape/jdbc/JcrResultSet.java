@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
@@ -40,6 +41,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import javax.jcr.Binary;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
@@ -133,10 +135,11 @@ public class JcrResultSet implements ResultSet {
                 case PropertyType.STRING:
                 case PropertyType.BOOLEAN:
                 case PropertyType.DOUBLE:
-
+                case PropertyType.LONG:
+                case PropertyType.DATE:
+                case PropertyType.DECIMAL:
                     String v = value.getString();
                     return (v != null ? v.getBytes() : null);
-
                 case PropertyType.BINARY:
                     is = value.getBinary().getStream();
                     return IoUtil.readBytes(is);
@@ -306,7 +309,7 @@ public class JcrResultSet implements ResultSet {
             this.itemNotFoundUsingColunName(columnLabel);
         }
         assert result != null;
-        return result.intValue();
+        return result;
     }
 
     private String findColumn( int columnIndex ) throws SQLException {
@@ -383,24 +386,28 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public BigDecimal getBigDecimal( int columnIndex ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBigDecimal(findColumn(columnIndex));
     }
 
     @Override
     public BigDecimal getBigDecimal( String columnLabel ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        Object o = updateCurrentValueFromColumn(columnLabel, PropertyType.DECIMAL);
+        if (o != null) {
+            return (BigDecimal)o;
+        }
+        return null;
     }
 
     @Override
     public BigDecimal getBigDecimal( int columnIndex,
                                      int scale ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBigDecimal(columnIndex).setScale(scale);
     }
 
     @Override
     public BigDecimal getBigDecimal( String columnLabel,
                                      int scale ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBigDecimal(columnLabel).setScale(scale);
     }
 
     @Override
@@ -410,21 +417,29 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public InputStream getBinaryStream( String columnLabel ) throws SQLException {
-        Object o = getValueReturn(columnLabel, PropertyType.BINARY);
+        Object o = updateCurrentValueFromColumn(columnLabel, PropertyType.BINARY);
         if (o != null) {
-            return (InputStream)o;
+            try {
+                return ((Binary) o).getStream();
+            } catch (RepositoryException e) {
+                throw new SQLException(e);
+            }
         }
         return null;
     }
 
     @Override
     public Blob getBlob( int columnIndex ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBlob(findColumn(columnIndex));
     }
 
     @Override
     public Blob getBlob( String columnLabel ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        Object o = updateCurrentValueFromColumn(columnLabel, PropertyType.BINARY);
+        if (o != null) {
+            return new JcrBlob((Binary)o);
+        }
+        return null;
     }
 
     @Override
@@ -435,7 +450,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public boolean getBoolean( String columnLabel ) throws SQLException {
 
-        Object o = getValueReturn(columnLabel, PropertyType.BOOLEAN);
+        Object o = updateCurrentValueFromColumn(columnLabel, PropertyType.BOOLEAN);
         if (o != null) {
             return (Boolean)o;
         }
@@ -444,12 +459,12 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public byte getByte( int columnIndex ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getByte(findColumn(columnIndex));
     }
 
     @Override
     public byte getByte( String columnLabel ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return Long.valueOf(getLong(columnLabel)).byteValue();
     }
 
     @Override
@@ -511,7 +526,7 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public Date getDate( String columnLabel ) throws SQLException {
-        Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+        Calendar calv = (Calendar)updateCurrentValueFromColumn(columnLabel, PropertyType.DATE);
         if (calv == null) return null;
 
         return TimestampWithTimezone.createDate(calv);
@@ -527,7 +542,7 @@ public class JcrResultSet implements ResultSet {
     public Date getDate( String columnLabel,
                          Calendar cal ) throws SQLException {
 
-        Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+        Calendar actual = (Calendar)updateCurrentValueFromColumn(columnLabel, PropertyType.DATE);
 
         if (actual == null) return null;
 
@@ -542,7 +557,7 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public double getDouble( String columnLabel ) throws SQLException {
-        Object o = getValueReturn(columnLabel, PropertyType.DOUBLE);
+        Object o = updateCurrentValueFromColumn(columnLabel, PropertyType.DOUBLE);
         if (o != null) {
             return (Double)o;
         }
@@ -551,12 +566,12 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public float getFloat( int columnIndex ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getFloat(findColumn(columnIndex));
     }
 
     @Override
     public float getFloat( String columnLabel ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return Double.valueOf(getDouble(columnLabel)).floatValue();
     }
 
     /**
@@ -592,7 +607,7 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public long getLong( String columnLabel ) throws SQLException {
-        Object o = getValueReturn(columnLabel, PropertyType.LONG);
+        Object o = updateCurrentValueFromColumn(columnLabel, PropertyType.LONG);
         if (o != null) {
             return (Long)o;
         }
@@ -710,12 +725,12 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public short getShort( int columnIndex ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getShort(findColumn(columnIndex));
     }
 
     @Override
     public short getShort( String columnLabel ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return Long.valueOf(getLong(columnLabel)).shortValue();
     }
 
     @Override
@@ -725,7 +740,7 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public String getString( String columnLabel ) throws SQLException {
-        Object o = getValueReturn(columnLabel, PropertyType.STRING);
+        Object o = updateCurrentValueFromColumn(columnLabel, PropertyType.STRING);
         if (o != null) {
             return (String)o;
         }
@@ -739,7 +754,7 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public Time getTime( String columnLabel ) throws SQLException {
-        Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+        Calendar calv = (Calendar)updateCurrentValueFromColumn(columnLabel, PropertyType.DATE);
         if (calv == null) return null;
 
         return TimestampWithTimezone.createTime(calv);
@@ -755,7 +770,7 @@ public class JcrResultSet implements ResultSet {
     public Time getTime( String columnLabel,
                          Calendar cal ) throws SQLException {
 
-        Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+        Calendar actual = (Calendar)updateCurrentValueFromColumn(columnLabel, PropertyType.DATE);
 
         if (actual == null) return null;
 
@@ -771,7 +786,7 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public Timestamp getTimestamp( String columnLabel ) throws SQLException {
-        Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+        Calendar calv = (Calendar)updateCurrentValueFromColumn(columnLabel, PropertyType.DATE);
         if (calv == null) return null;
         return TimestampWithTimezone.createTimestamp(calv);
 
@@ -787,7 +802,7 @@ public class JcrResultSet implements ResultSet {
     public Timestamp getTimestamp( String columnLabel,
                                    Calendar cal ) throws SQLException {
 
-        Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+        Calendar actual = (Calendar)updateCurrentValueFromColumn(columnLabel, PropertyType.DATE);
         if (actual == null) return null;
         // if cal is null, it will be supplied in TimestampWithTimezone
         return TimestampWithTimezone.createTimestamp(actual, cal);
@@ -795,12 +810,16 @@ public class JcrResultSet implements ResultSet {
 
     @Override
     public URL getURL( int columnIndex ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getURL(findColumn(columnIndex));
     }
 
     @Override
     public URL getURL( String columnLabel ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return new URL(getString(columnLabel));
+        } catch (MalformedURLException e) {
+            throw new SQLException(e);
+        }
     }
 
     @Override
@@ -832,26 +851,15 @@ public class JcrResultSet implements ResultSet {
 
     }
 
-    /**
-     * This is called when the calling method controls what datatype to be returned. Another reason for centralizing this logic so
-     * that the {@link #currentValue} can be maintained
-     * 
-     * @param columnName
-     * @param type is the {@link PropertyType datatype} to be returned
-     * @return Object
-     * @throws SQLException
-     */
-    private Object getValueReturn( String columnName,
-                                   int type ) throws SQLException {
+    private Object updateCurrentValueFromColumn( String columnName,
+                                                 int asType ) throws SQLException {
         notClosed();
         isRowSet();
 
         this.currentValue = null;
         try {
-
-            final Value value = row.getValue(columnName);
-            this.currentValue = getValueObject(value, type);
-
+            final Value jcrValue = row.getValue(columnName);
+            this.currentValue = extractValue(jcrValue, asType);
         } catch (PathNotFoundException pnfe) {
             // do nothing
         } catch (ItemNotFoundException e) {
@@ -862,52 +870,52 @@ public class JcrResultSet implements ResultSet {
         return this.currentValue;
     }
 
-    /**
-     * Helper method for returning an object from <code>value</code> based on <code>type</code>
-     * 
-     * @param value
-     * @param type indicates {@link PropertyType} used to derive return object type
-     * @return Object
-     * @throws SQLException
-     */
-    private Object getValueObject( Value value,
-                                   int type ) throws SQLException {
-        if (value == null) return null;
+    private Object extractValue( Value jcrValue,
+                                 int asType ) throws SQLException {
+        if (jcrValue == null) {
+            return null;
+        }
 
         try {
-            switch (type) {
-
-                case PropertyType.STRING:
-                    return value.getString();
-                case PropertyType.BOOLEAN:
-                    return value.getBoolean();
-                case PropertyType.DATE:
-                    return value.getDate();
-                case PropertyType.DOUBLE:
-                    if (value.getType() != PropertyType.DOUBLE) {
-                        Object o = getValueObject(value, value.getType());
-                        return Double.parseDouble(o.toString());
+            switch (asType) {
+                case PropertyType.STRING: {
+                    return jcrValue.getString();
+                }
+                case PropertyType.BOOLEAN: {
+                    return jcrValue.getBoolean();
+                }
+                case PropertyType.DATE: {
+                    return jcrValue.getDate();
+                }
+                case PropertyType.DOUBLE: {
+                    return jcrValue.getDouble();
+                }
+                case PropertyType.LONG: {
+                    return jcrValue.getLong();
+                }
+                case PropertyType.DECIMAL:  {
+                    return jcrValue.getDecimal();
+                }
+                case PropertyType.BINARY: {
+                    if (jcrValue.getType() != PropertyType.BINARY) {
+                        throw new SQLException(JdbcLocalI18n.cannotConvertJcrValue.text(PropertyType.nameFromValue(jcrValue.getType()),
+                                                                                        PropertyType.TYPENAME_BINARY));
                     }
-                    return value.getDouble();
-                case PropertyType.LONG:
-                    if (value.getType() != PropertyType.LONG) {
-                        Object o = getValueObject(value, value.getType());
-                        return Long.parseLong(o.toString());
-                    }
-                    return value.getLong();
-
-                case PropertyType.BINARY:
-                    return value.getBinary().getStream();
+                    return jcrValue.getBinary();
+                }
+                default: {
+                    return jcrValue.getString();
+                }
             }
-
         } catch (ValueFormatException ve) {
-            throw new SQLException(ve.getLocalizedMessage(), ve);
-        } catch (IllegalStateException ie) {
-            throw new SQLException(ie.getLocalizedMessage(), ie);
+            throw new SQLException(JdbcLocalI18n.cannotConvertJcrValue.text(PropertyType.nameFromValue(jcrValue.getType()),
+                                                                            PropertyType.nameFromValue(asType)), ve);
+        } catch (IllegalArgumentException ie) {
+            throw new SQLException(JdbcLocalI18n.cannotConvertJcrValue.text(PropertyType.nameFromValue(jcrValue.getType()),
+                                                                            PropertyType.nameFromValue(asType)), ie);
         } catch (RepositoryException e) {
-            throw new SQLException(e.getLocalizedMessage(), e);
+            throw new SQLException(e);
         }
-        return value.toString();
     }
 
     /**

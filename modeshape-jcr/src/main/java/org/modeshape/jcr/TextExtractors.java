@@ -15,6 +15,11 @@
  */
 package org.modeshape.jcr;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -26,11 +31,6 @@ import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Facility for managing {@link TextExtractor} instances and submitting text extraction work
@@ -43,21 +43,18 @@ public final class TextExtractors {
     private final List<TextExtractor> extractors;
     private final ExecutorService extractingQueue;
     private final ConcurrentHashMap<BinaryKey, CountDownLatch> workerLatches;
-    private final boolean fullTextSearchEnabled;
 
     public TextExtractors( ExecutorService extractingQueue,
-                           boolean fullTextSearchEnabled,
                            List<TextExtractor> extractors ) {
         this.extractingQueue = extractingQueue;
         this.workerLatches = new ConcurrentHashMap<BinaryKey, CountDownLatch>();
-        this.fullTextSearchEnabled = fullTextSearchEnabled;
         this.extractors = extractors;
     }
 
     TextExtractors( JcrRepository.RunningState repository,
-                    RepositoryConfiguration.TextExtracting extracting ) {
-        this(repository.context().getCachedTreadPool(extracting.getThreadPoolName()), repository.isFullTextSearchEnabled(),
-             getConfiguredExtractors(repository, extracting));
+                    RepositoryConfiguration.TextExtraction extracting ) {
+        this(repository.context().getCachedTreadPool(extracting.getThreadPoolName()), getConfiguredExtractors(repository,
+                                                                                                              extracting));
     }
 
     protected void shutdown() {
@@ -66,7 +63,7 @@ public final class TextExtractors {
     }
 
     public boolean extractionEnabled() {
-        return fullTextSearchEnabled && !extractors.isEmpty();
+        return !extractors.isEmpty();
     }
 
     public String extract( InMemoryBinaryValue inMemoryBinaryValue,
@@ -117,7 +114,7 @@ public final class TextExtractors {
     }
 
     private static List<TextExtractor> getConfiguredExtractors( JcrRepository.RunningState repository,
-                                                                RepositoryConfiguration.TextExtracting extracting ) {
+                                                                RepositoryConfiguration.TextExtraction extracting ) {
         List<Component> extractorComponents = extracting.getTextExtractors(repository.problems());
         List<TextExtractor> extractors = new ArrayList<TextExtractor>(extractorComponents.size());
         for (Component component : extractorComponents) {

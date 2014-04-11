@@ -144,7 +144,7 @@ public final class RestHelper {
     }
 
     /**
-     * Creates an absolute url using base url and appending optional segments.
+     * Creates an url using base url and appending optional segments.
      * 
      * @param baseUrl a {@code non-null} string which will act as a base.
      * @param pathSegments an option array of segments

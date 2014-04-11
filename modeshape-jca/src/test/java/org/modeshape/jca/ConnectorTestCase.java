@@ -27,7 +27,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.modeshape.jcr.AbstractTransactionalTest;
 
 /**
  * ConnectorTestCase
@@ -35,7 +34,7 @@ import org.modeshape.jcr.AbstractTransactionalTest;
  * @author kulikov
  */
 @RunWith( Arquillian.class )
-public class ConnectorTestCase extends AbstractTransactionalTest {
+public class ConnectorTestCase {
 
     private static String deploymentName = "ConnectorTestCase";
 

@@ -21,7 +21,6 @@ import java.util.Set;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.ValueFactory;

@@ -66,7 +66,7 @@ public class LiteralValue extends Literal implements javax.jcr.query.qom.Literal
     }
 
     public LiteralValue( Value value,
-                       Object rawValue ) {
+                         Object rawValue ) {
         super(rawValue);
         this.jcrValue = value;
     }

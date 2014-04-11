@@ -21,7 +21,7 @@ package org.infinispan.schematic.internal.marshall;
  * 
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  * @since 5.1
- * @see org.infinispan.marshall.Ids
+ * @see org.infinispan.marshall.core.Ids
  */
 public interface Ids {
 

@@ -18,27 +18,48 @@ package org.modeshape.web.jcr.rest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
+import junit.framework.AssertionFailedError;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.BufferedHttpEntity;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.ByteArrayBody;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpParams;
+import org.apache.http.util.EntityUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.Base64;
+import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.handler.AbstractHandler;
@@ -51,11 +72,9 @@ import org.modeshape.web.jcr.rest.handler.AbstractHandler;
  * @author ?
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-@SuppressWarnings( "restriction" )
 public class JcrResourcesTest {
 
-    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid",
-                                                                                    "jcr:score",
+    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid", "jcr:score",
                                                                                     AbstractHandler.NODE_ID_CUSTOM_PROPERTY);
 
     /**
@@ -67,27 +86,48 @@ public class JcrResourcesTest {
     protected static final String CHILDREN_KEY = "children";
     protected static final String ID_KEY = "id";
 
-    private static final String SERVER_CONTEXT = "/resources/v1";
-    private static final String SERVER_URL = "http://localhost:8090";
+    private static final HttpHost HOST = new HttpHost("localhost", 8090, "http");
 
-    private HttpURLConnection connection;
+    private static final String SERVER_CONTEXT = "/resources/v1";
+    private static final String AUTH_USERNAME = "dnauser";
+    private static final String AUTH_PASSWORD = "password";
+
+    private static final UrlEncoder URL_ENCODER = new UrlEncoder().setSlashEncoded(false);
+
+    protected DefaultHttpClient httpClient;
+
+    @Before
+    public void beforeEach() throws Exception {
+        httpClient = new DefaultHttpClient();
+        setAuthCredentials(AUTH_USERNAME, AUTH_PASSWORD);
+    }
+
+    private void setAuthCredentials( String authUsername,
+                                     String authPassword ) {
+        httpClient.getCredentialsProvider().setCredentials(new AuthScope(getHost()),
+                                                           new UsernamePasswordCredentials(authUsername, authPassword));
+    }
+
+    protected HttpHost getHost() {
+        return HOST;
+    }
 
     @After
     public void afterEach() throws Exception {
-        doDelete(itemsUrl(TEST_NODE)).submit();
-        if (connection != null) {
-            connection.disconnect();
-        }
+        doDelete(itemsUrl(TEST_NODE));
+        httpClient.getConnectionManager().shutdown();
     }
 
     @Test
     public void shouldNotServeContentToUnauthorizedUser() throws Exception {
-        doGet("dnauser", "invalidpassword").isUnauthorized();
+        setAuthCredentials("dnauser", "invalidpassword");
+        doGet().isUnauthorized();
     }
 
     @Test
     public void shouldNotServeContentToUserWithoutConnectRole() throws Exception {
-        doGet("unauthorizeduser", "password").isUnauthorized();
+        setAuthCredentials("unauthorizeduser", "password");
+        doGet().isUnauthorized();
     }
 
     @Test
@@ -470,7 +510,7 @@ public class JcrResourcesTest {
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
 
-        String query = "//element(child) order by @foo";
+        String query = "//element(child) order by @foo, @jcr:path";
         xpathQuery(query, queryUrl() + "?offset=1&limit=2").isOk().isJSON().isJSONObjectLikeFile(queryResultOffsetAndLimit());
     }
 
@@ -486,7 +526,7 @@ public class JcrResourcesTest {
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
 
-        String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
+        String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "') ORDER BY [jcr:path]";
         jcrSQL2Query(query, queryUrl()).isOk().isJSON().isJSONObjectLikeFile(jcrSQL2Result());
     }
 
@@ -507,15 +547,11 @@ public class JcrResourcesTest {
     }
 
     protected Response doGet() throws Exception {
-        return new Response(newDefaultConnection("GET", null));
-    }
-
-    protected Response doGet(String username, String password) throws Exception {
-        return new Response(newConnection("GET", null, MediaType.APPLICATION_JSON, username, password));
+        return new Response(newDefaultRequest(HttpGet.class, null, null));
     }
 
     protected Response doGet( String url ) throws Exception {
-        return new Response(newDefaultConnection("GET", null, url));
+        return new Response(newDefaultRequest(HttpGet.class, null, null, url));
     }
 
     protected Response doPost( String payloadFile,
@@ -533,16 +569,17 @@ public class JcrResourcesTest {
         return postStream(is, url, null);
     }
 
-    protected Response doPost( JSONObject request,
+    protected Response doPost( JSONObject object,
                                String url ) throws Exception {
-        HttpURLConnection connection = newDefaultConnection("POST", MediaType.APPLICATION_JSON, url);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(byteArrayOutputStream);
-        request.write(writer);
+        object.write(writer);
         writer.flush();
         writer.close();
-        connection.getOutputStream().write(byteArrayOutputStream.toByteArray());
-        return new Response(connection);
+
+        HttpPost post = newDefaultRequest(HttpPost.class, new ByteArrayInputStream(byteArrayOutputStream.toByteArray()),
+                                          MediaType.APPLICATION_JSON, url);
+        return new Response(post);
     }
 
     protected InputStream fileStream( String file ) {
@@ -576,147 +613,126 @@ public class JcrResourcesTest {
 
     protected Response postStream( InputStream is,
                                    String url,
-                                   String mediaType ) throws Exception {
-        HttpURLConnection connection = newDefaultConnection("POST", mediaType, url);
-        if (is != null) {
-            OutputStream outputStream = connection.getOutputStream();
-            outputStream.write(IoUtil.readBytes(is));
-            outputStream.flush();
-        }
-        return new Response(connection);
+                                   String contentType ) throws Exception {
+        HttpPost post = newDefaultRequest(HttpPost.class, is, contentType, url);
+        return new Response(post);
     }
 
     protected Response postStreamForTextResponse( InputStream is,
                                                   String url,
-                                                  String mediaType ) throws Exception {
-        HttpURLConnection connection = newConnection("POST", mediaType, "dnauser", "password", MediaType.TEXT_PLAIN, url);
-        if (is != null) {
-            OutputStream outputStream = connection.getOutputStream();
-            outputStream.write(IoUtil.readBytes(is));
-            outputStream.flush();
-        }
-        return new Response(connection);
+                                                  String contentType ) throws Exception {
+        HttpPost post = newRequest(HttpPost.class, is, contentType, MediaType.TEXT_PLAIN, url);
+        return new Response(post);
     }
 
-    protected Response doPostMultiPart( InputStream is,
+    protected Response doPostMultiPart( String filePath,
                                         String elementName,
                                         String url,
-                                        String mediaType ) throws IOException {
-        if (StringUtil.isBlank(mediaType)) {
-            mediaType = MediaType.APPLICATION_OCTET_STREAM;
-        }
-        String boundary = Long.toHexString(System.currentTimeMillis()); // random
-        String lineSeparator = "\r\n";
-
-        HttpURLConnection connection = newDefaultConnection("POST", "multipart/form-data; boundary=" + boundary, url);
-        PrintWriter writer = null;
+                                        String contentType ) {
         try {
-            OutputStream output = connection.getOutputStream();
-            writer = new PrintWriter(new OutputStreamWriter(output), true);
-            writer.append("--").append(boundary).append(lineSeparator);
-            writer.append("Content-Disposition: form-data; name=").append(elementName).append(lineSeparator);
-            writer.append("Content-Type: ").append(mediaType).append(lineSeparator);
-            writer.append("Content-Transfer-Encoding: binary").append(lineSeparator);
-            writer.append(lineSeparator).flush();
-            try {
-                byte[] buffer = new byte[1024];
-                for (int length = 0; (length = is.read(buffer)) > 0;) {
-                    output.write(buffer, 0, length);
-                }
-                output.flush();
-            } finally {
-                if (is != null) {
-                    try {
-                        is.close();
-                    } catch (IOException ignore) {
-                    }
-                }
+
+            if (StringUtil.isBlank(contentType)) {
+                contentType = MediaType.APPLICATION_OCTET_STREAM;
             }
-            writer.append(lineSeparator).flush(); // lineSeparator is important! It indicates end of binary boundary.
-            writer.append("--").append(boundary).append("--").append(lineSeparator);
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
+
+            url = URL_ENCODER.encode(RestHelper.urlFrom(getServerContext(), url));
+
+            HttpPost post = new HttpPost(url);
+            post.setHeader("Accept", MediaType.APPLICATION_JSON);
+            MultipartEntity reqEntity = new MultipartEntity();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            IoUtil.write(fileStream(filePath), baos);
+            reqEntity.addPart(elementName, new ByteArrayBody(baos.toByteArray(), "test_file"));
+            post.setEntity(reqEntity);
+
+            return new Response(post);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e.getMessage());
+            return null;
         }
-        return new Response(connection);
     }
 
     protected Response doPut( String payloadFile,
                               String url ) throws Exception {
-        HttpURLConnection connection = newDefaultConnection("PUT", MediaType.APPLICATION_JSON, url);
-        if (payloadFile != null) {
-            String fileContent = IoUtil.read(fileStream(payloadFile));
-            connection.getOutputStream().write(fileContent.getBytes());
-        }
-        return new Response(connection);
+        HttpPut put = newDefaultRequest(HttpPut.class, fileStream(payloadFile), MediaType.APPLICATION_JSON, url);
+        return new Response(put);
     }
 
     protected Response doPut( InputStream is,
                               String url ) throws Exception {
-        HttpURLConnection connection = newDefaultConnection("PUT", MediaType.APPLICATION_JSON, url);
-        connection.getOutputStream().write(IoUtil.readBytes(is));
-        return new Response(connection);
+        HttpPut put = newDefaultRequest(HttpPut.class, is, MediaType.APPLICATION_JSON, url);
+        return new Response(put);
     }
 
     protected Response doPut( JSONObject request,
                               String url ) throws Exception {
-        HttpURLConnection connection = newDefaultConnection("PUT", MediaType.APPLICATION_JSON, url);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(byteArrayOutputStream);
         request.write(writer);
         writer.flush();
         writer.close();
-        connection.getOutputStream().write(byteArrayOutputStream.toByteArray());
-        return new Response(connection);
+        HttpPut put = newDefaultRequest(HttpPut.class, new ByteArrayInputStream(byteArrayOutputStream.toByteArray()),
+                                        MediaType.APPLICATION_JSON, url);
+        return new Response(put);
     }
 
     protected Response doDelete( String url ) throws Exception {
-        return new Response(newDefaultConnection("DELETE", null, url));
+        HttpDeleteWithBody delete = newDefaultRequest(HttpDeleteWithBody.class, null, null, url);
+        return new Response(delete);
     }
 
     protected Response doDelete( String payloadFile,
                                  String url ) throws Exception {
-        HttpURLConnection connection = newDefaultConnection("DELETE", null, url);
+        InputStream is = null;
         if (payloadFile != null) {
-            String fileContent = IoUtil.read(fileStream(payloadFile));
-            connection.getOutputStream().write(fileContent.getBytes());
+            is = fileStream(payloadFile);
         }
-        return new Response(connection);
+        HttpDeleteWithBody delete = newDefaultRequest(HttpDeleteWithBody.class, is, MediaType.APPLICATION_JSON, url);
+        return new Response(delete);
     }
 
-    private HttpURLConnection newDefaultConnection( String method,
-                                                    String contentType,
-                                                    String... pathSegments ) throws IOException {
-        return newConnection(method, contentType, "dnauser", "password", MediaType.APPLICATION_JSON, pathSegments);
+    private <T extends HttpRequestBase> T newDefaultRequest( Class<T> clazz,
+                                                             InputStream inputStream,
+                                                             String contentType,
+                                                             String... pathSegments ) {
+        return newRequest(clazz, inputStream, contentType, MediaType.APPLICATION_JSON, pathSegments);
     }
 
-     private HttpURLConnection newConnection( String method,
-                                             String contentType,
-                                             String username,
-                                             String password,
-                                             String accepts,
-                                             String... pathSegments ) throws IOException {
-        if (connection != null) {
-            connection.disconnect();
+    private <T extends HttpRequestBase> T newRequest( Class<T> clazz,
+                                                      InputStream inputStream,
+                                                      String contentType,
+                                                      String accepts,
+                                                      String... pathSegments ) {
+        String url = RestHelper.urlFrom(getServerContext(), pathSegments);
+
+        try {
+            URIBuilder uriBuilder;
+            try {
+                uriBuilder = new URIBuilder(url);
+            } catch (URISyntaxException e) {
+                uriBuilder = new URIBuilder(URL_ENCODER.encode(url));
+            }
+
+            T result = clazz.getConstructor(URI.class).newInstance(uriBuilder.build());
+            result.setHeader("Accept", accepts);
+            result.setHeader("Content-Type", contentType);
+            HttpParams params = result.getParams();
+            for (NameValuePair nameValuePair : uriBuilder.getQueryParams()) {
+                params.setParameter(nameValuePair.getName(), nameValuePair.getValue());
+            }
+            if (inputStream != null) {
+                assertTrue("Invalid request clazz (requires an entity)", result instanceof HttpEntityEnclosingRequestBase);
+                InputStreamEntity inputStreamEntity = new InputStreamEntity(inputStream, inputStream.available());
+                ((HttpEntityEnclosingRequestBase)result).setEntity(new BufferedHttpEntity(inputStreamEntity));
+            }
+
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e.getMessage());
+            return null;
         }
-
-        String serviceUrl = getServerUrl() + getServerContext();
-        String url = RestHelper.urlFrom(serviceUrl, pathSegments);
-
-        URL postUrl = new URL(url);
-        connection = (HttpURLConnection)postUrl.openConnection();
-
-        connection.setDoOutput(true);
-        connection.setRequestMethod(method);
-        if (contentType != null) {
-            connection.setRequestProperty("Content-Type", contentType);
-        }
-        connection.setRequestProperty("Accept", accepts);
-        String userPassword = username + ":" + password;
-        String encoding = Base64.encodeBytes(userPassword.getBytes());
-        connection.setRequestProperty("Authorization", "Basic " + encoding);
-        return connection;
     }
 
     protected void assertJSON( Object expected,
@@ -744,8 +760,7 @@ public class JcrResourcesTest {
             JSONArray expectedArray = (JSONArray)expected;
             JSONArray actualArray = (JSONArray)actual;
             Assert.assertEquals("Arrays don't match. \nExpected:" + expectedArray.toString() + "\nActual  :" + actualArray,
-                                expectedArray.length(),
-                                actualArray.length());
+                                expectedArray.length(), actualArray.length());
             for (int i = 0; i < expectedArray.length(); i++) {
                 assertJSON(expectedArray.get(i), actualArray.get(i));
             }
@@ -763,54 +778,59 @@ public class JcrResourcesTest {
         return false;
     }
 
-    protected String responseString( HttpURLConnection connection ) throws IOException {
-        StringBuilder buff = new StringBuilder();
-        InputStream stream = connection.getInputStream();
-        int bytesRead;
-        byte[] bytes = new byte[1024];
-        while (-1 != (bytesRead = stream.read(bytes, 0, 1024))) {
-            buff.append(new String(bytes, 0, bytesRead));
-        }
-
-        return buff.toString();
-    }
-
     protected String getServerContext() {
         return SERVER_CONTEXT;
     }
 
-    protected String getServerUrl() {
-        return SERVER_URL;
+    protected static class HttpDeleteWithBody extends HttpPost {
+        public HttpDeleteWithBody( URI uri ) {
+            super(uri);
+        }
+
+        @Override
+        public String getMethod() {
+            return "DELETE";
+        }
     }
 
-    protected final class Response {
+    protected class Response {
 
-        private final HttpURLConnection connection;
-        private String responseString;
+        private final HttpResponse response;
+        private byte[] content;
+        private String contentString;
 
-        protected Response( HttpURLConnection connection ) {
-            this.connection = connection;
+        protected Response( HttpRequestBase request ) {
+            try {
+                response = httpClient.execute(getHost(), request);
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    ByteArrayOutputStream baous = new ByteArrayOutputStream();
+                    entity.writeTo(baous);
+                    EntityUtils.consumeQuietly(entity);
+                    content = baous.toByteArray();
+                } else {
+                    content = new byte[0];
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                request.releaseConnection();
+            }
         }
 
         private Response hasCode( int responseCode ) throws Exception {
-            assertEquals(responseCode, connection.getResponseCode());
+            assertEquals(responseCode, response.getStatusLine().getStatusCode());
             return this;
         }
 
         private Response hasHeader( String name,
                                     String value ) {
-            assertEquals(value, connection.getHeaderField(name));
+            assertEquals(value, response.getFirstHeader(name).getValue());
             return this;
         }
 
         protected String getContentTypeHeader() {
-            return connection.getHeaderField("Content-Type");
-        }
-
-        protected Response submit() throws IOException {
-            // just trigger the request, ignore the result
-            connection.getResponseCode();
-            return this;
+            return response.getFirstHeader("Content-Type").getValue();
         }
 
         protected Response hasMimeType( String mimeType ) {
@@ -857,8 +877,15 @@ public class JcrResourcesTest {
             String expectedJSONString = IoUtil.read(fileStream(pathToExpectedJSON));
             JSONObject expectedObject = new JSONObject(expectedJSONString);
 
-            JSONObject responseObject = new JSONObject(responseString());
-            assertJSON(expectedObject, responseObject);
+            JSONObject responseObject = new JSONObject(contentAsString());
+
+            try {
+                assertJSON(expectedObject, responseObject);
+            } catch (AssertionFailedError e) {
+                System.out.println("expected: " + expectedObject);
+                System.out.println("response: " + responseObject);
+                throw e;
+            }
 
             return this;
         }
@@ -867,7 +894,7 @@ public class JcrResourcesTest {
             isJSON();
             JSONObject expectedObject = otherResponse.json();
 
-            JSONObject responseObject = new JSONObject(responseString());
+            JSONObject responseObject = new JSONObject(contentAsString());
             assertJSON(expectedObject, responseObject);
 
             return this;
@@ -878,48 +905,42 @@ public class JcrResourcesTest {
             String expectedJSONString = IoUtil.read(fileStream(pathToExpectedJSON));
             JSONArray expectedArray = new JSONArray(expectedJSONString);
 
-            JSONArray responseObject = new JSONArray(responseString());
+            JSONArray responseObject = new JSONArray(contentAsString());
             assertJSON(expectedArray, responseObject);
 
             return this;
         }
 
         protected String hasNodeIdentifier() throws Exception {
-            JSONObject responseObject = new JSONObject(responseString());
+            JSONObject responseObject = new JSONObject(contentAsString());
             String id = responseObject.getString("id");
             assertNotNull(id);
             assertTrue(id.trim().length() != 0);
             return id;
         }
 
-        protected Response copyInputStream( OutputStream destination ) throws IOException {
-            assert destination != null;
-            IoUtil.write(connection.getInputStream(), destination);
-            return this;
-        }
-
         protected JSONObject json() throws Exception {
-            return new JSONObject(responseString());
+            return new JSONObject(contentAsString());
         }
 
         protected JSONObject children() throws Exception {
             return json().getJSONObject(CHILDREN_KEY);
         }
 
-        protected String responseString() throws IOException {
-            if (responseString == null) {
-                responseString = JcrResourcesTest.this.responseString(connection);
+        protected String contentAsString() {
+            if (contentString == null) {
+                contentString = new String(content);
             }
-            return responseString;
+            return contentString;
+        }
+
+        protected byte[] contentAsBytes() {
+            return content;
         }
 
         @Override
         public String toString() {
-            try {
-                return responseString();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            return contentAsString();
         }
     }
 }

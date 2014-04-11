@@ -21,8 +21,5 @@
             "roles" : ["readonly","readwrite","admin"],
             "useOnFailedLogin" : false
         }
-    },
-    "query" : {
-        "enabled" : true
     }
 }

@@ -25,9 +25,12 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
+import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.Column;
 import org.modeshape.jcr.query.model.Comparison;
@@ -54,14 +57,15 @@ public class ReplaceViewsTest extends AbstractQueryTest {
     public void beforeEach() {
         ExecutionContext executionContext = new ExecutionContext();
         rule = ReplaceViews.INSTANCE;
-        builder = ImmutableSchemata.createBuilder(executionContext);
+        builder = ImmutableSchemata.createBuilder(executionContext, mock(NodeTypes.class));
         builder.addTable("t1", "c11", "c12", "c13");
         builder.addTable("t2", "c21", "c22", "c23");
         builder.addView("v1", "SELECT c11, c12 FROM t1 WHERE c13 < CAST('3' AS LONG)");
         builder.addView("v2", "SELECT t1.c11, t1.c12, t2.c23 FROM t1 JOIN t2 ON t1.c11 = t2.c21");
         schemata = builder.build();
-        context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"),
-                                   mock(Schemata.class));
+        context = new QueryContext(new ExecutionContext(), mock(RepositoryCache.class), Collections.singleton("workspace"),
+                                   mock(Schemata.class), mock(RepositoryIndexes.class), mock(NodeTypes.class),
+                                   mock(BufferManager.class));
     }
 
     /**

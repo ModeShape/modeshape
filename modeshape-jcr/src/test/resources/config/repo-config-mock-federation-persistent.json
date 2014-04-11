@@ -16,11 +16,4 @@
         "cacheName" : "persistentRepository",
         "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
     },
-    "query" : {
-        "indexing" : {
-            "rebuildOnStartup" : {
-                "when" : "never"
-            }
-        }
-    }
 }

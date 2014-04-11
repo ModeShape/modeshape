@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
@@ -56,7 +57,7 @@ public class RepositoryChangeBusTest {
     }
 
     protected RepositoryChangeBus createRepositoryChangeBus() {
-        return new RepositoryChangeBus(Executors.newCachedThreadPool(), null);
+        return new RepositoryChangeBus(Executors.newCachedThreadPool(), RepositoryConfiguration.SYSTEM_WORKSPACE_NAME);
     }
 
     @After

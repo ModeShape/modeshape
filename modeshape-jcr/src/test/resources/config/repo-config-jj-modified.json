@@ -13,8 +13,5 @@
         "default": "default",
         "allowCreation": true
     },
-    "query": {
-        "enabled": false
-    },
     "node-types": ["cnd/jj_modified.cnd"]
 }

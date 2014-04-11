@@ -17,7 +17,10 @@ package org.modeshape.jcr;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +52,9 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.spi.index.IndexColumnDefinition;
+import org.modeshape.jcr.spi.index.IndexDefinition;
+import org.modeshape.jcr.spi.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -57,6 +63,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.ValueFactories;
@@ -80,6 +87,7 @@ public class SystemContent {
     private NodeKey namespacesKey;
     private NodeKey locksKey;
     private NodeKey versionStorageKey;
+    private NodeKey indexesKey;
     private final PropertyFactory propertyFactory;
     private final ValueFactory<Boolean> booleans;
     private final ValueFactory<String> strings;
@@ -131,6 +139,16 @@ public class SystemContent {
         return nodeTypesKey;
     }
 
+    public NodeKey indexesKey() {
+        if (indexesKey == null) {
+            // This is idempotent, so no need to lock
+            CachedNode systemNode = systemNode();
+            ChildReference nodeTypesRef = systemNode.getChildReferences(system).getChild(ModeShapeLexicon.INDEXES);
+            indexesKey = nodeTypesRef.getKey();
+        }
+        return indexesKey;
+    }
+
     public NodeKey namespacesKey() {
         if (namespacesKey == null) {
             // This is idempotent, so no need to lock
@@ -173,6 +191,10 @@ public class SystemContent {
         return system.getNode(namespacesKey());
     }
 
+    public CachedNode indexesNode() {
+        return system.getNode(indexesKey());
+    }
+
     public CachedNode locksNode() {
         return system.getNode(locksKey());
     }
@@ -189,12 +211,20 @@ public class SystemContent {
         return system.mutable(namespacesKey());
     }
 
+    public MutableCachedNode mutableIndexesNode() {
+        return system.mutable(indexesKey());
+    }
+
     public MutableCachedNode mutableLocksNode() {
         return system.mutable(locksKey());
     }
 
     public MutableCachedNode mutableVersionStorageNode() {
         return system.mutable(versionStorageKey());
+    }
+
+    public MutableCachedNode mutableSystemNode() {
+        return system.mutable(systemKey());
     }
 
     /**
@@ -304,11 +334,11 @@ public class SystemContent {
         if (nodeTypeNode != null) {
             // Update the properties ...
             nodeTypeNode.setProperties(system, properties);
-            //make sure each new supertype of the existing node is present *before* the existing node in the parent nodeTypes
-            //this because node type validation is a top-down process, expecting the parents before the children
-            for (NodeType superType : supertypes ) {
-                CachedNode superTypeNode = system.getNode(((JcrNodeType) superType).key());
-                if (superTypeNode instanceof MutableCachedNode && ((MutableCachedNode) superTypeNode).isNew()) {
+            // make sure each new supertype of the existing node is present *before* the existing node in the parent nodeTypes
+            // this because node type validation is a top-down process, expecting the parents before the children
+            for (NodeType superType : supertypes) {
+                CachedNode superTypeNode = system.getNode(((JcrNodeType)superType).key());
+                if (superTypeNode instanceof MutableCachedNode && ((MutableCachedNode)superTypeNode).isNew()) {
                     nodeTypes.reorderChild(system, superTypeNode.getKey(), nodeTypeNode.getKey());
                 }
             }
@@ -378,8 +408,9 @@ public class SystemContent {
         properties.add(propertyFactory.create(JcrLexicon.PROTECTED, propertyDef.isProtected()));
         properties.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
                                               OnParentVersionAction.nameFromValue(propertyDef.getOnParentVersion())));
-        properties.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE, org.modeshape.jcr.api.PropertyType.nameFromValue(propertyDef.getRequiredType())
-                                                                                    .toUpperCase()));
+        properties.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE,
+                                              org.modeshape.jcr.api.PropertyType.nameFromValue(propertyDef.getRequiredType())
+                                                                                .toUpperCase()));
 
         List<String> symbols = new ArrayList<String>();
         for (String value : propertyDef.getAvailableQueryOperators()) {
@@ -473,6 +504,216 @@ public class SystemContent {
         }
     }
 
+    public IndexDefinition readIndexDefinition( CachedNode indexDefn,
+                                                Name providerName ) {
+        String name = strings.create(indexDefn.getName(system));
+        String desc = strings.create(first(indexDefn, JcrLexicon.DESCRIPTION));
+        String providerNameStr = strings.create(providerName);
+        String kindStr = strings.create(first(indexDefn, ModeShapeLexicon.KIND));
+        IndexKind kind = IndexKind.valueOf(kindStr);
+        Name nodeTypeName = names.create(first(indexDefn, ModeShapeLexicon.NODE_TYPE_NAME));
+        Map<Name, Property> extendedProps = new HashMap<>();
+        for (Iterator<Property> props = indexDefn.getProperties(system); props.hasNext();) {
+            Property prop = props.next();
+            extendedProps.put(prop.getName(), prop);
+        }
+        extendedProps.remove(ModeShapeLexicon.KIND);
+        extendedProps.remove(JcrLexicon.DESCRIPTION);
+
+        Collection<IndexColumnDefinition> columnDefns = new LinkedList<>();
+        for (ChildReference ref : indexDefn.getChildReferences(system)) {
+            CachedNode indexColumnDefn = system.getNode(ref);
+            IndexColumnDefinition defn = readIndexColumnDefinition(indexColumnDefn);
+            columnDefns.add(defn);
+        }
+        return new RepositoryIndexDefinition(name, providerNameStr, kind, nodeTypeName, columnDefns, extendedProps, desc, true);
+    }
+
+    public IndexColumnDefinition readIndexColumnDefinition( CachedNode indexColumnDefn ) {
+        Name propertyName = names.create(first(indexColumnDefn, ModeShapeLexicon.PROPERTY_NAME));
+        String columnTypeName = strings.create(first(indexColumnDefn, ModeShapeLexicon.COLUMN_TYPE_NAME));
+        PropertyType columnType = PropertyType.valueFor(columnTypeName);
+        return new RepositoryIndexColumnDefinition(propertyName, columnType);
+    }
+
+    /**
+     * Read from system storage the index definitions. If the names of the providers are providers, then the resulting index
+     * definitions will each be {@link IndexDefinition#isEnabled() enabled} only if the definition's named provider is in the
+     * supplied set; otherwise, the definition will be marked as disabled.
+     * 
+     * @param providerNames the names of the providers that should be used to determine which index definitions are
+     *        {@link IndexDefinition#isEnabled() enabled}; may be null if not known and all index definitions will be
+     *        {@link IndexDefinition#isEnabled() enabled}
+     * @return the index definitions as read from the system storage
+     */
+    public List<IndexDefinition> readAllIndexDefinitions( Set<String> providerNames ) {
+        CachedNode indexes = indexesNode();
+        List<IndexDefinition> defns = new ArrayList<>();
+        for (ChildReference ref : indexes.getChildReferences(system)) {
+            CachedNode provider = system.getNode(ref);
+            Name providerName = provider.getName(system);
+            for (ChildReference indexRef : provider.getChildReferences(system)) {
+                CachedNode indexDefn = system.getNode(indexRef);
+                IndexDefinition defn = readIndexDefinition(indexDefn, providerName);
+                if (!providerNames.contains(defn.getProviderName())) {
+                    // There is no provider by this name, so mark it as not enabled ...
+                    defn = RepositoryIndexDefinition.createFrom(defn, false);
+                }
+            }
+        }
+        return defns;
+    }
+
+    private final NodeKey nodeKey( NodeKey prototype,
+                                   IndexDefinition defn ) {
+        return prototype.withId("/jcr:system/mode:indexes/" + defn.getProviderName() + "/" + defn.getName());
+    }
+
+    private final NodeKey nodeKey( NodeKey indexDefnKey,
+                                   IndexColumnDefinition defn ) {
+        String id = strings.create(strings.create(defn.getPropertyName()));
+        return indexDefnKey.withId(indexDefnKey.getIdentifier() + id);
+    }
+
+    private final NodeKey nodeKey( NodeKey prototype,
+                                   String providerName ) {
+        return prototype.withId("/jcr:system/mode:indexes/" + providerName);
+    }
+
+    public void remove( IndexDefinition indexDefn ) {
+        assert indexDefn != null;
+        assert system != null;
+        MutableCachedNode indexes = mutableIndexesNode();
+        final NodeKey providerKey = nodeKey(indexes.getKey(), indexDefn.getProviderName());
+        if (indexes.getChildReferences(system).hasChild(providerKey)) {
+            // Find the provider node ...
+            MutableCachedNode providerNode = system.mutable(providerKey);
+
+            // And remove the index defn from the provider ...
+            final NodeKey key = nodeKey(providerNode.getKey(), indexDefn);
+            providerNode.removeChild(system, key);
+            system.destroy(key);
+
+            // If there are no more children under the provider, remove it, too...
+            if (providerNode.getChildReferences(system).isEmpty()) {
+                indexes.removeChild(system, providerKey);
+                system.destroy(providerKey);
+            }
+        }
+    }
+
+    public void store( IndexDefinition indexDefn,
+                       boolean updateExisting ) {
+        MutableCachedNode indexesNode = mutableIndexesNode();
+        store(indexDefn, indexesNode, updateExisting);
+    }
+
+    private void store( IndexDefinition indexDefn,
+                        MutableCachedNode indexes,
+                        boolean updateExisting ) {
+        assert indexDefn != null;
+        assert system != null;
+        assert indexes != null;
+        assert indexDefn.getName() != null;
+
+        // First find or create the provider node ...
+        MutableCachedNode providerNode = null;
+        final NodeKey providerKey = nodeKey(indexes.getKey(), indexDefn.getProviderName());
+        if (indexes.getChildReferences(system).hasChild(providerKey)) {
+            // The node already exists ...
+            providerNode = system.mutable(providerKey);
+        } else {
+            // Create the new provider node ...
+            Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.INDEX_PROVIDER);
+            Name providerName = names.create(indexDefn.getProviderName());
+            providerNode = indexes.createChild(system, providerKey, providerName, primaryType);
+        }
+        assert providerNode != null;
+
+        Name name = names.create(indexDefn.getName());
+        final NodeKey key = nodeKey(indexes.getKey(), indexDefn);
+        MutableCachedNode indexNode = null;
+        Set<NodeKey> existingChildKeys = null;
+
+        if (providerNode.getChildReferences(system).hasChild(key)) {
+            // The node already exists ...
+            if (!updateExisting) return;
+            indexNode = system.mutable(key);
+
+            // We'll need to delete any existing column that isn't there anymore ...
+            existingChildKeys = new HashSet<NodeKey>();
+            for (ChildReference childRef : indexNode.getChildReferences(system)) {
+                existingChildKeys.add(childRef.getKey());
+            }
+        }
+
+        // Define the properties for this node type ...
+        List<Property> properties = new ArrayList<Property>();
+        // Add the extended properties first, in case the standard ones overwrite them ...
+        for (Property prop : indexDefn.getProperties().values()) {
+            properties.add(prop);
+        }
+
+        // Now do the standard properties ...
+        properties.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.INDEX));
+        properties.add(propertyFactory.create(JcrLexicon.DESCRIPTION, indexDefn.getDescription()));
+        properties.add(propertyFactory.create(ModeShapeLexicon.KIND, indexDefn.getKind().name()));
+        properties.add(propertyFactory.create(ModeShapeLexicon.NODE_TYPE_NAME, indexDefn.getNodeTypeName()));
+
+        // Now make or adjust the node for the node type ...
+        if (indexNode != null) {
+            // Update the properties ...
+            indexNode.setProperties(system, properties);
+        } else {
+            // We have to create the node type node ...
+            indexNode = providerNode.createChild(system, key, name, properties);
+        }
+
+        // And the column definitions ...
+        for (IndexColumnDefinition columnDefn : indexDefn) {
+            NodeKey columnDefnKey = store(indexNode, columnDefn);
+            if (existingChildKeys != null) existingChildKeys.remove(columnDefnKey);
+        }
+
+        // Remove any column defns that weren't represented in the index definition ...
+        if (existingChildKeys != null && !existingChildKeys.isEmpty()) {
+            for (NodeKey childKey : existingChildKeys) {
+                // Remove the child from the parent, then destroy it ...
+                indexNode.removeChild(system, childKey);
+                system.destroy(childKey);
+            }
+        }
+    }
+
+    private NodeKey store( MutableCachedNode indexDefn,
+                           IndexColumnDefinition columnDefn ) {
+        // Find an existing node for this column definition ...
+        final NodeKey key = nodeKey(indexDefn.getKey(), columnDefn);
+        final Name name = ModeShapeLexicon.INDEX_COLUMN;
+        MutableCachedNode columnDefnNode = null;
+        if (!indexDefn.isNew()) {
+            if (indexDefn.getChildReferences(system).hasChild(key)) {
+                // The node already exists ...
+                columnDefnNode = system.mutable(key);
+            }
+        }
+
+        List<Property> props = new ArrayList<Property>();
+        props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.INDEX_COLUMN));
+        props.add(propertyFactory.create(ModeShapeLexicon.PROPERTY_NAME, columnDefn.getPropertyName()));
+        props.add(propertyFactory.create(ModeShapeLexicon.COLUMN_TYPE_NAME, columnDefn.getColumnType().getName()));
+
+        // Now either update the existing node or create a new node ..
+        if (columnDefnNode != null) {
+            // Update the properties ...
+            columnDefnNode.setProperties(system, props);
+        } else {
+            // We have to create the node type node ...
+            columnDefnNode = indexDefn.createChild(system, key, name, props);
+        }
+        return key;
+    }
+
     /**
      * Read from system storage the node type definitions with the supplied names.
      * 
@@ -480,7 +721,7 @@ public class SystemContent {
      * @return the node types as read from the system storage
      */
     public List<NodeTypeDefinition> readNodeTypes( Set<Name> nodeTypesToRefresh ) {
-        return new ArrayList<NodeTypeDefinition>();
+        return readAllNodeTypes();
     }
 
     /**
@@ -776,7 +1017,7 @@ public class SystemContent {
         return false;
     }
 
-    protected void unregisterNodeTypes( JcrNodeType...nodeTypes) {
+    protected void unregisterNodeTypes( JcrNodeType... nodeTypes ) {
         MutableCachedNode nodeTypesNode = mutableNodeTypesNode();
         for (JcrNodeType nodeType : nodeTypes) {
             NodeKey nodeTypeKey = nodeType.key();
@@ -975,8 +1216,7 @@ public class SystemContent {
         historyProps.add(propertyFactory.create(JcrLexicon.UUID, versionHistoryKey.getIdentifier()));
         if (originalVersionKey != null) {
             // the tck expects this to be a reference, so that getNode works on it
-            historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM,
-                                                    org.modeshape.jcr.value.PropertyType.WEAKREFERENCE,
+            historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM, org.modeshape.jcr.value.PropertyType.WEAKREFERENCE,
                                                     referenceFactory.create(originalVersionKey, true)));
         }
         Name historyName = versionHistoryPath.getLastSegment().getName();
@@ -1060,14 +1300,8 @@ public class SystemContent {
         NodeKey versionKey = versionHistoryKey.withRandomId();
         if (historyNode == null) {
             // Initialize the version history ...
-            historyNode = initializeVersionStorage(versionableNodeKey,
-                                                   versionHistoryKey,
-                                                   null,
-                                                   primaryTypeName,
-                                                   mixinTypeNames,
-                                                   versionHistoryPath,
-                                                   originalVersionKey,
-                                                   now);
+            historyNode = initializeVersionStorage(versionableNodeKey, versionHistoryKey, null, primaryTypeName, mixinTypeNames,
+                                                   versionHistoryPath, originalVersionKey, now);
             // Overwrite the predecessor's property ...
             NodeKey rootVersionKey = historyNode.getChildReferences(system).getChild(JcrLexicon.ROOT_VERSION).getKey();
             Reference rootVersionRef = referenceFactory.create(rootVersionKey, true);
@@ -1123,8 +1357,7 @@ public class SystemContent {
             // Now add the uuid of the versionable node ...
             successorReferences.add(referenceFactory.create(versionKey, true));
 
-            successors = propertyFactory.create(JcrLexicon.SUCCESSORS,
-                                                org.modeshape.jcr.value.PropertyType.REFERENCE,
+            successors = propertyFactory.create(JcrLexicon.SUCCESSORS, org.modeshape.jcr.value.PropertyType.REFERENCE,
                                                 successorReferences);
             system.mutable(predecessorKey).setProperty(system, successors);
         }

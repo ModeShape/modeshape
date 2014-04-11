@@ -46,19 +46,10 @@
             <groupId>org.jgroups</groupId>
             <artifactId>jgroups</artifactId>
         </dependency>
-        <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
+        <!-- Heap and file-based maps -->
         <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-search-engine</artifactId>
-        </dependency>
-        <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-regex</artifactId>
+            <groupId>org.mapdb</groupId>
+            <artifactId>mapdb</artifactId>
         </dependency>
         <dependency>
             <groupId>javax.jms</groupId>
@@ -129,16 +120,17 @@
             <artifactId>infinispan-cachestore-jdbc</artifactId>
         </dependency>
         <dependency>
+            <groupId>c3p0</groupId>
+            <artifactId>c3p0</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-leveldb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mapdb</groupId>
-            <artifactId>mapdb</artifactId>
         </dependency>
         <dependency>
             <groupId>de.flapdoodle.embed</groupId>
@@ -303,6 +295,25 @@
                                         of the form "package#method". One per line. For example:
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
                                         -->
+                                        org.apache.jackrabbit.test.api.ShareableNodeTesttestSearch
+                                        org.apache.jackrabbit.test.api.query.qom.ChildNodeJoinConditionTest#testLeftOuterJoin
+                                        org.apache.jackrabbit.test.api.query.qom.DescendantNodeJoinConditionTest#testLeftOuterJoin
+                                        org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest#testRightOuterJoin1
+                                        org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest#testRightOuterJoin2
+                                        org.apache.jackrabbit.test.api.query.qom.SameNodeJoinConditionTest#testRightOuterJoin
+                                        org.apache.jackrabbit.test.api.query.qom.SameNodeJoinConditionTest#testRightOuterJoinWithPath
+                                        org.apache.jackrabbit.test.api.query.SQLQueryLevel2Test#testFullTextSearch
+                                        org.apache.jackrabbit.test.api.query.SQLQueryLevel2Test#testPathColumn
+                                        org.apache.jackrabbit.test.api.query.SQLQueryLevel2Test#testScoreColumn
+                                        org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test#testFullTextSearch
+                                        org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test#testPathColumn
+                                        org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test#testScoreColumn
+                                        org.apache.jackrabbit.test.api.query.TextNodeTest#testTextNodeTestContains
+                                        org.apache.jackrabbit.test.api.query.qom.FullTextSearchScoreTest#testConstraint
+                                        org.apache.jackrabbit.test.api.query.qom.FullTextSearchScoreTest#testOrdering
+                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testSearch
+                                        org.apache.jackrabbit.test.api.version.RestoreTest#testRestoreName
+                                        org.apache.jackrabbit.test.api.version.RestoreTest#testRestoreNameJcr2
                                     </value>
                                 </property>
                             </systemProperties>

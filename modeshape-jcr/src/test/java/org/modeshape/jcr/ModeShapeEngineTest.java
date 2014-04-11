@@ -38,7 +38,7 @@ import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.Default;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
-public class ModeShapeEngineTest extends AbstractTransactionalTest {
+public class ModeShapeEngineTest {
 
     private RepositoryConfiguration config;
     private ModeShapeEngine engine;
