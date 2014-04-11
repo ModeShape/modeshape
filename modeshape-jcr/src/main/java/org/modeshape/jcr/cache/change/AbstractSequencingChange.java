@@ -39,11 +39,12 @@ public abstract class AbstractSequencingChange extends AbstractNodeChange {
                                         Path sequencedNodePath,
                                         Name sequencedNodePrimaryType,
                                         Set<Name> sequencedNodeMixinTypes,
+                                        boolean queryable,
                                         String outputPath,
                                         String userId,
                                         String selectedPath,
                                         String sequencerName ) {
-        super(sequencedNodeKey, sequencedNodePath, sequencedNodePrimaryType, sequencedNodeMixinTypes);
+        super(sequencedNodeKey, sequencedNodePath, sequencedNodePrimaryType, sequencedNodeMixinTypes, queryable);
         assert outputPath != null;
         assert userId != null;
         assert selectedPath != null;

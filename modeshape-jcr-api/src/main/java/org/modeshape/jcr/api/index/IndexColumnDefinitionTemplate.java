@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.spi.index;
-
-import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.PropertyType;
+package org.modeshape.jcr.api.index;
 
 /**
  * An immutable definition of a column used in an {@link IndexDefinition}.
@@ -32,7 +29,7 @@ public interface IndexColumnDefinitionTemplate extends IndexColumnDefinition {
      * @return the property name; null if the value has not yet been set on this template
      */
     @Override
-    Name getPropertyName();
+    String getPropertyName();
 
     /**
      * Set the name of the property for which this index column applies.
@@ -40,13 +37,13 @@ public interface IndexColumnDefinitionTemplate extends IndexColumnDefinition {
      * @param name the name of the property; may not be null
      * @return this instance for method chaining; never null
      */
-    IndexColumnDefinitionTemplate setPropertyTypeName( Name name );
+    IndexColumnDefinitionTemplate setPropertyTypeName( String name );
 
     /**
      * Set the type of value for this index column applies.
      * 
-     * @param type the property type; may not be null
+     * @param propertyType the {@link javax.jcr.PropertyType property type}
      * @return this instance for method chaining; never null
      */
-    IndexColumnDefinitionTemplate getColumnType( PropertyType type );
+    IndexColumnDefinitionTemplate getColumnType( int propertyType );
 }

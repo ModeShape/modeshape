@@ -44,6 +44,10 @@ import javax.jcr.version.OnParentVersionAction;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.RepositoryLockManager.ModeShapeLock;
+import org.modeshape.jcr.api.index.IndexColumnDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
+import org.modeshape.jcr.api.index.IndexDefinition.WorkspaceMatchRule;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
@@ -52,9 +56,6 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.spi.index.IndexColumnDefinition;
-import org.modeshape.jcr.spi.index.IndexDefinition;
-import org.modeshape.jcr.spi.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
@@ -509,14 +510,20 @@ public class SystemContent {
         String desc = strings.create(first(indexDefn, JcrLexicon.DESCRIPTION));
         String providerNameStr = strings.create(providerName);
         String kindStr = strings.create(first(indexDefn, ModeShapeLexicon.KIND));
+        String workspacesRule = strings.create(first(indexDefn, ModeShapeLexicon.WORKSPACES));
         IndexKind kind = IndexKind.valueOf(kindStr);
-        Name nodeTypeName = names.create(first(indexDefn, ModeShapeLexicon.NODE_TYPE_NAME));
-        Map<Name, Property> extendedProps = new HashMap<>();
+        String nodeTypeName = strings.create(names.create(first(indexDefn, ModeShapeLexicon.NODE_TYPE_NAME)));
+        Map<String, Object> extendedProps = new HashMap<>();
         for (Iterator<Property> props = indexDefn.getProperties(system); props.hasNext();) {
             Property prop = props.next();
-            extendedProps.put(prop.getName(), prop);
+            if (prop.isSingle()) {
+                extendedProps.put(strings.create(prop.getName()), prop);
+            } else if (prop.isMultiple()) {
+                extendedProps.put(strings.create(prop.getName()), prop);
+            }
         }
         extendedProps.remove(ModeShapeLexicon.KIND);
+        extendedProps.remove(ModeShapeLexicon.WORKSPACES);
         extendedProps.remove(JcrLexicon.DESCRIPTION);
 
         Collection<IndexColumnDefinition> columnDefns = new LinkedList<>();
@@ -525,14 +532,17 @@ public class SystemContent {
             IndexColumnDefinition defn = readIndexColumnDefinition(indexColumnDefn);
             columnDefns.add(defn);
         }
-        return new RepositoryIndexDefinition(name, providerNameStr, kind, nodeTypeName, columnDefns, extendedProps, desc, true);
+
+        WorkspaceMatchRule rule = RepositoryIndexDefinition.workspaceMatchRule(workspacesRule);
+        return new RepositoryIndexDefinition(name, providerNameStr, kind, nodeTypeName, columnDefns, extendedProps, desc, true,
+                                             rule);
     }
 
     public IndexColumnDefinition readIndexColumnDefinition( CachedNode indexColumnDefn ) {
-        Name propertyName = names.create(first(indexColumnDefn, ModeShapeLexicon.PROPERTY_NAME));
+        String propertyName = strings.create(names.create(first(indexColumnDefn, ModeShapeLexicon.PROPERTY_NAME)));
         String columnTypeName = strings.create(first(indexColumnDefn, ModeShapeLexicon.COLUMN_TYPE_NAME));
         PropertyType columnType = PropertyType.valueFor(columnTypeName);
-        return new RepositoryIndexColumnDefinition(propertyName, columnType);
+        return new RepositoryIndexColumnDefinition(propertyName, columnType.jcrType());
     }
 
     /**
@@ -649,8 +659,9 @@ public class SystemContent {
         // Define the properties for this node type ...
         List<Property> properties = new ArrayList<Property>();
         // Add the extended properties first, in case the standard ones overwrite them ...
-        for (Property prop : indexDefn.getProperties().values()) {
-            properties.add(prop);
+        for (Map.Entry<String, Object> entry : indexDefn.getIndexProperties().entrySet()) {
+            Property prop = createProperty(entry.getKey(), entry.getValue());
+            if (prop != null) properties.add(prop);
         }
 
         // Now do the standard properties ...
@@ -684,6 +695,35 @@ public class SystemContent {
         }
     }
 
+    private Property createProperty( String name,
+                                     Object valueOrValues ) {
+        Name propName = names.create(name);
+        Property prop = null;
+        if (valueOrValues instanceof Object[]) {
+            Object[] values = (Object[])valueOrValues;
+            PropertyType type = propertyTypeOf(values);
+            prop = propertyFactory.create(propName, type, values);
+        } else if (valueOrValues == null) {
+            prop = propertyFactory.create(propName, new Object[] {});
+        } else {
+            PropertyType type = PropertyType.discoverType(valueOrValues);
+            prop = propertyFactory.create(propName, type, valueOrValues);
+        }
+        return prop;
+    }
+
+    private PropertyType propertyTypeOf( Object[] values ) {
+        if (values != null) {
+            for (Object value : values) {
+                if (value != null) {
+                    PropertyType type = PropertyType.discoverType(value);
+                    if (type != PropertyType.OBJECT) return type;
+                }
+            }
+        }
+        return PropertyType.OBJECT;
+    }
+
     private NodeKey store( MutableCachedNode indexDefn,
                            IndexColumnDefinition columnDefn ) {
         // Find an existing node for this column definition ...
@@ -697,10 +737,11 @@ public class SystemContent {
             }
         }
 
+        String propTypeName = org.modeshape.jcr.api.PropertyType.nameFromValue(columnDefn.getColumnType());
         List<Property> props = new ArrayList<Property>();
         props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.INDEX_COLUMN));
         props.add(propertyFactory.create(ModeShapeLexicon.PROPERTY_NAME, columnDefn.getPropertyName()));
-        props.add(propertyFactory.create(ModeShapeLexicon.COLUMN_TYPE_NAME, columnDefn.getColumnType().getName()));
+        props.add(propertyFactory.create(ModeShapeLexicon.COLUMN_TYPE_NAME, propTypeName));
 
         // Now either update the existing node or create a new node ..
         if (columnDefnNode != null) {
@@ -1217,8 +1258,7 @@ public class SystemContent {
      * <p>
      * The names of the different versions has changed since 2.x, and now follows the same convention and algorithm as used in the
      * reference implementation. See
-     * {@link #nextNameForVersionNode(org.modeshape.jcr.value.Property, org.modeshape.jcr.cache.ChildReferences)}
-     * for details.
+     * {@link #nextNameForVersionNode(org.modeshape.jcr.value.Property, org.modeshape.jcr.cache.ChildReferences)} for details.
      * </p>
      * 
      * @param versionableNode the versionable node for which a new version is to be created in the node's version history; may not

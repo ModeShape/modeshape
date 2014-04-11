@@ -1048,6 +1048,9 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
                 } else if (value instanceof IndexPlan) {
                     IndexPlan index = (IndexPlan)value;
                     str.append(index.getName());
+                    if (index.getWorkspaceName() != null) {
+                        str.append(", workspace=").append(index.getWorkspaceName());
+                    }
                     if (index.getProviderName() != null) {
                         str.append(", provider=").append(index.getProviderName());
                     }

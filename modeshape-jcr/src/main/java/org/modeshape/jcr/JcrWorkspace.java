@@ -46,7 +46,6 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.api.federation.FederationManager;
-import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
@@ -759,7 +758,6 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 throw new RepositoryException(msg);
             }
             repository.repositoryCache().createWorkspace(name);
-            repository.statistics().increment(ValueMetric.WORKSPACE_COUNT);
 
             // import any initial content
             repository.runningState().initialContentImporter().importInitialContent(name);
@@ -843,8 +841,6 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             if (!repositoryCache.destroyWorkspace(name, (WritableSessionCache)removeSession.cache())) {
                 throw new NoSuchWorkspaceException(JcrI18n.workspaceNotFound.text(name, getName()));
             }
-
-            repository.statistics().decrement(ValueMetric.WORKSPACE_COUNT);
         } catch (UnsupportedOperationException e) {
             throw new UnsupportedRepositoryOperationException(e.getMessage());
         } finally {

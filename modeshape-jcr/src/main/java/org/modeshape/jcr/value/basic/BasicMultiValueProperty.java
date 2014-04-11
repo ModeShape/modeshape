@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.ReadOnlyIterator;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.Name;
@@ -83,7 +84,7 @@ public class BasicMultiValueProperty extends BasicProperty {
     public boolean isReference() {
         Object firstValue = getFirstValue();
         if (firstValue instanceof NodeKeyReference) {
-            return !((NodeKeyReference) firstValue).isSimple();
+            return !((NodeKeyReference)firstValue).isSimple();
         }
         return firstValue instanceof Reference;
     }
@@ -91,7 +92,7 @@ public class BasicMultiValueProperty extends BasicProperty {
     @Override
     public boolean isSimpleReference() {
         Object firstValue = getFirstValue();
-        return  firstValue instanceof  Reference && ((Reference) firstValue).isSimple();
+        return firstValue instanceof Reference && ((Reference)firstValue).isSimple();
     }
 
     @Override
@@ -111,36 +112,11 @@ public class BasicMultiValueProperty extends BasicProperty {
 
     @Override
     public Iterator<Object> iterator() {
-        return new ReadOnlyIterator(values.iterator());
+        return ReadOnlyIterator.around(values.iterator());
     }
 
     @Override
     public Object getValue( int index ) throws IndexOutOfBoundsException {
         return values.get(index);
-    }
-
-    protected class ReadOnlyIterator implements Iterator<Object> {
-
-        private final Iterator<Object> values;
-
-        protected ReadOnlyIterator( Iterator<Object> values ) {
-            assert values != null;
-            this.values = values;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return values.hasNext();
-        }
-
-        @Override
-        public Object next() {
-            return values.next();
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
     }
 }

@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.spi.index;
+package org.modeshape.jcr.api.index;
 
 import java.util.Map;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.Property;
+import java.util.NoSuchElementException;
 
 /**
  * An immutable description of an index definition.
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
-@Immutable
 public interface IndexDefinition extends Iterable<IndexColumnDefinition> {
 
     /**
@@ -68,7 +65,7 @@ public interface IndexDefinition extends Iterable<IndexColumnDefinition> {
      * 
      * @return the node type name; never null
      */
-    Name getNodeTypeName();
+    String getNodeTypeName();
 
     /**
      * Get the description of this index.
@@ -92,17 +89,58 @@ public interface IndexDefinition extends Iterable<IndexColumnDefinition> {
     boolean hasSingleColumn();
 
     /**
+     * Get the number of columns in this index.
+     * 
+     * @return the number of columns; always positive
+     */
+    int size();
+
+    /**
+     * Get the definition for the index column at the given 0-based position.
+     * 
+     * @param position the 0-based position; must be less than {@link #size()}
+     * @return the index definition
+     * @throws NoSuchElementException if the position is negative or greater than or equal to {@link #size()}.
+     */
+    IndexColumnDefinition getColumnDefinition( int position ) throws NoSuchElementException;
+
+    /**
      * Get the index property with the given name. These properties are usually non-standard.
      * 
      * @param propertyName the property name; may not be null
-     * @return the property, or null if there is no property with that name
+     * @return the value or values of the property, or null if there is no property with that name
      */
-    Property getProperty( Name propertyName );
+    Object getIndexProperty( String propertyName );
 
     /**
-     * Get the index properties keyed by their name. These properties are usually non-standard.
+     * Get the index property values keyed by their name. These properties are usually non-standard.
      * 
      * @return the properties; never null but possibly empty
      */
-    Map<Name, Property> getProperties();
+    Map<String, Object> getIndexProperties();
+
+    /**
+     * Get the rule that defines the workspaces to which this index definition applies.
+     * 
+     * @return the matching rule for the workspace names; never null
+     */
+    WorkspaceMatchRule getWorkspaceMatchRule();
+
+    public static interface WorkspaceMatchRule {
+
+        /**
+         * Determine if the index applies to the workspace with the given name.
+         * 
+         * @param workspaceName the name of the workspace; may not be null
+         * @return true if the index applies to the workspace, or false if the rule does not match the name
+         */
+        boolean usedInWorkspace( String workspaceName );
+
+        /**
+         * Get the string representation of this rule.
+         * 
+         * @return the string representation of this rule; never null
+         */
+        String getDefinition();
+    }
 }

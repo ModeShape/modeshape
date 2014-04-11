@@ -25,6 +25,10 @@ import java.util.Iterator;
  */
 public final class ReadOnlyIterator<T> implements Iterator<T> {
 
+    public static <T> ReadOnlyIterator<T> around( Iterator<T> delegate ) {
+        return new ReadOnlyIterator<T>(delegate);
+    }
+
     private final Iterator<T> delegate;
 
     public ReadOnlyIterator( Iterator<T> delegate ) {

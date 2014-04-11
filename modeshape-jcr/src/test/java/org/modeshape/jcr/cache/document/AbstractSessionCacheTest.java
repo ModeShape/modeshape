@@ -27,8 +27,6 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
-import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
-import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.change.PrintingChangeSetListener;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.Transactions;
@@ -76,14 +74,8 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
 
     protected SessionEnvironment createSessionContext() {
         final TransactionManager txnMgr = txnManager();
-        final MonitorFactory monitorFactory = new MonitorFactory() {
-            @Override
-            public Monitor createMonitor() {
-                return null;
-            }
-        };
         return new SessionEnvironment() {
-            private final Transactions transactions = new NoClientTransactions(monitorFactory, txnMgr);
+            private final Transactions transactions = new NoClientTransactions(txnMgr);
             private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(
                                                                                                                              transactions);
 

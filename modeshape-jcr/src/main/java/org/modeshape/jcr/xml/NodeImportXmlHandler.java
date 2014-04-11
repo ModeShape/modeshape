@@ -439,8 +439,8 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         if (parsedElementsByPath == null) {
             parsedElementsByPath = new LinkedHashMap<>();
             int depthLevel = 1;
-            //convert the list of parsed elements to a map making sure that the parents come before the children and the children
-            //order is preserved
+            // convert the list of parsed elements to a map making sure that the parents come before the children and the children
+            // order is preserved
             while (!parsedElements.isEmpty()) {
                 for (Iterator<ImportElement> elementIterator = parsedElements.iterator(); elementIterator.hasNext();) {
                     ImportElement element = elementIterator.next();
@@ -460,6 +460,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      * {@link NodeImportXmlHandler#startElement(String, String, String, Attributes)} and a
      * {@link NodeImportXmlHandler#endElement(String, String, String)} event.
      */
+    @SuppressWarnings( "synthetic-access" )
     public class ImportElement {
 
         private final Multimap<String, String> properties = LinkedHashMultimap.create();
@@ -478,8 +479,8 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         }
 
         /**
-         * Returns whether this element entry looks (at this point) like a property element: either it has no properties
-         * or has just one {@link org.modeshape.jcr.xml.NodeImportXmlHandler#propertyTypeAttribute} type attribute.
+         * Returns whether this element entry looks (at this point) like a property element: either it has no properties or has
+         * just one {@link org.modeshape.jcr.xml.NodeImportXmlHandler#propertyTypeAttribute} type attribute.
          * 
          * @return true if this looks like a property element, or false otherwise
          */
@@ -512,14 +513,14 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
         protected void addProperty( String propertyName,
                                     String propertyValue,
-                                    org.modeshape.jcr.value.PropertyType jcrPropertyType) {
+                                    org.modeshape.jcr.value.PropertyType jcrPropertyType ) {
             if (propertyName.equalsIgnoreCase(propertyTypeAttribute)) {
                 propertyType = propertyValue;
             }
             String[] values = propertyValue.split(multiValueSeparator);
             for (String value : values) {
                 if (jcrPropertyType != org.modeshape.jcr.value.PropertyType.STRING) {
-                    //for everything but strings we trim the value
+                    // for everything but strings we trim the value
                     value = value.trim();
                 }
                 if (propertyName.equals(JcrConstants.JCR_MIXIN_TYPES)) {
@@ -535,10 +536,12 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             parent.addPropertyWithType(name, value, propertyType);
         }
 
-        private void addPropertyWithType(String propertyName, String propertyValue, String propertyType) {
+        private void addPropertyWithType( String propertyName,
+                                          String propertyValue,
+                                          String propertyType ) {
 
             if (propertyType == null) {
-                //there is no specified type, so add it as a simple string
+                // there is no specified type, so add it as a simple string
                 propertyType = "string";
             }
             switch (propertyType.toLowerCase()) {
@@ -591,7 +594,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
                     break;
                 }
                 default: {
-                    //by default we treat it a string
+                    // by default we treat it a string
                     addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.STRING);
                 }
             }
@@ -636,12 +639,12 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
         /**
          * Returns the JCR property type of the property with the given name.
-         *
+         * 
          * @param propertyName a {@link String} the name of a property; never null
-         * @return either a {@link org.modeshape.jcr.value.PropertyType} representing the JCR type
-         * of the property or {@code null} if the no property with the given name was parsed.
+         * @return either a {@link org.modeshape.jcr.value.PropertyType} representing the JCR type of the property or {@code null}
+         *         if the no property with the given name was parsed.
          */
-        public org.modeshape.jcr.value.PropertyType getPropertyType(String propertyName) {
+        public org.modeshape.jcr.value.PropertyType getPropertyType( String propertyName ) {
             return propertyTypes.get(propertyName);
         }
 

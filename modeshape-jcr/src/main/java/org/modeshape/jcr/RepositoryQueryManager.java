@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.RepositoryException;
@@ -30,6 +31,8 @@ import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.RepositoryIndexManager.ScanningRequest;
+import org.modeshape.jcr.RepositoryIndexManager.ScanningTasks;
 import org.modeshape.jcr.api.query.QueryCancelledException;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.cache.CachedNode;
@@ -39,6 +42,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.CancellableQuery;
@@ -51,16 +55,15 @@ import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.spi.index.IndexManager;
-import org.modeshape.jcr.spi.index.provider.IndexProvider;
-import org.modeshape.jcr.spi.index.provider.IndexWriter;
-import org.modeshape.jcr.spi.index.provider.IndexWriter.IndexingContext;
+import org.modeshape.jcr.spi.index.IndexWriter;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
+import org.modeshape.jcr.value.WorkspaceAndPath;
 
 /**
  * The query manager a the repository. Each instance lazily starts up the {@link QueryEngine}, which can be expensive.
  */
-class RepositoryQueryManager {
+class RepositoryQueryManager implements ChangeSetListener {
 
     private final Logger logger = Logger.getLogger(getClass());
     private final RunningState runningState;
@@ -71,6 +74,8 @@ class RepositoryQueryManager {
     @GuardedBy( "engineInitLock" )
     private volatile QueryEngine queryEngine;
     private volatile Future<Void> asyncReindexingResult;
+    private volatile ScanningTasks toBeScanned = new ScanningTasks();
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     RepositoryQueryManager( RunningState runningState,
                             ExecutorService indexingExecutorService,
@@ -81,12 +86,23 @@ class RepositoryQueryManager {
         this.indexManager = new RepositoryIndexManager(runningState, config);
     }
 
-    ChangeSetListener getListener() {
-        return this.indexManager;
+    synchronized void initialize() {
+        this.toBeScanned.add(indexManager.initialize());
+        initialized.set(true);
     }
 
-    void initialize() {
-        indexManager.initialize();
+    @Override
+    public synchronized void notify( ChangeSet changeSet ) {
+        boolean scanRequired = this.toBeScanned.add(this.indexManager.notify(changeSet));
+        if (scanRequired && initialized.get()) {
+            // It's initialized, so we have to call it ...
+            reindexIfNeeded();
+        }
+        // If not yet initialized, the "reindexIfNeeded" method will be called by the JcrRepository.
+    }
+
+    ChangeSetListener getListener() {
+        return this;
     }
 
     void shutdown() {
@@ -225,14 +241,47 @@ class RepositoryQueryManager {
     }
 
     /**
-     * Reindex the repository only if there is at least one provider that {@link IndexProvider#isReindexingRequired() requires
-     * reindexing}.
-     * 
-     * @param async true if the reindexing (if needed) should be done in the background, or false if it should be done using this
-     *        thread
+     * Reindex the repository only if there is at least one provider that required scanning and reindexing.
      */
-    protected void reindexIfNeeded( boolean async ) {
-        clearAndReindex(async, indexManager.getIndexWriterForProvidersNeedingReindexing());
+    protected void reindexIfNeeded() {
+        final ScanningRequest request = toBeScanned.drain();
+        if (!request.isEmpty()) {
+            final IndexWriter writer = indexManager.getIndexWriterForProviders(request.providerNames());
+            final RepositoryCache repoCache = runningState.repositoryCache();
+            scan(true, writer, new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    // Scan each of the workspace-path pairs ...
+                    for (WorkspaceAndPath workspaceAndPath : request) {
+                        final String workspaceName = workspaceAndPath.getWorkspaceName();
+                        NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
+                        if (workspaceCache != null) {
+                            // The workspace is still valid ...
+                            Path path = workspaceAndPath.getPath();
+                            CachedNode node = workspaceCache.getNode(workspaceCache.getRootKey());
+                            if (!path.isRoot()) {
+                                for (Path.Segment segment : path) {
+                                    ChildReference child = node.getChildReferences(workspaceCache).getChild(segment);
+                                    if (child == null) {
+                                        // The child no longer exists, so ignore this pair ...
+                                        node = null;
+                                        break;
+                                    }
+                                    node = workspaceCache.getNode(child);
+                                    if (node == null) break;
+                                }
+                            }
+                            if (node != null) {
+                                // If we find a node to start at, then scan the content ...
+                                boolean scanSystemContent = repoCache.getSystemWorkspaceName().equals(workspaceName);
+                                reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent, writer);
+                            }
+                        }
+                    }
+                    return null;
+                }
+            });
+        }
     }
 
     /**
@@ -241,25 +290,32 @@ class RepositoryQueryManager {
      * @param async true if the reindexing should be done in the background, or false if it should be done using this thread
      */
     protected void cleanAndReindex( boolean async ) {
-        clearAndReindex(async, getIndexWriter());
+        final IndexWriter writer = getIndexWriter();
+        scan(async, getIndexWriter(), new Callable<Void>() {
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public Void call() throws Exception {
+                writer.clearAllIndexes();
+                reindexContent(true, writer);
+                return null;
+            }
+        });
     }
 
-    private void clearAndReindex( boolean async,
-                                  final IndexWriter indexes ) {
+    private void scan( boolean async,
+                       final IndexWriter indexes,
+                       Callable<Void> callable ) {
         if (!indexes.canBeSkipped()) {
             if (async) {
-                asyncReindexingResult = indexingExecutorService.submit(new Callable<Void>() {
-                    @SuppressWarnings( "synthetic-access" )
-                    @Override
-                    public Void call() throws Exception {
-                        indexes.clearAllIndexes();
-                        reindexContent(true, indexes);
-                        return null;
-                    }
-                });
+                asyncReindexingResult = indexingExecutorService.submit(callable);
             } else {
-                indexes.clearAllIndexes();
-                reindexContent(true, indexes);
+                try {
+                    callable.call();
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new RuntimeException();
+                }
             }
         }
     }
@@ -274,7 +330,6 @@ class RepositoryQueryManager {
                                  IndexWriter indexes ) {
         if (indexes.canBeSkipped()) return;
         // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
-        NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
         RepositoryCache repoCache = runningState.repositoryCache();
 
         logger.debug(JcrI18n.reindexAll.text(runningState.name()));
@@ -284,7 +339,7 @@ class RepositoryQueryManager {
             CachedNode rootNode = systemWorkspaceCache.getNode(repoCache.getSystemKey());
             // Index the system content ...
             logger.debug("Starting reindex of system content in '{0}' repository.", runningState.name());
-            reindexSystemContent(rootNode, Integer.MAX_VALUE, schemata, indexes);
+            reindexSystemContent(rootNode, Integer.MAX_VALUE, indexes);
             logger.debug("Completed reindex of system content in '{0}' repository.", runningState.name());
         }
 
@@ -293,7 +348,7 @@ class RepositoryQueryManager {
             NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
             CachedNode rootNode = workspaceCache.getNode(workspaceCache.getRootKey());
             logger.debug("Starting reindex of workspace '{0}' content in '{1}' repository.", runningState.name(), workspaceName);
-            reindexContent(workspaceName, schemata, workspaceCache, rootNode, Integer.MAX_VALUE, false, indexes);
+            reindexContent(workspaceName, workspaceCache, rootNode, Integer.MAX_VALUE, false, indexes);
             logger.debug("Completed reindex of workspace '{0}' content in '{1}' repository.", runningState.name(), workspaceName);
         }
     }
@@ -337,21 +392,17 @@ class RepositoryQueryManager {
             node = cache.getNode(ref);
         }
 
-        // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
-        NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
-
         // If the node is in the system workspace ...
         String systemWorkspaceKey = runningState.repositoryCache().getSystemWorkspaceKey();
         if (node.getKey().getWorkspaceKey().equals(systemWorkspaceKey)) {
-            reindexSystemContent(node, depth, schemata, getIndexWriter());
+            reindexSystemContent(node, depth, getIndexWriter());
         } else {
             // It's just a regular node in the workspace ...
-            reindexContent(workspaceName, schemata, cache, node, depth, path.isRoot(), getIndexWriter());
+            reindexContent(workspaceName, cache, node, depth, path.isRoot(), getIndexWriter());
         }
     }
 
     protected void reindexContent( final String workspaceName,
-                                   final NodeTypeSchemata schemata,
                                    NodeCache cache,
                                    CachedNode node,
                                    int depth,
@@ -368,9 +419,8 @@ class RepositoryQueryManager {
         Path nodePath = paths.getPath(node);
 
         // Index the first node ...
-        final IndexingContext indxCtx = indexes.createIndexingContext(null); // not in a transaction
-        indexes.updateIndex(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
-                            node.getProperties(cache), schemata, indxCtx);
+        indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
+                    node.getPropertiesByName(cache));
 
         if (depth == 1) return;
 
@@ -387,7 +437,7 @@ class RepositoryQueryManager {
                 if (childKey.equals(systemKey)) {
                     // This is the "/jcr:system" node ...
                     node = cache.getNode(childKey);
-                    reindexSystemContent(node, depth - 1, schemata, indexes);
+                    reindexSystemContent(node, depth - 1, indexes);
                 } else {
                     queue.add(childKey);
                 }
@@ -416,8 +466,8 @@ class RepositoryQueryManager {
             nodePath = paths.getPath(node);
 
             // Index the node ...
-            indexes.updateIndex(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
-                                node.getProperties(cache), schemata, indxCtx);
+            indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
+                        node.getPropertiesByName(cache));
 
             // Check the depth ...
             if (nodePath.size() <= depth) {
@@ -431,12 +481,11 @@ class RepositoryQueryManager {
 
     protected void reindexSystemContent( CachedNode nodeInSystemBranch,
                                          int depth,
-                                         NodeTypeSchemata schemata,
                                          IndexWriter indexes ) {
         RepositoryCache repoCache = runningState.repositoryCache();
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
-        reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, true, indexes);
+        reindexContent(workspaceName, systemWorkspaceCache, nodeInSystemBranch, depth, true, indexes);
     }
 
     /**

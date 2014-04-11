@@ -78,7 +78,7 @@ import org.modeshape.jcr.value.ValueFactory;
  * </p>
  */
 @ThreadSafe
-class RepositoryNodeTypeManager implements ChangeSetListener {
+class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier {
 
     private final JcrRepository.RunningState repository;
     private final ExecutionContext context;
@@ -132,11 +132,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         return this.context.getValueFactories().getStringFactory();
     }
 
-    /**
-     * Get the immutable cache of node types.
-     * 
-     * @return the immutable node types cache; never null
-     */
+    @Override
     public NodeTypes getNodeTypes() {
         return nodeTypesCache;
     }

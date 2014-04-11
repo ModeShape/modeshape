@@ -32,7 +32,7 @@ import org.jboss.dmr.ModelType;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import org.modeshape.jcr.spi.index.IndexDefinition.IndexKind;
+import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 
 /**
  * Attributes used in setting up ModeShape configurations. To mark an attribute as required, mark it as not allowing null.

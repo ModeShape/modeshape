@@ -17,10 +17,10 @@ package org.modeshape.jcr.spi.index.provider;
 
 import java.util.List;
 import javax.jcr.query.qom.Constraint;
+import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.spi.index.IndexCollector;
-import org.modeshape.jcr.spi.index.IndexDefinition;
 
 /**
  * A provider-specific component obtained by ModeShape and then used in the planning and optimization phases of each query to
@@ -61,7 +61,7 @@ public abstract class IndexPlanner {
      * @return the composite planner, or null when both {@code planner1} and {@code planner2} are null
      */
     public static IndexPlanner both( final IndexPlanner planner1,
-                                          final IndexPlanner planner2 ) {
+                                     final IndexPlanner planner2 ) {
         if (planner1 == null) return planner2;
         if (planner2 == null) return planner1;
         return new IndexPlanner() {

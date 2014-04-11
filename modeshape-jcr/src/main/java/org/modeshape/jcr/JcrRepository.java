@@ -57,7 +57,6 @@ import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
 import javax.naming.OperationNotSupportedException;
 import javax.security.auth.login.LoginContext;
-import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
@@ -105,8 +104,6 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
-import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
-import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
@@ -130,15 +127,11 @@ import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.spi.index.IndexManager;
-import org.modeshape.jcr.spi.index.provider.IndexWriter;
-import org.modeshape.jcr.spi.index.provider.IndexWriter.IndexingContext;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.DateTimeFactory;
-import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
-import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryUsageChangeSetListener;
@@ -703,7 +696,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             // Need to make sure that the user has access to this session
-            session.checkWorkspacePermission(workspaceName,ModeShapePermissions.READ);
+            session.checkWorkspacePermission(workspaceName, ModeShapePermissions.READ);
             running.addSession(session, false);
             return session;
         } catch (AccessDeniedException ace) {
@@ -1042,9 +1035,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.documentStore = other.documentStore;
                     this.txnMgr = documentStore.transactionManager();
 
-                    MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                    this.transactions = createTransactions(this.cache.getName(), config.getTransactionMode(), monitorFactory,
-                                                           this.txnMgr);
+                    this.transactions = createTransactions(this.cache.getName(), config.getTransactionMode(), this.txnMgr);
 
                     suspendExistingUserTransaction();
 
@@ -1093,8 +1084,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(database);
                     this.txnMgr = this.documentStore.transactionManager();
-                    MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                    this.transactions = createTransactions(cacheName, config.getTransactionMode(), monitorFactory, this.txnMgr);
+                    this.transactions = createTransactions(cacheName, config.getTransactionMode(), this.txnMgr);
 
                     suspendExistingUserTransaction();
 
@@ -1154,6 +1144,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Set up the unused binary value listener ...
                     this.changeBus.register(new BinaryUsageChangeSetListener(binaryStore));
 
+                    // Set up the monitoring listener ...
+                    this.changeBus.register(this.statistics);
+
                     // Refresh several of the components information from the repository cache ...
                     this.persistentRegistry.refreshFromSystem();
                     this.lockManager.refreshFromSystem();
@@ -1208,7 +1201,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
                                                      new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
                 this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, config);
-                this.changeBus.register(this.repositoryQueryManager.getListener());
+                this.changeBus.register(this.repositoryQueryManager);
 
                 // Check that we have parsers for all the required languages ...
                 assert this.queryParsers.getParserFor(Query.XPATH) != null;
@@ -1271,7 +1264,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected Transactions createTransactions( String cacheName,
                                                    TransactionMode mode,
-                                                   MonitorFactory monitorFactory,
                                                    TransactionManager txnMgr ) {
             if (txnMgr == null) {
                 throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName(),
@@ -1280,11 +1272,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             switch (mode) {
                 case NONE:
-                    return new NoClientTransactions(monitorFactory, txnMgr);
+                    return new NoClientTransactions(txnMgr);
                 case AUTO:
                     break;
             }
-            return new SynchronizedTransactions(monitorFactory, txnMgr);
+            return new SynchronizedTransactions(txnMgr);
         }
 
         /**
@@ -1352,7 +1344,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected final void postInitialize() throws Exception {
             try {
                 // Have the query manager tell the providers to initialize the indexes. This may cause a background reindexing ...
-                queryManager().reindexIfNeeded(true);
+                queryManager().reindexIfNeeded();
 
                 // Register the background processes.
                 // Do this last since we want the repository running before these are started ...
@@ -1630,9 +1622,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected void shutdown() {
             // if reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
             // or we do anything that affects the nodes
-            if (repositoryQueryManager != null) {
-                repositoryQueryManager.stopReindexing();
-            }
+            this.repositoryQueryManager.stopReindexing();
 
             // shutdown the connectors
             this.connectors.shutdown();
@@ -1680,9 +1670,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             // Shutdown the query engine ...
-            if (repositoryQueryManager != null) {
-                repositoryQueryManager.shutdown();
-            }
+            repositoryQueryManager.shutdown();
 
             // Shutdown the text extractors
             if (extractors != null) {
@@ -1908,117 +1896,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         public String journalId() {
             return journalId;
         }
-    }
-
-    protected static class RepositoryMonitorFactory implements MonitorFactory {
-        private final RunningState runningState;
-
-        protected RepositoryMonitorFactory( RunningState runningState ) {
-            this.runningState = runningState;
-        }
-
-        protected Transaction currentTransaction() {
-            try {
-                Transaction txn = runningState.txnManager().getTransaction();
-                return (txn != null && txn.getStatus() == Status.STATUS_ACTIVE) ? txn : null;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public Monitor createMonitor() {
-            final RepositoryNodeTypeManager nodeTypeManager = this.runningState.nodeTypeManager();
-            final RepositoryQueryManager queryManager = this.runningState.queryManager();
-            if (nodeTypeManager == null || queryManager == null) {
-                // query isn't enabled most likely, so we'll only record statistics
-                return statisticsMonitor();
-            }
-            return indexingMonitor(nodeTypeManager, queryManager);
-        }
-
-        private Monitor indexingMonitor( RepositoryNodeTypeManager nodeTypeManager,
-                                         RepositoryQueryManager queryManager ) {
-            final RunningState runningState = this.runningState;
-            final NodeTypeSchemata schemata = nodeTypeManager.getRepositorySchemata();
-            final IndexWriter indexes = queryManager.getIndexWriter();
-
-            // a transaction will be returned only if it exists and is in ACTIVE status
-            final Transaction txn = currentTransaction();
-            final IndexingContext indexingContext = indexes.createIndexingContext(txn);
-            // Create a monitor that forwards everything to the correct component ...
-            return new Monitor() {
-                @Override
-                public void recordChanged( long changedNodesCount ) {
-                    // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                    runningState.statistics().increment(ValueMetric.NODE_CHANGES, changedNodesCount);
-                }
-
-                @Override
-                public void recordAdd( String workspace,
-                                       NodeKey key,
-                                       org.modeshape.jcr.value.Path path,
-                                       Name primaryType,
-                                       Set<Name> mixinTypes,
-                                       Iterator<Property> propertiesIterator ) {
-                    indexes.addToIndex(workspace, key, path, primaryType, mixinTypes, propertiesIterator, schemata,
-                                       indexingContext);
-                }
-
-                @Override
-                public void recordUpdate( String workspace,
-                                          NodeKey key,
-                                          org.modeshape.jcr.value.Path path,
-                                          Name primaryType,
-                                          Set<Name> mixinTypes,
-                                          Iterator<Property> properties ) {
-                    indexes.updateIndex(workspace, key, path, primaryType, mixinTypes, properties, schemata, indexingContext);
-                }
-
-                @Override
-                public void recordRemove( String workspace,
-                                          Iterable<NodeKey> keys ) {
-                    indexes.removeFromIndex(workspace, keys, indexingContext);
-                }
-            };
-        }
-
-        private Monitor statisticsMonitor() {
-            // Happens only when the repository's initial content is being initialized,
-            // so return a monitor that captures statistics but does not index ...
-            final RunningState runningState = this.runningState;
-            return new Monitor() {
-                @Override
-                public void recordChanged( long changedNodesCount ) {
-                    // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                    runningState.statistics().increment(ValueMetric.NODE_CHANGES, changedNodesCount);
-                }
-
-                @Override
-                public void recordAdd( String workspace,
-                                       NodeKey key,
-                                       org.modeshape.jcr.value.Path path,
-                                       Name primaryType,
-                                       Set<Name> mixinTypes,
-                                       Iterator<Property> propertiesIterator ) {
-                }
-
-                @Override
-                public void recordRemove( String workspace,
-                                          Iterable<NodeKey> keys ) {
-                }
-
-                @Override
-                public void recordUpdate( String workspace,
-                                          NodeKey key,
-                                          org.modeshape.jcr.value.Path path,
-                                          Name primaryType,
-                                          Set<Name> mixinTypes,
-                                          Iterator<Property> properties ) {
-                }
-            };
-        }
-
     }
 
     private final class InternalSecurityContext implements SecurityContext {

@@ -37,9 +37,9 @@ import org.modeshape.jcr.spi.index.IndexCollector;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 
 /**
- * A rule that adds indexes below {@link Type#SOURCE} nodes. The rule uses an {@link IndexPlanner} that will actually look at
- * the AND-ed constraints for the source (that is, the constraints in the {@link Type#SELECT} above the {@link Type#SOURCE} node
- * but below an {@link Type#ACCESS} node) and produce 0 or more indexes. These indexes are then added as {@link Type#INDEX} nodes
+ * A rule that adds indexes below {@link Type#SOURCE} nodes. The rule uses an {@link IndexPlanner} that will actually look at the
+ * AND-ed constraints for the source (that is, the constraints in the {@link Type#SELECT} above the {@link Type#SOURCE} node but
+ * below an {@link Type#ACCESS} node) and produce 0 or more indexes. These indexes are then added as {@link Type#INDEX} nodes
  * below the {@link Type#SOURCE} node.
  * 
  * @author Randall Hauch (rhauch@redhat.com)
@@ -100,6 +100,7 @@ public class AddIndexes implements OptimizerRule {
                 IndexCollector collector = new IndexCollector() {
                     @Override
                     public void addIndex( String name,
+                                          String workspaceName,
                                           String providerName,
                                           Collection<Constraint> constraints,
                                           int costEstimate,
@@ -107,8 +108,8 @@ public class AddIndexes implements OptimizerRule {
                                           Map<String, Object> parameters ) {
                         // Add a plan node for this index ...
                         PlanNode indexNode = new PlanNode(Type.INDEX, source.getSelectors());
-                        IndexPlan indexPlan = new IndexPlan(name, providerName, constraints, costEstimate, cardinalityEstimate,
-                                                            parameters);
+                        IndexPlan indexPlan = new IndexPlan(name, workspaceName, providerName, constraints, costEstimate,
+                                                            cardinalityEstimate, parameters);
                         indexNode.setProperty(Property.INDEX_SPECIFICATION, indexPlan);
                         // and add it under the SOURCE node ...
                         source.addLastChild(indexNode);
@@ -116,15 +117,17 @@ public class AddIndexes implements OptimizerRule {
 
                     @Override
                     public void addIndex( String name,
+                                          String workspaceName,
                                           String providerName,
                                           Collection<Constraint> constraints,
                                           int costEstimate,
                                           long cardinalityEstimate ) {
-                        addIndex(name, providerName, constraints, costEstimate, cardinalityEstimate, null);
+                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate, null);
                     }
 
                     @Override
                     public void addIndex( String name,
+                                          String workspaceName,
                                           String providerName,
                                           Collection<Constraint> constraints,
                                           int costEstimate,
@@ -132,11 +135,12 @@ public class AddIndexes implements OptimizerRule {
                                           String parameterName,
                                           Object parameterValue ) {
                         Map<String, Object> params = Collections.singletonMap(parameterName, parameterValue);
-                        addIndex(name, providerName, constraints, costEstimate, cardinalityEstimate, params);
+                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate, params);
                     }
 
                     @Override
                     public void addIndex( String name,
+                                          String workspaceName,
                                           String providerName,
                                           Collection<Constraint> constraints,
                                           int costEstimate,
@@ -148,7 +152,7 @@ public class AddIndexes implements OptimizerRule {
                         Map<String, Object> params = new HashMap<>();
                         params.put(parameterName1, parameterValue1);
                         params.put(parameterName2, parameterValue2);
-                        addIndex(name, providerName, constraints, costEstimate, cardinalityEstimate, params);
+                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate, params);
                     }
                 };
                 // And collect the indexes from the index planner ...

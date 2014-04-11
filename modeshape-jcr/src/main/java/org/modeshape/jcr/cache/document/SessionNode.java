@@ -184,15 +184,6 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
-    public boolean hasIndexRelatedChanges() {
-        if (isNew) return true;
-        if (newParent != null) return true;
-        ChangedAdditionalParents additionalParents = additionalParents();
-        if (additionalParents != null && !additionalParents.isEmpty()) return true;
-        return hasPropertyChanges();
-    }
-
-    @Override
     public void lock( boolean sessionScoped ) {
         this.lockChange = sessionScoped ? LockChange.LOCK_FOR_SESSION : LockChange.LOCK_FOR_NON_SESSION;
     }
@@ -730,6 +721,33 @@ public class SessionNode implements MutableCachedNode {
 
     protected final boolean isPropertyRemoved( Name name ) {
         return !isNew && removedProperties.containsKey(name);
+    }
+
+    @Override
+    public Properties getPropertiesByName( final NodeCache cache ) {
+        final AbstractSessionCache session = session(cache);
+        final CachedNode raw = nodeInWorkspace(session);
+        final ConcurrentMap<Name, Property> changedProperties = this.changedProperties;
+        final ConcurrentMap<Name, Name> removedProperties = this.removedProperties;
+        return new Properties() {
+            @Override
+            public Property getProperty( Name name ) {
+                // First check the removed properties ...
+                if (removedProperties.containsKey(name)) return null;
+                // Then check the changed properties ...
+                Property property = changedProperties.get(name);
+                if (property == null && raw != null) {
+                    // Check the raw property ...
+                    property = raw.getProperty(name, cache);
+                }
+                return property;
+            }
+
+            @Override
+            public Iterator<Property> iterator() {
+                return getProperties(cache);
+            }
+        };
     }
 
     @Override

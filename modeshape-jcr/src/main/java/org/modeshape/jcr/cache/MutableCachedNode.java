@@ -88,16 +88,6 @@ public interface MutableCachedNode extends CachedNode {
     boolean hasPropertyChanges();
 
     /**
-     * Return whether this node has any changes that affect the indexes.
-     *
-     * @return true if this node has added, removed, changed properties, a new parent or if it is new.
-     * @see #hasChanges()
-     * @see #hasNonPropertyChanges()
-     * @see #hasPropertyChanges()
-     */
-    boolean hasIndexRelatedChanges();
-
-    /**
      * Lock this node.
      * 
      * @param sessionScoped true if the lock should be limited in scope to the lifetime of the session, or false otherwise
@@ -215,18 +205,20 @@ public interface MutableCachedNode extends CachedNode {
 
     /**
      * Adds a new federated segment with the given name and key to this node.
-     *
-     * @param segmentName the name of the segment (i.e. the name of the alias under which an external child is linked); may not be null
+     * 
+     * @param segmentName the name of the segment (i.e. the name of the alias under which an external child is linked); may not be
+     *        null
      * @param externalNodeKey the key of the external node which should be linked under this name; may not be null
      */
-    void addFederatedSegment(String externalNodeKey, String segmentName);
+    void addFederatedSegment( String externalNodeKey,
+                              String segmentName );
 
     /**
      * Removes the federated segment towards an external node.
-     *
+     * 
      * @param externalNodeKey the key of the external node which should be linked under this name; may not be null
      */
-    void removeFederatedSegment(String externalNodeKey);
+    void removeFederatedSegment( String externalNodeKey );
 
     /**
      * Create a new node as a child of this node with the supplied name and properties.
@@ -329,7 +321,7 @@ public interface MutableCachedNode extends CachedNode {
 
     /**
      * Adds to this node a reference with the given type from the node with the supplied key to this node.
-     *
+     * 
      * @param cache the cache to which this node belongs; may not be null
      * @param property the {@link org.modeshape.jcr.value.Property} of the referrer node; may not be null
      * @param referrerKey the key for the node that has a new reference to this node; may not be null
@@ -342,7 +334,7 @@ public interface MutableCachedNode extends CachedNode {
 
     /**
      * Remove from this node a reference with the given type from the node with the supplied key to this node.
-     *
+     * 
      * @param cache the cache to which this node belongs; may not be null
      * @param property the {@link org.modeshape.jcr.value.Property} of the referrer node; may not be null
      * @param referrerKey the key for the node that no longer has a reference to this node; may not be null
@@ -363,7 +355,7 @@ public interface MutableCachedNode extends CachedNode {
 
     /**
      * Copies into this node all the properties and children (deep copy) from the given source node.
-     *
+     * 
      * @param cache the cache to which this node belongs; may not be null
      * @param sourceNode the node from which to copy the properties and children; may not be null
      * @param sourceCache the cache in which the source node belongs; may not be null
@@ -380,7 +372,7 @@ public interface MutableCachedNode extends CachedNode {
     /**
      * Clones into this node all the properties and children (deep clone) from the given source node. Each cloned node will have
      * the same identifier as the source node.
-     *
+     * 
      * @param cache the cache to which this node belongs; may not be null
      * @param sourceNode the node from which to copy the properties and children; may not be null
      * @param sourceCache the cache in which the source node belongs; may not be null

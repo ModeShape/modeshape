@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -39,10 +40,13 @@ public abstract class AbstractNodeChange extends Change {
 
     protected final Path path;
 
+    private final boolean queryable;
+
     protected AbstractNodeChange( NodeKey key,
                                   Path path,
                                   Name primaryType,
-                                  Set<Name> mixinTypes ) {
+                                  Set<Name> mixinTypes,
+                                  boolean queryable ) {
         assert key != null;
         assert path != null;
 
@@ -55,6 +59,7 @@ public abstract class AbstractNodeChange extends Change {
             assert mixinTypes != null;
             System.arraycopy(mixinTypes.toArray(new Name[0]), 0, types, 1, mixinTypes.size());
         }
+        this.queryable = queryable;
     }
 
     /**
@@ -92,5 +97,27 @@ public abstract class AbstractNodeChange extends Change {
             return Collections.emptySet();
         }
         return new HashSet<Name>(Arrays.asList(Arrays.copyOfRange(types, 1, types.length)));
+    }
+
+    /**
+     * Determine if the {@link #getPrimaryType() primary type} or any of the {@link #getMixinTypes() mixin types} of the changed
+     * node exactly matches at least one of the supplied node types.
+     * 
+     * @param nodeTypeName the name of the node types to be considered; may not be null
+     * @param nodeTypes the immutable snapshot of node types; may not be null
+     * @return true if the changed node is of the supplied node type or one of its supertypes, or false if none match
+     */
+    public boolean isType( Name nodeTypeName,
+                           NodeTypes nodeTypes ) {
+        return nodeTypes.isTypeOrSubtype(types, nodeTypeName);
+    }
+
+    /**
+     * Return whether this node is queryable.
+     * 
+     * @return true if this node is queryable, or false otherwise
+     */
+    public boolean isQueryable() {
+        return queryable;
     }
 }

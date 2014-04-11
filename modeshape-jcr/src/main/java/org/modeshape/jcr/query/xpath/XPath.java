@@ -1155,7 +1155,7 @@ public class XPath {
 
         @Override
         public Iterator<OrderBySpec> iterator() {
-            return new ReadOnlyIterator<OrderBySpec>(orderBySpecifications.iterator());
+            return ReadOnlyIterator.around(orderBySpecifications.iterator());
         }
 
         @Override

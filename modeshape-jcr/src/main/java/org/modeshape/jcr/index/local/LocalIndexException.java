@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.spi.index;
+package org.modeshape.jcr.index.local;
 
-import javax.jcr.RepositoryException;
 
 /**
- * Exception used when an index already exists.
+ * Exception used when a problem occurs in a local index.
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public class IndexExistsException extends RepositoryException {
+public class LocalIndexException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new instance of this class with <code>null</code> as its detail message.
      */
-    public IndexExistsException() {
+    public LocalIndexException() {
     }
 
     /**
@@ -38,7 +37,7 @@ public class IndexExistsException extends RepositoryException {
      * 
      * @param message the detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
      */
-    public IndexExistsException( String message ) {
+    public LocalIndexException( String message ) {
         super(message);
     }
 
@@ -47,7 +46,7 @@ public class IndexExistsException extends RepositoryException {
      * 
      * @param rootCause root failure cause
      */
-    public IndexExistsException( Throwable rootCause ) {
+    public LocalIndexException( Throwable rootCause ) {
         super(rootCause);
     }
 
@@ -57,8 +56,8 @@ public class IndexExistsException extends RepositoryException {
      * @param message the detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
      * @param rootCause root failure cause
      */
-    public IndexExistsException( String message,
-                                 Throwable rootCause ) {
+    public LocalIndexException( String message,
+                                Throwable rootCause ) {
         super(message, rootCause);
     }
 

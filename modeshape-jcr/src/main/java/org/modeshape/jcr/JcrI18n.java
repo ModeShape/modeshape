@@ -120,6 +120,7 @@ public final class JcrI18n {
     public static I18n indexMustHaveName;
     public static I18n indexMustHaveProviderName;
     public static I18n errorRefreshingIndexDefinitions;
+    public static I18n errorNotifyingProviderOfInitialIndexDefinitions;
     public static I18n errorNotifyingProviderOfIndexChanges;
 
     public static I18n rootNodeHasNoParent;

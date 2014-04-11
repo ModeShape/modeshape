@@ -16,29 +16,12 @@
 
 package org.modeshape.jcr.query.engine;
 
-import static java.util.Collections.singletonList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.query.qom.NodePath;
-import org.modeshape.jcr.api.query.qom.Operator;
-import org.modeshape.jcr.query.QueryContext;
-import org.modeshape.jcr.query.model.BindVariableName;
-import org.modeshape.jcr.query.model.ChildNode;
-import org.modeshape.jcr.query.model.Comparison;
-import org.modeshape.jcr.query.model.DescendantNode;
-import org.modeshape.jcr.query.model.DynamicOperand;
-import org.modeshape.jcr.query.model.Literal;
-import org.modeshape.jcr.query.model.SameNode;
-import org.modeshape.jcr.query.model.SelectorName;
-import org.modeshape.jcr.query.model.StaticOperand;
-import org.modeshape.jcr.spi.index.IndexCollector;
-import org.modeshape.jcr.spi.index.IndexDefinition;
-import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 
 @Immutable
@@ -47,6 +30,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
     private static final Map<String, Object> NO_PARAMETERS = Collections.emptyMap();
 
     private final String name;
+    private final String workspaceName;
     private final String providerName;
     private final int costEstimate;
     private final long cardinalityEstimate;
@@ -54,6 +38,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
     private final Map<String, Object> parameters;
 
     public IndexPlan( String name,
+                      String workspaceName,
                       String providerName,
                       Collection<Constraint> constraints,
                       int costEstimate,
@@ -63,6 +48,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
         CheckArg.isNonNegative(costEstimate, "costEstimate");
         CheckArg.isNonNegative(cardinalityEstimate, "cardinalityEstimate");
         this.name = name;
+        this.workspaceName = workspaceName;
         this.providerName = providerName; // may be null or empty
         this.constraints = constraints;
         this.costEstimate = costEstimate;
@@ -89,9 +75,9 @@ public final class IndexPlan implements Comparable<IndexPlan> {
 
     /**
      * Return an estimate of the cost of using the index for the query in question. An index that is expensive to use will have a
-     * higher cost than another index that is less expensive to use. For example, if a {@link IndexProvider} that owns the
-     * index is in a remote process, then the cost estimate will need to take into account the cost of transmitting the request
-     * with the criteria and the response with all of the node that meet the criteria of the index.
+     * higher cost than another index that is less expensive to use. For example, if a {@link IndexProvider} that owns the index
+     * is in a remote process, then the cost estimate will need to take into account the cost of transmitting the request with the
+     * criteria and the response with all of the node that meet the criteria of the index.
      * <p>
      * Indexes with lower costs and lower {@link #getCardinalityEstimate() cardinalities} will be favored over other indexes.
      * </p>
@@ -109,6 +95,15 @@ public final class IndexPlan implements Comparable<IndexPlan> {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Get the name of the workspace to which this index applies.
+     * 
+     * @return the workspace name; may be null if an implicit workspace is used
+     */
+    public String getWorkspaceName() {
+        return workspaceName;
     }
 
     /**
@@ -156,63 +151,4 @@ public final class IndexPlan implements Comparable<IndexPlan> {
         if (that == null) return 1;
         return this.getCostEstimate() - that.costEstimate;
     }
-
-    protected static final String NODE_BY_PATH_INDEX_NAME = "NodeByPath";
-    protected static final String CHILDREN_BY_PATH_INDEX_NAME = "ChildrenByPath";
-    protected static final String DESCENDANTS_BY_PATH_INDEX_NAME = "DescendantsByPath";
-    protected static final String PATH_PARAMETER = "path";
-
-    @Immutable
-    public static class StandardIndexPlanner extends IndexPlanner {
-        public static final IndexPlanner INSTANCE = new StandardIndexPlanner();
-
-        @Override
-        public void applyIndexes( QueryContext context,
-                                  SelectorName selector,
-                                  List<javax.jcr.query.qom.Constraint> andedConstraints,
-                                  Iterable<IndexDefinition> indexesOnSelector,
-                                  IndexCollector indexes ) {
-            for (javax.jcr.query.qom.Constraint constraint : andedConstraints) {
-                if (constraint instanceof SameNode) {
-                    SameNode sameNode = (SameNode)constraint;
-                    String path = sameNode.getPath();
-                    indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, singletonList(constraint), 1, 1L, PATH_PARAMETER, path);
-                } else if (constraint instanceof ChildNode) {
-                    ChildNode childNode = (ChildNode)constraint;
-                    String path = childNode.getParentPath();
-                    indexes.addIndex(CHILDREN_BY_PATH_INDEX_NAME, null, singletonList(constraint), 10, 100L, PATH_PARAMETER, path);
-                } else if (constraint instanceof DescendantNode) {
-                    DescendantNode descendantNode = (DescendantNode)constraint;
-                    String path = descendantNode.getAncestorPath();
-                    indexes.addIndex(DESCENDANTS_BY_PATH_INDEX_NAME, null, singletonList(constraint), 1000, 10000L,
-                                     PATH_PARAMETER, path);
-                } else if (constraint instanceof Comparison) {
-                    Comparison comparison = (Comparison)constraint;
-                    if (comparison.operator() != Operator.EQUAL_TO) return;
-                    DynamicOperand leftSide = comparison.getOperand1();
-                    if (leftSide instanceof NodePath) {
-                        // This is a constraint on the path of a node ...
-                        StaticOperand rightSide = comparison.getOperand2();
-                        Object value = null;
-                        if (rightSide instanceof BindVariableName) {
-                            BindVariableName varName = (BindVariableName)rightSide;
-                            value = context.getVariables().get(varName.getBindVariableName());
-                        } else if (rightSide instanceof Literal) {
-                            value = ((Literal)rightSide).value();
-                        }
-                        if (value == null) return;
-                        String path = null;
-                        if (value instanceof String) {
-                            path = (String)value;
-                        }
-                        if (path != null) {
-                            indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, singletonList(constraint), 1, 1L, PATH_PARAMETER,
-                                             path);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
 }

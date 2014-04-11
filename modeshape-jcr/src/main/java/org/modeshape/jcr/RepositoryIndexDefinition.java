@@ -18,59 +18,71 @@ package org.modeshape.jcr;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.ReadOnlyIterator;
-import org.modeshape.jcr.spi.index.IndexColumnDefinition;
-import org.modeshape.jcr.spi.index.IndexDefinition;
-import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.Property;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.api.index.IndexColumnDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition;
 
 @Immutable
-class RepositoryIndexDefinition implements IndexDefinition {
+final class RepositoryIndexDefinition implements IndexDefinition {
+
+    private static final Logger LOGGER = Logger.getLogger(RepositoryIndexDefinition.class);
 
     public static IndexDefinition createFrom( IndexDefinition other ) {
         return new RepositoryIndexDefinition(other.getName(), other.getProviderName(), other.getKind(), other.getNodeTypeName(),
-                                             other, other.getProperties(), other.getDescription(), other.isEnabled());
+                                             other, other.getIndexProperties(), other.getDescription(), other.isEnabled(),
+                                             other.getWorkspaceMatchRule());
     }
 
     public static IndexDefinition createFrom( IndexDefinition other,
                                               boolean isEnabled ) {
         return new RepositoryIndexDefinition(other.getName(), other.getProviderName(), other.getKind(), other.getNodeTypeName(),
-                                             other, other.getProperties(), other.getDescription(), isEnabled);
+                                             other, other.getIndexProperties(), other.getDescription(), isEnabled,
+                                             other.getWorkspaceMatchRule());
     }
 
     private final String name;
     private final String providerName;
     private final IndexKind kind;
-    private final Name nodeTypeName;
+    private final String nodeTypeName;
     private final String description;
     private final boolean enabled;
     private final List<IndexColumnDefinition> columnDefns;
-    private final Map<Name, Property> extendedProperties;
+    private final Map<String, Object> extendedProperties;
+    private final WorkspaceMatchRule workspaceRule;
 
     RepositoryIndexDefinition( String name,
                                String providerName,
                                IndexKind kind,
-                               Name nodeTypeName,
+                               String nodeTypeName,
                                Iterable<IndexColumnDefinition> columnDefns,
-                               Map<Name, Property> extendedProperties,
+                               Map<String, Object> extendedProperties,
                                String description,
-                               boolean enabled ) {
+                               boolean enabled,
+                               WorkspaceMatchRule workspaceRule ) {
         assert name != null;
         assert providerName != null;
         assert columnDefns != null;
         assert extendedProperties != null;
+        assert workspaceRule != null;
         this.name = name;
         this.providerName = providerName;
         this.kind = kind;
-        this.nodeTypeName = nodeTypeName != null ? nodeTypeName : JcrNtLexicon.BASE;
+        this.nodeTypeName = nodeTypeName != null ? nodeTypeName : JcrNtLexicon.BASE.getString();
         this.columnDefns = new ArrayList<>();
         this.extendedProperties = extendedProperties;
         this.description = description != null ? description : "";
         this.enabled = enabled;
+        this.workspaceRule = workspaceRule;
         for (IndexColumnDefinition columnDefn : columnDefns) {
             assert columnDefn != null;
             this.columnDefns.add(columnDefn);
@@ -94,7 +106,7 @@ class RepositoryIndexDefinition implements IndexDefinition {
     }
 
     @Override
-    public Name getNodeTypeName() {
+    public String getNodeTypeName() {
         return nodeTypeName;
     }
 
@@ -114,17 +126,168 @@ class RepositoryIndexDefinition implements IndexDefinition {
     }
 
     @Override
-    public Property getProperty( Name propertyName ) {
+    public int size() {
+        return columnDefns.size();
+    }
+
+    @Override
+    public IndexColumnDefinition getColumnDefinition( int position ) throws NoSuchElementException {
+        return columnDefns.get(position);
+    }
+
+    @Override
+    public Object getIndexProperty( String propertyName ) {
         return extendedProperties.get(propertyName);
     }
 
     @Override
-    public Map<Name, Property> getProperties() {
+    public Map<String, Object> getIndexProperties() {
         return Collections.unmodifiableMap(extendedProperties);
     }
 
     @Override
-    public Iterator<IndexColumnDefinition> iterator() {
-        return new ReadOnlyIterator<>(columnDefns.iterator());
+    public WorkspaceMatchRule getWorkspaceMatchRule() {
+        return workspaceRule;
     }
+
+    @Override
+    public Iterator<IndexColumnDefinition> iterator() {
+        return ReadOnlyIterator.around(columnDefns.iterator());
+    }
+
+    protected static WorkspaceMatchRule workspaceMatchRule( String... workspaceNames ) {
+        if (workspaceNames == null || workspaceNames.length == 0) return MATCH_ALL_WORKSPACES_RULE;
+        Set<String> names = new HashSet<>();
+        StringBuilder sb = new StringBuilder();
+        for (String name : workspaceNames) {
+            name = name.trim();
+            if (name.length() != 0) {
+                if (names.size() != 0) sb.append(",");
+                names.add(name);
+                sb.append(name);
+            }
+        }
+        if (!names.isEmpty()) {
+            return new MultipleWorkspaceMatchRule(sb.toString(), names);
+        }
+        return MATCH_ALL_WORKSPACES_RULE;
+    }
+
+    protected static WorkspaceMatchRule workspaceMatchRule( String rule ) {
+        if (rule == null) return MATCH_ALL_WORKSPACES_RULE;
+        rule = rule.trim();
+        if (rule.length() == 0 || MATCH_ALL_WORKSPACES.equals(rule)) return MATCH_ALL_WORKSPACES_RULE;
+        try {
+            return new RegexWorkspaceMatchRule(rule, Pattern.compile(rule));
+        } catch (PatternSyntaxException e) {
+            LOGGER.debug("Unable to parse workspace rule '{0}' into regular expression", rule);
+        }
+        try {
+            String[] names = rule.split(",");
+            Set<String> workspaceNames = new HashSet<>();
+            for (String name : names) {
+                if (name.trim().length() != 0) workspaceNames.add(name.trim());
+            }
+            if (!workspaceNames.isEmpty()) return new MultipleWorkspaceMatchRule(rule, workspaceNames);
+        } catch (PatternSyntaxException e) {
+            LOGGER.debug("Unable to parse workspace rule '{0}' into comma-separate list of workspace names", rule);
+        }
+        return new ExactWorkspaceMatchRule(rule);
+    }
+
+    public static final String MATCH_ALL_WORKSPACES = "*";
+    protected static final WorkspaceMatchRule MATCH_ALL_WORKSPACES_RULE = new MatchAllWorkspaces();
+
+    protected static class MatchAllWorkspaces implements WorkspaceMatchRule {
+        @Override
+        public boolean usedInWorkspace( String workspaceName ) {
+            return true;
+        }
+
+        @Override
+        public String getDefinition() {
+            return MATCH_ALL_WORKSPACES;
+        }
+
+        @Override
+        public String toString() {
+            return getDefinition();
+        }
+    }
+
+    protected static class RegexWorkspaceMatchRule implements WorkspaceMatchRule {
+        private final String rule;
+        private final Pattern pattern;
+
+        protected RegexWorkspaceMatchRule( String rule,
+                                           Pattern pattern ) {
+            this.rule = rule;
+            this.pattern = pattern;
+        }
+
+        @Override
+        public boolean usedInWorkspace( String workspaceName ) {
+            return pattern.matcher(workspaceName).matches();
+        }
+
+        @Override
+        public String getDefinition() {
+            return rule;
+        }
+
+        @Override
+        public String toString() {
+            return getDefinition();
+        }
+    }
+
+    protected static class ExactWorkspaceMatchRule implements WorkspaceMatchRule {
+        private final String workspaceName;
+
+        protected ExactWorkspaceMatchRule( String workspaceName ) {
+            this.workspaceName = workspaceName;
+        }
+
+        @Override
+        public boolean usedInWorkspace( String workspaceName ) {
+            return this.workspaceName.equals(workspaceName);
+        }
+
+        @Override
+        public String getDefinition() {
+            return workspaceName;
+        }
+
+        @Override
+        public String toString() {
+            return getDefinition();
+        }
+    }
+
+    protected static class MultipleWorkspaceMatchRule implements WorkspaceMatchRule {
+        private final String rule;
+        private final Set<String> workspaceNames;
+
+        protected MultipleWorkspaceMatchRule( String rule,
+                                              Set<String> workspaceNames ) {
+            this.rule = rule;
+            this.workspaceNames = workspaceNames;
+        }
+
+        @Override
+        public boolean usedInWorkspace( String workspaceName ) {
+            return this.workspaceNames.contains(workspaceName);
+        }
+
+        @Override
+        public String getDefinition() {
+            return rule;
+        }
+
+        @Override
+        public String toString() {
+            return getDefinition();
+        }
+    }
+
 }

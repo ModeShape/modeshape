@@ -29,8 +29,6 @@ import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import org.modeshape.common.logging.Logger;
-import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
-import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 
@@ -41,10 +39,10 @@ import org.modeshape.jcr.cache.document.WorkspaceCache;
  * with the current thread.
  * <p>
  * The basic workflow is as follows. When transient changes are to be persisted, a new ModeShape transaction is {@link #begin()
- * begun}. The resulting ModeShape {@link Transaction} represents the local transaction, and should be used to obtain the
- * {@link Monitor} that is interested in all changes, to register {@link TransactionFunction functions} that are to be called upon
- * successful transaction commit, and then either {@link Transaction#commit() committed} or {@link Transaction#rollback() rolled
- * back}. If committed, then any changes made should be forwarded to {@link #updateCache(WorkspaceCache, ChangeSet, Transaction)}.
+ * begun}. The resulting ModeShape {@link Transaction} represents the local transaction, to register {@link TransactionFunction
+ * functions} that are to be called upon successful transaction commit, and then either {@link Transaction#commit() committed} or
+ * {@link Transaction#rollback() rolled back}. If committed, then any changes made should be forwarded to
+ * {@link #updateCache(WorkspaceCache, ChangeSet, Transaction)}.
  * </p>
  * <p>
  * In the typical case where no JTA transactions are being used with JCR, then each time changes are made to a Session and
@@ -73,12 +71,9 @@ import org.modeshape.jcr.cache.document.WorkspaceCache;
 public abstract class Transactions {
 
     protected final TransactionManager txnMgr;
-    protected final MonitorFactory monitorFactory;
     protected final Logger logger = Logger.getLogger(Transactions.class);
 
-    protected Transactions( MonitorFactory monitorFactory,
-                            TransactionManager txnMgr ) {
-        this.monitorFactory = monitorFactory;
+    protected Transactions( TransactionManager txnMgr ) {
         this.txnMgr = txnMgr;
     }
 
@@ -181,15 +176,7 @@ public abstract class Transactions {
      * transaction for the current thread. In either case, the caller still {@link #commit() commits} or {@link #rollback()
      * rollsback} the transaction as normal when it's work is done.
      */
-    public static interface Transaction extends MonitorFactory {
-
-        /**
-         * Get a monitor that should be used to capture what has changed during this transaction.
-         * 
-         * @return the monitor, or null if there is no monitoring
-         */
-        @Override
-        Monitor createMonitor();
+    public static interface Transaction {
 
         /**
          * Register a function that will be called when the current transaction completes, or immediately if there is not
@@ -231,21 +218,12 @@ public abstract class Transactions {
         void transactionComplete();
     }
 
-    protected Monitor newMonitor() {
-        return monitorFactory.createMonitor();
-    }
-
     protected abstract class BaseTransaction implements Transaction {
         protected final TransactionManager txnMgr;
         private List<TransactionFunction> functions;
 
         protected BaseTransaction( TransactionManager txnMgr ) {
             this.txnMgr = txnMgr;
-        }
-
-        @Override
-        public Monitor createMonitor() {
-            return newMonitor();
         }
 
         protected void executeFunctions() {

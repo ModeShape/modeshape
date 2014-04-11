@@ -895,19 +895,19 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                                         QuerySources sources ) {
         if (index.getProviderName() != null) {
             String name = index.getName();
-            String pathStr = (String)index.getParameters().get(IndexPlan.PATH_PARAMETER);
+            String pathStr = (String)index.getParameters().get(IndexPlanners.PATH_PARAMETER);
             if (pathStr != null) {
-                if (IndexPlan.NODE_BY_PATH_INDEX_NAME.equals(name)) {
+                if (IndexPlanners.NODE_BY_PATH_INDEX_NAME.equals(name)) {
                     PathFactory paths = context.getExecutionContext().getValueFactories().getPathFactory();
                     Path path = paths.create(pathStr);
                     return sources.singleNode(path, 1.0f);
                 }
-                if (IndexPlan.CHILDREN_BY_PATH_INDEX_NAME.equals(name)) {
+                if (IndexPlanners.CHILDREN_BY_PATH_INDEX_NAME.equals(name)) {
                     PathFactory paths = context.getExecutionContext().getValueFactories().getPathFactory();
                     Path path = paths.create(pathStr);
                     return sources.childNodes(path, 1.0f);
                 }
-                if (IndexPlan.DESCENDANTS_BY_PATH_INDEX_NAME.equals(name)) {
+                if (IndexPlanners.DESCENDANTS_BY_PATH_INDEX_NAME.equals(name)) {
                     PathFactory paths = context.getExecutionContext().getValueFactories().getPathFactory();
                     Path path = paths.create(pathStr);
                     return sources.descendantNodes(path, 1.0f);
@@ -1443,7 +1443,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         }
         if (constraint instanceof FullTextSearch) {
             final TypeFactory<String> strings = context.getTypeSystem().getStringFactory();
-            final StaticOperand ftsExpression = ((FullTextSearch) constraint).getFullTextSearchExpression();
+            final StaticOperand ftsExpression = ((FullTextSearch)constraint).getFullTextSearchExpression();
             final FullTextSearch fts;
             if (ftsExpression instanceof BindVariableName) {
                 Object searchExpression = literalValue(ftsExpression, context, strings);
@@ -1492,9 +1492,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 protected boolean evaluate( Object leftHandValue ) {
                     /**
                      * The term will match the extracted value "as-is" via regex, without any stemming or punctuation removal.
-                     * This means that the matching is done in a much more strict way than what Lucene did in 3.x
-                     *
-                     * If we were to implement stemming or hyphen removal, we would need to do it *both* in the row extractor
+                     * This means that the matching is done in a much more strict way than what Lucene did in 3.x If we were to
+                     * implement stemming or hyphen removal, we would need to do it *both* in the row extractor
                      * (RowExtractors.extractFullText) and in the term where the regex is built
                      */
                     return fts.getTerm().matches(leftHandValue.toString());
@@ -2398,7 +2397,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("Using variable '{0}' value: {1}", variableName, literalValue);
             }
-            return literalValue; // without converting!
+            if (literalValue instanceof Collection || literalValue instanceof Object[]) return literalValue;
+            return type.create(literalValue); // without converting!
         }
         if (staticOperand instanceof LiteralValue) {
             LiteralValue literal = (LiteralValue)staticOperand;
@@ -2418,7 +2418,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             Literal literal = (Literal)staticOperand;
             literalValue = literal.value();
         }
-        return type != null ? type.create(literalValue) : literalValue;
+        return type != null ? type.create(literalValue) : null;
     }
 
     protected static Set<?> literalValues( SetCriteria setCriteria,

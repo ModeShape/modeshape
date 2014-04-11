@@ -25,7 +25,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- *  Change representing the addition of a node.
+ * Change representing the addition of a node.
  */
 public class NodeAdded extends AbstractNodeChange {
 
@@ -40,8 +40,9 @@ public class NodeAdded extends AbstractNodeChange {
                       Path path,
                       Name primaryType,
                       Set<Name> mixinTypes,
-                      Map<Name, Property> properties ) {
-        super(key, path, primaryType, mixinTypes);
+                      Map<Name, Property> properties,
+                      boolean queryable ) {
+        super(key, path, primaryType, mixinTypes, queryable);
         this.parentKey = parentKey;
         assert this.parentKey != null;
         if (properties == null || properties.isEmpty()) {

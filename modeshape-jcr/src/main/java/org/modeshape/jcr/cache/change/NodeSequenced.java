@@ -41,9 +41,10 @@ public class NodeSequenced extends AbstractSequencingChange {
                           String outputPath,
                           String userId,
                           String selectedPath,
-                          String sequencerName ) {
-        super(sequencedNodeKey, sequencedNodePath, sequencedNodePrimaryType, sequencedNodeMixinTypes, outputPath, userId,
-              selectedPath, sequencerName);
+                          String sequencerName,
+                          boolean queryable ) {
+        super(sequencedNodeKey, sequencedNodePath, sequencedNodePrimaryType, sequencedNodeMixinTypes, queryable, outputPath,
+              userId, selectedPath, sequencerName);
         assert outputNodeKey != null;
         assert outputNodePath != null;
         this.outputNodeKey = outputNodeKey;

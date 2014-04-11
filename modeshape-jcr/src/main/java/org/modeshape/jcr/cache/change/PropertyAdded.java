@@ -32,8 +32,9 @@ public class PropertyAdded extends AbstractPropertyChange {
                              Name nodePrimaryType,
                              Set<Name> nodeMixinTypes,
                              Path nodePath,
-                             Property property ) {
-        super(key, nodePrimaryType, nodeMixinTypes, nodePath, property);
+                             Property property,
+                             boolean queryable ) {
+        super(key, nodePrimaryType, nodeMixinTypes, nodePath, property, queryable);
     }
 
     @Override
