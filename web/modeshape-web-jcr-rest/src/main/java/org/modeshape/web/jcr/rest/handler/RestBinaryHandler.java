@@ -18,6 +18,8 @@ package org.modeshape.web.jcr.rest.handler;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -29,6 +31,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.web.jcr.rest.model.RestItem;
 import org.modeshape.web.jcr.rest.model.RestProperty;
 
 /**
@@ -119,7 +123,6 @@ public final class RestBinaryHandler extends AbstractHandler {
                                   String binaryPropertyAbsPath,
                                   InputStream binaryStream,
                                   boolean allowCreation ) throws RepositoryException {
-        //TODO author=Horia Chiorean date=8/9/12 description=We don't have a way (without changing the API) to set the mime-type on a binary
         CheckArg.isNotNull(binaryStream, "request body");
 
         String parentPath = parentPath(binaryPropertyAbsPath);
@@ -154,6 +157,85 @@ public final class RestBinaryHandler extends AbstractHandler {
                 binaryStream.close();
             } catch (IOException e) {
                 logger.error("Cannot close binary stream", e);
+            }
+        }
+    }
+
+    /**
+     * Uploads a binary value at the given path, creating each missing path segment as an [nt:folder]. The binary is uploaded
+     * as an [nt:resource] node of a [nt:file] node, both of which are created.
+     * @param request a {@link HttpServletRequest}, never {@code null}
+     * @param repositoryName a {@link String}, the repository name; never {@code null}
+     * @param workspaceName a {@link String}, the workspace name; never {@code null}
+     * @param filePath a {@link String}, file absolute path to the [nt:file] node; never {@code null}
+     * @param binaryStream an {@link java.io.InputStream} from which the binary content will be read.
+     * @return a {@link javax.ws.rs.core.Response} object, never {@code null}
+     * @throws RepositoryException if anything unexpected fails.
+     */
+    public Response uploadBinary( HttpServletRequest request,
+                                  String repositoryName,
+                                  String workspaceName,
+                                  String filePath,
+                                  InputStream binaryStream) throws RepositoryException {
+        CheckArg.isNotNull(binaryStream, "request body");
+
+        String[] segments = filePath.split("\\/");
+        List<String> parsedSegments = new ArrayList<>();
+        for (String segment : segments) {
+            if (!StringUtil.isBlank(segment)) {
+                parsedSegments.add(segment);
+            }
+        }
+        if (parsedSegments.isEmpty()) {
+            return exceptionResponse("The path '" + filePath + "' should contain at least one segment");
+        }
+
+        Session session = getSession(request, repositoryName, workspaceName);
+        Node fileNode;
+        try {
+            fileNode = session.getNode(filePath);
+        } catch (PathNotFoundException e) {
+            fileNode = null;
+        }
+
+        try {
+            Node content;
+            Response.Status responseStatus;
+            if (fileNode == null) {
+                String filename = parsedSegments.get(parsedSegments.size() - 1);
+                String parentPath = "/";
+
+                Node parent = session.getNode(parentPath);
+                for (int i = 0; i < parsedSegments.size() - 1; i++) {
+                    String childName = parsedSegments.get(i);
+                    try {
+                        parent = parent.getNode(childName);
+                    } catch (PathNotFoundException e) {
+                        parent = parent.addNode(childName, JcrConstants.NT_FOLDER);
+                    }
+                }
+                fileNode = parent.addNode(filename, JcrConstants.NT_FILE);
+                content = fileNode.addNode(JcrConstants.JCR_CONTENT, JcrConstants.NT_RESOURCE);
+                responseStatus = Response.Status.CREATED;
+            } else {
+                if (!JcrConstants.NT_FILE.equalsIgnoreCase(fileNode.getPrimaryNodeType().getName())) {
+                    return exceptionResponse("The node at '" + filePath + "' does not have the [nt:file] primary type");
+                }
+                content = fileNode.getNode(JcrConstants.JCR_CONTENT);
+                responseStatus = Response.Status.OK;
+            }
+
+            Binary binary = session.getValueFactory().createBinary(binaryStream);
+            Property binaryProperty = content.setProperty(JcrConstants.JCR_DATA, binary);
+            session.save();
+
+            RestItem restItem = createRestItem(request, 0, session, binaryProperty);
+            return Response.status(responseStatus).entity(restItem).build();
+        } finally {
+            try {
+                binaryStream.close();
+            } catch (IOException ioe) {
+                logger.error("Cannot close binary stream", ioe);
             }
         }
     }

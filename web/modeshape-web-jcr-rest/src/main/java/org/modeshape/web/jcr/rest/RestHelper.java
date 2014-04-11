@@ -55,13 +55,15 @@ public final class RestHelper {
     public static final String QUERY_METHOD_NAME = "query";
     public static final String QUERY_PLAN_METHOD_NAME = "queryPlan";
     public static final String NODE_TYPES_METHOD_NAME = "nodetypes";
+    public static final String UPLOAD_METHOD_NAME = "upload";
 
     private static final List<String> ALL_METHODS = Arrays.asList(BINARY_METHOD_NAME,
                                                                   ITEMS_METHOD_NAME,
                                                                   NODES_METHOD_NAME,
                                                                   QUERY_METHOD_NAME,
                                                                   QUERY_PLAN_METHOD_NAME,
-                                                                  NODE_TYPES_METHOD_NAME);
+                                                                  NODE_TYPES_METHOD_NAME,
+                                                                  UPLOAD_METHOD_NAME);
     // almost ISO8601, because in JDK 6 Z/z do not support timezones of the format hh:mm
     private static final List<SimpleDateFormat> ISO8601_DATE_PARSERS = Arrays.asList(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"),
                                                                                      new SimpleDateFormat("yyyy-MM-dd"));
