@@ -548,6 +548,83 @@ public final class ModeShapeRestService {
     }
 
     /**
+     * Creates/updates a binary file into the repository, using a {@link MediaType#MULTIPART_FORM_DATA} request, at {@code path}.
+     * The binary content is expected to be submitted from an HTML element with the name <i>file</i>.
+     * <p>
+     * Depending on the whether any node exists or not at {@code path}, this method behaves in different ways:
+     * <ul>
+     *     <li>
+     *         If {@code path} exists on the server, it is expected to point to an existing [nt:file] node, for which the [jcr:content]/[jcr:data] property will be updated/set
+     *     </li>
+     *     <li>
+     *         If {@code path} doesn't exist or only a <b>subpath</b> exists on the server, then for each missing segment but the last an [nt:folder] node will be created.
+     *         The last segment of the path will always represent the name of the [nt:file] node which will be created together with its content: [jcr:content]/[jcr:data].
+     *     </li>
+     * </ul>
+     * For example: issuing a POST request via this method to a path at which no node exists - {@code node1/node2/node3} - will
+     * trigger the creation of the corresponding nodes with the types - {@code [nt:folder]/[nt:folder]/[nt:file]/[jcr:content]/[jcr:data]}
+     * </p>
+     *
+     * @param request a non-null {@link HttpServletRequest} request
+     * @param repositoryName a non-null {@link String} representing the name of a repository.
+     * @param workspaceName a non-null {@link String} representing the name of a workspace.
+     * @param filePath the path to the binary property
+     * @param form a {@link FileUploadForm} instance representing the HTML form from which the binary was submitted
+     * @return a {@code non-null} {@link Response}
+     * @throws RepositoryException if any JCR related operation fails.
+     */
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.UPLOAD_METHOD_NAME + "{path:.+}")
+    @Produces( {MediaType.TEXT_HTML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN} )
+    @Consumes( MediaType.MULTIPART_FORM_DATA )
+    public Response uploadBinaryViaForm( @Context HttpServletRequest request,
+                                         @PathParam( "repositoryName" ) String repositoryName,
+                                         @PathParam( "workspaceName" ) String workspaceName,
+                                         @PathParam( "path" ) String filePath,
+                                         @MultipartForm FileUploadForm form ) throws RepositoryException {
+        form.validate();
+        return binaryHandler.uploadBinary(request, repositoryName, workspaceName, filePath, form.getFileData());
+    }
+
+    /**
+     * Creates/updates a binary file into the repository, <b>using the body of the request as the contents of the binary file</b>, at {@code path}.
+     *
+     * <p>
+     * Depending on the whether any node exists or not at {@code path}, this method behaves in different ways:
+     * <ul>
+     *     <li>
+     *         If {@code path} exists on the server, it is expected to point to an existing [nt:file] node, for which the [jcr:content]/[jcr:data] property will be updated/set
+     *     </li>
+     *     <li>
+     *         If {@code path} doesn't exist or only a <b>subpath</b> exists on the server, then for each missing segment but the last an [nt:folder] node will be created.
+     *         The last segment of the path will always represent the name of the [nt:file] node which will be created together with its content: [jcr:content]/[jcr:data].
+     *     </li>
+     * </ul>
+     * For example: issuing a POST request via this method to a path at which no node exists - {@code node1/node2/node3} - will
+     * trigger the creation of the corresponding nodes with the types - {@code [nt:folder]/[nt:folder]/[nt:file]/[jcr:content]/[jcr:data]}
+     * </p>
+     *
+     * @param request a non-null {@link HttpServletRequest} request
+     * @param repositoryName a non-null {@link String} representing the name of a repository.
+     * @param workspaceName a non-null {@link String} representing the name of a workspace.
+     * @param filePath the path to the binary property
+     * @param requestBodyInputStream a non-null {@link InputStream} stream which represents the body of the request, where the
+     * binary content is expected.
+     * @return a {@code non-null} {@link Response}
+     * @throws RepositoryException if any JCR related operation fails.
+     */
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.UPLOAD_METHOD_NAME + "{path:.+}")
+    @Produces( {MediaType.TEXT_HTML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN} )
+    public Response uploadBinary( @Context HttpServletRequest request,
+                                  @PathParam("repositoryName") String repositoryName,
+                                  @PathParam("workspaceName") String workspaceName,
+                                  @PathParam("path") String filePath,
+                                  InputStream requestBodyInputStream ) throws RepositoryException {
+        return binaryHandler.uploadBinary(request, repositoryName, workspaceName, filePath, requestBodyInputStream);
+    }
+
+    /**
      * Executes the XPath query contained in the body of the request against the give repository and workspace.
      * 
      * @param request the servlet request; may not be null or unauthenticated
