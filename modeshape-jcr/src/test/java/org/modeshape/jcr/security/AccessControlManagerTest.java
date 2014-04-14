@@ -25,6 +25,7 @@ import java.security.AccessControlException;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -344,6 +345,44 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     public void testGetApplicablePolicies() throws Exception {
         AccessControlList acl = (AccessControlList)acm.getApplicablePolicies("/Cars").nextAccessControlPolicy();
         assertTrue(acl != null);
+    }
+
+    @Test
+    @FixFor( "MODE-2193" )
+    public void shouldAllowReadingAccessibleNodes() throws Exception {
+        AccessControlList acl = acl("/");
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                  new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+        acm.setPolicy("/", acl);
+
+        Node root = session.getRootNode();
+        Node ufo = root.addNode("ufo");
+        Node vans = root.addNode("vans");
+        assertThat(ufo, is(notNullValue()));
+        assertThat(vans, is(notNullValue()));
+
+        AccessControlList acl1 = acl("/ufo");
+        acl1.addAccessControlEntry(SimplePrincipal.newInstance("Admin"),
+                                   new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+        acl1.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                   new Privilege[] {acm.privilegeFromName(Privilege.JCR_READ)});
+
+        acm.setPolicy("/ufo", acl1);
+
+        //No Access to "anonymous" on "vans" node
+        AccessControlList acl2 = acl("/vans");
+        acl2.addAccessControlEntry(SimplePrincipal.newInstance("user"),
+                                   new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+        acm.setPolicy("/vans", acl2);
+
+        session.save();
+
+        root = session.getRootNode();
+        NodeIterator ni = root.getNodes();
+
+        while(ni.hasNext()){
+            ni.nextNode();
+        }
     }
 
     private static void setPolicy( String path,

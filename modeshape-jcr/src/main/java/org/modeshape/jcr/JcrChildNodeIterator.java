@@ -38,6 +38,7 @@ final class JcrChildNodeIterator implements NodeIterator {
 
     private final NodeResolver resolver;
     private final Iterator<ChildReference> iterator;
+    private Node resolvedNode;
     private Iterator<Node> nodeIterator;
     private int ndx;
     private long size;
@@ -67,12 +68,20 @@ final class JcrChildNodeIterator implements NodeIterator {
         if (size > -1L) return size;
         if (!hasNext()) {
             // There are no more, so return the number of nodes we've already seen ...
-            size = ndx;
+            size = resolvedNode == null ? ndx : ndx + 1;
             return size;
         }
         // Otherwise, we have to iterate through the remaining iterator and keep the results ...
-        List<Node> remainingNodes = new LinkedList<Node>();
-        size = ndx;
+        List<Node> remainingNodes = new LinkedList<>();
+        if (resolvedNode != null) {
+            //we've already looked ahead once, so take that into account
+            size = ndx + 1;
+            remainingNodes.add(resolvedNode);
+            resolvedNode = null;
+        } else {
+            size = ndx;
+        }
+
         while (iterator.hasNext()) {
             Node node = resolver.nodeFrom(iterator.next());
             if (node != null) {
@@ -86,7 +95,15 @@ final class JcrChildNodeIterator implements NodeIterator {
 
     @Override
     public boolean hasNext() {
-        return nodeIterator != null ? nodeIterator.hasNext() : iterator.hasNext();
+        if (nodeIterator != null) {
+            return nodeIterator.hasNext();
+        }
+        //we need to look ahead in the child reference iterator, because the resolver might not return a node
+        while (iterator.hasNext() && resolvedNode == null) {
+            ChildReference ref = iterator.next();
+            resolvedNode = resolver.nodeFrom(ref);
+        }
+        return resolvedNode != null;
     }
 
     @Override
@@ -100,10 +117,15 @@ final class JcrChildNodeIterator implements NodeIterator {
             return nodeIterator.next();
         }
         Node child = null;
-        do {
-            ChildReference childRef = iterator.next();
-            child = resolver.nodeFrom(childRef);
-        } while (child == null);
+        if (resolvedNode == null) {
+            do {
+                ChildReference childRef = iterator.next();
+                child = resolver.nodeFrom(childRef);
+            } while (child == null);
+        } else {
+            child = resolvedNode;
+            resolvedNode = null;
+        }
         ndx++;
         return child;
     }
