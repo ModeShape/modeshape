@@ -40,7 +40,7 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jdbc.util.TimestampWithTimezone;
 
 /**
- *  Unit test for {@link org.modeshape.jdbc.JcrResultSet}
+ * Unit test for {@link org.modeshape.jdbc.JcrResultSet}
  */
 public class JcrResultSetTest {
 
@@ -490,8 +490,7 @@ public class JcrResultSetTest {
                 if (expectedValue != null && !(expectedValue instanceof byte[])) {
                     expectedValue = expectedValue.toString().getBytes();
                 }
-                assertThat(resultSet.getBytes(TestUtil.COLUMN_NAMES[x]),
-                           is(expectedValue));
+                assertThat(resultSet.getBytes(TestUtil.COLUMN_NAMES[x]), is(expectedValue));
             }
         }
     }
@@ -528,13 +527,14 @@ public class JcrResultSetTest {
                 Object o = resultSet.getObject(TestUtil.COLUMN_NAMES[x]);
                 Object expectedValue = tuple[x];
                 if (expectedValue instanceof Calendar) {
-                    expectedValue = new Timestamp(((Calendar) expectedValue).getTimeInMillis());
+                    expectedValue = new Timestamp(((Calendar)expectedValue).getTimeInMillis());
                 }
                 if (expectedValue instanceof byte[]) {
                     assertThat(o instanceof Blob, is(true));
+                    assert o != null;
                     o = IoUtil.readBytes(((Blob)o).getBinaryStream());
                 }
-                assertThat((o != null ? o: null), is((expectedValue != null ? expectedValue : null)));
+                assertThat((o != null ? o : null), is((expectedValue != null ? expectedValue : null)));
             }
         }
     }

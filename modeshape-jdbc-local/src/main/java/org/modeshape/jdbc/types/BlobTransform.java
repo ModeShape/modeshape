@@ -23,7 +23,6 @@ import org.modeshape.jdbc.Transform;
 
 public class BlobTransform implements Transform {
 
-    @SuppressWarnings( "unused" )
     @Override
     public Object transform( Value value ) throws ValueFormatException, RepositoryException {
         return new JcrBlob(value.getBinary());
