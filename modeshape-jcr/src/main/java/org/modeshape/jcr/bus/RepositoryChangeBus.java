@@ -40,6 +40,7 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
  * @author Horia Chiorean
  */
 @ThreadSafe
+@Deprecated
 public final class RepositoryChangeBus implements ChangeBus {
 
     protected static final Logger LOGGER = Logger.getLogger(RepositoryChangeBus.class);

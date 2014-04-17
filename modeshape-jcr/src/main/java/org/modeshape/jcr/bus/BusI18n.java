@@ -27,6 +27,8 @@ import org.modeshape.common.i18n.I18n;
 public final class BusI18n {
     public static I18n errorSerializingChanges;
     public static I18n errorDeserializingChanges;
+    public static I18n errorProcessingAsyncEvent;
+    public static I18n errorInitializingBatchProcessor;
 
     private BusI18n() {
     }

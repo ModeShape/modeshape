@@ -236,6 +236,7 @@
         <log4j.version>1.2.16</log4j.version>
         <jcr.version>2.0</jcr.version>
         <mapdb.version>0.9.11</mapdb.version>
+        <disruptor.version>3.2.1</disruptor.version>
         <jackrabbit.jcr.tck.version>2.6.0</jackrabbit.jcr.tck.version>
         <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
         <jbossjta.version>4.16.6.Final</jbossjta.version>
@@ -1264,6 +1265,12 @@
                 <groupId>org.mapdb</groupId>
                 <artifactId>mapdb</artifactId>
                 <version>${mapdb.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.lmax</groupId>
+                <artifactId>disruptor</artifactId>
+                <version>${disruptor.version}</version>
             </dependency>
 
             <dependency>
