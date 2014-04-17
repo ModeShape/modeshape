@@ -28,7 +28,7 @@ public final class BusI18n {
     public static I18n errorSerializingChanges;
     public static I18n errorDeserializingChanges;
     public static I18n errorProcessingAsyncEvent;
-    public static I18n errorInitializingBatchProcessor;
+    public static I18n errorInitializingEventProcessor;
 
     private BusI18n() {
     }

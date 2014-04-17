@@ -1621,6 +1621,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected void shutdown() {
+            // shutdown the event bus first - this should clear all existing listeners
+            if (this.changeBus != null) {
+                this.changeBus.shutdown();
+            }
+
             // if reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
             // or we do anything that affects the nodes
             if (repositoryQueryManager != null) {
@@ -1660,11 +1665,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // shutdown the clustering service
             if (this.clusteringService != null) {
                 this.clusteringService.shutdown();
-            }
-
-            // shutdown the event bus
-            if (this.changeBus != null) {
-                this.changeBus.shutdown();
             }
 
             // shutdown the journal

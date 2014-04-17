@@ -19,6 +19,7 @@ package org.modeshape.jcr.bus;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -173,28 +174,38 @@ public abstract class AbstractChangeBusTest {
     }
 
     @Test
-    @Ignore("This is just a perf test")
-    public void shouldNotifyAllRegisteredListenersWithLotsOfEvents() throws Exception {
-        int eventCount = 1000000;
-        int listenerCount = 100;
+    @Ignore("This is a perf test")
+    public void shouldNotifyLotsOfConsumersAsync() throws Exception {
+        int eventsPerBatch = 300000;
+        int listenersPerBatch = 30;
+        int batches = 4;
+        List<AbstractChangeBusTest.TestListener> listeners = new ArrayList<>();
 
-        List<TestListener> listeners = new ArrayList<>();
+        long start = System.nanoTime();
+        for (int i = 0; i < batches; i++) {
+            listeners.addAll(submitBatch(eventsPerBatch, listenersPerBatch, (batches - i) * eventsPerBatch));
+            Thread.sleep(50);
+        }
+
+        for (AbstractChangeBusTest.TestListener listener : listeners) {
+            listener.assertExpectedEventsCount();
+        }
+        System.out.println("Elapsed: " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " millis");
+    }
+
+    private List<AbstractChangeBusTest.TestListener> submitBatch( int eventCount, int listenerCount, int expectedEventsCount )
+            throws Exception{
+        List<AbstractChangeBusTest.TestListener> listeners = new ArrayList<>();
         for (int i = 0; i < listenerCount; i++) {
-            TestListener listener = new TestListener(eventCount, TimeUnit.SECONDS.toMillis(10));
+            AbstractChangeBusTest.TestListener listener = new AbstractChangeBusTest.TestListener(expectedEventsCount, 500);
             listeners.add(listener);
             getChangeBus().register(listener);
         }
 
-        long start = System.nanoTime();
-
         for (int i = 0; i < eventCount; i++) {
-            getChangeBus().notify(new TestChangeSet());
+            getChangeBus().notify(new AbstractChangeBusTest.TestChangeSet());
         }
-        for (TestListener listener : listeners) {
-            assertTrue(listener.await());
-            assertEquals(eventCount, listener.getObservedChangeSet().size());
-        }
-        System.out.println("Elapsed: " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " millis");
+        return listeners;
     }
 
     protected ChangeBus getChangeBus() throws Exception {
@@ -202,7 +213,7 @@ public abstract class AbstractChangeBusTest {
     }
 
     protected void assertChangesDispatched( TestListener listener ) throws InterruptedException {
-        assertTrue("Changes not dispatched to listener", listener.await());
+        listener.assertExpectedEventsCount();
 
         List<TestChangeSet> receivedChanges = listener.getObservedChangeSet();
         Map<String, List<Long>> changeSetsPerWs = new HashMap<>();
@@ -215,9 +226,9 @@ public abstract class AbstractChangeBusTest {
                 changeSetsPerWs.put(wsName, receivedTimes);
             }
             for (Long receivedTime : receivedTimes) {
-                assertTrue(receivedTime <= changeSet.getTimestamp().getMilliseconds());
+                assertTrue(receivedTime <= changeSet.time());
             }
-            receivedTimes.add(changeSet.getTimestamp().getMilliseconds());
+            receivedTimes.add(changeSet.time());
         }
     }
 
@@ -226,7 +237,7 @@ public abstract class AbstractChangeBusTest {
         private static final long serialVersionUID = 1L;
 
         private final String workspaceName;
-        private final DateTime dateTime;
+        private final long time;
 
         public TestChangeSet() {
             this(UUID.randomUUID().toString());
@@ -234,7 +245,7 @@ public abstract class AbstractChangeBusTest {
 
         protected TestChangeSet( String workspaceName ) {
             this.workspaceName = workspaceName;
-            this.dateTime = new JodaDateTime(System.currentTimeMillis());
+            this.time = System.currentTimeMillis();
         }
 
         @Override
@@ -264,7 +275,11 @@ public abstract class AbstractChangeBusTest {
 
         @Override
         public DateTime getTimestamp() {
-            return dateTime;
+            return new JodaDateTime(time);
+        }
+
+        public long time() {
+            return time;
         }
 
         @Override
@@ -299,13 +314,21 @@ public abstract class AbstractChangeBusTest {
 
         @Override
         public boolean equals( Object o ) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof TestChangeSet)) {
+                return false;
+            }
 
             TestChangeSet changes = (TestChangeSet)o;
 
-            if (!dateTime.equals(changes.dateTime)) return false;
-            if (!workspaceName.equals(changes.workspaceName)) return false;
+            if (time != changes.time) {
+                return false;
+            }
+            if (!workspaceName.equals(changes.workspaceName)) {
+                return false;
+            }
 
             return true;
         }
@@ -313,7 +336,7 @@ public abstract class AbstractChangeBusTest {
         @Override
         public int hashCode() {
             int result = workspaceName.hashCode();
-            result = 31 * result + dateTime.hashCode();
+            result = 31 * result + (int)(time ^ (time >>> 32));
             return result;
         }
     }
@@ -321,24 +344,27 @@ public abstract class AbstractChangeBusTest {
     protected static class TestListener implements ChangeSetListener {
         private final List<TestChangeSet> receivedChangeSet;
         private final long timeoutMillis;
+        private int expectedNumberOfEvents;
         private CountDownLatch latch;
 
-        public TestListener() {
+        protected TestListener() {
             this(0, 350);
         }
 
-        protected TestListener( int expectedNumberOfChangeSets ) {
-            this(expectedNumberOfChangeSets, 350);
+        protected TestListener( int expectedNumberOfEvents ) {
+            this(expectedNumberOfEvents, 350);
         }
 
-        protected TestListener( int expectedNumberOfChangeSets, long timeoutMillis ) {
-            latch = new CountDownLatch(expectedNumberOfChangeSets);
-            receivedChangeSet = new ArrayList<>();
+        protected TestListener( int expectedNumberOfEvents, long timeoutMillis ) {
+            this.latch = new CountDownLatch(expectedNumberOfEvents);
+            this.receivedChangeSet = new ArrayList<>();
             this.timeoutMillis = timeoutMillis;
+            this.expectedNumberOfEvents = expectedNumberOfEvents;
         }
 
-        public void expectChangeSet( int expectedNumberOfChangeSet ) {
-            latch = new CountDownLatch(expectedNumberOfChangeSet);
+        public void expectChangeSet( int expectedNumberOfEvents ) {
+            this.latch = new CountDownLatch(expectedNumberOfEvents);
+            this.expectedNumberOfEvents = expectedNumberOfEvents;
             receivedChangeSet.clear();
         }
 
@@ -351,8 +377,25 @@ public abstract class AbstractChangeBusTest {
             latch.countDown();
         }
 
-        public boolean await() throws InterruptedException {
-            return latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
+        public void assertExpectedEventsCount() {
+            try {
+                assertTrue("Not enough events received", latch.await(timeoutMillis, TimeUnit.MILLISECONDS));
+                assertEquals("Incorrect number of events received", expectedNumberOfEvents, receivedChangeSet.size());
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+                fail("Interrupted while waiting to verify event count");
+            }
+        }
+
+        public void assertEventsSequential() {
+            assertExpectedEventsCount();
+            List<Long> actualOrder = new ArrayList<>(expectedNumberOfEvents);
+            for (ChangeSet changeSet : receivedChangeSet) {
+                actualOrder.add(changeSet.getTimestamp().getMilliseconds());
+            }
+            List<Long> expectedOrder = new ArrayList<>(actualOrder);
+            Collections.sort(expectedOrder);
+            assertEquals("Events received in incorrect order", expectedOrder, actualOrder);
         }
 
         public List<TestChangeSet> getObservedChangeSet() {
