@@ -101,6 +101,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!--Used by the event bus-->
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+        </dependency>
 
         <!--  Used in tests -->
         <dependency>

@@ -16,6 +16,7 @@
 
 package org.modeshape.jcr.bus;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
@@ -25,13 +26,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
@@ -40,25 +41,23 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.value.basic.JodaDateTime;
 
 /**
- * Unit test for {@link RepositoryChangeBus}
+ * Base class for different {@link org.modeshape.jcr.bus.ChangeBus} implementations.
  * 
  * @author Horia Chiorean
  */
-public class RepositoryChangeBusTest {
+public abstract class AbstractChangeBusTest {
 
-    private static final String WORKSPACE1 = "ws1";
-    private static final String WORKSPACE2 = "ws2";
+    protected static final String WORKSPACE1 = "ws1";
+    protected static final String WORKSPACE2 = "ws2";
 
-    private RepositoryChangeBus changeBus;
+    private ChangeBus changeBus;
 
     @Before
-    public void beforeEach() {
+    public void beforeEach() throws Exception {
         changeBus = createRepositoryChangeBus();
     }
 
-    protected RepositoryChangeBus createRepositoryChangeBus() {
-        return new RepositoryChangeBus(Executors.newCachedThreadPool(), RepositoryConfiguration.SYSTEM_WORKSPACE_NAME);
-    }
+    protected abstract ChangeBus createRepositoryChangeBus() throws Exception;
 
     @After
     public void afterEach() {
@@ -149,8 +148,10 @@ public class RepositoryChangeBusTest {
 
         getChangeBus().notify(new TestChangeSet(WORKSPACE1));
         getChangeBus().notify(new TestChangeSet(WORKSPACE2));
+        Thread.sleep(50);
 
         getChangeBus().unregister(listener2);
+        Thread.sleep(50);
 
         getChangeBus().notify(new TestChangeSet(WORKSPACE2));
 
@@ -162,31 +163,55 @@ public class RepositoryChangeBusTest {
     public void shouldNotDispatchEventsIfShutdown() throws Exception {
         TestListener listener = new TestListener(1);
         getChangeBus().register(listener);
-
         getChangeBus().notify(new TestChangeSet(WORKSPACE1));
 
+        Thread.sleep(50);
+
         getChangeBus().shutdown();
-
         getChangeBus().notify(new TestChangeSet(WORKSPACE2));
-
         assertChangesDispatched(listener);
+    }
+
+    @Test
+    @Ignore("This is just a perf test")
+    public void shouldNotifyAllRegisteredListenersWithLotsOfEvents() throws Exception {
+        int eventCount = 1000000;
+        int listenerCount = 100;
+
+        List<TestListener> listeners = new ArrayList<>();
+        for (int i = 0; i < listenerCount; i++) {
+            TestListener listener = new TestListener(eventCount, TimeUnit.SECONDS.toMillis(10));
+            listeners.add(listener);
+            getChangeBus().register(listener);
+        }
+
+        long start = System.nanoTime();
+
+        for (int i = 0; i < eventCount; i++) {
+            getChangeBus().notify(new TestChangeSet());
+        }
+        for (TestListener listener : listeners) {
+            assertTrue(listener.await());
+            assertEquals(eventCount, listener.getObservedChangeSet().size());
+        }
+        System.out.println("Elapsed: " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " millis");
     }
 
     protected ChangeBus getChangeBus() throws Exception {
         return changeBus;
     }
 
-    private void assertChangesDispatched( TestListener listener ) throws InterruptedException {
-        listener.await();
+    protected void assertChangesDispatched( TestListener listener ) throws InterruptedException {
+        assertTrue("Changes not dispatched to listener", listener.await());
 
         List<TestChangeSet> receivedChanges = listener.getObservedChangeSet();
-        Map<String, List<Long>> changeSetsPerWs = new HashMap<String, List<Long>>();
+        Map<String, List<Long>> changeSetsPerWs = new HashMap<>();
 
         for (TestChangeSet changeSet : receivedChanges) {
             String wsName = changeSet.getWorkspaceName();
             List<Long> receivedTimes = changeSetsPerWs.get(wsName);
             if (receivedTimes == null) {
-                receivedTimes = new ArrayList<Long>();
+                receivedTimes = new ArrayList<>();
                 changeSetsPerWs.put(wsName, receivedTimes);
             }
             for (Long receivedTime : receivedTimes) {
@@ -202,6 +227,10 @@ public class RepositoryChangeBusTest {
 
         private final String workspaceName;
         private final DateTime dateTime;
+
+        public TestChangeSet() {
+            this(UUID.randomUUID().toString());
+        }
 
         protected TestChangeSet( String workspaceName ) {
             this.workspaceName = workspaceName;
@@ -291,15 +320,21 @@ public class RepositoryChangeBusTest {
 
     protected static class TestListener implements ChangeSetListener {
         private final List<TestChangeSet> receivedChangeSet;
+        private final long timeoutMillis;
         private CountDownLatch latch;
 
         public TestListener() {
-            this(0);
+            this(0, 350);
         }
 
-        protected TestListener( int expectedNumberOfChangeSet ) {
-            latch = new CountDownLatch(expectedNumberOfChangeSet);
-            receivedChangeSet = new ArrayList<TestChangeSet>();
+        protected TestListener( int expectedNumberOfChangeSets ) {
+            this(expectedNumberOfChangeSets, 350);
+        }
+
+        protected TestListener( int expectedNumberOfChangeSets, long timeoutMillis ) {
+            latch = new CountDownLatch(expectedNumberOfChangeSets);
+            receivedChangeSet = new ArrayList<>();
+            this.timeoutMillis = timeoutMillis;
         }
 
         public void expectChangeSet( int expectedNumberOfChangeSet ) {
@@ -316,12 +351,12 @@ public class RepositoryChangeBusTest {
             latch.countDown();
         }
 
-        public void await() throws InterruptedException {
-            latch.await(350, TimeUnit.MILLISECONDS);
+        public boolean await() throws InterruptedException {
+            return latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
         }
 
         public List<TestChangeSet> getObservedChangeSet() {
-            return receivedChangeSet;
+            return new ArrayList<>(receivedChangeSet);
         }
     }
 }

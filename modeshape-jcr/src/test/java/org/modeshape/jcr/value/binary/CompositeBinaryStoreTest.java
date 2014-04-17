@@ -215,6 +215,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
     @Override
     @SkipOnOS(value = SkipOnOS.WINDOWS, description = "Sometimes file locks prevent the cleanup thread from removing values")
+    @Test
     public void shouldCleanupUnunsedValues() throws Exception {
         super.shouldCleanupUnunsedValues();
     }

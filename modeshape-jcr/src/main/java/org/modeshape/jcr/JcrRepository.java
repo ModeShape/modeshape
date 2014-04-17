@@ -99,7 +99,7 @@ import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
-import org.modeshape.jcr.bus.RepositoryChangeBus;
+import org.modeshape.jcr.bus.DisruptorRepositoryChangeBus;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
@@ -325,7 +325,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      */
     Future<Boolean> shutdown() {
         // Create a simple executor that will do the backgrounding for us ...
-        final ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("modeshape-repository-shutdown"));
+        final ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("modeshape-repository-stop"));
         try {
             // Submit a runnable to terminate all sessions ...
             Future<Boolean> future = executor.submit(new Callable<Boolean>() {
@@ -1109,7 +1109,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Create clustering service and event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                    ChangeBus localBus = new RepositoryChangeBus(changeDispatchingQueue, systemWorkspaceName);
+                    ChangeBus localBus = new DisruptorRepositoryChangeBus(changeDispatchingQueue, systemWorkspaceName);
                     this.changeBus = clusteringService != null ? new ClusteredRepositoryChangeBus(localBus, clusteringService) : localBus;
                     this.changeBus.start();
 
