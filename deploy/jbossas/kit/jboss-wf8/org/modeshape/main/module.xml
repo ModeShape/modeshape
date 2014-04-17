@@ -45,6 +45,7 @@
         <module name="org.jgroups"/>
         <module name="org.apache.tika" slot="${tika.version}" services="import"/>
         <module name="org.mapdb" slot="${mapdb.version}" services="import"/>
+        <module name="com.lmax.disruptor" slot="${disruptor.version}" services="import"/>
         <!-- For naming ... -->
         <module name="javax.api" export="true"/>
         <module name="org.jboss.as.naming"/>

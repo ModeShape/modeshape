@@ -87,19 +87,21 @@ public class ThreadPools implements ThreadPoolFactory {
         for (Iterator<Map.Entry<String, ExecutorService>> entryIterator = poolsByName.entrySet().iterator(); entryIterator.hasNext();) {
             Map.Entry<String, ExecutorService> entry = entryIterator.next();
             ExecutorService executorService = entry.getValue();
-            executorService.shutdown();
-
-            // Calculate how long till we have to wait till the future stop time ...
-            long waitTimeInMillis = futureStopTimeInMillis - System.currentTimeMillis();
-            try {
-                if (waitTimeInMillis > 0) {
-                    executorService.awaitTermination(waitTimeInMillis, TimeUnit.MILLISECONDS);
+            if (!executorService.isShutdown()) {
+                executorService.shutdown();
+                // Calculate how long till we have to wait till the future stop time ...
+                long waitTimeInMillis = futureStopTimeInMillis - System.currentTimeMillis();
+                try {
+                    if (waitTimeInMillis > 0) {
+                        executorService.awaitTermination(waitTimeInMillis, TimeUnit.MILLISECONDS);
+                    }
+                    executorService.shutdownNow();
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
                 }
-                executorService.shutdownNow();
-                entryIterator.remove();
-            } catch (InterruptedException e) {
-                Thread.interrupted();
             }
+
+            entryIterator.remove();
         }
     }
 }

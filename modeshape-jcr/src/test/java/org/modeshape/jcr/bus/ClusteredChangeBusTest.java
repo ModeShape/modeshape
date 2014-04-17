@@ -34,7 +34,7 @@ import org.modeshape.jcr.clustering.ClusteringService;
  *
  * @author Horia Chiorean
  */
-public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
+public class ClusteredChangeBusTest extends AbstractChangeBusTest {
 
     private List<ChangeBus> buses = new ArrayList<>();
     private List<ClusteringService> clusteringServices = new ArrayList<>();
@@ -88,9 +88,9 @@ public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
         bus1.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -118,9 +118,9 @@ public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
         bus1.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -143,9 +143,9 @@ public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
         bus2.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -173,9 +173,9 @@ public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
         bus1.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -199,9 +199,9 @@ public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
         bus2.notify(changeSet2);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -225,9 +225,9 @@ public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
         bus3.notify(changeSet3);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -255,9 +255,9 @@ public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
         bus2.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -281,9 +281,9 @@ public class ClusteredAbstractChangeBusTest extends AbstractChangeBusTest {
         bus1.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));

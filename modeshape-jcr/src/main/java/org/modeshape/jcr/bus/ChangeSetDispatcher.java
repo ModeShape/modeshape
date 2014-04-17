@@ -21,17 +21,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
-import com.lmax.disruptor.BatchEventProcessor;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventFactory;
-import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.EventProcessor;
 import com.lmax.disruptor.EventTranslatorOneArg;
 import com.lmax.disruptor.ExceptionHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.Sequence;
+import com.lmax.disruptor.WorkHandler;
+import com.lmax.disruptor.WorkProcessor;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
@@ -65,7 +67,7 @@ public class ChangeSetDispatcher {
     private final List<ChangeSetListener> syncListeners;
     private final List<AsyncChangeSetListener> asyncListeners;
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings( "unchecked" )
     protected ChangeSetDispatcher( ExecutorService executorService, int bufferSize ) {
         this.executorService = executorService;
         // Construct the Disruptor
@@ -102,22 +104,27 @@ public class ChangeSetDispatcher {
 
     protected void stop() {
         syncListeners.clear();
-        for(AsyncChangeSetListener asyncListener : asyncListeners) {
+        for (AsyncChangeSetListener asyncListener : asyncListeners) {
             asyncListener.stop();
         }
         asyncListeners.clear();
         disruptor.shutdown();
-        executorService.shutdownNow();
+        try {
+            executorService.shutdownNow();
+            executorService.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+        }
     }
 
     protected void addAsyncListener( ChangeSetListener listener ) {
         RingBuffer<ChangeSetEvent> ringBuffer = disruptor.getRingBuffer();
-        BatchEventProcessor<ChangeSetEvent> processor = new BatchEventProcessor<>(
-                ringBuffer,
-                ringBuffer.newBarrier(),
-                new ChangeSetHandler(listener)
+        EventProcessor processor = new WorkProcessor<>(
+                ringBuffer, ringBuffer.newBarrier(),
+                new ChangeSetHandler(listener),
+                EventProcessorExceptionHandler.INSTANCE,
+                new Sequence(ringBuffer.getCursor())
         );
-        processor.setExceptionHandler(BatchProcessorExceptionHandler.INSTANCE);
         Future<?> future = executorService.submit(processor);
         asyncListeners.add(new AsyncChangeSetListener(processor, future, listener));
         ringBuffer.addGatingSequences(processor.getSequence());
@@ -127,32 +134,34 @@ public class ChangeSetDispatcher {
         syncListeners.add(listener);
     }
 
-    protected void removeListener(ChangeSetListener listener) {
+    protected void removeListener( ChangeSetListener listener ) {
         boolean wasRemoved = syncListeners.remove(listener);
         if (wasRemoved) {
             return;
         }
-        for (Iterator<AsyncChangeSetListener> asyncListenersIterator = asyncListeners.iterator(); asyncListenersIterator.hasNext(); ){
+        for (Iterator<AsyncChangeSetListener> asyncListenersIterator = asyncListeners.iterator(); asyncListenersIterator
+                .hasNext(); ) {
             AsyncChangeSetListener wrapper = asyncListenersIterator.next();
             if (wrapper.getListener() == listener) {
-                asyncListenersIterator.remove();
-                disruptor.getRingBuffer().removeGatingSequence(wrapper.getSequence());
+                Sequence sequence = wrapper.getSequence();
                 wrapper.stop();
+                disruptor.getRingBuffer().removeGatingSequence(sequence);
+                asyncListenersIterator.remove();
             }
         }
     }
 
-    protected static class BatchProcessorExceptionHandler implements ExceptionHandler {
-        private static final BatchProcessorExceptionHandler INSTANCE = new BatchProcessorExceptionHandler();
+    protected static class EventProcessorExceptionHandler implements ExceptionHandler {
+        private static final EventProcessorExceptionHandler INSTANCE = new EventProcessorExceptionHandler();
 
-        private BatchProcessorExceptionHandler() {
+        private EventProcessorExceptionHandler() {
         }
 
         @Override
         public void handleEventException( Throwable ex, long sequence, Object event ) {
             ChangeSet data = ((ChangeSetEvent)event).getData();
             if (ex instanceof InterruptedException) {
-                LOGGER.debug(ex, "Interrupted exception from batch processor for event {0}", event);
+                LOGGER.debug(ex, "Interrupted exception from event processor for event {0}", event);
             } else {
                 LOGGER.error(ex, BusI18n.errorProcessingAsyncEvent, data.toString(), sequence);
             }
@@ -160,31 +169,31 @@ public class ChangeSetDispatcher {
 
         @Override
         public void handleOnStartException( Throwable ex ) {
-            LOGGER.error(ex, BusI18n.errorInitializingBatchProcessor);
+            LOGGER.error(ex, BusI18n.errorInitializingEventProcessor);
 
         }
 
         @Override
         public void handleOnShutdownException( Throwable ex ) {
-            LOGGER.error(ex, BusI18n.errorInitializingBatchProcessor);
+            LOGGER.error(ex, BusI18n.errorInitializingEventProcessor);
         }
     }
 
     protected static class AsyncChangeSetListener {
-        private BatchEventProcessor<ChangeSetEvent> batchEventProcessor;
+        private EventProcessor eventProcessor;
         private Future<?> future;
         private ChangeSetListener listener;
 
-        protected AsyncChangeSetListener( BatchEventProcessor<ChangeSetEvent> batchEventProcessor,
+        protected AsyncChangeSetListener( EventProcessor eventProcessor,
                                           Future<?> future,
                                           ChangeSetListener listener ) {
-            this.batchEventProcessor = batchEventProcessor;
+            this.eventProcessor = eventProcessor;
             this.future = future;
             this.listener = listener;
         }
 
         protected Sequence getSequence() {
-            return batchEventProcessor != null ? batchEventProcessor.getSequence() : null;
+            return eventProcessor != null ? eventProcessor.getSequence() : null;
         }
 
         protected ChangeSetListener getListener() {
@@ -192,9 +201,9 @@ public class ChangeSetDispatcher {
         }
 
         protected void stop() {
-            batchEventProcessor.halt();
-            future.cancel(true);
-            batchEventProcessor = null;
+            eventProcessor.halt();
+            future.cancel(false);
+            eventProcessor = null;
             future = null;
             listener = null;
         }
@@ -218,7 +227,7 @@ public class ChangeSetDispatcher {
         }
     }
 
-    protected static class ChangeSetEvent  {
+    protected static class ChangeSetEvent {
         private ChangeSet data;
 
         protected ChangeSetEvent() {
@@ -233,7 +242,7 @@ public class ChangeSetDispatcher {
         }
     }
 
-    protected static class ChangeSetHandler implements EventHandler<ChangeSetEvent> {
+    protected static class ChangeSetHandler implements WorkHandler<ChangeSetEvent> {
         private final ChangeSetListener listener;
 
         protected ChangeSetHandler( ChangeSetListener listener ) {
@@ -241,7 +250,7 @@ public class ChangeSetDispatcher {
         }
 
         @Override
-        public void onEvent( ChangeSetEvent event, long l, boolean b ) throws Exception {
+        public void onEvent( ChangeSetEvent event ) throws Exception {
             listener.notify(event.getData());
         }
     }
