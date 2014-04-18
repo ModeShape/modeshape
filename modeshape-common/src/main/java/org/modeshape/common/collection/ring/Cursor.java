@@ -110,8 +110,20 @@ public interface Cursor {
     Pointer newPointer();
 
     /**
+     * Signal that the consumers should wake up if they are blocked on the barrier.
+     */
+    void signalConsumers();
+
+    /**
      * Signal that no more entries will be written and that the {@link #newBarrier() barriers} will not block on this cursor and
      * should return a negative number from {@link PointerBarrier#waitFor(long)}.
      */
     void complete();
+
+    /**
+     * Return whether this cursor has {@link #complete() completed} normally.
+     * 
+     * @return true if this cursor is complete, or false otherwise
+     */
+    boolean isComplete();
 }

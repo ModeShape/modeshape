@@ -24,6 +24,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.statistic.Stopwatch;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -39,9 +40,59 @@ public class RingBufferTest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void shouldBeAbleToAddAndRemoveConsumers() throws Exception {
         Executor executor = Executors.newCachedThreadPool();
-        RingBuffer<Long> ringBuffer = RingBuffer.withSingleProducer(executor, 8);
+        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBuffer.withSingleProducer(executor, 8);
+        print = true;
+
+        // Add 10 entries with no consumers ...
+        long value = 0L;
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+        }
+
+        // Add a single consumer that should start seeing items 10 and up ...
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        ringBuffer.addConsumer(consumer1);
+
+        // Add 10 more entries ...
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+            // Thread.sleep(100L);
+        }
+
+        // Add a second consumer that should start seeing items 20 and up ...
+        MonotonicallyIncreasingConsumer consumer2 = new MonotonicallyIncreasingConsumer("second", 20L, 20L);
+        ringBuffer.addConsumer(consumer2);
+
+        // Add 10 more entries ...
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+            // Thread.sleep(100L);
+        }
+
+        ringBuffer.remove(consumer2);
+
+        // Add 10 more entries ...
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+            // Thread.sleep(100L);
+        }
+
+        assertTrue(consumer2.isClosed());
+        ringBuffer.shutdown(true);
+        assertTrue(consumer1.isClosed());
+        assertTrue(consumer2.isClosed());
+    }
+
+    @Test
+    public void consumersShouldSeeEventsInCorrectOrder() throws Exception {
+        Executor executor = Executors.newCachedThreadPool();
+        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBuffer.withSingleProducer(executor, 8);
         print = true;
 
         // Add 10 entries with no consumers ...
@@ -76,26 +127,46 @@ public class RingBufferTest {
         print = false;
         slightPausesInConsumers = false;
 
-        // Add 1000 more entries
-        for (int i = 0; i != 10000; ++i) {
+        // Add 400K more entries
+        Stopwatch sw = new Stopwatch();
+        int count = 400000;
+        sw.start();
+        for (int i = 0; i != count; ++i) {
+            ringBuffer.add(value++);
+        }
+        sw.stop();
+
+        // Do 10 more while printing ...
+        for (int i = 0; i != 10; ++i) {
+            print = true;
             print("Adding entry " + value);
             ringBuffer.add(value++);
-            // Thread.sleep(100L);
-            if (i > 990) print = true;
         }
 
-        ringBuffer.shutdown();
+        boolean blockWhileShuttingDown = false;
+        ringBuffer.shutdown(blockWhileShuttingDown);
+        print("");
+        print("Ring buffer shutdown completed");
+        if (blockWhileShuttingDown) {
+            assertTrue(consumer1.isClosed());
+            assertTrue(consumer2.isClosed());
+        } else {
+            // Wait while the threads complete
+            while (!consumer1.isClosed()) {
+                Thread.sleep(10L);
+            }
+
+            while (!consumer2.isClosed()) {
+                Thread.sleep(10L);
+            }
+        }
 
         --value;
-        while (!consumer1.isClosed()) {
-            Thread.sleep(10L);
-        }
         assertThat(consumer1.getLastValue(), is(value));
-
-        while (!consumer2.isClosed()) {
-            Thread.sleep(10L);
-        }
         assertThat(consumer2.getLastValue(), is(value));
+
+        print("");
+        print("Time to add " + count + " entries: " + sw.getAverageDuration());
     }
 
     protected void print( String message ) {
@@ -122,7 +193,7 @@ public class RingBufferTest {
                                 long position ) {
             assertTrue(!closed);
             print(id + " consuming " + entry.longValue() + " at position " + position);
-            if (slightPausesInConsumers && position % 100 == 0) {
+            if (slightPausesInConsumers && position % 1000 == 0) {
                 try {
                     Thread.sleep(100L);
                 } catch (Exception e) {
@@ -146,6 +217,7 @@ public class RingBufferTest {
         @Override
         public void close() {
             super.close();
+            print(id + " closing");
             closed = true;
         }
 
