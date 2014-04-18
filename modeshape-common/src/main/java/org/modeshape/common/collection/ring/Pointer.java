@@ -23,17 +23,35 @@ import java.util.concurrent.atomic.AtomicLong;
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public final class Pointer extends AtomicLong {
+public class Pointer {
 
     public static long INITIAL_VALUE = -1L;
-    private static final long serialVersionUID = 1L;
+
+    private final AtomicLong value;
 
     public Pointer() {
-        super(INITIAL_VALUE);
+        value = new AtomicLong(INITIAL_VALUE);
     }
 
     public Pointer( long initialValue ) {
-        super(initialValue);
+        value = new AtomicLong(initialValue);
+    }
+
+    public long get() {
+        return value.get();
+    }
+
+    public void set( long newValue ) {
+        this.value.set(newValue);
+    }
+
+    public long incrementAndGet() {
+        return this.value.incrementAndGet();
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "=" + value.get();
     }
 
 }
