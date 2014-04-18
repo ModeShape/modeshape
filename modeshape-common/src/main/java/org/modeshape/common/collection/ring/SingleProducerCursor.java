@@ -16,10 +16,10 @@
 
 package org.modeshape.common.collection.ring;
 
-import static java.util.Arrays.copyOf;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
+import org.modeshape.common.collection.ring.GarbageCollectingConsumer.Collectable;
 import org.modeshape.common.util.CheckArg;
 
 /**
@@ -30,7 +30,7 @@ import org.modeshape.common.util.CheckArg;
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public final class SingleProducerCursor implements Cursor {
+public class SingleProducerCursor implements Cursor {
 
     private static final AtomicReferenceFieldUpdater<SingleProducerCursor, Pointer[]> STAY_BEHIND_UPDATER = AtomicReferenceFieldUpdater.newUpdater(SingleProducerCursor.class,
                                                                                                                                                    Pointer[].class,
@@ -42,7 +42,7 @@ public final class SingleProducerCursor implements Cursor {
     private long nextPosition = Pointer.INITIAL_VALUE;
     private long slowestConsumerPosition = Pointer.INITIAL_VALUE;
     protected volatile long finalPosition = Long.MAX_VALUE;
-    private volatile Pointer[] stayBehinds = new Pointer[0];
+    protected volatile Pointer[] stayBehinds = new Pointer[0];
 
     public SingleProducerCursor( int bufferSize,
                                  WaitStrategy waitStrategy ) {
@@ -83,15 +83,16 @@ public final class SingleProducerCursor implements Cursor {
         long nextPosition = this.nextPosition;
         long maxPosition = nextPosition + number;
         long wrapPoint = maxPosition - bufferSize;
-        long cachedGatingSequence = this.slowestConsumerPosition;
+        long cachedSlowestConsumerPosition = this.slowestConsumerPosition;
 
-        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextPosition) {
-            long minSequence;
-            while (wrapPoint > (minSequence = positionOfSlowestPointer(stayBehinds, nextPosition))) {
+        if (wrapPoint > cachedSlowestConsumerPosition || cachedSlowestConsumerPosition > nextPosition) {
+            long minPosition;
+            while (wrapPoint > (minPosition = positionOfSlowestPointer(nextPosition))) {
                 // This takes on the order of tens of nanoseconds, so it's a useful activity to pause a bit.
                 LockSupport.parkNanos(1L);
+                waitStrategy.signalAllWhenBlocking();
             }
-            this.slowestConsumerPosition = minSequence;
+            this.slowestConsumerPosition = minPosition;
         }
 
         this.nextPosition = maxPosition;
@@ -99,12 +100,8 @@ public final class SingleProducerCursor implements Cursor {
 
     }
 
-    protected long positionOfSlowestPointer( Pointer[] pointers,
-                                             long minimum ) {
-        for (int i = 0; i != pointers.length; ++i) {
-            minimum = Math.min(minimum, pointers[i].get());
-        }
-        return minimum;
+    protected long positionOfSlowestPointer( long minimumPosition ) {
+        return Pointers.getMinimum(stayBehinds, minimumPosition);
     }
 
     @Override
@@ -125,6 +122,8 @@ public final class SingleProducerCursor implements Cursor {
     @Override
     public PointerBarrier newBarrier() {
         return new PointerBarrier() {
+            private boolean closed = false;
+
             @Override
             public long waitFor( long position ) throws InterruptedException, TimeoutException {
                 if (position > finalPosition) {
@@ -140,7 +139,12 @@ public final class SingleProducerCursor implements Cursor {
 
             @Override
             public boolean isComplete() {
-                return SingleProducerCursor.this.isComplete();
+                return closed || SingleProducerCursor.this.isComplete();
+            }
+
+            @Override
+            public void close() {
+                this.closed = true;
             }
         };
     }
@@ -164,68 +168,22 @@ public final class SingleProducerCursor implements Cursor {
     @Override
     public Pointer newPointer() {
         Pointer result = new Pointer(current.get());
-        stayBehind(result);
+        this.stayBehind(result);
         return result;
     }
 
     @Override
     public void stayBehind( Pointer... pointers ) {
-        long currentPosition;
-        Pointer[] updatedPointers;
-        Pointer[] currentPointers;
-
-        do {
-            currentPointers = STAY_BEHIND_UPDATER.get(this);
-            updatedPointers = copyOf(currentPointers, currentPointers.length + pointers.length);
-            currentPosition = getCurrent();
-
-            int index = currentPointers.length;
-            for (Pointer sequence : pointers) {
-                sequence.set(currentPosition);
-                updatedPointers[index++] = sequence;
-            }
-        } while (!STAY_BEHIND_UPDATER.compareAndSet(this, currentPointers, updatedPointers));
-
-        // Set all of the new pointers to the current position ...
-        currentPosition = getCurrent();
-        for (Pointer pointer : pointers) {
-            pointer.set(currentPosition);
-        }
+        Pointers.add(this, STAY_BEHIND_UPDATER, this, pointers);
     }
 
     @Override
     public boolean ignore( Pointer pointer ) {
-        int numToRemove;
-        Pointer[] oldPointers;
-        Pointer[] newPointers;
-
-        do {
-            oldPointers = STAY_BEHIND_UPDATER.get(this);
-            numToRemove = countMatching(oldPointers, pointer);
-            if (0 == numToRemove) break;
-
-            final int oldSize = oldPointers.length;
-            newPointers = new Pointer[oldSize - numToRemove];
-
-            // Copy all but the 'pointer' into the new array ...
-            for (int i = 0, pos = 0; i < oldSize; i++) {
-                final Pointer testPointer = oldPointers[i];
-                if (pointer != testPointer) {
-                    newPointers[pos++] = testPointer;
-                }
-            }
-        } while (!STAY_BEHIND_UPDATER.compareAndSet(this, oldPointers, newPointers));
-        return numToRemove != 0;
+        return Pointers.remove(this, STAY_BEHIND_UPDATER, pointer);
     }
 
-    private static <T> int countMatching( final T[] values,
-                                          final T toMatch ) {
-        int numToRemove = 0;
-        for (T value : values) {
-            // Use object identity ...
-            if (value == toMatch) numToRemove++;
-        }
-        return numToRemove;
+    @Override
+    public GarbageCollectingConsumer createGarbageCollectingConsumer( Collectable collectable ) {
+        return new GarbageCollectingConsumer(this, current, waitStrategy, collectable);
     }
-
 }

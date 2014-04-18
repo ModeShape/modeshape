@@ -26,7 +26,7 @@ import java.util.concurrent.TimeoutException;
  * @see Cursor#newBarrier()
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public interface PointerBarrier {
+public interface PointerBarrier extends AutoCloseable {
 
     /**
      * Wait for the given position to be available for consumption.
@@ -45,4 +45,10 @@ public interface PointerBarrier {
      * @return true if this barrier is complete, or false otherwise
      */
     boolean isComplete();
+
+    /**
+     * Signal that this barrier is closed and should return -1 from {@link #waitFor(long)}.
+     */
+    @Override
+    public void close();
 }

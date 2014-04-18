@@ -40,9 +40,103 @@ public class RingBufferTest {
     }
 
     @Test
+    public void shouldBuildWithNoGarbageCollection() {
+        Executor executor = Executors.newCachedThreadPool();
+        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(8)
+                                                                       .garbageCollect(false).build();
+        print = true;
+
+        // Add 10 entries with no consumers ...
+        long value = 0L;
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+        }
+
+        // Add a single consumer that should start seeing items 10 and up ...
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        ringBuffer.addConsumer(consumer1);
+
+        // Add 10 more entries ...
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+            // Thread.sleep(100L);
+        }
+
+        ringBuffer.shutdown(true);
+        print("");
+        print("Ring buffer shutdown completed");
+        assertTrue(consumer1.isClosed());
+    }
+
+    @Test
+    public void shouldBuildWithGarbageCollectionAnd8Entries() {
+        Executor executor = Executors.newCachedThreadPool();
+        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(8)
+                                                                       .garbageCollect(true).build();
+        print = true;
+
+        // Add 10 entries with no consumers ...
+        long value = 0L;
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+        }
+
+        // Add a single consumer that should start seeing items 10 and up ...
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        ringBuffer.addConsumer(consumer1);
+
+        // Add 10 more entries ...
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+            // Thread.sleep(100L);
+        }
+
+        ringBuffer.shutdown(true);
+        print("");
+        print("Ring buffer shutdown completed");
+        // assertTrue(consumer1.isClosed());
+    }
+
+    @Test
+    public void shouldBuildWithGarbageCollectionAnd1024Entries() {
+        Executor executor = Executors.newCachedThreadPool();
+        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(1024)
+                                                                       .garbageCollect(true).build();
+        print = true;
+
+        // Add 10 entries with no consumers ...
+        long value = 0L;
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+        }
+
+        // Add a single consumer that should start seeing items 10 and up ...
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        ringBuffer.addConsumer(consumer1);
+
+        // Add 10 more entries ...
+        for (int i = 0; i != 1000; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+            // Thread.sleep(100L);
+        }
+
+        ringBuffer.shutdown(true);
+        print("");
+        print("Ring buffer shutdown completed");
+        // assertTrue(consumer1.isClosed());
+    }
+
+    @Test
     public void shouldBeAbleToAddAndRemoveConsumers() throws Exception {
         Executor executor = Executors.newCachedThreadPool();
-        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBuffer.withSingleProducer(executor, 8);
+        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(8)
+                                                                       .build();
         print = true;
 
         // Add 10 entries with no consumers ...
@@ -85,6 +179,8 @@ public class RingBufferTest {
 
         assertTrue(consumer2.isClosed());
         ringBuffer.shutdown(true);
+        print("");
+        print("Ring buffer shutdown completed");
         assertTrue(consumer1.isClosed());
         assertTrue(consumer2.isClosed());
     }
@@ -92,7 +188,8 @@ public class RingBufferTest {
     @Test
     public void consumersShouldSeeEventsInCorrectOrder() throws Exception {
         Executor executor = Executors.newCachedThreadPool();
-        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBuffer.withSingleProducer(executor, 8);
+        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(8)
+                                                                       .build();
         print = true;
 
         // Add 10 entries with no consumers ...
@@ -206,9 +303,9 @@ public class RingBufferTest {
                 assertTrue(position == lastPosition);
                 first = false;
             } else {
-                assertTrue(entry.longValue() > lastValue);
+                assertTrue(entry.longValue() == (lastValue + 1));
                 lastValue = entry.longValue();
-                assertTrue(position > lastPosition);
+                assertTrue(position == (lastPosition + 1));
                 lastPosition = position;
             }
             return true;

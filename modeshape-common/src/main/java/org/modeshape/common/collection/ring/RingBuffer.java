@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.modeshape.common.collection.ring.GarbageCollectingConsumer.Collectable;
 import org.modeshape.common.util.CheckArg;
 
 /**
@@ -84,91 +85,6 @@ import org.modeshape.common.util.CheckArg;
  */
 public final class RingBuffer<T, C> {
 
-    /**
-     * Create a ring buffer instance of the specified size that only a single thread can {@link RingBuffer#add(Object) add entries
-     * to} and that runs {@link RingBuffer#addConsumer consumers} using threads from the supplied {@link Executor}. The consumer
-     * threads will {@link BlockingWaitStrategy block} when they have consumed all entries in the buffer and no more have yet been
-     * added.
-     * 
-     * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
-     * @param bufferSize the size of the ring; must be positive and a power of 2
-     * @return the new ring buffer; never null
-     */
-    public static <T, C> RingBuffer<T, Consumer<T>> withSingleProducer( Executor executor,
-                                                                        int bufferSize ) {
-        CheckArg.isPositive(bufferSize, "bufferSize");
-        CheckArg.isPowerOfTwo(bufferSize, "bufferSize");
-        CheckArg.isNotNull(executor, "executor");
-        return withSingleProducer(executor, bufferSize, new BlockingWaitStrategy());
-    }
-
-    /**
-     * Create a ring buffer instance of the specified size that only a single thread can {@link RingBuffer#add(Object) add entries
-     * to} and that runs {@link RingBuffer#addConsumer consumers} using threads from the supplied {@link Executor}. The consumer
-     * threads will use the supplied {@link WaitStrategy} when they have consumed all entries in the buffer and no more have yet
-     * been added.
-     * 
-     * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
-     * @param bufferSize the size of the ring; must be positive and a power of 2
-     * @param waitStrategy the strategy that should be used for consumers when they have consumed all entries in the buffer and no
-     *        more have yet been added; may not be null
-     * @return the new ring buffer; never null
-     */
-    public static <T> RingBuffer<T, Consumer<T>> withSingleProducer( Executor executor,
-                                                                     int bufferSize,
-                                                                     WaitStrategy waitStrategy ) {
-        CheckArg.isPositive(bufferSize, "bufferSize");
-        CheckArg.isPowerOfTwo(bufferSize, "bufferSize");
-        CheckArg.isNotNull(executor, "executor");
-        CheckArg.isNotNull(waitStrategy, "waitStrategy");
-        return withSingleProducer(executor, bufferSize, StandardConsumerAdapter.<T>create(), waitStrategy);
-    }
-
-    /**
-     * Create a ring buffer instance of the specified size that only a single thread can {@link RingBuffer#add(Object) add entries
-     * to} and that runs {@link RingBuffer#addConsumer consumers} using threads from the supplied {@link Executor}. The consumer
-     * threads will {@link BlockingWaitStrategy block} when they have consumed all entries in the buffer and no more have yet been
-     * added.
-     * 
-     * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
-     * @param bufferSize the size of the ring; must be positive and a power of 2
-     * @param adapter the adapter to the desired consumer interface; may not be null
-     * @return the new ring buffer; never null
-     */
-    public static <T, C> RingBuffer<T, C> withSingleProducer( Executor executor,
-                                                              int bufferSize,
-                                                              ConsumerAdapter<T, C> adapter ) {
-        CheckArg.isPositive(bufferSize, "bufferSize");
-        CheckArg.isPowerOfTwo(bufferSize, "bufferSize");
-        CheckArg.isNotNull(executor, "executor");
-        CheckArg.isNotNull(adapter, "adapter");
-        return withSingleProducer(executor, bufferSize, adapter, new BlockingWaitStrategy());
-    }
-
-    /**
-     * Create a ring buffer instance of the specified size that only a single thread can {@link RingBuffer#add(Object) add entries
-     * to} and that runs {@link RingBuffer#addConsumer consumers} using threads from the supplied {@link Executor}. The consumer
-     * threads will use the supplied {@link WaitStrategy} when they have consumed all entries in the buffer and no more have yet
-     * been added.
-     * 
-     * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
-     * @param bufferSize the size of the ring; must be positive and a power of 2
-     * @param adapter the adapter to the desired consumer interface; may not be null
-     * @param waitStrategy the strategy that should be used for consumers when they have consumed all entries in the buffer and no
-     *        more have yet been added; may not be null
-     * @return the new ring buffer; never null
-     */
-    public static <T, C> RingBuffer<T, C> withSingleProducer( Executor executor,
-                                                              int bufferSize,
-                                                              ConsumerAdapter<T, C> adapter,
-                                                              WaitStrategy waitStrategy ) {
-        CheckArg.isPositive(bufferSize, "bufferSize");
-        CheckArg.isPowerOfTwo(bufferSize, "bufferSize");
-        CheckArg.isNotNull(executor, "executor");
-        CheckArg.isNotNull(waitStrategy, "waitStrategy");
-        return new RingBuffer<T, C>(new SingleProducerCursor(bufferSize, waitStrategy), executor, adapter);
-    }
-
     private final int bufferSize;
     private final int mask;
     protected final Cursor cursor;
@@ -178,10 +94,12 @@ public final class RingBuffer<T, C> {
     protected final AtomicBoolean runConsumers = new AtomicBoolean(true);
     protected final ConsumerAdapter<T, C> consumerAdapter;
     private final ConcurrentMap<ConsumerRunner, ConsumerRunner> consumers = new ConcurrentHashMap<>();
+    private final GarbageCollectingConsumer gcConsumer;
 
     RingBuffer( Cursor cursor,
                 Executor executor,
-                ConsumerAdapter<T, C> consumerAdapter ) {
+                ConsumerAdapter<T, C> consumerAdapter,
+                boolean gcEntries ) {
         this.cursor = cursor;
         this.bufferSize = cursor.getBufferSize();
         CheckArg.isPositive(bufferSize, "cursor.getBufferSize()");
@@ -190,6 +108,19 @@ public final class RingBuffer<T, C> {
         this.buffer = new Object[bufferSize];
         this.executor = executor;
         this.consumerAdapter = consumerAdapter;
+        if (gcEntries) {
+            this.gcConsumer = this.cursor.createGarbageCollectingConsumer(new Collectable() {
+
+                @Override
+                public void collect( long position ) {
+                    // System.out.println("----  CLEAR " + position);
+                    clearEntry(position);
+                }
+            });
+            this.executor.execute(gcConsumer);
+        } else {
+            this.gcConsumer = null;
+        }
     }
 
     /**
@@ -230,12 +161,21 @@ public final class RingBuffer<T, C> {
 
     @SuppressWarnings( "unchecked" )
     protected T getEntry( long position ) {
-        if (position < cursor.getCurrent() - bufferSize) {
+        if (position < (cursor.getCurrent() - bufferSize)) {
             // The cursor has already overwritten the entry ...
             return null;
         }
         int index = (int)(position & mask);
         return (T)buffer[index];
+    }
+
+    protected void clearEntry( long position ) {
+        if (position < (cursor.getCurrent() - bufferSize)) {
+            // The cursor has already overwritten the entry ...
+            return;
+        }
+        int index = (int)(position & mask);
+        buffer[index] = null;
     }
 
     /**
@@ -275,6 +215,7 @@ public final class RingBuffer<T, C> {
             throw new IllegalStateException();
         }
         ConsumerRunner runner = new ConsumerRunner(consumer, timesToRetryUponTimeout);
+        if (gcConsumer != null) gcConsumer.stayBehind(runner.getPointer());
 
         // Try to add the runner instance, with equality based upon consumer instance equality ...
         if (consumers.putIfAbsent(runner, runner) != null) return false;
@@ -305,7 +246,8 @@ public final class RingBuffer<T, C> {
             // Try to remove the matching runner (if we found one) from our list ...
             if (match != null) {
                 // Tell the thread to stop and wait for it, after which it will have been removed from our map ...
-                return match.stopAndDisconnect();
+                match.close();
+                return true;
             }
         }
         // We either didn't find it, or we found it but something else remove it while we searched ...
@@ -320,6 +262,7 @@ public final class RingBuffer<T, C> {
      */
     protected void disconnect( ConsumerRunner runner ) {
         this.consumers.remove(runner);
+        if (gcConsumer != null) gcConsumer.ignore(runner.getPointer());
     }
 
     /**
@@ -335,6 +278,9 @@ public final class RingBuffer<T, C> {
 
         // Mark the cursor as being finished; the threads will eventually catch up to this point and will each terminate ...
         this.cursor.complete();
+
+        // Stop the garbage collection thread (if running) ...
+        if (this.gcConsumer != null) this.gcConsumer.close();
 
         if (block) {
             // Go through all of the consumers and tell each to complete, waiting while they do ...
@@ -352,6 +298,9 @@ public final class RingBuffer<T, C> {
         // Mark the cursor as being finished ...
         this.cursor.complete();
 
+        // Stop the garbage collection thread (if running) ...
+        if (this.gcConsumer != null) this.gcConsumer.close();
+
         // Tell all of the consumers to stop immediately ...
         this.runConsumers.set(false);
 
@@ -363,7 +312,7 @@ public final class RingBuffer<T, C> {
         while (!consumers.isEmpty()) {
             try {
                 ConsumerRunner runner = consumers.keySet().iterator().next();
-                runner.stopAndDisconnect();
+                runner.close();
             } catch (NoSuchElementException e) {
                 // Must have been removed or finished while we were looking, so ignore it
             }
@@ -379,7 +328,7 @@ public final class RingBuffer<T, C> {
         void close( ConsumerType consumer );
     }
 
-    protected class ConsumerRunner implements Runnable {
+    protected class ConsumerRunner implements Runnable, AutoCloseable {
         private final C consumer;
         private final PointerBarrier barrier;
         private final Pointer pointer;
@@ -394,6 +343,10 @@ public final class RingBuffer<T, C> {
             // Create a new barrier and a new pointer for consumer ...
             this.barrier = cursor.newBarrier();
             this.pointer = cursor.newPointer(); // the cursor will not wrap beyond this pointer
+        }
+
+        protected Pointer getPointer() {
+            return pointer;
         }
 
         protected C getConsumer() {
@@ -416,16 +369,17 @@ public final class RingBuffer<T, C> {
             return false;
         }
 
-        public boolean stopAndDisconnect() {
-            this.runThread.compareAndSet(true, false);
-            try {
-                cursor.signalConsumers();
-                this.stopLatch.await();
-                return true;
-            } catch (InterruptedException e) {
-                // do nothing ...
+        @Override
+        public void close() {
+            if (this.runThread.compareAndSet(true, false)) {
+                try {
+                    cursor.signalConsumers();
+                    this.barrier.close();
+                    this.stopLatch.await();
+                } catch (InterruptedException e) {
+                    // do nothing ...
+                }
             }
-            return false;
         }
 
         @Override
