@@ -42,7 +42,7 @@ public class BlockingWaitStrategy implements WaitStrategy {
             // The caller wants a position that is farther along than what is available, so we have to block ...
             lock.lock();
             try {
-                while ((availablePosition = pointer.get()) < position) {
+                while (!barrier.isComplete() && (availablePosition = pointer.get()) < position) {
                     waitCondition.await();
                 }
             } finally {

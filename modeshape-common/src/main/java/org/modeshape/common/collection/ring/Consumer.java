@@ -20,8 +20,8 @@ package org.modeshape.common.collection.ring;
  * A consumer of entries that are added to the ring buffer.
  * 
  * @param <T> the type of entry
- * @see RingBuffer#addConsumer(Consumer)
- * @see RingBuffer#addConsumer(Consumer, int)
+ * @see RingBuffer#addConsumer(Object)
+ * @see RingBuffer#addConsumer(Object, int)
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public abstract class Consumer<T> implements AutoCloseable {
