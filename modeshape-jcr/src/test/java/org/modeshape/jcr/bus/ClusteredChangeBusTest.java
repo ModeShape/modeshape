@@ -30,7 +30,7 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.clustering.ClusteringService;
 
 /**
- * Unit test for {@link ClusteredRepositoryChangeBus}
+ * Unit test for {@link ClusteredChangeBus}
  *
  * @author Horia Chiorean
  */
@@ -72,7 +72,7 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         TestListener listener3 = new TestListener();
 
         // Create three buses using a real JGroups cluster ...
-        ClusteredRepositoryChangeBus bus1 = startNewBus();
+        ClusteredChangeBus bus1 = startNewBus();
         bus1.register(listener1);
         // ------------------------------------
         // Send a change from the first bus ...
@@ -101,7 +101,7 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         // ------------------------------------
         // Create a second bus ...
         // ------------------------------------
-        ClusteredRepositoryChangeBus bus2 = startNewBus();
+        ClusteredChangeBus bus2 = startNewBus();
         bus2.register(listener2);
 
         // ------------------------------------
@@ -157,7 +157,7 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         // ------------------------------------
         // Create a third bus ...
         // ------------------------------------
-        ClusteredRepositoryChangeBus bus3 = startNewBus();
+        ClusteredChangeBus bus3 = startNewBus();
         bus3.register(listener3);
         // ------------------------------------
         // Send a change from the first bus ...
@@ -292,11 +292,11 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
     }
 
-    private ClusteredRepositoryChangeBus startNewBus() throws Exception {
+    private ClusteredChangeBus startNewBus() throws Exception {
         ClusteringService clusteringService = new ClusteringService().startStandalone("test-bus-process", "config/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
-        ChangeBus internalBus = new DisruptorRepositoryChangeBus(Executors.newCachedThreadPool(), RepositoryConfiguration.SYSTEM_WORKSPACE_NAME);
-        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(internalBus, clusteringService);
+        ChangeBus internalBus = new RepositoryChangeBus(Executors.newCachedThreadPool(), RepositoryConfiguration.SYSTEM_WORKSPACE_NAME);
+        ClusteredChangeBus bus = new ClusteredChangeBus(internalBus, clusteringService);
         bus.start();
         buses.add(bus);
         return bus;

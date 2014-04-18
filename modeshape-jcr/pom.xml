@@ -51,10 +51,6 @@
             <groupId>org.mapdb</groupId>
             <artifactId>mapdb</artifactId>
         </dependency>
-        <dependency>
-            <groupId>javax.jms</groupId>
-            <artifactId>javax.jms-api</artifactId>
-        </dependency>
 
         <!-- MIME-type detection. This can be excluded in applications and components that depend on ModeShape
              if MIME type detection is to be disabled in ModeShape. -->
@@ -100,11 +96,6 @@
                     <artifactId>isoparser</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <!--Used by the event bus-->
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
         </dependency>
 
         <!--  Used in tests -->

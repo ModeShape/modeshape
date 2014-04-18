@@ -98,8 +98,8 @@ import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
-import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
-import org.modeshape.jcr.bus.DisruptorRepositoryChangeBus;
+import org.modeshape.jcr.bus.RepositoryChangeBus;
+import org.modeshape.jcr.bus.ClusteredChangeBus;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
@@ -1109,8 +1109,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Create clustering service and event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                    ChangeBus localBus = new DisruptorRepositoryChangeBus(changeDispatchingQueue, systemWorkspaceName);
-                    this.changeBus = clusteringService != null ? new ClusteredRepositoryChangeBus(localBus, clusteringService) : localBus;
+                    ChangeBus localBus = new RepositoryChangeBus(changeDispatchingQueue, systemWorkspaceName);
+                    this.changeBus = clusteringService != null ? new ClusteredChangeBus(localBus, clusteringService) : localBus;
                     this.changeBus.start();
 
                     // Set up the event journal
@@ -1621,11 +1621,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected void shutdown() {
-            // shutdown the event bus first - this should clear all existing listeners
-            if (this.changeBus != null) {
-                this.changeBus.shutdown();
-            }
-
             // if reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
             // or we do anything that affects the nodes
             if (repositoryQueryManager != null) {
@@ -1665,6 +1660,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // shutdown the clustering service
             if (this.clusteringService != null) {
                 this.clusteringService.shutdown();
+            }
+
+            // shutdown the event bus
+            if (this.changeBus != null) {
+                this.changeBus.shutdown();
             }
 
             // shutdown the journal

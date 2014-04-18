@@ -16,9 +16,10 @@
 
 package org.modeshape.common.collection.ring;
 
+import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
@@ -59,7 +60,7 @@ import org.modeshape.common.util.CheckArg;
  * </p>
  * <p>
  * The consumer threads also process batches, although most of this is hidden within the runnable that calls the
- * {@link Consumer#consume(Object, long)} method. When ready to process an entry, this code asks for one entry and will get as
+ * {@link Consumer#consume(Object, long, long)} method. When ready to process an entry, this code asks for one entry and will get as
  * many entries that are available. All of the returned entries can then be processed without having to check any of the shared
  * data.
  * </p>
@@ -93,7 +94,7 @@ public final class RingBuffer<T, C> {
     protected final AtomicBoolean addEntries = new AtomicBoolean(true);
     protected final AtomicBoolean runConsumers = new AtomicBoolean(true);
     protected final ConsumerAdapter<T, C> consumerAdapter;
-    private final ConcurrentMap<ConsumerRunner, ConsumerRunner> consumers = new ConcurrentHashMap<>();
+    private final Set<ConsumerRunner> consumers = Collections.newSetFromMap(new ConcurrentHashMap<ConsumerRunner, Boolean>());
     private final GarbageCollectingConsumer gcConsumer;
 
     RingBuffer( Cursor cursor,
@@ -159,6 +160,38 @@ public final class RingBuffer<T, C> {
         return cursor.publish(position);
     }
 
+    /**
+     * Submits the given entry to all registered consumers to be processed immediately and in the same thread.
+     *
+     * @param entry the entry to be submitted; may not be null
+     * @return true if the entry was submitted, or false if the buffer has been {@link #shutdown(boolean)}
+     */
+    public boolean submitImmediately(T entry) {
+        assert entry != null;
+        if (!addEntries.get()) return false;
+        for (ConsumerRunner consumerRunner : consumers) {
+            consumerAdapter.consume(consumerRunner.getConsumer(), entry, 0, 0);
+        }
+        return true;
+    }
+
+    /**
+     * Submits the given entries to all registered consumers to be processed immediately and in the same thread.
+     *
+     * @param entries and array of entries to be submitted; may not be null
+     * @return true if all the entries were submitted, or false if the buffer has been {@link #shutdown(boolean)}
+     */
+    public boolean submitImmediately(T[] entries) {
+        assert entries != null;
+        if (!addEntries.get()) return false;
+        for (ConsumerRunner consumerRunner : consumers) {
+            for (int i = 0; i < entries.length; i++) {
+                consumerAdapter.consume(consumerRunner.getConsumer(), entries[i], i, entries.length);
+            }
+        }
+        return true;
+    }
+
     @SuppressWarnings( "unchecked" )
     protected T getEntry( long position ) {
         if (position < (cursor.getCurrent() - bufferSize)) {
@@ -186,7 +219,7 @@ public final class RingBuffer<T, C> {
      * </p>
      * <p>
      * The consumer is automatically removed from the ring buffer when it returns {@code false} from its
-     * {@link Consumer#consume(Object, long)} method.
+     * {@link Consumer#consume(Object, long, long)} method.
      * </p>
      * 
      * @param consumer the component that will process the entries; may not be null
@@ -200,7 +233,7 @@ public final class RingBuffer<T, C> {
      * Add the supplied consumer, and have it start processing entries in a separate thread.
      * <p>
      * The consumer is automatically removed from the ring buffer when it returns {@code false} from its
-     * {@link Consumer#consume(Object, long)} method.
+     * {@link Consumer#consume(Object, long, long)} method.
      * </p>
      * 
      * @param consumer the component that will process the entries; may not be null
@@ -218,7 +251,7 @@ public final class RingBuffer<T, C> {
         if (gcConsumer != null) gcConsumer.stayBehind(runner.getPointer());
 
         // Try to add the runner instance, with equality based upon consumer instance equality ...
-        if (consumers.putIfAbsent(runner, runner) != null) return false;
+        if (!consumers.add(runner)) return false;
 
         // It was added, so
         executor.execute(runner);
@@ -237,8 +270,8 @@ public final class RingBuffer<T, C> {
         if (consumer != null) {
             // Iterate through the map to find the runner that owns this consumer ...
             ConsumerRunner match = null;
-            for (ConsumerRunner runner : consumers.keySet()) {
-                if (runner.getConsumer() == consumer) {
+            for (ConsumerRunner runner : consumers) {
+                if (runner.getConsumer().equals(consumer)) {
                     match = runner;
                     break;
                 }
@@ -266,9 +299,18 @@ public final class RingBuffer<T, C> {
     }
 
     /**
+     * Checks if there are any consumers registered.
+     *
+     * @return {@code true} if this buffer has any consumers, {@code false} otherwise.
+     */
+    public boolean hasConsumers() {
+        return !this.consumers.isEmpty();
+    }
+
+    /**
      * Shutdown this ring buffer by preventing any further entries, but allowing all existing entries to be processed by all
      * consumers.
-     * 
+     *
      * @param block true if this method should block until all threads terminate after processing all remaining entries, or false
      *        if this method should return immediately (before all threads complete their processing)
      */
@@ -311,7 +353,7 @@ public final class RingBuffer<T, C> {
     private void removeAndStopAllListeners() {
         while (!consumers.isEmpty()) {
             try {
-                ConsumerRunner runner = consumers.keySet().iterator().next();
+                ConsumerRunner runner = consumers.iterator().next();
                 runner.close();
             } catch (NoSuchElementException e) {
                 // Must have been removed or finished while we were looking, so ignore it
@@ -323,9 +365,12 @@ public final class RingBuffer<T, C> {
     public static interface ConsumerAdapter<EventType, ConsumerType> {
         boolean consume( ConsumerType consumer,
                          EventType event,
-                         long position );
+                         long position,
+                         long maxPosition );
 
         void close( ConsumerType consumer );
+
+        void handleException( Throwable t, EventType event, long position, long maxPosition );
     }
 
     protected class ConsumerRunner implements Runnable, AutoCloseable {
@@ -364,7 +409,7 @@ public final class RingBuffer<T, C> {
             if (obj instanceof RingBuffer.ConsumerRunner) {
                 @SuppressWarnings( "unchecked" )
                 ConsumerRunner that = (ConsumerRunner)obj;
-                return this.consumer == that.consumer;
+                return this.consumer.equals(that.consumer);
             }
             return false;
         }
@@ -373,10 +418,12 @@ public final class RingBuffer<T, C> {
         public void close() {
             if (this.runThread.compareAndSet(true, false)) {
                 try {
-                    cursor.signalConsumers();
                     this.barrier.close();
+                    cursor.signalConsumers();
                     this.stopLatch.await();
                 } catch (InterruptedException e) {
+                    // The thread was interrupted ...
+                    Thread.interrupted();
                     // do nothing ...
                 }
             }
@@ -396,10 +443,14 @@ public final class RingBuffer<T, C> {
                         while (next <= maxPosition) {
                             entry = getEntry(next);
                             if (!runThread.get()) return;
-                            if (!consumerAdapter.consume(consumer, entry, next)) {
-                                // We're done, but tell the cursor to disregard our barrier ...
-                                consume = false;
-                                break;
+                            try {
+                                if (!consumerAdapter.consume(consumer, entry, next, maxPosition)) {
+                                    // We're done, but tell the cursor to disregard our barrier ...
+                                    consume = false;
+                                    break;
+                                }
+                            } catch (Throwable t) {
+                                consumerAdapter.handleException(t, entry, next, maxPosition);
                             }
                             next = pointer.incrementAndGet() + 1L;
                             retry = timesToRetryUponTimeout;

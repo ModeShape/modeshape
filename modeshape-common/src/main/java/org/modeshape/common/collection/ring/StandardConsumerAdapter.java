@@ -23,31 +23,37 @@ import org.modeshape.common.collection.ring.RingBuffer.ConsumerAdapter;
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  * @param <T> the type of entry
+ * @param <C> the type of the consumer
  */
-final class StandardConsumerAdapter<T> implements ConsumerAdapter<T, Consumer<T>> {
+final class StandardConsumerAdapter<T, C extends Consumer<T>> implements ConsumerAdapter<T, C> {
 
     /**
      * Create a new instance.
      * 
      * @return the new adapter
      */
-    public static <T> ConsumerAdapter<T, Consumer<T>> create() {
-        return new StandardConsumerAdapter<T>();
+    public static <T, C extends Consumer<T>> ConsumerAdapter<T, C> create() {
+        return new StandardConsumerAdapter<>();
     }
 
     private StandardConsumerAdapter() {
     }
 
     @Override
-    public boolean consume( Consumer<T> consumer,
+    public boolean consume( C consumer,
                             T event,
-                            long position ) {
-        return consumer.consume(event, position);
+                            long position,
+                            long maxPosition ) {
+        return consumer.consume(event, position, maxPosition);
     }
 
     @Override
-    public void close( Consumer<T> consumer ) {
+    public void close( C consumer ) {
         consumer.close();
     }
 
+    @Override
+    public void handleException( Throwable t, T event, long position, long maxPosition ) {
+        //nothing by default
+    }
 }
