@@ -20,8 +20,8 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * A barrier that encapsulates a {@link Pointer} and that will {@link #waitFor(long) wait} to advance it until it is safe to do so
- * and there are entries available to read. This is used within the {@link RingBuffer#addConsumer(Consumer)} method to provide
- * each consumer with a valid {@link Pointer} that stays as close as possible behind the ring buffer's {@link Cursor}.
+ * and there are entries available to read. This is used within the {@link RingBuffer#addConsumer} method to provide each consumer
+ * with a valid {@link Pointer} that stays as close as possible behind the ring buffer's {@link Cursor}.
  * 
  * @see Cursor#newBarrier()
  * @author Randall Hauch (rhauch@redhat.com)
@@ -38,4 +38,11 @@ public interface PointerBarrier {
      * @throws TimeoutException if this blocking method times out
      */
     long waitFor( long position ) throws InterruptedException, TimeoutException;
+
+    /**
+     * Return whether this barrier has completed and should no longer be used.
+     * 
+     * @return true if this barrier is complete, or false otherwise
+     */
+    boolean isComplete();
 }

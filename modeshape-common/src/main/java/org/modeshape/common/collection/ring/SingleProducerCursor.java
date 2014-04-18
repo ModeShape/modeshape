@@ -137,13 +137,28 @@ public final class SingleProducerCursor implements Cursor {
                 }
                 return getHighestPublishedPosition(position, availableSequence);
             }
+
+            @Override
+            public boolean isComplete() {
+                return SingleProducerCursor.this.isComplete();
+            }
         };
+    }
+
+    @Override
+    public void signalConsumers() {
+        waitStrategy.signalAllWhenBlocking();
     }
 
     @Override
     public void complete() {
         finalPosition = current.get();
         waitStrategy.signalAllWhenBlocking();
+    }
+
+    @Override
+    public boolean isComplete() {
+        return finalPosition == current.get();
     }
 
     @Override
