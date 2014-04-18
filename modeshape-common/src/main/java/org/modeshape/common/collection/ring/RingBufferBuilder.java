@@ -48,9 +48,9 @@ public class RingBufferBuilder<T, C> {
      * @param entryClass the type of entry that will be put into and consumed from the buffer; may not be null
      * @return the builder for ring buffers; never null
      */
-    public static <T> RingBufferBuilder<T, Consumer<T>> withSingleProducer( Executor executor,
-                                                                            Class<T> entryClass ) {
-        return new RingBufferBuilder<>(executor, StandardConsumerAdapter.<T>create()).singleProducer();
+    public static <T, C extends Consumer<T>> RingBufferBuilder<T, C> withSingleProducer( Executor executor,
+                                                                                         Class<T> entryClass ) {
+        return new RingBufferBuilder<>(executor, StandardConsumerAdapter.<T, C>create()).singleProducer();
     }
 
     public static final int DEFAULT_BUFFER_SIZE = 1 << 10; // 1024

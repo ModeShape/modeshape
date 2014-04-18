@@ -35,9 +35,9 @@ import org.modeshape.jcr.clustering.MessageConsumer;
  * @author Horia Chiorean
  */
 @ThreadSafe
-public final class ClusteredRepositoryChangeBus extends MessageConsumer<ChangeSet> implements ChangeBus {
+public final class ClusteredChangeBus extends MessageConsumer<ChangeSet> implements ChangeBus {
 
-    private static final Logger LOGGER = Logger.getLogger(ClusteredRepositoryChangeBus.class);
+    private static final Logger LOGGER = Logger.getLogger(ClusteredChangeBus.class);
 
     /**
      * The wrapped standalone bus to which standard bus operations are delegated
@@ -55,8 +55,8 @@ public final class ClusteredRepositoryChangeBus extends MessageConsumer<ChangeSe
      * @param delegate the local bus to which changes will be delegated
      * @param clusteringService the object which will handle sending/receiving information in the cluster.
      */
-    public ClusteredRepositoryChangeBus( ChangeBus delegate,
-                                         ClusteringService clusteringService ) {
+    public ClusteredChangeBus( ChangeBus delegate,
+                               ClusteringService clusteringService ) {
         super(ChangeSet.class);
 
         CheckArg.isNotNull(delegate, "delegate");

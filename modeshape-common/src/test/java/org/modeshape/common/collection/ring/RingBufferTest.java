@@ -20,9 +20,11 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 
@@ -30,6 +32,7 @@ import org.modeshape.common.statistic.Stopwatch;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public class RingBufferTest {
+    private static final Random RANDOM = new Random();
 
     protected volatile boolean print = false;
     protected volatile boolean slightPausesInConsumers = false;
@@ -106,7 +109,7 @@ public class RingBufferTest {
         Executor executor = Executors.newCachedThreadPool();
         RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(1024)
                                                                        .garbageCollect(true).build();
-        print = true;
+        print = false;
 
         // Add 10 entries with no consumers ...
         long value = 0L;
@@ -137,7 +140,7 @@ public class RingBufferTest {
         Executor executor = Executors.newCachedThreadPool();
         RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(8)
                                                                        .build();
-        print = true;
+        print = false;
 
         // Add 10 entries with no consumers ...
         long value = 0L;
@@ -186,11 +189,12 @@ public class RingBufferTest {
     }
 
     @Test
+    @Ignore("Takes a long time to run")
     public void consumersShouldSeeEventsInCorrectOrder() throws Exception {
         Executor executor = Executors.newCachedThreadPool();
-        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(8)
-                                                                       .build();
-        print = true;
+        RingBuffer<Long, MonotonicallyIncreasingConsumer> ringBuffer = RingBufferBuilder.withSingleProducer(executor, LongConsumerAdapter.INSTANCE)
+                                                                                        .ofSize(8).garbageCollect(false).build();
+        print = false;
 
         // Add 10 entries with no consumers ...
         long value = 0L;
@@ -210,7 +214,7 @@ public class RingBufferTest {
             // Thread.sleep(100L);
         }
 
-        // Add a second consumer that should start seeing items 20 and up ...
+        // Add a single consumer that should start seeing items 10 and up ...
         MonotonicallyIncreasingConsumer consumer2 = new MonotonicallyIncreasingConsumer("second", 20L, 20L);
         ringBuffer.addConsumer(consumer2);
 
@@ -221,15 +225,41 @@ public class RingBufferTest {
             // Thread.sleep(100L);
         }
 
-        print = false;
+        // Add a second consumer that should start seeing items 20 and up ...
+        MonotonicallyIncreasingConsumer consumer3 = new MonotonicallyIncreasingConsumer("third", 30L, 30L);
+        ringBuffer.addConsumer(consumer3);
+
+        // Add 10 more entries ...
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+            // Thread.sleep(100L);
+        }
+
+        // Add a second consumer that should start seeing items 20 and up ...
+        MonotonicallyIncreasingConsumer consumer4 = new MonotonicallyIncreasingConsumer("fourth", 40L, 40L);
+        ringBuffer.addConsumer(consumer4);
+
+        // Add 10 more entries ...
+        for (int i = 0; i != 10; ++i) {
+            print("Adding entry " + value);
+            ringBuffer.add(value++);
+            // Thread.sleep(100L);
+        }
+
+        print = true;
         slightPausesInConsumers = false;
+        boolean slightPauseBetweenEvents = false;
 
         // Add 400K more entries
         Stopwatch sw = new Stopwatch();
-        int count = 400000;
+        int count = 20000;
         sw.start();
         for (int i = 0; i != count; ++i) {
             ringBuffer.add(value++);
+            if (slightPauseBetweenEvents) {
+                Thread.sleep(RANDOM.nextInt(50));
+            }
         }
         sw.stop();
 
@@ -240,13 +270,15 @@ public class RingBufferTest {
             ringBuffer.add(value++);
         }
 
-        boolean blockWhileShuttingDown = false;
+        boolean blockWhileShuttingDown = true;
         ringBuffer.shutdown(blockWhileShuttingDown);
         print("");
         print("Ring buffer shutdown completed");
         if (blockWhileShuttingDown) {
             assertTrue(consumer1.isClosed());
             assertTrue(consumer2.isClosed());
+            assertTrue(consumer3.isClosed());
+            assertTrue(consumer4.isClosed());
         } else {
             // Wait while the threads complete
             while (!consumer1.isClosed()) {
@@ -261,6 +293,8 @@ public class RingBufferTest {
         --value;
         assertThat(consumer1.getLastValue(), is(value));
         assertThat(consumer2.getLastValue(), is(value));
+        assertThat(consumer3.getLastValue(), is(value));
+        assertThat(consumer4.getLastValue(), is(value));
 
         print("");
         print("Time to add " + count + " entries: " + sw.getAverageDuration());
@@ -287,12 +321,13 @@ public class RingBufferTest {
 
         @Override
         public boolean consume( Long entry,
-                                long position ) {
+                                long position,
+                                long max ) {
             assertTrue(!closed);
-            print(id + " consuming " + entry.longValue() + " at position " + position);
+            print(id + " consuming " + entry.longValue() + " at position " + position + " with max " + max);
             if (slightPausesInConsumers && position % 1000 == 0) {
                 try {
-                    Thread.sleep(100L);
+                    Thread.sleep(RANDOM.nextInt(100));
                 } catch (Exception e) {
                     e.printStackTrace();
                     fail(e.getMessage());
@@ -328,6 +363,29 @@ public class RingBufferTest {
 
         public boolean isClosed() {
             return closed;
+        }
+    }
+
+    private static class LongConsumerAdapter implements RingBuffer.ConsumerAdapter<Long, MonotonicallyIncreasingConsumer> {
+        private static final LongConsumerAdapter INSTANCE = new LongConsumerAdapter();
+
+        private LongConsumerAdapter() {
+        }
+
+        @Override
+        public boolean consume( MonotonicallyIncreasingConsumer consumer, Long event, long position, long maxPosition ) {
+            consumer.consume(event, position, maxPosition);
+            return true;
+        }
+
+        @Override
+        public void close( MonotonicallyIncreasingConsumer consumer ) {
+            consumer.close();
+        }
+
+        @Override
+        public void handleException( Throwable t, Long event, long position, long maxPosition ) {
+            throw new AssertionError("Test failure", t);
         }
     }
 

@@ -212,13 +212,13 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
     }
 
     private void incrementEventQueueStatistic( ChangeSet changeSet ) {
+        // whenever a change set is received from the bus, increment the que size
+        if (repositoryStatistics != null) {
+            repositoryStatistics.increment(ValueMetric.EVENT_QUEUE_SIZE);
+        }
+
         changesLock.lock();
         try {
-            // whenever a change set is received from the bus, increment the que size
-            if (repositoryStatistics != null) {
-                repositoryStatistics.increment(ValueMetric.EVENT_QUEUE_SIZE);
-            }
-
             if (!this.changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
                 // none of the adapters have processed this change set yet, register it
                 changesReceivedAndDispatched.put(changeSet.hashCode(), new AtomicInteger(listeners.size()));
@@ -388,6 +388,11 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
         @Override
         public int hashCode() {
             return this.delegate.hashCode();
+        }
+
+        @Override
+        public String toString() {
+          return delegate.toString();
         }
     }
 

@@ -56,6 +56,7 @@ public abstract class AbstractChangeBusTest {
     @Before
     public void beforeEach() throws Exception {
         changeBus = createRepositoryChangeBus();
+        changeBus.start();
     }
 
     protected abstract ChangeBus createRepositoryChangeBus() throws Exception;

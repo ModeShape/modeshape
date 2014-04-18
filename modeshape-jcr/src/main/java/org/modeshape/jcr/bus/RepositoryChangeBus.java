@@ -13,251 +13,167 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.modeshape.jcr.bus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.modeshape.common.annotation.GuardedBy;
-import org.modeshape.common.annotation.ThreadSafe;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import org.modeshape.common.collection.ring.RingBuffer;
+import org.modeshape.common.collection.ring.RingBufferBuilder;
 import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.HashCode;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
- * A standard {@link ChangeBus} implementation.
- * 
- * @author Horia Chiorean
+ * Change bus implementation around a {@link org.modeshape.common.collection.ring.RingBuffer}
+ *
+ * @author Randall Hauch (rhauch@redhat.com)
+ * @author Horia Chiorean (hchiorean@redhat.com)
  */
-@ThreadSafe
-@Deprecated
 public final class RepositoryChangeBus implements ChangeBus {
 
     protected static final Logger LOGGER = Logger.getLogger(RepositoryChangeBus.class);
 
-    protected volatile boolean shutdown;
+    private static final int DEFAULT_SIZE = 1 << 10; //1024
 
-    private final ExecutorService executor;
-    private final List<ChangeSetDispatcher> dispatchers;
-    private final Map<Integer, Future<?>> workers;
-    private final ReadWriteLock listenersLock;
-
+    private final AtomicBoolean shutdown = new AtomicBoolean(true);
+    /**
+     * We use a lock for {@link #register(ChangeSetListener)}, {@link #registerInThread(ChangeSetListener)},
+     * {@link #unregister(ChangeSetListener)}, {@link #start()} and {@link #shutdown()} to ensure that a single listener is
+     * properly and atomcially added to either one of the maps. However, the {@link #notify(ChangeSet)} method only needs a
+     * consistent snapshot of each of the maps (not a consistent snapshot of <em>both</em>), which is why we're using
+     * <em>concurrent</em> maps (even though we're using a lock for registration).
+     */
+    private final Lock registrationLock = new ReentrantLock();
     private final String systemWorkspaceName;
+    private final Set<ChangeSetListener> inThreadListeners = Collections.newSetFromMap(new ConcurrentHashMap<ChangeSetListener, Boolean>());
+    private final RingBuffer<ChangeSet, ChangeSetListener> ringBuffer;
 
     /**
      * Creates new change bus
      * 
-     * @param executor the {@link ExecutorService} which will be used internally to submit workers to dispatching events to
-     *        listeners.
+     * @param executor the {@link java.util.concurrent.ExecutorService} which will be used internally to submit workers to
+     *        dispatching events to listeners.
      * @param systemWorkspaceName the name of the system workspace, needed because internal (system) events are dispatched in the
      *        same thread; may no be null
      */
     public RepositoryChangeBus( ExecutorService executor,
                                 String systemWorkspaceName ) {
+
         this.systemWorkspaceName = systemWorkspaceName;
-        this.workers = new HashMap<>();
-        this.dispatchers = new ArrayList<>();
-        this.listenersLock = new ReentrantReadWriteLock(true);
-        this.executor = executor;
-        this.shutdown = false;
+        this.ringBuffer = RingBufferBuilder.withSingleProducer(executor, new ChangeSetListenerConsumerAdapter())
+                                           .ofSize(DEFAULT_SIZE)
+                                           .garbageCollect(true)
+                                           .build();
     }
 
     @Override
-    public synchronized void start() {
+    public boolean hasObservers() {
+        if (shutdown.get()) return false;
+        return !inThreadListeners.isEmpty() || ringBuffer.hasConsumers();
+    }
+
+    @Override
+    public boolean register( ChangeSetListener observer ) {
+        if (observer == null || shutdown.get()) return false;
+        try {
+            registrationLock.lock();
+            return ringBuffer.addConsumer(observer);
+        } finally {
+            registrationLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean registerInThread( ChangeSetListener observer ) {
+        if (observer == null || shutdown.get()) return false;
+        try {
+            registrationLock.lock();
+            return inThreadListeners.add(observer);
+        } finally {
+            registrationLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean unregister( ChangeSetListener observer ) {
+        if (observer == null || shutdown.get()) return false;
+        try {
+            registrationLock.lock();
+            return ringBuffer.remove(observer) || inThreadListeners.remove(observer);
+        } finally {
+            registrationLock.unlock();
+        }
+    }
+
+    @Override
+    public synchronized void start() throws Exception {
+        shutdown.set(false);
     }
 
     @Override
     public synchronized void shutdown() {
-        shutdown = true;
-        dispatchers.clear();
-        stopWork();
-    }
-
-    private void stopWork() {
-        executor.shutdown();
-        for (Future<?> worker : workers.values()) {
-            if (!worker.isDone()) {
-                worker.cancel(true);
-            }
+        // This method is synchronized to make sure that 'start' and 'stop' are not called simultaneously ...
+        if (shutdown.getAndSet(true)) {
+            // It was already shutdown ...
+            return;
         }
-        workers.clear();
-    }
 
-    @GuardedBy( "listenersLock" )
-    @Override
-    public boolean register( ChangeSetListener listener ) {
-        return internalRegister(listener, false);
-    }
-
-    @Override
-    @GuardedBy( "listenersLock" )
-    public boolean registerInThread( ChangeSetListener listener ) {
-        return internalRegister(listener, true);
-    }
-
-    private boolean internalRegister( ChangeSetListener listener, boolean inThread ) {
-        if (listener == null) {
-            return false;
-        }
-        int hashCode = HashCode.compute(listener);
-        if (workers.containsKey(hashCode)) {
-            return false;
-        }
         try {
-            listenersLock.writeLock().lock();
-
-            if (!workers.containsKey(hashCode)) {
-                ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener, inThread);
-                dispatchers.add(dispatcher);
-                workers.put(hashCode, executor.submit(dispatcher));
-                return true;
-            }
-            return false;
+            registrationLock.lock();
+            // Clear all of the in-thread listeners ...
+            inThreadListeners.clear();
+            // Shutdown the ring buffer waiting for running threads to complete
+            ringBuffer.shutdown(true);
         } finally {
-            listenersLock.writeLock().unlock();
+            registrationLock.unlock();
         }
     }
 
-    @GuardedBy( "listenersLock" )
-    @Override
-    public boolean unregister( ChangeSetListener listener ) {
-        if (listener == null) {
-            return false;
-        }
-        int hashCode = HashCode.compute(listener);
-        if (!workers.containsKey(hashCode)) {
-            return false;
-        }
-        try {
-            listenersLock.writeLock().lock();
-            if (!workers.containsKey(hashCode)) {
-                return false;
-            }
-            for (Iterator<ChangeSetDispatcher> dispatcherIterator = dispatchers.iterator(); dispatcherIterator.hasNext();) {
-                ChangeSetDispatcher dispatcher = dispatcherIterator.next();
-                if (dispatcher.listenerHashCode() == hashCode) {
-                    Future<?> work = workers.remove(hashCode);
-                    // cancelling the work will call shutdown on the dispatcher
-                    work.cancel(true);
-                    dispatcherIterator.remove();
-                    return true;
-                }
-            }
-        } finally {
-            listenersLock.writeLock().unlock();
-        }
-        return false;
-    }
-
-    @GuardedBy( "listenersLock" )
     @Override
     public void notify( ChangeSet changeSet ) {
         if (changeSet == null || !hasObservers()) {
             return;
         }
 
-        if (shutdown) {
+        if (shutdown.get()) {
             throw new IllegalStateException("Change bus has been already shut down, should not have any more observers");
         }
 
-        // changes in the system workspace are always submitted in the same thread because they need immediate processing
-        boolean inThread = systemWorkspaceName.equalsIgnoreCase(changeSet.getWorkspaceName());
-        submitChanges(changeSet, inThread);
+
+        if (systemWorkspaceName.equalsIgnoreCase(changeSet.getWorkspaceName())) {
+            // changes in the system workspace are always submitted in the same thread because they need immediate processing
+            ringBuffer.submitImmediately(changeSet);
+        } else {
+            ringBuffer.add(changeSet);
+        }
+
+        // And process all of the in-thread listeners ...
+        for (ChangeSetListener listener : inThreadListeners) {
+            listener.notify(changeSet);
+        }
     }
 
-    private boolean submitChanges( ChangeSet changeSet,
-                                   boolean inThread ) {
-        try {
-            listenersLock.readLock().lock();
-            for (ChangeSetDispatcher dispatcher : dispatchers) {
-                if (inThread || dispatcher.notifyInSameThread()) {
-                    dispatcher.listener().notify(changeSet);
-                } else {
-                    dispatcher.submit(changeSet);
-                }
-            }
+    protected class ChangeSetListenerConsumerAdapter implements RingBuffer.ConsumerAdapter<ChangeSet,ChangeSetListener> {
+        @Override
+        public boolean consume( ChangeSetListener consumer, ChangeSet event, long position, long maxPosition ) {
+            consumer.notify(event);
             return true;
-        } finally {
-            listenersLock.readLock().unlock();
-        }
-    }
-
-    @GuardedBy( "listenersLock" )
-    @Override
-    public boolean hasObservers() {
-        try {
-            listenersLock.readLock().lock();
-            return !dispatchers.isEmpty();
-        } finally {
-            listenersLock.readLock().unlock();
-        }
-    }
-
-    private class ChangeSetDispatcher implements Callable<Void> {
-
-        private final int listenerHashCode;
-        private final boolean notifyInSameThread;
-        private ChangeSetListener listener;
-        private BlockingQueue<ChangeSet> queue;
-
-        protected ChangeSetDispatcher( ChangeSetListener listener, boolean notifyInSameThread ) {
-            this.listener = listener;
-            this.listenerHashCode = HashCode.compute(listener);
-            this.queue = new LinkedBlockingQueue<>();
-            this.notifyInSameThread = notifyInSameThread;
         }
 
         @Override
-        public Void call() {
-            while (!shutdown) {
-                try {
-                    ChangeSet changeSet = queue.take();
-                    if (changeSet != null) {
-                        listener.notify(changeSet);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    break;
-                }
-            }
-            shutdown();
-            return null;
+        public void close( ChangeSetListener consumer ) {
+            //nothing to do here
         }
 
-        protected void submit( ChangeSet changeSet ) {
-            if (!queue.offer(changeSet)) {
-                LOGGER.debug("Cannot submit change set: {0} because the queue is full", changeSet);
-            }
-        }
-
-        protected int listenerHashCode() {
-            return listenerHashCode;
-        }
-
-        protected ChangeSetListener listener() {
-            return listener;
-        }
-
-        protected boolean notifyInSameThread() {
-            return notifyInSameThread;
-        }
-
-        private void shutdown() {
-            while (!queue.isEmpty()) {
-                listener.notify(queue.remove());
-            }
-            this.listener = null;
-            this.queue = null;
+        @Override
+        public void handleException( Throwable t, ChangeSet event, long position, long maxPosition ) {
+            LOGGER.error(t, BusI18n.errorProcessingEvent, event.toString(), position);
         }
     }
 }

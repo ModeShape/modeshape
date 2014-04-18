@@ -159,15 +159,6 @@
             </includes>
         </dependencySet>
 
-        <!-- Module for the LMAX disruptor (self-contained) -->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.kit.modules.location}/com/lmax/disruptor/${disruptor.version}</outputDirectory>
-            <includes>
-                <include>com.lmax:*:jar</include>
-            </includes>
-        </dependencySet>
-
         <!--Connectors-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

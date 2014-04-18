@@ -17,15 +17,13 @@
 package org.modeshape.jcr.bus;
 
 import java.util.concurrent.Executors;
-import org.junit.Ignore;
 import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
- * Unit test for {@link org.modeshape.jcr.bus.RepositoryChangeBus}
+ * Unit test for {@link RepositoryChangeBus}
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-@Ignore("Uses the deprecated bus")
 public class RepositoryChangeBusTest extends AbstractChangeBusTest {
 
     @Override

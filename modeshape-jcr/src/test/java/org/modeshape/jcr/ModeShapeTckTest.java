@@ -2576,6 +2576,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             while (events.hasNext()) {
                 try {
                     latch.countDown();
+                    events.nextEvent();
                 } catch (Throwable e) {
                     latch.countDown();
                     fail(e.getMessage());
