@@ -16,6 +16,8 @@
 
 package org.modeshape.common.collection.ring;
 
+import org.modeshape.common.collection.ring.GarbageCollectingConsumer.Collectable;
+
 /**
  * A cursor in a ring buffer at which point information can be added to the buffer. A ring buffer uses its cursor to keep track of
  * the {@link Pointer positions} of all consumers (to keep from overlapping them), and to ensure that entries are added to the
@@ -28,7 +30,7 @@ package org.modeshape.common.collection.ring;
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public interface Cursor {
+public interface Cursor extends DependentOnPointers {
 
     /**
      * Get the size of the buffer that this cursor operates against.
@@ -78,23 +80,6 @@ public interface Cursor {
                                       long upperPosition );
 
     /**
-     * Ensure that this cursor always remains behind the specified pointer.
-     * 
-     * @param pointers the pointers that this cursor may not run past in the ring buffer
-     */
-    void stayBehind( Pointer... pointers );
-
-    /**
-     * Ignore the specified pointer that cursor had previously {@link #stayBehind(Pointer[]) stayed behind}. This should be called
-     * when the supplied pointer is removed from the ring buffer.
-     * 
-     * @param pointer the pointer that this cursor may no longer depend upon
-     * @return true if this cursor did depend on the supplied pointer and now no longer does, or false if this cursor never
-     *         dependent upon the supplied pointer
-     */
-    boolean ignore( Pointer pointer );
-
-    /**
      * Add a new barrier that a consumer can use the wait for the next available positions.
      * 
      * @return the new barrier; never null
@@ -126,4 +111,6 @@ public interface Cursor {
      * @return true if this cursor is complete, or false otherwise
      */
     boolean isComplete();
+
+    GarbageCollectingConsumer createGarbageCollectingConsumer( Collectable collectable );
 }
