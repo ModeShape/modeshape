@@ -1261,7 +1261,7 @@ public class SystemContent {
      * <p>
      * The names of the different versions has changed since 2.x, and now follows the same convention and algorithm as used in the
      * reference implementation. See
-     * {@link #nextNameForVersionNode(org.modeshape.jcr.cache.CachedNode, org.modeshape.jcr.value.Property, org.modeshape.jcr.cache.ChildReferences)}
+     * {@link #nextNameForVersionNode(org.modeshape.jcr.value.Property, org.modeshape.jcr.cache.ChildReferences)}
      * for details.
      * </p>
      * 
@@ -1310,7 +1310,7 @@ public class SystemContent {
         } else {
             ChildReferences historyChildren = historyNode.getChildReferences(system);
             predecessors = versionableNode.getProperty(JcrLexicon.PREDECESSORS, cacheForVersionableNode);
-            versionName = nextNameForVersionNode(historyNode, predecessors, historyChildren);
+            versionName = nextNameForVersionNode(predecessors, historyChildren);
         }
 
         // Create a 'nt:version' node under the version history node ...
@@ -1403,26 +1403,26 @@ public class SystemContent {
      * 
      * </p>
      * 
-     * @param historyNode
      * @param predecessors the 'jcr:predecessors' property; may not be null
      * @param historyChildren the child references under the version history for the node
      * @return the next name
      */
-    protected Name nextNameForVersionNode( CachedNode historyNode,
-                                           Property predecessors,
+    protected Name nextNameForVersionNode( Property predecessors,
                                            ChildReferences historyChildren ) {
         String proposedName = null;
         CachedNode versionNode = null;
 
         // Try to find the versions in the history that are considered predecessors ...
-        for (Object predecessor : predecessors) {
-            if (predecessor == null) continue;
-            NodeKey key = ((NodeKeyReference)predecessor).getNodeKey();
-            CachedNode predecessorNode = system.getNode(key);
-            Name predecessorName = predecessorNode.getName(system);
-            if (proposedName == null || predecessorName.getLocalName().length() < proposedName.length()) {
-                proposedName = predecessorName.getLocalName();
-                versionNode = predecessorNode;
+        if (predecessors != null) {
+            for (Object predecessor : predecessors) {
+                if (predecessor == null) continue;
+                NodeKey key = ((NodeKeyReference)predecessor).getNodeKey();
+                CachedNode predecessorNode = system.getNode(key);
+                Name predecessorName = predecessorNode.getName(system);
+                if (proposedName == null || predecessorName.getLocalName().length() < proposedName.length()) {
+                    proposedName = predecessorName.getLocalName();
+                    versionNode = predecessorNode;
+                }
             }
         }
         if (proposedName == null) {

@@ -45,6 +45,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.Privilege;
+import javax.jcr.version.Version;
 import javax.jcr.version.VersionIterator;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1112,6 +1113,36 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         testImportExport("/", "/", ExportType.SYSTEM, true, false, true);
         testImportExport("/", "/", ExportType.DOCUMENT, true, false, true);
+    }
+
+    @Test
+    @FixFor( "MODE-2192" )
+    public void shouldImportSystemViewWithCheckedInNodes() throws Exception {
+        tools.registerNodeTypes(session, "cnd/ecm.cnd");
+
+        InputStream stream = resourceStream("io/ecm.xml");
+        session.importXML("/", stream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+        session.save();
+        JcrVersionManager versionManager = session.getWorkspace().getVersionManager();
+
+        assertNode("/root");
+        Node file = assertNode("/root/file1", "nt:file");
+        assertTrue(file.isCheckedOut());
+        Version fileVersion = versionManager.checkin("/root/file1");
+        assertEquals("1.0", fileVersion.getName());
+        assertEquals(2, versionManager.getVersionHistory("/root/file1").getAllVersions().getSize());
+
+        Node doc1 = assertNode("/root/folder1/doc1", "nt:file");
+        assertTrue(doc1.isCheckedOut());
+        Version docVersion = versionManager.checkin("/root/folder1/doc1");
+        assertEquals("1.0", docVersion.getName());
+        assertEquals(2, versionManager.getVersionHistory("/root/folder1/doc1").getAllVersions().getSize());
+
+        Node content = assertNode("/root/folder1/doc1/jcr:content", "nt:resource");
+        assertTrue(content.isCheckedOut());
+        Version contentVersion = versionManager.checkin("/root/folder1/doc1/jcr:content");
+        assertEquals("1.0", contentVersion.getName());
+        assertEquals(2, versionManager.getVersionHistory("/root/folder1/doc1/jcr:content").getAllVersions().getSize());
     }
 
     @Test
