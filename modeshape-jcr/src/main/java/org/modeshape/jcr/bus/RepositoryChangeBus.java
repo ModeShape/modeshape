@@ -31,7 +31,7 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
  * Change bus implementation around a {@link org.modeshape.common.collection.ring.RingBuffer}
- *
+ * 
  * @author Randall Hauch (rhauch@redhat.com)
  * @author Horia Chiorean (hchiorean@redhat.com)
  */
@@ -39,7 +39,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     protected static final Logger LOGGER = Logger.getLogger(RepositoryChangeBus.class);
 
-    private static final int DEFAULT_SIZE = 1 << 10; //1024
+    private static final int DEFAULT_SIZE = 1 << 10; // 1024
 
     private final AtomicBoolean shutdown = new AtomicBoolean(true);
     /**
@@ -66,10 +66,8 @@ public final class RepositoryChangeBus implements ChangeBus {
                                 String systemWorkspaceName ) {
 
         this.systemWorkspaceName = systemWorkspaceName;
-        this.ringBuffer = RingBufferBuilder.withSingleProducer(executor, new ChangeSetListenerConsumerAdapter())
-                                           .ofSize(DEFAULT_SIZE)
-                                           .garbageCollect(true)
-                                           .build();
+        this.ringBuffer = RingBufferBuilder.withMultipleProducers(executor, new ChangeSetListenerConsumerAdapter())
+                                           .ofSize(DEFAULT_SIZE).garbageCollect(true).build();
     }
 
     @Override
@@ -129,7 +127,7 @@ public final class RepositoryChangeBus implements ChangeBus {
             // Clear all of the in-thread listeners ...
             inThreadListeners.clear();
             // Shutdown the ring buffer waiting for running threads to complete
-            ringBuffer.shutdown(true);
+            ringBuffer.shutdown();
         } finally {
             registrationLock.unlock();
         }
@@ -145,7 +143,6 @@ public final class RepositoryChangeBus implements ChangeBus {
             throw new IllegalStateException("Change bus has been already shut down, should not have any more observers");
         }
 
-
         if (systemWorkspaceName.equalsIgnoreCase(changeSet.getWorkspaceName())) {
             // changes in the system workspace are always submitted in the same thread because they need immediate processing
             ringBuffer.submitImmediately(changeSet);
@@ -159,20 +156,26 @@ public final class RepositoryChangeBus implements ChangeBus {
         }
     }
 
-    protected class ChangeSetListenerConsumerAdapter implements RingBuffer.ConsumerAdapter<ChangeSet,ChangeSetListener> {
+    protected class ChangeSetListenerConsumerAdapter implements RingBuffer.ConsumerAdapter<ChangeSet, ChangeSetListener> {
         @Override
-        public boolean consume( ChangeSetListener consumer, ChangeSet event, long position, long maxPosition ) {
+        public boolean consume( ChangeSetListener consumer,
+                                ChangeSet event,
+                                long position,
+                                long maxPosition ) {
             consumer.notify(event);
             return true;
         }
 
         @Override
         public void close( ChangeSetListener consumer ) {
-            //nothing to do here
+            // nothing to do here
         }
 
         @Override
-        public void handleException( Throwable t, ChangeSet event, long position, long maxPosition ) {
+        public void handleException( Throwable t,
+                                     ChangeSet event,
+                                     long position,
+                                     long maxPosition ) {
             LOGGER.error(t, BusI18n.errorProcessingEvent, event.toString(), position);
         }
     }
