@@ -162,8 +162,6 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
 
         this.session = session;
         this.repositoryObservable = repositoryObservable;
-        // this is registered as an observer just so it can count the number of events dispatched
-        this.repositoryObservable.register(this);
 
         this.listenersLock = new ReentrantReadWriteLock(true);
         this.listeners = new HashMap<>();
@@ -171,6 +169,9 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
         this.repositoryStatistics = statistics;
         this.changesLock = new ReentrantLock();
         this.changesReceivedAndDispatched = new HashMap<>();
+
+        // this is registered as an observer just so it can count the number of events dispatched
+        this.repositoryObservable.register(this);
     }
 
     @Override
@@ -212,10 +213,12 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
 
     private void incrementEventQueueStatistic( ChangeSet changeSet ) {
         // whenever a change set is received from the bus, increment the que size
-        repositoryStatistics.increment(ValueMetric.EVENT_QUEUE_SIZE);
+        if (repositoryStatistics != null) {
+            repositoryStatistics.increment(ValueMetric.EVENT_QUEUE_SIZE);
+        }
 
+        changesLock.lock();
         try {
-            changesLock.lock();
             if (!this.changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
                 // none of the adapters have processed this change set yet, register it
                 changesReceivedAndDispatched.put(changeSet.hashCode(), new AtomicInteger(listeners.size()));
@@ -226,14 +229,15 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
     }
 
     protected void decrementEventQueueStatistic( ChangeSet changeSet ) {
-
+        changesLock.lock();
         try {
-            changesLock.lock();
             if (changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
                 // the change set has already been registered (and the que size incremented)
                 int timesProcessed = changesReceivedAndDispatched.get(changeSet.hashCode()).decrementAndGet();
                 if (timesProcessed == 0) {
-                    repositoryStatistics.decrement(ValueMetric.EVENT_QUEUE_SIZE);
+                    if (repositoryStatistics != null) {
+                        repositoryStatistics.decrement(ValueMetric.EVENT_QUEUE_SIZE);
+                    }
                     changesReceivedAndDispatched.remove(changeSet.hashCode());
                 }
             } else {
@@ -384,6 +388,11 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
         @Override
         public int hashCode() {
             return this.delegate.hashCode();
+        }
+
+        @Override
+        public String toString() {
+          return delegate.toString();
         }
     }
 

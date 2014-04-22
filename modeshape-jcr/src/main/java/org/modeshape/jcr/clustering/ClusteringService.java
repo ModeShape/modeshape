@@ -273,9 +273,9 @@ public final class ClusteringService {
             isOpen.set(false);
             try {
                 // Disconnect from the channel and close it ...
-                channel.close();
                 channel.removeChannelListener(listener);
                 channel.setReceiver(null);
+                channel.close();
                 LOGGER.debug("Successfully closed main channel");
             } finally {
                 channel = null;

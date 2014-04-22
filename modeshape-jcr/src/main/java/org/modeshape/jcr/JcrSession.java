@@ -262,7 +262,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         isLive = false;
 
-        observationManager().removeAllEventListeners();
+        JcrObservationManager jcrObservationManager = observationManager();
+        if (jcrObservationManager != null) {
+            jcrObservationManager.removeAllEventListeners();
+        }
 
         cleanLocks();
         if (removeFromActiveSession) this.repository.runningState().removeSession(this);

@@ -316,7 +316,7 @@ final class SequencingRunner implements Runnable {
                                             outputNode.path(), work.getOutputPath(), work.getUserId(), work.getSelectedPath(),
                                             sequencerName);
         }
-
+        sequencingChanges.freeze(outputSession.getUserID(), null, outputSession.context().getValueFactories().getDateFactory().create());
         repository.changeBus().notify(sequencingChanges);
     }
 
