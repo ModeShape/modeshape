@@ -14,20 +14,17 @@ by ModeShape's service.
 
 As of 4.0.0.Alpha1, ModeShape is licensed under the Apache Software License, 2.0.
 
-This is the first alpha release of the 4.0 stream, and it includes several significant
-changes. The largest impact is the query engine, which has been completely rewritten
-so that it can use a variety of indexing technology. As of 4.0.0.Alpha1, all queries 
-work except those that use full text search or outer joins (see MODE-2178 for details);
-these will be fixed in an upcoming release. Also, version &version; does not yet have
-support for defining custom indexes, so queries may be slower than in 3.x. However,
-you will soon be able to define custom indexes for the queries that you are using in 
-your application, reducing the amount of time and processing required to update the indexes.
+This is the second alpha release of the 4.0 stream, and it includes several fixes
+and new features. The previous alpha release introduced a new query engine that allows 
+clients to explicitly define the indexes used in the query system, and this second
+alpha release brings minor changes to the Service Provider Interface (SPI) for 
+query providers. Version &version; does introduce a programmatic API and configuration
+modifications for defining indexes, although no complete query providers are included
+(see next release).
 
-Clustering has also been made simpler. ModeShape now automatically piggybacks onto 
-Infinispan's clustering configuration, and events can now be captured in a journal
-on each machine. Over the next few alpha releases, we'll use this to improve how quickly
-processes can (re)join the cluster. We'll also add support for JCR's event journaling
-feature.
+Additionally, this release has support for the JCR event journal feature, allowing
+applications to poll for changes that occurred during time ranges. This is a useful
+alternative to listeners that may be expensive or time-consuming.
 
 ## What to test
 
