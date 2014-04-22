@@ -18,8 +18,8 @@ package org.modeshape.common.util;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.CommonI18n;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Utility class that checks arguments to methods. This class is to be used only in API methods, where failure to supply correct
@@ -122,8 +122,7 @@ public final class CheckArg {
                                                int greaterThanOrEqualToValue,
                                                String name ) {
         if (argument < greaterThanOrEqualToValue) {
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeGreaterThanOrEqualTo.text(name,
-                                                                                                  argument,
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeGreaterThanOrEqualTo.text(name, argument,
                                                                                                   greaterThanOrEqualToValue));
         }
     }
@@ -140,8 +139,7 @@ public final class CheckArg {
                                             int lessThanOrEqualToValue,
                                             String name ) {
         if (argument > lessThanOrEqualToValue) {
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeLessThanOrEqualTo.text(name,
-                                                                                               argument,
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeLessThanOrEqualTo.text(name, argument,
                                                                                                lessThanOrEqualToValue));
         }
     }
@@ -199,6 +197,20 @@ public final class CheckArg {
                                    String name ) {
         if (argument <= 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBePositive.text(name, argument));
+        }
+    }
+
+    /**
+     * Check that the argument is a power of 2.
+     * 
+     * @param argument The argument
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If argument is not a power of 2
+     */
+    public static void isPowerOfTwo( int argument,
+                                     String name ) {
+        if (Integer.bitCount(argument) != 1) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBePowerOfTwo.text(name, argument));
         }
     }
 
@@ -422,8 +434,7 @@ public final class CheckArg {
                                      String name ) {
         isNotNull(argument, name);
         if (!expectedClass.isInstance(argument)) {
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeInstanceOf.text(name,
-                                                                                        argument.getClass(),
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeInstanceOf.text(name, argument.getClass(),
                                                                                         expectedClass.getName()));
         }
     }
@@ -716,8 +727,7 @@ public final class CheckArg {
         if (argument.size() < minimumSize) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
                                                                                            Collection.class.getSimpleName(),
-                                                                                           argument.size(),
-                                                                                           minimumSize));
+                                                                                           argument.size(), minimumSize));
         }
     }
 
@@ -736,8 +746,7 @@ public final class CheckArg {
         if (argument.size() > maximumSize) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
                                                                                            Collection.class.getSimpleName(),
-                                                                                           argument.size(),
-                                                                                           maximumSize));
+                                                                                           argument.size(), maximumSize));
         }
     }
 
@@ -754,10 +763,8 @@ public final class CheckArg {
                                          String name ) {
         isNotNull(argument, name);
         if (argument.size() < minimumSize) {
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
-                                                                                           Map.class.getSimpleName(),
-                                                                                           argument.size(),
-                                                                                           minimumSize));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name, Map.class.getSimpleName(),
+                                                                                           argument.size(), minimumSize));
         }
     }
 
@@ -774,10 +781,8 @@ public final class CheckArg {
                                         String name ) {
         isNotNull(argument, name);
         if (argument.size() > maximumSize) {
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
-                                                                                           Map.class.getSimpleName(),
-                                                                                           argument.size(),
-                                                                                           maximumSize));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name, Map.class.getSimpleName(),
+                                                                                           argument.size(), maximumSize));
         }
     }
 
@@ -794,10 +799,8 @@ public final class CheckArg {
                                          String name ) {
         isNotNull(argument, name);
         if (argument.length < minimumSize) {
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
-                                                                                           Object[].class.getSimpleName(),
-                                                                                           argument.length,
-                                                                                           minimumSize));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name, Object[].class.getSimpleName(),
+                                                                                           argument.length, minimumSize));
         }
     }
 
@@ -814,10 +817,8 @@ public final class CheckArg {
                                         String name ) {
         isNotNull(argument, name);
         if (argument.length > maximumSize) {
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
-                                                                                           Object[].class.getSimpleName(),
-                                                                                           argument.length,
-                                                                                           maximumSize));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name, Object[].class.getSimpleName(),
+                                                                                           argument.length, maximumSize));
         }
     }
 
