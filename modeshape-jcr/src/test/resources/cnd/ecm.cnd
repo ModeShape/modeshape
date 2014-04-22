@@ -1,0 +1,56 @@
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<cf='http:///www.crif.com/creditflow/ecm'>
+<cfext='http:///www.crif.com/creditflow/ecm/ext'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[cf:Folder] mixin
+ - cf:FolderId (string)
+ - cf:LabelId (string)
+ - cf:Label (string)
+ - cf:LastUpdateUserId (string)
+ - cf:LastUpdateUser (string)
+ - cf:LastUpdateDate (date)
+ - cf:DescriptionId (string)
+ - cf:Description (string)
+ - cf:Type (string)
+ - cf:UserFolder (boolean)
+ - cf:CreationDate (date)
+ - cf:CreationUserId (string)
+ - cf:CreationUser (string)
+ + Note (cf:NoteType) sns
+  
+[cf:File] mixin
+ - cf:Name (string)
+ - cf:Type (string)
+ - cf:LastUpdateUserId (string)
+ - cf:LastUpdateUser (string)
+ - cf:LastUpdateDate (date)
+ - cf:Notes (string)
+ - cf:FileName (string)
+ - cf:FileSize (long)
+ - cf:FileType (string)
+ - cf:VersionMajor (long)
+ - cf:VersionMinor (long)
+ - cf:SystemFileType (string)
+ - cf:IsUpdatable (boolean)
+ - cf:LogInfo (string)
+ - cf:CreationDate (date)
+ - cf:CreationUserId (string)
+ - cf:CreationUser (string)
+ - cf:TitleKey (string)
+ - cf:AbstractKey (string)
+ + extendedMetadata (nt:unstructured)
+ 
+ [cf:NoteType]
+ - cf:CreationUserId (string)
+ - cf:CreationUser (string)
+ - cf:CreationDate (date)
+ - cf:Text (string)

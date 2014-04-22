@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -79,36 +80,37 @@ class JcrContentHandler extends DefaultHandler {
     protected static final TextDecoder SYSTEM_VIEW_NAME_DECODER = new XmlNameEncoder();
     protected static final TextDecoder DOCUMENT_VIEW_NAME_DECODER = JcrDocumentViewExporter.NAME_DECODER;
     protected static final TextDecoder DOCUMENT_VIEW_VALUE_DECODER = JcrDocumentViewExporter.VALUE_DECODER;
+    protected static final List<String> INTERNAL_MIXINS = Arrays.asList(JcrMixLexicon.VERSIONABLE.getString().toLowerCase());
 
     private static final String ALT_XML_SCHEMA_NAMESPACE_PREFIX = "xsd";
+
+    protected final NamespaceRegistry namespaces;
+    protected final int uuidBehavior;
+    protected final boolean retentionInfoRetained;
+    protected final boolean lifecycleInfoRetained;
+    protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<>();
+    protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<>();
+    protected final Map<String, NodeKey> uuidToNodeKeyMapping = new HashMap<>();
+    protected final Map<NodeKey, String> shareIdsToUUIDMap = new HashMap<>();
+    protected SessionCache cache;
+    protected final String primaryTypeName;
+    protected final String mixinTypesName;
+    protected final String uuidName;
+
     private final JcrSession session;
     private final ExecutionContext context;
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final org.modeshape.jcr.value.ValueFactory<String> stringFactory;
-    protected final NamespaceRegistry namespaces;
     private final ValueFactory jcrValueFactory;
     private final JcrNodeTypeManager nodeTypes;
     private final org.modeshape.jcr.api.NamespaceRegistry jcrNamespaceRegistry;
-    protected final int uuidBehavior;
-    protected final boolean retentionInfoRetained;
-    protected final boolean lifecycleInfoRetained;
-
-    protected final String primaryTypeName;
-    protected final String mixinTypesName;
-    protected final String uuidName;
+    private final boolean saveWhenCompleted;
+    private final String systemWorkspaceKey;
 
     private AbstractJcrNode currentNode;
     private ContentHandler delegate;
-    protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<>();
-    protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<>();
 
-    protected final Map<String, NodeKey> uuidToNodeKeyMapping = new HashMap<>();
-    protected final Map<NodeKey, String> shareIdsToUUIDMap = new HashMap<>();
-
-    protected SessionCache cache;
-
-    private final boolean saveWhenCompleted;
 
     JcrContentHandler( JcrSession session,
                        AbstractJcrNode parent,
@@ -145,6 +147,7 @@ class JcrContentHandler extends DefaultHandler {
         this.primaryTypeName = JcrLexicon.PRIMARY_TYPE.getString(this.namespaces);
         this.mixinTypesName = JcrLexicon.MIXIN_TYPES.getString(this.namespaces);
         this.uuidName = JcrLexicon.UUID.getString(this.namespaces);
+        this.systemWorkspaceKey = session.repository().systemWorkspaceKey();
     }
 
     protected final JcrSession session() {
@@ -233,7 +236,12 @@ class JcrContentHandler extends DefaultHandler {
                     if (baseVersionProp != null) {
                         // we rely on the fact that the base version ref is exported with full key
                         NodeKeyReference baseVersionRef = (NodeKeyReference)baseVersionProp.getValue().value();
-                        session.setDesiredBaseVersionKey(node.key(), baseVersionRef.getNodeKey());
+                        String workspaceKey = baseVersionRef.getNodeKey().getWorkspaceKey();
+                        //we only register the base version if it comes from the system workspace (if it doesn't come from the
+                        //system workspace, it's not valid - e.g. could be coming from an older version of ModeShape)
+                        if (systemWorkspaceKey.equals(workspaceKey)) {
+                            session.setDesiredBaseVersionKey(node.key(), baseVersionRef.getNodeKey());
+                        }
                     }
                 }
 
@@ -774,7 +782,9 @@ class JcrContentHandler extends DefaultHandler {
                         // via the WS cache -> ISPN db. Therefore, there might be the case when even though the child was created
                         // via addChild(), the old node with all the old properties and mixins is still visible at the key() and
                         // so the "new child" reports the mixin as already present (even though it's not)
-                        if (child.isNodeType(mixinName) && !nodeAlreadyExists) {
+                        boolean addMixinInternally = (child.isNodeType(mixinName) && !nodeAlreadyExists) ||
+                                                     INTERNAL_MIXINS.contains(mixinName.toLowerCase());
+                        if (addMixinInternally) {
                             child.mutable().addMixin(child.sessionCache(), nameFor(mixinName));
                         } else {
                             child.addMixin(mixinName);
