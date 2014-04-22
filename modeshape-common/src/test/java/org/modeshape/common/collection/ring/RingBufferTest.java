@@ -24,7 +24,6 @@ import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 
@@ -32,7 +31,7 @@ import org.modeshape.common.statistic.Stopwatch;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public class RingBufferTest {
-    private static final Random RANDOM = new Random();
+    protected static final Random RANDOM = new Random();
 
     protected volatile boolean print = false;
     protected volatile boolean slightPausesInConsumers = false;
@@ -57,7 +56,7 @@ public class RingBufferTest {
         }
 
         // Add a single consumer that should start seeing items 10 and up ...
-        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L, 0);
         ringBuffer.addConsumer(consumer1);
 
         // Add 10 more entries ...
@@ -67,7 +66,7 @@ public class RingBufferTest {
             // Thread.sleep(100L);
         }
 
-        ringBuffer.shutdown(true);
+        ringBuffer.shutdown();
         print("");
         print("Ring buffer shutdown completed");
         assertTrue(consumer1.isClosed());
@@ -88,7 +87,7 @@ public class RingBufferTest {
         }
 
         // Add a single consumer that should start seeing items 10 and up ...
-        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L, 0);
         ringBuffer.addConsumer(consumer1);
 
         // Add 10 more entries ...
@@ -98,7 +97,7 @@ public class RingBufferTest {
             // Thread.sleep(100L);
         }
 
-        ringBuffer.shutdown(true);
+        ringBuffer.shutdown();
         print("");
         print("Ring buffer shutdown completed");
         // assertTrue(consumer1.isClosed());
@@ -119,7 +118,7 @@ public class RingBufferTest {
         }
 
         // Add a single consumer that should start seeing items 10 and up ...
-        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L, 0);
         ringBuffer.addConsumer(consumer1);
 
         // Add 10 more entries ...
@@ -129,7 +128,7 @@ public class RingBufferTest {
             // Thread.sleep(100L);
         }
 
-        ringBuffer.shutdown(true);
+        ringBuffer.shutdown();
         print("");
         print("Ring buffer shutdown completed");
         // assertTrue(consumer1.isClosed());
@@ -150,7 +149,7 @@ public class RingBufferTest {
         }
 
         // Add a single consumer that should start seeing items 10 and up ...
-        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L, 0);
         ringBuffer.addConsumer(consumer1);
 
         // Add 10 more entries ...
@@ -161,7 +160,7 @@ public class RingBufferTest {
         }
 
         // Add a second consumer that should start seeing items 20 and up ...
-        MonotonicallyIncreasingConsumer consumer2 = new MonotonicallyIncreasingConsumer("second", 20L, 20L);
+        MonotonicallyIncreasingConsumer consumer2 = new MonotonicallyIncreasingConsumer("second", 20L, 20L, 0);
         ringBuffer.addConsumer(consumer2);
 
         // Add 10 more entries ...
@@ -181,7 +180,7 @@ public class RingBufferTest {
         }
 
         assertTrue(consumer2.isClosed());
-        ringBuffer.shutdown(true);
+        ringBuffer.shutdown();
         print("");
         print("Ring buffer shutdown completed");
         assertTrue(consumer1.isClosed());
@@ -189,10 +188,11 @@ public class RingBufferTest {
     }
 
     @Test
-    @Ignore("Takes a long time to run")
+    // @Ignore( "Takes a long time to run" )
     public void consumersShouldSeeEventsInCorrectOrder() throws Exception {
         Executor executor = Executors.newCachedThreadPool();
-        RingBuffer<Long, MonotonicallyIncreasingConsumer> ringBuffer = RingBufferBuilder.withSingleProducer(executor, LongConsumerAdapter.INSTANCE)
+        RingBuffer<Long, MonotonicallyIncreasingConsumer> ringBuffer = RingBufferBuilder.withSingleProducer(executor,
+                                                                                                            LongConsumerAdapter.INSTANCE)
                                                                                         .ofSize(8).garbageCollect(false).build();
         print = false;
 
@@ -204,7 +204,7 @@ public class RingBufferTest {
         }
 
         // Add a single consumer that should start seeing items 10 and up ...
-        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L);
+        MonotonicallyIncreasingConsumer consumer1 = new MonotonicallyIncreasingConsumer("first", 10L, 10L, 0);
         ringBuffer.addConsumer(consumer1);
 
         // Add 10 more entries ...
@@ -215,7 +215,7 @@ public class RingBufferTest {
         }
 
         // Add a single consumer that should start seeing items 10 and up ...
-        MonotonicallyIncreasingConsumer consumer2 = new MonotonicallyIncreasingConsumer("second", 20L, 20L);
+        MonotonicallyIncreasingConsumer consumer2 = new MonotonicallyIncreasingConsumer("second", 20L, 20L, 0);
         ringBuffer.addConsumer(consumer2);
 
         // Add 10 more entries ...
@@ -226,7 +226,7 @@ public class RingBufferTest {
         }
 
         // Add a second consumer that should start seeing items 20 and up ...
-        MonotonicallyIncreasingConsumer consumer3 = new MonotonicallyIncreasingConsumer("third", 30L, 30L);
+        MonotonicallyIncreasingConsumer consumer3 = new MonotonicallyIncreasingConsumer("third", 30L, 30L, 0);
         ringBuffer.addConsumer(consumer3);
 
         // Add 10 more entries ...
@@ -237,7 +237,7 @@ public class RingBufferTest {
         }
 
         // Add a second consumer that should start seeing items 20 and up ...
-        MonotonicallyIncreasingConsumer consumer4 = new MonotonicallyIncreasingConsumer("fourth", 40L, 40L);
+        MonotonicallyIncreasingConsumer consumer4 = new MonotonicallyIncreasingConsumer("fourth", 40L, 40L, 0);
         ringBuffer.addConsumer(consumer4);
 
         // Add 10 more entries ...
@@ -270,25 +270,13 @@ public class RingBufferTest {
             ringBuffer.add(value++);
         }
 
-        boolean blockWhileShuttingDown = true;
-        ringBuffer.shutdown(blockWhileShuttingDown);
+        ringBuffer.shutdown();
         print("");
         print("Ring buffer shutdown completed");
-        if (blockWhileShuttingDown) {
-            assertTrue(consumer1.isClosed());
-            assertTrue(consumer2.isClosed());
-            assertTrue(consumer3.isClosed());
-            assertTrue(consumer4.isClosed());
-        } else {
-            // Wait while the threads complete
-            while (!consumer1.isClosed()) {
-                Thread.sleep(10L);
-            }
-
-            while (!consumer2.isClosed()) {
-                Thread.sleep(10L);
-            }
-        }
+        assertTrue(consumer1.isClosed());
+        assertTrue(consumer2.isClosed());
+        assertTrue(consumer3.isClosed());
+        assertTrue(consumer4.isClosed());
 
         --value;
         assertThat(consumer1.getLastValue(), is(value));
@@ -310,13 +298,16 @@ public class RingBufferTest {
         private long lastValue = -1L;
         private long lastPosition = -1L;
         private boolean closed = false;
+        private final int secondsToWork;
 
         public MonotonicallyIncreasingConsumer( String id,
                                                 long firstValue,
-                                                long firstPosition ) {
+                                                long firstPosition,
+                                                int secondsToWork ) {
             this.id = id;
             this.lastValue = firstValue;
             this.lastPosition = firstPosition;
+            this.secondsToWork = secondsToWork;
         }
 
         @Override
@@ -325,6 +316,12 @@ public class RingBufferTest {
                                 long max ) {
             assertTrue(!closed);
             print(id + " consuming " + entry.longValue() + " at position " + position + " with max " + max);
+            try {
+                Thread.sleep(secondsToWork * 1000);
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
             if (slightPausesInConsumers && position % 1000 == 0) {
                 try {
                     Thread.sleep(RANDOM.nextInt(100));
@@ -367,13 +364,16 @@ public class RingBufferTest {
     }
 
     private static class LongConsumerAdapter implements RingBuffer.ConsumerAdapter<Long, MonotonicallyIncreasingConsumer> {
-        private static final LongConsumerAdapter INSTANCE = new LongConsumerAdapter();
+        protected static final LongConsumerAdapter INSTANCE = new LongConsumerAdapter();
 
         private LongConsumerAdapter() {
         }
 
         @Override
-        public boolean consume( MonotonicallyIncreasingConsumer consumer, Long event, long position, long maxPosition ) {
+        public boolean consume( MonotonicallyIncreasingConsumer consumer,
+                                Long event,
+                                long position,
+                                long maxPosition ) {
             consumer.consume(event, position, maxPosition);
             return true;
         }
@@ -384,7 +384,10 @@ public class RingBufferTest {
         }
 
         @Override
-        public void handleException( Throwable t, Long event, long position, long maxPosition ) {
+        public void handleException( Throwable t,
+                                     Long event,
+                                     long position,
+                                     long maxPosition ) {
             throw new AssertionError("Test failure", t);
         }
     }

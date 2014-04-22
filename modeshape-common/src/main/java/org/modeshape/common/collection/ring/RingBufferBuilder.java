@@ -29,7 +29,8 @@ public class RingBufferBuilder<T, C> {
 
     /**
      * Create a builder for ring buffers that use the supplied {@link Executor} to create consumer threads and the supplied
-     * {@link ConsumerAdapter} to adapt to custom consumer implementations.
+     * {@link ConsumerAdapter} to adapt to custom consumer implementations. The ring buffer will <i>only</i> allow entries to be
+     * added from a single thread.
      * 
      * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
      * @param adapter the adapter to the desired consumer interface; may not be null
@@ -42,7 +43,7 @@ public class RingBufferBuilder<T, C> {
 
     /**
      * Create a builder for ring buffers that use the supplied {@link Executor} to create threads for each {@link Consumer}
-     * instance.
+     * instance. The ring buffer will <i>only</i> allow entries to be added from a single thread.
      * 
      * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
      * @param entryClass the type of entry that will be put into and consumed from the buffer; may not be null
@@ -51,6 +52,33 @@ public class RingBufferBuilder<T, C> {
     public static <T, C extends Consumer<T>> RingBufferBuilder<T, C> withSingleProducer( Executor executor,
                                                                                          Class<T> entryClass ) {
         return new RingBufferBuilder<>(executor, StandardConsumerAdapter.<T, C>create()).singleProducer();
+    }
+
+    /**
+     * Create a builder for ring buffers that use the supplied {@link Executor} to create consumer threads and the supplied
+     * {@link ConsumerAdapter} to adapt to custom consumer implementations. The ring buffer will allow entries to be added from
+     * multiple threads.
+     * 
+     * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
+     * @param adapter the adapter to the desired consumer interface; may not be null
+     * @return the builder for ring buffers; never null
+     */
+    public static <T, C> RingBufferBuilder<T, C> withMultipleProducers( Executor executor,
+                                                                        ConsumerAdapter<T, C> adapter ) {
+        return new RingBufferBuilder<>(executor, adapter).multipleProducers();
+    }
+
+    /**
+     * Create a builder for ring buffers that use the supplied {@link Executor} to create threads for each {@link Consumer}
+     * instance. The ring buffer will allow entries to be added from multiple threads.
+     * 
+     * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
+     * @param entryClass the type of entry that will be put into and consumed from the buffer; may not be null
+     * @return the builder for ring buffers; never null
+     */
+    public static <T, C extends Consumer<T>> RingBufferBuilder<T, C> withMultipleProducers( Executor executor,
+                                                                                            Class<T> entryClass ) {
+        return new RingBufferBuilder<>(executor, StandardConsumerAdapter.<T, C>create()).multipleProducers();
     }
 
     public static final int DEFAULT_BUFFER_SIZE = 1 << 10; // 1024
@@ -98,12 +126,17 @@ public class RingBufferBuilder<T, C> {
         return this;
     }
 
+    protected RingBufferBuilder<T, C> multipleProducers() {
+        this.singleProducer = false;
+        return this;
+    }
+
     public RingBuffer<T, C> build() {
         WaitStrategy waitStrategy = this.waitStrategy;
         if (waitStrategy == null) waitStrategy = defaultWaitStrategy();
         Cursor cursor = this.cursor;
         if (cursor == null) cursor = defaultCursor(singleProducer, bufferSize, waitStrategy);
-        return new RingBuffer<T, C>(cursor, executor, adapter, garbageCollect);
+        return new RingBuffer<T, C>(cursor, executor, adapter, garbageCollect, singleProducer);
     }
 
     protected WaitStrategy defaultWaitStrategy() {
