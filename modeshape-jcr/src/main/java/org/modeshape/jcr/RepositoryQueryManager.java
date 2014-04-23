@@ -39,6 +39,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.CancellableQuery;
 import org.modeshape.jcr.query.QueryContext;
@@ -78,6 +79,10 @@ class RepositoryQueryManager {
         this.indexingExecutorService = indexingExecutorService;
         this.repoConfig = config;
         this.indexManager = new RepositoryIndexManager(runningState, config);
+    }
+
+    ChangeSetListener getListener() {
+        return this.indexManager;
     }
 
     void initialize() {

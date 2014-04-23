@@ -26,6 +26,7 @@ import org.infinispan.util.concurrent.TimeoutException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.NodeCache;
@@ -41,7 +42,7 @@ import org.modeshape.jcr.value.PathFactory;
  * A {@link NodeCache} implementation that uses Infinispan's {@link SchematicDb} for storage, with each node represented as a
  * single {@link Document}. The nodes in this cache represent the actual, unmodified values.
  */
-public class WorkspaceCache implements DocumentCache, ChangeSetListener {
+public class WorkspaceCache implements DocumentCache {
 
     protected static final Logger LOGGER = Logger.getLogger(WorkspaceCache.class);
 
@@ -57,20 +58,23 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     private final String sourceKey;
     private final PathFactory pathFactory;
     private final NameFactory nameFactory;
-    private final ChangeSetListener changeSetListener;
+    private final ChangeBus changeBus;
+    private final ChangeSetListener systemChangeNotifier;
+    private final ChangeSetListener nonSystemChangeNotifier;
     private volatile boolean closed = false;
 
     public WorkspaceCache( ExecutionContext context,
                            String repositoryKey,
                            String workspaceName,
+                           WorkspaceCache systemWorkspace,
                            DocumentStore documentStore,
                            DocumentTranslator translator,
                            NodeKey rootKey,
                            ConcurrentMap<NodeKey, CachedNode> cache,
-                           ChangeSetListener changeSetListener ) {
+                           ChangeBus changeBus ) {
         this.context = context;
         this.documentStore = documentStore;
-        this.changeSetListener = changeSetListener;
+        this.changeBus = changeBus;
         this.translator = translator;
         this.rootKey = rootKey;
         this.childReferenceForRoot = new ChildReference(rootKey, Path.ROOT_NAME, 1);
@@ -81,14 +85,29 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.nameFactory = context.getValueFactories().getNameFactory();
         this.nodesByKey = cache;
+        if (systemWorkspace != null) {
+            // This is not the system workspace, so we have to listen both asynchronously and synchronously ...
+            this.systemChangeNotifier = new SystemChangeNotifier(systemWorkspace.getWorkspaceName());
+            this.nonSystemChangeNotifier = new NonSystemChangeNotifier(systemWorkspace.getWorkspaceName());
+            this.changeBus.registerInThread(this.systemChangeNotifier);
+            this.changeBus.register(this.nonSystemChangeNotifier);
+        } else if (this.changeBus != null) {
+            // This IS the system workspace, so we have to listen just asynchronously for remote changes ...
+            this.nonSystemChangeNotifier = null;
+            this.systemChangeNotifier = new SystemChangeNotifier(this.workspaceName);
+            this.changeBus.registerInThread(this.systemChangeNotifier);
+        } else {
+            // We don't have a reference system workspace nor a change bus, so do nothing ...
+            this.systemChangeNotifier = null;
+            this.nonSystemChangeNotifier = null;
+        }
     }
 
     protected WorkspaceCache( WorkspaceCache original,
                               ConcurrentMap<NodeKey, CachedNode> cache,
-                              ChangeSetListener changeSetListener ) {
+                              ChangeBus changeBus ) {
         this.context = original.context;
         this.documentStore = original.documentStore;
-        this.changeSetListener = changeSetListener;
         this.translator = original.translator;
         this.rootKey = original.rootKey;
         this.childReferenceForRoot = original.childReferenceForRoot;
@@ -99,6 +118,9 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.pathFactory = original.pathFactory;
         this.nameFactory = original.nameFactory;
         this.nodesByKey = cache;
+        this.systemChangeNotifier = null;
+        this.nonSystemChangeNotifier = null;
+        this.changeBus = changeBus;
     }
 
     public void setMinimumStringLengthForBinaryStorage( long largeValueSize ) {
@@ -214,8 +236,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
                 try {
                     Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
                     if (cacheTtlSeconds != null && nodesByKey instanceof BasicCache) {
-                        node = ((BasicCache<NodeKey, CachedNode>)nodesByKey).putIfAbsent(key,
-                                                                                         newNode,
+                        node = ((BasicCache<NodeKey, CachedNode>)nodesByKey).putIfAbsent(key, newNode,
                                                                                          cacheTtlSeconds.longValue(),
                                                                                          TimeUnit.SECONDS);
                     } else {
@@ -262,14 +283,11 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         nodesByKey.clear();
     }
 
-    @Override
-    public void notify( ChangeSet changes ) {
+    protected void expellChangedNodes( ChangeSet changes ) {
         if (!closed) {
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Cache for workspace '{0}' received {1} changes from remote sessions: {2}",
-                             workspaceName,
-                             changes.size(),
-                             changes);
+                LOGGER.trace("Cache for workspace '{0}' received {1} changes from remote sessions: {2}", workspaceName,
+                             changes.size(), changes);
             }
             // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
             for (NodeKey key : changes.changedNodes()) {
@@ -288,10 +306,8 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     public void changed( ChangeSet changes ) {
         checkNotClosed();
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Cache for workspace '{0}' received {1} changes from local sessions: {2}",
-                         workspaceName,
-                         changes.size(),
-                         changes);
+            LOGGER.trace("Cache for workspace '{0}' received {1} changes from local sessions: {2}", workspaceName,
+                         changes.size(), changes);
         }
         // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
         for (NodeKey key : changes.changedNodes()) {
@@ -299,8 +315,8 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
             nodesByKey.remove(key);
         }
 
-        // Notify the listener ...
-        if (changeSetListener != null) changeSetListener.notify(changes);
+        // Send the changes to the change bus so that others can see them ...
+        if (changeBus != null) changeBus.notify(changes);
     }
 
     @Override
@@ -314,18 +330,39 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         }
     }
 
+    /**
+     * Signal that the workspace for this workspace cache has been deleted/destroyed, so this cache is not needed anymore.
+     */
     public void signalDeleted() {
         this.closed = true;
+        removeListeners();
         clear();
     }
 
+    /**
+     * Signal that this workspace cache is to be closed, and it can start reclaiming resources.
+     */
     public void signalClosing() {
         this.closed = true;
+        // We are closing (and the repository is shutting down), and while our listeners will eventually be removed,
+        // we know we can remove them immediately and not process any events any further ...
+        removeListeners();
     }
 
+    /**
+     * Signal that this workspace cache has been fully closed.
+     */
     public void signalClosed() {
         this.closed = true;
         clear();
+    }
+
+    private void removeListeners() {
+        if (this.changeBus != null) {
+            // Unregister our listeners ...
+            if (this.systemChangeNotifier != null) this.changeBus.unregister(systemChangeNotifier);
+            if (this.nonSystemChangeNotifier != null) this.changeBus.unregister(nonSystemChangeNotifier);
+        }
     }
 
     /**
@@ -342,5 +379,43 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     @Override
     public String toString() {
         return workspaceName;
+    }
+
+    protected final class SystemChangeNotifier implements ChangeSetListener {
+        private final String systemWorkspaceName;
+
+        protected SystemChangeNotifier( String systemWorkspaceName ) {
+            this.systemWorkspaceName = systemWorkspaceName;
+        }
+
+        @Override
+        public void notify( ChangeSet changeSet ) {
+            if (systemWorkspaceName.equals(changeSet.getWorkspaceName())) {
+                // The change affects the 'system' workspace, and we likely have some system nodes cached. So we have
+                // to clear out from our cache any changed system nodes
+                expellChangedNodes(changeSet);
+            }
+        }
+    }
+
+    protected final class NonSystemChangeNotifier implements ChangeSetListener {
+        private final String systemWorkspaceName;
+
+        protected NonSystemChangeNotifier( String systemWorkspaceName ) {
+            this.systemWorkspaceName = systemWorkspaceName;
+        }
+
+        @Override
+        public void notify( ChangeSet changeSet ) {
+            if (systemWorkspaceName.equals(changeSet.getWorkspaceName())) {
+                // we already processed it via SystemChangeNotifier ...
+                return;
+            }
+            // A workspace cache might contain a cached node that is federated, shared, or a system node.
+            // Because of this, those nodes might be changed in other workspaces and we might still have a cached
+            // representation. Therefore, we need to expell all nodes that have changed, even if they are changed
+            // in other workspaces ...
+            expellChangedNodes(changeSet);
+        }
     }
 }

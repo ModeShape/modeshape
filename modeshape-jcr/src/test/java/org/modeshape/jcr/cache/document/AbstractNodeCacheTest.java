@@ -28,6 +28,7 @@ import java.util.UUID;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.AbstractSchematicDbTest;
@@ -72,6 +73,13 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
         cache = createCache();
     }
 
+    @After
+    @Override
+    public void afterEach() {
+        shutdownCache(cache);
+        super.afterEach();
+    }
+
     protected boolean print() {
         return print;
     }
@@ -81,6 +89,10 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
     }
 
     protected abstract NodeCache createCache();
+
+    protected void shutdownCache( NodeCache cache ) {
+        cache.clear();
+    }
 
     protected Name name( String name ) {
         return context.getValueFactories().getNameFactory().create(name);

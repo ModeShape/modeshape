@@ -175,7 +175,7 @@ public abstract class AbstractChangeBusTest {
     }
 
     @Test
-    @Ignore("This is a perf test")
+    @Ignore( "This is a perf test" )
     public void shouldNotifyLotsOfConsumersAsync() throws Exception {
         int eventsPerBatch = 300000;
         int listenersPerBatch = 30;
@@ -194,8 +194,9 @@ public abstract class AbstractChangeBusTest {
         System.out.println("Elapsed: " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " millis");
     }
 
-    private List<AbstractChangeBusTest.TestListener> submitBatch( int eventCount, int listenerCount, int expectedEventsCount )
-            throws Exception{
+    private List<AbstractChangeBusTest.TestListener> submitBatch( int eventCount,
+                                                                  int listenerCount,
+                                                                  int expectedEventsCount ) throws Exception {
         List<AbstractChangeBusTest.TestListener> listeners = new ArrayList<>();
         for (int i = 0; i < listenerCount; i++) {
             AbstractChangeBusTest.TestListener listener = new AbstractChangeBusTest.TestListener(expectedEventsCount, 500);
@@ -213,7 +214,7 @@ public abstract class AbstractChangeBusTest {
         return changeBus;
     }
 
-    protected void assertChangesDispatched( TestListener listener ) throws InterruptedException {
+    protected void assertChangesDispatched( TestListener listener ) {
         listener.assertExpectedEventsCount();
 
         List<TestChangeSet> receivedChanges = listener.getObservedChangeSet();
@@ -356,7 +357,8 @@ public abstract class AbstractChangeBusTest {
             this(expectedNumberOfEvents, 350);
         }
 
-        protected TestListener( int expectedNumberOfEvents, long timeoutMillis ) {
+        protected TestListener( int expectedNumberOfEvents,
+                                long timeoutMillis ) {
             this.latch = new CountDownLatch(expectedNumberOfEvents);
             this.receivedChangeSet = new ArrayList<>();
             this.timeoutMillis = timeoutMillis;

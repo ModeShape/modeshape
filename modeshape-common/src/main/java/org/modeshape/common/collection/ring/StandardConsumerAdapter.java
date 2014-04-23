@@ -53,7 +53,11 @@ final class StandardConsumerAdapter<T, C extends Consumer<T>> implements Consume
     }
 
     @Override
-    public void handleException( Throwable t, T event, long position, long maxPosition ) {
-        //nothing by default
+    public void handleException( C consumer,
+                                 Throwable t,
+                                 T entry,
+                                 long position,
+                                 long maxPosition ) {
+        // nothing by default
     }
 }

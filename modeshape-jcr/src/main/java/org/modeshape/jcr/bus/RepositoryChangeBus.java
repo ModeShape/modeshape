@@ -16,9 +16,8 @@
 
 package org.modeshape.jcr.bus;
 
-import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -50,24 +49,20 @@ public final class RepositoryChangeBus implements ChangeBus {
      * <em>concurrent</em> maps (even though we're using a lock for registration).
      */
     private final Lock registrationLock = new ReentrantLock();
-    private final String systemWorkspaceName;
-    private final Set<ChangeSetListener> inThreadListeners = Collections.newSetFromMap(new ConcurrentHashMap<ChangeSetListener, Boolean>());
+    private final Set<ChangeSetListener> inThreadListeners = new CopyOnWriteArraySet<>();
     private final RingBuffer<ChangeSet, ChangeSetListener> ringBuffer;
 
     /**
      * Creates new change bus
      * 
+     * @param repositoryName the repository name; may not be null
      * @param executor the {@link java.util.concurrent.ExecutorService} which will be used internally to submit workers to
      *        dispatching events to listeners.
-     * @param systemWorkspaceName the name of the system workspace, needed because internal (system) events are dispatched in the
-     *        same thread; may no be null
      */
-    public RepositoryChangeBus( ExecutorService executor,
-                                String systemWorkspaceName ) {
-
-        this.systemWorkspaceName = systemWorkspaceName;
+    public RepositoryChangeBus( String repositoryName,
+                                ExecutorService executor ) {
         this.ringBuffer = RingBufferBuilder.withMultipleProducers(executor, new ChangeSetListenerConsumerAdapter())
-                                           .ofSize(DEFAULT_SIZE).garbageCollect(true).build();
+                                           .ofSize(DEFAULT_SIZE).named(repositoryName).garbageCollect(true).build();
     }
 
     @Override
@@ -135,20 +130,13 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     @Override
     public void notify( ChangeSet changeSet ) {
-        if (changeSet == null || !hasObservers()) {
-            return;
-        }
-
+        if (changeSet == null || !hasObservers()) return;
         if (shutdown.get()) {
             throw new IllegalStateException("Change bus has been already shut down, should not have any more observers");
         }
 
-        if (systemWorkspaceName.equalsIgnoreCase(changeSet.getWorkspaceName())) {
-            // changes in the system workspace are always submitted in the same thread because they need immediate processing
-            ringBuffer.submitImmediately(changeSet);
-        } else {
-            ringBuffer.add(changeSet);
-        }
+        // Add the change set into the buffer so it can be processed by the asynchronous listeners ...
+        ringBuffer.add(changeSet);
 
         // And process all of the in-thread listeners ...
         for (ChangeSetListener listener : inThreadListeners) {
@@ -172,11 +160,12 @@ public final class RepositoryChangeBus implements ChangeBus {
         }
 
         @Override
-        public void handleException( Throwable t,
-                                     ChangeSet event,
+        public void handleException( ChangeSetListener consumer,
+                                     Throwable t,
+                                     ChangeSet entry,
                                      long position,
                                      long maxPosition ) {
-            LOGGER.error(t, BusI18n.errorProcessingEvent, event.toString(), position);
+            LOGGER.error(t, BusI18n.errorProcessingEvent, entry.toString(), position);
         }
     }
 }
