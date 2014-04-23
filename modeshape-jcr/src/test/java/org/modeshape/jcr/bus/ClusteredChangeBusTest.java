@@ -25,20 +25,19 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.jcr.ClusteringHelper;
-import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.clustering.ClusteringService;
 
 /**
  * Unit test for {@link ClusteredChangeBus}
- *
+ * 
  * @author Horia Chiorean
  */
 public class ClusteredChangeBusTest extends AbstractChangeBusTest {
 
     private List<ChangeBus> buses = new ArrayList<>();
     private List<ClusteringService> clusteringServices = new ArrayList<>();
-    
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         ClusteringHelper.bindJGroupsToLocalAddress();
@@ -293,9 +292,10 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
     }
 
     private ClusteredChangeBus startNewBus() throws Exception {
-        ClusteringService clusteringService = new ClusteringService().startStandalone("test-bus-process", "config/jgroups-test-config.xml");
+        ClusteringService clusteringService = new ClusteringService().startStandalone("test-bus-process",
+                                                                                      "config/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
-        ChangeBus internalBus = new RepositoryChangeBus(Executors.newCachedThreadPool(), RepositoryConfiguration.SYSTEM_WORKSPACE_NAME);
+        ChangeBus internalBus = new RepositoryChangeBus("repo", Executors.newCachedThreadPool());
         ClusteredChangeBus bus = new ClusteredChangeBus(internalBus, clusteringService);
         bus.start();
         buses.add(bus);

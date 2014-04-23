@@ -83,12 +83,14 @@ public class RingBufferBuilder<T, C> {
 
     public static final int DEFAULT_BUFFER_SIZE = 1 << 10; // 1024
     public static final boolean DEFAULT_GARBAGE_COLLECT_ENTITIES = false;
+    public static final String DEFAULT_NAME = "ringbuffer";
 
     private final Executor executor;
     private final ConsumerAdapter<T, C> adapter;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private boolean garbageCollect = DEFAULT_GARBAGE_COLLECT_ENTITIES;
     private boolean singleProducer = true;
+    private String name = DEFAULT_NAME;
     private WaitStrategy waitStrategy;
     private Cursor cursor;
 
@@ -131,12 +133,17 @@ public class RingBufferBuilder<T, C> {
         return this;
     }
 
+    public RingBufferBuilder<T, C> named( String bufferName ) {
+        if (bufferName != null && bufferName.trim().isEmpty()) this.name = bufferName;
+        return this;
+    }
+
     public RingBuffer<T, C> build() {
         WaitStrategy waitStrategy = this.waitStrategy;
         if (waitStrategy == null) waitStrategy = defaultWaitStrategy();
         Cursor cursor = this.cursor;
         if (cursor == null) cursor = defaultCursor(singleProducer, bufferSize, waitStrategy);
-        return new RingBuffer<T, C>(cursor, executor, adapter, garbageCollect, singleProducer);
+        return new RingBuffer<T, C>(name, cursor, executor, adapter, garbageCollect, singleProducer);
     }
 
     protected WaitStrategy defaultWaitStrategy() {

@@ -16,10 +16,9 @@
 
 package org.modeshape.common.collection.ring;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +27,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.modeshape.common.CommonI18n;
 import org.modeshape.common.collection.ring.GarbageCollectingConsumer.Collectable;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 
 /**
@@ -51,9 +52,11 @@ import org.modeshape.common.util.CheckArg;
  * cursor rarely (if ever) closes on the slowest consumer. (If this does happen, consider increasing the size of the buffer or
  * changing the consumers to process the entries more quickly, perhaps using a separate durable queue for those slow consumers.)
  * </p>
+ * <h2>Consumers</h2>
  * <p>
  * Consumers can be added after the ring buffer has entries, but such consumers will only see those entries that are added after
- * the consumer has been attached to the buffer.
+ * the consumer has been attached to the buffer. Additionally, the ring buffer guarantees that the consumers will be called from a
+ * single thread, so consumers do <em>not</em> need to be concurrent or thread-safe.
  * </p>
  * <h2>Batching</h2>
  * <p>
@@ -91,13 +94,14 @@ public final class RingBuffer<T, C> {
     private final Object[] buffer;
     private final Executor executor;
     protected final AtomicBoolean addEntries = new AtomicBoolean(true);
-    protected final AtomicBoolean runConsumers = new AtomicBoolean(true);
     protected final ConsumerAdapter<T, C> consumerAdapter;
-    private final Set<ConsumerRunner> consumers = Collections.newSetFromMap(new ConcurrentHashMap<ConsumerRunner, Boolean>());
+    private final Set<ConsumerRunner> consumers = new CopyOnWriteArraySet<>();
     private final GarbageCollectingConsumer gcConsumer;
     private final Lock producerLock;
+    protected final Logger logger = Logger.getLogger(getClass());
 
-    RingBuffer( Cursor cursor,
+    RingBuffer( String name,
+                Cursor cursor,
                 Executor executor,
                 ConsumerAdapter<T, C> consumerAdapter,
                 boolean gcEntries,
@@ -126,35 +130,7 @@ public final class RingBuffer<T, C> {
 
         if (singleProducer) {
             // There is but one thread calling 'add', so no need for alock. Create an impl that does nothing ...
-            producerLock = new Lock() {
-                @Override
-                public void lock() {
-                }
-
-                @Override
-                public void unlock() {
-                }
-
-                @Override
-                public void lockInterruptibly() {
-                }
-
-                @Override
-                public boolean tryLock() {
-                    return false;
-                }
-
-                @Override
-                public boolean tryLock( long time,
-                                        TimeUnit unit ) {
-                    return false;
-                }
-
-                @Override
-                public Condition newCondition() {
-                    return null;
-                }
-            };
+            producerLock = new NoOpLock();
         } else {
             // Multiple threads can call 'add', so use a real lock ...
             producerLock = new ReentrantLock();
@@ -205,40 +181,6 @@ public final class RingBuffer<T, C> {
         } finally {
             producerLock.unlock();
         }
-    }
-
-    /**
-     * Submits the given entry to all registered consumers to be processed immediately and in the same thread. The entry is never
-     * placed within the ring buffer.
-     * 
-     * @param entry the entry to be submitted; may not be null
-     * @return true if the entry was submitted, or false if the buffer has been {@link #shutdown()}
-     */
-    public boolean submitImmediately( T entry ) {
-        assert entry != null;
-        if (!addEntries.get()) return false;
-        for (ConsumerRunner consumerRunner : consumers) {
-            consumerAdapter.consume(consumerRunner.getConsumer(), entry, 0, 0);
-        }
-        return true;
-    }
-
-    /**
-     * Submits the given entries to all registered consumers to be processed immediately and in the same thread. The entries are
-     * never placed within the ring buffer.
-     * 
-     * @param entries and array of entries to be submitted; may not be null
-     * @return true if all the entries were submitted, or false if the buffer has been {@link #shutdown()}
-     */
-    public boolean submitImmediately( T[] entries ) {
-        assert entries != null;
-        if (!addEntries.get()) return false;
-        for (ConsumerRunner consumerRunner : consumers) {
-            for (int i = 0; i < entries.length; i++) {
-                consumerAdapter.consume(consumerRunner.getConsumer(), entries[i], i, entries.length);
-            }
-        }
-        return true;
     }
 
     @SuppressWarnings( "unchecked" )
@@ -302,7 +244,7 @@ public final class RingBuffer<T, C> {
         // Try to add the runner instance, with equality based upon consumer instance equality ...
         if (!consumers.add(runner)) return false;
 
-        // It was added, so
+        // It was added, so start it ...
         executor.execute(runner);
         return true;
     }
@@ -380,16 +322,59 @@ public final class RingBuffer<T, C> {
         assert consumers.isEmpty();
     }
 
-    public static interface ConsumerAdapter<EventType, ConsumerType> {
+    /**
+     * Adapts the {@link #consume(Object, Object, long, long)}, {@link #close(Object)} and
+     * {@link #handleException(Object, Throwable, Object, long, long)} methods to other methods on an unknown type.
+     * 
+     * @param <EntryType> the type of event
+     * @param <ConsumerType> the type of consumer
+     * @author Randall Hauch (rhauch@redhat.com)
+     */
+    public static interface ConsumerAdapter<EntryType, ConsumerType> {
+
+        /**
+         * Consume an entry from the ring buffer. Generally all exceptions should be handled within this method; any exception
+         * thrown will result in the {@link #handleException(Object, Throwable, Object, long, long)} being called.
+         * 
+         * @param consumer the consumer instance that is to consume the event; never null
+         * @param entry the entry; will not be null
+         * @param position the position of the entry within in the ring buffer; this is typically a monotonically-increasing value
+         * @param maxPosition the maximum position of entries in the ring buffer that are being consumed within the same batch;
+         *        this will be greater or equal to {@code position}
+         * @return {@code true} if the consumer should continue processing the next entry, or {@code false} if this consumer is to
+         *         stop processing any more entries (from this or subsequent batches); returning {@code false} provides a way for
+         *         the consumer to signal that it should no longer be used
+         */
         boolean consume( ConsumerType consumer,
-                         EventType event,
+                         EntryType entry,
                          long position,
                          long maxPosition );
 
+        /**
+         * Called by the {@link RingBuffer} when the {@link #consume(Object, Object, long, long)} method returns false, or when
+         * the buffer has been shutdown and the consumer has {@link #consume(Object, Object, long, long) consumed} all entries in
+         * the now-closed buffer.
+         * <p>
+         * This method allows any resources used by the consumer to be cleaned up when no longer needed
+         * </p>
+         * 
+         * @param consumer the consumer instance that is being closed; never null
+         */
         void close( ConsumerType consumer );
 
-        void handleException( Throwable t,
-                              EventType event,
+        /**
+         * Handle an exception that was thrown from the {@link #consume(Object, Object, long, long)}.
+         * 
+         * @param consumer the consumer instance that is to consume the event; never null
+         * @param t the exception; never null
+         * @param entry the entry during the consumption of which generated the exception; will not be null
+         * @param position the position of the entry within in the ring buffer; this is typically a monotonically-increasing value
+         * @param maxPosition the maximum position of entries in the ring buffer that are being consumed within the same batch;
+         *        this will be greater or equal to {@code position}
+         */
+        void handleException( ConsumerType consumer,
+                              Throwable t,
+                              EntryType entry,
                               long position,
                               long maxPosition );
     }
@@ -465,7 +450,7 @@ public final class RingBuffer<T, C> {
             boolean consume = true;
             try {
                 int retry = timesToRetryUponTimeout;
-                while (consume && runThread.get() && runConsumers.get()) {
+                while (consume && runThread.get()) {
                     T entry = null;
                     long next = pointer.get() + 1L;
                     try {
@@ -473,15 +458,14 @@ public final class RingBuffer<T, C> {
                         long maxPosition = barrier.waitFor(next);
                         while (next <= maxPosition) {
                             entry = getEntry(next);
-                            if (!runConsumers.get()) return;
                             try {
                                 if (!consumerAdapter.consume(consumer, entry, next, maxPosition)) {
-                                    // We're done, but tell the cursor to disregard our barrier ...
+                                    // The consumer is done, so break out of the loop and clean up ...
                                     consume = false;
                                     break;
                                 }
                             } catch (Throwable t) {
-                                consumerAdapter.handleException(t, entry, next, maxPosition);
+                                consumerAdapter.handleException(consumer, t, entry, next, maxPosition);
                             }
                             next = pointer.incrementAndGet() + 1L;
                             retry = timesToRetryUponTimeout;
@@ -506,13 +490,16 @@ public final class RingBuffer<T, C> {
                     }
                 }
             } finally {
-                // When we're done, so tell the cursor to ignore our pointer ...
+                // We are done ...
                 try {
                     consume = false;
+                    // Tell the cursor to ignore our pointer ...
                     cursor.ignore(pointer);
                 } finally {
                     try {
                         consumerAdapter.close(consumer);
+                    } catch (Throwable t) {
+                        logger.error(t, CommonI18n.errorWhileClosingRingBufferConsumer, consumer, t.getMessage());
                     } finally {
                         try {
                             disconnect(this);
@@ -524,4 +511,35 @@ public final class RingBuffer<T, C> {
             }
         }
     }
+
+    protected static final class NoOpLock implements Lock {
+        @Override
+        public void lock() {
+        }
+
+        @Override
+        public void unlock() {
+        }
+
+        @Override
+        public void lockInterruptibly() {
+        }
+
+        @Override
+        public boolean tryLock() {
+            return false;
+        }
+
+        @Override
+        public boolean tryLock( long time,
+                                TimeUnit unit ) {
+            return false;
+        }
+
+        @Override
+        public Condition newCondition() {
+            return null;
+        }
+    }
+
 }

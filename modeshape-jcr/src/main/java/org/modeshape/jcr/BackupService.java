@@ -15,6 +15,23 @@
  */
 package org.modeshape.jcr;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.jcr.RepositoryException;
 import org.infinispan.Cache;
 import org.infinispan.schematic.Schematic;
@@ -40,23 +57,6 @@ import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A service used to generate backups from content and restore repository content from backups.
@@ -90,7 +90,7 @@ public class BackupService {
 
     protected BackupService( RunningState runningState ) {
         this.runningState = runningState;
-        //backup restore should not care about federation, hence only the local store should be used
+        // backup restore should not care about federation, hence only the local store should be used
         documentStore = this.runningState.documentStore().localStore();
         binaryStore = this.runningState.binaryStore();
         repositoryCache = this.runningState.repositoryCache();
@@ -158,8 +158,7 @@ public class BackupService {
             try {
                 repository.completeRestore();
             } catch (Throwable t) {
-                restoreActivity.problems.addError(JcrI18n.repositoryCannotBeRestartedAfterRestore,
-                                                  repository.getName(),
+                restoreActivity.problems.addError(JcrI18n.repositoryCannotBeRestartedAfterRestore, repository.getName(),
                                                   t.getMessage());
             }
         }
@@ -322,15 +321,13 @@ public class BackupService {
         }
 
         protected void writeToChangedArea( SchematicEntry document ) {
-            LOGGER.debug("Writing document to change area of backup for {0} repository at {1}",
-                         repositoryName(),
+            LOGGER.debug("Writing document to change area of backup for {0} repository at {1}", repositoryName(),
                          backupLocation());
             changesWriter.write(document.asDocument());
         }
 
         protected void writeToChangedArea( Iterable<BinaryKey> unusedBinaries ) {
-            LOGGER.debug("Writing unused binaries to change area of backup for {0} repository at {1}",
-                         repositoryName(),
+            LOGGER.debug("Writing unused binaries to change area of backup for {0} repository at {1}", repositoryName(),
                          backupLocation());
             File file = new File(changeDirectory, SUMMARY_FILE_NAME);
             try {
@@ -405,7 +402,7 @@ public class BackupService {
                 // changes are made while this execution is proceeding. It's possible not all of these will be needed,
                 // but by doing this we make sure that we include the latest changes in the backup (at least those
                 // changes made before the observer is disconnected)...
-                repositoryCache.register(observer);
+                repositoryCache.changeBus().register(observer);
 
                 try {
                     // PHASE 1:
@@ -434,7 +431,7 @@ public class BackupService {
                 } finally {
                     // Now that we're done with the backup, unregister the listener ...
                     try {
-                        repositoryCache.unregister(observer);
+                        repositoryCache.changeBus().unregister(observer);
                     } finally {
                         // Now stop the worker that is writing changed documents ...
                         continueWritingChangedDocuments.set(false);
@@ -482,10 +479,8 @@ public class BackupService {
                 changesLatch.await(30, TimeUnit.SECONDS);
 
                 LOGGER.debug("Completed backup of '{0}' repository into {1} (contains {2} nodes and {3} binary values)",
-                             repositoryName(),
-                             backupLocation(),
-                             contentWriter.getDocumentCount() + changesWriter.getDocumentCount(),
-                             numBinaryValues);
+                             repositoryName(), backupLocation(),
+                             contentWriter.getDocumentCount() + changesWriter.getDocumentCount(), numBinaryValues);
 
             } catch (InterruptedException e) {
                 Thread.interrupted();
@@ -567,9 +562,7 @@ public class BackupService {
                     I18n msg = JcrI18n.interruptedWhilePerformingBackup;
                     this.problems.addError(msg, repositoryName(), backupLocation(), e2.getMessage());
                 } catch (CancellationException e2) {
-                    this.problems.addError(JcrI18n.backupOperationWasCancelled,
-                                           repositoryName(),
-                                           backupLocation(),
+                    this.problems.addError(JcrI18n.backupOperationWasCancelled, repositoryName(), backupLocation(),
                                            e2.getMessage());
                 } catch (ExecutionException e2) {
                     I18n msg = JcrI18n.problemObtainingDocumentsToBackup;

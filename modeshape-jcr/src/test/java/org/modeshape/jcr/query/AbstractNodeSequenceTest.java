@@ -46,7 +46,7 @@ public class AbstractNodeSequenceTest extends AbstractNodeCacheTest {
         ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<NodeKey, CachedNode>();
         DocumentStore documentStore = new LocalDocumentStore(schematicDb);
         DocumentTranslator translator = new DocumentTranslator(context, documentStore, 100L);
-        WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", documentStore, translator, ROOT_KEY_WS1,
+        WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", null, documentStore, translator, ROOT_KEY_WS1,
                                                            nodeCache, null);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
         return workspaceCache;

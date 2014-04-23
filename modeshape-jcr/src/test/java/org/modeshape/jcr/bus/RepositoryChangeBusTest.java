@@ -17,17 +17,16 @@
 package org.modeshape.jcr.bus;
 
 import java.util.concurrent.Executors;
-import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * Unit test for {@link RepositoryChangeBus}
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class RepositoryChangeBusTest extends AbstractChangeBusTest {
 
     @Override
     protected ChangeBus createRepositoryChangeBus() throws Exception {
-        return new RepositoryChangeBus(Executors.newCachedThreadPool(), RepositoryConfiguration.SYSTEM_WORKSPACE_NAME);
+        return new RepositoryChangeBus("repo", Executors.newCachedThreadPool());
     }
 }

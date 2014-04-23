@@ -46,7 +46,7 @@ public class RingBufferTest {
         Executor executor = Executors.newCachedThreadPool();
         RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(8)
                                                                        .garbageCollect(false).build();
-        print = true;
+        print = false;
 
         // Add 10 entries with no consumers ...
         long value = 0L;
@@ -77,7 +77,7 @@ public class RingBufferTest {
         Executor executor = Executors.newCachedThreadPool();
         RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(8)
                                                                        .garbageCollect(true).build();
-        print = true;
+        print = false;
 
         // Add 10 entries with no consumers ...
         long value = 0L;
@@ -247,13 +247,13 @@ public class RingBufferTest {
             // Thread.sleep(100L);
         }
 
-        print = true;
+        // print = true;
         slightPausesInConsumers = false;
         boolean slightPauseBetweenEvents = false;
 
         // Add 400K more entries
         Stopwatch sw = new Stopwatch();
-        int count = 20000;
+        int count = 2000;
         sw.start();
         for (int i = 0; i != count; ++i) {
             ringBuffer.add(value++);
@@ -265,7 +265,7 @@ public class RingBufferTest {
 
         // Do 10 more while printing ...
         for (int i = 0; i != 10; ++i) {
-            print = true;
+            // print = true;
             print("Adding entry " + value);
             ringBuffer.add(value++);
         }
@@ -384,8 +384,9 @@ public class RingBufferTest {
         }
 
         @Override
-        public void handleException( Throwable t,
-                                     Long event,
+        public void handleException( MonotonicallyIncreasingConsumer consumer,
+                                     Throwable t,
+                                     Long entry,
                                      long position,
                                      long maxPosition ) {
             throw new AssertionError("Test failure", t);

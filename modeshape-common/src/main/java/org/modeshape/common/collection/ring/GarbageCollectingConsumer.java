@@ -111,7 +111,6 @@ public class GarbageCollectingConsumer implements Runnable, AutoCloseable, Depen
                 cursor.ignore(pointer);
             } finally {
                 stopLatch.countDown();
-//                System.out.println("Ring buffer garbage collection thread has terminated");
             }
         }
     }
@@ -120,9 +119,7 @@ public class GarbageCollectingConsumer implements Runnable, AutoCloseable, Depen
     public void close() {
         if (this.runThread.compareAndSet(true, false)) {
             try {
-                cursor.signalConsumers();
                 this.stopLatch.await();
-//                System.out.println("Ring buffer garbage collection thread has terminated");
             } catch (InterruptedException e) {
                 // do nothing ...
             }

@@ -153,7 +153,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
-        //Do not allow to copy a subgraph into root
+        // Do not allow to copy a subgraph into root
         if (destPath.isRoot() && !srcPath.isRoot()) {
             throw new RepositoryException(JcrI18n.cannotCopySubgraphIntoRoot.text(srcAbsPath, srcWorkspace, getName()));
         }
@@ -205,8 +205,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             AbstractJcrNode copy = newNodeName == null ? parentNode : parentNode.addChildNode(newNodeName,
                                                                                               sourceNode.getPrimaryTypeName(),
                                                                                               null, false, false);
-            Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(),
-                                                                                  sourceNode.node(),
+            Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(), sourceNode.node(),
                                                                                   sourceSession.cache(),
                                                                                   repository().systemWorkspaceKey(),
                                                                                   repository().runningState().connectors());
@@ -238,7 +237,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         }
     }
 
-    private void validateCopyForExternalNode(AbstractJcrNode sourceNode,  AbstractJcrNode destParentNode) throws RepositoryException {
+    private void validateCopyForExternalNode( AbstractJcrNode sourceNode,
+                                              AbstractJcrNode destParentNode ) throws RepositoryException {
         String rootSourceKey = session.getRootNode().key().getSourceKey();
 
         NodeKey parentKey = destParentNode.key();
@@ -257,14 +257,15 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 sourceContainsExternalNodes = true;
                 if (!sourceNodeSourceKey.equalsIgnoreCase(destExternalKey)) {
                     String sourceExternalSourceName = connectors.getSourceNameAtKey(sourceNodeSourceKey);
-                    throw new RepositoryException(JcrI18n.unableToCopySourceTargetMismatch.text(sourceExternalSourceName, destSourceName));
+                    throw new RepositoryException(JcrI18n.unableToCopySourceTargetMismatch.text(sourceExternalSourceName,
+                                                                                                destSourceName));
                 }
             }
         }
 
         String sourceNodeSourceKey = sourceNode.key().getSourceKey();
         if (sourceContainsExternalNodes && !sourceNodeSourceKey.equalsIgnoreCase(destExternalKey)) {
-            //the source graph contains external nodes, but the source itself is not an external node
+            // the source graph contains external nodes, but the source itself is not an external node
             throw new RepositoryException(JcrI18n.unableToCopySourceNotExternal.text(sourceNode.path()));
         }
     }
@@ -283,7 +284,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                         String srcAbsPath,
                         String destAbsPath,
                         boolean removeExisting,
-                        boolean skipVersioningValidation)
+                        boolean skipVersioningValidation )
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
         PathNotFoundException, ItemExistsException, LockException, RepositoryException {
         CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
@@ -319,7 +320,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
-        //Do not allow to clone a subgraph into root
+        // Do not allow to clone a subgraph into root
         if (destPath.isRoot() && !srcPath.isRoot()) {
             throw new RepositoryException(JcrI18n.cannotCloneSubgraphIntoRoot.text(srcAbsPath, srcWorkspace, getName()));
         }
@@ -404,8 +405,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                         AbstractJcrNode srcNode = sourceSession.node(srcKey, null);
                         boolean isExternal = !srcKey.getSourceKey().equalsIgnoreCase(sourceCache.getRootKey().getSourceKey());
                         if (isExternal && session.nodeExists(srcKey) && !removeExisting) {
-                            throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(srcKey,
-                                                                                                 workspaceName,
+                            throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(srcKey, workspaceName,
                                                                                                  srcNode.getPath()));
                         }
                         NodeKey cloneKey = parentNode.key().withId(srcNode.key().getIdentifier());
@@ -422,8 +422,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                                                                                                           cloneSessionNode.getIdentifier()));
                         }
 
-                        boolean hasAnyPendingChanges = !session.cache()
-                                                               .getChangedNodeKeysAtOrBelow(cloneSessionNode.node())
+                        boolean hasAnyPendingChanges = !session.cache().getChangedNodeKeysAtOrBelow(cloneSessionNode.node())
                                                                .isEmpty();
                         if (hasAnyPendingChanges) {
                             throw new RepositoryException(
@@ -432,8 +431,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                         }
 
                         if (!removeExisting) {
-                            throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(srcKey,
-                                                                                                 workspaceName,
+                            throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(srcKey, workspaceName,
                                                                                                  cloneSessionNode.getPath()));
                         }
 
@@ -447,7 +445,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 if (!destPath.isRoot()) {
                     // Use the JCR add child here to perform the parent validations
                     cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
-                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, skipVersioningValidation, false);
+                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, skipVersioningValidation,
+                                            false);
                 } else {
                     cloneKey = parentNode.key();
                 }
@@ -485,11 +484,12 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         }
     }
 
-    private Set<NodeKey> filterNodeKeysForClone(Set<NodeKey> sourceKeys, SessionCache sourceCache ) {
+    private Set<NodeKey> filterNodeKeysForClone( Set<NodeKey> sourceKeys,
+                                                 SessionCache sourceCache ) {
         Set<NodeKey> filteredSet = new HashSet<NodeKey>();
         for (NodeKey sourceKey : sourceKeys) {
-            if (sourceKey.equals(sourceCache.getRootKey()) ||
-                sourceKey.getWorkspaceKey().equalsIgnoreCase(repository().systemWorkspaceKey())) {
+            if (sourceKey.equals(sourceCache.getRootKey())
+                || sourceKey.getWorkspaceKey().equalsIgnoreCase(repository().systemWorkspaceKey())) {
                 continue;
             }
             filteredSet.add(sourceKey);
@@ -618,7 +618,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             try {
                 lock.lock();
                 if (observationManager == null) {
-                    observationManager = new JcrObservationManager(session, repository().repositoryCache(),
+                    observationManager = new JcrObservationManager(session, repository().changeBus(),
                                                                    repository().getRepositoryStatistics());
                 }
             } finally {
@@ -778,9 +778,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         JcrSession newWorkspaceSession = session.spawnSession(name, false);
         JcrSession srcWorkspaceSession = session.spawnSession(srcWorkspace, true);
 
-        deepClone(srcWorkspaceSession,
-                  srcWorkspaceSession.getRootNode().key(),
-                  newWorkspaceSession,
+        deepClone(srcWorkspaceSession, srcWorkspaceSession.getRootNode().key(), newWorkspaceSession,
                   newWorkspaceSession.getRootNode().key());
     }
 
@@ -799,7 +797,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         /**
          * Perform the clone at the cache level - clone all properties & children
          */
-        mutableCloneNode.deepClone(cloneCache, sourceNode, sourceCache, repository().systemWorkspaceKey(), repository().runningState().connectors());
+        mutableCloneNode.deepClone(cloneCache, sourceNode, sourceCache, repository().systemWorkspaceKey(),
+                                   repository().runningState().connectors());
 
         /**
          * Make sure the version history is preserved
@@ -821,7 +820,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
         session.checkLive();
         session.checkPermission(name, null, ModeShapePermissions.DELETE_WORKSPACE);
-        //start an internal remove session which needs to act as a unit for the entire operation
+        // start an internal remove session which needs to act as a unit for the entire operation
         JcrSession removeSession = session.spawnSession(name, false);
         JcrRepository repository = session.repository();
         RepositoryCache repositoryCache = repository.repositoryCache();
@@ -829,18 +828,18 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         try {
             JcrRootNode rootNode = removeSession.getRootNode();
 
-            //first remove all the nodes via JCR, because we need validations to be performed
-            for (NodeIterator nodeIterator = rootNode.getNodesInternal(); nodeIterator.hasNext(); ) {
+            // first remove all the nodes via JCR, because we need validations to be performed
+            for (NodeIterator nodeIterator = rootNode.getNodesInternal(); nodeIterator.hasNext();) {
                 AbstractJcrNode child = (AbstractJcrNode)nodeIterator.nextNode();
                 if (child.key().equals(systemKey)) {
-                    //we don't remove the jcr:system node here, we just unlink it via the cache
+                    // we don't remove the jcr:system node here, we just unlink it via the cache
                     continue;
                 }
                 child.remove();
             }
 
-            //then remove the workspace itself and unlink the system content. This method will create & save the session cache
-            //therefore, we don't need to call removeSession.save() from here.
+            // then remove the workspace itself and unlink the system content. This method will create & save the session cache
+            // therefore, we don't need to call removeSession.save() from here.
             if (!repositoryCache.destroyWorkspace(name, (WritableSessionCache)removeSession.cache())) {
                 throw new NoSuchWorkspaceException(JcrI18n.workspaceNotFound.text(name, getName()));
             }
@@ -906,7 +905,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             try {
                 lock.lock();
                 if (federationManager == null) {
-                    federationManager = new ModeShapeFederationManager(session, session.repository().runningState().documentStore());
+                    federationManager = new ModeShapeFederationManager(session, session.repository().runningState()
+                                                                                       .documentStore());
                 }
             } finally {
                 lock.unlock();

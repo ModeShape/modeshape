@@ -246,7 +246,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             } catch (NodeNotFoundException e) {
                 isAtOrBelow = false;
             }
-            
+
             if (!isAtOrBelow) {
                 continue;
             }
@@ -370,10 +370,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             NamespaceRegistry registry = context.getNamespaceRegistry();
             if (username == null) username = "<anonymous>";
             SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) is persisting the following changes:",
-                              s,
-                              txn,
-                              username,
-                              id);
+                              s, txn, username, id);
             for (NodeKey key : firstNodesInOrder) {
                 SessionNode node = changedNodes.get(key);
                 if (node != null && node.hasChanges()) {
@@ -391,11 +388,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
             }
             SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) completed persisting changes to {4} nodes",
-                              s,
-                              txn,
-                              username,
-                              id,
-                              changes);
+                              s, txn, username, id, changes);
         }
     }
 
@@ -606,9 +599,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         runPreSaveAfterLocking(preSaveOperation);
 
                         // Now persist the changes ...
-                        logChangesBeingSaved(this.changedNodesInOrder,
-                                             this.changedNodes,
-                                             that.changedNodesInOrder,
+                        logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, that.changedNodesInOrder,
                                              that.changedNodes);
                         events1 = persistChanges(this.changedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
@@ -934,7 +925,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // to A', which of course had a child reference to B' (not B). Thus, we're not able to find B inside
                         // A' and we get this exception. Since B exists below the already-removed A, we don't need to throw any
                         // events so we can just skip that. See MODE-2123 for details.
-                    }                    
+                    }
                     removedNodes.add(key);
 
                     // if there were any referrer changes for the removed nodes, we need to process them
@@ -945,7 +936,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                     // if the node had any binary properties, make sure we decrement the ref count of each
-                    for (Iterator<Property> propertyIterator = persisted.getProperties(workspaceCache); propertyIterator.hasNext(); ) {
+                    for (Iterator<Property> propertyIterator = persisted.getProperties(workspaceCache); propertyIterator.hasNext();) {
                         Property property = propertyIterator.next();
                         if (property.isBinary()) {
                             Object value = property.isMultiple() ? Arrays.asList(property.getValuesAsArray()) : property.getFirstValue();
@@ -1110,7 +1101,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                                     ChildReference appendedChildRef = node.getChildReferences(this).getChild(persistent.getKey());
                                     newPath = pathFactory().create(sessionPaths.getPath(node), appendedChildRef.getSegment());
                                     Path oldPath = workspacePaths.getPath(persistent);
-                                    changes.nodeReordered(persistent.getKey(), primaryType, mixinTypes, node.getKey(), newPath, oldPath, null);
+                                    changes.nodeReordered(persistent.getKey(), primaryType, mixinTypes, node.getKey(), newPath,
+                                                          oldPath, null);
                                 }
                             }
 
@@ -1132,7 +1124,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                             }
                             Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
                             Path renamedToPath = pathFactory().create(renamedFromPath.getParent(), renameEntry.getValue());
-                            changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment(), primaryType, mixinTypes);
+                            changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment(), primaryType,
+                                                mixinTypes);
                             if (isExternal) {
                                 renamedExternalNodes.add(renamedKey);
                             }
@@ -1152,19 +1145,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 CachedNode insertedBeforeNode = workspaceCache.getNode(insertion.insertedBefore());
                                 if (insertedBeforeNode != null) {
                                     insertedBeforePath = workspacePaths.getPath(insertedBeforeNode);
-                                    boolean isSnsReordering = nodeOldPath.getLastSegment()
-                                                                         .getName()
+                                    boolean isSnsReordering = nodeOldPath.getLastSegment().getName()
                                                                          .equals(insertedBeforePath.getLastSegment().getName());
                                     if (isSnsReordering) {
-                                        nodeNewPath =  insertedBeforePath;
+                                        nodeNewPath = insertedBeforePath;
                                     }
                                 }
-                                changes.nodeReordered(insertedRef.getKey(),
-                                                      insertedNode.getPrimaryType(this),
-                                                      insertedNode.getMixinTypes(this),
-                                                      node.getKey(),
-                                                      nodeNewPath,
-                                                      nodeOldPath,
+                                changes.nodeReordered(insertedRef.getKey(), insertedNode.getPrimaryType(this),
+                                                      insertedNode.getMixinTypes(this), node.getKey(), nodeNewPath, nodeOldPath,
                                                       insertedBeforePath);
 
                             } else {
@@ -1172,27 +1160,40 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 // or explicit reordering of transient nodes) there is no "old path"
                                 CachedNode insertedBeforeNode = getNode(insertion.insertedBefore().getKey());
                                 Path insertedBeforePath = sessionPaths.getPath(insertedBeforeNode);
-                                changes.nodeReordered(insertedRef.getKey(),
-                                                      insertedNode.getPrimaryType(this),
-                                                      insertedNode.getMixinTypes(this),
-                                                      node.getKey(),
-                                                      nodeNewPath, null, insertedBeforePath);
+                                changes.nodeReordered(insertedRef.getKey(), insertedNode.getPrimaryType(this),
+                                                      insertedNode.getMixinTypes(this), node.getKey(), nodeNewPath, null,
+                                                      insertedBeforePath);
                             }
                         }
                     }
                 }
 
                 ReferrerChanges referrerChanges = node.getReferrerChanges();
+                boolean nodeChanged = false;
                 if (referrerChanges != null && !referrerChanges.isEmpty()) {
                     translator.changeReferrers(doc, referrerChanges);
                     changes.nodeChanged(key, newPath, primaryType, mixinTypes);
+                    nodeChanged = true;
                 }
 
                 // write the federated segments
                 for (Map.Entry<String, String> federatedSegment : node.getAddedFederatedSegments().entrySet()) {
-                    translator.addFederatedSegment(doc, federatedSegment.getKey(), federatedSegment.getValue());
+                    String externalNodeKey = federatedSegment.getKey();
+                    String childName = federatedSegment.getValue();
+                    translator.addFederatedSegment(doc, externalNodeKey, childName);
+                    if (!nodeChanged) {
+                        changes.nodeChanged(key, newPath, primaryType, mixinTypes);
+                        nodeChanged = true;
+                    }
                 }
-                translator.removeFederatedSegments(doc, node.getRemovedFederatedSegments());
+                Set<String> removedFederatedSegments = node.getRemovedFederatedSegments();
+                if (!removedFederatedSegments.isEmpty()) {
+                    translator.removeFederatedSegments(doc, node.getRemovedFederatedSegments());
+                    if (!nodeChanged) {
+                        changes.nodeChanged(key, newPath, primaryType, mixinTypes);
+                        nodeChanged = true;
+                    }
+                }
 
                 // write additional node "metadata", meaning various flags which have internal meaning
                 boolean queryable = node.isQueryable(this);
@@ -1219,8 +1220,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     // And record the new node via the monitor ...
                     if (monitor != null && queryable) {
-                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties()
-                                                                                                    .values()
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values()
                                                                                                     .iterator());
                     }
                 } else {
@@ -1260,14 +1260,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                                     monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
                                 }
                             } // otherwise the parent was not PERSISTED and there's nothing to do
-                            //for each of the children of the node which has the changed path, we need to update the path
-                            //in the indexes
+                              // for each of the children of the node which has the changed path, we need to update the path
+                              // in the indexes
                             updateIndexesForAllChildren(node, sessionPaths, workspaceName, monitor);
                         }
                     }
 
-                    //writable connectors *may* change their data in-place, so the update operation needs to be called only
-                    //after the index changes have finished.
+                    // writable connectors *may* change their data in-place, so the update operation needs to be called only
+                    // after the index changes have finished.
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called
                         documentStore.updateDocument(keyStr, doc, node);
@@ -1357,7 +1357,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         return changes;
     }
 
-
     private void updateIndexesForAllChildren( CachedNode parentNode,
                                               PathCache sessionPaths,
                                               String workspaceName,
@@ -1368,12 +1367,12 @@ public class WritableSessionCache extends AbstractSessionCache {
             NodeKey childKey = childReference.getKey();
             CachedNode child = getNode(childKey);
             if (child == null) {
-                //it has been removed
+                // it has been removed
                 continue;
             }
-            if (child instanceof SessionNode && ((SessionNode) child).hasIndexRelatedChanges()) {
-                //if the child has also been modified in this session and has index-related changes it either already has
-                //or it will be re-indexed, so we shouldn't re-index it here.
+            if (child instanceof SessionNode && ((SessionNode)child).hasIndexRelatedChanges()) {
+                // if the child has also been modified in this session and has index-related changes it either already has
+                // or it will be re-indexed, so we shouldn't re-index it here.
                 continue;
             }
             indexingMonitor.recordUpdate(workspaceName, childKey, newChildPath, child.getPrimaryType(this),

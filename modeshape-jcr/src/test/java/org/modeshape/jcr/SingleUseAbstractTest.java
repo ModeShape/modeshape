@@ -233,6 +233,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
         try {
             repository.apply(changes);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new AssertionFailedError("Unexpected error while predefining the \"" + workspaceName + "\" workspace:"
                                            + e.getMessage());
         }
@@ -300,7 +301,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
     protected boolean startRepositoryAutomatically() {
         return startRepositoryAutomatically;
     }
-    
+
     protected InputStream resource( String path ) {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
         assertThat(stream, is(notNullValue()));

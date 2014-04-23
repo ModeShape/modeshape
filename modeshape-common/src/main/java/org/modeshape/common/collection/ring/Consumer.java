@@ -16,22 +16,26 @@
 
 package org.modeshape.common.collection.ring;
 
+import org.modeshape.common.annotation.NotThreadSafe;
+
 /**
- * A consumer of entries that are added to the ring buffer.
+ * A consumer of entries that are added to the ring buffer. Note that consumers do not need to be threadsafe, since they are
+ * called from only a single thread in the ring buffer.
  * 
  * @param <T> the type of entry
  * @see RingBuffer#addConsumer(Object)
  * @see RingBuffer#addConsumer(Object, int)
  * @author Randall Hauch (rhauch@redhat.com)
  */
+@NotThreadSafe
 public abstract class Consumer<T> implements AutoCloseable {
     /**
      * Consume an entry from the ring buffer. All exceptions should be handled by the implementation.
      * 
      * @param entry the entry
      * @param position the position of the entry in the ring buffer;
-     * @param maxPosition the maximum position that available in the ring buffer; in the case of a batch of entries, this may
-     * be greater than position
+     * @param maxPosition the maximum position that available in the ring buffer; in the case of a batch of entries, this may be
+     *        greater than position
      * @return true if the consumer should continue processing the next entry, or false if this consumer should stop
      */
     public abstract boolean consume( T entry,
