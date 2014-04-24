@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -137,7 +138,9 @@ public abstract class AbstractBinaryStoreTest {
         assertEquals(key, res.getKey());
         assertEquals(data.length, res.getSize());
         InputStream inputStream = getBinaryStore().getInputStream(key);
-        BinaryKey currentKey = BinaryKey.keyFor(IoUtil.readBytes(inputStream));
+        byte[] content = IoUtil.readBytes(inputStream);
+        assertArrayEquals(data, content);
+        BinaryKey currentKey = BinaryKey.keyFor(content);
         assertEquals(key, currentKey);
         return res;
     }

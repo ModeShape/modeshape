@@ -439,7 +439,7 @@
             <properties>
                 <database>h2</database>
                 <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:h2:mem:${project.build.directory}/db/h2/modeshape</dataSource.url>
+                <dataSource.url>jdbc:h2:mem:${project.build.directory}/db/h2/modeshape;DB_CLOSE_DELAY=-1</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password/>
             </properties>

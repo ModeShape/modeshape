@@ -60,6 +60,9 @@ public class JDBCRepositoryIntegrationTest {
     @Resource (mappedName =  "/jcr/binaryJDBCRepository")
     private JcrRepository repositoryWithBinaryJDBCStore;
 
+    @Resource (mappedName =  "/jcr/dbBinaryJDBCRepository")
+    private JcrRepository repositoryWithDbBinaryStorage;
+
     @Resource (mappedName =  "/jcr/binaryIndexingJDBCRepository")
     private JcrRepository binaryIndexingJDBCRepository;
 
@@ -111,6 +114,12 @@ public class JDBCRepositoryIntegrationTest {
     }
 
     @Test
+    @FixFor( "MODE-2194" )
+    public void shouldPersistBinaryDataInDBBinaryStore() throws Exception {
+        persistBinaryContent(repositoryWithDbBinaryStorage);
+    }
+
+    @Test
     @FixFor( "MODE-1841" )
     public void shouldPersistBinaryDataInJDBCIndexingBinaryStore() throws Exception {
         persistBinaryContent(binaryIndexingJDBCRepository);
@@ -120,7 +129,7 @@ public class JDBCRepositoryIntegrationTest {
         assertNotNull(repository);
 
         long minimumBinarySize = repository.getConfiguration().getBinaryStorage().getMinimumBinarySizeInBytes();
-        long binarySize = minimumBinarySize + 1;
+        long binarySize = 2 * minimumBinarySize;
 
         Session session = repository.login();
         InputStream binaryValueStream = null;
