@@ -72,6 +72,14 @@ public class WorkspaceCache implements DocumentCache {
                            NodeKey rootKey,
                            ConcurrentMap<NodeKey, CachedNode> cache,
                            ChangeBus changeBus ) {
+        assert context != null;
+        assert repositoryKey != null;
+        assert workspaceName != null;
+        assert documentStore != null;
+        assert translator != null;
+        assert rootKey != null;
+        assert cache != null;
+        assert changeBus != null;
         this.context = context;
         this.documentStore = documentStore;
         this.changeBus = changeBus;
@@ -91,15 +99,11 @@ public class WorkspaceCache implements DocumentCache {
             this.nonSystemChangeNotifier = new NonSystemChangeNotifier(systemWorkspace.getWorkspaceName());
             this.changeBus.registerInThread(this.systemChangeNotifier);
             this.changeBus.register(this.nonSystemChangeNotifier);
-        } else if (this.changeBus != null) {
-            // This IS the system workspace, so we have to listen just asynchronously for remote changes ...
+        } else {
+            // This IS the system workspace, so we have to listen synchronously for changes ...
             this.nonSystemChangeNotifier = null;
             this.systemChangeNotifier = new SystemChangeNotifier(this.workspaceName);
             this.changeBus.registerInThread(this.systemChangeNotifier);
-        } else {
-            // We don't have a reference system workspace nor a change bus, so do nothing ...
-            this.systemChangeNotifier = null;
-            this.nonSystemChangeNotifier = null;
         }
     }
 
@@ -283,7 +287,7 @@ public class WorkspaceCache implements DocumentCache {
         nodesByKey.clear();
     }
 
-    protected void expellChangedNodes( ChangeSet changes ) {
+    protected void evictChangedNodes( ChangeSet changes ) {
         if (!closed) {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("Cache for workspace '{0}' received {1} changes from remote sessions: {2}", workspaceName,
@@ -393,7 +397,7 @@ public class WorkspaceCache implements DocumentCache {
             if (systemWorkspaceName.equals(changeSet.getWorkspaceName())) {
                 // The change affects the 'system' workspace, and we likely have some system nodes cached. So we have
                 // to clear out from our cache any changed system nodes
-                expellChangedNodes(changeSet);
+                evictChangedNodes(changeSet);
             }
         }
     }
@@ -415,7 +419,7 @@ public class WorkspaceCache implements DocumentCache {
             // Because of this, those nodes might be changed in other workspaces and we might still have a cached
             // representation. Therefore, we need to expell all nodes that have changed, even if they are changed
             // in other workspaces ...
-            expellChangedNodes(changeSet);
+            evictChangedNodes(changeSet);
         }
     }
 }

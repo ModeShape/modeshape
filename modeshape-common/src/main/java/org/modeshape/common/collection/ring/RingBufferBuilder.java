@@ -92,7 +92,6 @@ public class RingBufferBuilder<T, C> {
     private boolean singleProducer = true;
     private String name = DEFAULT_NAME;
     private WaitStrategy waitStrategy;
-    private Cursor cursor;
 
     /**
      * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
@@ -141,8 +140,7 @@ public class RingBufferBuilder<T, C> {
     public RingBuffer<T, C> build() {
         WaitStrategy waitStrategy = this.waitStrategy;
         if (waitStrategy == null) waitStrategy = defaultWaitStrategy();
-        Cursor cursor = this.cursor;
-        if (cursor == null) cursor = defaultCursor(singleProducer, bufferSize, waitStrategy);
+        Cursor cursor = defaultCursor(bufferSize, waitStrategy);
         return new RingBuffer<T, C>(name, cursor, executor, adapter, garbageCollect, singleProducer);
     }
 
@@ -150,8 +148,7 @@ public class RingBufferBuilder<T, C> {
         return new BlockingWaitStrategy();
     }
 
-    protected Cursor defaultCursor( boolean singleProducer,
-                                    int bufferSize,
+    protected Cursor defaultCursor( int bufferSize,
                                     WaitStrategy waitStrategy ) {
         return new SingleProducerCursor(bufferSize, waitStrategy);
     }

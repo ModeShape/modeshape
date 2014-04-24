@@ -271,7 +271,7 @@ public class RepositoryCache {
         refreshRepositoryMetadata(false);
 
         this.changeBus = changeBus;
-        this.changeBus.register(new ChangesToWorkspacesListener());
+        this.changeBus.registerInThread(new ChangesToWorkspacesListener());
 
         // Make sure the system workspace is configured to have a 'jcr:system' node ...
         SessionCache systemSession = createSession(context, systemWorkspaceName, false);
