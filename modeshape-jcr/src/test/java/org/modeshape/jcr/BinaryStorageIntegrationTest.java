@@ -148,7 +148,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2144" )
     public void shouldCleanupUnusedBinariesForDatabaseStore() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage-other.json"));
         checkUnusedBinariesAreCleanedUp();
     }
 

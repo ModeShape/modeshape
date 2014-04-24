@@ -23,10 +23,11 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -146,7 +147,9 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         assertEquals(key, res.getKey());
         assertEquals(data.length, res.getSize());
         InputStream inputStream = getBinaryStore().getInputStream(key);
-        BinaryKey currentKey = BinaryKey.keyFor(IoUtil.readBytes(inputStream));
+        byte[] content = IoUtil.readBytes(inputStream);
+        assertArrayEquals(data, content);
+        BinaryKey currentKey = BinaryKey.keyFor(content);
         assertEquals(key, currentKey);
         return res;
     }
@@ -157,7 +160,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         List<BinaryKey> keys = new ArrayList<BinaryKey>();
         keys.add(IN_MEMORY_KEY);
         getBinaryStore().markAsUnused(keys);
-        Thread.sleep(1000);
+        Thread.sleep(100);
         // now remove and test if still there
         getBinaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
 

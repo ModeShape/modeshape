@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.git;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.Immutable;
@@ -56,11 +57,20 @@ public class Values {
 
     public BinaryValue binaryFor( BinaryKey key,
                                   long size ) {
+        InputStream is = null;
         try {
-            binaryStore.getInputStream(key);
+            is = binaryStore.getInputStream(key);
             return factories.getBinaryFactory().find(key, size);
         } catch (BinaryStoreException e) {
             // Must not have found it ...
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    //ignore
+                }
+            }
         }
         return null;
     }

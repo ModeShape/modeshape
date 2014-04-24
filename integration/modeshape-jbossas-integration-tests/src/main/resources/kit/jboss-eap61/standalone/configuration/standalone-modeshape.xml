@@ -341,6 +341,9 @@
                 <local-cache name="binaryJDBCRepository">
                     <transaction mode="NON_XA"/>
                 </local-cache>
+                <local-cache name="dbBinaryJDBCRepository">
+                    <transaction mode="NON_XA"/>
+                </local-cache>
                 <local-cache name="binaryIndexingJDBCRepository">
                     <transaction mode="NON_XA"/>
                 </local-cache>
@@ -615,6 +618,9 @@
             </repository>
             <repository name="binaryJDBCRepository" enable-queries="false">
                 <cache-binary-storage cache-container="jdbc-binary-cache-container"/>
+            </repository>
+            <repository name="dbBinaryJDBCRepository">
+                <db-binary-storage data-source-jndi-name="java:jboss/datasources/ExampleDS"/>
             </repository>
             <repository name="binaryIndexingJDBCRepository">
                 <indexing rebuild-upon-startup-mode="sync"/>
