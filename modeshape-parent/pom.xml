@@ -255,12 +255,12 @@
         <jdbc.hsqldb.version>2.2.9</jdbc.hsqldb.version>
         <jdbc.h2.version>1.3.172</jdbc.h2.version>
         <jdbc.postgresql9.version>9.2-1002.jdbc4</jdbc.postgresql9.version>
-        <jdbc.postgresql8.version>8.2-504.jdbc3</jdbc.postgresql8.version>
+        <jdbc.postgresql8.version>8.4-702.jdbc4</jdbc.postgresql8.version>
         <jdbc.mysql5.version>5.1.25</jdbc.mysql5.version>
         <jdbc.db2v9.version>3.58.82</jdbc.db2v9.version>
         <jdbc.db2v9.license.version>3.57.86</jdbc.db2v9.license.version>
-        <jdbc.oracle10g.version>10.0.2.0</jdbc.oracle10g.version>
-        <jdbc.oracle11g.version>11.1.0.7.0</jdbc.oracle11g.version>
+        <jdbc.oracle10g.version>10.2.0.3.0</jdbc.oracle10g.version>
+        <jdbc.oracle11g.version>11.2.0.4</jdbc.oracle11g.version>
         <jdbc.sybase15.version>6.0.5</jdbc.sybase15.version>
         <jdbc.mssql2008.version>4.0.2206</jdbc.mssql2008.version>
         <javax.servlet.version>3.1.0</javax.servlet.version>
@@ -439,9 +439,12 @@
             <properties>
                 <database>h2</database>
                 <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:h2:mem:${project.build.directory}/db/h2/modeshape</dataSource.url>
+                <dataSource.url>jdbc:h2:mem:${project.build.directory}/db/h2/modeshape;DB_CLOSE_DELAY=-1</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password/>
+                <infinispan.jdbc.id_column.type>VARCHAR(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BINARY</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>BIGINT</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -456,6 +459,7 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>hsqldb</groupId>
                     <artifactId>hsqldb</artifactId>
                     <version>${jdbc.hsqldb.version}</version>
@@ -468,6 +472,9 @@
                 <dataSource.url>jdbc:hsqldb:mem:modeshape</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password />
+                <infinispan.jdbc.id_column.type>VARCHAR(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BINARY</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>BIGINT</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -482,6 +489,7 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>mysql</groupId>
                     <artifactId>mysql-connector-java</artifactId>
                     <version>${jdbc.mysql5.version}</version>
@@ -492,9 +500,12 @@
                 <database>mysql5</database>
                 <dataSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</dataSource.dialect>
                 <dataSource.driverClassName>com.mysql.jdbc.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:mysql://vmg02.mw.lab.eng.bos.redhat.com/modeshape</dataSource.url>
-                <dataSource.username>modeshape</dataSource.username>
-                <dataSource.password>modeshape</dataSource.password>
+                <dataSource.url>jdbc:mysql://db01.mw.lab.eng.bos.redhat.com:3306/dballo02</dataSource.url>
+                <dataSource.username>dballo02</dataSource.username>
+                <dataSource.password>dballo02</dataSource.password>
+                <infinispan.jdbc.id_column.type>VARCHAR(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BLOB</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>BIGINT</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -508,6 +519,7 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>mysql</groupId>
                     <artifactId>mysql-connector-java</artifactId>
                     <version>${jdbc.mysql5.version}</version>
@@ -521,6 +533,9 @@
                 <dataSource.url>jdbc:mysql://localhost:3306/modeshape</dataSource.url>
                 <dataSource.username>root</dataSource.username>
                 <dataSource.password></dataSource.password>
+                <infinispan.jdbc.id_column.type>VARCHAR(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BLOB</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>BIGINT</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -535,18 +550,51 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
-                    <version>${jdbc.postgresql8.version}</version>
+                    <version>${jdbc.postgresql9.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
                 <database>postgresql8</database>
                 <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:postgresql://localhost:5432/modeshape</dataSource.url>
-                <dataSource.username>postgres</dataSource.username>
-                <dataSource.password>postgres</dataSource.password>
+                <dataSource.url>jdbc:postgresql://postgresql04.mw.lab.eng.bos.redhat.com:5432/dballo01</dataSource.url>
+                <dataSource.username>dballo01</dataSource.username>
+                <dataSource.password>dballo01</dataSource.password>
+                <infinispan.jdbc.id_column.type>VARCHAR(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BYTEA</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>BIGINT</infinispan.jdbc.timestamp_column.type>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>postgresql9</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>postgresql9</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${jdbc.postgresql9.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>postgresq9</database>
+                <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
+                <dataSource.url>jdbc:postgresql://db14.mw.lab.eng.bos.redhat.com:5432/dballo04</dataSource.url>
+                <dataSource.username>dballo04</dataSource.username>
+                <dataSource.password>dballo04</dataSource.password>
+                <infinispan.jdbc.id_column.type>VARCHAR(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BYTEA</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>BIGINT</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -560,6 +608,7 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
                     <version>${jdbc.postgresql9.version}</version>
@@ -573,6 +622,9 @@
                 <dataSource.url>jdbc:postgresql://localhost:5432/modeshape</dataSource.url>
                 <dataSource.username>postgres</dataSource.username>
                 <dataSource.password>postgres</dataSource.password>
+                <infinispan.jdbc.id_column.type>VARCHAR(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BYTEA</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>BIGINT</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -587,9 +639,10 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.oracle</groupId>
-                    <artifactId>ojdbc14</artifactId>
-                    <version>${jdbc.oracle10g.version}</version>
+                    <artifactId>ojdbc6</artifactId>
+                    <version>${jdbc.oracle11g.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
@@ -597,9 +650,12 @@
                 <database>oracle10g</database>
                 <dataSource.dialect>org.hibernate.dialect.Oracle10gDialect</dataSource.dialect>
                 <dataSource.driverClassName>oracle.jdbc.driver.OracleDriver</dataSource.driverClassName>
-                <dataSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:QAORA10</dataSource.url>
-                <dataSource.username>modeshape</dataSource.username>
-                <dataSource.password>modeshape</dataSource.password>
+                <dataSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:qaora10</dataSource.url>
+                <dataSource.username>dballo03</dataSource.username>
+                <dataSource.password>dballo03</dataSource.password>
+                <infinispan.jdbc.id_column.type>NVARCHAR2(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BLOB</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>NUMBER</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -614,6 +670,7 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.oracle</groupId>
                     <artifactId>ojdbc6</artifactId>
                     <version>${jdbc.oracle11g.version}</version>
@@ -623,9 +680,12 @@
             <properties>
                 <database>oracle11g</database>
                 <dataSource.driverClassName>oracle.jdbc.driver.OracleDriver</dataSource.driverClassName>
-                <dataSource.url>jdbc:oracle:thin:@dev04.mw.lab.eng.bos.redhat.com:1521:qaora11</dataSource.url>
-                <dataSource.username>modeshape</dataSource.username>
-                <dataSource.password>modeshape</dataSource.password>
+                <dataSource.url>jdbc:oracle:thin:@db04.mw.lab.eng.bos.redhat.com:1521:qaora11</dataSource.url>
+                <dataSource.username>DBALLO02</dataSource.username>
+                <dataSource.password>DBALLO02</dataSource.password>
+                <infinispan.jdbc.id_column.type>NVARCHAR2(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>BLOB</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>NUMBER</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -640,6 +700,7 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.sybase</groupId>
                     <artifactId>jconnect</artifactId>
                     <version>${jdbc.sybase15.version}</version>
@@ -653,6 +714,9 @@
                 <dataSource.url>jdbc:sybase:Tds:vmg07.mw.lab.eng.bos.redhat.com:5000/modeshape</dataSource.url>
                 <dataSource.username>modeshape</dataSource.username>
                 <dataSource.password>modeshape</dataSource.password>
+                <infinispan.jdbc.id_column.type>VARCHAR(255)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>IMAGE</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>NUMERIC</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 
@@ -667,13 +731,11 @@
             </activation>
             <dependencies>
                 <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.microsoft.sqlserver</groupId>
                     <artifactId>msjdbc</artifactId>
                     <version>${jdbc.mssql2008.version}</version>
                     <classifier>4</classifier>
-                    <!--
-                        Must use the JDBC-4 driver on JDK6
-                    -->
                     <scope>test</scope>
                 </dependency>
             </dependencies>
@@ -682,9 +744,12 @@
                 <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.SqlServerMetadataCollector</metadata.collectorClassName>
                 <dataSource.dialect>org.hibernate.dialect.SQLServerDialect</dataSource.dialect>
                 <dataSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</dataSource.driverClassName>
-                <dataSource.url>jdbc:sqlserver://vmg04.mw.lab.eng.bos.redhat.com</dataSource.url>
-                <dataSource.username>modeshape</dataSource.username>
-                <dataSource.password>modeshape</dataSource.password>
+                <dataSource.url>jdbc:sqlserver://mssql01.mw.lab.eng.bos.redhat.com:1433;DatabaseName=dballo00</dataSource.url>
+                <dataSource.username>dballo00</dataSource.username>
+                <dataSource.password>dballo00</dataSource.password>
+                <infinispan.jdbc.id_column.type>NVARCHAR(400)</infinispan.jdbc.id_column.type>
+                <infinispan.jdbc.data_column.type>IMAGE</infinispan.jdbc.data_column.type>
+                <infinispan.jdbc.timestamp_column.type>BIGINT</infinispan.jdbc.timestamp_column.type>
             </properties>
         </profile>
 

@@ -7,7 +7,7 @@
                 "invalid-configuration-without-a-default-store" : {
                     "type"  : "database",
                     "driverClass" : "org.h2.Driver",
-                    "url" : "jdbc:h2:mem:target/test/binary-store-db",
+                    "url" : "jdbc:h2:mem:target/test/binary-store-db;DB_CLOSE_DELAY=-1",
                     "username" : "sa"
                 }
             }

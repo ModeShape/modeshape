@@ -256,14 +256,14 @@
                     <include>**/*</include>
                 </includes>
                 <excludes>
-                    <exclude>datasource.properties</exclude>
+                    <exclude>config/db/**</exclude>
                 </excludes>
             </testResource>
             <testResource>
                 <directory>src/test/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>datasource.properties</include>
+                    <include>config/db/**</include>
                 </includes>
             </testResource>
         </testResources>        
