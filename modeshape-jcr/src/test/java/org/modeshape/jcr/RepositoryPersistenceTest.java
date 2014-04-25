@@ -41,7 +41,6 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
@@ -153,10 +152,9 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
     }
 
     @Test
-    @Ignore("Should only be used manually when needed")
-    public void shouldPersistDataInSQLServer2008() throws Exception {
+    public void shouldPersistDataUsingDB() throws Exception {
         //make sure the DB is clean (empty) when running this test; there is no effective teardown
-        assertDataPersistenceAcrossRestarts("config/repo-config-sqlserver2008.json");
+        assertDataPersistenceAcrossRestarts("config/db/repo-config-jdbc.json");
     }
 
     protected File getFile( String resourcePath ) throws URISyntaxException {

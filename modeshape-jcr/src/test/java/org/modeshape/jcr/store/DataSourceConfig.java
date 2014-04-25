@@ -38,7 +38,7 @@ public class DataSourceConfig {
     private final Properties dsProperties;
 
     public DataSourceConfig() {
-        this("datasource.properties");
+        this("config/db/datasource.properties");
     }
 
     public DataSourceConfig( String configFilePath ) {

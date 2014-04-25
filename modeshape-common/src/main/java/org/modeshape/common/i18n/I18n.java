@@ -217,6 +217,9 @@ public final class I18n implements I18nResource {
             // Get the URL to the localization properties file ...
             final String localizationBaseName = i18nClass.getName();
             URL bundleUrl = ClasspathLocalizationRepository.getLocalizationBundle(i18nClass.getClassLoader(), localizationBaseName, locale);
+            if (bundleUrl == null && i18nClass == CommonI18n.class) {
+                throw new SystemFailureException("CommonI18n.properties file not found in classpath !");
+            }
             if (bundleUrl == null) {
                 LOGGER.warn(CommonI18n.i18nBundleNotFoundInClasspath,
                             ClasspathLocalizationRepository.getPathsToSearchForBundle(localizationBaseName, locale));
