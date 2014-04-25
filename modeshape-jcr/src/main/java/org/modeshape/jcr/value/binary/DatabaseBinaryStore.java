@@ -96,7 +96,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     /**
      * A temporary fs-based store which stores binaries before they are persisted in the DB
      */
-    private FileSystemBinaryStore cache;
+    private final FileSystemBinaryStore cache;
 
     /**
      * JDBC utility for working with the database.
@@ -147,13 +147,14 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             lookupDriver();
         }
 
-        dbCall(new DBCallable<Void>() {
-            @Override
-            public Void execute( Connection connection ) throws Exception {
-                DatabaseBinaryStore.this.database = new Database(connection);
-                return null;
-            }
-        });
+        Connection connection = newConnection();
+        try {
+            this.database = new Database(connection);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        } finally {
+            Database.tryToClose(connection);
+        }
     }
 
     @Override
@@ -161,7 +162,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         // store into temporary file system store and get SHA-1
         final BinaryValue temp = cache.storeValue(stream);
         try {
-            return dbCallBinaryStoreException(new DBCallable<BinaryValue>() {
+            return dbCall(new DBCallable<BinaryValue>() {
                 @Override
                 public BinaryValue execute( Connection connection ) throws Exception {
                     // prepare new binary key based on SHA-1
@@ -177,7 +178,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                         database.restoreContent(key, connection);
                     } else {
                         // store the content
-                        database.insertContent(key, temp.getStream(), connection);
+                        database.insertContent(key, temp.getStream(), temp.getSize(), connection);
                     }
                     return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
                 }
@@ -205,7 +206,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void markAsUnused( final Iterable<BinaryKey> keys ) throws BinaryStoreException {
-        dbCallBinaryStoreException(new DBCallable<Void>() {
+        dbCall(new DBCallable<Void>() {
             @Override
             public Void execute( Connection connection ) throws Exception {
                 database.markUnused(keys, connection);
@@ -217,7 +218,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public void removeValuesUnusedLongerThan( final long minimumAge,
                                               final TimeUnit unit ) throws BinaryStoreException {
-        dbCallBinaryStoreException(new DBCallable<Void>() {
+        dbCall(new DBCallable<Void>() {
             @Override
             public Void execute( Connection connection ) throws Exception {
                 long deadline = System.currentTimeMillis() - unit.toMillis(minimumAge);
@@ -229,7 +230,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     protected String getStoredMimeType( final BinaryValue source ) throws BinaryStoreException {
-        return dbCallBinaryStoreException(new DBCallable<String>() {
+        return dbCall(new DBCallable<String>() {
             @Override
             public String execute( Connection connection ) throws Exception {
                 BinaryKey key = source.getKey();
@@ -244,7 +245,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     protected void storeMimeType( final BinaryValue source,
                                   final String mimeType ) throws BinaryStoreException {
-        dbCallBinaryStoreException(new DBCallable<Void>() {
+        dbCall(new DBCallable<Void>() {
             @Override
             public Void execute( Connection connection ) throws Exception {
                 database.setMimeType(source.getKey(), mimeType, connection);
@@ -255,7 +256,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public String getExtractedText( final BinaryValue source ) throws BinaryStoreException {
-        return dbCallBinaryStoreException(new DBCallable<String>() {
+        return dbCall(new DBCallable<String>() {
             @Override
             public String execute( Connection connection ) throws Exception {
                 BinaryKey key = source.getKey();
@@ -270,7 +271,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public void storeExtractedText( final BinaryValue source,
                                     final String extractedText ) throws BinaryStoreException {
-        dbCallBinaryStoreException(new DBCallable<Void>() {
+        dbCall(new DBCallable<Void>() {
             @Override
             public Void execute( Connection connection ) throws Exception {
                 database.setExtractedText(source.getKey(), extractedText, connection);
@@ -281,7 +282,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public Iterable<BinaryKey> getAllBinaryKeys() throws BinaryStoreException {
-        return dbCallBinaryStoreException(new DBCallable<Iterable<BinaryKey>>() {
+        return dbCall(new DBCallable<Iterable<BinaryKey>>() {
             @Override
             public Iterable<BinaryKey> execute( Connection connection ) throws Exception {
                 return database.getBinaryKeys(connection);
@@ -325,18 +326,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         public T execute(Connection connection) throws Exception;
     }
 
-    private <T> T dbCall(DBCallable<T> callable) {
-        Connection connection = newConnection();
-        try {
-            return callable.execute(connection);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            Database.tryToClose(connection);
-        }
-    }
-
-    private <T> T dbCallBinaryStoreException(DBCallable<T> callable) throws BinaryStoreException {
+    private <T> T dbCall( DBCallable<T> callable ) throws BinaryStoreException {
         Connection connection = newConnection();
         try {
             return callable.execute(connection);

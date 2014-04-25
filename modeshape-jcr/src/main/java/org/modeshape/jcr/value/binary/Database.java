@@ -273,21 +273,31 @@ public class Database {
 
     protected void insertContent( BinaryKey key,
                                   InputStream stream,
-                                  Connection connection) throws SQLException {
+                                  long size,
+                                  Connection connection ) throws SQLException {
         PreparedStatement addContentSql = prepareStatement(INSERT_CONTENT_STMT_KEY, connection);
         try {
             addContentSql.setString(1, key.toString());
             addContentSql.setTimestamp(2, new java.sql.Timestamp(System.currentTimeMillis()));
-            addContentSql.setBinaryStream(3, stream);
+            addContentSql.setBinaryStream(3, stream, size);
             execute(addContentSql);
         } finally {
+            try {
+                //it's not guaranteed that the driver will close the stream, so we mush always close it to prevent read-locks
+                stream.close();
+            } catch (IOException e) {
+                //ignore
+            }
             tryToClose(addContentSql);
         }
     }
 
     protected boolean contentExists(BinaryKey key, boolean inUse, Connection connection) throws SQLException {
-        PreparedStatement readContentStatement = readContentSQLStatement(key, inUse, connection);
+        PreparedStatement readContentStatement = inUse ?
+                                prepareStatement(USED_CONTENT_STMT_KEY, connection) :
+                                prepareStatement(UNUSED_CONTENT_STMT_KEY, connection);
         try {
+            readContentStatement.setString(1, key.toString());
             ResultSet rs = executeQuery(readContentStatement);
             return rs.next();
         } catch (SQLException e) {
@@ -299,26 +309,36 @@ public class Database {
         }
     }
 
+    /**
+     * Attempts to return the content stream for a given binary value.
+     * @param key a {@link org.modeshape.jcr.value.BinaryKey} the key of the binary value, may not be null
+     * @param connection a {@link java.sql.Connection} instance, may not be null
+     * @return either a stream that wraps the input stream of the binary value and closes the connection and the statement
+     * when it terminates or {@code null}, meaning that the binary was not found.
+     *
+     * @throws SQLException if anything unexpected fails
+     */
     protected InputStream readContent(BinaryKey key, Connection connection) throws SQLException {
-        PreparedStatement readContentStatement = readContentSQLStatement(key, true, connection);
-        ResultSet rs = executeQuery(readContentStatement);
-        if (!rs.next()) {
+        PreparedStatement readContentStatement = prepareStatement(USED_CONTENT_STMT_KEY, connection);
+        try {
+            readContentStatement.setString(1, key.toString());
+            ResultSet rs = executeQuery(readContentStatement);
+            if (!rs.next()) {
+                tryToClose(readContentStatement);
+                tryToClose(connection);
+                return null;
+            } else {
+                return new DatabaseBinaryStream(connection, readContentStatement, rs.getBinaryStream(1));
+            }
+        } catch (SQLException e) {
             tryToClose(readContentStatement);
             tryToClose(connection);
-            return null;
+            throw e;
+        } catch (Throwable t) {
+            tryToClose(readContentStatement);
+            tryToClose(connection);
+            throw new RuntimeException(t);
         }
-
-        return new DatabaseBinaryStream(connection, readContentStatement, rs.getBinaryStream(1));
-    }
-
-    private PreparedStatement readContentSQLStatement( BinaryKey key,
-                                                       boolean inUse,
-                                                       Connection connection ) throws SQLException {
-        PreparedStatement sql = inUse ?
-                                prepareStatement(USED_CONTENT_STMT_KEY, connection) :
-                                prepareStatement(UNUSED_CONTENT_STMT_KEY, connection);
-        sql.setString(1, key.toString());
-        return sql;
     }
 
     protected void markUnused( Iterable<BinaryKey> keys, Connection connection ) throws SQLException {
@@ -505,8 +525,8 @@ public class Database {
         if (statement != null) {
             try {
                 statement.close();
-            } catch (SQLException e) {
-                LOGGER.debug(e, "Cannot close prepared statement");
+            } catch (Throwable t) {
+                LOGGER.debug(t, "Cannot close prepared statement");
             }
         }
     }
@@ -515,8 +535,8 @@ public class Database {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException e) {
-                LOGGER.debug(e, "Cannot close prepared statement");
+            } catch (Throwable t) {
+                LOGGER.debug(t, "Cannot close prepared statement");
             }
         }
     }

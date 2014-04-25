@@ -4,7 +4,10 @@
         xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd
                             urn:infinispan:config:jdbc:6.0 http://www.infinispan.org/schemas/infinispan-cachestore-jdbc-config-6.0.xsd"
         xmlns="urn:infinispan:config:6.0">
-    <namedCache name="sqlserver_repository">
+    <global>
+        <globalJmxStatistics allowDuplicateDomains="true"/>
+    </global>
+    <namedCache name="db_repository">
         <transaction
                 transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
                 transactionMode="TRANSACTIONAL"
@@ -16,18 +19,18 @@
                                   ignoreModifications="false"
                                   purgeOnStartup="false">
                 <connectionPool
-                        connectionUrl="jdbc:sqlserver://mssql01.mw.lab.eng.bos.redhat.com:1433;DatabaseName=dballo00"
-                        driverClass="com.microsoft.sqlserver.jdbc.SQLServerDriver"
-                        username="dballo00"
-                        password="dballo00"
+                        connectionUrl="${dataSource.url}"
+                        driverClass="${dataSource.driverClassName}"
+                        username="${dataSource.username}"
+                        password="${dataSource.password}"
                 />
                 <stringKeyedTable
-                        prefix="ISPN_STRING_TABLE"
+                        prefix="ISPN_"
                         createOnStart="true"
                         dropOnExit="false">
-                    <idColumn name="ID_COLUMN" type="NVARCHAR(400)"/>
-                    <dataColumn name="DATA_COLUMN" type="IMAGE"/>
-                    <timestampColumn name="TIMESTAMP_COLUMN" type="BIGINT"/>
+                    <idColumn name="ID_COLUMN" type="${infinispan.jdbc.id_column.type}"/>
+                    <dataColumn name="DATA_COLUMN" type="${infinispan.jdbc.data_column.type}"/>
+                    <timestampColumn name="TIMESTAMP_COLUMN" type="${infinispan.jdbc.timestamp_column.type}"/>
                 </stringKeyedTable>
             </stringKeyedJdbcStore>
         </persistence>
