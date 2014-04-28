@@ -75,7 +75,10 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( {"MODE-1526", "MODE-1512", "MODE-1617"} )
     public void shouldKeepPersistentDataAcrossRestart() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
+        FileUtil.delete("target/persistent_repository");
+
+        final String workspace1 = "ws1";
+        final String workspace2 = "ws2";
 
         String repositoryConfigFile = "config/repo-config-persistent-cache.json";
 
@@ -83,12 +86,13 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             @Override
             public Void call() throws Exception {
                 Session session = repository.login();
+
                 session.getRootNode().addNode("testNode");
                 session.save();
 
                 // create 2 new workspaces
-                session.getWorkspace().createWorkspace("ws1");
-                session.getWorkspace().createWorkspace("ws2");
+                session.getWorkspace().createWorkspace(workspace1);
+                session.getWorkspace().createWorkspace(workspace2);
                 session.logout();
 
                 return null;
@@ -104,13 +108,13 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 session.logout();
 
                 // check the workspaces were persisted
-                Session newWsSession = repository.login("ws1");
+                Session newWsSession = repository.login(workspace1);
                 newWsSession.getRootNode().addNode("newWsTestNode");
                 newWsSession.save();
                 newWsSession.logout();
 
-                Session newWs1Session = repository.login("ws2");
-                newWs1Session.getWorkspace().deleteWorkspace("ws2");
+                Session newWs1Session = repository.login(workspace2);
+                newWs1Session.getWorkspace().deleteWorkspace(workspace2);
                 newWs1Session.logout();
 
                 return null;
@@ -120,13 +124,13 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
-                Session newWsSession = repository.login("ws1");
+                Session newWsSession = repository.login(workspace1);
                 assertNotNull(newWsSession.getNode("/newWsTestNode"));
                 newWsSession.logout();
 
                 // check a workspace was deleted
                 try {
-                    repository.login("ws2");
+                    repository.login(workspace2);
                     fail("Workspace was not deleted from the repository");
                 } catch (NoSuchWorkspaceException e) {
                     // expected

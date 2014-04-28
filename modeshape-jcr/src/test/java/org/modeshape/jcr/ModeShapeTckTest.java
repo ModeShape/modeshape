@@ -701,7 +701,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         ValueFactory vf = session.getValueFactory();
 
         Node root = session.getRootNode();
-        Node file = root.addNode("createfile4.mode", "nt:file");
+        Node file = root.addNode("createfile.mode", "nt:file");
 
         Node content = file.addNode("jcr:content", "nt:resource");
         content.setProperty("jcr:data", vf.createBinary(new ByteArrayInputStream("Write 1".getBytes())));

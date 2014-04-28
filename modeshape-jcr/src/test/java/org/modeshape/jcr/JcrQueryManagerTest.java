@@ -219,6 +219,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 registerNodeTypes(session, "cnd/notionalTypes.cnd");
                 registerNodeTypes(session, "cnd/cars.cnd");
                 registerNodeTypes(session, "cnd/validType.cnd");
+                registerNodeTypes(session, "cnd/mode-1900.cnd");
 
                 InputStream stream = resourceStream("io/cars-system-view.xml");
                 try {
@@ -3055,12 +3056,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToExecuteXPathQueryWithNewlyRegisteredNamespace() throws RepositoryException {
         session.getWorkspace().getNamespaceRegistry().registerNamespace("newPrefix", "newUri");
 
-        // We don't have any elements that use this yet, but let's at least verify that it can execute.
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("//*[@newPrefix:someColumn = 'someValue']", Query.XPATH);
-        query.execute();
-
+        try {
+            // We don't have any elements that use this yet, but let's at least verify that it can execute.
+            Query query = session.getWorkspace()
+                                 .getQueryManager()
+                                 .createQuery("//*[@newPrefix:someColumn = 'someValue']", Query.XPATH);
+            query.execute();
+        } finally {
+            session.getWorkspace().getNamespaceRegistry().unregisterNamespace("newPrefix");
+        }
     }
 
     @SuppressWarnings( "deprecation" )
@@ -3256,18 +3260,24 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @Test
     @FixFor( "MODE-1550" )
     public void shouldFindChildrenOfRootUsingIsChildNodeCriteria() throws Exception {
-        session.getRootNode().addNode("node1");
-        session.getRootNode().addNode("node2");
+        Node node1 = session.getRootNode().addNode("node1");
+        Node node2 = session.getRootNode().addNode("node2");
 
-        // We didn't save our changes, so we shouldn't find the newly-added nodes
-        String queryString = "select [jcr:path] from [nt:base] where ischildnode('/')";
-        assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/Cars", "/Other", "/NodeB");
+        try {
+            // We didn't save our changes, so we shouldn't find the newly-added nodes
+            String queryString = "select [jcr:path] from [nt:base] where ischildnode('/')";
+            assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/Cars", "/Other", "/NodeB");
 
-        // Now save the session, and re-query to find the newly-added nodes ...
-        session.save();
+            // Now save the session, and re-query to find the newly-added nodes ...
+            session.save();
 
-        // We should now find the newly-added nodes ...
-        assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/Cars", "/Other", "/NodeB", "/node1", "/node2");
+            // We should now find the newly-added nodes ...
+            assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/Cars", "/Other", "/NodeB", "/node1", "/node2");
+        } finally {
+            node1.remove();
+            node2.remove();
+            session.save();
+        }
     }
 
     @SuppressWarnings( "deprecation" )
@@ -3278,91 +3288,95 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Node src = session.getRootNode().addNode("src", "nt:folder");
 
         // add node f1 with child jcr:content
-        Node f1 = src.addNode("f1", "nt:file");
-        f1.addMixin("mix:simpleVersionable");
-        Node content1 = f1.addNode("jcr:content", "nt:resource");
-        content1.setProperty("jcr:data", session.getValueFactory().createBinary("Node f1".getBytes()));
+        try {
+            Node f1 = src.addNode("f1", "nt:file");
+            f1.addMixin("mix:simpleVersionable");
+            Node content1 = f1.addNode("jcr:content", "nt:resource");
+            content1.setProperty("jcr:data", session.getValueFactory().createBinary("Node f1".getBytes()));
 
-        // save and slip a bit to have difference in time of node creation.
-        session.save();
-        Thread.sleep(1000);
+            // save and slip a bit to have difference in time of node creation.
+            session.save();
+            Thread.sleep(1000);
 
-        // add node f2 with child jcr:content
-        Node f2 = src.addNode("f2", "nt:file");
-        f2.addMixin("mix:simpleVersionable");
-        Node content2 = f2.addNode("jcr:content", "nt:resource");
-        content2.setProperty("jcr:data", session.getValueFactory().createBinary("Node f2".getBytes()));
+            // add node f2 with child jcr:content
+            Node f2 = src.addNode("f2", "nt:file");
+            f2.addMixin("mix:simpleVersionable");
+            Node content2 = f2.addNode("jcr:content", "nt:resource");
+            content2.setProperty("jcr:data", session.getValueFactory().createBinary("Node f2".getBytes()));
 
-        session.save();
+            session.save();
 
-        // print = true;
-        printMessage("-------------------- MyQueryTest---------------------");
+            // print = true;
+            printMessage("-------------------- MyQueryTest---------------------");
 
-        String descOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:lastModified] DESC";
-        String ascOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:lastModified] ASC";
+            String descOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:lastModified] DESC";
+            String ascOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:lastModified] ASC";
 
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        Query query = queryManager.createQuery(descOrder, Query.JCR_SQL2);
-        QueryResult result = query.execute();
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery(descOrder, Query.JCR_SQL2);
+            QueryResult result = query.execute();
 
-        // checking first query
-        RowIterator it = result.getRows();
-        assertEquals(2, it.getSize());
+            // checking first query
+            RowIterator it = result.getRows();
+            assertEquals(2, it.getSize());
 
-        Node n1 = it.nextRow().getNode();
-        Node n2 = it.nextRow().getNode();
+            Node n1 = it.nextRow().getNode();
+            Node n2 = it.nextRow().getNode();
 
-        assertEquals("f2", n1.getName());
-        assertEquals("f1", n2.getName());
+            assertEquals("f2", n1.getName());
+            assertEquals("f1", n2.getName());
 
-        // the same request with other order
-        query = queryManager.createQuery(ascOrder, Query.JCR_SQL2);
-        result = query.execute();
+            // the same request with other order
+            query = queryManager.createQuery(ascOrder, Query.JCR_SQL2);
+            result = query.execute();
 
-        // checking second query
-        it = result.getRows();
-        assertEquals(2, it.getSize());
+            // checking second query
+            it = result.getRows();
+            assertEquals(2, it.getSize());
 
-        n1 = it.nextRow().getNode();
-        n2 = it.nextRow().getNode();
+            n1 = it.nextRow().getNode();
+            n2 = it.nextRow().getNode();
 
-        assertEquals("f1", n1.getName());
-        assertEquals("f2", n2.getName());
+            assertEquals("f1", n1.getName());
+            assertEquals("f2", n2.getName());
 
-        // Try the XPath query ...
-        String descOrderX = "/jcr:root//element(*,nt:file)[(@jcr:mixinTypes = 'mix:simpleVersionable')] order by jcr:content/@jcr:lastModified descending";
-        String ascOrderX = "/jcr:root//element(*,nt:file)[(@jcr:mixinTypes = 'mix:simpleVersionable')] order by jcr:content/@jcr:lastModified ascending";
-        query = queryManager.createQuery(descOrderX, Query.XPATH);
-        result = query.execute();
-        // checking first query
-        it = result.getRows();
-        assertEquals(2, it.getSize());
+            // Try the XPath query ...
+            String descOrderX = "/jcr:root//element(*,nt:file)[(@jcr:mixinTypes = 'mix:simpleVersionable')] order by jcr:content/@jcr:lastModified descending";
+            String ascOrderX = "/jcr:root//element(*,nt:file)[(@jcr:mixinTypes = 'mix:simpleVersionable')] order by jcr:content/@jcr:lastModified ascending";
+            query = queryManager.createQuery(descOrderX, Query.XPATH);
+            result = query.execute();
+            // checking first query
+            it = result.getRows();
+            assertEquals(2, it.getSize());
 
-        n1 = it.nextRow().getNode();
-        n2 = it.nextRow().getNode();
+            n1 = it.nextRow().getNode();
+            n2 = it.nextRow().getNode();
 
-        assertEquals("f2", n1.getName());
-        assertEquals("f1", n2.getName());
+            assertEquals("f2", n1.getName());
+            assertEquals("f1", n2.getName());
 
-        // the same request with other order
-        query = queryManager.createQuery(ascOrderX, Query.XPATH);
-        result = query.execute();
+            // the same request with other order
+            query = queryManager.createQuery(ascOrderX, Query.XPATH);
+            result = query.execute();
 
-        // checking second query
-        it = result.getRows();
-        assertEquals(2, it.getSize());
+            // checking second query
+            it = result.getRows();
+            assertEquals(2, it.getSize());
 
-        n1 = it.nextRow().getNode();
-        n2 = it.nextRow().getNode();
+            n1 = it.nextRow().getNode();
+            n2 = it.nextRow().getNode();
 
-        assertEquals("f1", n1.getName());
-        assertEquals("f2", n2.getName());
+            assertEquals("f1", n1.getName());
+            assertEquals("f2", n2.getName());
+        } finally {
+            src.remove();
+            session.save();
+        }
     }
 
     @Test
     @FixFor( "MODE-1900" )
     public void shouldSelectDistinctNodesWhenJoiningMultiValueReferenceProperties() throws Exception {
-        registerNodeTypes(session, "cnd/mode-1900.cnd");
         Node nodeA = session.getRootNode().addNode("A", "test:node");
         nodeA.setProperty("test:name", "A");
 
@@ -3374,21 +3388,28 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         nodeC.setProperty("test:name", "C");
         JcrValue nodeCRef = session.getValueFactory().createValue(nodeC);
 
-        Node relationship = nodeA.addNode("relationship", "test:relationship");
-        relationship.setProperty("test:target", new JcrValue[] {nodeBRef, nodeCRef});
+        try {
+            Node relationship = nodeA.addNode("relationship", "test:relationship");
+            relationship.setProperty("test:target", new JcrValue[] {nodeBRef, nodeCRef});
 
-        session.save();
+            session.save();
 
-        String queryString = "SELECT DISTINCT target.* " + "   FROM [test:node] AS node "
-                             + "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) "
-                             + "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] "
-                             + "   WHERE node.[test:name] = 'A'";
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        QueryResult queryResult = queryManager.createQuery(queryString, Query.JCR_SQL2).execute();
-        if (print) {
-            System.out.println("queryResult = " + queryResult);
+            String queryString = "SELECT DISTINCT target.* " + "   FROM [test:node] AS node "
+                                 + "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) "
+                                 + "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] "
+                                 + "   WHERE node.[test:name] = 'A'";
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            QueryResult queryResult = queryManager.createQuery(queryString, Query.JCR_SQL2).execute();
+            if (print) {
+                System.out.println("queryResult = " + queryResult);
+            }
+            assertEquals(2, queryResult.getNodes().getSize());
+        } finally {
+            nodeA.remove();
+            nodeB.remove();
+            nodeC.remove();
+            session.save();
         }
-        assertEquals(2, queryResult.getNodes().getSize());
     }
 
     @Test
@@ -3408,20 +3429,28 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
         session.save();
 
-        String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
-        QueryResult result = query.execute();
+        try {
+            String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            QueryResult result = query.execute();
 
-        NodeIterator nodes = result.getNodes();
-        assertEquals(2, nodes.getSize());
-        List<String> resultIds = new ArrayList<String>();
-        while (nodes.hasNext()) {
-            resultIds.add(nodes.nextNode().getIdentifier());
+            NodeIterator nodes = result.getNodes();
+            assertEquals(2, nodes.getSize());
+            List<String> resultIds = new ArrayList<String>();
+            while (nodes.hasNext()) {
+                resultIds.add(nodes.nextNode().getIdentifier());
+            }
+            Collections.sort(resultIds);
+
+            assertEquals(referrerIds, resultIds);
+        } finally {
+            nodeA.remove();
+            nodeB.remove();
+            referrerA.remove();
+            referrerB.remove();
+            session.save();
         }
-        Collections.sort(resultIds);
-
-        assertEquals(referrerIds, resultIds);
     }
 
     @Test
@@ -3441,53 +3470,29 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
         session.save();
 
-        String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
-        QueryResult result = query.execute();
+        try {
+            String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            QueryResult result = query.execute();
 
-        NodeIterator nodes = result.getNodes();
-        assertEquals(2, nodes.getSize());
-        List<String> resultIds = new ArrayList<String>();
-        while (nodes.hasNext()) {
-            resultIds.add(nodes.nextNode().getIdentifier());
+            NodeIterator nodes = result.getNodes();
+            assertEquals(2, nodes.getSize());
+            List<String> resultIds = new ArrayList<String>();
+            while (nodes.hasNext()) {
+                resultIds.add(nodes.nextNode().getIdentifier());
+            }
+            Collections.sort(resultIds);
+
+            assertEquals(referrerIds, resultIds);
+        } finally {
+            nodeA.remove();
+            nodeB.remove();
+            referrerA.remove();
+            referrerB.remove();
+
+            session.save();
         }
-        Collections.sort(resultIds);
-
-        assertEquals(referrerIds, resultIds);
-    }
-
-    @Test
-    @FixFor( "MODE-1969" )
-    public void shouldRetrieveSimpleReferrers() throws Exception {
-        Node nodeA = session.getRootNode().addNode("A");
-        nodeA.addMixin("mix:referenceable");
-        Node nodeB = session.getRootNode().addNode("B");
-        nodeB.addMixin("mix:referenceable");
-
-        Node referrerA = session.getRootNode().addNode("referrerA");
-        referrerA.setProperty("nodeASRef", session.getValueFactory().createSimpleReference(nodeA));
-        Node referrerB = session.getRootNode().addNode("referrerB");
-        referrerB.setProperty("nodeBSRef", session.getValueFactory().createSimpleReference(nodeB));
-        List<String> referrerIds = Arrays.asList(referrerA.getIdentifier(), referrerB.getIdentifier());
-        Collections.sort(referrerIds);
-
-        session.save();
-
-        String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
-        QueryResult result = query.execute();
-
-        NodeIterator nodes = result.getNodes();
-        assertEquals(2, nodes.getSize());
-        List<String> resultIds = new ArrayList<String>();
-        while (nodes.hasNext()) {
-            resultIds.add(nodes.nextNode().getIdentifier());
-        }
-        Collections.sort(resultIds);
-
-        assertEquals(referrerIds, resultIds);
     }
 
     @Test
@@ -3509,33 +3514,49 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
         session.save();
 
-        String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
-        QueryResult result = query.execute();
+        try {
+            String queryString = "SELECT * from [nt:unstructured] where REFERENCE() IN " + idList(nodeA, nodeB);
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            QueryResult result = query.execute();
 
-        NodeIterator nodes = result.getNodes();
-        assertEquals(3, nodes.getSize());
-        List<String> resultIds = new ArrayList<String>();
-        while (nodes.hasNext()) {
-            resultIds.add(nodes.nextNode().getIdentifier());
+            NodeIterator nodes = result.getNodes();
+            assertEquals(3, nodes.getSize());
+            List<String> resultIds = new ArrayList<String>();
+            while (nodes.hasNext()) {
+                resultIds.add(nodes.nextNode().getIdentifier());
+            }
+            Collections.sort(resultIds);
+
+            assertEquals(referrerIds, resultIds);
+        } finally {
+            nodeA.remove();
+            nodeB.remove();
+            referrerA.remove();
+            referrerB.remove();
+            referrerC.remove();
+
+            session.save();
         }
-        Collections.sort(resultIds);
-
-        assertEquals(referrerIds, resultIds);
     }
 
     @Test
     @FixFor( "MODE-2053" )
     public void shouldRunLeftOuterJoin() throws Exception {
-        session.getRootNode().addNode("name_p1", "modetest:intermediate");
+        Node parent1 = session.getRootNode().addNode("name_p1", "modetest:intermediate");
         Node parent2 = session.getRootNode().addNode("name_p2", "modetest:intermediate");
         parent2.addNode("name_c1", "modetest:child");
         session.save();
 
-        String queryString = "SELECT parent.* FROM [modetest:intermediate] as parent LEFT OUTER JOIN [modetest:child] as child ON ISCHILDNODE(child, parent)"
-                             + " WHERE parent.[jcr:name] LIKE 'name%' OR child.[jcr:name] LIKE 'name%'";
-        assertNodesAreFound(queryString, Query.JCR_SQL2, "/name_p1", "/name_p2");
+        try {
+            String queryString = "SELECT parent.* FROM [modetest:intermediate] as parent LEFT OUTER JOIN [modetest:child] as child ON ISCHILDNODE(child, parent)"
+                                 + " WHERE parent.[jcr:name] LIKE 'name%' OR child.[jcr:name] LIKE 'name%'";
+            assertNodesAreFound(queryString, Query.JCR_SQL2, "/name_p1", "/name_p2");
+        } finally {
+            parent1.remove();
+            parent2.remove();
+            session.save();
+        }
     }
 
     @FixFor( "MODE-2027" )

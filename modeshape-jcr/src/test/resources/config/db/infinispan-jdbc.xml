@@ -2,7 +2,10 @@
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
             xmlns="urn:infinispan:config:5.2">
-<namedCache name="sqlserver_repository">
+<global>
+    <globalJmxStatistics allowDuplicateDomains="true"/>
+</global>
+<namedCache name="db_repository">
     <loaders passivation="false" shared="false" preload="false">
         <loader class="org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStore"
                 fetchPersistentState="false" ignoreModifications="false"
