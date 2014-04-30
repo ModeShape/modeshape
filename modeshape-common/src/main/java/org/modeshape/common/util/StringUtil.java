@@ -185,8 +185,7 @@ public class StringUtil {
                                                                                                    parameters.length == 1 ? "" : "s",
                                                                                                    requiredParameterCount,
                                                                                                    requiredParameterCount == 1 ? "" : "s",
-                                                                                                   pattern,
-                                                                                                   text.toString()));
+                                                                                                   pattern, text.toString()));
         }
         matcher.appendTail(text);
 

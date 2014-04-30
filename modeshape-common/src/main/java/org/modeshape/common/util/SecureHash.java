@@ -102,6 +102,17 @@ public class SecureHash {
         }
 
         /**
+         * Determine whether the supplied string is of the correct format to contain a hexadecimal representation of this
+         * algorithm.
+         * 
+         * @param string the string; may not be null
+         * @return true if the string might contain a hexadecimal representation of this algorithm, or false otherwise
+         */
+        public boolean isHexadecimal( String string ) {
+            return string.length() == getHexadecimalStringLength() && StringUtil.isHexString(string);
+        }
+
+        /**
          * Get the length of the hexadecimal representation.
          * 
          * @return the number of hexadecimal characters

@@ -137,6 +137,10 @@ public class DocumentTranslator implements DocumentConstants {
         assert this.largeStringSize.get() >= 0;
     }
 
+    public DocumentTranslator withLargeStringSize( long largeStringSize ) {
+        return new DocumentTranslator(context, documentStore, largeStringSize);
+    }
+
     public final ValueFactory<String> getStringFactory() {
         return strings;
     }
@@ -805,7 +809,7 @@ public class DocumentTranslator implements DocumentConstants {
         List<?> children = document.getArray(CHILDREN);
         EditableArray newChildren = Schematic.newArray();
         if (children != null) {
-            //process existing children
+            // process existing children
             for (Object value : children) {
                 ChildReference ref = childReferenceFrom(value);
                 if (ref == null) {
@@ -835,16 +839,17 @@ public class DocumentTranslator implements DocumentConstants {
         }
 
         if (!insertionsByBeforeKey.isEmpty()) {
-            //there are transient insertions (due to reordering of transient nodes) that have to be inserted in a correct order
-            //if any reorderings involved existing children, they would have already been removed by the previous block
-            //note that these insertions have to be added as child because *they do not appear* in the appended list
+            // there are transient insertions (due to reordering of transient nodes) that have to be inserted in a correct order
+            // if any reorderings involved existing children, they would have already been removed by the previous block
+            // note that these insertions have to be added as child because *they do not appear* in the appended list
             LinkedList<ChildReference> toBeInsertedInOrder = new LinkedList<ChildReference>();
             for (Insertions insertion : insertionsByBeforeKey.values()) {
-                //process the remaining insertions-before, which indicate transient & reordered children (reordering removes children
-                //from the appended list
+                // process the remaining insertions-before, which indicate transient & reordered children (reordering removes
+                // children
+                // from the appended list
                 for (ChildReference activeReference : insertion.inserted()) {
                     if (toBeInsertedInOrder.contains(activeReference)) {
-                        //the current reference is already in the list
+                        // the current reference is already in the list
                         continue;
                     }
                     Insertions insertionsBeforeActive = insertionsByBeforeKey.get(activeReference.getKey());
@@ -1183,8 +1188,7 @@ public class DocumentTranslator implements DocumentConstants {
                 key = ref.isWeak() ? WEAK_REFERENCE_FIELD : REFERENCE_FIELD;
             }
 
-            String refString = ref instanceof NodeKeyReference ? ((NodeKeyReference)ref).getNodeKey().toString() :
-                               this.strings.create(ref);
+            String refString = ref instanceof NodeKeyReference ? ((NodeKeyReference)ref).getNodeKey().toString() : this.strings.create(ref);
             boolean isForeign = ref.isForeign();
             return Schematic.newDocument(key, refString, "$foreign", isForeign);
         }
@@ -1193,9 +1197,7 @@ public class DocumentTranslator implements DocumentConstants {
         }
         if (value instanceof ExternalBinaryValue) {
             ExternalBinaryValue externalBinaryValue = (ExternalBinaryValue)value;
-            return Schematic.newDocument(EXTERNAL_BINARY_ID_FIELD,
-                                         externalBinaryValue.getId(),
-                                         SOURCE_NAME_FIELD,
+            return Schematic.newDocument(EXTERNAL_BINARY_ID_FIELD, externalBinaryValue.getId(), SOURCE_NAME_FIELD,
                                          externalBinaryValue.getSourceName());
         }
         if (value instanceof org.modeshape.jcr.value.BinaryValue) {
@@ -1256,7 +1258,7 @@ public class DocumentTranslator implements DocumentConstants {
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
     protected void decrementBinaryReferenceCount( Object fieldValue,
-                                                     Set<BinaryKey> unusedBinaryKeys ) {
+                                                  Set<BinaryKey> unusedBinaryKeys ) {
         if (fieldValue instanceof List<?>) {
             for (Object value : (List<?>)fieldValue) {
                 decrementBinaryReferenceCount(value, unusedBinaryKeys);
@@ -1273,7 +1275,7 @@ public class DocumentTranslator implements DocumentConstants {
             } else if (fieldValue instanceof BinaryKey) {
                 sha1 = fieldValue.toString();
             } else if (fieldValue instanceof org.modeshape.jcr.api.Binary && !(fieldValue instanceof InMemoryBinaryValue)) {
-                sha1 = ((org.modeshape.jcr.api.Binary) fieldValue).getHexHash();
+                sha1 = ((org.modeshape.jcr.api.Binary)fieldValue).getHexHash();
             }
 
             if (sha1 != null) {
