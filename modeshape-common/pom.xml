@@ -21,9 +21,6 @@
          those defined in the dependencyManagement section of the parent pom.
      -->
     <dependencies>
-        <!--
-        Testing (note the scope)
-        -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

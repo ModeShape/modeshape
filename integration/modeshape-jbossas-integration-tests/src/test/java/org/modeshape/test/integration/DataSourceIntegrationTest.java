@@ -24,28 +24,29 @@
 
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertNotNull;
+import java.io.File;
+import java.sql.Connection;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.sql.DataSource;
-import static junit.framework.Assert.assertNotNull;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.DependencyResolvers;
-import org.jboss.shrinkwrap.resolver.api.maven.MavenDependencyResolver;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
+import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jdbc.ConnectionResultsComparator;
-import java.io.File;
-import java.sql.Connection;
 
 /**
  * Test which verifies that the ModeShape datasource configuration inside of AS7 is correct.
@@ -71,20 +72,20 @@ public class DataSourceIntegrationTest {
     private Session session;
     private Node testRoot;
 
+
     @Deployment
     public static WebArchive createDeployment() {
-        MavenDependencyResolver mavenResolver = DependencyResolvers.use(MavenDependencyResolver.class)
-                                                                   .goOffline()
-                                                                   .loadMetadataFromPom("pom.xml")
-                                                                   .artifact("org.modeshape:modeshape-jdbc-local:jar:tests")
-                                                                   .artifact("org.modeshape:modeshape-jdbc-local:jar")
-                                                                   .scope("test");
+        File[] testDeps = Maven.resolver().offline().loadPomFromFile("pom.xml").addDependencies(
+                MavenDependencies.createDependency("org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven",
+                                                   ScopeType.TEST, false),
+                MavenDependencies.createDependency("org.modeshape:modeshape-jdbc-local", ScopeType.TEST, false),
+                MavenDependencies.createDependency("org.modeshape:modeshape-jdbc-local:test-jar:?", ScopeType.TEST, false))
+                               .resolve().withTransitivity().asFile();
         return ShrinkWrap.create(WebArchive.class, "ds-test.war")
-                         .addAsLibraries(mavenResolver.resolveAsFiles())
+                         .addAsLibraries(testDeps)
                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }
-
 
     @Before
     public void before() throws Exception {

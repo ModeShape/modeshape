@@ -26,6 +26,7 @@ package org.modeshape.jcr.security;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -40,8 +41,6 @@ import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicyIterator;
 import javax.jcr.security.Privilege;
-import org.hamcrest.Matcher;
-import org.hamcrest.core.IsNull;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -93,8 +92,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     @Test
     public void shouldObtainAccessControlManager() throws Exception {
         assertTrue(acm != null);
-        Matcher<AccessControlManager> m = IsNull.notNullValue();
-        m.matches(session.getAccessControlManager());
+        assertNotNull(session.getAccessControlManager());
     }
 
     @Test
@@ -330,16 +328,6 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
                                    new Privilege[] {acm.privilegeFromName(Privilege.JCR_READ)});
 
         acm.setPolicy("/aircraft", acl2);
-
-        AccessControlList acl = getACL("/");
-        acl.addAccessControlEntry(SimplePrincipal.newInstance("Admin"),
-                                  new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
-        acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
-                                  new Privilege[] {acm.privilegeFromName(Privilege.JCR_READ)});
-
-        acm.setPolicy("/", acl);
-
-        session.save();
 
         root = session.getRootNode();
         aircraft = root.getNode("aircraft");

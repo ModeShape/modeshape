@@ -22,7 +22,7 @@ public class DoLockTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockRes).sendError(WebdavStatus.SC_FORBIDDEN);
+                oneOf(mockRes).sendError(WebdavStatus.SC_FORBIDDEN);
             }
         });
 
@@ -48,32 +48,32 @@ public class DoLockTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(lockPath));
 
-                one(mockReq).getHeader("If");
+                oneOf(mockReq).getHeader("If");
                 will(returnValue(lockToken));
 
-                one(mockReq).getHeader("User-Agent");
+                oneOf(mockReq).getHeader("User-Agent");
                 will(returnValue("Goliath"));
 
                 exactly(2).of(mockReq).getHeader("If");
                 will(returnValue(lockToken));
 
-                one(mockReq).getHeader("Timeout");
+                oneOf(mockReq).getHeader("Timeout");
                 will(returnValue("Infinite"));
 
-                one(mockRes).setStatus(WebdavStatus.SC_OK);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_OK);
 
-                one(mockRes).setContentType("text/xml; charset=UTF-8");
+                oneOf(mockRes).setContentType("text/xml; charset=UTF-8");
 
-                one(mockRes).getWriter();
+                oneOf(mockRes).getWriter();
                 will(returnValue(getPrintWriter()));
 
-                one(mockRes).addHeader("Lock-Token", lockToken.substring(lockToken.indexOf("(") + 1, lockToken.indexOf(")")));
+                oneOf(mockRes).addHeader("Lock-Token", lockToken.substring(lockToken.indexOf("(") + 1, lockToken.indexOf(")")));
             }
         });
 
@@ -90,41 +90,41 @@ public class DoLockTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(lockPath));
 
-                one(mockReq).getHeader("User-Agent");
+                oneOf(mockReq).getHeader("User-Agent");
                 will(returnValue("Goliath"));
 
-                one(mockReq).getHeader("If");
+                oneOf(mockReq).getHeader("If");
                 will(returnValue(null));
 
                 StoredObject so = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, lockPath);
+                oneOf(mockStore).getStoredObject(mockTransaction, lockPath);
                 will(returnValue(so));
 
-                one(mockReq).getInputStream();
+                oneOf(mockReq).getInputStream();
                 will(returnValue(exclusiveLockRequestStream()));
 
-                one(mockReq).getHeader("Depth");
+                oneOf(mockReq).getHeader("Depth");
                 will(returnValue(DEPTH_STRING));
 
-                one(mockReq).getHeader("Timeout");
+                oneOf(mockReq).getHeader("Timeout");
                 will(returnValue(TIMEOUT_STRING));
 
-                one(mockRes).setStatus(WebdavStatus.SC_OK);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_OK);
 
-                one(mockRes).setContentType("text/xml; charset=UTF-8");
+                oneOf(mockRes).setContentType("text/xml; charset=UTF-8");
 
-                one(mockRes).getWriter();
+                oneOf(mockRes).getWriter();
                 will(returnValue(getPrintWriter()));
 
                 // addHeader("Lock-Token", "(<opaquelocktoken:xxx-xxx-xxx>)")
-                one(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
+                oneOf(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
             }
         });
 
@@ -141,40 +141,40 @@ public class DoLockTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(lockPath));
 
-                one(mockReq).getHeader("User-Agent");
+                oneOf(mockReq).getHeader("User-Agent");
                 will(returnValue("Goliath"));
 
-                one(mockReq).getHeader("If");
+                oneOf(mockReq).getHeader("If");
                 will(returnValue(null));
 
                 StoredObject so = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, lockPath);
+                oneOf(mockStore).getStoredObject(mockTransaction, lockPath);
                 will(returnValue(so));
 
-                one(mockReq).getInputStream();
+                oneOf(mockReq).getInputStream();
                 will(returnValue(sharedLockRequestStream()));
 
-                one(mockReq).getHeader("Depth");
+                oneOf(mockReq).getHeader("Depth");
                 will(returnValue(DEPTH_STRING));
 
-                one(mockReq).getHeader("Timeout");
+                oneOf(mockReq).getHeader("Timeout");
                 will(returnValue(TIMEOUT_STRING));
 
-                one(mockRes).setStatus(WebdavStatus.SC_OK);
-                one(mockRes).setContentType("text/xml; charset=UTF-8");
+                oneOf(mockRes).setStatus(WebdavStatus.SC_OK);
+                oneOf(mockRes).setContentType("text/xml; charset=UTF-8");
 
-                one(mockRes).getWriter();
+                oneOf(mockRes).getWriter();
                 will(returnValue(getPrintWriter()));
 
                 // addHeader("Lock-Token", "(<opaquelocktoken:xxx-xxx-xxx>)")
-                one(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
+                oneOf(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
             }
         });
 
@@ -192,41 +192,41 @@ public class DoLockTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(lockPath));
 
-                one(mockReq).getHeader("User-Agent");
+                oneOf(mockReq).getHeader("User-Agent");
                 will(returnValue("Goliath"));
 
-                one(mockReq).getHeader("If");
+                oneOf(mockReq).getHeader("If");
                 will(returnValue(null));
 
                 StoredObject so = initFolderStoredObject();
 
-                one(mockStore).getStoredObject(mockTransaction, lockPath);
+                oneOf(mockStore).getStoredObject(mockTransaction, lockPath);
                 will(returnValue(so));
 
-                one(mockReq).getInputStream();
+                oneOf(mockReq).getInputStream();
                 will(returnValue(exclusiveLockRequestStream()));
 
-                one(mockReq).getHeader("Depth");
+                oneOf(mockReq).getHeader("Depth");
                 will(returnValue(DEPTH_STRING));
 
-                one(mockReq).getHeader("Timeout");
+                oneOf(mockReq).getHeader("Timeout");
                 will(returnValue(TIMEOUT_STRING));
 
-                one(mockRes).setStatus(WebdavStatus.SC_OK);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_OK);
 
-                one(mockRes).setContentType("text/xml; charset=UTF-8");
+                oneOf(mockRes).setContentType("text/xml; charset=UTF-8");
 
-                one(mockRes).getWriter();
+                oneOf(mockRes).getWriter();
                 will(returnValue(getPrintWriter()));
 
                 // addHeader("Lock-Token", "(<opaquelocktoken:xxx-xxx-xxx>)")
-                one(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
+                oneOf(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
             }
         });
 
@@ -244,41 +244,41 @@ public class DoLockTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(lockPath));
 
-                one(mockReq).getHeader("User-Agent");
+                oneOf(mockReq).getHeader("User-Agent");
                 will(returnValue("Goliath"));
 
-                one(mockReq).getHeader("If");
+                oneOf(mockReq).getHeader("If");
                 will(returnValue(null));
 
                 StoredObject so = initFolderStoredObject();
 
-                one(mockStore).getStoredObject(mockTransaction, lockPath);
+                oneOf(mockStore).getStoredObject(mockTransaction, lockPath);
                 will(returnValue(so));
 
-                one(mockReq).getInputStream();
+                oneOf(mockReq).getInputStream();
                 will(returnValue(sharedLockRequestStream()));
 
-                one(mockReq).getHeader("Depth");
+                oneOf(mockReq).getHeader("Depth");
                 will(returnValue(DEPTH_STRING));
 
-                one(mockReq).getHeader("Timeout");
+                oneOf(mockReq).getHeader("Timeout");
                 will(returnValue(TIMEOUT_STRING));
 
-                one(mockRes).setStatus(WebdavStatus.SC_OK);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_OK);
 
-                one(mockRes).setContentType("text/xml; charset=UTF-8");
+                oneOf(mockRes).setContentType("text/xml; charset=UTF-8");
 
-                one(mockRes).getWriter();
+                oneOf(mockRes).getWriter();
                 will(returnValue(getPrintWriter()));
 
                 // addHeader("Lock-Token", "(<opaquelocktoken:xxx-xxx-xxx>)")
-                one(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
+                oneOf(mockRes).addHeader(with(any(String.class)), with(any(String.class)));
             }
         });
 
@@ -295,25 +295,25 @@ public class DoLockTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(lockPath));
 
                 LockedObject lockNullResourceLo = null;
 
-                one(mockResourceLocks).getLockedObjectByPath(mockTransaction, lockPath);
+                oneOf(mockResourceLocks).getLockedObjectByPath(mockTransaction, lockPath);
                 will(returnValue(lockNullResourceLo));
 
                 LockedObject parentLo = null;
-                one(mockResourceLocks).getLockedObjectByPath(mockTransaction, parentPath);
+                oneOf(mockResourceLocks).getLockedObjectByPath(mockTransaction, parentPath);
                 will(returnValue(parentLo));
 
-                one(mockReq).getHeader("User-Agent");
+                oneOf(mockReq).getHeader("User-Agent");
                 will(returnValue("Goliath"));
 
-                one(mockResourceLocks).lock(with(any(ITransaction.class)),
+                oneOf(mockResourceLocks).lock(with(any(ITransaction.class)),
                                             with(any(String.class)),
                                             with(any(String.class)),
                                             with(any(boolean.class)),
@@ -322,57 +322,57 @@ public class DoLockTest extends AbstractWebDAVTest {
                                             with(any(boolean.class)));
                 will(returnValue(true));
 
-                one(mockReq).getHeader("If");
+                oneOf(mockReq).getHeader("If");
                 will(returnValue(null));
 
                 StoredObject lockNullResourceSo = null;
 
-                one(mockStore).getStoredObject(mockTransaction, lockPath);
+                oneOf(mockStore).getStoredObject(mockTransaction, lockPath);
                 will(returnValue(lockNullResourceSo));
 
                 StoredObject parentSo = null;
 
-                one(mockStore).getStoredObject(mockTransaction, parentPath);
+                oneOf(mockStore).getStoredObject(mockTransaction, parentPath);
                 will(returnValue(parentSo));
 
-                one(mockStore).createFolder(mockTransaction, parentPath);
+                oneOf(mockStore).createFolder(mockTransaction, parentPath);
 
-                one(mockStore).getStoredObject(mockTransaction, lockPath);
+                oneOf(mockStore).getStoredObject(mockTransaction, lockPath);
                 will(returnValue(lockNullResourceSo));
 
-                one(mockStore).createResource(mockTransaction, lockPath);
+                oneOf(mockStore).createResource(mockTransaction, lockPath);
 
-                one(mockRes).setStatus(WebdavStatus.SC_CREATED);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_CREATED);
 
                 lockNullResourceSo = initLockNullStoredObject();
 
-                one(mockStore).getStoredObject(mockTransaction, lockPath);
+                oneOf(mockStore).getStoredObject(mockTransaction, lockPath);
                 will(returnValue(lockNullResourceSo));
 
-                one(mockReq).getInputStream();
+                oneOf(mockReq).getInputStream();
                 will(returnValue(exclusiveLockRequestStream()));
 
-                one(mockReq).getHeader("Depth");
+                oneOf(mockReq).getHeader("Depth");
                 will(returnValue(("0")));
 
-                one(mockReq).getHeader("Timeout");
+                oneOf(mockReq).getHeader("Timeout");
                 will(returnValue("Infinite"));
 
                 ResourceLocks resLocks = ResourceLocks.class.newInstance();
 
-                one(mockResourceLocks).exclusiveLock(mockTransaction, lockPath, "I'am the Lock Owner", 0, 604800);
+                oneOf(mockResourceLocks).exclusiveLock(mockTransaction, lockPath, "I'am the Lock Owner", 0, 604800);
                 will(returnValue(true));
 
                 lockNullResourceLo = initLockNullLockedObject(resLocks, lockPath);
 
-                one(mockResourceLocks).getLockedObjectByPath(mockTransaction, lockPath);
+                oneOf(mockResourceLocks).getLockedObjectByPath(mockTransaction, lockPath);
                 will(returnValue(lockNullResourceLo));
 
-                one(mockRes).setStatus(WebdavStatus.SC_OK);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_OK);
 
-                one(mockRes).setContentType("text/xml; charset=UTF-8");
+                oneOf(mockRes).setContentType("text/xml; charset=UTF-8");
 
-                one(mockRes).getWriter();
+                oneOf(mockRes).getWriter();
                 will(returnValue(getPrintWriter()));
 
                 String loId = null;
@@ -381,8 +381,8 @@ public class DoLockTest extends AbstractWebDAVTest {
                 }
                 final String lockToken = "<opaquelocktoken:" + loId + ">";
 
-                one(mockRes).addHeader("Lock-Token", lockToken);
-                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)),
+                oneOf(mockRes).addHeader("Lock-Token", lockToken);
+                oneOf(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)),
                                                                     with(any(String.class)),
                                                                     with(any(String.class)));
             }

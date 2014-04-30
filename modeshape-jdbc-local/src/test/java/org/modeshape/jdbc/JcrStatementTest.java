@@ -23,6 +23,7 @@
  */
 package org.modeshape.jdbc;
 
+import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertFalse;
@@ -200,7 +201,7 @@ public class JcrStatementTest {
 
     @Test
     public void shouldReturnDefaultForGeneratedKeys() {
-        assertThat(stmt.getGeneratedKeys(), is(ResultSet.class));
+        assertThat(stmt.getGeneratedKeys(), isA(ResultSet.class));
     }
 
     @Test

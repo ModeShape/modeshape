@@ -24,15 +24,18 @@
 
 package org.modeshape.jcr;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.NodeIterator;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-import org.junit.Assert;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.ArrayListMultimap;
@@ -40,10 +43,6 @@ import org.modeshape.common.collection.ListMultimap;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.value.Name;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Unit test for the initial content import feature.
@@ -199,7 +198,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
             for (String propertyValueString : properties) {
                 String[] parts = propertyValueString.split("=");
                 String propertyName = parts[0];
-                Assert.assertTrue("Property " + propertyName + " not found", nodeProperties.containsKey(propertyName));
+                assertTrue("Property " + propertyName + " not found", nodeProperties.containsKey(propertyName));
                 String propertyValue = parts[1];
 
                 Set<String> expectedValues = new TreeSet<String>(Arrays.asList(propertyValue.split(",")));

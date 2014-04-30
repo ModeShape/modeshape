@@ -16,13 +16,13 @@ public class DoCopyTest extends AbstractWebDAVTest {
     public void testDoCopyIfReadOnly() throws Exception {
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockRes).sendError(WebdavStatus.SC_FORBIDDEN);
+                oneOf(mockRes).sendError(WebdavStatus.SC_FORBIDDEN);
             }
         });
 
@@ -45,43 +45,43 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(path));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue("/destination"));
 
-                one(mockReq).getServerName();
+                oneOf(mockReq).getServerName();
                 will(returnValue("myServer"));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue(""));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue("/destination"));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("/servletPath"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(path));
 
-                one(mockReq).getHeader("Overwrite");
+                oneOf(mockReq).getHeader("Overwrite");
                 will(returnValue("T"));
 
                 StoredObject so = initLockNullStoredObject();
 
-                one(mockStore).getStoredObject(mockTransaction, path);
+                oneOf(mockStore).getStoredObject(mockTransaction, path);
                 will(returnValue(so));
 
-                one(mockRes).addHeader("Allow", "OPTIONS, MKCOL, PUT, PROPFIND, LOCK, UNLOCK");
-                one(mockRes).sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
+                oneOf(mockRes).addHeader("Allow", "OPTIONS, MKCOL, PUT, PROPFIND, LOCK, UNLOCK");
+                oneOf(mockRes).sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
         });
 
@@ -102,37 +102,37 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue(DEST_FILE_PATH));
 
-                one(mockReq).getServerName();
+                oneOf(mockReq).getServerName();
                 will(returnValue("myServer"));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue(""));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(DEST_FILE_PATH));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("/servletPath"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("If");
+                oneOf(mockReq).getHeader("If");
                 will(returnValue(wrongLockToken));
 
-                one(mockRes).setStatus(WebdavStatus.SC_LOCKED);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_LOCKED);
             }
         });
 
@@ -154,65 +154,65 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue(DEST_FILE_PATH));
 
-                one(mockReq).getServerName();
+                oneOf(mockReq).getServerName();
                 will(returnValue("myServer"));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue(""));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(DEST_FILE_PATH));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("/servletPath"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("If");
+                oneOf(mockReq).getHeader("If");
                 will(returnValue(rightLockToken));
 
-                one(mockReq).getHeader("Overwrite");
+                oneOf(mockReq).getHeader("Overwrite");
                 will(returnValue("F"));
 
                 StoredObject sourceFileSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceFileSo));
 
                 StoredObject destFileSo = null;
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(destFileSo));
 
-                one(mockRes).setStatus(WebdavStatus.SC_CREATED);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_CREATED);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceFileSo));
 
-                one(mockStore).createResource(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).createResource(mockTransaction, DEST_FILE_PATH);
 
-                one(mockStore).getResourceContent(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getResourceContent(mockTransaction, SOURCE_FILE_PATH);
                 DelegatingServletInputStream resourceStream = resourceRequestStream();
                 will(returnValue(resourceStream));
 
-                one(mockStore).setResourceContent(mockTransaction, DEST_FILE_PATH, resourceStream, null, null);
+                oneOf(mockStore).setResourceContent(mockTransaction, DEST_FILE_PATH, resourceStream, null, null);
                 will(returnValue(RESOURCE_LENGTH));
 
                 destFileSo = initFileStoredObject(RESOURCE_CONTENT);
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(destFileSo));
             }
         });
@@ -229,16 +229,16 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue(null));
 
-                one(mockRes).sendError(WebdavStatus.SC_BAD_REQUEST);
+                oneOf(mockRes).sendError(WebdavStatus.SC_BAD_REQUEST);
             }
         });
 
@@ -256,34 +256,34 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getServerName();
+                oneOf(mockReq).getServerName();
                 will(returnValue("serverName"));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue(""));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("/servletPath"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockRes).sendError(WebdavStatus.SC_FORBIDDEN);
+                oneOf(mockRes).sendError(WebdavStatus.SC_FORBIDDEN);
 
             }
         });
@@ -302,70 +302,70 @@ public class DoCopyTest extends AbstractWebDAVTest {
         final String[] sourceChildren = new String[] {"sourceFile"};
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_COLLECTION_PATH));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue(DEST_COLLECTION_PATH));
 
-                one(mockReq).getServerName();
+                oneOf(mockReq).getServerName();
                 will(returnValue("serverName"));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue(""));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(DEST_COLLECTION_PATH));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("/servletPath"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_COLLECTION_PATH));
 
-                one(mockReq).getHeader("Overwrite");
+                oneOf(mockReq).getHeader("Overwrite");
                 will(returnValue("F"));
 
                 StoredObject sourceCollectionSo = initFolderStoredObject();
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_COLLECTION_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_COLLECTION_PATH);
                 will(returnValue(sourceCollectionSo));
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_COLLECTION_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_COLLECTION_PATH);
                 will(returnValue(null));
 
-                one(mockRes).setStatus(WebdavStatus.SC_CREATED);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_CREATED);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_COLLECTION_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_COLLECTION_PATH);
                 will(returnValue(sourceCollectionSo));
 
-                one(mockStore).createFolder(mockTransaction, DEST_COLLECTION_PATH);
+                oneOf(mockStore).createFolder(mockTransaction, DEST_COLLECTION_PATH);
 
-                one(mockReq).getHeader("Depth");
+                oneOf(mockReq).getHeader("Depth");
                 will(returnValue("-1"));
 
-                one(mockStore).getChildrenNames(mockTransaction, SOURCE_COLLECTION_PATH);
+                oneOf(mockStore).getChildrenNames(mockTransaction, SOURCE_COLLECTION_PATH);
                 will(returnValue(sourceChildren));
 
                 StoredObject sourceFileSo = initFileStoredObject(RESOURCE_CONTENT);
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceFileSo));
 
-                one(mockStore).createResource(mockTransaction, DEST_COLLECTION_PATH + "/sourceFile");
+                oneOf(mockStore).createResource(mockTransaction, DEST_COLLECTION_PATH + "/sourceFile");
 
-                one(mockStore).getResourceContent(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getResourceContent(mockTransaction, SOURCE_FILE_PATH);
                 DelegatingServletInputStream stream = resourceRequestStream();
                 will(returnValue(stream));
-                one(mockStore).setResourceContent(mockTransaction, DEST_COLLECTION_PATH + "/sourceFile", stream, null, null);
+                oneOf(mockStore).setResourceContent(mockTransaction, DEST_COLLECTION_PATH + "/sourceFile", stream, null, null);
 
                 StoredObject destFileSo = initFileStoredObject(RESOURCE_CONTENT);
-                one(mockStore).getStoredObject(mockTransaction, DEST_COLLECTION_PATH + "/sourceFile");
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_COLLECTION_PATH + "/sourceFile");
                 will(returnValue(destFileSo));
             }
         });
@@ -384,42 +384,42 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue(DEST_FILE_PATH));
 
-                one(mockReq).getServerName();
+                oneOf(mockReq).getServerName();
                 will(returnValue("serverName"));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue(""));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(DEST_FILE_PATH));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("/servletPath"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("Overwrite");
+                oneOf(mockReq).getHeader("Overwrite");
                 will(returnValue("F"));
 
                 StoredObject notExistSo = null;
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(notExistSo));
 
-                one(mockRes).sendError(WebdavStatus.SC_NOT_FOUND);
+                oneOf(mockRes).sendError(WebdavStatus.SC_NOT_FOUND);
             }
         });
 
@@ -438,64 +438,64 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
                 StoredObject sourceSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceSo));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue(DEST_FILE_PATH));
 
-                one(mockReq).getServerName();
+                oneOf(mockReq).getServerName();
                 will(returnValue("serverName"));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue(""));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue("/folder/destFolder"));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("/servletPath"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
                 StoredObject existingDestSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(existingDestSo));
 
-                one(mockReq).getHeader("Overwrite");
+                oneOf(mockReq).getHeader("Overwrite");
                 will(returnValue("T"));
 
-                one(mockRes).setStatus(WebdavStatus.SC_NO_CONTENT);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_NO_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(existingDestSo));
 
-                one(mockStore).removeObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).removeObject(mockTransaction, DEST_FILE_PATH);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceSo));
 
-                one(mockStore).createResource(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).createResource(mockTransaction, DEST_FILE_PATH);
 
-                one(mockStore).getResourceContent(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getResourceContent(mockTransaction, SOURCE_FILE_PATH);
                 DelegatingServletInputStream resourceStream = resourceRequestStream();
                 will(returnValue(resourceStream));
-                one(mockStore).setResourceContent(mockTransaction, DEST_FILE_PATH, resourceStream, null, null);
+                oneOf(mockStore).setResourceContent(mockTransaction, DEST_FILE_PATH, resourceStream, null, null);
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(existingDestSo));
             }
         });
@@ -514,47 +514,47 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
                 StoredObject sourceSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceSo));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue("serverName".concat(DEST_FILE_PATH)));
 
-                one(mockReq).getServerName();
+                oneOf(mockReq).getServerName();
                 will(returnValue("serverName"));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue(""));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(DEST_FILE_PATH));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("/servletPath"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
                 StoredObject existingDestSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(existingDestSo));
 
-                one(mockReq).getHeader("Overwrite");
+                oneOf(mockReq).getHeader("Overwrite");
                 will(returnValue("F"));
 
-                one(mockRes).sendError(WebdavStatus.SC_PRECONDITION_FAILED);
+                oneOf(mockRes).sendError(WebdavStatus.SC_PRECONDITION_FAILED);
             }
         });
 
@@ -572,61 +572,61 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
                 StoredObject sourceSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceSo));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue("http://destination:80".concat(DEST_FILE_PATH)));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue("http://destination:80"));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(DEST_COLLECTION_PATH));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("http://destination:80"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getAttribute("javax.servlet.include.path_info");
+                oneOf(mockReq).getAttribute("javax.servlet.include.path_info");
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("Overwrite");
+                oneOf(mockReq).getHeader("Overwrite");
                 will(returnValue("T"));
 
                 StoredObject destFileSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(destFileSo));
 
-                one(mockRes).setStatus(WebdavStatus.SC_NO_CONTENT);
+                oneOf(mockRes).setStatus(WebdavStatus.SC_NO_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(destFileSo));
 
-                one(mockStore).removeObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).removeObject(mockTransaction, DEST_FILE_PATH);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceSo));
 
-                one(mockStore).createResource(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).createResource(mockTransaction, DEST_FILE_PATH);
 
-                one(mockStore).getResourceContent(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getResourceContent(mockTransaction, SOURCE_FILE_PATH);
                 DelegatingServletInputStream resourceStream = resourceRequestStream();
                 will(returnValue(resourceStream));
-                one(mockStore).setResourceContent(mockTransaction, DEST_FILE_PATH, resourceStream, null, null);
+                oneOf(mockStore).setResourceContent(mockTransaction, DEST_FILE_PATH, resourceStream, null, null);
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_FILE_PATH);
                 will(returnValue(destFileSo));
             }
         });
@@ -645,44 +645,44 @@ public class DoCopyTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
                 StoredObject sourceSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceSo));
 
-                one(mockReq).getHeader("Destination");
+                oneOf(mockReq).getHeader("Destination");
                 will(returnValue("http://destination:80".concat(DEST_COLLECTION_PATH)));
 
-                one(mockReq).getContextPath();
+                oneOf(mockReq).getContextPath();
                 will(returnValue("http://destination:80"));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getServletPath();
+                oneOf(mockReq).getServletPath();
                 will(returnValue("http://destination:80"));
 
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getAttribute("javax.servlet.include.path_info");
+                oneOf(mockReq).getAttribute("javax.servlet.include.path_info");
                 will(returnValue(SOURCE_FILE_PATH));
 
-                one(mockReq).getHeader("Overwrite");
+                oneOf(mockReq).getHeader("Overwrite");
                 will(returnValue("F"));
 
                 StoredObject existingDestSo = initFolderStoredObject();
 
-                one(mockStore).getStoredObject(mockTransaction, DEST_COLLECTION_PATH);
+                oneOf(mockStore).getStoredObject(mockTransaction, DEST_COLLECTION_PATH);
                 will(returnValue(existingDestSo));
 
-                one(mockRes).sendError(WebdavStatus.SC_PRECONDITION_FAILED);
+                oneOf(mockRes).sendError(WebdavStatus.SC_PRECONDITION_FAILED);
             }
         });
 

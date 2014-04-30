@@ -41,13 +41,55 @@
         </profile>
 
         <profile>
-            <id>jboss-eap-repository</id>
+            <id>jboss-thirdpartyuploads-repository</id>
+            <repositories>
+                <repository>
+                    <!--This repository is required for the Fungal artifact used by ModeShape JCA -->
+                    <id>jboss-thirdpartyuploads-repository</id>
+                    <name>JBoss Third Party Uploads Repository</name>
+                    <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-uploads/</url>
+                    <layout>default</layout>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+
+        <profile>
+            <id>jboss-eap61-repository</id>
             <repositories>
                 <!--This is a non-standard repository, where EAP/AS components artifacts are located-->
                 <repository>
-                    <id>jboss-eap-techpreview</id>
+                    <id>jboss-eap61-techpreview</id>
                     <name>JBoss.org Public EAP Repository</name>
                     <url>http://maven.repository.redhat.com/techpreview/eap6/6.1.1/maven-repository</url>
+                    <layout>default</layout>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+
+        <profile>
+            <id>jboss-eap62-repository</id>
+            <repositories>
+                <!--This is a non-standard repository, where EAP/AS components artifacts are located-->
+                <repository>
+                    <id>jboss-eap62-techpreview</id>
+                    <name>JBoss.org Public EAP Repository</name>
+                    <url>http://maven.repository.redhat.com/techpreview/eap6/6.2.1/maven-repository/</url>
                     <layout>default</layout>
                     <releases>
                         <enabled>true</enabled>
@@ -64,6 +106,7 @@
 
     <activeProfiles>
         <activeProfile>jboss-public-repository</activeProfile>
-        <activeProfile>jboss-eap-repository</activeProfile>
+        <activeProfile>jboss-eap62-repository</activeProfile>
+        <activeProfile>jboss-thirdpartyuploads-repository</activeProfile>
     </activeProfiles>
 </settings>

@@ -30,7 +30,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Value;
 import javax.jcr.query.QueryResult;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**

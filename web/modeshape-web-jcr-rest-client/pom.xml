@@ -58,7 +58,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -67,7 +66,6 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr-rest-war</artifactId>
             <type>war</type>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 

@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr;
 
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.fail;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;

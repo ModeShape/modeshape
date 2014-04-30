@@ -24,7 +24,7 @@
 
 package org.modeshape.extractor.tika;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +33,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
-import org.junit.Assert;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.SingleUseAbstractTest;
@@ -101,7 +100,7 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
         QueryManager queryManager = ((javax.jcr.Workspace)session.getWorkspace()).getQueryManager();
         Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
         NodeIterator nodes = query.execute().getNodes();
-        Assert.assertEquals(howMany, nodes.getSize());
+        assertEquals(howMany, nodes.getSize());
     }
 
     @Test
