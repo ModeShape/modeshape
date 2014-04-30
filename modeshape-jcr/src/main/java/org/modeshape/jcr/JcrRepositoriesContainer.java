@@ -15,6 +15,8 @@
  */
 package org.modeshape.jcr;
 
+import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import javax.jcr.RepositoryException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import org.infinispan.schematic.document.ParsingException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
@@ -84,7 +87,7 @@ public final class JcrRepositoriesContainer implements RepositoriesContainer {
         if (repositoryURL.toLowerCase().startsWith(JNDI_PROTOCOL)) {
             return new JNDIRepositoryLookup().repository(configParams, repositoryURL);
         }
-        return new FileRepositoryLookup().repository(configParams, repositoryURL);
+        return new UrlRepositoryLookup().repository(configParams, repositoryURL);
     }
 
     @Override
@@ -102,7 +105,7 @@ public final class JcrRepositoriesContainer implements RepositoriesContainer {
             repositoryNames.addAll(jndiRepositories);
         } else {
             // based on the parameters try to lookup a repository (note that this may actually start it)
-            JcrRepository repository = new FileRepositoryLookup().repository(parameters, repositoryURL);
+            JcrRepository repository = new UrlRepositoryLookup().repository(parameters, repositoryURL);
             if (repository != null) {
                 repositoryNames.add(repository.getName());
             }
@@ -187,7 +190,7 @@ public final class JcrRepositoriesContainer implements RepositoriesContainer {
         return null;
     }
 
-    protected class FileRepositoryLookup {
+    protected class UrlRepositoryLookup {
         protected JcrRepository repository( Map<?, ?> parameters,
                                             String repositoryURL ) throws RepositoryException {
             String repositoryName = repositoryNameFrom(repositoryURL, parameters);
@@ -245,22 +248,56 @@ public final class JcrRepositoriesContainer implements RepositoriesContainer {
 
         private RepositoryConfiguration loadRepositoryConfigurationFrom( String repositoryURL ) throws RepositoryException {
             try {
-                if (repositoryURL.toLowerCase().startsWith(FILE_PROTOCOL)) {
-                    String configLocation = removeForwardSlashes(repositoryURL.substring(FILE_PROTOCOL.length()));
-                    if (configLocation.indexOf("?") > 0) {
-                        configLocation = configLocation.substring(0, configLocation.indexOf("?"));
+                assert !repositoryURL.toLowerCase().startsWith(JNDI_PROTOCOL);
+                // First try to see if the repository URL is really a URL ...
+                try {
+                    java.net.URL url = new java.net.URL(repositoryURL);
+
+                    // We need to handle file-based URLs differently, but it's easier to handle the others first.
+                    if (!repositoryURL.toLowerCase().startsWith(FILE_PROTOCOL)) {
+                        // Just try resolving the URL (e.g., http, https, jar, etc.) ...
+                        return RepositoryConfiguration.read(url);
                     }
-                    return RepositoryConfiguration.read(configLocation);
+
+                    // Otherwise, this is a file-base URL that we'll try to resolve with some special logic...
+                    // A file URL shouldn't really have any query parameters, but try to strip them anyway just in case.
+                    url = removeQueryParameters(url);
+                    try {
+                        // Try loading the configuration from the URL ...
+                        return RepositoryConfiguration.read(url);
+                    } catch (ParsingException pe) {
+                        // Try reading from local file system via just the path ...
+                        String path = url.getPath().replaceFirst("//+", ""); // remove the first 2 forward slashes ...
+                        try {
+                            return RepositoryConfiguration.read(path);
+                        } catch (FileNotFoundException e) {
+                            // Try removing any leading slashes to make it relative, and try again...
+                            path = path.replaceFirst("/+", "");
+                            try {
+                                return RepositoryConfiguration.read(path);
+                            } catch (FileNotFoundException e2) {
+                                // Throw the exception from the first path ...
+                                throw e;
+                            }
+                        }
+                    }
+                } catch (MalformedURLException e) {
+                    // Must not be a valid URL, so just try reading it as a string ...
+                    return RepositoryConfiguration.read(repositoryURL);
                 }
-                // Just try resolving the URL ...
-                return RepositoryConfiguration.read(repositoryURL);
             } catch (Exception e) {
                 throw new RepositoryException(e);
             }
         }
 
-        private String removeForwardSlashes( String path ) {
-            return path.replaceFirst("//+", "");
+        private java.net.URL removeQueryParameters( java.net.URL url ) {
+            try {
+                // We do this by creating a new URL with the same protocol, host, and port, but using the URL path
+                // as returned by URL#getPath() instead of the URL path and query parameters as returned by URL#getFile()
+                return new java.net.URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath());
+            } catch (MalformedURLException e) {
+                return url;
+            }
         }
     }
 

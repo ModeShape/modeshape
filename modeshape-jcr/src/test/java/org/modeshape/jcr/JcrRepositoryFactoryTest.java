@@ -46,7 +46,8 @@ public class JcrRepositoryFactoryTest {
 
     @Before
     public void beforeEach() throws Exception {
-        Iterator<javax.jcr.RepositoryFactory> repositoryFactoryIterator = ServiceLoader.load(javax.jcr.RepositoryFactory.class).iterator();
+        Iterator<javax.jcr.RepositoryFactory> repositoryFactoryIterator = ServiceLoader.load(javax.jcr.RepositoryFactory.class)
+                                                                                       .iterator();
         if (!repositoryFactoryIterator.hasNext()) {
             fail("No RepositoryFactory implementation located");
         }
