@@ -17,6 +17,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
@@ -81,7 +83,11 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
         assertNoProblems(problems);
 
-        assertContentInWorkspace(repository(), "default");
+        // Make some changes that will not be in the backup ...
+        session().getRootNode().addNode("node-not-in-backup");
+        session().save();
+
+        assertContentInWorkspace(repository(), "default", "/node-not-in-backup");
         assertContentInWorkspace(repository(), "ws2");
         assertContentInWorkspace(repository(), "ws3");
 
@@ -101,6 +107,9 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
                 newSession.logout();
             }
 
+            // Check that the node that was added *after* the backup is not there ...
+            assertContentNotInWorkspace(newRepository, "default", "/node-not-in-backup");
+
             // Before we assert the content, create a backup of it (for comparison purposes when debugging) ...
             newSession = newRepository.login();
             try {
@@ -119,6 +128,46 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         } finally {
             newRepository.shutdown().get(10, TimeUnit.SECONDS);
         }
+    }
+
+    @Test
+    public void shouldBackupAndRestoreRepositoryWithMultipleWorkspaces() throws Exception {
+        // Load the content and verify it's there ...
+        loadContent();
+        assertContentInWorkspace(repository(), "default");
+        assertContentInWorkspace(repository(), "ws2");
+        assertContentInWorkspace(repository(), "ws3");
+
+        // Make the backup, and check that there are no problems ...
+        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
+        assertNoProblems(problems);
+
+        // Make some changes that will not be in the backup ...
+        session().getRootNode().addNode("node-not-in-backup");
+        session().save();
+
+        // Check the content again ...
+        assertContentInWorkspace(repository(), "default", "/node-not-in-backup");
+        assertContentInWorkspace(repository(), "ws2");
+        assertContentInWorkspace(repository(), "ws3");
+
+        // Restore the content from the backup into our current repository ...
+        JcrSession newSession = repository().login();
+        try {
+            Problems restoreProblems = newSession.getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
+            assertNoProblems(restoreProblems);
+        } finally {
+            newSession.logout();
+        }
+
+        assertWorkspaces(repository(), "default", "ws2", "ws3");
+
+        // Check the content again ...
+        assertContentInWorkspace(repository(), "default");
+        assertContentInWorkspace(repository(), "ws2");
+        assertContentInWorkspace(repository(), "ws3");
+        assertContentNotInWorkspace(repository(), "default", "/node-not-in-backup");
+        queryContentInWorkspace(repository(), null);
     }
 
     private void assertWorkspaces( JcrRepository newRepository,
@@ -155,7 +204,8 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
     }
 
     private void assertContentInWorkspace( JcrRepository newRepository,
-                                           String workspaceName ) throws RepositoryException {
+                                           String workspaceName,
+                                           String... paths ) throws RepositoryException {
         JcrSession session = workspaceName != null ? newRepository.login(workspaceName) : newRepository.login();
 
         try {
@@ -175,6 +225,29 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
             session.getNode("/Cars/Utility/Hummer H3");
             session.getNode("/Cars/Utility/Ford F-150");
             session.getNode("/Cars/Utility/Toyota Land Cruiser");
+            for (String path : paths) {
+                session.getNode(path);
+            }
+        } finally {
+            session.logout();
+        }
+    }
+
+    private void assertContentNotInWorkspace( JcrRepository newRepository,
+                                              String workspaceName,
+                                              String... paths ) throws RepositoryException {
+        JcrSession session = workspaceName != null ? newRepository.login(workspaceName) : newRepository.login();
+
+        try {
+            session.getRootNode();
+            for (String path : paths) {
+                try {
+                    session.getNode(path);
+                    fail("Should not have found '" + path + "'");
+                } catch (PathNotFoundException e) {
+                    // expected
+                }
+            }
         } finally {
             session.logout();
         }
