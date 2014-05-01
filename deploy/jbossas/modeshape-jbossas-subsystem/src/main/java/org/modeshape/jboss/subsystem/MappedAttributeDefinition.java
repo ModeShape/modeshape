@@ -35,13 +35,6 @@ import org.modeshape.jcr.RepositoryConfiguration;
 public interface MappedAttributeDefinition {
 
     /**
-     * Get the path to the field within the {@link RepositoryConfiguration}.
-     * 
-     * @return the path; never null and never empty
-     */
-    List<String> getPathToField();
-
-    /**
      * Get the path to the field that contains the mapped field within the {@link RepositoryConfiguration}.
      * 
      * @return the parent path; never null but possibly empty if the mapped field is at the top-level of the configuration

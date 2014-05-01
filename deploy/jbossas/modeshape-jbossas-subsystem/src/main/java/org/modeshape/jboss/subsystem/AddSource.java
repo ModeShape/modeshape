@@ -24,6 +24,10 @@
 
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,10 +49,6 @@ import org.modeshape.jboss.service.SourceService;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  * {@link AbstractAddStepHandler} implementation for an external source.
@@ -149,6 +149,11 @@ public class AddSource extends AbstractAddStepHandler {
         sourceServiceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
         ServiceController<JcrRepository> controller = sourceServiceBuilder.install();
         newControllers.add(controller);
+    }
+
+    @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        return true;
     }
 
     private Object propertyValue(Property property) {

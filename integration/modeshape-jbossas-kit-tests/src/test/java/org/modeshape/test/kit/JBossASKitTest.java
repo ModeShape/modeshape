@@ -24,6 +24,8 @@
 
 package org.modeshape.test.kit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.io.IOException;
 import javax.annotation.Resource;
@@ -47,14 +49,12 @@ import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.DependencyResolvers;
-import org.jboss.shrinkwrap.resolver.api.maven.MavenDependencyResolver;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
+import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.api.Repository;
-import junit.framework.Assert;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Arquillian based test which verifies that the standard ModeShape distribution kit starts up correctly and its deployed applications
@@ -62,31 +62,41 @@ import static org.junit.Assert.assertNotNull;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-@RunWith( Arquillian.class )
+@RunWith(Arquillian.class)
 public class JBossASKitTest {
 
-    @Resource( mappedName = "java:/datasources/ModeShapeDS" )
+    @Resource(mappedName = "java:/datasources/ModeShapeDS")
     private DataSource modeshapeDS;
 
-    @Resource( mappedName = "java:/jcr/artifacts" )
+    @Resource(mappedName = "java:/jcr/artifacts")
     private Repository artifactsRepo;
 
-    @Resource( mappedName = "java:/jcr/sample" )
+    @Resource(mappedName = "java:/jcr/sample")
     private Repository sampleRepo;
-
 
     @Deployment
     public static WebArchive createDeployment() {
-        MavenDependencyResolver mavenResolver = DependencyResolvers.use(MavenDependencyResolver.class)
-                                                                   .goOffline()
-                                                                   .loadMetadataFromPom("pom.xml")
-                                                                   .artifact("org.apache.httpcomponents:httpclient:jar")
-                                                                   .scope("test");
+        File[] testDeps = Maven.resolver()
+                               .offline()
+                               .loadPomFromFile("pom.xml")
+                               .addDependencies(MavenDependencies.createDependency(
+                                                        "org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven",
+                                                        ScopeType.TEST,
+                                                        false),
+                                                MavenDependencies.createDependency(
+                                                        "org.apache.httpcomponents:httpclient",
+                                                        ScopeType.TEST,
+                                                        false)
+                                               )
+                               .resolve()
+                               .withTransitivity()
+                               .asFile();
         return ShrinkWrap.create(WebArchive.class, "as7-kit-test.war")
-                         .addAsLibraries(mavenResolver.resolveAsFiles())
+                         .addAsLibraries(testDeps)
                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }
+
 
     @Test
     public void repositoriesShouldBeAccessible() throws Exception {
@@ -101,11 +111,11 @@ public class JBossASKitTest {
     public void artifactsRepositoryShouldBePublishArea() throws Exception {
         Session session = artifactsRepo.login();
         Node filesFolder = session.getNode("/files");
-        Assert.assertNotNull(filesFolder);
-        Assert.assertEquals("nt:folder", filesFolder.getPrimaryNodeType().getName());
+        assertNotNull(filesFolder);
+        assertEquals("nt:folder", filesFolder.getPrimaryNodeType().getName());
         NodeType[] mixins = filesFolder.getMixinNodeTypes();
-        Assert.assertEquals(1, mixins.length);
-        Assert.assertEquals("mode:publishArea", mixins[0].getName());
+        assertEquals(1, mixins.length);
+        assertEquals("mode:publishArea", mixins[0].getName());
     }
 
     @Test

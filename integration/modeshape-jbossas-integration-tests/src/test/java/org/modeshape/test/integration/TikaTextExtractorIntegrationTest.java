@@ -24,7 +24,7 @@
 
 package org.modeshape.test.integration;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.io.InputStream;
 import javax.annotation.Resource;

@@ -24,6 +24,9 @@
 
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.Random;
@@ -42,9 +45,6 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.ValueFactory;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Test which verifies that the ModeShape composite binary store configuration inside of AS7 is correct.
