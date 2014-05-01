@@ -67,6 +67,11 @@ public class AddAuthenticator extends AbstractAddStepHandler {
     }
 
     @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        return true;
+    }
+
+    @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
                                    final ModelNode model,

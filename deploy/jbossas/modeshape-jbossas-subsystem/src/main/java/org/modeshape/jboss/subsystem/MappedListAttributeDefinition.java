@@ -29,7 +29,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -70,11 +69,6 @@ public class MappedListAttributeDefinition extends ListAttributeDefinition imple
         this.pathToFieldInConfiguration = pathToFieldInConfiguration;
         this.pathToContainerOfFieldInConfiguration = this.pathToFieldInConfiguration.size() > 1 ? this.pathToFieldInConfiguration.subList(0,
                                                                                                                                           this.pathToFieldInConfiguration.size() - 1) : Collections.<String>emptyList();
-    }
-
-    @Override
-    public List<String> getPathToField() {
-        return pathToFieldInConfiguration;
     }
 
     @Override
@@ -120,14 +114,6 @@ public class MappedListAttributeDefinition extends ListAttributeDefinition imple
                             XMLStreamReader reader ) throws XMLStreamException {
         return simpleList.parse(value, reader);
     }
-
-    @Deprecated
-    @Override
-    public ModelNode parse( String value,
-                            Location location ) throws XMLStreamException {
-        return simpleList.parse(value, location);
-    }
-
     @Override
     public void marshallAsElement( ModelNode resourceModel,
                                    XMLStreamWriter writer ) throws XMLStreamException {
@@ -210,20 +196,6 @@ public class MappedListAttributeDefinition extends ListAttributeDefinition imple
     @Override
     public ModelNode validateOperation( ModelNode operationObject ) throws OperationFailedException {
         return simpleList.validateOperation(operationObject);
-    }
-
-    @Deprecated
-    @Override
-    public void parseAndAddParameterElement( String value,
-                                             ModelNode operation,
-                                             Location location ) throws XMLStreamException {
-        simpleList.parseAndAddParameterElement(value, operation, location);
-    }
-
-    @Deprecated
-    @Override
-    public ModelNode validateResolvedOperation( ModelNode operationObject ) throws OperationFailedException {
-        return simpleList.validateResolvedOperation(operationObject);
     }
 
     @Override

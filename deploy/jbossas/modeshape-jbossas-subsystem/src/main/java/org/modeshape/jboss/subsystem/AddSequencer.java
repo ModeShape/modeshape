@@ -132,6 +132,11 @@ public class AddSequencer extends AbstractAddStepHandler {
         newControllers.add(controller);
     }
 
+    @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        return true;
+    }
+
     private void ensureClassLoadingPropertyIsSet( Properties sequencerProperties ) {
         // could be already set if the "module" element is present in the xml (AddSequencer)
         if (sequencerProperties.containsKey(FieldName.CLASSLOADER)) {

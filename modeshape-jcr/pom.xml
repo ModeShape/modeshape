@@ -50,6 +50,12 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-search-engine</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-search-analyzers</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
         <dependency>
@@ -61,8 +67,9 @@
             <artifactId>lucene-regex</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.jms</groupId>
-            <artifactId>jms-api</artifactId>
+            <groupId>org.jboss.spec.javax.jms</groupId>
+            <artifactId>jboss-jms-api_1.1_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- MIME-type detection. This can be excluded in applications and components that depend on ModeShape
@@ -115,38 +122,38 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
-            <version>${infinispan.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-bdbje</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-jdbm</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>c3p0</groupId>
+            <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-jdbc</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-search-infinispan</artifactId>
-            <version>${hibernate.search.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -158,17 +165,16 @@
             <artifactId>de.flapdoodle.embed.mongo</artifactId>
         </dependency>
         
-        <!--
-        These following are defined as 'provided' in the parent POM, since ModeShape
-        has code that is optional if these APIs are available.
-        -->
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.jboss.spec.javax.security.jacc</groupId>
             <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!--
@@ -187,24 +193,20 @@
             <artifactId>mockito-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.jbossts</groupId>
-            <artifactId>jbossjta</artifactId>
+            <groupId>org.jboss.jbossts.jta</groupId>
+            <artifactId>narayana-jta</artifactId>
         </dependency>
+
         <!--
-        Used for Base64 testing. This may overlap or vary with the JBoss AS7 integration, so we fully-specify the version
-        we want to use here. It's only to validate our Base64 functionality, so we can use an older version.
+         Defined in parent BOM
+
+         Used for Base64 testing. This may overlap or vary with the JBoss AS7 integration, so we fully-specify the version
+         we want to use here. It's only to validate our Base64 functionality, so we can use an older version.
         -->
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jboss-common-core</artifactId>
-            <version>2.2.17.GA</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.logging</groupId>
-                    <artifactId>jboss-logging-spi</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!--
         Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)

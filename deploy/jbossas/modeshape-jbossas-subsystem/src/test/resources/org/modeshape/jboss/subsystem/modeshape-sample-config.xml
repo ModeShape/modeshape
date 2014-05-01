@@ -1,5 +1,5 @@
 <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
-  <repository name="sample1" jndi-name="java:jcr/local/modeshape_repo1">
+  <repository name="sample1" jndi-name="jcr/local/modeshape_repo1">
     <sequencers>
       <sequencer name="modeshape-sequencer-ddl" classname="ddl" path-expression="//a/b" />
       <sequencer name="modeshape-sequencer-java" classname="java" path-expression="//a/b" extra1="value1" extra2="2"/>
@@ -15,6 +15,3 @@
     </sequencers>
   </repository>
 </subsystem>
-
-
-                            

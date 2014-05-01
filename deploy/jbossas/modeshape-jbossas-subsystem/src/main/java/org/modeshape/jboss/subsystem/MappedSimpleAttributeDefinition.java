@@ -60,11 +60,6 @@ public class MappedSimpleAttributeDefinition extends SimpleAttributeDefinition i
     }
 
     @Override
-    public List<String> getPathToField() {
-        return pathToFieldInConfiguration;
-    }
-
-    @Override
     public List<String> getPathToContainerOfField() {
         return pathToContainerOfFieldInConfiguration;
     }

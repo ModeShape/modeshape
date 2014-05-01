@@ -133,7 +133,6 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-search-modules</artifactId>
-            <version>${hibernate.search.version}</version>
             <classifier>jbossas-72-dist</classifier>
             <type>zip</type>
         </dependency>
@@ -145,11 +144,26 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.mongodb</groupId>
+                        <artifactId>mongo-java-driver</artifactId>
+                        <version>${version.org.mongodb.mongo-java-driver}</version>
+                        <scope>compile</scope>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jboss.as</groupId>
+                        <artifactId>jboss-as-controller</artifactId>
+                        <version>${version.org.jboss.as}</version>
+                        <scope>compile</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
             <dependencies>
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-common</artifactId>
-                    <version>${project.version}</version>
                     <classifier>component-with-dependencies</classifier>
                     <type>zip</type>
                 </dependency>
@@ -157,7 +171,6 @@
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-jcr-api</artifactId>
-                    <version>${project.version}</version>
                     <classifier>component-with-dependencies</classifier>
                     <type>zip</type>
                 </dependency>
@@ -166,7 +179,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-schematic</artifactId>
                     <classifier>component-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -174,7 +186,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-jcr</artifactId>
                     <classifier>component-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -182,7 +193,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-images</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -190,7 +200,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-unit-test</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -198,7 +207,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-mp3</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -206,7 +214,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-java</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -214,7 +221,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-msoffice</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -222,7 +228,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-teiid</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -230,7 +235,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-text</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -238,7 +242,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-xml</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -246,7 +249,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-xsd</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -254,7 +256,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-wsdl</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -262,7 +263,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-sramp</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -270,7 +270,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-zip</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -278,7 +277,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-ddl</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -286,7 +284,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-connector-git</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -294,7 +291,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-extractor-tika</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -302,7 +298,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-web-jcr</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -310,7 +305,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-web-jcr-rest</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -318,7 +312,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-web-jcr-rest-client</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -326,7 +319,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-webdav</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -334,7 +326,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-web-jcr-webdav</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 		
@@ -342,7 +333,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-web-cmis</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -350,7 +340,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-web-explorer</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -358,7 +347,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-jdbc-local</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -366,7 +354,6 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-jdbc</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -374,28 +361,24 @@
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-jca</artifactId>
                     <classifier>module-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
                 <!--The client artifact is produced during the assembly profile, by the modeshape-jdbc profile -->
                 <dependency>
                     <groupId>org.modeshape</groupId>
-                    <artifactId>${client.artifactId}</artifactId>
-                    <version>${project.version}</version>
+                    <artifactId>modeshape-client</artifactId>
                 </dependency>
 
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-jbossas-subsystem</artifactId>
-                    <version>${project.version}</version>
                 </dependency>
 
                 <dependency>
                     <groupId>org.modeshape.demo</groupId>
                     <artifactId>modeshape-sequencers-demo</artifactId>
                     <classifier>example-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -403,7 +386,6 @@
                     <groupId>org.modeshape.demo</groupId>
                     <artifactId>modeshape-embedded-repo-demo</artifactId>
                     <classifier>example-with-dependencies</classifier>
-                    <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
 
@@ -414,14 +396,10 @@
                 <dependency>
                   <groupId>org.mongodb</groupId>
                   <artifactId>mongo-java-driver</artifactId>
-                  <version>${mongo.driver.version}</version>
-                  <scope>compile</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.as</groupId>
                     <artifactId>jboss-as-controller</artifactId>
-                    <version>${jbossas.version}</version>
-                    <scope>compile</scope>
                 </dependency>
             </dependencies>
             <build>
@@ -435,7 +413,7 @@
                         -->
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>${version.javadoc.plugin}</version>
-                                
+
                         <configuration>
                             <includeDependencySources>true</includeDependencySources>
                             <failOnError>true</failOnError>
@@ -457,7 +435,7 @@
                               <link>http://docs.oracle.com/javaee/6/api/</link>
                               <link>http://www.slf4j.org/apidocs/</link>
                               <link>http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/</link>
-                              <link>http://api.mongodb.org/java/${mongo.driver.version}/</link>
+                              <link>http://api.mongodb.org/java/${version.org.mongodb.mongo-java-driver}/</link>
                               <link>http://aperture.sourceforge.net/doc/javadoc/1.5.0/index.html</link>
                             </links>
                             <groups>
@@ -504,14 +482,6 @@
                             </groups>
                             <excludePackageNames>org.modeshape.test*:org.modeshape.demo*</excludePackageNames>
 
-                            <!-- GraphViz: 
-                            <doclet>org.jboss.apiviz.APIviz</doclet>
-                            <docletArtifact>
-                                <groupId>org.jboss.apiviz</groupId>
-                                <artifactId>apiviz</artifactId>
-                                <version>1.3.0.GA</version>
-                            </docletArtifact>
-                            -->
                             <attach>false</attach>
                             <useStandardDocletOptions>true</useStandardDocletOptions>
                             <charset>UTF-8</charset>
@@ -547,32 +517,6 @@
                                     <destDir>api</destDir>
                                     <doctitle>${project.name} Library Reference (${project.version})</doctitle>
                                     <windowtitle>${project.name} Library Reference (${project.version})</windowtitle>
-                                    <!--
-                                    <excludePackageNames>org.modeshape.test*:org.modeshape.demo*</excludePackageNames>
-                                    <additionalparam>
-                                        -link http://download.oracle.com/javase/1.5.0/docs/api/
-                                        -link http://docs.oracle.com/javaee/6/api/
-                                        -link http://www.slf4j.org/apidocs/
-                                        -link http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/
-                                        -link http://api.mongodb.org/java/${mongo.driver.version}/
-                                        -link http://aperture.sourceforge.net/doc/javadoc/1.5.0/index.html
-
-                                        -group "ModeShape API (extends JCR API)" ${project.groupId}.jcr.api*
-                                        -group "ModeShape engine" ${project.groupId}.jcr*:${project.groupId}.jcr.*:${project.groupId}.jcr.bus*:${project.groupId}.jcr.cache*:${project.groupId}.jcr.clustering*:${project.groupId}.jcr.query*:${project.groupId}.jcr.security*:${project.groupId}.jcr.value*
-                                        -group "ModeShape SPI for Extensions" ${project.groupId}.jcr.api.sequencer*:${project.groupId}.jcr.api.mimetype*:${project.groupId}.jcr.api.text*
-                                        -group "ModeShape JDBC Driver" ${project.groupId}.jdbc*
-                                        -group "ModeShape Web services" ${project.groupId}.web*
-                                        -group "ModeShape Sequencers" ${project.groupId}.sequencer*
-                                        -group "Schematic Documents" org.infinispan.schematic*
-
-                                    </additionalparam>
-                                    -->
-                                    <!-- GraphViz: Removed from end of "additionalParam":
-                                    <additionalparam>
-                                        -nopackagediagram
-                                    </additionalparam>
-                                    -->
-
                                     <detectOfflineLinks>false</detectOfflineLinks>
                                 </configuration>
                             </execution>
@@ -588,6 +532,9 @@
                                 <descriptorRef>source-distribution</descriptorRef>
                                 <descriptorRef>${jboss.eap.distribution.id}</descriptorRef>
                             </descriptorRefs>
+                            <descriptors>
+                                <descriptor>src/assembly/javadoc.xml</descriptor>
+                            </descriptors>
                         </configuration>
                     </plugin>
 

@@ -65,19 +65,19 @@ public class WebdavServletTest extends AbstractWebDAVTest {
 
                 allowing(servletContext).log("webdav-servlet: init");
 
-                one(servletConfig).getInitParameter("ResourceHandlerImplementation");
+                oneOf(servletConfig).getInitParameter("ResourceHandlerImplementation");
                 will(returnValue(""));
 
-                one(servletConfig).getInitParameter("rootpath");
+                oneOf(servletConfig).getInitParameter("rootpath");
                 will(returnValue("./target/tmpTestData/"));
 
                 exactly(2).of(servletConfig).getInitParameter("lazyFolderCreationOnPut");
                 will(returnValue("1"));
 
-                one(servletConfig).getInitParameter("default-index-file");
+                oneOf(servletConfig).getInitParameter("default-index-file");
                 will(returnValue("index.html"));
 
-                one(servletConfig).getInitParameter("instead-of-404");
+                oneOf(servletConfig).getInitParameter("instead-of-404");
                 will(returnValue(""));
 
                 exactly(2).of(servletConfig).getInitParameter("no-content-length-headers");

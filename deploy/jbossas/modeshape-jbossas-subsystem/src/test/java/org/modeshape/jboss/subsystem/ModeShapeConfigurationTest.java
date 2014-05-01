@@ -1,40 +1,24 @@
 package org.modeshape.jboss.subsystem;
 
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import junit.framework.Assert;
-import static junit.framework.Assert.assertEquals;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.junit.Assert.fail;
 
 @SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
@@ -128,129 +112,20 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         parse(readResource("modeshape-webapp-config.xml"));
     }
 
-
-    /* // todo replace with dmr format not json
-    @Test
-    public void testOutputPersistence() throws Exception {
-    String subsystemXml = readResource("modeshape-sample-config.xml");
-
-    String json = readResource("modeshape-sample-config.json");
-    ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-    String triggered = outputModel(testModel);
-
-    KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
-
-    // Get the model and the persisted xml from the controller
-    ModelNode model = services.readWholeModel();
-    String marshalled = services.getPersistedSubsystemXml();
-
-    compare(testModel, model);
-    Assert.assertEquals(triggered, marshalled);
-    Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-    }
-    */
-    /*
-    @Test
-    public void testOutputPersistenceOfRelativelyThoroughConfiguration() throws Exception {
-        String subsystemXml = readResource("modeshape-full-config.xml");
-
-        String json = readResource("modeshape-full-config.json");
-        ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-        String triggered = outputModel(testModel);
-
-        KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
-
-        // Get the model and the persisted xml from the controller
-        ModelNode model = services.readWholeModel();
-        String marshalled = services.getPersistedSubsystemXml();
-
-        compare(ModelNode.fromJSONString(json), model);
-        compare(testModel, model);
-        Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-        // The input XML contains some default values, and the marshalled value doesn't contain the defaults;
-        // therefore we cannot compare them directly (though they are equivalent) ...
-        // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
-    }
-    */
-
-    /*
-        @Test
-        public void testOutputPersistenceOfConfigurationWithLocalFileIndexStorage() throws Exception {
-        roundTrip("modeshape-local-file-index-storage.xml", "modeshape-local-file-index-storage.json");
-        }
-
-        @Test
-        public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
-        roundTrip("modeshape-file-binary-storage.xml", "modeshape-file-binary-storage.json");
-        }
-
-        @Test
-        public void testOutputPersistenceOfConfigurationWithCacheBinaryStorage() throws Exception {
-        roundTrip("modeshape-cache-binary-storage.xml", "modeshape-cache-binary-storage.json");
-        }
-
-        @Test
-        public void testOutputPersistenceOfConfigurationWithClustering() throws Exception {
-        roundTrip("modeshape-clustered-config.xml", "modeshape-clustered-config.json");
-        }
-
-        @Test
-        public void testOutputPersistenceOfConfigurationWithMinimalRepository() throws Exception {
-        roundTrip("modeshape-minimal-config.xml", "modeshape-minimal-config.json");
-        }
-    */
-    @Ignore
-    @Test
-    public void testOutputPersistenceOfConfigurationWithAuthenticators() throws Exception {
-        roundTrip("modeshape-custom-authenticators-config.xml", "modeshape-custom-authenticators-config.json");
-    }
-
-    @SuppressWarnings( "deprecation" )
-    protected void roundTrip( String filenameOfInputXmlConfig,
-                              String filenameOfExpectedJson ) throws Exception {
-        String subsystemXml = readResource(filenameOfInputXmlConfig);
-
-        String json = readResource(filenameOfExpectedJson);
-        System.out.println("JSON: " + json);
-        ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-        String triggered = outputModel(testModel);
-        System.out.println("Triggered: " + triggered);
-
-        KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
-
-        // Get the model and the persisted xml from the controller
-        ModelNode model = services.readWholeModel();
-        System.out.println("Original Model: " + testModel);
-        System.out.println("Re-read  Model: " + model);
-        String marshalled = services.getPersistedSubsystemXml();
-
-        System.out.println("Marshalled: " + marshalled);
-
-        compare(ModelNode.fromJSONString(json), model);
-        compare(testModel, model);
-        Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-        // The input XML contains some default values, and the marshalled value doesn't contain the defaults;
-        // therefore we cannot compare them directly (though they are equivalent) ...
-        // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
-    }
-
-    @SuppressWarnings( "deprecation" )
     @Test
     public void testSchema() throws Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
         validate(subsystemXml);
-
-        // TODO: AS7.2 Use this next line in AS7.2 (but it doesn't work in 7.1.1!) ...
-        // KernelServices services = super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT)
-        // .setSubsystemXml(subsystemXml).build();
-        KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
+        KernelServices services = initKernel(subsystemXml);
 
         // Get the model and the persisted xml from the controller
-        /*ModelNode model =*/
         services.readWholeModel();
         String marshalled = services.getPersistedSubsystemXml();
-
         validate(marshalled);
+    }
+
+    private KernelServices initKernel( String subsystemXml ) throws Exception {
+        return super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(subsystemXml).build();
     }
 
     private void validate( String marshalled ) throws SAXException, IOException {
@@ -284,137 +159,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
         validator.validate(source);
     }
-
-    @Ignore
-    @Test
-    public void testAddRemoveRepository() throws Exception {
-        KernelServices services = buildSubsystem();
-
-        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME));
-
-        // look at current query engines make sure there are only two from configuration.
-        ModelNode read = new ModelNode();
-        read.get(OP).set("read-children-names");
-        read.get(OP_ADDR).set(addr.toModelNode());
-        read.get(CHILD_TYPE).set("repository");
-
-        ModelNode result = services.executeOperation(read);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-
-        List<String> opNames = getList(result);
-        assertEquals(2, opNames.size());
-        String[] ops = {"sample1", "sample2"};
-        assertEquals(Arrays.asList(ops), opNames);
-
-        // add repository
-        ModelNode addOp = new ModelNode();
-        addOp.get(OP).set("add");
-        addOp.get(OP_ADDR).set(addr.toModelNode().add("repository", "myrepository")); //$NON-NLS-1$;
-        addOp.get("jndi-name").set("jcr:local:myrepository");
-
-        result = services.executeOperation(addOp);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-
-        result = services.executeOperation(read);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        opNames = getList(result);
-        assertEquals(3, opNames.size());
-        String[] ops2 = {"myrepository", "sample1", "sample2"};
-        assertEquals(Arrays.asList(ops2), opNames);
-
-    }
-
-    @SuppressWarnings( "deprecation" )
-    private KernelServices buildSubsystem() throws IOException, FileNotFoundException, Exception {
-        String subsystemXml = readResource("modeshape-sample-config.xml");
-
-        // TODO: AS7.2 Use this next line in AS7.2 (but it doesn't work in 7.1.1!) ...
-        // KernelServices services = super.createKernelServicesBuilder(null)
-        // .setSubsystemXml(subsystemXml)
-        // .build();
-        KernelServices services = super.installInController(subsystemXml);
-        return services;
-    }
-
-    private static List<String> getList( ModelNode operationResult ) {
-        if (!operationResult.hasDefined("result")) {
-            return Collections.emptyList();
-        }
-
-        List<ModelNode> nodeList = operationResult.get("result").asList();
-        if (nodeList.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<String> list = new ArrayList<String>(nodeList.size());
-        for (ModelNode node : nodeList) {
-            list.add(node.asString());
-        }
-        return list;
-    }
-
-    // private ModelNode buildProperty(String name, String value) {
-    // ModelNode node = new ModelNode();
-    // node.get("property-name").set(name);
-    // node.get("property-value").set(value);
-    // return node;
-    // }
-
-    // @Test
-    // public void testConnector() throws Exception {
-    // KernelServices services = buildSubsystem();
-    //
-    // PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, ModeShapeExtension.TEIID_SUBSYSTEM));
-    //
-    // ModelNode addOp = new ModelNode();
-    // addOp.get(OP).set("add");
-    // addOp.get(OP_ADDR).set(addr.toModelNode().add("translator", "oracle"));
-    // ModelNode result = services.executeOperation(addOp);
-    // Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-    //
-    // ModelNode read = new ModelNode();
-    // read.get(OP).set("read-children-names");
-    // read.get(OP_ADDR).set(addr.toModelNode());
-    // read.get(CHILD_TYPE).set("translator");
-    //
-    // result = services.executeOperation(read);
-    // Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-    //
-    // List<String> translators = Util.getList(result);
-    // Assert.assertTrue(translators.contains("oracle"));
-    //
-    // ModelNode resourceRead = new ModelNode();
-    // resourceRead.get(OP).set("read-resource");
-    // resourceRead.get(OP_ADDR).set(addr.toModelNode());
-    // resourceRead.get("translator").set("oracle");
-    //
-    // result = services.executeOperation(resourceRead);
-    // Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-    //
-    // ModelNode oracleNode = result.get("result");
-    //
-    // ModelNode oracle = new ModelNode();
-    // oracle.get("translator-name").set("oracle");
-    // oracle.get("description").set("A translator for Oracle 9i Database or later");
-    // oracle.get("children",
-    // "properties").add(buildProperty("execution-factory-class","org.teiid.translator.jdbc.oracle.OracleExecutionFactory"));
-    // oracle.get("children", "properties").add(buildProperty("TrimStrings","false"));
-    // oracle.get("children", "properties").add(buildProperty("SupportedJoinCriteria","ANY"));
-    // oracle.get("children", "properties").add(buildProperty("requiresCriteria","false"));
-    // oracle.get("children", "properties").add(buildProperty("supportsOuterJoins","true"));
-    // oracle.get("children", "properties").add(buildProperty("useCommentsInSourceQuery","false"));
-    // oracle.get("children", "properties").add(buildProperty("useBindVariables","true"));
-    // oracle.get("children", "properties").add(buildProperty("MaxPreparedInsertBatchSize","2048"));
-    // oracle.get("children", "properties").add(buildProperty("supportsInnerJoins","true"));
-    // oracle.get("children", "properties").add(buildProperty("MaxInCriteriaSize","1000"));
-    // oracle.get("children", "properties").add(buildProperty("supportsSelectDistinct","true"));
-    // oracle.get("children", "properties").add(buildProperty("supportsOrderBy","true"));
-    // oracle.get("children", "properties").add(buildProperty("supportsFullOuterJoins","true"));
-    // oracle.get("children", "properties").add(buildProperty("Immutable","false"));
-    // oracle.get("children", "properties").add(buildProperty("MaxDependentInPredicates","50"));
-    //
-    // super.compare(oracleNode, oracle);
-    // }
 
     /**
      * When JSON strings are parsed into ModelNode structures, any integer values are parsed into org.jboss.dmr.BigIntegerValue

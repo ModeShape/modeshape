@@ -23,9 +23,9 @@
  */
 package org.modeshape.common.collection;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.hasItems;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;

@@ -1,8 +1,12 @@
 package org.modeshape.webdav;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import junit.framework.Assert;
 import org.jmock.Mockery;
 import org.junit.After;
 import org.junit.Before;
@@ -11,13 +15,8 @@ import org.modeshape.webdav.locking.IResourceLocks;
 import org.modeshape.webdav.locking.LockedObject;
 import org.modeshape.webdav.locking.ResourceLocks;
 import org.springframework.mock.web.DelegatingServletInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Date;
 
-public abstract class AbstractWebDAVTest extends Assert {
+public abstract class AbstractWebDAVTest {
 
     protected static final boolean READ_ONLY = true;
 

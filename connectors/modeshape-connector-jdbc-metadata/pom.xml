@@ -19,11 +19,11 @@
         defined in the dependencyManagement section of the parent pom.
     -->
     <dependencies>
-        <!--This needs to be overwritten, because the default scope is test -->
         <dependency>
-            <groupId>c3p0</groupId>
+            <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
         </dependency>
+
         <!-- Test dependencies (defined in parent) -->
         <dependency>
             <groupId>commons-naming</groupId>

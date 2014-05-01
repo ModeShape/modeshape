@@ -23,15 +23,15 @@
  */
 package org.modeshape.sequencer.ddl;
 
-import static org.junit.matchers.JUnitMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
-import org.modeshape.sequencer.ddl.node.AstNode;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
+import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
  *

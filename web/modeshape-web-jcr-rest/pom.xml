@@ -35,10 +35,15 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-multipart-provider</artifactId>
         </dependency>
-        <!--See modeshape-parent for an explanation of this dependency-->
+        <!--
+           Since 2.3.6, RestEASY excludes the following dependency because of https://issues.jboss.org/browse/RESTEASY-848
+           This is most likely a bug in RestEASY, because commons-logging is needed by resteasy-multipart-provider via
+           its org.apache.james dependency
+        -->
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.codehaus.jettison</groupId>
@@ -54,14 +59,15 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>junit</groupId>
-            <artifactId>junit-dep</artifactId>
+            <artifactId>junit</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

@@ -23,18 +23,18 @@
  */
 package org.modeshape.sequencer.javafile;
 
-import static org.hamcrest.collection.IsCollectionContaining.hasItems;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsCollectionContaining.hasItems;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.modeshape.sequencer.JavaSequencerHelper.JAVA_FILE_HELPER;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
 import java.util.ArrayList;
 import java.util.List;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
 import javax.jcr.Node;
 import javax.jcr.Value;
-import static junit.framework.Assert.assertNotNull;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import static org.modeshape.sequencer.JavaSequencerHelper.JAVA_FILE_HELPER;
 import org.modeshape.sequencer.testdata.MockClass;
 import org.modeshape.sequencer.testdata.MockEnum;
 

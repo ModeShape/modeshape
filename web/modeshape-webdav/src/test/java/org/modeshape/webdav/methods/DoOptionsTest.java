@@ -16,23 +16,23 @@ public class DoOptionsTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue("/index.html"));
 
-                one(mockRes).addHeader("DAV", "1, 2");
+                oneOf(mockRes).addHeader("DAV", "1, 2");
 
                 StoredObject indexSo = initFileStoredObject(RESOURCE_CONTENT);
 
-                one(mockStore).getStoredObject(mockTransaction, "/index.html");
+                oneOf(mockStore).getStoredObject(mockTransaction, "/index.html");
                 will(returnValue(indexSo));
 
-                one(mockRes).addHeader("Allow",
+                oneOf(mockRes).addHeader("Allow",
                                        "OPTIONS, GET, HEAD, POST, DELETE, TRACE, PROPPATCH, COPY, "
                                        + "MOVE, LOCK, UNLOCK, PROPFIND");
-                one(mockRes).addHeader("MS-Author-Via", "DAV");
+                oneOf(mockRes).addHeader("MS-Author-Via", "DAV");
             }
         });
 
@@ -47,22 +47,22 @@ public class DoOptionsTest extends AbstractWebDAVTest {
 
         mockery.checking(new Expectations() {
             {
-                one(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
+                oneOf(mockReq).getAttribute(INCLUDE_REQUEST_URI_ATTRIBUTE);
                 will(returnValue(null));
 
-                one(mockReq).getPathInfo();
+                oneOf(mockReq).getPathInfo();
                 will(returnValue("/index.html"));
 
-                one(mockRes).addHeader("DAV", "1, 2");
+                oneOf(mockRes).addHeader("DAV", "1, 2");
 
                 StoredObject indexSo = null;
 
-                one(mockStore).getStoredObject(mockTransaction, "/index.html");
+                oneOf(mockStore).getStoredObject(mockTransaction, "/index.html");
                 will(returnValue(indexSo));
 
-                one(mockRes).addHeader("Allow", "OPTIONS, MKCOL, PUT");
+                oneOf(mockRes).addHeader("Allow", "OPTIONS, MKCOL, PUT");
 
-                one(mockRes).addHeader("MS-Author-Via", "DAV");
+                oneOf(mockRes).addHeader("MS-Author-Via", "DAV");
             }
         });
 

@@ -23,6 +23,7 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -40,7 +41,6 @@ import org.modeshape.jboss.service.IndexStorage;
 import org.modeshape.jboss.service.IndexStorageService;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
     protected AbstractAddIndexStorage() {
@@ -97,6 +97,11 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
         //remove the default service added by "AddRepository"
         context.removeService(indexStorageServiceName);
         newControllers.add(indexBuilder.install());
+    }
+
+    @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        return true;
     }
 
     protected abstract void writeIndexStorageConfiguration( final OperationContext context,

@@ -24,6 +24,9 @@
 
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Session;
@@ -36,16 +39,12 @@ import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Arquillian test which verifies that a repository using a clustered configuration starts up.
@@ -77,7 +76,7 @@ public class ClusteredConfigurationIntegrationTest {
     public void clusteredRepositoryShouldHaveStartedUp() throws Exception {
         RepositoryConfiguration.Clustering clusteringConfiguration = clusteredRepository.getConfiguration().getClustering();
         assertEquals("modeshape-cluster", clusteringConfiguration.getClusterName());
-        Assert.assertNotNull(clusteringConfiguration.getChannel());
+        assertNotNull(clusteringConfiguration.getChannel());
 
         Session session = clusteredRepository.login();
         assertNotNull(session);

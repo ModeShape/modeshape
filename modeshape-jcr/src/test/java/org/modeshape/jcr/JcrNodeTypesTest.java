@@ -24,8 +24,8 @@
 
 package org.modeshape.jcr;
 
-import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;

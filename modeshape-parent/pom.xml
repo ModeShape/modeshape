@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <groupId>org.jboss</groupId>
-        <artifactId>jboss-parent</artifactId>
-        <version>9</version>
+        <groupId>org.jboss.integration-platform</groupId>
+        <artifactId>jboss-integration-platform-parent</artifactId>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -195,8 +195,68 @@
 
     <properties>
 
+        <version.ip-bom>6.0.0-SNAPSHOT</version.ip-bom>
+
+        <!--
+            Versions of COMPILE artifacts *specific* to ModeShape, which do not appear in the BOM or are in conflict
+        -->
+
+        <!--The following list of eclipse dependencies IS A MESS but needs to be exactly this because of the sequencers -->
+        <version.org.eclipse.osgi>3.3.0-v20070530</version.org.eclipse.osgi>
+        <version.org.eclipse.core.resources>3.3.0-v20070604</version.org.eclipse.core.resources>
+        <version.org.eclipse.core.expressions>3.3.0-v20070606-0010</version.org.eclipse.core.expressions>
+        <version.org.eclipse.core.runtime>3.3.100-v20070530</version.org.eclipse.core.runtime>
+        <version.org.eclipse.core.jobs>3.3.0-v20070423</version.org.eclipse.core.jobs>
+        <version.org.eclipse.core.contenttype>3.2.100-v20070319</version.org.eclipse.core.contenttype>
+        <version.org.eclipse.equinox.common>3.3.0-v20070426</version.org.eclipse.equinox.common>
+        <version.org.eclipse.equinox.registry>3.3.0-v20070522</version.org.eclipse.equinox.registry>
+        <version.org.eclipse.equinox.preferences>3.2.100-v20070522</version.org.eclipse.equinox.preferences>
+        <version.org.eclipse.emf.common>2.4.0</version.org.eclipse.emf.common>
+        <version.org.eclipse.emf.ecore>2.4.2</version.org.eclipse.emf.ecore>
+        <version.org.eclipse.emf.ecore-change>2.2.3</version.org.eclipse.emf.ecore-change>
+        <version.org.eclipse.emf.ecore-xmi>2.4.1</version.org.eclipse.emf.ecore-xmi>
+        <version.org.eclipse.jdt.core>3.3.0-v_771</version.org.eclipse.jdt.core>
+        <version.org.eclipse.xsd>2.2.3</version.org.eclipse.xsd>
+
+        <!--
+            The following is a list of TEST artifacts dependencies. These are all ModeShape specific as the BOM does not
+            enforce test versions or because we want certain version overwritten
+        -->
+        <version.org.apache.jackrabbit.jcr-tests>2.6.0</version.org.apache.jackrabbit.jcr-tests>
+        <version.org.apache.jackrabbit.core>2.7.3</version.org.apache.jackrabbit.core>
+        <version.com.atomikos.transactions>3.8.0</version.com.atomikos.transactions>
+        <version.org.picketbox>4.0.17.SP2</version.org.picketbox>
+        <version.com.googlecode.sardine>146</version.com.googlecode.sardine>
+        <version.de.undercouch.bson4jackson>1.1.2</version.de.undercouch.bson4jackson>
+        <version.de.flapdoodle.embed.mongo>1.28</version.de.flapdoodle.embed.mongo>
+        <version.com.googlecode.json-simple>1.1</version.com.googlecode.json-simple>
+        <version.org.jmock>2.6.0</version.org.jmock>
+        <version.org.springframework.webmvc>2.5.2</version.org.springframework.webmvc>
+        <version.org.springframework.mock>2.0.8</version.org.springframework.mock>
+        <version.org.jboss.bom.jboss-javaee-6.0-with-tools>1.0.7.Final</version.org.jboss.bom.jboss-javaee-6.0-with-tools>
+        <version.commons-naming.commons-naming-core>20031116.223527</version.commons-naming.commons-naming-core>
+        <version.org.apache-extras.cassandra-jdbc>1.2.5</version.org.apache-extras.cassandra-jdbc>
+        <version.org.apache.cassandra.cassandra-all>1.2.0</version.org.apache.cassandra.cassandra-all>
+        <version.org.apache.avro>1.4.0</version.org.apache.avro>
+
+        <version.postgresql>9.2-1002.jdbc4</version.postgresql>
+        <version.mysql.mysql-connector-java>5.1.25</version.mysql.mysql-connector-java>
+        <version.com.oracle.ojdbc6>11.2.0.4</version.com.oracle.ojdbc6>
+        <version.com.sybase.jconnect>6.0.5</version.com.sybase.jconnect>
+        <version.com.microsoft.sqlserver.msjdbc>4.0.2206</version.com.microsoft.sqlserver.msjdbc>
+
+        <!--Overwriten from BOM for Cassandra testing -->
+        <version.org.antlr>3.2</version.org.antlr>
+
+        <!--
+          Maven test plugins related properties
+        -->
+        <cargo.container>jetty7x</cargo.container>
+        <version.org.codehaus.cargo.plugin>1.3.3</version.org.codehaus.cargo.plugin>
+
         <!-- Used to define the JCR Descriptor value -->
         <jcr.repository.vendor>${project.organization.name}</jcr.repository.vendor>
+        <jcr.repository.vendor.url>http://www.modeshape.org</jcr.repository.vendor.url>
         <jcr.repository.name>ModeShape</jcr.repository.name>
 
         <!-- Instruct the build to use only UTF-8 encoding for source code -->
@@ -219,155 +279,28 @@
         <preferIpv4>true</preferIpv4>
         <preferIpv6>false</preferIpv6>
         <debug.argline/>
-        <!--
-          Global dependency version information
-          -->
-        <modeshape.java.version>1.6</modeshape.java.version>
-
-        <joda.time.version>1.6.2</joda.time.version>
-        <junit.version>4.10</junit.version>
-        <hamcrest.version>1.1</hamcrest.version>
-        <mockito.all.version>1.8.4</mockito.all.version>
-        <slf4j.api.version>1.6.1</slf4j.api.version>
-        <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
-        <log4j.version>1.2.16</log4j.version>
-        <jcr.version>2.0</jcr.version>
-        <jackrabbit.jcr.tck.version>2.6.0</jackrabbit.jcr.tck.version>
-        <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
-        <jbossjta.version>4.16.6.Final</jbossjta.version>
-        <atomikos.version>3.8.0</atomikos.version>
-        <picketbox.version>4.0.17.SP2</picketbox.version>
-        <lucene.version>3.6.2</lucene.version>
-        <lucene.regex.version>3.0.3</lucene.regex.version>
-
-        <!-- These versions of Hibernate Search transitive dependencies are used in creating the Hibernate Search AS7 module.
-             When changing the version of Hiberate Search version, update these
-             Note that Hibernate Search forcibly overrides the Jackson libraries -->
-        <hibernate.search.version>4.3.0.Final</hibernate.search.version>
-        <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
-        <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
-
-        <infinispan.version>5.2.7.Final</infinispan.version>
-        <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.2.10.Final</jgroups.version>
-        <c3p0.version>0.9.1.2</c3p0.version>
-        <jboss.logging.version>3.1.2.GA</jboss.logging.version>
-
-        <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
-        <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
-        <jdbc.hsqldb.version>2.2.9</jdbc.hsqldb.version>
-        <jdbc.h2.version>1.3.172</jdbc.h2.version>
-        <jdbc.postgresql9.version>9.2-1002.jdbc4</jdbc.postgresql9.version>
-        <jdbc.postgresql8.version>8.4-702.jdbc4</jdbc.postgresql8.version>
-        <jdbc.mysql5.version>5.1.25</jdbc.mysql5.version>
-        <jdbc.db2v9.version>3.58.82</jdbc.db2v9.version>
-        <jdbc.db2v9.license.version>3.57.86</jdbc.db2v9.license.version>
-        <jdbc.oracle10g.version>10.2.0.3.0</jdbc.oracle10g.version>
-        <jdbc.oracle11g.version>11.2.0.4</jdbc.oracle11g.version>
-        <jdbc.sybase15.version>6.0.5</jdbc.sybase15.version>
-        <jdbc.mssql2008.version>4.0.2206</jdbc.mssql2008.version>
-        <javax.servlet.version>2.5</javax.servlet.version>
-        <javax.jms.version>1.1-rev-1</javax.jms.version>
-        <javax.jacc.version>1.0.0.Final</javax.jacc.version>
-        <resteasy.version>2.3.6.Final</resteasy.version>
-        <commons.logging.version>1.1.1</commons.logging.version>
-        <commons.naming.version>20031116.223527</commons.naming.version>
-        <jettison.version>1.3.1</jettison.version>
-        <httpclient.version>4.1.2</httpclient.version>
-        <sardine.version>146</sardine.version>
-        <javaassist.version>3.11.0.GA</javaassist.version>
-        <jaudiotagger.version>2.0.3</jaudiotagger.version>
-        <poi.version>3.10-beta1</poi.version>
-        <jcommander.version>1.5</jcommander.version>
-        <wsdl4j.version>1.6.2</wsdl4j.version>
-        <bson4jackson.version>1.1.2</bson4jackson.version>
-        <mongo.driver.version>2.7.3</mongo.driver.version>
-        <embedmongo.version>1.28</embedmongo.version>
-        <json.simple.version>1.1</json.simple.version>
-        <logback.version>0.9.29</logback.version>
-        <jgit.version>2.1.0.201209190230-r</jgit.version>
-        <jgit.jsch.version>0.1.44-1</jgit.jsch.version>
-        <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
-        <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
-        <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
-        <eclipse.core.expressions.version>3.3.0-v20070606-0010</eclipse.core.expressions.version>
-        <eclipse.core.runtime.version>3.3.100-v20070530</eclipse.core.runtime.version>
-        <eclipse.osgi.version>3.3.0-v20070530</eclipse.osgi.version>
-        <eclipse.core.jobs.version>3.3.0-v20070423</eclipse.core.jobs.version>
-        <eclipse.equinox.registry.version>3.3.0-v20070522</eclipse.equinox.registry.version>
-        <eclipse.equinox.preferences.version>3.2.100-v20070522</eclipse.equinox.preferences.version>
-        <eclipse.core.contenttype.version>3.2.100-v20070319</eclipse.core.contenttype.version>
-        <eclipse.xsd.version>2.2.3</eclipse.xsd.version>
-        <eclipse.emf.common.version>2.4.0</eclipse.emf.common.version>
-        <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
-        <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
-        <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
-        <tika.version>1.3</tika.version>
-        <image.metadata.extractor>2.6.2</image.metadata.extractor>
-
-        <!--WebDAV servlet-->
-        <jmock.version>2.4.0</jmock.version>
-        <spring.webmvc>2.5.2</spring.webmvc>
-        <spring.mock>2.0.7</spring.mock>
-
-        <!-- Apache chemistry version -->
-        <chemistry.version>0.10.0</chemistry.version>
-
-        <!-- GWT version -->
-        <gwt.version>2.5.1</gwt.version>
-        <gwt.maven.plugin.version>${gwt.version}</gwt.maven.plugin.version>
-
-        <!-- Smart GWT version -->
-        <smartgwt.version>2.4</smartgwt.version>
 
         <!--
-            JBOSS AS/EAP constants
-        -->
-
+             JBOSS AS/EAP constants
+         -->
         <!--Version of the artifacts (API) needed by the AS7 subsystem and provided as part of EAP-->
-        <jbossas.version>7.2.1.Final-redhat-10</jbossas.version>
+        <version.org.jboss.as>7.3.1.Final-redhat-3</version.org.jboss.as>
         <!--Properties which must be used when installing locally an EAP ZIP distribution -->
         <jboss.eap.groupId>org.jboss.as</jboss.eap.groupId>
         <jboss.eap.artifactId>jboss-eap</jboss.eap.artifactId>
-        <jboss.eap.version>6.1.1.GA</jboss.eap.version>
-        <jboss.eap.root.folder>jboss-eap-6.1</jboss.eap.root.folder>
+        <jboss.eap.version>6.2.0.GA</jboss.eap.version>
+        <jboss.eap.root.folder>jboss-eap-6.2</jboss.eap.root.folder>
 
         <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
         <jboss.eap.modules.location>modules</jboss.eap.modules.location>
 
         <!-- The id of the maven distribution which is building the current kit -->
-        <jboss.eap.distribution.id>jbosseap-61-dist</jboss.eap.distribution.id>
-
-        <javax.connector-api.version>1.5</javax.connector-api.version>
-        <javax.jta.version>1.1</javax.jta.version>
-
-        <!--Versions used by the integration/kit tests an -->
-        <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-9</jboss-javaee-6.0-with-tools.version>
-        <jboss-as-arquillian-container-managed.version>7.2.0.Final</jboss-as-arquillian-container-managed.version>
-
-        <!--
-          Maven plugin versions
-          -->
-        <cargo.container>jetty7x</cargo.container>
-        <maven.codehaus.cargo.plugin.version>1.3.3</maven.codehaus.cargo.plugin.version>
-        <version.jar.plugin>2.4</version.jar.plugin>
-        <version.javadoc.plugin>2.9</version.javadoc.plugin>
-        <version.bundle.plugin>2.3.7</version.bundle.plugin>
-        <version.failsafe.plugin>2.13</version.failsafe.plugin>
-        <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
-
-        <!--The name of the modeshape-client artifact used by tools-->
-        <client.artifactId>modeshape-client</client.artifactId>
-
-	   <!-- IronJacamar container -->
-        <version.org.jboss.ironjacamar>1.0.13.Final</version.org.jboss.ironjacamar>
+        <jboss.eap.distribution.id>jbosseap-dist</jboss.eap.distribution.id>
 
         <!--Skip long running tests by default-->
         <skipLongRunningTests>true</skipLongRunningTests>
-        <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
-        <cassandra-cql-driver>1.0.0</cassandra-cql-driver>
-        <cassandra.all.version>1.2.0</cassandra.all.version>
-        <apache.avro.version>1.4.0</apache.avro.version>
+
+        <managed-deps.checkProfiles>false</managed-deps.checkProfiles>
     </properties>
 
     <profiles>
@@ -434,8 +367,6 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
-                    <version>${jdbc.h2.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -462,10 +393,8 @@
             <dependencies>
                 <dependency>
                     <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>hsqldb</groupId>
+                    <groupId>org.hsqldb</groupId>
                     <artifactId>hsqldb</artifactId>
-                    <version>${jdbc.hsqldb.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -494,8 +423,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>mysql</groupId>
                     <artifactId>mysql-connector-java</artifactId>
-                    <version>${jdbc.mysql5.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -524,8 +451,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>mysql</groupId>
                     <artifactId>mysql-connector-java</artifactId>
-                    <version>${jdbc.mysql5.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -555,8 +480,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
-                    <version>${jdbc.postgresql9.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -584,8 +507,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
-                    <version>${jdbc.postgresql9.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -613,8 +534,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
-                    <version>${jdbc.postgresql9.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -644,8 +563,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.oracle</groupId>
                     <artifactId>ojdbc6</artifactId>
-                    <version>${jdbc.oracle11g.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -675,8 +592,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.oracle</groupId>
                     <artifactId>ojdbc6</artifactId>
-                    <version>${jdbc.oracle11g.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -705,8 +620,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.sybase</groupId>
                     <artifactId>jconnect</artifactId>
-                    <version>${jdbc.sybase15.version}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -736,9 +649,6 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.microsoft.sqlserver</groupId>
                     <artifactId>msjdbc</artifactId>
-                    <version>${jdbc.mssql2008.version}</version>
-                    <classifier>4</classifier>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -778,6 +688,15 @@
           -->
         <pluginManagement>
             <plugins>
+                <!-- Specify the compiler options and settings -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <showDeprecation>false</showDeprecation>
+                        <showWarnings>false</showWarnings>
+                    </configuration>
+                </plugin>
                 <!--
                         Fixes how test resources of a project can be used in projects
                         dependent on it
@@ -815,7 +734,7 @@
                 <plugin>
                     <groupId>org.codehaus.cargo</groupId>
                     <artifactId>cargo-maven2-plugin</artifactId>
-                    <version>${maven.codehaus.cargo.plugin.version}</version>
+                    <version>${version.org.codehaus.cargo.plugin}</version>
                     <executions>
                         <execution>
                             <id>start-container</id>
@@ -857,7 +776,6 @@
                 <plugin>
                     <groupId>org.eclipse.m2e</groupId>
                     <artifactId>lifecycle-mapping</artifactId>
-                    <version>1.0.0</version>
                     <configuration>
                         <lifecycleMappingMetadata>
                             <pluginExecutions>
@@ -880,25 +798,10 @@
                         </lifecycleMappingMetadata>
                     </configuration>
                 </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>gwt-maven-plugin</artifactId>
-                    <version>${version.gwt.maven.plugin}</version>
-                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
-            <!-- Specify the compiler options and settings -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${modeshape.java.version}</source>
-                    <target>${modeshape.java.version}</target>
-                    <showDeprecation>false</showDeprecation>
-                    <showWarnings>false</showWarnings>
-                </configuration>
-            </plugin>
+
             <!-- Produce source jars during package and test-source jars during the 'verify' phase -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1016,9 +919,39 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-common</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-common</artifactId>
+                <version>${project.version}</version>
+                <classifier>component-with-dependencies</classifier>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jcr</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr</artifactId>
+                <classifier>component-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-schematic</artifactId>
@@ -1026,14 +959,31 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-schematic</artifactId>
+                <classifier>component-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jcr-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr-api</artifactId>
+                <version>${project.version}</version>
+                <classifier>component-with-dependencies</classifier>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jcr-tck</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-connector-git</artifactId>
@@ -1041,9 +991,18 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-git</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-connector-jdbc-metadata</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-ddl</artifactId>
@@ -1051,9 +1010,25 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-ddl</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-images</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-images</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-java</artifactId>
@@ -1061,9 +1036,25 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-java</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-mp3</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-mp3</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-msoffice</artifactId>
@@ -1071,9 +1062,25 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-msoffice</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-sramp</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-sramp</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-teiid</artifactId>
@@ -1081,9 +1088,25 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-teiid</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-text</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-text</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-xml</artifactId>
@@ -1091,9 +1114,25 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-xml</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-xsd</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-xsd</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-wsdl</artifactId>
@@ -1101,9 +1140,25 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-wsdl</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-zip</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-zip</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-extractor-tika</artifactId>
@@ -1111,14 +1166,46 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-extractor-tika</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-rest</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-rest</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-rest-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-rest-client</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-rest-war</artifactId>
@@ -1130,6 +1217,7 @@
                 <artifactId>modeshape-web-jcr</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-webdav</artifactId>
@@ -1137,9 +1225,26 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-webdav</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-webdav-war</artifactId>
                 <version>${project.version}</version>
-           </dependency>
+                <scope>test</scope>
+                <type>test-jar</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-webdav-war</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-webdav</artifactId>
@@ -1147,9 +1252,52 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-webdav</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-webdav-war</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-webdav-war</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-cmis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-cmis</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-explorer</artifactId>
+                <version>${project.version}</version>
+                <type>war</type>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-explorer</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jdbc-local</artifactId>
@@ -1157,19 +1305,64 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc-local</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc-local</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jdbc</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc</artifactId>
+                <version>${project.version}</version>
+                <classifier>jar-with-dependencies</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jca</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jca</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
            <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jbossas-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-unit-test</artifactId>
@@ -1177,317 +1370,229 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>servlet-api</artifactId>
-                <version>${javax.servlet.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.resource</groupId>
-                <artifactId>jboss-connector-api_1.6_spec</artifactId>
-                <version>1.0.1.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.security.jacc</groupId>
-                <artifactId>jboss-jacc-api_1.4_spec</artifactId>
-                <version>${javax.jacc.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <!--
-                Infinispan
-            -->
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>woodstox-core-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>stax2-api</artifactId>
-                    </exclusion>
-                </exclusions>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-unit-test</artifactId>
+                <classifier>module-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
             </dependency>
 
-            <!--
-                JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
-                because of ISPN.
-             -->
+            <!--The client artifact is produced during the assembly profile, by the modeshape-jdbc profile -->
             <dependency>
-                <groupId>org.jgroups</groupId>
-                <artifactId>jgroups</artifactId>
-                <version>${jgroups.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-bdbje</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-jdbm</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-jdbc</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!--Required by infinispan-cachestore-jdbc -->
-            <dependency>
-                <groupId>c3p0</groupId>
-                <artifactId>c3p0</artifactId>
-                <version>${c3p0.version}</version>
-            </dependency>
-            
-            <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-engine</artifactId>
-                <version>${hibernate.search.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.hibernate</groupId>
-                        <artifactId>hibernate-search-analyzers</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-infinispan</artifactId>
-                <version>${hibernate.search.version}</version>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-client</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-modules</artifactId>
-                <version>${hibernate.search.version}</version>
-                <classifier>jbossas-72-dist</classifier>
+                <groupId>org.modeshape.demo</groupId>
+                <artifactId>modeshape-sequencers-demo</artifactId>
+                <classifier>example-with-dependencies</classifier>
+                <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
 
             <dependency>
-              <!--
-              To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
-              -->
-              <groupId>org.codehaus.jackson</groupId>
-              <artifactId>jackson-core-asl</artifactId>
-              <version>${hibernate.search.jackson-core-asl.version}</version>
+                <groupId>org.modeshape.demo</groupId>
+                <artifactId>modeshape-embedded-repo-demo</artifactId>
+                <classifier>example-with-dependencies</classifier>
+                <version>${project.version}</version>
+                <type>zip</type>
             </dependency>
+
+            <!--IP-Platform BOM-->
             <dependency>
-              <!--
-              To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
-              -->
-              <groupId>org.codehaus.jackson</groupId>
-              <artifactId>jackson-mapper-asl</artifactId>
-              <version>${hibernate.search.jackson-mapper-asl.version}</version>
+                <groupId>org.jboss.integration-platform</groupId>
+                <artifactId>jboss-integration-platform-bom</artifactId>
+                <version>${version.ip-bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-core</artifactId>
-                <version>${lucene.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-regex</artifactId>
-                <version>${lucene.regex.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.jms</groupId>
-                <artifactId>jms-api</artifactId>
-                <version>${javax.jms.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <!--
-               Time and Date
-               -->
-            <dependency>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-                <version>${joda.time.version}</version>
-                <scope>compile</scope>
-            </dependency>
-            <!-- Testing (note the scope) -->
+
+            <!--Inherited from BOM, but changes the default scope to "test"-->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
+                <version>${version.junit}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit-dep</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
+
+            <!--Inherited from BOM, but changes the default scope to "test"-->
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-library</artifactId>
-                <version>${hamcrest.version}</version>
+                <version>${version.org.hamcrest}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!--Inherited from BOM, but changes the default scope to "test"-->
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
-                <version>${mockito.all.version}</version>
+                <version>${version.org.mockito}</version>
                 <scope>test</scope>
             </dependency>
-            <!-- Logging (all of the libraries should be optional, as the logging implementation falls back to JUL if nothig is found -->
+
+            <!--
+                Various database tests activated by profiles
+            -->
+            <dependency>
+                <!--Must be JDBC 4 (Java 6) compliant-->
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>msjdbc</artifactId>
+                <version>${version.com.microsoft.sqlserver.msjdbc}</version>
+                <classifier>4</classifier>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!--Must be JDBC 4 (Java 6) compliant-->
+                <groupId>com.sybase</groupId>
+                <artifactId>jconnect</artifactId>
+                <version>${version.com.sybase.jconnect}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!--Must be JDBC 4 (Java 6) compliant-->
+                <groupId>com.oracle</groupId>
+                <artifactId>ojdbc6</artifactId>
+                <version>${version.com.oracle.ojdbc6}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!--Must be JDBC 4 (Java 6) compliant-->
+                <groupId>postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${version.postgresql}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!--Must be JDBC 4 (Java 6) compliant-->
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${version.mysql.mysql-connector-java}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!--Must be JDBC 4 (Java 6) compliant-->
+                <groupId>org.hsqldb</groupId>
+                <artifactId>hsqldb</artifactId>
+                <version>${version.org.hsqldb}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${version.com.h2database}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--
+              Logging (all of the libraries should be optional, as the logging implementation falls back to JUL if nothing is found)
+            -->
+
+            <!--Inherited from BOM, but changes the default scope to "test"-->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.api.version}</version>
+                <version>${version.org.slf4j}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!--Inherited from BOM, but changes the default scope to "test"-->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j.log4j.version}</version>
+                <version>${version.org.slf4j}</version>
                 <scope>test</scope>
             </dependency>
+            <!--Inherited from BOM, but changes the default scope to "test"-->
             <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
+                <version>${version.log4j}</version>
                 <scope>test</scope>
             </dependency>
-            <!--WebDAV servlet-->
+
+            <!--
+               WebDAV servlet test dependencies
+             -->
+            <!--Specific to ModeShape tests-->
             <dependency>
                 <groupId>org.jmock</groupId>
                 <artifactId>jmock</artifactId>
-                <version>${jmock.version}</version>
+                <version>${version.org.jmock}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hamcrest</groupId>
+                        <artifactId>hamcrest-core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
+
+            <!--Specific to ModeShape tests-->
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-webmvc</artifactId>
-                <version>${spring.webmvc}</version>
+                <version>${version.org.springframework.webmvc}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!--Specific to ModeShape tests-->
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-mock</artifactId>
-                <version>${spring.mock}</version>
+                <version>${version.org.springframework.mock}</version>
                 <scope>test</scope>
             </dependency>
 
-            <!-- Apache chemistry -->
+            <!--Specific to ModeShape tests-->
             <dependency>
-                <groupId>org.apache.chemistry.opencmis</groupId>
-                <artifactId>chemistry-opencmis-commons-api</artifactId>
-                <version>${chemistry.version}</version>
+                <groupId>com.googlecode.sardine</groupId>
+                <artifactId>sardine</artifactId>
+                <version>${version.com.googlecode.sardine}</version>
+                <scope>test</scope>
             </dependency>
 
-            <dependency>
-                <groupId>org.apache.chemistry.opencmis</groupId>
-                <artifactId>chemistry-opencmis-commons-impl</artifactId>
-                <version>${chemistry.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.chemistry.opencmis</groupId>
-                <artifactId>chemistry-opencmis-server-support</artifactId>
-                <version>${chemistry.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.apache.chemistry.opencmis</groupId>
-                <artifactId>chemistry-opencmis-server-jcr</artifactId>
-                <version>${chemistry.version}</version>
-                <classifier>classes</classifier>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.chemistry.opencmis</groupId>
-                <artifactId>chemistry-opencmis-server-bindings</artifactId>
-                <version>${chemistry.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.chemistry.opencmis</groupId>
-                <artifactId>chemistry-opencmis-client-impl</artifactId>
-                <version>${chemistry.version}</version>
-            </dependency>
-
+            <!--
+                CMIS connector tests
+            -->
+            <!--Version is defined in BOM, but this is specific to ModeShape tests-->
             <dependency>
                 <groupId>org.apache.chemistry.opencmis</groupId>
                 <artifactId>chemistry-opencmis-server-inmemory</artifactId>
-                <version>${chemistry.version}</version>
+                <version>${version.org.apache.chemistry}</version>
                 <type>war</type>
+                <scope>test</scope>
             </dependency>
 
-		<!-- GWT dependency -->
-	<dependency>
-            <groupId>com.google.gwt</groupId>
-            <artifactId>gwt-servlet</artifactId>
-            <version>${gwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.gwt</groupId>
-            <artifactId>gwt-user</artifactId>
-            <version>${gwt.version}</version>
-            <scope>provided</scope>
-        </dependency>              
-        <dependency>
-            <groupId>smartgwt</groupId>
-            <artifactId>smartgwt</artifactId>
-            <version>${smartgwt.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>com.smartgwt</groupId>
-            <artifactId>smartgwt-skins</artifactId>
-            <version>${smartgwt.version}</version>
-            <type>jar</type>
-        </dependency>
-            <!--
-                Demo module
-            -->
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <!-- Java Content Repository API -->
-            <dependency>
-                <groupId>javax.jcr</groupId>
-                <artifactId>jcr</artifactId>
-                <version>${jcr.version}</version>
-                <scope>compile</scope>
-            </dependency>
             <!--
                    Apache JCR API unit tests (for any JCR implementation), which is a
                    subset of the official TCK
                -->
+
+            <!--Specific to ModeShape tests-->
             <dependency>
                 <groupId>org.apache.jackrabbit</groupId>
                 <artifactId>jackrabbit-jcr-tests</artifactId>
-                <version>${jackrabbit.jcr.tck.version}</version>
+                <version>${version.org.apache.jackrabbit.jcr-tests}</version>
                 <scope>test</scope>
             </dependency>
-            <!--
-               JGit
-               -->
             <dependency>
-                <groupId>org.eclipse.jgit</groupId>
-                <artifactId>org.eclipse.jgit</artifactId>
-                <version>${jgit.version}</version>
+                <groupId>org.apache.jackrabbit</groupId>
+                <artifactId>jackrabbit-core</artifactId>
+                <version>${version.org.apache.jackrabbit.core}</version>
+                <scope>test</scope>
             </dependency>
+
             <!--
                PicketBox (JAAS implementation used in test cases)
-               -->
+            -->
+            <!--Specific to ModeShape tests-->
             <dependency>
                 <groupId>org.picketbox</groupId>
                 <artifactId>picketbox-bare</artifactId>
-                <version>${picketbox.version}</version>
+                <version>${version.org.picketbox}</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -1512,22 +1617,15 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!--
-               JAX-B implementation used by some modules particularly the JBoss Console component
-               -->
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${sun.xml.bind.jaxbimpl.version}</version>
-                <scope>runtime</scope>
-            </dependency>
+
             <!--
                Web Modules dependencies
             -->
+            <!--Inherited from BOM, but has some custom exclusions -->
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-jaxrs</artifactId>
-                <version>${resteasy.version}</version>
+                <version>${version.org.jboss.resteasy}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -1539,10 +1637,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <!--Inherited from BOM, but has some custom exclusions -->
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-jaxb-provider</artifactId>
-                <version>${resteasy.version}</version>
+                <version>${version.org.jboss.resteasy}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.sun.xml.bind</groupId>
@@ -1554,15 +1654,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jettison-provider</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
+
+            <!--Inherited from BOM, but has some custom exclusions -->
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-multipart-provider</artifactId>
-                <version>${resteasy.version}</version>
+                <version>${version.org.jboss.resteasy}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.sun.xml.bind</groupId>
@@ -1574,21 +1671,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!--
-                Since 2.3.6, RestEASY excludes the following dependency because of https://issues.jboss.org/browse/RESTEASY-848
-                This is most likely a bug in RestEASY, because commons-logging is needed by resteasy-multipart-provider via
-                its org.apache.james dependency
-            -->
-            <dependency>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>${commons.logging.version}</version>
-                <scope>runtime</scope>
-            </dependency>
+
+            <!--Inherited from BOM, but has some custom exclusions -->
             <dependency>
                 <groupId>org.codehaus.jettison</groupId>
                 <artifactId>jettison</artifactId>
-                <version>${jettison.version}</version>
+                <version>${version.org.codehaus.jettison}</version>
                 <exclusions>
                     <!-- This results in duplicate stax-api jars. This is the older one.
                          A newer is brought in by com.sun.xml.bind:jaxb-impl
@@ -1598,18 +1686,6 @@
                         <artifactId>stax-api</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${httpclient.version}</version>
-            </dependency>
-            <!--WebDav client used for testing-->
-            <dependency>
-                <groupId>com.googlecode.sardine</groupId>
-                <artifactId>sardine</artifactId>
-                <version>${sardine.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!--
@@ -1630,137 +1706,87 @@
                      |     +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
                      |     \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
             -->
-
-            <!--Image sequencer-->
+            <!--
+                Java sequencer
+            -->
             <dependency>
-                <groupId>com.drewnoakes</groupId>
-                <artifactId>metadata-extractor</artifactId>
-                <version>${image.metadata.extractor}</version>
-            </dependency>
-            <!--Java sequencer-->
-            <dependency>
-                <groupId>org.eclipse.equinox</groupId>
-                <artifactId>common</artifactId>
-                <version>${eclipse.equinox.common.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jdt</groupId>
-                <artifactId>core</artifactId>
-                <version>${eclipse.jdt.core.version}</version>
+                <groupId>org.eclipse</groupId>
+                <artifactId>osgi</artifactId>
+                <version>${version.org.eclipse.osgi}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>resources</artifactId>
-                <version>${eclipse.core.resources.version}</version>
+                <version>${version.org.eclipse.core.resources}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>expressions</artifactId>
-                <version>${eclipse.core.expressions.version}</version>
+                <version>${version.org.eclipse.core.expressions}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>runtime</artifactId>
-                <version>${eclipse.core.runtime.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse</groupId>
-                <artifactId>osgi</artifactId>
-                <version>${eclipse.osgi.version}</version>
+                <version>${version.org.eclipse.core.runtime}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>jobs</artifactId>
-                <version>${eclipse.core.jobs.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.equinox</groupId>
-                <artifactId>registry</artifactId>
-                <version>${eclipse.equinox.registry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.equinox</groupId>
-                <artifactId>preferences</artifactId>
-                <version>${eclipse.equinox.preferences.version}</version>
+                <version>${version.org.eclipse.core.jobs}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>contenttype</artifactId>
-                <version>${eclipse.core.contenttype.version}</version>
+                <version>${version.org.eclipse.core.contenttype}</version>
             </dependency>
             <dependency>
-                <groupId>javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>${javaassist.version}</version>
-            </dependency>
-            <!--Mp3 sequencer-->
-            <dependency>
-                <groupId>org</groupId>
-                <artifactId>jaudiotagger</artifactId>
-                <version>${jaudiotagger.version}</version>
-            </dependency>
-            <!--MsOffice sequencer-->
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi</artifactId>
-                <version>${poi.version}</version>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>common</artifactId>
+                <version>${version.org.eclipse.equinox.common}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-scratchpad</artifactId>
-                <version>${poi.version}</version>
-            </dependency>
-            <!--
-                The following 2 POI dependencies are not used directly, but defined so that we use the same "beta" version
-                across the board (see https://issues.jboss.org/browse/MODE-1934).Tika-parsers brings these 2 transitively in
-             -->
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml</artifactId>
-                <version>${poi.version}</version>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>registry</artifactId>
+                <version>${version.org.eclipse.equinox.registry}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml-schemas</artifactId>
-                <version>${poi.version}</version>
-            </dependency>
-            <!--Teiid sequencer-->
-            <dependency>
-                <groupId>com.beust</groupId>
-                <artifactId>jcommander</artifactId>
-                <version>${jcommander.version}</version>
-            </dependency>
-            <!--WSDL sequencer-->
-            <dependency>
-                <groupId>wsdl4j</groupId>
-                <artifactId>wsdl4j</artifactId>
-                <version>${wsdl4j.version}</version>
-            </dependency>
-            <!--XSD sequencer-->
-            <dependency>
-                <groupId>org.eclipse.xsd</groupId>
-                <artifactId>xsd</artifactId>
-                <version>${eclipse.xsd.version}</version>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>preferences</artifactId>
+                <version>${version.org.eclipse.equinox.preferences}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>common</artifactId>
-                <version>${eclipse.emf.common.version}</version>
+                <version>${version.org.eclipse.emf.common}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore</artifactId>
-                <version>${eclipse.emf.ecore.version}</version>
+                <version>${version.org.eclipse.emf.ecore}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-change</artifactId>
-                <version>${eclipse.emf.ecorechange.version}</version>
+                <version>${version.org.eclipse.emf.ecore-change}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-xmi</artifactId>
-                <version>${eclipse.emf.ecorexmi.version}</version>
+                <version>${version.org.eclipse.emf.ecore-xmi}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jdt</groupId>
+                <artifactId>core</artifactId>
+                <version>${version.org.eclipse.jdt.core}</version>
+            </dependency>
+
+            <!--
+                XSD sequencer
+            -->
+            <dependency>
+                <groupId>org.eclipse.xsd</groupId>
+                <artifactId>xsd</artifactId>
+                <version>${version.org.eclipse.xsd}</version>
             </dependency>
 
             <!--TIKA text extractor
@@ -1768,15 +1794,17 @@
                 most of them and only keep a few that are for Microsoft Office documents,
                 HTML, XML and PDF. When others are needed, they can simply be added to
                 an application's dependencies.
-                
+
                 Note that 'modeshape-jcr' excludes even more transitive dependencies, since it
                 only uses the MIME type detector functionality, whereas the 'modeshape-extractor-tika'
                 uses everything defined here.
                 -->
+
+            <!--Defined in BOM but needs custom exclusions-->
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-parsers</artifactId>
-                <version>${tika.version}</version>
+                <version>${version.org.apache.tika}</version>
                 <exclusions>
                     <!--
                     The NetCDF and HDF files are often used in the scientific community, so we exclude this
@@ -1815,11 +1843,11 @@
                         <groupId>de.l3s.boilerpipe</groupId>
                         <artifactId>boilerpipe</artifactId>
                     </exclusion>
-                    <!-- 
+                    <!--
                     PDFBox declares the Bouncy Castle dependencies
                     as optional, and Tika always depends on them to avoid
-                    problems with encrypted PDFs (see TIKA-370). 
-                    We exclude them by default. 
+                    problems with encrypted PDFs (see TIKA-370).
+                    We exclude them by default.
                     -->
                     <exclusion>
                       <groupId>org.bouncycastle</groupId>
@@ -1831,44 +1859,42 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
             <!--
                 Schematic dependencies
             -->
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss.logging.version}</version>
-            </dependency>
-
+            <!--Specific to ModeShape tests-->
             <dependency>
                 <groupId>de.undercouch</groupId>
                 <artifactId>bson4jackson</artifactId>
-                <version>${bson4jackson.version}</version>
+                <version>${version.de.undercouch.bson4jackson}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>org.mongodb</groupId>
-                <artifactId>mongo-java-driver</artifactId>
-                <version>${mongo.driver.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <!-- MongoDB binary store test -->
+
+            <!--
+               MongoDB binary store test
+            -->
+            <!--Specific to ModeShape tests-->
             <dependency>
                 <groupId>de.flapdoodle.embed</groupId>
                 <artifactId>de.flapdoodle.embed.mongo</artifactId>
-                <version>${embedmongo.version}</version>
+                <version>${version.de.flapdoodle.embed.mongo}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!--Specific to ModeShape tests-->
             <dependency>
                 <groupId>com.googlecode.json-simple</groupId>
                 <artifactId>json-simple</artifactId>
-                <version>${json.simple.version}</version>
+                <version>${version.com.googlecode.json-simple}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!--Specific to ModeShape tests, but must use the generic org.jboss.jbossts version from the BOM -->
             <dependency>
-                <groupId>org.jboss.jbossts</groupId>
-                <artifactId>jbossjta</artifactId>
-                <version>${jbossjta.version}</version>
+                <groupId>org.jboss.jbossts.jta</groupId>
+                <artifactId>narayana-jta</artifactId>
+                <version>${version.org.jboss.jbossts.jbossxts}</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -2011,137 +2037,89 @@
                         <artifactId>jboss-transaction-api_1.1_spec</artifactId>
                         <groupId>org.jboss.spec.javax.transaction</groupId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>byteman</artifactId>
+                        <groupId>org.jboss.byteman</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>byteman-submit</artifactId>
+                        <groupId>org.jboss.byteman</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hornetq-core</artifactId>
+                        <groupId>org.hornetq</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hornetq-commons</artifactId>
+                        <groupId>org.hornetq</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
             <!--
-                JBOSS AS subsystem
-            -->
-            <dependency>
-                <groupId>javax.resource</groupId>
-                <artifactId>connector-api</artifactId>
-                <version>${javax.connector-api.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.transaction</groupId>
-                <artifactId>jta</artifactId>
-                <version>${javax.jta.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
+              JBOSS AS subsystem
+             -->
+            <!--These dependencies are NOT PUBLIC nor are they present in the BOM (see version), so they must be local to ModeShape -->
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-controller</artifactId>
-                <version>${jbossas.version}</version>
+                <version>${version.org.jboss.as}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-naming</artifactId>
-                <version>${jbossas.version}</version>
+                <version>${version.org.jboss.as}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-clustering-jgroups</artifactId>
-                <version>${jbossas.version}</version>
+                <version>${version.org.jboss.as}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-subsystem-test</artifactId>
-                <version>${jbossas.version}</version>
+                <artifactId>jboss-as-subsystem-test-framework</artifactId>
+                <version>${version.org.jboss.as}</version>
                 <scope>test</scope>
             </dependency>
 
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-model-test</artifactId>
-                <version>${jbossas.version}</version>
-                <scope>test</scope>
-            </dependency>
-
+            <!--Specific to ModeShape tests-->
+            <!--
+                JCA adapter testing
+            -->
             <dependency>
                 <groupId>org.jboss.ironjacamar</groupId>
                 <artifactId>ironjacamar-depchain</artifactId>
                 <version>${version.org.jboss.ironjacamar}</version>
+                <scope>test</scope>
                 <type>pom</type>
             </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-spec-api</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-common-api</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-common-spi</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-common-impl</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-common-impl-papaki</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-core-api</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-core-impl</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-deployers-common</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-deployers-fungal</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-embedded-arquillian</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-embedded</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.ironjacamar</groupId>
-            <artifactId>ironjacamar-validator</artifactId>
-            <version>${version.org.jboss.ironjacamar}</version>
-            <scope>test</scope>
-        </dependency>
-
+            <dependency>
+                <groupId>org.jboss.ironjacamar</groupId>
+                <artifactId>ironjacamar-deployers-common</artifactId>
+                <version>${version.org.jboss.ironjacamar}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.ironjacamar</groupId>
+                <artifactId>ironjacamar-deployers-fungal</artifactId>
+                <version>${version.org.jboss.ironjacamar}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.ironjacamar</groupId>
+                <artifactId>ironjacamar-embedded-arquillian</artifactId>
+                <version>${version.org.jboss.ironjacamar}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.ironjacamar</groupId>
+                <artifactId>ironjacamar-embedded</artifactId>
+                <version>${version.org.jboss.ironjacamar}</version>
+                <scope>test</scope>
+            </dependency>
 
             <!--
                 Atomikos Transaction Manager (for testing only)
@@ -2149,39 +2127,52 @@
             <dependency>
                 <groupId>com.atomikos</groupId>
                 <artifactId>transactions</artifactId>
-                <version>${atomikos.version}</version>
+                <version>${version.com.atomikos.transactions}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.atomikos</groupId>
                 <artifactId>transactions-jta</artifactId>
-                <version>${atomikos.version}</version>
+                <version>${version.com.atomikos.transactions}</version>
                 <scope>test</scope>
             </dependency>
 
-            <!-- Cassandra JDBC driver -->
-            <dependency>
-                <groupId>org.apache-extras.cassandra-jdbc</groupId>
-                <artifactId>cassandra-jdbc</artifactId>
-                <version>${cassandra-jdbc-driver}</version>
-                <scope>provided</scope>
-            </dependency>
+            <!-- Cassandra JDBC driver (changes scope from BOM) -->
             <dependency>
                 <groupId>com.datastax.cassandra</groupId>
                 <artifactId>cassandra-driver-core</artifactId>
-                <version>${cassandra-cql-driver}</version>
+                <version>${version.com.datastax.cassandra.cassandra-driver-core}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache-extras.cassandra-jdbc</groupId>
+                <artifactId>cassandra-jdbc</artifactId>
+                <version>${version.org.apache-extras.cassandra-jdbc}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.cassandra</groupId>
                 <artifactId>cassandra-all</artifactId>
-                <version>${cassandra.all.version}</version>
+                <version>${version.org.apache.cassandra.cassandra-all}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
-                <version>${apache.avro.version}</version>
+                <version>${version.org.apache.avro}</version>
+                <scope>test</scope>
+            </dependency>
+            <!--ANTLR deps are overriden for testing, because the Cassandra tests require a specific version-->
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr-runtime</artifactId>
+                <version>${version.org.antlr}</version>
+                <scope>test</scope>
+            </dependency>
+           <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr</artifactId>
+                <version>${version.org.antlr}</version>
                 <scope>test</scope>
             </dependency>
 
@@ -2189,19 +2180,9 @@
             <dependency>
                 <groupId>commons-naming</groupId>
                 <artifactId>commons-naming-core</artifactId>
-                <version>${commons.naming.version}</version>
+                <version>${version.commons-naming.commons-naming-core}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>${version.surefire.plugin}</version>
-            </plugin>
-        </plugins>
-    </reporting>
 </project>

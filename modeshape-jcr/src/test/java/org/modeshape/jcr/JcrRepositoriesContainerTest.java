@@ -23,9 +23,9 @@
  */
 package org.modeshape.jcr;
 
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -104,14 +104,14 @@ public class JcrRepositoriesContainerTest extends JcrRepositoryFactoryTest {
         Map<String, String> params = new HashMap<String, String>();
         params.put(RepositoryFactory.URL, url);
         Set<String> repositoryNames = repositoriesContainer.getRepositoryNames(params);
-        Assert.assertTrue(repositoryNames.contains("Another Test Repository"));
+        assertTrue(repositoryNames.contains("Another Test Repository"));
 
         url = "file:src/test/resources/config/repo-config.json";
         params.put(RepositoryFactory.URL, url);
         repositoryNames = repositoriesContainer.getRepositoryNames(params);
         Assert.assertEquals(2, repositoryNames.size());
-        Assert.assertTrue(repositoryNames.contains("Another Test Repository"));
-        Assert.assertTrue(repositoryNames.contains("CND Sequencer Test Repository"));
+        assertTrue(repositoryNames.contains("Another Test Repository"));
+        assertTrue(repositoryNames.contains("CND Sequencer Test Repository"));
     }
 
     @Override

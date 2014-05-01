@@ -34,13 +34,11 @@ import org.jboss.as.naming.ServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.as.naming.service.BinderService;
 import org.jboss.dmr.ModelNode;
-import org.jboss.modules.Module;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.modeshape.common.logging.Logger;
-import org.modeshape.common.naming.SingletonInitialContextFactory;
 import org.modeshape.jboss.lifecycle.JBossLifeCycleListener;
 import org.modeshape.jboss.service.EngineService;
 import org.modeshape.jboss.service.ReferenceFactoryService;
@@ -49,13 +47,6 @@ import org.modeshape.jcr.ModeShapeEngine;
 class AddModeShapeSubsystem extends AbstractAddStepHandler {
 
     public static final AddModeShapeSubsystem INSTANCE = new AddModeShapeSubsystem();
-
-    // Jcr Engine
-    EngineService engine;
-
-    SingletonInitialContextFactory scf = new SingletonInitialContextFactory();
-    final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();// todo why defined here and then again inside
-                                                                                 // initializeModeShapeEngine
 
     @Override
     protected void populateModel( ModelNode operation,
@@ -71,13 +62,12 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
                                    final ModelNode model,
                                    final ServiceVerificationHandler verificationHandler,
                                    final List<ServiceController<?>> newControllers ) {
-        ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(Module.getCallerModule().getClassLoader());
-            initializeModeShapeEngine(context, operation, model, newControllers);
-        } finally {
-            Thread.currentThread().setContextClassLoader(classloader);
-        }
+        initializeModeShapeEngine(context, operation, model, newControllers);
+    }
+
+    @Override
+    protected boolean requiresRuntime( OperationContext context ) {
+        return true;
     }
 
     private void initializeModeShapeEngine( final OperationContext context,
@@ -89,7 +79,7 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
         final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener(); // what is right, this or one defined in
                                                                                       // top?
 
-        engine = buildModeShapeEngine(model);
+        EngineService engine = new EngineService(new ModeShapeEngine());
 
         // Engine service
         ServiceBuilder<ModeShapeEngine> engineBuilder = target.addService(ModeShapeServiceNames.ENGINE, engine);
@@ -116,15 +106,9 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
                                     binderService.getNamingStoreInjector());
         binderBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
-        Logger.getLogger(getClass()).debug("Binding ModeShape to JNDI name '{0}'", bindInfo.getAbsoluteJndiName());
+        Logger.getLogger(getClass()).debugv("Binding ModeShape to JNDI name {0}", bindInfo.getAbsoluteJndiName());
 
         newControllers.add(referenceBuilder.install());
         newControllers.add(binderBuilder.install());
-
-    }
-
-    private EngineService buildModeShapeEngine( ModelNode model ) {
-        EngineService engine = new EngineService(new ModeShapeEngine());
-        return engine;
     }
 }

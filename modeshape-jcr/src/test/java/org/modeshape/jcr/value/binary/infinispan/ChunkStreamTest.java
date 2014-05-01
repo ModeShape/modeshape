@@ -47,21 +47,23 @@
 package org.modeshape.jcr.value.binary.infinispan;
 
 
-import org.infinispan.Cache;
-import org.infinispan.manager.DefaultCacheManager;
-import org.junit.*;
-import org.modeshape.common.FixFor;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
-
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
-
-import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.assertArrayEquals;
+import org.infinispan.Cache;
+import org.infinispan.manager.DefaultCacheManager;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
 
 /**
  * Unit test for {@link ChunkStreamTest} and {@link ChunkOutputStream}

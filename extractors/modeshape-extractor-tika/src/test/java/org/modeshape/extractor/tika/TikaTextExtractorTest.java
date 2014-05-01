@@ -23,6 +23,12 @@
  */
 package org.modeshape.extractor.tika;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -34,7 +40,6 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.TreeSet;
 import org.apache.tika.mime.MediaType;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -46,12 +51,6 @@ import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.text.TextExtractorOutput;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link TikaTextExtractor}
@@ -78,8 +77,8 @@ public class TikaTextExtractorTest {
     @Test
     public void shouldHavePredefinedMimeTypesByDefault() {
         assertThat(extractor.getIncludedMediaTypes().isEmpty(), is(true));
-        Assert.assertEquals(new TreeSet<MediaType>(TikaTextExtractor.DEFAULT_EXCLUDED_MIME_TYPES),
-                            new TreeSet<MediaType>(extractor.getExcludedMediaTypes()));
+        assertEquals(new TreeSet<MediaType>(TikaTextExtractor.DEFAULT_EXCLUDED_MIME_TYPES),
+                     new TreeSet<MediaType>(extractor.getExcludedMediaTypes()));
         assertFalse(extractor.getParserSupportedMediaTypes().isEmpty());
     }
 

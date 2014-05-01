@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+<module xmlns="urn:jboss:module:1.2" name="org.modeshape">
+    <resources>
+        <resource-root path="modeshape-jcr-${project.version}.jar"/>
+        <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar"/>
+        <resource-root path="modeshape-schematic-${project.version}.jar"/>
+        <resource-root path="res"/>
+        <resource-root path="deployments"/>
+    </resources>
+
+    <dependencies>
+        <!--The sequencers aren't listed here because they are loaded from the ModuleLoader API -->
+        <module name="org.modeshape.jcr.api" export="true"/>
+        <module name="org.modeshape.common" export="true"/>
+
+        <!-- ModeShape JCR dependencies (must export Infinispan so that our stored classes can be loaded )-->
+        <module name="org.infinispan" export="true"/>
+        <!--
+             Include the JDBC and Remote modules because in AS7.2, the ModeShape ISPN cache container will use the "module"
+             attribute, meaning Infinispan will be loaded using ModeShape's class loader. If we don't export these modules,
+             declaring JDBC or Remote caches within ModeShape's cache container would not be possible.
+        -->
+        <module name="org.infinispan.cachestore.jdbc" export="true"/>
+        <module name="org.infinispan.cachestore.remote" export="true"/>
+
+        <module name="org.joda.time"/>
+        <module name="org.jgroups"/>
+        <!--Needed in order to be able to use ChannelInjector in our kit -->
+        <module name="org.jboss.as.clustering.jgroups"/>
+        <module name="org.apache.tika" slot="${version.org.apache.tika}" services="import"/>
+        <module name="org.apache.lucene" slot="${version.org.apache.lucene}"/>
+        <module name="org.hibernate.search.engine" export="true"/>
+        <!-- For naming ... -->
+        <module name="javax.api" export="true"/>
+        <module name="org.jboss.as.naming"/>
+        <!-- For security provider ... -->
+        <module name="javax.servlet.api"/>
+        <module name="javax.resource.api"/>
+        <module name="javax.security.jacc.api"/>
+        <!-- For logging ... -->
+        <module name="org.jboss.logging"/>
+        <!-- For the subsystem ... -->
+        <module name="org.jboss.as.controller"/>
+        <module name="org.jboss.staxmapper"/>
+        <module name="org.jboss.modules"/>
+        <module name="org.jboss.msc"/>
+        <module name="org.jboss.as.server"/>
+
+        <!--Needed for clustering configurations-->
+        <module name="org.jboss.as.clustering.infinispan"/>
+        <!--Needed for indexing via JMS-->
+        <module name="javax.jms.api"/>
+    </dependencies>
+
+</module>
