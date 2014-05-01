@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.RepositoriesContainer;
 import org.modeshape.jcr.api.RepositoryFactory;
 
@@ -75,6 +77,20 @@ public class JcrRepositoriesContainerTest extends JcrRepositoryFactoryTest {
         // execute the call one more time
         repository = repositoryFor("Another Test Repository", params);
         assertNotNull(repository);
+    }
+
+    @Test
+    @FixFor( "MODE-2201" )
+    public void shouldReturnRepositoryUsingConfigurationInJarFile() throws Exception {
+        String url = "jar:file:src/test/resources/config/wrapped-config.jar!/com/acme/repo-config.json";
+        Map<String, String> params = Collections.singletonMap(RepositoryFactory.URL, url);
+        Repository repository = repositoryFor("RepoFromJarFileConfiguration", params);
+        assertNotNull(repository);
+        // execute the call one more time
+        Repository repository2 = repositoryFor("RepoFromJarFileConfiguration", params);
+        assertNotNull(repository2);
+        // The same Repository instance should be returned from both calls ...
+        assertSame(repository, repository2);
     }
 
     @Test
