@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.jboss.integration-platform</groupId>
         <artifactId>jboss-integration-platform-parent</artifactId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>6.0.0.CR8</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -195,7 +195,7 @@
 
     <properties>
 
-        <version.ip-bom>6.0.0-SNAPSHOT</version.ip-bom>
+        <version.ip-bom>6.0.0.CR8</version.ip-bom>
 
         <!--
             Versions of COMPILE artifacts *specific* to ModeShape, which do not appear in the BOM or are in conflict
