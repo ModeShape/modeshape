@@ -414,8 +414,8 @@ public class RepositoryCache {
     }
 
     public RepositoryCache completeInitialization() {
-        if (initializingRepository) {
-            try {
+        try {
+            if (initializingRepository) {
                 LOGGER.debug("Marking repository '{0}' as fully initialized", name);
                 runInTransaction(new Callable<Void>() {
                     @Override
@@ -432,15 +432,15 @@ public class RepositoryCache {
                     }
                 });
                 LOGGER.debug("Repository '{0}' is fully initialized", name);
-            } finally {
-                // if we have a global cluster-wide lock, make sure its released
-                if (isHoldingClusterLock) {
-                    clusteringService.unlock();
-                    LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
-                }
+            }
+            return this;
+        } finally {
+            // if we have a global cluster-wide lock, make sure its released
+            if (isHoldingClusterLock) {
+                clusteringService.unlock();
+                LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
             }
         }
-        return this;
     }
 
     public RepositoryCache completeUpgrade( final Upgrades.Context resources ) {
