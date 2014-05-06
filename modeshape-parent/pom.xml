@@ -329,9 +329,6 @@
         <!-- The id of the maven distribution which is building the current kit -->
         <jboss.kit.distribution.id>jboss-wf8-dist</jboss.kit.distribution.id>
 
-         <!--Versions used by the integration/kit tests an -->
-        <jboss-javaee-6.0-with-tools.version>1.0.7.Final</jboss-javaee-6.0-with-tools.version>
-
         <!--
           Maven plugin versions
           -->
