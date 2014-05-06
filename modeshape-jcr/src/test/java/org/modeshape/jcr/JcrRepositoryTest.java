@@ -40,6 +40,8 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -85,6 +87,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     private RepositoryConfiguration config;
     private JcrRepository repository;
     private JcrSession session;
+    protected boolean print = false;
 
     @Before
     public void beforeEach() throws Exception {
@@ -94,6 +97,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         config = new RepositoryConfiguration("repoName", environment);
         repository = new JcrRepository(config);
         repository.start();
+        print = false;
     }
 
     @After
@@ -777,165 +781,287 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertThat(future.get(), is(true)); // get() blocks until done
     }
 
-    @FixFor( "MODE-1498" )
+    @FixFor( {"MODE-1498", "MODE-2202"} )
     @Test
-    public void shouldWorkWithUserDefinedTransactions() throws Exception {
+    public void shouldWorkWithUserDefinedTransactionsInSeparateThreads() throws Exception {
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        CyclicBarrier completionBarrier = new CyclicBarrier(3);
         session = createSession();
 
-        Session session2 = createSession();
-        try {
+        // THREAD 1 ...
+        SessionWorker worker1 = new SessionWorker(session, barrier, completionBarrier, "thread 1") {
+            @Override
+            protected void execute( Session session ) throws Exception {
+                // STEP 1: Setup the listener, and check that the new nodes are not visible to the other session ...
+                SimpleListener listener = addListener(3); // we'll create 3 nodes ...
+                assertThat(listener.getActualEventCount(), is(0));
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                barrier.await();
 
-            // Create a listener to count the changes ...
-            SimpleListener listener = addListener(3); // we'll create 3 nodes ...
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 2: Make changes using a transaction, but do not commit the transaction ...
+                final TransactionManager txnMgr = getTransactionManager();
+                txnMgr.begin();
+                assertThat(listener.getActualEventCount(), is(0));
+                Node txnNode1 = session.getRootNode().addNode("txnNode1");
+                Node txnNode1a = txnNode1.addNode("txnNodeA");
+                assertThat(txnNode1a, is(notNullValue()));
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
+                session.save();
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
+                assertThat(listener.getActualEventCount(), is(0));
+                barrier.await();
 
-            // Check that the node is not visible to the other session ...
-            session.refresh(false);
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
+                // STEP 3: Wait for other session to verify that it can't see the new node we created but have not committed...
+                // Meanwhile, sleep a bit to let any incorrect events propagate through the system. Our listener still should
+                // not see the event, since we didn't commit ...
+                Thread.sleep(100L);
+                assertThat(listener.getActualEventCount(), is(0));
+                barrier.await();
 
-            // Start a transaction ...
-            final TransactionManager txnMgr = getTransactionManager();
-            txnMgr.begin();
-            assertThat(listener.getActualEventCount(), is(0));
-            Node txnNode1 = session.getRootNode().addNode("txnNode1");
-            Node txnNode1a = txnNode1.addNode("txnNodeA");
-            assertThat(txnNode1a, is(notNullValue()));
-            session.save();
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 4: Create another new node using this transaction ...
+                Node txnNode2 = session.getRootNode().addNode("txnNode2");
+                assertThat(txnNode2, is(notNullValue()));
+                session.save();
+                assertThat(listener.getActualEventCount(), is(0));
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+                barrier.await();
 
-            // Check that the node is not visible to the other session ...
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
-            session2.refresh(false);
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
+                // STEP 5: Wait for other session to verify that it can't see the new node we created but have not committed...
+                // Meanwhile, sleep a bit to let any incorrect events propagate through the system. Our listener still should
+                // not see the event, since we didn't commit ...
+                Thread.sleep(100L);
+                assertThat(listener.getActualEventCount(), is(0));
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+                barrier.await();
 
-            // sleep a bit to let any incorrect events propagate through the system ...
-            Thread.sleep(100L);
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 6: Commit the txn ...
+                txnMgr.commit();
+                barrier.await();
 
-            Node txnNode2 = session.getRootNode().addNode("txnNode2");
-            assertThat(txnNode2, is(notNullValue()));
-            session.save();
-            assertThat(listener.getActualEventCount(), is(0));
-            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
-            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+                // STEP 7: Verify the commit resulted in the things we expect ...
+                listener.waitForEvents();
+                nodeExists(session, "/", "txnNode1");
+                nodeExists(session, "/", "txnNode2");
+            }
+        };
 
-            // Check that the node is not visible to the other session ...
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
-            session2.refresh(false);
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
+        // THREAD 2 ...
+        SessionWorker worker2 = new SessionWorker(createSession(), barrier, completionBarrier, "thread 2") {
+            @Override
+            protected void execute( Session session ) throws Exception {
+                // STEP 1: Check that the new nodes are not visible to the other session ...
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                barrier.await();
 
-            // sleep a bit to let any incorrect events propagate through the system ...
-            Thread.sleep(100L);
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 2: Wait for changes to be made in the other transaction ...
+                Thread.sleep(50L);
+                barrier.await();
 
-            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
-            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+                // STEP 3: Check that we cannot see the new node created by the other session in the still-ongoing txn ...
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                session.refresh(false);
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                barrier.await();
 
-            // Now commit the transaction ...
-            txnMgr.commit();
-            listener.waitForEvents();
+                // STEP 4: Wait for changes to be made in the other transaction ...
+                Thread.sleep(50L);
+                barrier.await();
 
-            nodeExists(session, "/", "txnNode1");
-            nodeExists(session, "/", "txnNode2");
+                // STEP 5: Check that we cannot see the new node created by the other session in the still-ongoing txn ...
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                session.refresh(false);
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                barrier.await();
 
-            // Check that the node IS visible to the other session ...
-            nodeExists(session2, "/", "txnNode1");
-            nodeExists(session2, "/", "txnNode2");
-            session2.refresh(false);
-            nodeExists(session2, "/", "txnNode1");
-            nodeExists(session2, "/", "txnNode2");
+                // STEP 6: Wait for the transaction to be committed
+                Thread.sleep(50L);
+                barrier.await();
 
-        } finally {
-            session2.logout();
-        }
+                // STEP 7: Check that the nodes are now visible to this session ...
+                nodeExists(session, "/", "txnNode1");
+                nodeExists(session, "/", "txnNode2");
+                session.refresh(false);
+                nodeExists(session, "/", "txnNode1");
+                nodeExists(session, "/", "txnNode2");
+            }
+        };
+
+        new Thread(worker1).start();
+        new Thread(worker2).start();
+
+        // Wait for the threads to complete ...
+        completionBarrier.await();
     }
 
-    @FixFor( "MODE-1498" )
+    @FixFor( {"MODE-1498", "MODE-2202"} )
     @Test
-    public void shouldWorkWithUserDefinedTransactionsThatUseRollback() throws Exception {
+    public void shouldWorkWithUserDefinedTransactionsThatUseRollbackInSeparateThreads() throws Exception {
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        CyclicBarrier completionBarrier = new CyclicBarrier(3);
         session = createSession();
 
-        Session session2 = createSession();
-        try {
+        // THREAD 1 ...
+        SessionWorker worker1 = new SessionWorker(session, barrier, completionBarrier, "thread 1") {
+            @Override
+            protected void execute( Session session ) throws Exception {
+                // STEP 1: Setup the listener, and check that the new nodes are not visible to the other session ...
+                SimpleListener listener = addListener(3); // we'll create 3 nodes ...
+                assertThat(listener.getActualEventCount(), is(0));
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                barrier.await();
 
-            // Create a listener to count the changes ...
-            SimpleListener listener = addListener(3); // we'll create 3 nodes ...
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 2: Make changes using a transaction, but do not commit the transaction ...
+                final TransactionManager txnMgr = getTransactionManager();
+                txnMgr.begin();
+                assertThat(listener.getActualEventCount(), is(0));
+                Node txnNode1 = session.getRootNode().addNode("txnNode1");
+                Node txnNode1a = txnNode1.addNode("txnNodeA");
+                assertThat(txnNode1a, is(notNullValue()));
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
+                session.save();
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
+                assertThat(listener.getActualEventCount(), is(0));
+                barrier.await();
 
-            // Check that the node is not visible to the other session ...
-            session.refresh(false);
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
+                // STEP 3: Wait for other session to verify that it can't see the new node we created but have not committed...
+                // Meanwhile, sleep a bit to let any incorrect events propagate through the system. Our listener still should
+                // not see the event, since we didn't commit ...
+                Thread.sleep(100L);
+                assertThat(listener.getActualEventCount(), is(0));
+                barrier.await();
 
-            // Start a transaction ...
-            final TransactionManager txnMgr = getTransactionManager();
-            txnMgr.begin();
-            assertThat(listener.getActualEventCount(), is(0));
-            Node txnNode1 = session.getRootNode().addNode("txnNode1");
-            Node txnNode1a = txnNode1.addNode("txnNodeA");
-            assertThat(txnNode1a, is(notNullValue()));
-            session.save();
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 4: Create another new node using this transaction ...
+                Node txnNode2 = session.getRootNode().addNode("txnNode2");
+                assertThat(txnNode2, is(notNullValue()));
+                session.save();
+                assertThat(listener.getActualEventCount(), is(0));
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+                barrier.await();
 
-            // Check that the node is not visible to the other session ...
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
-            session2.refresh(false);
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
+                // STEP 5: Wait for other session to verify that it can't see the new node we created but have not committed...
+                // Meanwhile, sleep a bit to let any incorrect events propagate through the system. Our listener still should
+                // not see the event, since we didn't commit ...
+                Thread.sleep(100L);
+                assertThat(listener.getActualEventCount(), is(0));
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+                barrier.await();
 
-            // sleep a bit to let any incorrect events propagate through the system ...
-            Thread.sleep(100L);
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 6: Rollback the txn ...
+                txnMgr.rollback();
+                barrier.await();
 
-            Node txnNode2 = session.getRootNode().addNode("txnNode2");
-            assertThat(txnNode2, is(notNullValue()));
-            session.save();
-            assertThat(listener.getActualEventCount(), is(0));
-            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
-            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+                // STEP 7: Check that there were no events and that the nodes are not visible anymore ...
+                Thread.sleep(100L);
+                assertThat(listener.getActualEventCount(), is(0));
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(false));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
+                session.refresh(false);
+                assertThat(session.getRootNode().hasNode("txnNode1"), is(false));
+                assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
+            }
+        };
 
-            // Check that the node is not visible to the other session ...
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
-            session2.refresh(false);
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
+        // THREAD 2 ...
+        SessionWorker worker2 = new SessionWorker(createSession(), barrier, completionBarrier, "thread 2") {
+            @Override
+            protected void execute( Session session ) throws Exception {
+                // STEP 1: Check that the new nodes are not visible to the other session ...
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                barrier.await();
 
-            // sleep a bit to let any incorrect events propagate through the system ...
-            Thread.sleep(100L);
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 2: Wait for changes to be made in the other transaction ...
+                Thread.sleep(50L);
+                barrier.await();
 
-            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
-            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+                // STEP 3: Check that we cannot see the new node created by the other session in the still-ongoing txn ...
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                session.refresh(false);
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                barrier.await();
 
-            // Now commit the transaction ...
-            txnMgr.rollback();
+                // STEP 4: Wait for changes to be made in the other transaction ...
+                Thread.sleep(50L);
+                barrier.await();
 
-            // There should have been no events ...
-            Thread.sleep(100L);
-            assertThat(listener.getActualEventCount(), is(0));
+                // STEP 5: Check that we cannot see the new node created by the other session in the still-ongoing txn ...
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                session.refresh(false);
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                barrier.await();
 
-            // The nodes does not exist in the session because the session was saved and those changes were rolled back ...
-            assertThat(session.getRootNode().hasNode("txnNode1"), is(false));
-            assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
-            session.refresh(false);
-            assertThat(session.getRootNode().hasNode("txnNode1"), is(false));
-            assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
+                // STEP 6: Wait for the transaction to be rolled back ...
+                Thread.sleep(50L);
+                barrier.await();
 
-            // Check that the node IS NOT visible to the other session ...
-            session2.refresh(false);
-            nodeDoesNotExist(session2, "/", "txnNode1");
-            nodeDoesNotExist(session2, "/", "txnNode2");
+                // STEP 7: Check that the node IS NOT visible to this session ...
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+                session.refresh(false);
+                nodeDoesNotExist(session, "/", "txnNode1");
+                nodeDoesNotExist(session, "/", "txnNode2");
+            }
+        };
 
-        } finally {
-            session2.logout();
+        new Thread(worker1).start();
+        new Thread(worker2).start();
+
+        // Wait for the threads to complete ...
+        completionBarrier.await();
+    }
+
+    protected abstract class SessionWorker implements Runnable {
+
+        protected final CyclicBarrier barrier;
+        private final CyclicBarrier completionBarrier;
+        protected final JcrSession session;
+        private final String desc;
+
+        protected SessionWorker( JcrSession session,
+                                 CyclicBarrier barrier,
+                                 CyclicBarrier completionBarrier,
+                                 String desc ) {
+            this.barrier = barrier;
+            this.session = session;
+            this.completionBarrier = completionBarrier;
+            this.desc = desc;
         }
+
+        @Override
+        public void run() {
+            if (session == null) return;
+            if (print) System.out.println("Start " + desc);
+            try {
+                execute(session);
+                completionBarrier.await();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                session.logout();
+                if (print) System.out.println("Stop " + desc);
+            }
+        }
+
+        protected abstract void execute( Session session ) throws Exception;
     }
 
     @FixFor( "MODE-1828" )
