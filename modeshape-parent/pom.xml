@@ -339,7 +339,7 @@
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
         <version.failsafe.plugin>2.13</version.failsafe.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
-        <version.checkstyle.maven.plugin>2.10</version.checkstyle.maven.plugin>
+        <version.checkstyle.maven.plugin>2.12.1</version.checkstyle.maven.plugin>
 
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
@@ -1022,7 +1022,7 @@
                 <executions>
                    <execution>
                       <id>check-style</id>
-                      <phase>verify</phase>
+                      <phase>process-test-classes</phase>
                       <goals>
                          <goal>checkstyle</goal>
                       </goals>

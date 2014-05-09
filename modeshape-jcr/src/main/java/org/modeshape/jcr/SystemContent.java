@@ -55,7 +55,6 @@ import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.spi.index.IndexColumnDefinition;
 import org.modeshape.jcr.spi.index.IndexDefinition;
 import org.modeshape.jcr.spi.index.IndexDefinition.IndexKind;
-import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
@@ -1030,50 +1029,7 @@ public class SystemContent {
         return namespacesKey().withId("mode:namespaces-" + namespaceUri);
     }
 
-    /**
-     * Clean up the locks within the repository's system content. Any locks held by active sessions are extended/renewed, while
-     * those locks that are significantly expired are removed.
-     * 
-     * @param activeSessionIds the IDs of the sessions that are still active in this repository
-     */
-    public void cleanUpLocks( Set<String> activeSessionIds ) {
-        // Create a new expiration date ...
-        DateTimeFactory dates = context().getValueFactories().getDateFactory();
-        DateTime now = dates.create();
-        DateTime newExpiration = dates.create(now, RepositoryConfiguration.LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD);
-        DateTime expiry = dates.create(now, -RepositoryConfiguration.LOCK_EXPIRY_AGE_IN_MILLIS);
-
-        // Iterate over the locks ...
-        MutableCachedNode locksNode = mutableLocksNode();
-        for (ChildReference ref : locksNode.getChildReferences(system)) {
-            NodeKey key = ref.getKey();
-            CachedNode lockNode = system.getNode(key);
-            if (!booleans.create(first(lockNode, ModeShapeLexicon.IS_SESSION_SCOPED))) {
-                // It's not session-scoped, so continue ...
-                continue;
-            }
-            String lockingSessionId = strings.create(first(lockNode, ModeShapeLexicon.LOCKING_SESSION));
-            if (activeSessionIds.contains(lockingSessionId)) {
-                // Extend the lock ...
-                MutableCachedNode mutableLockNode = system.mutable(key);
-                Property prop = propertyFactory.create(ModeShapeLexicon.EXPIRATION_DATE, newExpiration);
-                mutableLockNode.setProperty(system, prop);
-            } else {
-                // It's not used by an active session in this process, but may be in another process.
-                // Check the age of the lock ...
-                DateTime expired = dates.create(first(lockNode, ModeShapeLexicon.EXPIRATION_DATE));
-                if (expired.isBefore(expiry)) {
-                    // The lock's expiration time is earlier than our limit, so it is expired and needs to be removed ...
-                    locksNode.removeChild(system, key);
-                    system.destroy(key);
-                }
-            }
-        }
-    }
-
-    void storeLock( JcrSession session,
-                    ModeShapeLock lock,
-                    DateTime expiration ) {
+    void storeLock( ModeShapeLock lock ) {
         MutableCachedNode locksNode = mutableLocksNode();
         Name name = names.create(lock.getLockToken());
         List<Property> properties = new ArrayList<Property>();
@@ -1085,8 +1041,8 @@ public class SystemContent {
         properties.add(propertyFactory.create(ModeShapeLexicon.IS_SESSION_SCOPED, lock.isSessionScoped()));
         // Locks are always created by sessions and then held by them unless explicitly removed later ...
         properties.add(propertyFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, true));
-        properties.add(propertyFactory.create(ModeShapeLexicon.LOCKING_SESSION, session.sessionId()));
-        properties.add(propertyFactory.create(ModeShapeLexicon.EXPIRATION_DATE, expiration));
+        properties.add(propertyFactory.create(ModeShapeLexicon.LOCKING_SESSION, lock.getLockingSessionId()));
+        properties.add(propertyFactory.create(ModeShapeLexicon.EXPIRATION_DATE, lock.getExpiryTime()));
         locksNode.createChild(system, lock.getLockKey(), name, properties);
     }
 

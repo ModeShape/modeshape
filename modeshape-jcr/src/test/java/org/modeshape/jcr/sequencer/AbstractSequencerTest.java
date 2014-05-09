@@ -220,7 +220,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
             createWaitingLatchIfNecessary(expectedPath, nodeSequencedLatches);
             logger.debug("Waiting for sequenced node at: " + expectedPath);
             CountDownLatch countDownLatch = nodeSequencedLatches.get(expectedPath);
-            assertTrue("Sequencing event not received", countDownLatch.await(waitTimeSeconds, TimeUnit.SECONDS));
+            countDownLatch.await(waitTimeSeconds, TimeUnit.SECONDS);
         }
         nodeSequencedLatches.remove(expectedPath);
         return sequencedNodes.remove(expectedPath);

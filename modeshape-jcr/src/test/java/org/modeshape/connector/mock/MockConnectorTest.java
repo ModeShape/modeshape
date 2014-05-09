@@ -773,7 +773,8 @@ public class MockConnectorTest extends SingleUseAbstractTest {
             // correctly cloned)
             fed2.addNode("federated2_1");
             ws1Session.save();
-            // Thread.sleep(1000L);
+            //sleep a bit to make sure the events which clear the ws cache have reached the other session
+            Thread.sleep(100L);
             assertNodeFound("/testRoot/fed2/federated2_1");
         } finally {
             ws1Session.logout();
