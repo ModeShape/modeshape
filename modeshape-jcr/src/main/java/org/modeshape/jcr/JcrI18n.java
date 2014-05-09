@@ -137,6 +137,7 @@ public final class JcrI18n {
     public static I18n errorWhileInitializingTheNamespaceRegistry;
     public static I18n errorCleaningUpLocks;
     public static I18n errorRefreshingLocks;
+    public static I18n lockNotFound;
     public static I18n cleaningUpLocks;
     public static I18n cleanedUpLocks;
     public static I18n invalidRelativePath;

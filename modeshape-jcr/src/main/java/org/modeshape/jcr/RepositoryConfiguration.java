@@ -162,7 +162,7 @@ public class RepositoryConfiguration {
      * The process of garbage collecting locks and binary values runs periodically, and this value controls how often it runs. The
      * value is currently set to 5 minutes.
      */
-    final static int LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD = 5;
+    private final static int LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD = 5;
     private final static TimeUnit LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
 
     /**
