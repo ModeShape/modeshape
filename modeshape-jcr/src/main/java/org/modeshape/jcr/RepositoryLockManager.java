@@ -1,7 +1,33 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
 package org.modeshape.jcr;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,11 +107,96 @@ class RepositoryLockManager implements ChangeSetListener {
             CachedNode locks = system.locksNode();
             for (ChildReference ref : locks.getChildReferences(systemCache)) {
                 CachedNode node = systemCache.getNode(ref);
+                if (node == null) {
+                    logger.warn(JcrI18n.lockNotFound, ref.getKey());
+                    continue;
+                }
                 ModeShapeLock lock = new ModeShapeLock(node, systemCache);
                 locksByNodeKey.put(lock.getLockedNodeKey(), lock);
             }
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingLocks, repository.name());
+        }
+    }
+
+    /**
+     * Clean up the locks within the repository's system content. Any locks held by active sessions are extended/renewed, while
+     * those locks that are significantly expired are removed.
+     *
+     * @param activeSessionIds the IDs of the sessions that are still active in this repository
+     */
+    protected void cleanupLocks( Set<String> activeSessionIds ) {
+        try {
+            ExecutionContext context = repository.context();
+
+            DateTimeFactory dates = context.getValueFactories().getDateFactory();
+            DateTime now = dates.create();
+            DateTime newExpiration = dates.create(now, RepositoryConfiguration.LOCK_EXTENSION_INTERVAL_IN_MILLIS);
+
+            PropertyFactory propertyFactory = context.getPropertyFactory();
+            SessionCache systemSession = repository.createSystemSession(context, false);
+            SystemContent systemContent = new SystemContent(systemSession);
+
+            Map<String, List<NodeKey>> lockedNodesByWorkspaceName = new HashMap<String, List<NodeKey>>();
+            // Iterate over the locks ...
+            MutableCachedNode locksNode = systemContent.mutableLocksNode();
+            for (ChildReference ref : locksNode.getChildReferences(systemSession)) {
+                NodeKey lockKey = ref.getKey();
+                CachedNode lockNode = systemSession.getNode(lockKey);
+                if (lockNode == null) {
+                    //it may happen that another thread has performed a session.logout which means the lock might have been removed
+                    continue;
+                }
+                ModeShapeLock lock = new ModeShapeLock(lockNode, systemSession);
+                NodeKey lockedNodeKey = lock.getLockedNodeKey();
+                if (lock.isSessionScoped() && activeSessionIds.contains(lock.getLockingSessionId())) {
+                    //for active session locks belonging to the sessions of this process, we want to extend the expiration date
+                    //so that other processes in a cluster can tell that this lock is still active
+                    MutableCachedNode mutableLockNode = systemSession.mutable(lockKey);
+                    Property prop = propertyFactory.create(ModeShapeLexicon.EXPIRATION_DATE, newExpiration);
+                    mutableLockNode.setProperty(systemSession, prop);
+                    //reflect the change in the expiry date in the internal map
+                    this.locksByNodeKey.replace(lockedNodeKey, lock.withExpiryTime(newExpiration));
+
+                    continue;
+                }
+
+                //if it's not an active session lock, we always check the expiry date
+                DateTime expirationDate = firstDate(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE, systemSession));
+                if (expirationDate.isBefore(now)) {
+                    //remove the lock from the system area
+                    systemContent.removeLock(lock);
+                    //register the target node which needs cleaning
+                    List<NodeKey> lockedNodes = lockedNodesByWorkspaceName.get(lock.getWorkspaceName());
+                    if (lockedNodes == null) {
+                        lockedNodes = new ArrayList<NodeKey>();
+                        lockedNodesByWorkspaceName.put(lock.getWorkspaceName(), lockedNodes);
+                    }
+                    lockedNodes.add(lockedNodeKey);
+                }
+            }
+            //persist all the changes to the locks from the system area
+            systemSession.save();
+
+            //update each of nodes which has been unlocked
+            for (String workspaceName : lockedNodesByWorkspaceName.keySet()) {
+                SessionCache internalSession = repository.repositoryCache().createSession(context, workspaceName, false);
+                for (NodeKey lockedNodeKey : lockedNodesByWorkspaceName.get(workspaceName)) {
+                    //clear the internal cache
+                    this.locksByNodeKey.remove(lockedNodeKey);
+
+                    CachedNode lockedNode = internalSession.getWorkspace().getNode(lockedNodeKey);
+                    if (lockedNode != null) {
+                        MutableCachedNode mutableLockedNode = internalSession.mutable(lockedNodeKey);
+                        mutableLockedNode.removeProperty(internalSession, JcrLexicon.LOCK_IS_DEEP);
+                        mutableLockedNode.removeProperty(internalSession, JcrLexicon.LOCK_OWNER);
+                        mutableLockedNode.unlock();
+                    }
+                }
+                internalSession.save();
+            }
+        } catch (Throwable t) {
+            logger.error(t, JcrI18n.errorCleaningUpLocks, repository.name());
         }
     }
 
@@ -165,13 +276,21 @@ class RepositoryLockManager implements ChangeSetListener {
         final ExecutionContext context = session.context();
         final String owner = ownerInfo != null ? ownerInfo : session.getUserID();
 
+        final DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
+        long expirationTimeInMillis = RepositoryConfiguration.LOCK_EXPIRY_AGE_IN_MILLIS;
+        if (timeoutHint > 0 && timeoutHint < Long.MAX_VALUE) {
+            expirationTimeInMillis = TimeUnit.MILLISECONDS.convert(timeoutHint, TimeUnit.SECONDS);
+        }
+        DateTime expirationDate = dateFactory.create().plus(expirationTimeInMillis, TimeUnit.MILLISECONDS);
+
         // Create a new lock ...
         SessionCache systemSession = repository.createSystemSession(context, false);
         SystemContent system = new SystemContent(systemSession);
         NodeKey nodeKey = node.getKey();
         NodeKey lockKey = generateLockKey(system.locksKey(), nodeKey);
         String token = generateLockToken();
-        ModeShapeLock lock = new ModeShapeLock(nodeKey, lockKey, session.workspaceName(), owner, token, isDeep, isSessionScoped);
+        ModeShapeLock lock = new ModeShapeLock(nodeKey, lockKey, session.workspaceName(), owner, token, isDeep, isSessionScoped,
+                                               session.sessionId(), expirationDate);
 
         if (isDeep) {
             NodeCache cache = session.cache();
@@ -193,13 +312,7 @@ class RepositoryLockManager implements ChangeSetListener {
 
         try {
             // Store the lock within the system area ...
-            final DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
-            long expirationTimeInMillis = RepositoryConfiguration.LOCK_EXPIRY_AGE_IN_MILLIS;
-            if (timeoutHint != Long.MAX_VALUE && timeoutHint > 1) {
-                expirationTimeInMillis = TimeUnit.MILLISECONDS.convert(timeoutHint, TimeUnit.SECONDS);
-            }
-            DateTime expirationDate = dateFactory.create().plus(expirationTimeInMillis, TimeUnit.MILLISECONDS);
-            system.storeLock(session, lock, expirationDate);
+            system.storeLock(lock);
 
             // Update the persistent node ...
             SessionCache lockingSession = session.spawnSessionCache(false);
@@ -380,6 +493,11 @@ class RepositoryLockManager implements ChangeSetListener {
         return repository.context().getValueFactories().getBooleanFactory().create(property.getFirstValue());
     }
 
+    protected final DateTime firstDate( Property property ) {
+        if (property == null) return null;
+        return repository.context().getValueFactories().getDateFactory().create(property.getFirstValue());
+    }
+   
     final ModeShapeLock findLockByToken(String token) {
         assert token != null;
         for (ModeShapeLock lock : locksByNodeKey.values()) {
@@ -402,6 +520,8 @@ class RepositoryLockManager implements ChangeSetListener {
         private final String lockToken;
         private final boolean deep;
         private final boolean sessionScoped;
+        private final String lockingSessionId;
+        private final DateTime expiryTime;
 
         protected ModeShapeLock( CachedNode lockNode,
                                  NodeCache cache ) {
@@ -412,6 +532,8 @@ class RepositoryLockManager implements ChangeSetListener {
             this.deep = firstBoolean(lockNode.getProperty(JcrLexicon.LOCK_IS_DEEP, cache));
             this.sessionScoped = firstBoolean(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED, cache));
             this.lockToken = firstString(lockNode.getProperty(ModeShapeLexicon.LOCK_TOKEN, cache));
+            this.lockingSessionId = firstString(lockNode.getProperty(ModeShapeLexicon.LOCKING_SESSION, cache));
+            this.expiryTime = firstDate(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE, cache));
         }
 
         protected ModeShapeLock( NodeKey lockKey,
@@ -423,6 +545,8 @@ class RepositoryLockManager implements ChangeSetListener {
             this.deep = firstBoolean(properties.get(JcrLexicon.LOCK_IS_DEEP));
             this.sessionScoped = firstBoolean(properties.get(ModeShapeLexicon.IS_SESSION_SCOPED));
             this.lockToken = firstString(properties.get(ModeShapeLexicon.LOCK_TOKEN));
+            this.lockingSessionId = firstString(properties.get(ModeShapeLexicon.LOCKING_SESSION));
+            this.expiryTime = firstDate(properties.get(ModeShapeLexicon.EXPIRATION_DATE));
         }
 
         protected ModeShapeLock( NodeKey lockedNodeKey,
@@ -431,7 +555,9 @@ class RepositoryLockManager implements ChangeSetListener {
                                  String lockOwner,
                                  String lockToken,
                                  boolean deep,
-                                 boolean sessionScoped ) {
+                                 boolean sessionScoped,
+                                 String lockingSessionId,
+                                 DateTime expiryTime ) {
             this.lockedNodeKey = lockedNodeKey;
             this.lockKey = lockKey;
             this.lockOwner = lockOwner;
@@ -439,6 +565,13 @@ class RepositoryLockManager implements ChangeSetListener {
             this.deep = deep;
             this.sessionScoped = sessionScoped;
             this.lockToken = lockToken;
+            this.lockingSessionId = lockingSessionId;
+            this.expiryTime = expiryTime;
+        }
+
+        protected ModeShapeLock withExpiryTime(DateTime expiryTime) {
+            return new ModeShapeLock(this.lockedNodeKey, this.lockKey, this.workspaceName, this.lockOwner, this.lockToken,
+                                     this.deep, this.sessionScoped, this.lockingSessionId, expiryTime);
         }
 
         public boolean isLive() {
@@ -472,6 +605,10 @@ class RepositoryLockManager implements ChangeSetListener {
         public String getLockToken() {
             return lockToken;
         }
+
+        public String getLockingSessionId() { return lockingSessionId; }
+
+        public DateTime getExpiryTime() { return expiryTime; }
 
         @SuppressWarnings( "synthetic-access" )
         public Lock lockFor( final JcrSession session ) throws RepositoryException {
@@ -530,7 +667,7 @@ class RepositoryLockManager implements ChangeSetListener {
 
                 @Override
                 public long getSecondsRemaining() {
-                    return isLockOwningSession() ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+                    return isLockOwningSession() ? Long.MAX_VALUE : Long.MIN_VALUE;
                 }
 
                 @Override

@@ -32,6 +32,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -644,48 +645,88 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertThat(repository.runningState().activeSessionCount(), is(0));
     }
 
-    /**
-     * This test takes about 10 minutes to run, and is therefore @Ignore'd.
-     * 
-     * @throws Exception
-     */
-    @Ignore
     @Test
-    public void shouldCleanUpLocksFromDeadSessions() throws Exception {
-        String lockedNodeName = "lockedNode";
-        JcrSession locker = repository.login();
+    @FixFor( "MODE-2190" )
+    public void shouldCleanupLocks() throws Exception {
+        JcrSession locker1 = repository.login();
 
         // Create a node to lock
-        javax.jcr.Node lockedNode = locker.getRootNode().addNode(lockedNodeName);
-        lockedNode.addMixin("mix:lockable");
-        locker.save();
+        javax.jcr.Node sessionLockedNode1 = locker1.getRootNode().addNode("sessionLockedNode1");
+        sessionLockedNode1.addMixin("mix:lockable");
+
+        javax.jcr.Node openLockedNode = locker1.getRootNode().addNode("openLockedNode");
+        openLockedNode.addMixin("mix:lockable");
+        locker1.save();
 
         // Create a session-scoped lock (not deep)
-        locker.getWorkspace().getLockManager().lock(lockedNode.getPath(), false, true, 1L, "me");
-        assertThat(lockedNode.isLocked(), is(true));
+        locker1.getWorkspace().getLockManager().lock(sessionLockedNode1.getPath(), false, true, 1, "me");
+        assertLocking(locker1, "/sessionLockedNode1", true);
 
-        Session reader = repository.login();
-        javax.jcr.Node readerNode = (javax.jcr.Node)reader.getItem("/" + lockedNodeName);
-        assertThat(readerNode.isLocked(), is(true));
+        // Create an open-scoped lock (not deep)
+        locker1.getWorkspace().getLockManager().lock(openLockedNode.getPath(), false, false, 1, "me");
+        assertLocking(locker1, "/openLockedNode", true);
 
-        // No locks should have changed yet.
+        JcrSession locker2 = repository.login();
+
+        javax.jcr.Node sessionLockedNode2 = locker2.getRootNode().addNode("sessionLockedNode2");
+        sessionLockedNode2.addMixin("mix:lockable");
+        locker2.save();
+
+        locker2.getWorkspace().getLockManager().lock(sessionLockedNode2.getPath(), false, true, 1, "me");
+        assertEquals(Long.MAX_VALUE, locker2.getWorkspace().getLockManager().getLock("/sessionLockedNode2").getSecondsRemaining());
+        assertEquals(Long.MIN_VALUE, locker1.getWorkspace().getLockManager().getLock("/sessionLockedNode2").getSecondsRemaining());
+
+        assertLocking(locker2, "/openLockedNode", true);
+        assertLocking(locker2, "/sessionLockedNode1", true);
+        assertLocking(locker2, "/sessionLockedNode2", true);
+
+        javax.jcr.Session reader = repository.login();
+
+        assertLocking(locker1, "/openLockedNode", true);
+        assertLocking(locker1, "/sessionLockedNode1", true);
+        assertLocking(locker1, "/sessionLockedNode2", true);
+
+        assertLocking(locker2, "/openLockedNode", true);
+        assertLocking(locker2, "/sessionLockedNode1", true);
+        assertLocking(locker2, "/sessionLockedNode2", true);
+
+        assertLocking(reader, "/openLockedNode", true);
+        assertLocking(reader, "/sessionLockedNode1", true);
+        assertLocking(reader, "/sessionLockedNode2", true);
+
+        //remove the 1st locking session internally, as if it had terminated unexpectedly
+        repository.runningState().removeSession(locker1);
+        //make sure the open lock also expires
+        Thread.sleep(1001);
+        // The locker1 thread should be inactive and both the session lock and the open lock cleaned up
         repository.runningState().cleanUpLocks();
-        assertThat(lockedNode.isLocked(), is(true));
-        assertThat(readerNode.isLocked(), is(true));
 
-        /*       
-         * Simulate the GC cleaning up the session and it being purged from the activeSessions() map.
-         * This can't really be tested in a consistent way due to a lack of specificity around when
-         * the garbage collector runs. The @Ignored test above does cause a GC sweep on by computer and
-         * confirms that the code works in principle. A different chicken dance may be required to
-         * fully test this on a different computer.
-         */
-        repository.runningState().removeSession(locker);
-        Thread.sleep(RepositoryConfiguration.LOCK_EXTENSION_INTERVAL_IN_MILLIS + 100);
+        assertLocking(locker1, "/openLockedNode", false);
+        assertLocking(locker1, "/sessionLockedNode1", false);
+        assertLocking(locker1, "/sessionLockedNode2", true);
 
-        // The locker thread should be inactive and the lock cleaned up
-        repository.runningState().cleanUpLocks();
-        assertThat(readerNode.isLocked(), is(false));
+        assertLocking(locker2, "/openLockedNode", false);
+        assertLocking(locker2, "/sessionLockedNode1", false);
+        assertLocking(locker2, "/sessionLockedNode2", true);
+
+        assertLocking(reader, "/openLockedNode", false);
+        assertLocking(reader, "/sessionLockedNode1", false);
+        assertLocking(reader, "/sessionLockedNode2", true);
+
+        assertEquals(Long.MAX_VALUE, locker2.getWorkspace().getLockManager().getLock("/sessionLockedNode2").getSecondsRemaining());
+    }
+
+    private void assertLocking( Session session, String path, boolean locked ) throws Exception {
+        Node node = session.getNode(path);
+        if (locked) {
+            assertTrue(node.isLocked());
+            assertTrue(node.hasProperty(JcrLexicon.LOCK_IS_DEEP.getString()));
+            assertTrue(node.hasProperty(JcrLexicon.LOCK_OWNER.getString()));
+        } else {
+            assertFalse(node.isLocked());
+            assertFalse(node.hasProperty(JcrLexicon.LOCK_IS_DEEP.getString()));
+            assertFalse(node.hasProperty(JcrLexicon.LOCK_OWNER.getString()));
+        }
     }
 
     @Test
