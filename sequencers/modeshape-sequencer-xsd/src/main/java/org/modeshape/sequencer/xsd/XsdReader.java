@@ -27,6 +27,7 @@ import static org.modeshape.sequencer.sramp.SrampLexicon.DESCRIPTION;
 import static org.modeshape.sequencer.xsd.XsdLexicon.IMPORT;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -74,6 +75,7 @@ import org.eclipse.xsd.util.XSDParser;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.SizeMeasuringInputStream;
 import org.modeshape.common.util.SizeMeasuringReader;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.sramp.AbstractResolvingReader;
 import org.modeshape.sequencer.sramp.SrampLexicon;
@@ -104,6 +106,29 @@ public class XsdReader extends AbstractResolvingReader {
     public static final SymbolSpace ATTRIBUTE_GROUP_DEFINITIONS = new SymbolSpace("AttributeGroupDeclarations");
     public static final SymbolSpace MODEL_GROUP_DEFINITIONS = new SymbolSpace("ModelGroupDeclarations");
     public static final SymbolSpace IDENTITY_CONSTRAINT_DEFINITIONS = new SymbolSpace("IdentityConstraintDeclarations");
+
+    /**
+     * A set of attribute names which should be ignored when/if they appear without a schema
+     */
+    private static final Set<String> IGNORED_ATTRIBUTES_IMPORT = removePrefix(XsdLexicon.NAMESPACE, XsdLexicon.SCHEMA_LOCATION);
+    private static final Set<String> IGNORED_ATTRIBUTES_INCLUDE = removePrefix(XsdLexicon.SCHEMA_LOCATION);
+    private static final Set<String> IGNORED_ATTRIBUTES_REDEFINE = removePrefix(XsdLexicon.SCHEMA_LOCATION);
+    private static final Set<String> IGNORED_ATTRIBUTES_SIMPLE_TYPE_DEF = removePrefix(XsdLexicon.NAMESPACE, XsdLexicon.NC_NAME);
+    private static final Set<String> IGNORED_ATTRIBUTES_COMPLEX_TYPE_DEF = removePrefix(XsdLexicon.NAMESPACE,
+                                                                                     XsdLexicon.BASE_TYPE_NAME,
+                                                                                     XsdLexicon.BASE_TYPE_NAMESPACE,
+                                                                                     XsdLexicon.BLOCK,
+                                                                                     XsdLexicon.FINAL,
+                                                                                     XsdLexicon.ABSTRACT, XsdLexicon.MIXED);
+    private static final Set<String> IGNORED_ATTRIBUTES_ELEMENT_DECL = removePrefix(XsdLexicon.TYPE_NAME, XsdLexicon.TYPE_NAMESPACE,
+                                                                                XsdLexicon.TYPE_REFERENCE, XsdLexicon.FORM,
+                                                                                XsdLexicon.FINAL, XsdLexicon.BLOCK);
+    private static final Set<String> IGNORED_ATTRIBUTES_ATTR_DECL = removePrefix(XsdLexicon.TYPE_NAME, XsdLexicon.TYPE_NAMESPACE);
+    private static final Set<String> IGNORED_ATTRIBUTES_COMPLEX_TYPE_CONTENT = removePrefix(XsdLexicon.METHOD);
+    private static final Set<String> IGNORED_ATTRIBUTES_ATTR_GROUP_DEF = removePrefix(XsdLexicon.REF, XsdLexicon.NC_NAME,
+                                                                                   XsdLexicon.NAMESPACE);
+    private static final Set<String> IGNORED_ATTRIBUTES_WILDCARD = removePrefix(XsdLexicon.NAMESPACE, XsdLexicon.PROCESS_CONTENTS);
+    private static final Set<String> IGNORED_ATTRIBUTES_ATTR_USE = removePrefix(XsdLexicon.USE);
 
     public XsdReader( Sequencer.Context context ) {
         super(context);
@@ -177,7 +202,7 @@ public class XsdReader extends AbstractResolvingReader {
         @SuppressWarnings( "unchecked" )
         List<XSDAnnotation> annotations = schema.getAnnotations();
         processAnnotations(annotations, rootNode);
-        processNonSchemaAttributes(schema, rootNode);
+        processNonSchemaAttributes(schema, rootNode, Collections.<String>emptySet());
 
         // Parse the objects ...
         for (EObject obj : schema.eContents()) {
@@ -212,7 +237,7 @@ public class XsdReader extends AbstractResolvingReader {
         Node importNode = parentNode.addNode(IMPORT, IMPORT);
         importNode.setProperty(XsdLexicon.NAMESPACE, xsdImport.getNamespace());
         importNode.setProperty(XsdLexicon.SCHEMA_LOCATION, xsdImport.getSchemaLocation());
-        processNonSchemaAttributes(xsdImport, importNode);
+        processNonSchemaAttributes(xsdImport, importNode, IGNORED_ATTRIBUTES_IMPORT);
     }
 
     protected void processInclude( XSDInclude xsdInclude,
@@ -220,7 +245,7 @@ public class XsdReader extends AbstractResolvingReader {
         logger.debug("Include: '{0}' ", xsdInclude.getSchemaLocation());
         Node includeNode = parentNode.addNode(XsdLexicon.INCLUDE, XsdLexicon.INCLUDE);
         includeNode.setProperty(XsdLexicon.SCHEMA_LOCATION, xsdInclude.getSchemaLocation());
-        processNonSchemaAttributes(xsdInclude, includeNode);
+        processNonSchemaAttributes(xsdInclude, includeNode, IGNORED_ATTRIBUTES_INCLUDE);
     }
 
     protected void processRedefine( XSDRedefine redefine,
@@ -228,7 +253,7 @@ public class XsdReader extends AbstractResolvingReader {
         logger.debug("Include: '{0}' ", redefine.getSchemaLocation());
         Node redefineNode = parentNode.addNode(XsdLexicon.REDEFINE, XsdLexicon.REDEFINE);
         redefineNode.setProperty(XsdLexicon.SCHEMA_LOCATION, redefine.getSchemaLocation());
-        processNonSchemaAttributes(redefine, redefineNode);
+        processNonSchemaAttributes(redefine, redefineNode, IGNORED_ATTRIBUTES_REDEFINE);
     }
 
     protected void processSimpleTypeDefinition( XSDSimpleTypeDefinition type,
@@ -245,7 +270,7 @@ public class XsdReader extends AbstractResolvingReader {
             registerForSymbolSpace(TYPE_DEFINITIONS, type.getTargetNamespace(), type.getName(), typeNode.getIdentifier());
         }
         processTypeFacets(type, typeNode, type.getBaseType());
-        processNonSchemaAttributes(type, typeNode);
+        processNonSchemaAttributes(type, typeNode, IGNORED_ATTRIBUTES_SIMPLE_TYPE_DEF);
     }
 
     protected void processTypeFacets( XSDSimpleTypeDefinition type,
@@ -342,7 +367,7 @@ public class XsdReader extends AbstractResolvingReader {
         processComplexTypeContent(type.getContent(), typeNode);
 
         processAnnotation(type.getAnnotation(), typeNode);
-        processNonSchemaAttributes(type, typeNode);
+        processNonSchemaAttributes(type, typeNode, IGNORED_ATTRIBUTES_COMPLEX_TYPE_DEF);
     }
 
     protected Node processElementDeclaration( XSDElementDeclaration decl,
@@ -401,7 +426,7 @@ public class XsdReader extends AbstractResolvingReader {
         processEnumerators(blocks, declarationNode, XsdLexicon.BLOCK);
 
         processAnnotation(decl.getAnnotation(), declarationNode);
-        processNonSchemaAttributes(type, declarationNode);
+        processNonSchemaAttributes(type, declarationNode, IGNORED_ATTRIBUTES_ELEMENT_DECL);
         return declarationNode;
     }
 
@@ -428,7 +453,7 @@ public class XsdReader extends AbstractResolvingReader {
             attributeDeclarationNode.setProperty(XsdLexicon.TYPE_NAMESPACE, type.getTargetNamespace());
         }
         processAnnotation(decl.getAnnotation(), attributeDeclarationNode);
-        processNonSchemaAttributes(type, attributeDeclarationNode);
+        processNonSchemaAttributes(type, attributeDeclarationNode, IGNORED_ATTRIBUTES_ATTR_DECL);
         return attributeDeclarationNode;
     }
 
@@ -468,7 +493,7 @@ public class XsdReader extends AbstractResolvingReader {
         }
         XSDWildcard wildcard = owner.getAttributeWildcard();
         processWildcard(wildcard, parentNode);
-        processNonSchemaAttributes(owner, parentNode);
+        processNonSchemaAttributes(owner, parentNode, IGNORED_ATTRIBUTES_COMPLEX_TYPE_CONTENT);
     }
 
     protected void processParticle( XSDParticle content,
@@ -505,7 +530,7 @@ public class XsdReader extends AbstractResolvingReader {
             return null;
         }
         XSDModelGroup group = defn.getModelGroup();
-        processNonSchemaAttributes(defn, parentNode);
+        processNonSchemaAttributes(defn, parentNode, Collections.<String>emptySet());
         return processModelGroup(group, parentNode);
     }
 
@@ -523,7 +548,7 @@ public class XsdReader extends AbstractResolvingReader {
         for (XSDParticle particle : particles) {
             processParticle(particle, childNode);
         }
-        processNonSchemaAttributes(group, childNode);
+        processNonSchemaAttributes(group, childNode, Collections.<String>emptySet());
         return childNode;
     }
 
@@ -597,7 +622,7 @@ public class XsdReader extends AbstractResolvingReader {
             }
         }
         processAnnotation(defn.getAnnotation(), attributeGroupNode);
-        processNonSchemaAttributes(defn, attributeGroupNode);
+        processNonSchemaAttributes(defn, attributeGroupNode, IGNORED_ATTRIBUTES_ATTR_GROUP_DEF);
     }
 
     protected Node processWildcard( XSDWildcard wildcard,
@@ -628,7 +653,7 @@ public class XsdReader extends AbstractResolvingReader {
             anyAttributeNode.setProperty(XsdLexicon.PROCESS_CONTENTS, processContents.getLiteral());
         }
         processAnnotation(wildcard.getAnnotation(), anyAttributeNode);
-        processNonSchemaAttributes(wildcard, anyAttributeNode);
+        processNonSchemaAttributes(wildcard, anyAttributeNode, IGNORED_ATTRIBUTES_WILDCARD);
         return anyAttributeNode;
     }
 
@@ -639,11 +664,12 @@ public class XsdReader extends AbstractResolvingReader {
         if (use.getUse() != null) {
             attributeDeclaration.setProperty(XsdLexicon.USE, use.getUse().getLiteral());
         }
-        processNonSchemaAttributes(use, attributeDeclaration);
+        processNonSchemaAttributes(use, attributeDeclaration, IGNORED_ATTRIBUTES_ATTR_USE);
     }
 
     protected void processNonSchemaAttributes( XSDConcreteComponent component,
-                                               Node node ) throws RepositoryException {
+                                               Node node,
+                                               Set<String> excludeAttributes) throws RepositoryException {
         if (component == null) {
             return;
         }
@@ -666,6 +692,9 @@ public class XsdReader extends AbstractResolvingReader {
             if (!XsdLexicon.Namespace.URI.equals(namespaceUri)) {
                 // Record any attribute that is not in the XSD namespace ...
                 String localName = attribute.getLocalName();
+                if (excludeAttributes.contains(localName)) {
+                    continue;
+                }
                 String value = attribute.getNodeValue();
                 if (value == null) continue;
                 if (namespaceUri != null) {
@@ -832,5 +861,19 @@ public class XsdReader extends AbstractResolvingReader {
         if (enumerator != null && enumerator.getLiteral() != null) {
             node.setProperty(propertyName, enumerator.getLiteral());
         }
+    }
+
+    protected static Set<String> removePrefix( String... attributeNames ) {
+        if (attributeNames.length == 0) {
+            return Collections.emptySet();
+        }
+        Set<String> result = new HashSet<String>(attributeNames.length);
+        for (String attributeName : attributeNames) {
+            if (!StringUtil.isBlank(attributeName) && attributeName.contains(":")) {
+                attributeName = attributeName.substring(attributeName.indexOf(":") + 1);
+            }
+            result.add(attributeName);
+        }
+        return result;
     }
 }
