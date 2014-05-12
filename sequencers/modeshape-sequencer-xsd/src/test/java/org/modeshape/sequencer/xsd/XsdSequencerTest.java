@@ -3,7 +3,7 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
@@ -25,8 +25,10 @@
 package org.modeshape.sequencer.xsd;
 
 import javax.jcr.Node;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -44,7 +46,7 @@ public class XsdSequencerTest extends AbstractSequencerTest {
         assertSequencedSuccessfully("stockQuote.xsd");
     }
 
-    private void assertSequencedSuccessfully( String filename ) throws Exception {
+    private Node assertSequencedSuccessfully( String filename ) throws Exception {
         int pathSeparatorIndex = filename.lastIndexOf("/");
         String nodeName = pathSeparatorIndex != -1 ? filename.substring(pathSeparatorIndex + 1) : filename;
 
@@ -55,6 +57,8 @@ public class XsdSequencerTest extends AbstractSequencerTest {
         assertCreatedBySessionUser(outputNode, session);
         assertEquals(XsdLexicon.SCHEMA_DOCUMENT, outputNode.getPrimaryNodeType().getName());
         assertTrue(outputNode.getNodes().getSize() > 0);
+
+        return outputNode;
     }
 
     @Test
@@ -88,8 +92,12 @@ public class XsdSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    @FixFor("MODE-2183")
     public void shouldBeAbleToParseXsdFromDefinitiveXmlSchemaExampleChapter04ord1() throws Exception {
-        assertSequencedSuccessfully("definitiveXmlSchema/chapter04ord1.xsd");
+        final Node outputNode = assertSequencedSuccessfully("definitiveXmlSchema/chapter04ord1.xsd");
+        final Node includeNode = outputNode.getNode(XsdLexicon.INCLUDE);
+        assertThat(includeNode.hasProperty(XsdLexicon.SCHEMA_LOCATION), is(true));
+        assertThat(includeNode.hasProperty("schemaLocation"), is(false));
     }
 
     @Test
@@ -148,8 +156,16 @@ public class XsdSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
-    @FixFor("MODE-1464")
+    @FixFor({"MODE-1464", "MODE-2183"})
     public void shouldBeAbleToParseUnsignedLong() throws Exception {
-        assertSequencedSuccessfully("unsigned_long.xsd");
+        final Node outputNode = assertSequencedSuccessfully("unsigned_long.xsd");
+
+        final Node includeNode = outputNode.getNode(XsdLexicon.IMPORT);
+        assertThat(includeNode.hasProperty(XsdLexicon.SCHEMA_LOCATION), is(true));
+        assertThat(includeNode.hasProperty("schemaLocation"), is(false));
+
+        final Node complexType = outputNode.getNode("openAttrs");
+        assertThat(complexType.hasProperty(XsdLexicon.MIXED), is(true));
+        assertThat(complexType.hasProperty("mixed"), is(false));
     }
 }
