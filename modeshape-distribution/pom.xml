@@ -155,7 +155,7 @@
                     <dependency>
                         <groupId>org.jboss.as</groupId>
                         <artifactId>jboss-as-controller</artifactId>
-                        <version>${version.org.jboss.as}</version>
+                        <version>${version.org.jboss.eap}</version>
                         <scope>compile</scope>
                     </dependency>
                 </dependencies>

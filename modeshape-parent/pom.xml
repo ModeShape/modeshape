@@ -233,7 +233,6 @@
         <version.org.jmock>2.6.0</version.org.jmock>
         <version.org.springframework.webmvc>2.5.2</version.org.springframework.webmvc>
         <version.org.springframework.mock>2.0.8</version.org.springframework.mock>
-        <version.org.jboss.bom.jboss-javaee-6.0-with-tools>1.0.7.Final</version.org.jboss.bom.jboss-javaee-6.0-with-tools>
         <version.commons-naming.commons-naming-core>20031116.223527</version.commons-naming.commons-naming-core>
         <version.org.apache-extras.cassandra-jdbc>1.2.5</version.org.apache-extras.cassandra-jdbc>
         <version.org.apache.cassandra.cassandra-all>1.2.0</version.org.apache.cassandra.cassandra-all>
@@ -283,8 +282,10 @@
         <!--
              JBOSS AS/EAP constants
          -->
-        <!--Version of the artifacts (API) needed by the AS7 subsystem and provided as part of EAP-->
-        <version.org.jboss.as>7.3.1.Final-redhat-3</version.org.jboss.as>
+        <!--Version of the artifacts (API) needed by the EAP subsystem and provided as part of EAP-->
+        <version.org.jboss.eap>7.3.1.Final-redhat-3</version.org.jboss.eap>
+        <version.org.jboss.eap.bom>6.2.1.GA</version.org.jboss.eap.bom>
+
         <!--Properties which must be used when installing locally an EAP ZIP distribution -->
         <jboss.eap.groupId>org.jboss.as</jboss.eap.groupId>
         <jboss.eap.artifactId>jboss-eap</jboss.eap.artifactId>
@@ -2063,25 +2064,25 @@
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-controller</artifactId>
-                <version>${version.org.jboss.as}</version>
+                <version>${version.org.jboss.eap}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-naming</artifactId>
-                <version>${version.org.jboss.as}</version>
+                <version>${version.org.jboss.eap}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-clustering-jgroups</artifactId>
-                <version>${version.org.jboss.as}</version>
+                <version>${version.org.jboss.eap}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-subsystem-test-framework</artifactId>
-                <version>${version.org.jboss.as}</version>
+                <version>${version.org.jboss.eap}</version>
                 <scope>test</scope>
             </dependency>
 
