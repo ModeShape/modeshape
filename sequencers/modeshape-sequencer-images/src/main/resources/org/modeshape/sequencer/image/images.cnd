@@ -25,10 +25,6 @@
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
-
-/**
- * Mixin that defines the metadata for an image
- */
 [image:metadata] > nt:unstructured, mix:mimeType
   - image:formatName (string) mandatory
     < 'JPEG', 'GIF', 'PNG', 'BMP', 'PCX', 'IFF', 'RAS', 'PBM', 'PGM', 'PPM', 'PSD', 'TIFF'
