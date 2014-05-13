@@ -196,6 +196,7 @@ public class Sequencers implements ChangeSetListener {
 
         // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
         Session session = null;
+        List<Sequencer> initialized = new ArrayList<>();
         try {
             // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
             session = repository.loginInternalSession();
@@ -208,7 +209,7 @@ public class Sequencers implements ChangeSetListener {
             }
 
             // Initialize each sequencer using the supplied session ...
-            for (Iterator<Map.Entry<UUID, Sequencer>> sequencersIterator = sequencersById.entrySet().iterator(); sequencersIterator.hasNext();) {
+            for (Iterator<Map.Entry<String, Sequencer>> sequencersIterator = sequencersByName.entrySet().iterator(); sequencersIterator.hasNext();) {
                 Sequencer sequencer = sequencersIterator.next().getValue();
                 try {
                     sequencer.initialize(registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
@@ -220,12 +221,17 @@ public class Sequencers implements ChangeSetListener {
                         LOGGER.debug("Successfully initialized sequencer '{0}' in repository '{1}'", sequencer.getName(),
                                      repository.name());
                     }
+                    initialized.add(sequencer);
                 } catch (Throwable t) {
                     if (t.getCause() != null) {
                         t = t.getCause();
                     }
                     repository.error(t, JcrI18n.unableToInitializeSequencer, sequencer, repository.name(), t.getMessage());
-                    sequencersIterator.remove();
+                    try {
+                        sequencersIterator.remove();
+                    } finally {
+                        sequencersById.remove(sequencer.getUniqueId());
+                    }
                 }
             }
             this.initialized = true;
@@ -236,6 +242,15 @@ public class Sequencers implements ChangeSetListener {
                 session.logout();
             }
         }
+        assert allSequencersInitialized(initialized);
+    }
+
+    private boolean allSequencersInitialized( Collection<Sequencer> initialized ) {
+        assert initialized.size() == sequencersByName.size();
+        for (Sequencer sequencer : sequencersByName.values()) {
+            if (!initialized.contains(sequencer)) return false;
+        }
+        return true;
     }
 
     /**
