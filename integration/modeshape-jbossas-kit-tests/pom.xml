@@ -18,19 +18,11 @@
     </properties>
     <dependencyManagement>
         <dependencies>
-            <!-- Define the version of JBoss' Java EE 6 APIs we want to import.
-                  Any dependencies from org.jboss.spec will have their version defined by this
-                  BOM -->
-            <!-- JBoss distributes a complete set of Java EE 6 APIs including
-                  a Bill of Materials (BOM). A BOM specifies the versions of a "stack" (or
-                  a collection) of artifacts. We use this here so that we always get the correct
-                  versions of artifacts. Here we use the jboss-javaee-6.0-with-tools stack
-                  (you can read this as the JBoss stack of the Java EE 6 APIs, with some extras
-                  tools for your project, such as Arquillian for testing) -->
+            <!--The EAP BOM-->
             <dependency>
-                <groupId>org.jboss.bom</groupId>
+                <groupId>org.jboss.bom.eap</groupId>
                 <artifactId>jboss-javaee-6.0-with-tools</artifactId>
-                <version>${version.org.jboss.bom.jboss-javaee-6.0-with-tools}</version>
+                <version>${version.org.jboss.eap.bom}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

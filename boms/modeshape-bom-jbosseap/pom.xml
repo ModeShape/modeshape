@@ -56,7 +56,7 @@
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
         <jcr.version>2.0</jcr.version>
-        <version.org.eap.bom>6.1.0-redhat-1</version.org.eap.bom>
+        <version.org.jboss.eap.bom>6.2.1.GA</version.org.jboss.eap.bom>
     </properties>
 
     <!--
@@ -90,7 +90,7 @@
             <dependency>
                 <groupId>org.jboss.bom.eap</groupId>
                 <artifactId>jboss-javaee-6.0-with-tools</artifactId>
-                <version>${version.org.eap.bom}</version>
+                <version>${version.org.jboss.eap.bom}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -98,7 +98,7 @@
             <dependency>
                 <groupId>org.jboss.bom.eap</groupId>
                 <artifactId>jboss-javaee-6.0-with-logging</artifactId>
-                <version>${version.org.eap.bom}</version>
+                <version>${version.org.jboss.eap.bom}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

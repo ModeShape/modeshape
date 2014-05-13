@@ -56,16 +56,14 @@
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
         <jcr.version>2.0</jcr.version>
 
-        <!--//TODO author=Horia Chiorean date=1/8/14 description=The following version props should not be here -->
-
-        <slf4j.api.version>1.6.1</slf4j.api.version>
-        <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
-        <log4j.version>1.2.16</log4j.version>
-        <logback.version>0.9.29</logback.version>
-        <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
-        <resteasy.version>2.3.6.Final</resteasy.version>
+        <slf4j.api.version>1.7.2</slf4j.api.version>
+        <slf4j.log4j.version>1.7.2</slf4j.log4j.version>
+        <log4j.version>1.2.17</log4j.version>
+        <logback.version>1.0.9</logback.version>
+        <sun.xml.bind.jaxbimpl.version>2.2.5</sun.xml.bind.jaxbimpl.version>
+        <resteasy.version>2.3.7.Final</resteasy.version>
         <jettison.version>1.3.1</jettison.version>
-        <httpclient.version>4.1.2</httpclient.version>
+        <httpclient.version>4.2.1</httpclient.version>
     </properties>
 
     <!--
@@ -91,9 +89,6 @@
                 <version>${jcr.version}</version>
             </dependency>
 
-            <!--
-               //TODO author=Horia Chiorean date=1/8/14 description=The following dependencies are only here to be compatible with 3.6.0.Final.
-           -->
             <!--
                Compatible logging modules.
            -->
