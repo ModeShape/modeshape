@@ -70,6 +70,7 @@ import javax.jcr.query.QueryManager;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.JcrTools;
@@ -128,6 +129,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @SkipLongRunning
     public void shouldAllowCreatingManyUnstructuredNodesWithSameNameSiblings() throws Exception {
         JcrRootNode node = session.getRootNode();
         int count = 10000;
@@ -136,14 +138,14 @@ public class JcrSessionTest extends SingleUseAbstractTest {
             node.addNode("childNode");
         }
         long millis = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start1), TimeUnit.NANOSECONDS);
-        System.out.println("Time to create " + count + " nodes under root: " + millis + " ms");
+        printMessage("Time to create " + count + " nodes under root: " + millis + " ms");
 
         long start2 = System.nanoTime();
         session.save();
         millis = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start2), TimeUnit.NANOSECONDS);
-        System.out.println("Time to save " + count + " new nodes: " + millis + " ms");
+        printMessage("Time to save " + count + " new nodes: " + millis + " ms");
         millis = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start1), TimeUnit.NANOSECONDS);
-        System.out.println("Total time to create " + count + " new nodes and save: " + millis + " ms");
+        printMessage("Total time to create " + count + " new nodes and save: " + millis + " ms");
 
         NodeIterator iter = node.getNodes("childNode");
         assertThat(iter.getSize(), is((long)count));
@@ -157,7 +159,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         node.addNode("oneMore");
         session.save();
         millis = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start1), TimeUnit.NANOSECONDS);
-        System.out.println("Time to create " + (count + 1) + "th node and save: " + millis + " ms");
+        printMessage("Time to create " + (count + 1) + "th node and save: " + millis + " ms");
     }
 
     @Test
@@ -191,7 +193,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
             session.getRootNode().getNode("testNode").remove();
             session.save();
         }
-        System.out.println(sw.getDetailedStatistics());
+        printMessage(sw.getDetailedStatistics().toString());
     }
 
     @Test
@@ -684,6 +686,65 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertNotNull(session.getNode("/d"));
         assertNotNull(session.getNode("/d/b"));
         assertNotNull(session.getNode("/d/b/c"));
+    }
+
+    @Test
+    @FixFor( "MODE-2206" )
+    public void shouldMoveOverNodesRemovedInTheSameSession() throws Exception {
+        try {
+            // add 2 nodes under a parent that doesn't allow SNS
+            final Node root = session.getRootNode();
+            final Node parent = root.addNode("parent", "nt:folder");
+            parent.addNode("name1", "nt:folder");
+            parent.addNode("name2", "nt:folder");
+
+            session.save();
+
+            // overwrite 2 with 1
+            session.removeItem("/parent/name2");
+
+            assertFalse("Added node 2 doest not exist after remove", session.nodeExists("/parent/name2"));
+            assertTrue("Added node 1 still exists", session.nodeExists("/parent/name1"));
+
+            session.move("/parent/name1", "/parent/name2");
+            session.save();
+
+            assertTrue("Added node 2 doest not exist after move", session.nodeExists("/parent/name2"));
+            assertFalse("Added node 1 still exists", session.nodeExists("/parent/name1"));
+        } finally {
+            session.logout();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2206" )
+    public void shouldMoveOverNodesRenamedInTheSameSession() throws Exception {
+        try {
+            // add 2 nodes under a parent that doesn't allow SNS
+            final Node root = session.getRootNode();
+            final Node parent = root.addNode("parent", "nt:folder");
+            parent.addNode("name1", "nt:folder");
+            parent.addNode("name2", "nt:folder");
+
+            session.save();
+
+            // rename 1 to 3
+            session.move("/parent/name1", "/parent/name3");
+
+            assertFalse(session.nodeExists("/parent/name1"));
+            assertTrue(session.nodeExists("/parent/name2"));
+            assertTrue(session.nodeExists("/parent/name3"));
+
+            //rename 2 to 1
+            session.move("/parent/name2", "/parent/name1");
+            session.save();
+
+            assertTrue(session.nodeExists("/parent/name1"));
+            assertFalse(session.nodeExists("/parent/name2"));
+            assertTrue(session.nodeExists("/parent/name3"));
+        } finally {
+            session.logout();
+        }
     }
 
     @SuppressWarnings( "unchecked" )
