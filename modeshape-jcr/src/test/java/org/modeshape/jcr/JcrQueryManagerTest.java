@@ -34,6 +34,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -75,6 +76,9 @@ import javax.jcr.query.qom.Ordering;
 import javax.jcr.query.qom.PropertyValue;
 import javax.jcr.query.qom.QueryObjectModelConstants;
 import javax.jcr.query.qom.Selector;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.Privilege;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.junit.AfterClass;
@@ -93,6 +97,7 @@ import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.query.JcrQueryResult;
+import org.modeshape.jcr.security.SimplePrincipal;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
 
@@ -3633,6 +3638,46 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         } finally {
             n1.remove();
             n2.remove();
+            session.save();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2173 ")
+    public void queriesShouldTakePermissionsIntoAccount() throws Exception {
+        AccessControlManager acm = session.getAccessControlManager();
+
+        Node parent = session.getRootNode().addNode("parent");
+        parent.addNode("child1");
+        parent.addNode("child2");
+        session.save();
+
+        try {
+            String queryString = "select [jcr:path] from [nt:unstructured] as node where ISCHILDNODE(node, '/parent')";
+            assertNodesAreFound(queryString, Query.JCR_SQL2, "/parent/child1", "/parent/child2");
+
+            //remove the READ permission for child1
+            AccessControlList acl = acl("/parent/child1");
+            acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[] { acm.privilegeFromName(Privilege.JCR_WRITE),
+                                                                                  acm.privilegeFromName(Privilege.JCR_REMOVE_NODE)
+            });
+            acm.setPolicy("/parent/child1", acl);
+            session.save();
+
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
+            QueryResult result = query.execute();
+
+            //assert that only child2 is still visible in the query results
+            NodeIterator nodes = result.getNodes();
+            assertEquals("/parent/child2", nodes.nextNode().getPath());
+            assertFalse(nodes.hasNext());
+
+            RowIterator rows = result.getRows();
+            assertEquals("/parent/child2", rows.nextRow().getNode().getPath());
+            assertFalse(rows.hasNext());
+        } finally {
+            parent.remove();
             session.save();
         }
     }

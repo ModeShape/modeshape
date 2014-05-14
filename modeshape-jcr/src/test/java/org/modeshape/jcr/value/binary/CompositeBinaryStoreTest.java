@@ -21,6 +21,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.junit.SkipOnOS;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.value.BinaryKey;
@@ -199,6 +200,13 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
                                                                   "this-hint-doesnt-reference-a-store");
 
         assertTrue(alternativeStore.hasBinary(v.getKey()));
+    }
+
+    @Override
+    @SkipOnOS(value = SkipOnOS.WINDOWS, description = "Sometimes file locks prevent the cleanup thread from removing values")
+    @Test
+    public void shouldCleanupUnunsedValues() throws Exception {
+        super.shouldCleanupUnunsedValues();
     }
 
     private byte[] randomContent() {
