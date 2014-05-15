@@ -440,12 +440,12 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return aclChangesCount.longValue();
     }
 
-    protected final long aclAdded() {
-        return aclChangesCount.incrementAndGet();
+    protected final long aclAdded(long count) {
+        return aclChangesCount.addAndGet(count);
     }
 
-    protected final long aclRemoved() {
-        return aclChangesCount.decrementAndGet();
+    protected final long aclRemoved(long count) {
+        return aclChangesCount.addAndGet(-count);
     }
 
     protected final String readable( Path path ) {
