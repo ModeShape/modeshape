@@ -283,8 +283,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         @Override
         public Node nextNode() {
             CachedNode cachedNode = moveToNextRow().getNode(defaultSelectorIndex);
-            Node node = context.getNode(cachedNode);
-            return node;
+            return context.getNode(cachedNode);
         }
 
         @Override
