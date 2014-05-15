@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -276,16 +277,14 @@ class JcrQueryManager implements QueryManager {
         @Override
         public Node getNode( Location location ) {
             if (location != null) {
-                String pathString = factories.getStringFactory().create(location.getPath());
+                Path path = location.getPath();
                 try {
-                    return session.getNode(pathString, false);
-                } catch (PathNotFoundException pnfe) {
-                    LOGGER.debug("'{0}' not found - it must have been deleted from storage but not yet from the indexes",
-                                 pathString);
+                    session.checkPermission(path, ModeShapePermissions.READ);
+                    return session.node(location.getKey(), null);
+                } catch (ItemNotFoundException infe) {
+                    LOGGER.debug("'{0}' not found - it must have been deleted from storage but not yet from the indexes", path);
                 } catch (AccessDeniedException ade) {
-                    LOGGER.debug("READ access denied on '{0}'", pathString);
-                } catch (RepositoryException re) {
-                    LOGGER.error(re, JcrI18n.cannotLoadNodeFromQueryResult, pathString);
+                    LOGGER.debug("READ access denied on '{0}'", path);
                 }
             }
             return null;
@@ -343,6 +342,10 @@ class JcrQueryManager implements QueryManager {
             session.repository().statistics().recordDuration(DurationMetric.QUERY_EXECUTION_TIME, nanos, unit, payload);
         }
 
+        @Override
+        public boolean isAccessControlEnabled() {
+            return session.repository().repositoryCache().isAccessControlEnabled();
+        }
     }
 
     protected static class SessionTypeSystem implements JcrTypeSystem {
