@@ -235,9 +235,13 @@ public class AccessControlManagerImpl implements AccessControlManager {
             assert (ace.getPrincipal() != null);
             String name = ace.getPrincipal().getName();
 
-            AbstractJcrNode entryNode = aclNode.hasNode(name) ? aclNode.getNode(name, true) : aclNode.addAclNode(name,
-                                                                                                           MODE_ACCESS_LIST_ENTRY_NODE);
-
+            AbstractJcrNode entryNode = null;
+            if (aclNode.hasNode(name)) {
+                entryNode = aclNode.getNode(name, true);
+            } else {
+                entryNode = aclNode.addAclNode(name, MODE_ACCESS_LIST_ENTRY_NODE);
+                session.aclAdded(1);
+            }
             entryNode.setPropertyInAccessControlScope(PRINCIPAL_NAME, ace.getPrincipal().getName());
             entryNode.setPropertyInAccessControlScope(PRIVILEGES, privileges(ace.getPrivileges()));
         }
@@ -249,9 +253,9 @@ public class AccessControlManagerImpl implements AccessControlManager {
             String name = entryNode.getProperty(PRINCIPAL_NAME).getString();
             if (!acl.hasEntry(name)) {
                 entryNode.remove();
+                session.aclRemoved(1);
             }
         }
-        session.aclAdded();
     }
 
     @Override
@@ -272,9 +276,9 @@ public class AccessControlManagerImpl implements AccessControlManager {
             }
             if (node.hasNode(ACCESS_LIST_NODE)) {
                 AbstractJcrNode aclNode = node.getNode(ACCESS_LIST_NODE, true);
+                session.aclRemoved(aclNode.childCount());
                 aclNode.remove();
                 node.removeMixin(MODE_ACCESS_CONTROLLABLE);
-                session.aclRemoved();
             }
         } catch (PathNotFoundException e) {
         }
