@@ -162,7 +162,8 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
     @Override
     public RowIterator getRows() /*throws RepositoryException*/{
         // We can actually delay the loading of the nodes until the rows are accessed ...
-        final int numRows = results.getRowCount();
+        // If ACLs are enabled, we don't know the size up front
+        final int numRows = context.isAccessControlEnabled() ? -1 : results.getRowCount();
         final List<Object[]> tuples = results.getTuples();
         if (results.getColumns().getLocationCount() == 1) {
             return new SingleSelectorQueryResultRowIterator(context, queryStatement, results, tuples.iterator(), numRows);
@@ -343,7 +344,9 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
                 } catch (RepositoryException e) {
                     // The node could not be found in this session, so skip it ...
                 }
-                --numRows;
+                if (numRows != -1) {
+                    --numRows;
+                }
             }
             return false;
         }
