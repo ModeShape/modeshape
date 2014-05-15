@@ -696,7 +696,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             // Need to make sure that the user has access to this session
-            session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
+            session.checkWorkspacePermission(workspaceName,ModeShapePermissions.READ);
             running.addSession(session, false);
             return session;
         } catch (AccessDeniedException ace) {

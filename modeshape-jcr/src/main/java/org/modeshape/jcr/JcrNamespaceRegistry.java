@@ -41,7 +41,6 @@ import org.modeshape.common.xml.XmlCharacters;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
-import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.ValueFormatException;
 
 /**
@@ -269,7 +268,7 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
                 }
 
                 try {
-                    session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
+                    session.checkWorkspacePermission(session.workspaceName(), ModeShapePermissions.REGISTER_NAMESPACE);
                 } catch (AccessControlException ace) {
                     throw new AccessDeniedException(ace);
                 }
@@ -303,7 +302,7 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
         // Don't need to check permissions for transient registration/unregistration
         if (behavior.equals(Behavior.WORKSPACE)) {
             try {
-                session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
+                session.checkWorkspacePermission(session.workspaceName(), ModeShapePermissions.REGISTER_NAMESPACE);
             } catch (AccessControlException ace) {
                 throw new AccessDeniedException(ace);
             }
@@ -384,7 +383,7 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
                 // --------------------------------------------------
                 global = true;
                 try {
-                    session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
+                    session.checkWorkspacePermission(session.workspaceName(), ModeShapePermissions.REGISTER_NAMESPACE);
                 } catch (AccessControlException ace) {
                     throw new AccessDeniedException(ace);
                 }

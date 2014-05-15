@@ -332,7 +332,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
         checkNotProtected();
         checkForLock();
         checkForCheckedOut();
-        session.checkPermission(path(), ModeShapePermissions.REMOVE);
+        session.checkPermission(this, ModeShapePermissions.REMOVE);
         AbstractJcrNode parentNode = getParent();
         if (parentNode.isLocked()) {
             Lock parentLock = parentNode.getLock();
