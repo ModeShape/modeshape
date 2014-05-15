@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
@@ -142,6 +143,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private final AtomicReference<Map<NodeKey, NodeKey>> baseVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
     private final AtomicReference<Map<NodeKey, NodeKey>> originalVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
     private final AtomicReference<JcrSharedNodeCache> shareableNodeCache = new AtomicReference<JcrSharedNodeCache>();
+    private final AtomicLong aclChangesCount = new AtomicLong(0);
     private volatile JcrValueFactory valueFactory;
     private volatile boolean isLive = true;
     private final long nanosCreated;
@@ -443,6 +445,18 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         } catch (Throwable t) {
             return node.getKey().toString();
         }
+    }
+
+    protected final long aclChangesCount() {
+        return aclChangesCount.longValue();
+    }
+
+    protected final long aclAdded(long count) {
+        return aclChangesCount.addAndGet(count);
+    }
+
+    protected final long aclRemoved(long count) {
+        return aclChangesCount.addAndGet(-count);
     }
 
     protected final String readable( Path path ) {
@@ -824,19 +838,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return node(path);
     }
 
-    /*    protected Node getAclNode( String absPath ) throws PathNotFoundException, RepositoryException {
-            checkLive();
-            CheckArg.isNotEmpty(absPath, "absolutePath");
-            Path path = absolutePathFor(absPath);
-
-            // Return root node if path is "/" ...
-            if (path.isRoot()) {
-                return getRootNode();
-            }
-
-            return node(path);
-        }
-    */
     @Override
     public AbstractJcrItem getItem( String absPath ) throws PathNotFoundException, RepositoryException {
         checkLive();
@@ -1142,9 +1143,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
         Map<NodeKey, NodeKey> originalVersionKeys = this.originalVersionKeys.get();
         try {
-            cache().save(systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys, originalVersionKeys));
+            cache().save(systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys, originalVersionKeys, aclChangesCount()));
             this.baseVersionKeys.set(null);
             this.originalVersionKeys.set(null);
+            this.aclChangesCount.set(0);
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
@@ -1215,7 +1217,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         Map<NodeKey, NodeKey> originalVersionKeys = this.originalVersionKeys.get();
         try {
             sessionCache.save(keysToBeSaved, systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys,
-                                                                                   originalVersionKeys));
+                                                                                   originalVersionKeys, aclChangesCount()));
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
@@ -1246,6 +1248,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         checkLive();
         if (!keepChanges) {
             cache.clear();
+            aclChangesCount.set(0);
         }
         // Otherwise there is nothing to do, as all persistent changes are always immediately visible to all sessions
         // using that same workspace
@@ -1879,11 +1882,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      */
     protected final class JcrPreSave implements SessionCache.PreSave {
         private final SessionCache cache;
+        private final SessionCache systemCache;
         private final RepositoryNodeTypeManager nodeTypeMgr;
         private final NodeTypes nodeTypeCapabilities;
         private final SystemContent systemContent;
         private final Map<NodeKey, NodeKey> baseVersionKeys;
         private final Map<NodeKey, NodeKey> originalVersionKeys;
+
         private boolean initialized = false;
         private PropertyFactory propertyFactory;
         private ReferenceFactory referenceFactory;
@@ -1891,15 +1896,43 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         protected JcrPreSave( SystemContent content,
                               Map<NodeKey, NodeKey> baseVersionKeys,
-                              Map<NodeKey, NodeKey> originalVersionKeys ) {
+                              Map<NodeKey, NodeKey> originalVersionKeys,
+                              long aclChangesCount) {
             assert content != null;
             this.cache = cache();
             this.systemContent = content;
+            this.systemCache = content.cache();
             this.baseVersionKeys = baseVersionKeys;
             this.originalVersionKeys = originalVersionKeys;
+
             // Get the capabilities cache. This is immutable, so we'll use it for the entire pre-save operation ...
             this.nodeTypeMgr = repository().nodeTypeManager();
             this.nodeTypeCapabilities = nodeTypeMgr.getNodeTypes();
+
+            if (aclChangesCount != 0) {
+                aclMetadataRefresh(aclChangesCount);
+            }
+        }
+
+        private void aclMetadataRefresh( long aclChangesCount ) {
+            //we have a session that has added and/or removed ACLs from nodes, so we need to reflect this in the repository
+            //metadata
+            MutableCachedNode systemNode = systemContent.mutableSystemNode();
+            org.modeshape.jcr.value.Property aclCount = systemNode.getProperty(ModeShapeLexicon.ACL_COUNT,
+                                                                               systemCache);
+            if (aclCount == null && aclChangesCount > 0) {
+                systemNode.setProperty(systemCache, propertyFactory().create(ModeShapeLexicon.ACL_COUNT, aclChangesCount));
+                repository().repositoryCache().setAccessControlEnabled(true);
+            } else if (aclCount != null) {
+                long newCount = Long.valueOf(aclCount.getFirstValue().toString()) + aclChangesCount;
+                if (newCount < 0) {
+                    newCount = 0;
+                }
+                if (newCount == 0) {
+                    repository().repositoryCache().setAccessControlEnabled(false);
+                }
+                systemNode.setProperty(systemCache, propertyFactory().create(ModeShapeLexicon.ACL_COUNT, newCount));
+            }
         }
 
         @Override
@@ -1968,7 +2001,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                     // the base version points to an existing version while no version history is found initially
                     boolean shouldCreateNewVersionHistory = true;
                     if (baseVersionKey != null) {
-                        SessionCache systemCache = systemContent.cache();
                         CachedNode baseVersionNode = systemCache.getNode(baseVersionKey);
                         if (baseVersionNode != null) {
                             historyKey = baseVersionNode.getParentKey(systemCache);
@@ -1997,14 +2029,14 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
                     node.setReference(cache,
                                       propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef),
-                                      systemContent.cache());
+                                      systemCache);
                     node.setReference(cache,
                                       propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef),
-                                      systemContent.cache());
+                                      systemCache);
                     // JSR 283 - 15.1
                     node.setReference(cache,
                                       propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}),
-                                      systemContent.cache());
+                                      systemCache);
                 } else {
                     // we're dealing with node which has a version history, check if there any versionable properties present
                     boolean hasVersioningProperties = node.hasProperty(JcrLexicon.IS_CHECKED_OUT, cache)
@@ -2025,7 +2057,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         Reference historyRef = referenceFactory.create(versionHistoryNode.key(), true);
                         node.setReference(cache,
                                           propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef),
-                                          systemContent.cache());
+                                          systemCache);
 
                         // set the base version to the last existing version
                         JcrVersionNode baseVersion = null;
@@ -2039,7 +2071,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         Reference baseVersionRef = referenceFactory.create(baseVersion.key(), true);
                         node.setReference(cache,
                                           propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef),
-                                          systemContent.cache());
+                                          systemCache);
 
                         // set the predecessors to the same list as the base version's predecessors
                         Version[] baseVersionPredecessors = baseVersion.getPredecessors();
@@ -2049,7 +2081,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         }
                         node.setReference(cache,
                                           propertyFactory.create(JcrLexicon.PREDECESSORS, predecessors),
-                                          systemContent.cache());
+                                          systemCache);
                     }
                 }
             }
