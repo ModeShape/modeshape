@@ -30,15 +30,18 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
@@ -74,7 +77,7 @@ import org.modeshape.jcr.value.ValueFactories;
 @Immutable
 class JcrQueryManager implements QueryManager {
 
-    public static final int MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES = Integer.MAX_VALUE;
+    private static final Logger LOGGER = Logger.getLogger(JcrQueryManager.class);
 
     private final JcrSession session;
     private final JcrQueryContext context;
@@ -105,7 +108,7 @@ class JcrQueryManager implements QueryManager {
      * Creates a new JCR {@link Query} by specifying the query expression itself, the language in which the query is stated, the
      * {@link QueryCommand} representation and, optionally, the node from which the query was loaded. The language must be a
      * string from among those returned by {@code QueryManager#getSupportedQueryLanguages()}.
-     * 
+     *
      * @param expression the original query expression as supplied by the client; may not be null
      * @param language the language in which the expression is represented; may not be null
      * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
@@ -155,7 +158,7 @@ class JcrQueryManager implements QueryManager {
      * Creates a new JCR {@link Query} by specifying the query expression itself, the language in which the query is stated, the
      * {@link QueryCommand} representation. This method is more efficient than {@link #createQuery(String, String, Path)} if the
      * QueryCommand is created directly.
-     * 
+     *
      * @param command the query command; may not be null
      * @return query the JCR query object; never null
      * @throws InvalidQueryException if expression is invalid or language is unsupported
@@ -274,10 +277,14 @@ class JcrQueryManager implements QueryManager {
         @Override
         public Node getNode( Location location ) {
             if (location != null) {
+                Path path = location.getPath();
                 try {
+                    session.checkPermission(path, ModeShapePermissions.READ);
                     return session.node(location.getKey(), null);
-                } catch (ItemNotFoundException e) {
-                    // Must have been deleted from storage but not yet from the indexes ...
+                } catch (ItemNotFoundException infe) {
+                    LOGGER.debug("'{0}' not found - it must have been deleted from storage but not yet from the indexes", path);
+                } catch (AccessDeniedException ade) {
+                    LOGGER.debug("READ access denied on '{0}'", path);
                 }
             }
             return null;
@@ -335,6 +342,10 @@ class JcrQueryManager implements QueryManager {
             session.repository().statistics().recordDuration(DurationMetric.QUERY_EXECUTION_TIME, nanos, unit, payload);
         }
 
+        @Override
+        public boolean isAccessControlEnabled() {
+            return session.repository().repositoryCache().isAccessControlEnabled();
+        }
     }
 
     protected static class SessionTypeSystem implements JcrTypeSystem {

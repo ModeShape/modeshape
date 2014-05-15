@@ -97,6 +97,7 @@ public class ModeShapeLexicon {
     public static final Name ACCESS_CONTROLLABLE = new BasicName(Namespace.URI, "accessControllable");
     public static final Name ACL = new BasicName(Namespace.URI, "Acl");
     public static final Name PERMISSION = new BasicName(Namespace.URI, "Permission");
+    public static final Name ACL_COUNT = new BasicName(Namespace.URI, "aclCount");
 
     /**
      * Deprecated names because of originally invalid node types in modeshape_builtins.cnd.

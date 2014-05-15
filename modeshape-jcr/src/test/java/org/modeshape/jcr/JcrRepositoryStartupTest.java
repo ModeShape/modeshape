@@ -46,6 +46,10 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicyIterator;
+import javax.jcr.security.Privilege;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
@@ -61,6 +65,8 @@ import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.document.DocumentStore;
+import org.modeshape.jcr.security.SimplePrincipal;
+import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 
 /**
@@ -460,10 +466,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             @Override
             public Void call() throws Exception {
                 //modify the repository-info document to force an upgrade on the next restart
-                DocumentStore documentStore =  repository.documentStore();
-                EditableDocument editableDocument = documentStore.localStore().get("repository:info").editDocumentContent();
-                editableDocument.set("lastUpgradeId", Upgrades.ModeShape_3_6_0.INSTANCE.getId() - 1);
-                documentStore.localStore().put("repository:info", editableDocument);
+                changeLastUpgradeId(repository, Upgrades.ModeShape_3_6_0.INSTANCE.getId() - 1);
 
                 //create a non-session lock on a node
                 JcrSession session = repository.login();
@@ -657,4 +660,164 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             }
         }, repositoryConfigFile);
     }
+
+    @Test
+    @FixFor("MODE-2167")
+    public void shouldDisableACLsIfAllPoliciesAreRemoved() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+
+        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                Node testNode = session.getRootNode().addNode("testNode");
+                testNode.addNode("node1");
+                testNode.addNode("node2");
+                session.save();
+
+                AccessControlManager acm = session.getAccessControlManager();
+
+                AccessControlList aclNode1 = getACL(acm, "/testNode/node1");
+                aclNode1.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                          new Privilege[] { acm.privilegeFromName(Privilege.JCR_ALL) });
+                acm.setPolicy("/testNode/node1", aclNode1);
+
+                AccessControlList aclNode2 = getACL(acm, "/testNode/node2");
+                aclNode2.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                          new Privilege[] { acm.privilegeFromName(Privilege.JCR_ALL) });
+                acm.setPolicy("/testNode/node2", aclNode2);
+
+                //access control should not be enabled yet because we haven't saved the session
+                assertFalse(repository.runningState().repositoryCache().isAccessControlEnabled());
+
+                session.save();
+                assertTrue(repository.runningState().repositoryCache().isAccessControlEnabled());
+
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                assertTrue(repository.runningState().repositoryCache().isAccessControlEnabled());
+
+                Session session = repository.login();
+                AccessControlManager acm = session.getAccessControlManager();
+                //TODO author=Horia Chiorean date=25-Mar-14 description=Why null here !?!
+                acm.removePolicy("/testNode/node1", null);
+                acm.removePolicy("/testNode/node2", null);
+                session.save();
+
+                assertFalse(repository.runningState().repositoryCache().isAccessControlEnabled());
+
+                session.getNode("/testNode").remove();
+                session.save();
+                return null;
+            }
+        }, repositoryConfigFile);
+    }
+
+    @Test
+    @FixFor("MODE-2167")
+    public void shouldRun3_7_4UpgradeFunction() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+        String config = "config/repo-config-persistent-indexes-disk.json";
+        //first run is empty, so no upgrades will be performed
+        startRunStop(new RepositoryOperation() {
+            @SuppressWarnings( "deprecation" )
+            @Override
+            public Void call() throws Exception {
+                changeLastUpgradeId(repository, Upgrades.ModeShape_3_7_4.INSTANCE.getId() - 1);
+
+
+                //modify some ACLs
+                JcrSession session = repository.login();
+                session.getRootNode().addNode("testNode");
+                session.save();
+
+                AccessControlManager acm = session.getAccessControlManager();
+
+                AccessControlList acl = getACL(acm, "/testNode");
+                acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"),
+                                          new Privilege[] { acm.privilegeFromName(Privilege.JCR_ALL) });
+                acm.setPolicy("/testNode", acl);
+                session.save();
+
+                //remove the new property from 4.0 which actually stores the ACL count to simulate a pre 4.0 repository
+                SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), false);
+                SystemContent systemContent = new SystemContent(systemSession);
+                MutableCachedNode systemNode = systemContent.mutableSystemNode();
+                systemNode.removeProperty(systemSession, ModeShapeLexicon.ACL_COUNT);
+                systemSession.save();
+                return null;
+            }
+        }, config);
+
+        //second run should run the upgrade
+        startRunStop(new RepositoryOperation() {
+            @SuppressWarnings( "deprecation" )
+            @Override
+            public Void call() throws Exception {
+                //check that the upgrade function correctly added the new property
+                SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), false);
+                SystemContent systemContent = new SystemContent(systemSession);
+                MutableCachedNode systemNode = systemContent.mutableSystemNode();
+                Property aclCountProp = systemNode.getProperty(ModeShapeLexicon.ACL_COUNT, systemSession);
+                assertNotNull("ACL count property not found after upgrade", aclCountProp);
+                assertEquals(1, Long.valueOf(aclCountProp.getFirstValue().toString()).longValue());
+
+                //force a 2nd upgrade
+                changeLastUpgradeId(repository, Upgrades.ModeShape_3_7_4.INSTANCE.getId() - 1);
+
+                //remove all ACLs
+                JcrSession session = repository.login();
+                AccessControlManager acm = session.getAccessControlManager();
+                //TODO author=Horia Chiorean date=25-Mar-14 description=Why null ?!
+                acm.removePolicy("/testNode", null);
+                session.save();
+
+                //remove the new property from 4.0 which actually stores the ACL count to simulate a pre 4.0 repository
+                systemNode.removeProperty(systemSession, ModeShapeLexicon.ACL_COUNT);
+                systemSession.save();
+                return null;
+            }
+        }, config);
+
+        //check that the upgrade disabled ACLs
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+
+                SessionCache systemSession = repository.createSystemSession(repository.runningState().context(), true);
+                SystemContent systemContent = new SystemContent(systemSession);
+                CachedNode systemNode = systemContent.systemNode();
+                Property aclCountProp = systemNode.getProperty(ModeShapeLexicon.ACL_COUNT, systemSession);
+                assertNotNull("ACL count property not found after upgrade", aclCountProp);
+                assertEquals(0, Long.valueOf(aclCountProp.getFirstValue().toString()).longValue());
+
+                assertFalse(repository.runningState().repositoryCache().isAccessControlEnabled());
+                return null;
+            }
+        }, config);
+    }
+
+    private void changeLastUpgradeId( JcrRepository repository, int value ) {
+        //modify the repository-info document to force an upgrade on the next restart
+        DocumentStore documentStore =  repository.documentStore();
+        EditableDocument editableDocument = documentStore.localStore().get("repository:info").editDocumentContent();
+        editableDocument.set("lastUpgradeId", value);
+        documentStore.localStore().put("repository:info", editableDocument);
+    }
+
+    private AccessControlList getACL(  AccessControlManager acm, String absPath ) throws Exception {
+        AccessControlPolicyIterator it = acm.getApplicablePolicies(absPath);
+        if (it.hasNext()) {
+            return (AccessControlList)it.nextAccessControlPolicy();
+        }
+        return (AccessControlList)acm.getPolicies(absPath)[0];
+    }
+
 }

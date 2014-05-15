@@ -67,4 +67,6 @@ public interface JcrQueryContext {
                          TimeUnit unit,
                          String query,
                          String language );
+
+    boolean isAccessControlEnabled();
 }
