@@ -57,6 +57,10 @@ import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.observation.Event;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicyIterator;
+import javax.jcr.security.Privilege;
 import javax.transaction.TransactionManager;
 import org.junit.After;
 import org.junit.Before;
@@ -76,6 +80,7 @@ import org.modeshape.jcr.api.monitor.Window;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.journal.JournalRecord;
 import org.modeshape.jcr.journal.LocalJournal;
+import org.modeshape.jcr.security.SimplePrincipal;
 
 public class JcrRepositoryTest {
 
@@ -1394,7 +1399,8 @@ public class JcrRepositoryTest {
         shutdownDefaultRepository();
         FileUtil.delete("target/indexes");
         RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResource("config/repo-config-query-placeholder.json"));
+                                                                                .getResource(
+                                                                                        "config/repo-config-query-placeholder.json"));
         repository = new JcrRepository(config);
         String namespaceName = "admb";
         String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";
@@ -1427,6 +1433,61 @@ public class JcrRepositoryTest {
             // expected
         }
         session.logout();
+    }
+
+    @Test
+    @FixFor( "MODE-2167" )
+    public void shouldEnableOrDisableACLsBasedOnChanges() throws Exception {
+        Session session = repository.login();
+
+        try {
+            Node testNode = session.getRootNode().addNode("testNode");
+            testNode.addNode("node1");
+            testNode.addNode("node2");
+            session.save();
+
+            assertFalse(repository.repositoryCache().isAccessControlEnabled());
+
+            SimplePrincipal principalA = SimplePrincipal.newInstance("a");
+            SimplePrincipal principalB = SimplePrincipal.newInstance("b");
+            SimplePrincipal everyone = SimplePrincipal.newInstance("everyone");
+            AccessControlManager acm = session.getAccessControlManager();
+            Privilege[] allPriviledges = { acm.privilegeFromName(Privilege.JCR_ALL) };
+
+
+            AccessControlList aclNode1 = getACL(acm, "/testNode/node1");
+            aclNode1.addAccessControlEntry(principalA, allPriviledges);
+            aclNode1.addAccessControlEntry(principalB, allPriviledges);
+            aclNode1.addAccessControlEntry(everyone, allPriviledges);
+            acm.setPolicy("/testNode/node1", aclNode1);
+
+            AccessControlList aclNode2 = getACL(acm, "/testNode/node2");
+            aclNode2.addAccessControlEntry(principalA, allPriviledges);
+            aclNode2.addAccessControlEntry(principalB, allPriviledges);
+            aclNode2.addAccessControlEntry(everyone, allPriviledges);
+            acm.setPolicy("/testNode/node2", aclNode2);
+
+            //access control should not be enabled yet because we haven't saved the session
+            assertFalse(repository.repositoryCache().isAccessControlEnabled());
+
+            session.save();
+            assertTrue(repository.repositoryCache().isAccessControlEnabled());
+
+            aclNode1.addAccessControlEntry(everyone, allPriviledges);
+            acm.setPolicy("/testNode/node1", aclNode1);
+            aclNode2.addAccessControlEntry(everyone, allPriviledges);
+            acm.setPolicy("/testNode/node2", aclNode2);
+
+            session.save();
+            assertTrue(repository.repositoryCache().isAccessControlEnabled());
+
+            acm.removePolicy("/testNode/node1", null);
+            acm.removePolicy("/testNode/node2", null);
+            session.save();
+            assertFalse(repository.repositoryCache().isAccessControlEnabled());
+        } finally {
+            session.logout();
+        }
     }
 
     protected void nodeExists( Session session,
@@ -1499,6 +1560,14 @@ public class JcrRepositoryTest {
         session.getWorkspace().getObservationManager()
                .addEventListener(listener, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
         return listener;
+    }
+
+    private AccessControlList getACL(  AccessControlManager acm, String absPath ) throws Exception {
+        AccessControlPolicyIterator it = acm.getApplicablePolicies(absPath);
+        if (it.hasNext()) {
+            return (AccessControlList)it.nextAccessControlPolicy();
+        }
+        return (AccessControlList)acm.getPolicies(absPath)[0];
     }
 
 }
