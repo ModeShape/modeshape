@@ -501,8 +501,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         CheckArg.isNotEmpty(srcWorkspace, "srcWorkspace");
 
         session.checkLive();
-        session.checkPermission(srcWorkspace, null, ModeShapePermissions.READ);
-        session.checkPermission(getName(), null, ModeShapePermissions.READ);
+        session.checkWorkspacePermission(srcWorkspace, ModeShapePermissions.READ);
+        session.checkWorkspacePermission(getName(), ModeShapePermissions.READ);
 
         JcrRepository repository = repository();
         if (!repository.hasWorkspace(srcWorkspace)) {
@@ -737,7 +737,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         // Remove any workspaces for which we don't have read access ...
         for (Iterator<String> iter = names.iterator(); iter.hasNext();) {
             try {
-                session.checkPermission(iter.next(), null, ModeShapePermissions.READ);
+                session.checkWorkspacePermission(iter.next(), ModeShapePermissions.READ);
             } catch (AccessDeniedException ace) {
                 iter.remove();
             }
@@ -751,7 +751,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         throws AccessDeniedException, UnsupportedRepositoryOperationException, RepositoryException {
         session.checkLive();
         try {
-            session.checkPermission(name, null, ModeShapePermissions.CREATE_WORKSPACE);
+            session.checkWorkspacePermission(name, ModeShapePermissions.CREATE_WORKSPACE);
             JcrRepository repository = session.repository();
             if (repository.hasWorkspace(name)) {
                 // TCK: cannot create a workspace with the same name as an already existing one
@@ -819,7 +819,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     public void deleteWorkspace( String name )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
         session.checkLive();
-        session.checkPermission(name, null, ModeShapePermissions.DELETE_WORKSPACE);
+        session.checkWorkspacePermission(name, ModeShapePermissions.DELETE_WORKSPACE);
         // start an internal remove session which needs to act as a unit for the entire operation
         JcrSession removeSession = session.spawnSession(name, false);
         JcrRepository repository = session.repository();

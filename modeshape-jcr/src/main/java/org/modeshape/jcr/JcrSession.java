@@ -608,8 +608,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         if (absPath == null) {
             try {
                 // We need to look up the absolute path ..
-                absPath = node.getPath(cache);
-                checkPermission(absPath, actions);
+                checkPermission(node, cache, actions);
             } catch (NodeNotFoundException e) {
                 throw new PathNotFoundException(JcrI18n.nodeNotFound.text(stringFactory().create(path), workspaceName()));
             }
@@ -746,7 +745,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // Try the identifier as a node key ...
             try {
                 NodeKey key = new NodeKey(id);
-                return node(key, null);
+                AbstractJcrNode node = node(key, null);
+                checkPermission(pathSupplierFor(node), ModeShapePermissions.READ);
+                return node;
             } catch (ItemNotFoundException e) {
                 // continue ...
             }
@@ -757,7 +758,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         try {
             // Try as node key identifier ...
             key = this.rootNode.key.withId(id);
-            return node(key, null);
+            AbstractJcrNode node = node(key, null);
+            checkPermission(pathSupplierFor(node), ModeShapePermissions.READ);
+            return node;
         } catch (ItemNotFoundException e) {
             // Not found, so capture the exception (which we might use later) and continue ...
             first = e;
@@ -772,6 +775,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // this means that if we got this far, the original hasn't been found, so neither should the version history
                 throw first;
             }
+            checkPermission(pathSupplierFor(systemNode), ModeShapePermissions.READ);
             return systemNode;
         } catch (ItemNotFoundException e) {
             // Not found, so throw the original exception ...
@@ -1255,83 +1259,149 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return valueFactory();
     }
 
+    private static interface PathSupplier {
+        /**
+         * Get the absolute path
+         * 
+         * @return the absolute path
+         * @throws ItemNotFoundException if the node was deleted
+         */
+        Path getAbsolutePath() throws ItemNotFoundException;
+    }
+
+    private PathSupplier pathSupplierFor( final Path path ) {
+        return new PathSupplier() {
+            @Override
+            public Path getAbsolutePath() {
+                return path;
+            }
+        };
+    }
+
+    private PathSupplier pathSupplierFor( final CachedNode node,
+                                          final NodeCache nodeCache ) {
+        return new PathSupplier() {
+            @Override
+            public Path getAbsolutePath() throws ItemNotFoundException {
+                return node.getPath(nodeCache);
+            }
+        };
+    }
+
+    private PathSupplier pathSupplierFor( final AbstractJcrItem item ) {
+        return new PathSupplier() {
+            @Override
+            public Path getAbsolutePath() throws ItemNotFoundException {
+                try {
+                    return item.path();
+                } catch (InvalidItemStateException err) {
+                    // This happens when the session removes the node, but we know that couldn't have happened since we have the
+                    // node instance, so ignore it ...
+                } catch (ItemNotFoundException err) {
+                    throw err;
+                } catch (RepositoryException e) {
+                    return null;
+                }
+                assert false;
+                return null;
+            }
+        };
+    }
+
     /**
      * Determine if the current user does not have permission for all of the named actions in the named workspace in the given
      * context, otherwise returns silently.
      * 
      * @param workspaceName the name of the workspace in which the path exists
-     * @param path the path on which the actions are occurring
+     * @param pathSupplier the supplier for the path on which the actions are occurring; may be null if the permission is on the
+     *        whole workspace
      * @param actions the list of {@link ModeShapePermissions actions} to check
      * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
      *         given workspace within the repository, or false otherwise
      */
     private boolean hasPermission( String workspaceName,
-                                   Path path,
+                                   PathSupplier pathSupplier,
                                    String... actions ) {
-        assert path == null || path.isAbsolute() : "The path (if provided) must be absolute";
         SecurityContext sec = context.getSecurityContext();
         final boolean checkAcl = repository.repositoryCache().isAccessControlEnabled();
 
         boolean hasPermission = true;
 
         final String repositoryName = this.repository.repositoryName();
-        if (sec instanceof AuthorizationProvider) {
-            // Delegate to the security context ...
-            AuthorizationProvider authorizer = (AuthorizationProvider)sec;
-            hasPermission = authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
+        try {
+            if (sec instanceof AuthorizationProvider) {
+                // Delegate to the security context ...
+                AuthorizationProvider authorizer = (AuthorizationProvider)sec;
+                Path path = pathSupplier != null ? pathSupplier.getAbsolutePath() : null;
+                if (path != null) {
+                    assert path.isAbsolute() : "The path (if provided) must be absolute";
+                    hasPermission = authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
+    
+                    if (checkAcl && hasPermission) {
+                        hasPermission = acm.hasPermission(path, actions);
+                    }
+                    return hasPermission;
+                }
+            }
+
+            if (sec instanceof AdvancedAuthorizationProvider) {
+                // Delegate to the security context ...
+                AdvancedAuthorizationProvider authorizer = (AdvancedAuthorizationProvider)sec;
+                Path path = pathSupplier != null ? pathSupplier.getAbsolutePath() : null;
+                if (path != null) {
+                    assert path.isAbsolute() : "The path (if provided) must be absolute";
+                    hasPermission = authorizer.hasPermission(authorizerContext, path, actions);
+    
+                    if (checkAcl && hasPermission) {
+                        hasPermission = acm.hasPermission(path, actions);
+                    }
+                    return hasPermission;
+                }
+            }
+
+            // It is a role-based security context, so apply role-based authorization ...
+            for (String action : actions) {
+                if (ModeShapePermissions.READ.equals(action)) {
+                    hasPermission &= hasRole(sec, ModeShapeRoles.READONLY, repositoryName, workspaceName)
+                                     || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName)
+                                     || hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName);
+                } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
+                           || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)
+                           || ModeShapePermissions.CREATE_WORKSPACE.equals(action)
+                           || ModeShapePermissions.DELETE_WORKSPACE.equals(action) || ModeShapePermissions.MONITOR.equals(action)
+                           || ModeShapePermissions.DELETE_WORKSPACE.equals(action)
+                           || ModeShapePermissions.INDEX_WORKSPACE.equals(action)) {
+                    hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName);
+                } else {
+                    hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName)
+                                     || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName);
+                }
+            }
 
             if (checkAcl && hasPermission) {
-                hasPermission = acm.hasPermission(path, actions);
+                Path path = pathSupplier != null ? pathSupplier.getAbsolutePath() : null;
+                if (path != null) {
+                    assert path.isAbsolute() : "The path (if provided) must be absolute";
+                    hasPermission = acm.hasPermission(path, actions);
+                }
             }
 
             return hasPermission;
+        } catch (ItemNotFoundException err) {
+            // The node was removed from this session
+            return false;
         }
-
-        if (sec instanceof AdvancedAuthorizationProvider) {
-            // Delegate to the security context ...
-            AdvancedAuthorizationProvider authorizer = (AdvancedAuthorizationProvider)sec;
-            hasPermission = authorizer.hasPermission(authorizerContext, path, actions);
-
-            if (checkAcl && hasPermission) {
-                hasPermission = acm.hasPermission(path, actions);
-            }
-
-            return hasPermission;
-        }
-
-        // It is a role-based security context, so apply role-based authorization ...
-        for (String action : actions) {
-            if (ModeShapePermissions.READ.equals(action)) {
-                hasPermission &= hasRole(sec, ModeShapeRoles.READONLY, repositoryName, workspaceName)
-                                 || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName)
-                                 || hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName);
-            } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
-                       || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)
-                       || ModeShapePermissions.CREATE_WORKSPACE.equals(action)
-                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action) || ModeShapePermissions.MONITOR.equals(action)
-                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action)
-                       || ModeShapePermissions.INDEX_WORKSPACE.equals(action)) {
-                hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName);
-            } else {
-                hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName)
-                                 || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName);
-            }
-        }
-
-        if (checkAcl && hasPermission) {
-            hasPermission = acm.hasPermission(path, actions);
-        }
-
-        return hasPermission;
     }
 
-    private boolean hasPermissionOnPath( Path path,
-                                         String... actions ) throws RepositoryException {
+    private boolean hasPermissionOnExternalPath( PathSupplier pathSupplier,
+                                                 String... actions ) throws RepositoryException {
         Connectors connectors = this.repository().runningState().connectors();
         if (!connectors.hasConnectors() || !connectors.hasReadonlyConnectors()) {
             // federation is not enabled or there are no readonly connectors
             return true;
         }
+        Path path = pathSupplier.getAbsolutePath();
+        if (path == null) return false;
         if (connectors.isReadonlyPath(path, this)) {
             // this is a readonly external path, so we need to see what the actual actions are
             if (actions.length > ModeShapePermissions.READONLY_EXTERNAL_PATH_PERMISSIONS.size()) {
@@ -1377,11 +1447,12 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         CheckArg.isNotEmpty(path, "path");
         CheckArg.isNotEmpty(actions, "actions");
         try {
-            Path absPath = absolutePathFor(path);
+            PathSupplier supplier = pathSupplierFor(absolutePathFor(path));
             String[] actionsArray = actions.split(",");
-            checkPermission(absPath, actionsArray);
-            if (!hasPermissionOnPath(absPath, actionsArray)) {
-                throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath.getString(this.namespaces()), actions));
+            checkPermission(workspace().getName(), supplier, actionsArray);
+            if (!hasPermissionOnExternalPath(supplier, actionsArray)) {
+                String absPath = supplier.getAbsolutePath().getString(namespaces());
+                throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath, actions));
             }
         } catch (RepositoryException e) {
             throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
@@ -1404,6 +1475,33 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         checkPermission(this.workspace().getName(), path, actions);
     }
 
+    void checkPermission( PathSupplier pathSupplier,
+                          String... actions ) throws AccessDeniedException {
+        checkPermission(this.workspace().getName(), pathSupplier, actions);
+    }
+
+    /**
+     * Throws an {@link AccessControlException} if the current user does not have permission for all of the named actions in the
+     * current workspace, otherwise returns silently.
+     * <p>
+     * The {@code path} parameter is included for future use and is currently ignored
+     * </p>
+     * 
+     * @param item the property or node on which the actions are occurring
+     * @param actions a comma-delimited list of actions to check
+     * @throws AccessDeniedException if the actions cannot be performed on the node at the specified path
+     */
+    void checkPermission( AbstractJcrItem item,
+                          String... actions ) throws AccessDeniedException {
+        checkPermission(this.workspace().getName(), pathSupplierFor(item), actions);
+    }
+
+    void checkPermission( CachedNode node,
+                          NodeCache cache,
+                          String... actions ) throws AccessDeniedException {
+        checkPermission(this.workspace().getName(), pathSupplierFor(node, cache), actions);
+    }
+
     /**
      * Throws an {@link AccessControlException} if the current user does not have permission for all of the named actions in the
      * named workspace, otherwise returns silently.
@@ -1419,12 +1517,30 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     void checkPermission( String workspaceName,
                           Path path,
                           String... actions ) throws AccessDeniedException {
+        checkPermission(workspaceName, pathSupplierFor(path), actions);
+    }
+
+    void checkPermission( String workspaceName,
+                          PathSupplier pathSupplier,
+                          String... actions ) throws AccessDeniedException {
         CheckArg.isNotEmpty(actions, "actions");
 
-        if (hasPermission(workspaceName, path, actions)) return;
+        if (hasPermission(workspaceName, pathSupplier, actions)) return;
 
-        String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
+        String pathAsString = "<unknown>";
+        if (pathSupplier != null) {
+            try {
+                pathAsString = pathSupplier.getAbsolutePath().getString(namespaces());
+            } catch (ItemNotFoundException e) {
+                // Node was somehow removed from this session
+            }
+        }
         throw new AccessDeniedException(JcrI18n.permissionDenied.text(pathAsString, actions));
+    }
+
+    void checkWorkspacePermission( String workspaceName,
+                                   String... actions ) throws AccessDeniedException {
+        checkPermission(workspaceName, (PathSupplier)null, actions);
     }
 
     @Override
@@ -1432,10 +1548,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                   String actions ) throws RepositoryException {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absPath");
-        Path p = absolutePathFor(absPath);
+        PathSupplier pathSupplier = pathSupplierFor(absolutePathFor(absPath));
         String[] actionsArray = actions.split(",");
         String workspaceName = this.workspace().getName();
-        return hasPermission(workspaceName, p, actionsArray) && hasPermissionOnPath(p, actionsArray);
+        return hasPermission(workspaceName, pathSupplier, actionsArray)
+               && hasPermissionOnExternalPath(pathSupplier, actionsArray);
     }
 
     /**
