@@ -70,6 +70,11 @@ public abstract class AbstractChildReferences implements ChildReferences {
     }
 
     @Override
+    public Iterator<ChildReference> iterator() {
+        return iterator(new BasicContext());
+    }
+
+    @Override
     public Iterator<ChildReference> iterator( Name name,
                                               Context context ) {
         return contextSensitiveIterator(iterator(name), context);
@@ -183,12 +188,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
     @Override
     public Iterator<ChildReference> iterator( Collection<?> namePatterns,
                                               final NamespaceRegistry registry ) {
-        return new PatternIterator<ChildReference>(iterator(), namePatterns) {
-            @Override
-            protected String matchable( ChildReference value ) {
-                return value.getSegmentAsString(registry);
-            }
-        };
+        return iterator(new BasicContext(), namePatterns, registry);
     }
 
     @Override
@@ -198,7 +198,8 @@ public abstract class AbstractChildReferences implements ChildReferences {
         return new PatternIterator<ChildReference>(iterator(context), namePatterns) {
             @Override
             protected String matchable( ChildReference value ) {
-                return value.getSegmentAsString(registry);
+                // We only want the **name** excluding same-name-siblings ...
+                return value.getName().getString(registry);
             }
         };
     }
