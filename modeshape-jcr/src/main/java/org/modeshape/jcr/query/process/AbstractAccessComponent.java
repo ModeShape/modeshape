@@ -48,6 +48,7 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
     protected final SelectorName sourceName;
     protected final List<Column> projectedColumns;
     protected final List<Constraint> andedConstraints;
+    protected final List<Constraint> postConstraints;
     protected final Limit limit;
 
     protected AbstractAccessComponent( QueryContext context,
@@ -92,14 +93,16 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
         assert this.projectedColumns != null;
 
         // Add the criteria ...
-        List<Constraint> andedConstraints = null;
+        LuceneQueryDistributor distributor = new LuceneQueryDistributor(columns);
         for (PlanNode select : accessNode.findAllAtOrBelow(Type.SELECT)) {
             Constraint selectConstraint = select.getProperty(Property.SELECT_CRITERIA, Constraint.class);
-            if (andedConstraints == null) andedConstraints = new ArrayList<Constraint>();
-            andedConstraints.add(selectConstraint);
+            distributor.distribute(selectConstraint);
         }
-        this.andedConstraints = andedConstraints != null ? andedConstraints : Collections.<Constraint>emptyList();
+        this.andedConstraints = distributor.getLuceneConstraints();
         assert this.andedConstraints != null;
+
+        this.postConstraints = distributor.getPostConstraints();
+        assert this.postConstraints != null;
 
         // Find the limit ...
         Limit limit = Limit.NONE;
