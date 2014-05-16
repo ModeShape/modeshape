@@ -23,15 +23,6 @@
  */
 package org.modeshape.jcr.query.lucene;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import javax.jcr.RepositoryException;
-import javax.jcr.query.InvalidQueryException;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
@@ -59,12 +50,20 @@ import org.modeshape.jcr.query.optimize.Optimizer;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.Planner;
-import org.modeshape.jcr.query.process.AbstractAccessComponent;
-import org.modeshape.jcr.query.process.ProcessingComponent;
-import org.modeshape.jcr.query.process.QueryEngine;
-import org.modeshape.jcr.query.process.QueryProcessor;
-import org.modeshape.jcr.query.process.SelectComponent;
+import org.modeshape.jcr.query.process.*;
 import org.modeshape.jcr.query.validate.Schemata;
+
+import javax.jcr.RepositoryException;
+import javax.jcr.query.InvalidQueryException;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+
 
 /**
  * A {@link QueryEngine} that uses Lucene for answering queries. Each repository uses a single {@link LuceneQueryEngine} instance,
@@ -276,10 +275,11 @@ public class LuceneQueryEngine extends QueryEngine {
         @Override
         public List<Object[]> execute() {
             assert andedConstraints != null;
+            assert postConstraints != null;
             assert limit != null;
 
             // Create the Lucene queries ...
-            LuceneQuery queries = schema.createQuery(sourceName, andedConstraints, processingContext);
+			LuceneQuery queries = schema.createQuery(sourceName, andedConstraints, processingContext);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Executing the lucene query: {0}", queries.toString());
             }
@@ -338,12 +338,20 @@ public class LuceneQueryEngine extends QueryEngine {
                     return Collections.emptyList();
                 } catch (IOException e) {
                     throw new LuceneException(e);
-                }
-            }
+				}
+			}
+
+			if (!postConstraints.isEmpty())
+			{
+				for (Constraint constraint : postConstraints)
+				{
+					queries.addConstraintForPostprocessing(constraint);
+				}
+			}
 
             if (!tuples.isEmpty() && !queryContext.isCancelled()) {
                 Constraint postProcessingConstraints = queries.getPostProcessingConstraints();
-                if (postProcessingConstraints != null) {
+				if (postProcessingConstraints != null) {
                     // Create a delegate processing component that will return the tuples we've already found ...
                     final List<Object[]> allTuples = tuples;
                     ProcessingComponent tuplesProcessor = new ProcessingComponent(queryContext, columns) {
