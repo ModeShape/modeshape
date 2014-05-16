@@ -217,7 +217,7 @@ public class Upgrades {
                     String name = nodeTypeDefinition.getName();
                     // keep only the exact types that we know have changed to keep the overhead to a minimum
                     if (ModeShapeLexicon.ACCESS_CONTROLLABLE.getString().equalsIgnoreCase(name)
-                        || ModeShapeLexicon.ACL.getString().equalsIgnoreCase(name)
+                        || ModeShapeLexicon.ACCESS_LIST_NODE_TYPE.getString().equalsIgnoreCase(name)
                         || ModeShapeLexicon.PERMISSION.getString().equalsIgnoreCase(name)
                         || ModeShapeLexicon.LOCK.getString().equalsIgnoreCase(name)) {
                         continue;
@@ -260,7 +260,7 @@ public class Upgrades {
                     try {
                         JcrQueryManager queryManager = session.getWorkspace().getQueryManager();
                         Query query = queryManager.createQuery(
-                                "select [jcr:name] from [" + AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE + "]",
+                                "select [jcr:name] from [" + ModeShapeLexicon.ACCESS_CONTROLLABLE.getString() + "]",
                                 JcrQuery.JCR_SQL2);
                         nodesWithAccessControl = query.execute().getRows().getSize();
                     } finally {

@@ -1000,7 +1000,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[]{ accessControlManager.privilegeFromName(
                 Privilege.JCR_ALL)});
         accessControlManager.setPolicy("/node", acl);
-        assertTrue(hasMixin(node, AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE));
+        assertTrue(hasMixin(node, ModeShapeLexicon.ACCESS_CONTROLLABLE.getString()));
         session.save();
 
         //export the data
@@ -1013,7 +1013,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         session.importXML("/", new ByteArrayInputStream(baos.toByteArray()),
                           ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
         node = session.getNode("/node");
-        assertTrue(hasMixin(node, AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE));
+        assertTrue(hasMixin(node, ModeShapeLexicon.ACCESS_CONTROLLABLE.getString()));
         assertFalse(node.getNodes().hasNext());
     }
 
@@ -1026,7 +1026,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[]{ accessControlManager.privilegeFromName(
                 Privilege.JCR_ALL)});
         accessControlManager.setPolicy("/node", acl);
-        assertTrue(hasMixin(node, AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE));
+        assertTrue(hasMixin(node, ModeShapeLexicon.ACCESS_CONTROLLABLE.getString()));
         session.save();
 
         //export the data
@@ -1039,7 +1039,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         session.importXML("/", new ByteArrayInputStream(baos.toByteArray()),
                           ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
         node = session.getNode("/node");
-        assertTrue(hasMixin(node, AccessControlManagerImpl.MODE_ACCESS_CONTROLLABLE));
+        assertTrue(hasMixin(node, ModeShapeLexicon.ACCESS_CONTROLLABLE.getString()));
         assertFalse(node.getNodes().hasNext());
     }
 
