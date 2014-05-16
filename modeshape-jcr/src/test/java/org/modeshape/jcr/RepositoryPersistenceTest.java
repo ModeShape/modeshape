@@ -29,7 +29,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -45,6 +44,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.JcrTools;
@@ -64,14 +64,13 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
         assertDataPersistenceAcrossRestarts(repositoryConfigFile);
     }
 
+    @FixFor( "MODE-2212" )
     @Test
     public void shouldPersistGeneratedNamespacesAcrossRestart() throws Exception {
         String repositoryConfigFile = "config/repo-config-persistent-cache.json";
         File persistentFolder = new File("target/persistent_repository");
         // remove all persisted content ...
         FileUtil.delete(persistentFolder);
-
-        final JcrTools tools = new JcrTools();
 
         startRunStop(new RepositoryOperation() {
 
@@ -129,7 +128,6 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
             assertThat(testFile.getPath() + " should be readable", testFile.canRead(), is(true));
             testFileSizesInBytes.put(testFile.getName(), testFile.length());
         }
-
 
         final JcrTools tools = new JcrTools();
 
@@ -210,7 +208,7 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
 
     @Test
     public void shouldPersistDataUsingDB() throws Exception {
-        //make sure the DB is clean (empty) when running this test; there is no effective teardown
+        // make sure the DB is clean (empty) when running this test; there is no effective teardown
         assertDataPersistenceAcrossRestarts("config/db/repo-config-jdbc.json");
     }
 
