@@ -65,7 +65,6 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
-import org.modeshape.jcr.value.Path;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -482,7 +481,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
         session.checkLive();
         try {
-            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
+            session.checkWorkspacePermission(session.workspaceName(), ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
@@ -512,7 +511,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
         session.checkLive();
         try {
-            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
+            session.checkWorkspacePermission(session.workspaceName(), ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
@@ -539,7 +538,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, AccessDeniedException, RepositoryException {
 
         try {
-            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
+            session.checkWorkspacePermission(session.workspaceName(), ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
@@ -570,7 +569,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
 
         try {
-            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
+            session.checkWorkspacePermission(session.workspaceName(), ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
@@ -617,7 +616,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         NameFactory nameFactory = context().getValueFactories().getNameFactory();
 
         try {
-            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
+            session.checkWorkspacePermission(session.workspaceName(), ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
