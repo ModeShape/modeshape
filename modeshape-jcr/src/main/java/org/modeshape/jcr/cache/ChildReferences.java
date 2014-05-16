@@ -176,7 +176,8 @@ public interface ChildReferences extends Iterable<ChildReference> {
     Iterator<ChildReference> iterator();
 
     /**
-     * Get an iterator over all of the children that have names matching at least one of the supplied patterns.
+     * Get an iterator over all of the children that have {@link Segment#getName() names} (excluding same-name-sibling indexes)
+     * matching at least one of the supplied patterns.
      * 
      * @param namePatterns the list of string literals or regex patterns describing the names
      * @param registry the namespace registry, used to convert names to a form compatible with the name patterns
@@ -194,9 +195,9 @@ public interface ChildReferences extends Iterable<ChildReference> {
     Iterator<ChildReference> iterator( Context context );
 
     /**
-     * Get an iterator over all of the children that have names matching at least one of the supplied patterns, using the supplied
-     * context. The resulting iterator is lazy where possible, but it may be an expensive call if there are large numbers of
-     * children.
+     * Get an iterator over all of the children that have {@link Segment#getName() names} (excluding same-name-sibling indexes)
+     * matching at least one of the supplied patterns, using the supplied context. The resulting iterator is lazy where possible,
+     * but it may be an expensive call if there are large numbers of children.
      * 
      * @param context the context in which the child should be evaluated; may be null if there is no context
      * @param namePatterns the list of string literals or regex patterns describing the names
@@ -322,8 +323,8 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Get the number of child references that were inserted with the given name.
-         *
-         * @param  name the {@link Name} of a child, never {@code null}
+         * 
+         * @param name the {@link Name} of a child, never {@code null}
          * @return the number of inserted child references which have the given name; never negative
          */
         int insertionCount( Name name );
