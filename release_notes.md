@@ -12,8 +12,8 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This patch release addresses a single issue with the way repository URLs are resolved.
-The fix is low-risk and has already been tested in the community.
+This patch release addresses a half dozen issues. The fixes are all low-risk and have
+already been tested in the community.
 
 ## Features
 
