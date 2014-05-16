@@ -14,15 +14,17 @@ by ModeShape's service.
 
 As of 4.0.0.Alpha1, ModeShape is licensed under the Apache Software License, 2.0.
 
-This is the second alpha release of the 4.0 stream, and it includes several fixes
-and new features. The previous alpha release introduced a new query engine that allows 
-clients to explicitly define the indexes used in the query system, and this second
-alpha release brings minor changes to the Service Provider Interface (SPI) for 
-query providers. Version &version; does introduce a programmatic API and configuration
-modifications for defining indexes, although no complete query providers are included
-(see next release).
+This is the third alpha release of the 4.0 stream, and it includes several fixes
+and new features. Of note is that the event system now uses a uses our new ring buffer
+that is substantially faster. Of course, there's no change in the event APIs so 
+your listener implementations will continue to work unchanged.
 
-Additionally, this release has support for the JCR event journal feature, allowing
+The first alpha release introduced a new query engine that allows 
+clients to explicitly define the indexes used in the query system, and the second
+alpha release brought minor changes to the Service Provider Interface (SPI) for 
+query providers and introduced a programmatic API and configuration
+modifications for defining indexes, although no complete query providers are included
+(see next release). Alpha2 had support for the JCR event journal feature, allowing
 applications to poll for changes that occurred during time ranges. This is a useful
 alternative to listeners that may be expensive or time-consuming.
 
@@ -40,7 +42,7 @@ we ask that you test the following areas:
 be happy to hear about it if you do.
 * Queries - although there are known issues (see MODE-2178 for details), we think that most
 queries will work, albeit a bit slower, especially on medium or large repositories. We'll
-increase speed by adding indexes in a forthcoming release, but in the meantime please
+increase speed by adding indexes in a forthcoming alpha release, but in the meantime please
 check that your queries work. If not, please file an issue.
 * Clustering - ModeShape no longer has a clustering section in its configuration, since
 we simply piggyback on top of Infinispan's clustering setup. We've also upgraded to 
@@ -55,8 +57,8 @@ file-based cache stores. Also, the LevelDB cache store is supposedly very fast.
 in order to test migrating 3.x repositories to 4.0 you will need to use ModeShape's backup
 and restore feature. If you don't regularly use that, please test it with your repository.
 Just be sure not to overwrite any 3.x repositories.
-* Bugs - we've fixed a number of bugs reported against 3.x; see the list below for details. 
-All these are ready for testing.
+* Bugs - we've fixed a number of bugs reported against and fixed in 3.x; see the list 
+below for details. All these are ready for testing.
 * Configuration - comments are now allowed in our JSON configuration.
 
 
