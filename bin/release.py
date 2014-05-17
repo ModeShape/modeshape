@@ -150,7 +150,7 @@ def generate_release_notes(markdown_file,version,output_dir):
   readme_text = unmarkdown(readme_md)
 
   # Write out the two files in the desired location ...
-  if not os.path.exists(directory):
+  if not os.path.exists(output_dir):
     os.makedirs(output_dir)
   path = os.path.join(output_dir,"release.html")
   mdf = open(path,'w')
