@@ -15,10 +15,10 @@
  */
 /**
  * This package provides a Service Provider Interface (SPI) for connectors to external systems. The ModeShape federation system
- * uses these {@link org.modeshape.jcr.federation.spi.Connector} implementations to enable a repository to access external systems
+ * uses these {@link org.modeshape.jcr.spi.federation.Connector} implementations to enable a repository to access external systems
  * and project the external information as structured nodes within the repository. External sources are configured in the 
  * {@link org.modeshape.jcr.RepositoryConfiguration repository configuration JSON file} to use a specific 
- * {@link org.modeshape.jcr.federation.spi.Connector} implementation (including connector-specific configuration properties), 
+ * {@link org.modeshape.jcr.spi.federation.Connector} implementation (including connector-specific configuration properties),
  * while the projections that define how and where the external content is bound into the repository content are created using the 
  * {@link org.modeshape.jcr.api.federation.FederationManager}:
  * <pre>
@@ -34,13 +34,13 @@
  * fedMgr.createExternalProjection(parentPath, sourceName, externalPath, alias);
  * </pre>
  * <p>
- * To create a custom connector, simply create a {@link org.modeshape.jcr.federation.spi.Connector} subclass
+ * To create a custom connector, simply create a {@link org.modeshape.jcr.spi.federation.Connector} subclass
  * and implement the necessary methods. If your connector is only to read information and never will update any external content,
- * you can instead subclass the {@link org.modeshape.jcr.federation.spi.ReadOnlyConnector} class, which implements the methods
+ * you can instead subclass the {@link org.modeshape.jcr.spi.federation.ReadOnlyConnector} class, which implements the methods
  * used to create/update/delete content by throwing the proper exception.
  * </p>
  */
 
-package org.modeshape.jcr.federation.spi;
+package org.modeshape.jcr.spi.federation;
 
 

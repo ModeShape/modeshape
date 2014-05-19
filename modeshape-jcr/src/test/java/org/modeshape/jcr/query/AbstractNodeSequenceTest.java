@@ -20,7 +20,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.Before;
+import org.modeshape.jcr.bus.RepositoryChangeBus;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
@@ -41,15 +44,26 @@ import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
  */
 public class AbstractNodeSequenceTest extends AbstractNodeCacheTest {
 
+    private ExecutorService executor;
+    private RepositoryChangeBus changeBus;
+
     @Override
     protected NodeCache createCache() {
+        executor = Executors.newCachedThreadPool();
+        changeBus = new RepositoryChangeBus("repo", executor);
         ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<NodeKey, CachedNode>();
         DocumentStore documentStore = new LocalDocumentStore(schematicDb);
         DocumentTranslator translator = new DocumentTranslator(context, documentStore, 100L);
-        WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", documentStore, translator, ROOT_KEY_WS1,
-                                                           nodeCache, null);
+        WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", null, documentStore, translator, ROOT_KEY_WS1,
+                                                           nodeCache, changeBus);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
         return workspaceCache;
+    }
+
+    @Override
+    protected void shutdownCache( NodeCache cache ) {
+        super.shutdownCache(cache);
+        executor.shutdown();
     }
 
     @Override

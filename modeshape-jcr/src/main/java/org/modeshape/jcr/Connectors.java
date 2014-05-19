@@ -61,11 +61,11 @@ import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
-import org.modeshape.jcr.federation.ConnectorChangeSetFactory;
 import org.modeshape.jcr.federation.ConnectorChangeSetImpl;
-import org.modeshape.jcr.federation.spi.Connector;
-import org.modeshape.jcr.federation.spi.ConnectorChangeSet;
-import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
+import org.modeshape.jcr.spi.federation.Connector;
+import org.modeshape.jcr.spi.federation.ConnectorChangeSet;
+import org.modeshape.jcr.spi.federation.ConnectorChangeSetFactory;
+import org.modeshape.jcr.spi.federation.ExtraPropertiesStore;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -89,6 +89,7 @@ public final class Connectors {
 
     private boolean initialized = false;
     private final AtomicReference<Snapshot> snapshot = new AtomicReference<>();
+    private volatile DocumentTranslator translator;
 
     protected Connectors( JcrRepository.RunningState repository,
                           Collection<Component> components,
@@ -596,7 +597,13 @@ public final class Connectors {
      * @return a {@link DocumentTranslator} instance.
      */
     public DocumentTranslator getDocumentTranslator() {
-        return repository.repositoryCache().getDocumentTranslator();
+        if (translator == null) {
+            // We don't want the connectors to use a translator that converts large strings to binary values that are
+            // managed within ModeShape's binary store. Instead, all of the connector-created string property values
+            // should be kept as strings ...
+            translator = repository.repositoryCache().getDocumentTranslator().withLargeStringSize(Long.MAX_VALUE);
+        }
+        return translator;
     }
 
     /**

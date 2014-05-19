@@ -84,6 +84,7 @@ public class XsdSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    @FixFor("MODE-2183")
     public void shouldBeAbleToParseXsdFromDefinitiveXmlSchemaExampleChapter04ord1() throws Exception {
         final Node outputNode = assertSequencedSuccessfully("definitiveXmlSchema/chapter04ord1.xsd");
         final Node includeNode = outputNode.getNode(XsdLexicon.INCLUDE);
@@ -147,7 +148,7 @@ public class XsdSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
-    @FixFor("MODE-1464")
+    @FixFor({"MODE-1464", "MODE-2183"})
     public void shouldBeAbleToParseUnsignedLong() throws Exception {
         final Node outputNode = assertSequencedSuccessfully("unsigned_long.xsd");
 

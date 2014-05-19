@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.federation.spi;
+package org.modeshape.jcr.spi.federation;
 
 import org.modeshape.common.i18n.I18n;
 

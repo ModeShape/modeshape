@@ -56,8 +56,7 @@
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
         <jcr.version>2.0</jcr.version>
-        <version.org.jboss.bom>1.0.7.Final</version.org.jboss.bom>
-        <jboss.server.version>8.0.0.CR1</jboss.server.version>
+        <jboss.server.version>8.0.0.Final</jboss.server.version>
     </properties>
 
     <!--
@@ -85,21 +84,20 @@
             </dependency>
 
             <!--
-                The following imports will bring in 2 boms which contain server-specific dependencies and should give clients
-                all the standard (JEE & JBoss spec) dependencies, together with logging.
+              Wildfly BOM
             -->
             <dependency>
-                <groupId>org.jboss.bom</groupId>
-                <artifactId>jboss-javaee-6.0-with-tools</artifactId>
-                <version>${version.org.jboss.bom}</version>
-                <scope>import</scope>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>jboss-javaee-7.0-with-tools</artifactId>
+                <version>${jboss.server.version}</version>
                 <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <dependency>
-                <groupId>org.jboss.bom</groupId>
-                <artifactId>jboss-javaee-6.0-with-logging</artifactId>
-                <version>${version.org.jboss.bom}</version>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>jboss-javaee-7.0-with-logging</artifactId>
+                <version>${jboss.server.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>

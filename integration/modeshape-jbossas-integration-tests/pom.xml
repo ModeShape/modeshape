@@ -22,19 +22,13 @@
     </properties>
     <dependencyManagement>
         <dependencies>
-            <!-- Define the version of JBoss' Java EE 6 APIs we want to import.
-                  Any dependencies from org.jboss.spec will have their version defined by this
-                  BOM -->
-            <!-- JBoss distributes a complete set of Java EE 6 APIs including
-                  a Bill of Materials (BOM). A BOM specifies the versions of a "stack" (or
-                  a collection) of artifacts. We use this here so that we always get the correct
-                  versions of artifacts. Here we use the jboss-javaee-6.0-with-tools stack
-                  (you can read this as the JBoss stack of the Java EE 6 APIs, with some extras
-                  tools for your project, such as Arquillian for testing) -->
+            <!--
+                Wildfly BOM
+            -->
             <dependency>
-                <groupId>org.jboss.bom</groupId>
-                <artifactId>jboss-javaee-6.0-with-tools</artifactId>
-                <version>${jboss-javaee-6.0-with-tools.version}</version>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>jboss-javaee-7.0-with-tools</artifactId>
+                <version>${jboss.server.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -56,30 +50,18 @@
             <artifactId>modeshape-jcr-api</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <!-- Import the CDI API, we use provided scope as the API is included in JBoss AS 7 -->
         <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- Import the Common Annotations API (JSR-250), using 'provided' scope as the API is included in JBoss AS 7 -->
-        <dependency>
-            <groupId>org.jboss.spec.javax.annotation</groupId>
-            <artifactId>jboss-annotations-api_1.1_spec</artifactId>
-            <scope>provided</scope>
-        </dependency>
+
         <!-- Import the EJB API, using 'provided' scope as the API is included in JBoss AS 7 -->
         <dependency>
             <groupId>org.jboss.spec.javax.ejb</groupId>
-            <artifactId>jboss-ejb-api_3.1_spec</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-6.0</artifactId>
-            <version>1.0.0.Final</version>
-            <type>pom</type>
+            <artifactId>jboss-ejb-api_3.2_spec</artifactId>
             <scope>provided</scope>
         </dependency>
 

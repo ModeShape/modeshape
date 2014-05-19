@@ -29,7 +29,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
+import org.modeshape.jcr.spi.federation.ExtraPropertiesStore;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 

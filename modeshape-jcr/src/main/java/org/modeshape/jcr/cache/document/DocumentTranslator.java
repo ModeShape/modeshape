@@ -124,6 +124,10 @@ public class DocumentTranslator implements DocumentConstants {
         assert this.largeStringSize.get() >= 0;
     }
 
+    public DocumentTranslator withLargeStringSize( long largeStringSize ) {
+        return new DocumentTranslator(context, documentStore, largeStringSize);
+    }
+
     public final ValueFactory<String> getStringFactory() {
         return strings;
     }
@@ -149,7 +153,7 @@ public class DocumentTranslator implements DocumentConstants {
      * Obtain the preferred {@link NodeKey key} for the parent of this node. Because a node can be used in more than once place,
      * it may technically have more than one parent. Therefore, in such cases this method prefers the parent that is in the
      * {@code primaryWorkspaceKey} and, if there is no such parent, the parent that is in the {@code secondaryWorkspaceKey}.
-     *
+     * 
      * @param document the document for the node; may not be null
      * @param primaryWorkspaceKey the key for the workspace in which the parent should preferably exist; may be null
      * @param secondaryWorkspaceKey the key for the workspace in which the parent should exist if not in the primary workspace;
@@ -788,7 +792,7 @@ public class DocumentTranslator implements DocumentConstants {
         List<?> children = document.getArray(CHILDREN);
         EditableArray newChildren = Schematic.newArray();
         if (children != null) {
-            //process existing children
+            // process existing children
             for (Object value : children) {
                 ChildReference ref = childReferenceFrom(value);
                 if (ref == null) {
@@ -818,16 +822,17 @@ public class DocumentTranslator implements DocumentConstants {
         }
 
         if (!insertionsByBeforeKey.isEmpty()) {
-            //there are transient insertions (due to reordering of transient nodes) that have to be inserted in a correct order
-            //if any reorderings involved existing children, they would have already been removed by the previous block
-            //note that these insertions have to be added as child because *they do not appear* in the appended list
+            // there are transient insertions (due to reordering of transient nodes) that have to be inserted in a correct order
+            // if any reorderings involved existing children, they would have already been removed by the previous block
+            // note that these insertions have to be added as child because *they do not appear* in the appended list
             LinkedList<ChildReference> toBeInsertedInOrder = new LinkedList<ChildReference>();
             for (Insertions insertion : insertionsByBeforeKey.values()) {
-                //process the remaining insertions-before, which indicate transient & reordered children (reordering removes children
-                //from the appended list
+                // process the remaining insertions-before, which indicate transient & reordered children (reordering removes
+                // children
+                // from the appended list
                 for (ChildReference activeReference : insertion.inserted()) {
                     if (toBeInsertedInOrder.contains(activeReference)) {
-                        //the current reference is already in the list
+                        // the current reference is already in the list
                         continue;
                     }
                     Insertions insertionsBeforeActive = insertionsByBeforeKey.get(activeReference.getKey());
@@ -885,7 +890,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Reads the children of the given block and returns a {@link ChildReferences} instance.
-     *
+     * 
      * @param block a {@code non-null} {@link Document} representing a block of children
      * @return a {@code non-null} child references instance
      */
@@ -1078,7 +1083,7 @@ public class DocumentTranslator implements DocumentConstants {
     /**
      * Given the lists of added & removed referrers (which may contain duplicates), compute the delta with which the count has to
      * be updated in the document
-     *
+     * 
      * @param addedReferrers the list of referrers that was added
      * @param removedReferrers the list of referrers that was removed
      * @return a map(nodekey, delta) pairs
@@ -1166,8 +1171,7 @@ public class DocumentTranslator implements DocumentConstants {
                 key = ref.isWeak() ? WEAK_REFERENCE_FIELD : REFERENCE_FIELD;
             }
 
-            String refString = ref instanceof NodeKeyReference ? ((NodeKeyReference)ref).getNodeKey().toString() :
-                               this.strings.create(ref);
+            String refString = ref instanceof NodeKeyReference ? ((NodeKeyReference)ref).getNodeKey().toString() : this.strings.create(ref);
             boolean isForeign = ref.isForeign();
             return Schematic.newDocument(key, refString, "$foreign", isForeign);
         }
@@ -1176,9 +1180,7 @@ public class DocumentTranslator implements DocumentConstants {
         }
         if (value instanceof ExternalBinaryValue) {
             ExternalBinaryValue externalBinaryValue = (ExternalBinaryValue)value;
-            return Schematic.newDocument(EXTERNAL_BINARY_ID_FIELD,
-                                         externalBinaryValue.getId(),
-                                         SOURCE_NAME_FIELD,
+            return Schematic.newDocument(EXTERNAL_BINARY_ID_FIELD, externalBinaryValue.getId(), SOURCE_NAME_FIELD,
                                          externalBinaryValue.getSourceName());
         }
         if (value instanceof org.modeshape.jcr.value.BinaryValue) {
@@ -1207,7 +1209,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Increment the reference count for the stored binary value with the supplied SHA-1 hash.
-     *
+     * 
      * @param binaryKey the key for the binary value; never null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
@@ -1234,12 +1236,12 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Decrement the reference count for the binary value.
-     *
+     * 
      * @param fieldValue the value in the document that may contain a binary value reference; may be null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
     protected void decrementBinaryReferenceCount( Object fieldValue,
-                                                     Set<BinaryKey> unusedBinaryKeys ) {
+                                                  Set<BinaryKey> unusedBinaryKeys ) {
         if (fieldValue instanceof List<?>) {
             for (Object value : (List<?>)fieldValue) {
                 decrementBinaryReferenceCount(value, unusedBinaryKeys);
@@ -1256,7 +1258,7 @@ public class DocumentTranslator implements DocumentConstants {
             } else if (fieldValue instanceof BinaryKey) {
                 sha1 = fieldValue.toString();
             } else if (fieldValue instanceof org.modeshape.jcr.api.Binary && !(fieldValue instanceof InMemoryBinaryValue)) {
-                sha1 = ((org.modeshape.jcr.api.Binary) fieldValue).getHexHash();
+                sha1 = ((org.modeshape.jcr.api.Binary)fieldValue).getHexHash();
             }
 
             if (sha1 != null) {
@@ -1416,7 +1418,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Checks if the given document is already locked
-     *
+     * 
      * @param doc the document
      * @return true if the change was made successfully, or false otherwise
      */
@@ -1454,7 +1456,7 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Marks the given document as queryable, by setting a flag.
-     *
+     * 
      * @param document a {@link EditableDocument} instance; never null
      * @param queryable a boolean which indicates whether the document should be queryable or not.
      */
@@ -1481,7 +1483,7 @@ public class DocumentTranslator implements DocumentConstants {
     /**
      * Returns the value of the {@link org.modeshape.jcr.cache.document.DocumentTranslator#CACHE_TTL_SECONDS} field, if such a
      * value exists.
-     *
+     * 
      * @param document a {@code non-null} document
      * @return either the value of the above field, or {@code null} if such a value doesn't exist.
      */

@@ -30,12 +30,14 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.WebLogger;
 import org.modeshape.web.jcr.rest.RestHelper;
+import org.modeshape.web.jcr.rest.model.RestException;
 import org.modeshape.web.jcr.rest.model.RestItem;
 import org.modeshape.web.jcr.rest.model.RestNode;
 import org.modeshape.web.jcr.rest.model.RestProperty;
@@ -327,5 +329,9 @@ public abstract class AbstractHandler {
         String parentUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, encodedPath(property.getParent().getPath()));
         boolean multiValued = property.isMultiple();
         return new RestProperty(property.getName(), url, parentUrl, values, multiValued);
+    }
+
+    protected Response exceptionResponse(String message) {
+        return Response.status(Response.Status.BAD_REQUEST).entity(new RestException(message)).build();
     }
 }

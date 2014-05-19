@@ -18,7 +18,7 @@ package org.modeshape.connector.git;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.infinispan.schematic.document.Document;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
 
 /**
  * 

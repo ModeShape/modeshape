@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.JcrNtLexicon;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
 
 /**
  * Class which converts database metadata, to connector documents.

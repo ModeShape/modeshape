@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
 
 /**
  * Base class for converting DB Metadata to connector documents.

@@ -190,6 +190,8 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
      * @param waitTimeSeconds the max number of seconds to wait.
      * @return either the sequenced node or null, if something has failed.
      * @throws Exception if anything unexpected happens
+     * @throws java.lang.AssertionError if the specified period of time has elapsed, but not enough sequencing events were
+     * received
      */
     protected Node getOutputNode( Node parentNode,
                                   String relativePath,

@@ -51,7 +51,7 @@ import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.api.query.QueryManager;
-import org.modeshape.jcr.federation.spi.ConnectorException;
+import org.modeshape.jcr.spi.federation.ConnectorException;
 
 /**
  * Unit test for the {@link org.modeshape.connector.mock.MockConnector} which validates several areas around the connector SPI and
@@ -773,6 +773,8 @@ public class MockConnectorTest extends SingleUseAbstractTest {
             // correctly cloned)
             fed2.addNode("federated2_1");
             ws1Session.save();
+            //sleep a bit to make sure the events which clear the ws cache have reached the other session
+            Thread.sleep(100L);
             assertNodeFound("/testRoot/fed2/federated2_1");
         } finally {
             ws1Session.logout();

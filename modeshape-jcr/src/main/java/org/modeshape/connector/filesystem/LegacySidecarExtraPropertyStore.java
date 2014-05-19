@@ -38,7 +38,7 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.cache.DocumentStoreException;
-import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
+import org.modeshape.jcr.spi.federation.ExtraPropertiesStore;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Property;

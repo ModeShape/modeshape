@@ -19,6 +19,7 @@ package org.modeshape.jcr;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
@@ -128,6 +129,22 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-2200" )
+    public void shouldDecrementBinaryRefCountsWithFederations() throws Exception {
+
+        FileUtil.delete("target/persistent_repository/");
+
+        new File("target/federation_persistent_3").mkdir();
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-infinispan-fs-connector3.json"));
+
+        byte[] data = randomBytes(10);
+        storeBinaryProperty(data, "skipNode1");
+        jcrSession().getNode("/skipNode1").remove();
+        jcrSession().save();
+        FileUtil.delete("target/persistent_repository/");
+    }
+
+    @Test
     @FixFor( "MODE-2144" )
     public void shouldCleanupUnusedBinariesForFilesystemStore() throws Exception {
         FileUtil.delete("target/persistent_repository");
@@ -139,7 +156,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2144" )
     public void shouldCleanupUnusedBinariesForDatabaseStore() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage-other.json"));
         checkUnusedBinariesAreCleanedUp();
     }
 

@@ -37,23 +37,23 @@ import javax.jcr.ValueFormatException;
  */
 public final class JdbcJcrValueFactory {
 
-    private static final SimpleDateFormat ISO8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    protected static final SimpleDateFormat ISO8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     private JdbcJcrValueFactory() {
     }
 
     /**
      * Creates a new {@link javax.jcr.Value} instance to be used by the JDBC driver.
-     *
+     * 
      * @param value an actual value which will be wrapped by the JCR value; may be null
-     * @return either a {@link javax.jcr.Value} instance or {@code null} if the given argument is {@code null} or is the
-     * string {@code NULL}
+     * @return either a {@link javax.jcr.Value} instance or {@code null} if the given argument is {@code null} or is the string
+     *         {@code NULL}
      */
     public static Value createValue( Object value ) {
         if (value == null) {
             return null;
         }
-        if (value instanceof String && ((String) value).equalsIgnoreCase("NULL")) {
+        if (value instanceof String && ((String)value).equalsIgnoreCase("NULL")) {
             return null;
         }
         return new JdbcJcrValue(value);
@@ -69,7 +69,7 @@ public final class JdbcJcrValueFactory {
         }
 
         @Override
-        public boolean getBoolean() throws ValueFormatException, IllegalStateException, RepositoryException {
+        public boolean getBoolean() throws IllegalStateException {
             if (value instanceof Boolean) {
                 return (Boolean)value;
             }
@@ -99,7 +99,7 @@ public final class JdbcJcrValueFactory {
         @Override
         public double getDouble() throws ValueFormatException, IllegalStateException, RepositoryException {
             if (value instanceof Number) {
-                return ((Number) value).doubleValue();
+                return ((Number)value).doubleValue();
             }
 
             try {
@@ -112,7 +112,7 @@ public final class JdbcJcrValueFactory {
         @Override
         public long getLong() throws ValueFormatException, IllegalStateException, RepositoryException {
             if (value instanceof Number) {
-                return ((Number) value).longValue();
+                return ((Number)value).longValue();
             }
 
             try {
@@ -200,7 +200,7 @@ public final class JdbcJcrValueFactory {
                 return ((InputStream)value);
             }
             if (value instanceof byte[]) {
-                return new ByteArrayInputStream((byte[]) value);
+                return new ByteArrayInputStream((byte[])value);
             }
             throw new ValueFormatException("Value not an InputStream");
         }

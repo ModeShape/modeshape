@@ -31,6 +31,7 @@ import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.JcrI18n;
@@ -40,13 +41,13 @@ import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.SessionNode;
-import org.modeshape.jcr.federation.spi.Connector;
-import org.modeshape.jcr.federation.spi.ConnectorException;
-import org.modeshape.jcr.federation.spi.DocumentChanges;
-import org.modeshape.jcr.federation.spi.DocumentReader;
-import org.modeshape.jcr.federation.spi.DocumentWriter;
-import org.modeshape.jcr.federation.spi.PageKey;
-import org.modeshape.jcr.federation.spi.Pageable;
+import org.modeshape.jcr.spi.federation.Connector;
+import org.modeshape.jcr.spi.federation.ConnectorException;
+import org.modeshape.jcr.spi.federation.DocumentChanges;
+import org.modeshape.jcr.spi.federation.DocumentReader;
+import org.modeshape.jcr.spi.federation.DocumentWriter;
+import org.modeshape.jcr.spi.federation.PageKey;
+import org.modeshape.jcr.spi.federation.Pageable;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ReferenceFactory;
@@ -142,9 +143,7 @@ public class FederatedDocumentStore implements DocumentStore {
                 EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
                 String documentId = documentIdFromNodeKey(key);
                 MutableCachedNode.NodeChanges nodeChanges = sessionNode.getNodeChanges();
-                DocumentChanges documentChanges = createDocumentChanges(nodeChanges,
-                                                                        connector.getSourceName(),
-                                                                        editableDocument,
+                DocumentChanges documentChanges = createDocumentChanges(nodeChanges, connector.getSourceName(), editableDocument,
                                                                         documentId);
                 connector.updateDocument(documentChanges);
             }
@@ -177,8 +176,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
         documentChanges.setChildrenChanges(nodeKeyMapToIdentifierMap(appendedChildren),
                                            nodeKeyMapToIdentifierMap(nodeChanges.renamedChildren()),
-                                           nodeKeySetToIdentifiersSet(nodeChanges.removedChildren()),
-                                           processedChildrenInsertions);
+                                           nodeKeySetToIdentifiersSet(nodeChanges.removedChildren()), processedChildrenInsertions);
 
         // parents
         Set<NodeKey> addedParents = nodeChanges.addedParents();
@@ -424,8 +422,12 @@ public class FederatedDocumentStore implements DocumentStore {
     private boolean isLocalSource( String key ) {
         return !NodeKey.isValidFormat(key) // the key isn't a std key format (probably some internal format)
                || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
-               || key.startsWith(localSourceKey); // the sources differ
+               || key.startsWith(localSourceKey) // the sources differ
+               || isBinaryMetadataDocumentKey(key); // it's the metadata document with reference counts for a SHA1 binary value
+    }
 
+    private boolean isBinaryMetadataDocumentKey( String key ) {
+        return key.endsWith("-ref") && Algorithm.SHA_1.isHexadecimal(key.substring(0, 40)); // 40 hexadecimal characters long
     }
 
     private String sourceKey( String nodeKey ) {

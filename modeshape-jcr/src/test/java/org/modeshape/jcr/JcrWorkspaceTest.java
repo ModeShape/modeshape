@@ -283,7 +283,7 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
 
         // workspace deletion clears the cache asynchronously so we need to wait until that completes
         final CountDownLatch workspaceDeletedLatch = new CountDownLatch(1);
-        repository.repositoryCache().register(new ChangeSetListener() {
+        repository.changeBus().register(new ChangeSetListener() {
             @Override
             public void notify( ChangeSet changeSet ) {
                 for (Change change : changeSet) {
@@ -478,7 +478,7 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
 
         AbstractJcrNode newParent = session.getNode("/new_parent");
         assertEquals(2, newParent.getNodes().getSize());
-        //validate that the jcr:uuid is the same as the identifier of the node
+        // validate that the jcr:uuid is the same as the identifier of the node
         Node child1 = assertNode("/new_parent/child1", "test:subnodeReferenceable");
         assertEquals(child1.getIdentifier(), child1.getProperty("jcr:uuid").getString());
 

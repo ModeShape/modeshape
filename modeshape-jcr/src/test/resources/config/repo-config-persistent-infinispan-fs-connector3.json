@@ -1,0 +1,31 @@
+{
+    "name" : "Persistent Repository",
+    "jndiName" : "java:jcr/local/PersistentRepository",
+    "monitoring" : {
+        "enabled" : true
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-persistent.xml",
+        "binaryStorage" : {
+            "type"  : "cache",
+            "cacheConfiguration" : "config/infinispan-persistent-binary-store.xml",
+            "dataCacheName" : "persistentRepository",
+            "metadataCacheName" : "binary-meta-data",
+            "minimumBinarySizeInBytes" : 1024
+        }
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "externalSources" : {
+        "fs2": {
+            "classname": "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath": "target/federation_persistent_3",
+            "projections" : [
+                "default:/fs3 => /"
+            ]
+        }
+    }
+}

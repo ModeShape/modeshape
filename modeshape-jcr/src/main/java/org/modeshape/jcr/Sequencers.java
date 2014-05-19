@@ -137,8 +137,7 @@ public class Sequencers implements ChangeSetListener {
                         // There are no path expressions, so this sequencer is only for explicit invocation ...
                         if (DEBUG) {
                             LOGGER.debug("Created sequencer '{0}' in repository '{1}' with no path expression; availabe only for explicit invocation",
-                                         sequencer.getName(),
-                                         repository.name());
+                                         sequencer.getName(), repository.name());
                         }
 
                     } else {
@@ -151,9 +150,7 @@ public class Sequencers implements ChangeSetListener {
                         pathExpressionsBySequencerId.put(uuid, pathExpressions);
                         if (DEBUG) {
                             LOGGER.debug("Created sequencer '{0}' in repository '{1}' with valid path expressions: {2}",
-                                         sequencer.getName(),
-                                         repository.name(),
-                                         pathExpressions);
+                                         sequencer.getName(), repository.name(), pathExpressions);
                         }
                     }
                 } catch (Throwable t) {
@@ -167,7 +164,7 @@ public class Sequencers implements ChangeSetListener {
             for (String workspaceName : workspaceNames) {
                 workspaceAdded(workspaceName);
             }
-            repository.repositoryCache().register(this);
+            repository.changeBus().register(this);
             this.initialized = false;
         }
     }
@@ -199,6 +196,7 @@ public class Sequencers implements ChangeSetListener {
 
         // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
         Session session = null;
+        List<Sequencer> initialized = new ArrayList<>();
         try {
             // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
             session = repository.loginInternalSession();
@@ -211,7 +209,7 @@ public class Sequencers implements ChangeSetListener {
             }
 
             // Initialize each sequencer using the supplied session ...
-            for (Iterator<Map.Entry<UUID, Sequencer>> sequencersIterator = sequencersById.entrySet().iterator(); sequencersIterator.hasNext();) {
+            for (Iterator<Map.Entry<String, Sequencer>> sequencersIterator = sequencersByName.entrySet().iterator(); sequencersIterator.hasNext();) {
                 Sequencer sequencer = sequencersIterator.next().getValue();
                 try {
                     sequencer.initialize(registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
@@ -220,16 +218,20 @@ public class Sequencers implements ChangeSetListener {
                     Method postInitialize = ReflectionUtil.findMethod(Sequencer.class, "postInitialize");
                     ReflectionUtil.invokeAccessibly(sequencer, postInitialize, new Object[] {});
                     if (DEBUG) {
-                        LOGGER.debug("Successfully initialized sequencer '{0}' in repository '{1}'",
-                                     sequencer.getName(),
+                        LOGGER.debug("Successfully initialized sequencer '{0}' in repository '{1}'", sequencer.getName(),
                                      repository.name());
                     }
+                    initialized.add(sequencer);
                 } catch (Throwable t) {
                     if (t.getCause() != null) {
                         t = t.getCause();
                     }
                     repository.error(t, JcrI18n.unableToInitializeSequencer, sequencer, repository.name(), t.getMessage());
-                    sequencersIterator.remove();
+                    try {
+                        sequencersIterator.remove();
+                    } finally {
+                        sequencersById.remove(sequencer.getUniqueId());
+                    }
                 }
             }
             this.initialized = true;
@@ -240,6 +242,15 @@ public class Sequencers implements ChangeSetListener {
                 session.logout();
             }
         }
+        assert allSequencersInitialized(initialized);
+    }
+
+    private boolean allSequencersInitialized( Collection<Sequencer> initialized ) {
+        assert initialized.size() == sequencersByName.size();
+        for (Sequencer sequencer : sequencersByName.values()) {
+            if (!initialized.contains(sequencer)) return false;
+        }
+        return true;
     }
 
     /**
@@ -274,10 +285,7 @@ public class Sequencers implements ChangeSetListener {
             }
             if (DEBUG && updated) {
                 LOGGER.debug("Updated sequencer '{0}' (id={1}) configuration due to new workspace '{2}' in repository '{3}'",
-                             sequencer.getName(),
-                             sequencer.getUniqueId(),
-                             workspaceName,
-                             repository.name());
+                             sequencer.getName(), sequencer.getUniqueId(), workspaceName, repository.name());
             }
         }
         if (configs.isEmpty()) return;
@@ -441,20 +449,14 @@ public class Sequencers implements ChangeSetListener {
                         if (!matcher.matches()) {
                             if (TRACE) {
                                 LOGGER.trace("Added property '{1}:{0}' in repository '{2}' did not match sequencer '{3}' and path expression '{4}'",
-                                             added.getPath(),
-                                             workspaceName,
-                                             repository.name(),
-                                             config.getSequencer().getName(),
+                                             added.getPath(), workspaceName, repository.name(), config.getSequencer().getName(),
                                              config.getPathExpression());
                             }
                             continue;
                         }
                         if (TRACE) {
                             LOGGER.trace("Submitting added property '{1}:{0}' in repository '{2}' for sequencing using '{3}' and path expression '{4}'",
-                                         added.getPath(),
-                                         workspaceName,
-                                         repository.name(),
-                                         config.getSequencer().getName(),
+                                         added.getPath(), workspaceName, repository.name(), config.getSequencer().getName(),
                                          config.getPathExpression());
                         }
                         // The property should be sequenced ...
@@ -471,20 +473,14 @@ public class Sequencers implements ChangeSetListener {
                         if (!matcher.matches()) {
                             if (TRACE) {
                                 LOGGER.trace("Changed property '{1}:{0}' in repository '{2}' did not match sequencer '{3}' and path expression '{4}'",
-                                             changed.getPath(),
-                                             workspaceName,
-                                             repository.name(),
-                                             config.getSequencer().getName(),
-                                             config.getPathExpression());
+                                             changed.getPath(), workspaceName, repository.name(),
+                                             config.getSequencer().getName(), config.getPathExpression());
                             }
                             continue;
                         }
                         if (TRACE) {
                             LOGGER.trace("Submitting changed property '{1}:{0}' in repository '{2}' for sequencing using '{3}' and path expression '{4}'",
-                                         changed.getPath(),
-                                         workspaceName,
-                                         repository.name(),
-                                         config.getSequencer().getName(),
+                                         changed.getPath(), workspaceName, repository.name(), config.getSequencer().getName(),
                                          config.getPathExpression());
                         }
                         // The property should be sequenced ...
@@ -605,12 +601,8 @@ public class Sequencers implements ChangeSetListener {
             this.outputPath = outputPath;
             this.outputWorkspaceName = outputWorkspaceName;
             this.changedPropertyName = changedPropertyName;
-            this.hc = HashCode.compute(this.sequencerId,
-                                       this.inputWorkspaceName,
-                                       this.inputPath,
-                                       this.changedPropertyName,
-                                       this.outputPath,
-                                       this.outputWorkspaceName);
+            this.hc = HashCode.compute(this.sequencerId, this.inputWorkspaceName, this.inputPath, this.changedPropertyName,
+                                       this.outputPath, this.outputWorkspaceName);
             assert this.sequencerId != null;
             assert this.inputPath != null;
             assert this.changedPropertyName != null;

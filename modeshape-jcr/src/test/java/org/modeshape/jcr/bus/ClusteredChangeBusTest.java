@@ -20,6 +20,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,16 +29,15 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.clustering.ClusteringService;
 
 /**
- * Unit test for {@link ClusteredRepositoryChangeBus}
- *
+ * Unit test for {@link ClusteredChangeBus}
+ * 
  * @author Horia Chiorean
  */
-public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
+public class ClusteredChangeBusTest extends AbstractChangeBusTest {
 
-    private ClusteredRepositoryChangeBus defaultBus;
     private List<ChangeBus> buses = new ArrayList<>();
     private List<ClusteringService> clusteringServices = new ArrayList<>();
-    
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         ClusteringHelper.bindJGroupsToLocalAddress();
@@ -49,11 +49,8 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
     }
 
     @Override
-    protected ChangeBus getChangeBus() throws Exception {
-        if (defaultBus == null) {
-            defaultBus = startNewBus();
-        }
-        return defaultBus;
+    protected ChangeBus createRepositoryChangeBus() throws Exception {
+        return startNewBus();
     }
 
     @Override
@@ -64,7 +61,6 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         for (ClusteringService clusteringService : clusteringServices) {
             clusteringService.shutdown();
         }
-        defaultBus = null;
     }
 
     @Test
@@ -75,7 +71,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         TestListener listener3 = new TestListener();
 
         // Create three buses using a real JGroups cluster ...
-        ClusteredRepositoryChangeBus bus1 = startNewBus();
+        ClusteredChangeBus bus1 = startNewBus();
         bus1.register(listener1);
         // ------------------------------------
         // Send a change from the first bus ...
@@ -91,9 +87,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         bus1.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -104,7 +100,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         // ------------------------------------
         // Create a second bus ...
         // ------------------------------------
-        ClusteredRepositoryChangeBus bus2 = startNewBus();
+        ClusteredChangeBus bus2 = startNewBus();
         bus2.register(listener2);
 
         // ------------------------------------
@@ -121,9 +117,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         bus1.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -146,9 +142,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         bus2.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -160,7 +156,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         // ------------------------------------
         // Create a third bus ...
         // ------------------------------------
-        ClusteredRepositoryChangeBus bus3 = startNewBus();
+        ClusteredChangeBus bus3 = startNewBus();
         bus3.register(listener3);
         // ------------------------------------
         // Send a change from the first bus ...
@@ -176,9 +172,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         bus1.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -202,9 +198,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         bus2.notify(changeSet2);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -228,9 +224,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         bus3.notify(changeSet3);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -258,9 +254,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         bus2.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -284,9 +280,9 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         bus1.notify(changeSet);
 
         // Wait for the observers to be notified ...
-        listener1.await();
-        listener2.await();
-        listener3.await();
+        listener1.assertExpectedEventsCount();
+        listener2.assertExpectedEventsCount();
+        listener3.assertExpectedEventsCount();
 
         // Now verify that all of the observers received the notification ...
         assertThat(listener1.getObservedChangeSet().size(), is(1));
@@ -295,10 +291,12 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
     }
 
-    private ClusteredRepositoryChangeBus startNewBus() throws Exception {
-        ClusteringService clusteringService = new ClusteringService().startStandalone("test-bus-process", "config/jgroups-test-config.xml");
+    private ClusteredChangeBus startNewBus() throws Exception {
+        ClusteringService clusteringService = new ClusteringService().startStandalone("test-bus-process",
+                                                                                      "config/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
-        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(super.createRepositoryChangeBus(), clusteringService);
+        ChangeBus internalBus = new RepositoryChangeBus("repo", Executors.newCachedThreadPool());
+        ClusteredChangeBus bus = new ClusteredChangeBus(internalBus, clusteringService);
         bus.start();
         buses.add(bus);
         return bus;

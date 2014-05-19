@@ -31,14 +31,13 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 
 /**
- * Integration test with the http protocol of the {@link JcrDriver}.
- *
- * Please note that this class only performs a series of "smoke tests" against a running remote repository and is nowhere near
- * complete from a point of view of testing a {@link java.sql.Driver} implementation.
- *
+ * Integration test with the http protocol of the {@link JcrDriver}. Please note that this class only performs a series of
+ * "smoke tests" against a running remote repository and is nowhere near complete from a point of view of testing a
+ * {@link java.sql.Driver} implementation.
+ * 
  * @author Horia Chiorean
  */
-public class JcrHttpDriverIntegrationTest  {
+public class JcrHttpDriverIntegrationTest {
 
     private Properties driverProperties = new Properties();
     private JcrDriver driver = new JcrDriver(null);
@@ -64,7 +63,7 @@ public class JcrHttpDriverIntegrationTest  {
         assertFalse(connection.isClosed());
     }
 
-    @Test(expected = SQLException.class)
+    @Test( expected = SQLException.class )
     public void shouldNotConnectWithInvalidRepositoryName() throws Exception {
         DriverManager.getConnection(getContextPathUrl() + "/dummy", driverProperties);
     }
@@ -76,10 +75,11 @@ public class JcrHttpDriverIntegrationTest  {
         DatabaseMetaData metadata = connection.getMetaData();
         assertNotNull(metadata);
 
-        //reads tables and columns
+        // reads tables and columns
         readTables(metadata);
     }
 
+    @SuppressWarnings( "unused" )
     private void readTables( DatabaseMetaData metadata ) throws SQLException {
         ResultSet tables = metadata.getTables(null, null, null, null);
         try {
@@ -102,8 +102,11 @@ public class JcrHttpDriverIntegrationTest  {
         }
     }
 
-    private void readColumns( DatabaseMetaData metadata, String catalog, String schema, String table )
-            throws SQLException {
+    @SuppressWarnings( "unused" )
+    private void readColumns( DatabaseMetaData metadata,
+                              String catalog,
+                              String schema,
+                              String table ) throws SQLException {
         ResultSet columns = metadata.getColumns(catalog, schema, table, null);
         try {
             while (columns.next()) {
@@ -129,8 +132,8 @@ public class JcrHttpDriverIntegrationTest  {
                 String scopeSchema = columns.getString(20);
                 String scopeTable = columns.getString(21);
                 short scopeDataType = columns.getShort(22);
-//                String isAutoIncrement = columns.getString(23);
-//                String isGenerated = columns.getString(24);
+                // String isAutoIncrement = columns.getString(23);
+                // String isGenerated = columns.getString(24);
             }
         } finally {
             columns.close();
@@ -138,20 +141,18 @@ public class JcrHttpDriverIntegrationTest  {
     }
 
     @Test
-    @FixFor("MODE-872")
+    @FixFor( "MODE-872" )
     public void shouldReturnResultsFromSimpleQuery() throws Exception {
         Connection connection = connectToRemoteRepository();
         String query = "SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] WHERE [jcr:path] LIKE '/%' AND [jcr:path] NOT LIKE '/%/%'ORDER BY [jcr:path]";
         String[] expectedResults = new String[] {
-                "jcr:path[STRING]    jcr:name[STRING]    mode:depth[LONG]    mode:localName[STRING]    jcr:mixinTypes[STRING]    jcr:primaryType[STRING]",
-                "/        0        null    mode:root",
-                "/jcr:system    jcr:system    1    system    null    mode:system"
-        };
+            "jcr:path[STRING]    jcr:name[STRING]    mode:depth[LONG]    mode:localName[STRING]    jcr:mixinTypes[STRING]    jcr:primaryType[STRING]",
+            "/        0        null    mode:root", "/jcr:system    jcr:system    1    system    null    mode:system"};
         ConnectionResultsComparator.executeTest(connection, query, expectedResults, 3);
     }
 
     @Test
-    @FixFor("MODE-872")
+    @FixFor( "MODE-872" )
     public void shouldReturnEmptyResultSetWhenNoResultsFoundForQuery() throws Exception {
         Connection connection = connectToRemoteRepository();
         String query = "SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [mix:versionable] ORDER BY [jcr:path]";
@@ -175,27 +176,27 @@ public class JcrHttpDriverIntegrationTest  {
     }
 
     protected String getContextPathUrl() {
-        //must match Cargo's configuration
+        // must match Cargo's configuration
         return "localhost:8090/modeshape/v1";
     }
 
     protected String getRepositoryName() {
-        //must match the configuration from modeshape-web-jcr-rest-war
+        // must match the configuration from modeshape-web-jcr-rest-war
         return "repo";
     }
 
     protected String getWorkspaceName() {
-        //must match the configuration from modeshape-web-jcr-rest-war
+        // must match the configuration from modeshape-web-jcr-rest-war
         return "default";
     }
 
     protected String getUserName() {
-        //must match Cargo's configuration
+        // must match Cargo's configuration
         return "dnauser";
     }
 
     protected String getPassword() {
-        //must match Cargo's configuration
+        // must match Cargo's configuration
         return "password";
     }
 

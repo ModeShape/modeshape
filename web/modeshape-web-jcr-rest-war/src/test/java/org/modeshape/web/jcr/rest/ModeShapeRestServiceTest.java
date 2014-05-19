@@ -40,7 +40,7 @@ import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
 
 /**
  * Unit test for the v2 version of the rest service: {@link ModeShapeRestService}
- * 
+ *
  * @author Horia Chiorean
  */
 public class ModeShapeRestServiceTest extends JcrResourcesTest {
@@ -285,7 +285,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
                                                                              .hasMimeType(MediaType.TEXT_PLAIN)
                                                                              .hasContentDisposition(
                                                                                      RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX
-                                                                                     + TEST_NODE);
+                                                                                     + TEST_NODE
+                                                                                                   );
 
         assertEquals("testValue", response.contentAsString());
     }
@@ -322,7 +323,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     public void shouldCreateBinaryProperty() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
         doPost(fileStream("v2/post/binary.pdf"), binaryUrl(TEST_NODE, binaryPropertyName())).isCreated()
-                                                                                            .isJSONObjectLikeFile(newBinaryProperty());
+                                                                                            .isJSONObjectLikeFile(
+                                                                                                    newBinaryProperty());
         Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
 
         byte[] expectedBinaryContent = IoUtil.readBytes(fileStream("v2/post/binary.pdf"));
@@ -455,7 +457,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-1816" )
+    @FixFor("MODE-1816")
     public void shouldAllowPostingNodeWithMixinAndPrimaryTypesPropertiesAfterProperties() throws Exception {
         doPost(nodeWithMixinAfterPropsRequest(), itemsUrl(TEST_NODE)).isCreated()
                                                                      .isJSONObjectLikeFile(nodeWithMixinAfterPropsResponse());
@@ -463,7 +465,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-1901" )
+    @FixFor("MODE-1901")
     public void shouldComputePlainTextPlanForJcrSql2Query() throws Exception {
         // No need to create any data, since we are not executing the query ...
         String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
@@ -475,7 +477,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-1901" )
+    @FixFor("MODE-1901")
     public void shouldComputeJsonPlanForJcrSql2Query() throws Exception {
         // No need to create any data, since we are not executing the query ...
         String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
@@ -491,7 +493,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-2048")
+    @FixFor( "MODE-2048" )
     public void shouldAllowChildrenUpdateViaID() throws Exception {
         /**
          * testNode
@@ -530,7 +532,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-2048")
+    @FixFor("MODE-2048")
     public void shouldPerformChildReordering() throws Exception {
         /**
          * testNode
@@ -549,7 +551,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         JSONObject children = doPut("v2/put/node_multiple_children_reorder1.json", itemsUrl(TEST_NODE)).isOk().children();
 
         List<String> actualOrder = new ArrayList<String>();
-        for (Iterator<?> iterator = children.keys(); iterator.hasNext();) {
+        for (Iterator<?> iterator = children.keys(); iterator.hasNext(); ) {
             actualOrder.add(iterator.next().toString());
         }
         assertEquals("Invalid child order", Arrays.asList("child3", "child2", "child1"), actualOrder);
@@ -562,14 +564,14 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
          */
         children = doPut("v2/put/node_multiple_children_reorder2.json", itemsUrl(TEST_NODE)).isOk().children();
         actualOrder = new ArrayList<String>();
-        for (Iterator<?> iterator = children.keys(); iterator.hasNext();) {
+        for (Iterator<?> iterator = children.keys(); iterator.hasNext(); ) {
             actualOrder.add(iterator.next().toString());
         }
         assertEquals("Invalid child order", Arrays.asList("child2", "child3", "child1"), actualOrder);
     }
 
     @Test
-    @FixFor( "MODE-2048")
+    @FixFor("MODE-2048")
     public void shouldMoveNode() throws Exception {
         /**
          * node1
@@ -578,7 +580,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
          *   - child3
          */
         try {
-            JSONObject children = doPost("v2/post/node_multiple_children_request.json", itemsUrl("node1")).isCreated().children();
+            JSONObject children = doPost("v2/post/node_multiple_children_request.json", itemsUrl("node1")).isCreated()
+                                                                                                          .children();
             String child2Id = children.getJSONObject("child2").getString(ID_KEY);
 
             /**
@@ -603,7 +606,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-2056" )
+    @FixFor("MODE-2056")
     public void shouldCloseActiveSessions() throws Exception {
         //execute 3 requests
         doPost("v2/post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isCreated();
@@ -618,7 +621,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-2170" )
+    @FixFor("MODE-2170")
     public void shouldAllowUpdatingMultivaluedProperty() throws Exception {
         doPost("v2/post/node_multivalue_prop_request.json", itemsUrl(TEST_NODE)).isCreated();
         doPut("v2/put/node_multivalue_prop_request.json", itemsUrl(TEST_NODE))
@@ -628,7 +631,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-2181" )
+    @FixFor("MODE-2181")
     public void shouldAllowCreatingSNS() throws Exception {
         doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
         doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
@@ -638,7 +641,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-2181" )
+    @FixFor("MODE-2181")
     public void shouldAllowUpdatingSNSViaArray() throws Exception {
         doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
         doPut("v2/put/node_with_sns_edit_request.json", itemsUrl(TEST_NODE)).isOk();
@@ -651,7 +654,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-2181" )
+    @FixFor("MODE-2181")
     public void shouldAllowUpdatingSNSViaObject() throws Exception {
         doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
         doPut("v2/put/node_with_sns_edit_alt_request.json", itemsUrl(TEST_NODE)).isOk();
@@ -664,11 +667,98 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Test
-    @FixFor( "MODE-2181" )
+    @FixFor("MODE-2181")
     public void shouldAllowDeletingSNS() throws Exception {
         doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
         doDelete("v2/delete/sns_nodes_delete.json", itemsUrl()).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]")).isNotFound();
         doGet(itemsUrl(TEST_NODE, "foo[2]")).isNotFound();
+    }
+
+    @Test
+    @FixFor("MODE-2182")
+    public void shouldUploadFileUnderRootUsingStream() throws Exception {
+        try {
+            assertUpload("testFile1", true, false);
+        } catch (Exception e) {
+            doDelete(itemsUrl("testFile1")).isDeleted();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2182" )
+    public void shouldUploadFileUnderRootUsingForm() throws Exception {
+        try {
+            assertUpload("testFile2", true, true);
+        } finally {
+            doDelete(itemsUrl("testFile2")).isDeleted();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2182" )
+    public void shouldUploadFileAndCreateHierarchy() throws Exception {
+        try {
+            assertUpload("node1/node2/file", true, false);
+            doGet(itemsUrl("node1")).isOk().hasPrimaryType("nt:folder");
+            doGet(itemsUrl("node1/node2")).isOk().hasPrimaryType("nt:folder");
+            doGet(itemsUrl("node1/node2/file")).isOk().hasPrimaryType("nt:file");
+        } finally {
+            doDelete(itemsUrl("node1"));
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2182" )
+    public void shouldUploadFileAndCreatePartialHierarchy() throws Exception {
+        try {
+            doPost("v2/post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
+            doPost("v2/post/folder.json", itemsUrl("node1/node2")).isCreated().hasPrimaryType("nt:folder");
+            assertUpload("node1/node2/file", true, false);
+            doGet(itemsUrl("node1/node2/file")).isOk().hasPrimaryType("nt:file");
+        } finally {
+            doDelete(itemsUrl("node1"));
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2182" )
+    public void shouldModifyExistingFileViaUpload() throws Exception {
+        try {
+            doPost("v2/post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
+            doPost("v2/post/folder.json", itemsUrl("node1/node2")).isCreated().hasPrimaryType("nt:folder");
+            doPost("v2/post/file.json", itemsUrl("node1/node2/file")).isCreated().hasPrimaryType("nt:file");
+            assertUpload("node1/node2/file", false, false);
+        } finally {
+            doDelete(itemsUrl("node1"));
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2182" )
+    public void shouldNotAllowUploadIfTypeInvalid() throws Exception {
+        try {
+            doPost("v2/post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
+            doPost(fileStream("v2/post/binary.pdf"), uploadUrl("node1")).isBadRequest();
+        } finally {
+            doDelete(itemsUrl("node1"));
+        }
+    }
+
+    private void assertUpload( String url, boolean expectCreated, boolean useMultiPart ) throws Exception {
+        Response response = useMultiPart ?
+                            doPostMultiPart("v2/post/binary.pdf", FileUploadForm.PARAM_NAME, uploadUrl(url),
+                                            MediaType.APPLICATION_OCTET_STREAM) :
+                            doPost(fileStream("v2/post/binary.pdf"), uploadUrl(url));
+        if (expectCreated) {
+            response.isCreated();
+        } else {
+            response.isOk();
+        }
+        String binaryPropertyRequest = response.json().getString("jcr:data");
+        binaryPropertyRequest = binaryPropertyRequest.substring(binaryPropertyRequest.indexOf(
+                getServerContext()) + getServerContext().length());
+        byte[] uploaded = doGet(binaryPropertyRequest).isOk().contentAsBytes();
+        assertArrayEquals(IoUtil.readBytes(fileStream("v2/post/binary.pdf")), uploaded);
     }
 }

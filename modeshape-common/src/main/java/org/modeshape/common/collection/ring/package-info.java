@@ -13,15 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.cache.change;
 
 /**
- * 
+ * A ring buffer and the components it uses internally.
  */
-public final class NoOpChangeSetListener implements ChangeSetListener {
-
-    @Override
-    public void notify( ChangeSet changeSet ) {
-    }
-
-}
+package org.modeshape.common.collection.ring;

@@ -33,15 +33,16 @@ public class JcrBlob implements Blob {
 
     /**
      * Creates a new {@link java.sql.Blob} by wrapping a JCR binary
+     * 
      * @param binary a {@link javax.jcr.Binary} instance; may not be null
      */
-    public JcrBlob( Binary binary) {
+    public JcrBlob( Binary binary ) {
         this.binary = binary;
         assert this.binary != null;
     }
 
     @Override
-    public void free() throws SQLException {
+    public void free() {
         binary.dispose();
     }
 

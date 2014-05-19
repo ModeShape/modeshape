@@ -350,19 +350,15 @@ class QueryResultRowIterator implements RowIterator {
 
         while (tuples.hasNext()) {
             final Object[] tuple = tuples.next();
-            try {
-                // Get the next row ...
-                nextRow = getNextRow(tuple);
-                if (nextRow != null) return true;
-            } catch (RepositoryException e) {
-                // The node could not be found in this session, so skip it ...
-            }
+            // Get the next row ...
+            nextRow = getNextRow(tuple);
+            if (nextRow != null) return true;
             --numRows;
         }
         return false;
     }
 
-    private Row getNextRow( Object[] tuple ) throws RepositoryException {
+    private Row getNextRow( Object[] tuple ) {
         return new QueryResultRow(this, nodes, tuple);
     }
 
@@ -444,10 +440,10 @@ class QueryResultRow implements javax.jcr.query.Row {
     }
 
     @Override
-    public Value[] getValues() throws RepositoryException {
+    public Value[] getValues() {
         Value[] values = new Value[tuple.length];
         for (int i = 0; i < tuple.length; i++) {
-            values[i] =  JdbcJcrValueFactory.createValue(tuple[i]);
+            values[i] = JdbcJcrValueFactory.createValue(tuple[i]);
 
         }
         return values;

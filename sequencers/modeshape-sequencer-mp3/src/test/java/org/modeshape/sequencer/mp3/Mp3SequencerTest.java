@@ -53,6 +53,4 @@ public class Mp3SequencerTest extends AbstractSequencerTest {
         assertEquals("Sample MP3", sequencedNode.getProperty(TITLE).getString());
         assertEquals("2008", sequencedNode.getProperty(YEAR).getString());
     }
-
-
 }

@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.federation;
+package org.modeshape.jcr.spi.federation;
 
-import org.modeshape.jcr.federation.spi.ConnectorChangeSet;
-
+/**
+ * The trait of being able to create {@link org.modeshape.jcr.spi.federation.ConnectorChangeSet} instances.
+ */
 public interface ConnectorChangeSetFactory {
 
     /**

@@ -64,6 +64,7 @@ public final class CommonI18n {
     public static I18n argumentMustBeOfMaximumSize;
     public static I18n argumentMustBeOfMinimumSize;
     public static I18n argumentMustBePositive;
+    public static I18n argumentMustBePowerOfTwo;
     public static I18n argumentMustBeSameAs;
     public static I18n argumentMustNotBeEquals;
     public static I18n argumentMustNotBeSameAs;
@@ -117,6 +118,8 @@ public final class CommonI18n {
     public static I18n slf4jAvailable;
     public static I18n log4jAvailable;
     public static I18n jdkFallback;
+
+    public static I18n errorWhileClosingRingBufferConsumer;
 
     private CommonI18n() {
     }

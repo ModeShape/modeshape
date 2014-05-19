@@ -103,10 +103,10 @@ public class TransactionalWorkspaceCache extends WorkspaceCache {
     }
 
     @Override
-    public void notify( ChangeSet changeSet ) {
+    protected void evictChangedNodes( ChangeSet changeSet ) {
         // Delegate to the shared ...
-        sharedWorkspaceCache.notify(changeSet);
+        sharedWorkspaceCache.evictChangedNodes(changeSet);
         // And then handle it ourselves ...
-        super.notify(changeSet);
+        super.evictChangedNodes(changeSet);
     }
 }

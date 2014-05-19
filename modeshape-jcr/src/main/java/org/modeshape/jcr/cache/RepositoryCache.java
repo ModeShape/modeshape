@@ -52,18 +52,9 @@ import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.Upgrades;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
-import org.modeshape.jcr.cache.change.AbstractNodeChange;
-import org.modeshape.jcr.cache.change.AbstractPropertyChange;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
-import org.modeshape.jcr.cache.change.NodeAdded;
-import org.modeshape.jcr.cache.change.NodeChanged;
-import org.modeshape.jcr.cache.change.NodeMoved;
-import org.modeshape.jcr.cache.change.NodeRemoved;
-import org.modeshape.jcr.cache.change.NodeRenamed;
-import org.modeshape.jcr.cache.change.NodeReordered;
-import org.modeshape.jcr.cache.change.Observable;
 import org.modeshape.jcr.cache.change.RecordingChanges;
 import org.modeshape.jcr.cache.change.RepositoryMetadataChanged;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
@@ -88,7 +79,7 @@ import org.modeshape.jcr.value.ValueFactory;
 /**
  *
  */
-public class RepositoryCache implements Observable {
+public class RepositoryCache {
 
     private static final Logger LOGGER = Logger.getLogger(RepositoryCache.class);
 
@@ -280,7 +271,7 @@ public class RepositoryCache implements Observable {
         refreshRepositoryMetadata(false);
 
         this.changeBus = changeBus;
-        this.changeBus.register(new LocalChangeListener());
+        this.changeBus.registerInThread(new ChangesToWorkspacesListener());
 
         // Make sure the system workspace is configured to have a 'jcr:system' node ...
         SessionCache systemSession = createSession(context, systemWorkspaceName, false);
@@ -375,6 +366,10 @@ public class RepositoryCache implements Observable {
         }
     }
 
+    public final ChangeBus changeBus() {
+        return changeBus;
+    }
+
     protected final SessionEnvironment sessionContext() {
         return sessionContext;
     }
@@ -419,8 +414,8 @@ public class RepositoryCache implements Observable {
     }
 
     public RepositoryCache completeInitialization() {
-        if (initializingRepository) {
-            try {
+        try {
+            if (initializingRepository) {
                 LOGGER.debug("Marking repository '{0}' as fully initialized", name);
                 runInTransaction(new Callable<Void>() {
                     @Override
@@ -437,15 +432,15 @@ public class RepositoryCache implements Observable {
                     }
                 });
                 LOGGER.debug("Repository '{0}' is fully initialized", name);
-            } finally {
-                // if we have a global cluster-wide lock, make sure its released
-                if (isHoldingClusterLock) {
-                    clusteringService.unlock();
-                    LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
-                }
+            }
+            return this;
+        } finally {
+            // if we have a global cluster-wide lock, make sure its released
+            if (isHoldingClusterLock) {
+                clusteringService.unlock();
+                LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
             }
         }
-        return this;
     }
 
     public RepositoryCache completeUpgrade( final Upgrades.Context resources ) {
@@ -533,16 +528,6 @@ public class RepositoryCache implements Observable {
      */
     public NodeKey getRepositoryMetadataDocumentKey() {
         return systemMetadataKey;
-    }
-
-    @Override
-    public boolean register( ChangeSetListener observer ) {
-        return changeBus.register(observer);
-    }
-
-    @Override
-    public boolean unregister( ChangeSetListener observer ) {
-        return changeBus.unregister(observer);
     }
 
     public void setLargeStringLength( long sizeInBytes ) {
@@ -667,30 +652,15 @@ public class RepositoryCache implements Observable {
         return systemSession.mutable(systemRef.getKey());
     }
 
-    protected class LocalChangeListener implements ChangeSetListener {
+    protected class ChangesToWorkspacesListener implements ChangeSetListener {
         @Override
         public void notify( ChangeSet changeSet ) {
 
             if (changeSet == null || !getKey().equals(changeSet.getRepositoryKey())) {
                 return;
             }
-            boolean isLocalEvent = processKey().equals(changeSet.getProcessKey());
-            String workspaceName = changeSet.getWorkspaceName();
-            if (workspaceName != null) {
-                // notify the workspace caches first, so they flush their data
-                for (WorkspaceCache cache : workspaces()) {
-                    if (!isLocalEvent || !cache.getWorkspaceName().equalsIgnoreCase(workspaceName)) {
-                        // If the event did not originate in this process, we always process it. Otherwise, it did originate
-                        // in this process and the workspace that triggered the event should've already processed the
-                        // changeset (and we don't want to do it again)...
-                        cache.notify(changeSet);
-                    }
-                }
-                // process index changes for remote events
-                if (!isLocalEvent) {
-                    updateIndexesForRemoteEvent(changeSet);
-                }
-            } else {
+            // Look at local and remote change sets ...
+            if (changeSet.getWorkspaceName() == null) {
                 // Look for changes to the workspaces ...
                 Set<String> removedNames = new HashSet<String>();
                 boolean changed = false;
@@ -717,75 +687,6 @@ public class RepositoryCache implements Observable {
                     // And remove any already-cached workspaces. Note any open sessions to these workspaces will
                     for (String removedName : removedNames) {
                         removeWorkspaceCaches(removedName);
-                    }
-                }
-            }
-        }
-
-        private void updateIndexesForRemoteEvent( ChangeSet event ) {
-            String workspaceName = event.getWorkspaceName();
-            WorkspaceCache workspaceCache = workspace(workspaceName);
-            Transaction tx = null;
-            try {
-                tx = sessionContext().getTransactions().begin();
-                SessionEnvironment.Monitor monitor = tx.createMonitor();
-
-                Set<NodeKey> nodesWithUpdatedIndexes = new HashSet<NodeKey>();
-                Set<NodeKey> nodesToBeRemovedFromIndexes = new HashSet<NodeKey>();
-                for (Change change : event) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("Process {0} updating indexes for change: {1} ", processKey(), change);
-                    }
-                    if (!(change instanceof AbstractNodeChange)) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Process {0} ignoring change: {1} because it is not index-related", processKey(), change);
-                        }
-                        continue;
-                    }
-
-                    boolean shouldUpdateIndexes = (change instanceof NodeMoved) || (change instanceof NodeRenamed)
-                                                  || (change instanceof NodeReordered) || (change instanceof NodeChanged)
-                                                  || (change instanceof AbstractPropertyChange);
-
-                    // retrieve the node from the local workspace cache - the workspace should already have the
-                    // updated version of the node
-                    AbstractNodeChange nodeChange = (AbstractNodeChange)change;
-                    CachedNode node = workspaceCache.getNode(nodeChange.getKey());
-                    if (node != null) {
-                        NodeKey nodeKey = node.getKey();
-                        if (change instanceof NodeAdded) {
-                            monitor.recordAdd(workspaceName, nodeKey, node.getPath(workspaceCache),
-                                              node.getPrimaryType(workspaceCache), node.getMixinTypes(workspaceCache),
-                                              node.getProperties(workspaceCache));
-                        } else if (shouldUpdateIndexes && !nodesWithUpdatedIndexes.contains(nodeKey)) {
-                            nodesWithUpdatedIndexes.add(nodeKey);
-                            // since for an updated node any number of property change events can be received, we only want to
-                            // update the indexes once
-                            // because the persistent state should already have been updated
-                            monitor.recordUpdate(workspaceName, nodeKey, node.getPath(workspaceCache),
-                                                 node.getPrimaryType(workspaceCache), node.getMixinTypes(workspaceCache),
-                                                 node.getProperties(workspaceCache));
-                        }
-                    } else {
-                        if (change instanceof NodeRemoved) {
-                            // collect what needs to be removed from the indexes as we'll do that at the end
-                            nodesToBeRemovedFromIndexes.add(nodeChange.getKey());
-                        }
-                    }
-                }
-
-                // remove indexes in one batch
-                if (!nodesToBeRemovedFromIndexes.isEmpty()) {
-                    monitor.recordRemove(workspaceName, nodesToBeRemovedFromIndexes);
-                }
-                tx.commit();
-            } catch (Exception e) {
-                logger.error(e, JcrI18n.errorUpdatingQueryIndexes, e.getMessage());
-                if (tx != null) {
-                    try {
-                        tx.rollback();
-                    } catch (SystemException se) {
-                        logger.debug(se, "Error while rolling back transaction");
                     }
                 }
             }
@@ -839,9 +740,13 @@ public class RepositoryCache implements Observable {
             return workspaceCache;
         }
 
-        if (!this.workspaceNames.contains(name) && !this.systemWorkspaceName.equals(name)) {
+        final boolean isSystemWorkspace = this.systemWorkspaceName.equals(name);
+        if (!this.workspaceNames.contains(name) && !isSystemWorkspace) {
             throw new WorkspaceNotFoundException(name);
         }
+
+        // We know that this workspace is not the system workspace, so find it ...
+        final WorkspaceCache systemWorkspaceCache = isSystemWorkspace ? null : workspaceCachesByName.get(systemWorkspaceName);
 
         // when multiple threads (e.g. re-indexing threads) are performing ws cache initialization, we want this to be atomic
         synchronized (this) {
@@ -869,8 +774,9 @@ public class RepositoryCache implements Observable {
                                           null);
                         trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
 
-                        WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, documentStore, translator,
-                                                                           rootKey, nodeCache, changeBus);
+                        WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, systemWorkspaceCache,
+                                                                           documentStore, translator, rootKey, nodeCache,
+                                                                           changeBus);
 
                         if (documentStore.localStore().putIfAbsent(rootKey.toString(), rootDoc) == null) {
                             // we are the first node to perform the initialization, so we need to link the system node

@@ -98,7 +98,7 @@ import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
-import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
+import org.modeshape.jcr.bus.ClusteredChangeBus;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
@@ -325,7 +325,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      */
     Future<Boolean> shutdown() {
         // Create a simple executor that will do the backgrounding for us ...
-        final ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("modeshape-repository-shutdown"));
+        final ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("modeshape-repository-stop"));
         try {
             // Submit a runnable to terminate all sessions ...
             Future<Boolean> future = executor.submit(new Callable<Boolean>() {
@@ -703,7 +703,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             // Need to make sure that the user has access to this session
-            session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
+            session.checkWorkspacePermission(workspaceName,ModeShapePermissions.READ);
             running.addSession(session, false);
             return session;
         } catch (AccessDeniedException ace) {
@@ -1062,15 +1062,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                     this.mimeTypeDetector = new MimeTypeDetectors(other.config.environment(), this.problems);
                     this.binaryStore = other.binaryStore;
+                    this.changeBus = other.changeBus;
                     this.internalWorkerContext = other.internalWorkerContext;
                     this.nodeTypes = other.nodeTypes.with(this, true, true);
                     this.lockManager = other.lockManager.with(this);
-                    this.cache.register(this.lockManager);
-                    other.cache.unregister(other.lockManager);
+                    // We have to register new components that depend on this instance ...
+                    this.changeBus.unregister(other.nodeTypes);
+                    this.changeBus.unregister(other.lockManager);
+                    this.changeBus.register(this.nodeTypes);
+                    this.changeBus.register(this.lockManager);
                     this.persistentRegistry = other.persistentRegistry;
                     this.changeDispatchingQueue = other.changeDispatchingQueue;
                     this.clusteringService = other.clusteringService;
-                    this.changeBus = other.changeBus;
                     this.journal = other.journal;
                 } else {
                     // find the Schematic database and Infinispan Cache ...
@@ -1109,8 +1112,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Create clustering service and event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                    ChangeBus localBus = new RepositoryChangeBus(changeDispatchingQueue, systemWorkspaceName);
-                    this.changeBus = clusteringService != null ? new ClusteredRepositoryChangeBus(localBus, clusteringService) : localBus;
+                    ChangeBus localBus = new RepositoryChangeBus(name(), changeDispatchingQueue);
+                    this.changeBus = clusteringService != null ? new ClusteredChangeBus(localBus, clusteringService) : localBus;
                     this.changeBus.start();
 
                     // Set up the event journal
@@ -1122,8 +1125,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         this.journal = clusteringService != null ? new ClusteredJournal(localJournal, clusteringService) : localJournal;
                         this.journal.start();
                         if (asyncWritesEnabled) {
+                            // Register the journal as a normal asynchronous listener ...
                             this.changeBus.register(journal);
                         } else {
+                            // Register the journal
                             this.changeBus.registerInThread(journal);
                         }
                     } else {
@@ -1139,14 +1144,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Set up the node type manager ...
                     this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
-                    this.cache.register(this.nodeTypes);
+                    this.changeBus.register(this.nodeTypes);
 
                     // Set up the lock manager ...
                     this.lockManager = new RepositoryLockManager(this);
-                    this.cache.register(this.lockManager);
+                    this.changeBus.register(this.lockManager);
 
                     // Set up the unused binary value listener ...
-                    this.cache.register(new BinaryUsageChangeSetListener(binaryStore));
+                    this.changeBus.register(new BinaryUsageChangeSetListener(binaryStore));
 
                     // Refresh several of the components information from the repository cache ...
                     this.persistentRegistry.refreshFromSystem();
@@ -1192,8 +1197,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 if (other != null && !change.sequencingChanged) {
                     this.sequencers = other.sequencers.with(this);
-                    if (!sequencers.isEmpty()) this.cache.register(this.sequencers);
-                    this.cache.unregister(other.sequencers);
+                    if (!sequencers.isEmpty()) this.changeBus.register(this.sequencers);
+                    this.changeBus.unregister(other.sequencers);
                 } else {
                     this.sequencers = new Sequencers(this, config, cache.getWorkspaceNames());
                 }
@@ -1202,6 +1207,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
                                                      new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
                 this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, config);
+                this.changeBus.register(this.repositoryQueryManager.getListener());
 
                 // Check that we have parsers for all the required languages ...
                 assert this.queryParsers.getParserFor(Query.XPATH) != null;
@@ -1811,11 +1817,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     lock.unlock();
                 }
 
-                // Create a system session and delegate to its logic ...
-                SessionCache systemSession = createSystemSession(context(), false);
-                SystemContent system = new SystemContent(systemSession);
-                system.cleanUpLocks(activeSessionIds);
-                system.save();
+                this.lockManager().cleanupLocks(activeSessionIds);
             } catch (Throwable e) {
                 logger.error(e, JcrI18n.errorDuringGarbageCollection, e.getMessage());
             }

@@ -43,6 +43,7 @@ import org.jgroups.conf.ProtocolStackConfigurator;
 import org.jgroups.conf.XmlConfigurator;
 import org.jgroups.fork.ForkChannel;
 import org.jgroups.protocols.CENTRAL_LOCK;
+import org.jgroups.protocols.FORK;
 import org.jgroups.stack.Protocol;
 import org.jgroups.stack.ProtocolStack;
 import org.modeshape.common.SystemFailureException;
@@ -60,6 +61,11 @@ import org.modeshape.common.util.StringUtil;
 public final class ClusteringService {
 
     protected static final Logger LOGGER = Logger.getLogger(ClusteringService.class);
+
+    /**
+     * The name of the fork channel
+     */
+    private static final String FORK_CHANNEL_NAME = "modeshape-fork-channel";
 
     /**
      * An approximation about the maximum delay in local time that we consider acceptable.
@@ -100,6 +106,11 @@ public final class ClusteringService {
      * The JGroups channel which will be used to send/receive event across the cluster
      */
     private Channel channel;
+
+    /**
+     * A JGroups channel off of which a fork channel may have been created.
+     */
+    private Channel originalChannel;
 
     /**
      * The JGroups fork channel which will be used for cluster-wide locking.
@@ -164,9 +175,10 @@ public final class ClusteringService {
         try {
             Protocol topProtocol = mainChannel.getProtocolStack().getTopProtocol();
             // add the fork at the top of the stack (the bottom should be either TCP/UDP) to preserve the default configuration
-            this.channel = new ForkChannel(mainChannel, "modeshape-stack", "modeshape-fork-channel", true, ProtocolStack.ABOVE,
+            this.channel = new ForkChannel(mainChannel, "modeshape-stack", FORK_CHANNEL_NAME, true, ProtocolStack.ABOVE,
                                            topProtocol.getClass());
-            initChannel("modeshape-fork-channel");
+            this.originalChannel = mainChannel;
+            initChannel(FORK_CHANNEL_NAME);
             initLockService(mainChannel);
 
             return this;
@@ -273,14 +285,23 @@ public final class ClusteringService {
             isOpen.set(false);
             try {
                 // Disconnect from the channel and close it ...
-                channel.close();
                 channel.removeChannelListener(listener);
                 channel.setReceiver(null);
+                channel.close();
                 LOGGER.debug("Successfully closed main channel");
             } finally {
                 channel = null;
             }
             membersInCluster.set(1);
+
+            if (originalChannel != null) {
+                //we were started in forked mode, so remove the fork stack (but don't change anything else around the original channel)
+                Protocol removed = this.originalChannel.getProtocolStack().removeProtocol(FORK.class);
+                if (removed == null) {
+                    LOGGER.debug("FORK protocol not found in original channel stack");
+                }
+                this.originalChannel = null;
+            }
         }
     }
 

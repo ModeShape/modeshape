@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
-import junit.framework.AssertionFailedError;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -62,7 +61,9 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.web.jcr.rest.handler.AbstractHandler;
+import junit.framework.AssertionFailedError;
 
 /**
  * Test of the ModeShape JCR REST resource. Note that this test case uses a very low-level API to construct requests and
@@ -546,6 +547,10 @@ public class JcrResourcesTest {
         return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.QUERY_METHOD_NAME, additionalPathSegments);
     }
 
+    protected String uploadUrl(String...additionalPathSegments) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.UPLOAD_METHOD_NAME, additionalPathSegments);
+    }
+
     protected Response doGet() throws Exception {
         return new Response(newDefaultRequest(HttpGet.class, null, null));
     }
@@ -798,6 +803,7 @@ public class JcrResourcesTest {
         private final HttpResponse response;
         private byte[] content;
         private String contentString;
+        private JSONObject contentJSON;
 
         protected Response( HttpRequestBase request ) {
             try {
@@ -920,7 +926,10 @@ public class JcrResourcesTest {
         }
 
         protected JSONObject json() throws Exception {
-            return new JSONObject(contentAsString());
+            if (contentJSON == null) {
+                contentJSON = new JSONObject(contentAsString());
+            }
+            return contentJSON;
         }
 
         protected JSONObject children() throws Exception {
@@ -932,6 +941,13 @@ public class JcrResourcesTest {
                 contentString = new String(content);
             }
             return contentString;
+        }
+
+        protected Response hasPrimaryType(String primaryType) throws Exception {
+            JSONObject json = json();
+            assertTrue("jcr:primary type property not found", json.has(JcrConstants.JCR_PRIMARY_TYPE));
+            assertEquals(primaryType, json().getString(JcrConstants.JCR_PRIMARY_TYPE));
+            return this;
         }
 
         protected byte[] contentAsBytes() {
