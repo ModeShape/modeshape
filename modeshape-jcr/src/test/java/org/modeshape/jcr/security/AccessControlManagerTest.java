@@ -58,7 +58,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
 
         setPolicy("/", Privilege.JCR_ALL);
         setPolicy("/Cars/Luxury/Cadillac DTS", Privilege.JCR_READ, Privilege.JCR_WRITE, Privilege.JCR_MODIFY_ACCESS_CONTROL);
-        setPolicy("/Cars/Luxury/", Privilege.JCR_READ, Privilege.JCR_MODIFY_ACCESS_CONTROL);
+        setPolicy("/Cars/Luxury/", Privilege.JCR_READ, Privilege.JCR_MODIFY_ACCESS_CONTROL, Privilege.JCR_READ_ACCESS_CONTROL);
         setPolicy("/Cars/Sports/", Privilege.JCR_READ, Privilege.JCR_WRITE, Privilege.JCR_MODIFY_ACCESS_CONTROL);
         setPolicy("/Cars/Utility/Ford F-150/", Privilege.JCR_MODIFY_ACCESS_CONTROL, Privilege.JCR_READ_ACCESS_CONTROL);
         setPolicy("/Cars/Utility/", Privilege.JCR_READ_ACCESS_CONTROL);

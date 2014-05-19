@@ -232,7 +232,7 @@ public interface MutableCachedNode extends CachedNode {
      * Create a new node as a child of this node with the supplied name and properties.
      * 
      * @param cache the cache to which this node belongs; may not be null
-     * @param key the key for the new node; may not be null
+     * @param key the key for the new node; may be null
      * @param name the name for the new node; may not be null
      * @param firstProperty the first property; may not be null
      * @param additionalProperties the properties that should be set on the node; may be null or empty, and any null property
@@ -249,7 +249,7 @@ public interface MutableCachedNode extends CachedNode {
      * Create a new node as a child of this node with the supplied name and properties.
      * 
      * @param cache the cache to which this node belongs; may not be null
-     * @param key the key for the new node; may not be null
+     * @param key the key for the new node; may be null
      * @param name the name for the new node; may not be null
      * @param properties the properties that should be set on the node; may be null or empty, and any null property references
      *        will be ignored
@@ -431,6 +431,25 @@ public interface MutableCachedNode extends CachedNode {
     public NodeChanges getNodeChanges();
 
     /**
+     * Sets permissions for this node, creating in effect an ACL.
+     *
+     * @param cache the cache to which this node belongs; may not be null
+     * @param permissions a set of privileges enqueued by principal name; may not be null
+     * @return a {@link org.modeshape.jcr.cache.MutableCachedNode.PermissionChanges} instance which reflects how the persistent
+     * state has been affected by the change; never null
+     */
+    public PermissionChanges setPermissions(SessionCache cache, Map<String, Set<String>> permissions);
+
+    /**
+     * Removes any potential existing ACL for this node.
+     *
+     * @param cache the cache to which this node belongs; may not be null
+     * @return a {@link org.modeshape.jcr.cache.MutableCachedNode.PermissionChanges} instance which reflects which principal
+     * have been removed; never null
+     */
+    public PermissionChanges removeACL(SessionCache cache);
+
+    /**
      * Interface which exposes all the changes that have occurred on a {@link MutableCachedNode} instance
      */
     public interface NodeChanges {
@@ -540,5 +559,24 @@ public interface MutableCachedNode extends CachedNode {
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedStrongReferrers();
+    }
+
+    /**
+     * Interface which exposes the ACL-related changes for mutable cached nodes.
+     */
+    public interface PermissionChanges {
+        /**
+         * Returns the number of new principals for which privileges have been added in the node's ACL.
+         *
+         * @return the number of principals
+         */
+        public long addedPrincipalsCount();
+
+        /**
+         * Returns the number of principals which have been removed from this node's ACL.
+         *
+         * @return the number of principals
+         */
+        public long removedPrincipalsCount();
     }
 }

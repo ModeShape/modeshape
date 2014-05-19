@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -87,6 +89,8 @@ public class LazyCachedNode implements CachedNode, Serializable {
     private transient volatile Set<NodeKey> additionalParents;
     private transient volatile boolean propertiesFullyLoaded = false;
     private transient volatile ChildReferences childReferences;
+    private transient volatile Boolean hasACL = null;
+    private transient final AtomicReference<Map<String, Set<String>>> permissions = new AtomicReference<>();
 
     public LazyCachedNode( NodeKey key,
                            Document document ) {
@@ -440,6 +444,47 @@ public class LazyCachedNode implements CachedNode, Serializable {
     public boolean isQueryable( NodeCache cache ) {
         WorkspaceCache wsCache = workspaceCache(cache);
         return wsCache.translator().isQueryable(document(wsCache));
+    }
+
+    @Override
+    public boolean hasACL( NodeCache cache ) {
+        if (hasACL == null) {
+            hasACL = getChildReferences(cache).getChild(ModeShapeLexicon.ACCESS_LIST_NODE_NAME) != null;
+        }
+        return hasACL;
+    }
+
+    @Override
+    public Map<String, Set<String>> getPermissions( NodeCache cache ) {
+        if (!hasACL(cache)) {
+            return null;
+        }
+        if (permissions.get() == null) {
+            ChildReference aclNodeReference = getChildReferences(cache).getChild(ModeShapeLexicon.ACCESS_LIST_NODE_NAME);
+            assert aclNodeReference != null;
+            CachedNode aclNode = cache.getNode(aclNodeReference);
+            assert aclNode != null;
+
+            Map<String, Set<String>> permissions = new HashMap<>();
+            ChildReferences permissionsReference = aclNode.getChildReferences(cache);
+            for (ChildReference permissionReference : permissionsReference) {
+                CachedNode permission = cache.getNode(permissionReference);
+                String name = permission.getProperty(ModeShapeLexicon.PERMISSION_PRINCIPAL_NAME, cache).getFirstValue().toString();
+                Property privileges = permission.getProperty(ModeShapeLexicon.PERMISSION_PRIVILEGES_NAME, cache);
+                Set<String> privilegeNames = new HashSet<>();
+                for (Object privilege : privileges.getValuesAsArray()) {
+                    privilegeNames.add(privilege.toString());
+                }
+                permissions.put(name, privilegeNames);
+            }
+            this.permissions.compareAndSet(null, permissions);
+        }
+        return permissions.get();
+    }
+
+    @Override
+    public boolean isExternal( NodeCache cache) {
+        return !getKey().getSourceKey().equals(cache.getRootKey().getSourceKey());
     }
 
     @Override

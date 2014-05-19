@@ -17,6 +17,7 @@ package org.modeshape.jcr.cache;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -234,8 +235,35 @@ public interface CachedNode {
      * Determine if this node should be indexed and therefore available for querying. By default, every node is queryable, so only
      * in certain cases can a node be made non-queryable.
      * 
-     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null *
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
      * @return {@code true} if the node should be indexed, {@code false} otherwise
      */
     boolean isQueryable( NodeCache cache );
+
+    /**
+     * Determine if there is an access control list for this node only, not taking into account any possible parents.
+     *
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @return {@code true} if this node has an ACL, {@code false} otherwise
+     */
+    boolean hasACL( NodeCache cache );
+
+    /**
+     * Gets the map of privileges by principal name which are in effect for this node. This will not look
+     * at any of the parent nodes.
+     *
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @return a {@code Map} which contains a set of permission names keyed by principal name or {@code null} if no privileges
+     * are in effect for this node(i.e. this node does not have an ACL). An empty {@code Map} means a node which has an ACL, but
+     * does not have any permissions.
+     */
+    Map<String, Set<String>> getPermissions(NodeCache cache);
+
+    /**
+     * Determine if this node belongs to an external source (via federation) or is local to the repository.
+     *
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @return {@code true} if the node is local, {@code false} otherwise.
+     */
+    boolean isExternal(NodeCache cache );
 }
