@@ -99,7 +99,9 @@ public class ModeShapeLexicon {
      * ACL related
      */
     public static final Name ACCESS_CONTROLLABLE = new BasicName(Namespace.URI, "accessControllable");
+    public static final String ACCESS_CONTROLLABLE_STRING = ACCESS_CONTROLLABLE.getString();
     public static final Name ACCESS_LIST_NODE_TYPE = new BasicName(Namespace.URI, "Acl");
+    public static final String ACCESS_LIST_NODE_TYPE_STRING = ACCESS_LIST_NODE_TYPE.getString();
     public static final Name ACCESS_LIST_NODE_NAME = new BasicName(Namespace.URI, "acl");
     public static final Name PERMISSION_PRINCIPAL_NAME = new BasicName("", "name");
     public static final Name PERMISSION_PRIVILEGES_NAME = new BasicName("", "privileges");

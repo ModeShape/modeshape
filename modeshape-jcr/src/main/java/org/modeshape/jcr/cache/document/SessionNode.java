@@ -102,6 +102,7 @@ public class SessionNode implements MutableCachedNode {
     private final AtomicReference<Boolean> isQueryable = new AtomicReference<Boolean>();
     private final boolean isNew;
     private volatile LockChange lockChange;
+    private final AtomicReference<PermissionChanges> permissionChanges = new AtomicReference<>();
 
     public SessionNode( NodeKey key,
                         boolean isNew ) {
@@ -1340,7 +1341,7 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public boolean hasACL( NodeCache cache ) {
-        return getMixinTypes(cache).contains(ModeShapeLexicon.ACCESS_CONTROLLABLE);
+        return getChildReferences(cache).getChild(ModeShapeLexicon.ACCESS_LIST_NODE_NAME) != null;
     }
 
     @Override
@@ -1369,6 +1370,100 @@ public class SessionNode implements MutableCachedNode {
             result.put(name, privilegeNames);
         }
         return result;
+    }
+
+    @Override
+    public PermissionChanges setPermissions(SessionCache cache, Map<String, Set<String>> privilegesByPrincipalName ) {
+        assert privilegesByPrincipalName != null;
+        if (this.isExternal(cache)) {
+            throw new UnsupportedOperationException(JcrI18n.aclsOnExternalNodesNotAllowed.text());
+        }
+        if (!this.getMixinTypes(cache).contains(ModeShapeLexicon.ACCESS_CONTROLLABLE)) {
+            addMixin(cache, ModeShapeLexicon.ACCESS_CONTROLLABLE);
+        }
+        ChildReference aclNodeRef = getChildReferences(cache).getChild(ModeShapeLexicon.ACCESS_LIST_NODE_NAME);
+        MutableCachedNode aclNode = null;
+        PropertyFactory propertyFactory = cache.getContext().getPropertyFactory();
+        ChildReferences permissionsReferences = null;
+        if (aclNodeRef != null) {
+            aclNode = cache.mutable(aclNodeRef.getKey());
+            permissionsReferences = aclNode.getChildReferences(cache);
+            //there was a previous ACL node present so iterate it and remove all permissions which are not found in the map
+            for (ChildReference permissionRef : permissionsReferences) {
+                CachedNode permissionNode = cache.getNode(permissionRef);
+                String principalName = permissionNode.getProperty(ModeShapeLexicon.PERMISSION_PRINCIPAL_NAME, cache)
+                                                     .getFirstValue().toString();
+                if (!privilegesByPrincipalName.containsKey(principalName)) {
+                    permissionChanges().principalRemoved(principalName);
+                    NodeKey permissionNodeKey = permissionNode.getKey();
+                    aclNode.removeChild(cache, permissionNodeKey);
+                    cache.destroy(permissionNodeKey);
+                }
+            }
+        } else {
+            org.modeshape.jcr.value.Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE,
+                                                                                  ModeShapeLexicon.ACCESS_LIST_NODE_TYPE);
+            aclNode = this.createChild(cache, null, ModeShapeLexicon.ACCESS_LIST_NODE_NAME, primaryType);
+            permissionsReferences = ImmutableChildReferences.EmptyChildReferences.INSTANCE;
+        }
+
+        //go through the new map of permissions and update/create the internal nodes
+        NameFactory nameFactory = cache.getContext().getValueFactories().getNameFactory();
+
+        for (String principal : privilegesByPrincipalName.keySet()) {
+            Name principalName = nameFactory.create(principal);
+            ChildReference permissionRef = permissionsReferences.getChild(principalName);
+            if (permissionRef == null) {
+                //this is a new principal
+                permissionChanges().principalAdded(principal);
+                org.modeshape.jcr.value.Property primaryType = propertyFactory.create(
+                        JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.PERMISSION);
+                Property principalProp = propertyFactory.create(ModeShapeLexicon.PERMISSION_PRINCIPAL_NAME,
+                                                                    principal);
+                Property privileges = propertyFactory.create(ModeShapeLexicon.PERMISSION_PRIVILEGES_NAME,
+                                                             privilegesByPrincipalName.get(principal));
+                aclNode.createChild(cache, null, principalName, primaryType, principalProp, privileges);
+            } else {
+                //there already is a child node for this principal, so we just need to update its privileges
+                MutableCachedNode permissionNode = cache.mutable(permissionRef.getKey());
+                Property privileges = propertyFactory.create(ModeShapeLexicon.PERMISSION_PRIVILEGES_NAME,
+                                                             privilegesByPrincipalName.get(principal));
+                permissionNode.setProperty(cache, privileges);
+            }
+        }
+        return permissionChanges();
+    }
+
+    protected PermissionChanges permissionChanges() {
+        if (permissionChanges.get() == null) {
+            permissionChanges.compareAndSet(null, new PermissionChanges());
+        }
+        return permissionChanges.get();
+    }
+
+    @Override
+    public MutableCachedNode.PermissionChanges removeACL( SessionCache cache ) {
+        if (this.isExternal(cache)) {
+            throw new UnsupportedOperationException(JcrI18n.aclsOnExternalNodesNotAllowed.text());
+        }
+        if (hasACL(cache)) {
+            NodeKey aclNodeKey = getChildReferences(cache).getChild(ModeShapeLexicon.ACCESS_LIST_NODE_NAME).getKey();
+            MutableCachedNode mutableACLNode = cache.mutable(aclNodeKey);
+            for (ChildReference permissionRef : mutableACLNode.getChildReferences(cache)) {
+                permissionChanges().principalRemoved(permissionRef.getName().getString());
+            }
+            if (!cache.isDestroyed(aclNodeKey)) {
+                this.removeChild(cache, aclNodeKey);
+                cache.destroy(aclNodeKey);
+            }
+            removeMixin(cache, ModeShapeLexicon.ACCESS_CONTROLLABLE);
+        }
+        return permissionChanges();
+    }
+
+    @Override
+    public boolean isExternal( NodeCache cache ) {
+        return !getKey().getSourceKey().equals(cache.getRootKey().getSourceKey());
     }
 
     @Override
@@ -2305,6 +2400,36 @@ public class SessionNode implements MutableCachedNode {
                 sb.append(" removedStrong=").append(removedStrong);
             }
             return sb.toString();
+        }
+    }
+
+    protected static class PermissionChanges implements MutableCachedNode.PermissionChanges {
+        private final Set<String> removedPrincipals;
+        private final Set<String> addedPrincipals;
+
+        protected PermissionChanges() {
+            this.removedPrincipals = new HashSet<>();
+            this.addedPrincipals = new HashSet<>();
+        }
+
+        protected void principalAdded(String principalName) {
+            this.removedPrincipals.remove(principalName);
+            this.addedPrincipals.add(principalName);
+        }
+
+        protected void principalRemoved(String principalName) {
+            this.addedPrincipals.remove(principalName);
+            this.removedPrincipals.add(principalName);
+        }
+
+        @Override
+        public long addedPrincipalsCount() {
+            return addedPrincipals.size();
+        }
+
+        @Override
+        public long removedPrincipalsCount() {
+            return removedPrincipals.size();
         }
     }
 

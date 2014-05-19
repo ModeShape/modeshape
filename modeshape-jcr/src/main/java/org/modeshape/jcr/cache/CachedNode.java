@@ -258,4 +258,12 @@ public interface CachedNode {
      * does not have any permissions.
      */
     Map<String, Set<String>> getPermissions(NodeCache cache);
+
+    /**
+     * Determine if this node belongs to an external source (via federation) or is local to the repository.
+     *
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @return {@code true} if the node is local, {@code false} otherwise.
+     */
+    boolean isExternal(NodeCache cache );
 }

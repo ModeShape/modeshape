@@ -16,12 +16,12 @@
 
 package org.modeshape.jcr;
 
+import java.util.Enumeration;
+import org.apache.jackrabbit.test.JCRTestSuite;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
-import org.apache.jackrabbit.test.JCRTestSuite;
-import java.util.Enumeration;
 
 /**
  * Helper class which provides various JUnit 3.x {@link TestSuite} instances, which should be used when running any form of Tck tests, to be able
@@ -71,10 +71,12 @@ public final class JcrTckSuites {
         };
     }
 
-    public static TestSuite someTestsInline( final Class<? extends TestCase> ownerClass ) {
+    public static TestSuite someTestsInline( final Class<? extends TestCase>... classes ) {
         return new TestSuite() {
             {
-                addTestSuite(ownerClass);
+                for (Class<? extends TestCase> testClass : classes) {
+                    addTestSuite(testClass);
+                }
             }
 
             @Override

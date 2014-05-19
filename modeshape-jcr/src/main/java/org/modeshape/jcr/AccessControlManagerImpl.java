@@ -15,18 +15,12 @@
  */
 package org.modeshape.jcr;
 
-import static org.modeshape.jcr.ModeShapeLexicon.ACCESS_CONTROLLABLE;
-import static org.modeshape.jcr.ModeShapeLexicon.ACCESS_LIST_NODE_NAME;
-import static org.modeshape.jcr.ModeShapeLexicon.ACCESS_LIST_NODE_TYPE;
-import static org.modeshape.jcr.ModeShapeLexicon.PERMISSION;
-import static org.modeshape.jcr.ModeShapeLexicon.PERMISSION_PRINCIPAL_NAME;
-import static org.modeshape.jcr.ModeShapeLexicon.PERMISSION_PRIVILEGES_NAME;
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.AccessDeniedException;
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFormatException;
@@ -40,8 +34,10 @@ import javax.jcr.security.AccessControlPolicyIterator;
 import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
 import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.security.SimplePrincipal;
 import org.modeshape.jcr.security.acl.AccessControlPolicyIteratorImpl;
 import org.modeshape.jcr.security.acl.JcrAccessControlList;
@@ -65,6 +61,8 @@ import org.modeshape.jcr.value.Path;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class AccessControlManagerImpl implements AccessControlManager {
+
+    private static final AccessControlPolicy[] EMPTY_POLICIES = new AccessControlPolicy[0];
 
     // session under resource control
     private final JcrSession session;
@@ -108,26 +106,21 @@ public class AccessControlManagerImpl implements AccessControlManager {
     public boolean hasPrivileges( String path,
                                   Privilege[] privileges ) throws PathNotFoundException, RepositoryException {
         // recursively search for first available access list
-        JcrAccessControlList acl;
-        if (!found(acl = findAccessList(path, true))) {
-            // access list is not assigned, use default
-            return defaultACL.hasPrivileges(session.context().getSecurityContext(), privileges);
-        }
+        JcrAccessControlList acl = getApplicableACL(path);
+        return acl.isEmpty() || acl.hasPrivileges(securityContext(), privileges);
+    }
 
-        // perform checking of the privileges
-        return acl.isEmpty() || acl.hasPrivileges(session.context().getSecurityContext(), privileges);
+    private JcrAccessControlList getApplicableACL( String path ) throws RepositoryException {
+        JcrAccessControlList acl = findAccessList(path, true);
+        return acl != null ? acl : defaultACL;
     }
 
     @Override
     public Privilege[] getPrivileges( String path ) throws PathNotFoundException, RepositoryException {
         // recursively search for first available access list
-        JcrAccessControlList acl;
-        if (!found(acl = findAccessList(path, true))) {
-            // access list is not assigned, use default
-            return defaultACL.getPrivileges(session.context().getSecurityContext());
-        }
+        JcrAccessControlList acl = getApplicableACL(path);
         // access list found, ask it to get defined privileges
-        return acl.getPrivileges(session.context().getSecurityContext());
+        return acl.getPrivileges(securityContext());
     }
 
     @Override
@@ -142,7 +135,11 @@ public class AccessControlManagerImpl implements AccessControlManager {
         }
 
         AccessControlList acl = findAccessList(absPath, false);
-        return acl == null ?  new AccessControlPolicy[0] : new AccessControlPolicy[] {acl};
+        return acl == null ?  EMPTY_POLICIES : new AccessControlPolicy[] {acl};
+    }
+
+    private SecurityContext securityContext() {
+        return session.context().getSecurityContext();
     }
 
     @Override
@@ -156,107 +153,95 @@ public class AccessControlManagerImpl implements AccessControlManager {
     }
 
     @Override
-    public AccessControlPolicyIterator getApplicablePolicies( String path )
+    public AccessControlPolicyIterator getApplicablePolicies( String absPath )
         throws PathNotFoundException, AccessDeniedException, RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read access control content"));
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath, "read access control content"));
         }
-        // Current implementation supports only one policy - access list
-        // So we need to check the node specified by path for the policy bound to it
-        // if node has already policy bound then we need return empty list and
-        // access list otherwise
-        Node node = session.getNode(path, true);
-        if (node.hasNode(ACCESS_LIST_NODE_NAME.getString())) {
-            // node already has policy, nothing is applicable except it
+
+        JcrAccessControlList acl = getApplicableACL(absPath);
+        if (!acl.isEmpty() && !acl.hasPrivileges(securityContext(), new Privilege[] { privileges.forName(Privilege.JCR_READ_ACCESS_CONTROL) })) {
+            throw new AccessDeniedException();
+        }
+
+        CachedNode node = session.cachedNode(session.pathFactory().create(absPath), false);
+        if (node.hasACL(session.cache())) {
+            // we only support 1 ACL per node; therefore if the node already has an ACL, we don't want to allow any additional ones
             return AccessControlPolicyIteratorImpl.EMPTY;
+        } else {
+            // the node doesn't have an ACL yet, so return a new, empty ACL which can be used by clients to set privileges
+            return new AccessControlPolicyIteratorImpl(new JcrAccessControlList(this, absPath));
         }
-        // access list still applicable
-        return new AccessControlPolicyIteratorImpl(new JcrAccessControlList(this, path));
     }
 
     @Override
-    public void setPolicy( String path,
+    public void setPolicy( String absPath,
                            AccessControlPolicy policy )
         throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException, VersionException,
         RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read access control content"));
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath, "read access control content"));
         }
 
-        if (!hasPrivileges(path, new Privilege[] {privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
+        if (!hasPrivileges(absPath, new Privilege[] {privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
             throw new AccessDeniedException();
         }
 
         // we support only access list then cast policy to access list
-        if (!(policy instanceof AccessControlList)) {
-            throw new AccessControlException("");
+        if (!(policy instanceof JcrAccessControlList)) {
+            throw new AccessControlException("Invalid policy class (expected JcrAccessControlList): "
+                                             + policy.getClass().getSimpleName());
         }
         JcrAccessControlList acl = (JcrAccessControlList)policy;
-
-        // binding given policy to the specified path as special child node
-        AbstractJcrNode node = session.getNode(path, true);
-
-        if (node.isExternal()) {
-            throw new RepositoryException(JcrI18n.aclsOnExternalNodesNotAllowed.text());
-        }
-        // make node access controllable and add special child node which belongs to the access list
-        node.addMixin(ACCESS_CONTROLLABLE.getString(), false);
-
-        AbstractJcrNode aclNode = node.hasNode(ACCESS_LIST_NODE_NAME.getString()) ?
-                                  node.getNode(ACCESS_LIST_NODE_NAME.getString(), true) :
-                                  node.addAclNode(ACCESS_LIST_NODE_NAME.getString(), ACCESS_LIST_NODE_TYPE.getString());
-        // store entries as child nodes of acl
-        for (AccessControlEntry ace : acl.getAccessControlEntries()) {
-            assert (ace.getPrincipal() != null);
-            String name = ace.getPrincipal().getName();
-
-            AbstractJcrNode entryNode = null;
-            if (aclNode.hasNode(name)) {
-                entryNode = aclNode.getNode(name, true);
-            } else {
-                entryNode = aclNode.addAclNode(name, PERMISSION.getString());
-                session.aclAdded(1);
-            }
-            entryNode.setPropertyInAccessControlScope(PERMISSION_PRINCIPAL_NAME.getString(), ace.getPrincipal().getName());
-            entryNode.setPropertyInAccessControlScope(PERMISSION_PRIVILEGES_NAME.getString(), privileges(ace.getPrivileges()));
-        }
-
-        // delete removed entries
-        NodeIterator it = aclNode.getNodesInternal();
-        while (it.hasNext()) {
-            Node entryNode = it.nextNode();
-            String name = entryNode.getProperty(PERMISSION_PRINCIPAL_NAME.getString()).getString();
-            if (!acl.hasEntry(name)) {
-                entryNode.remove();
-                session.aclRemoved(1);
-            }
+        Map<String, Set<String>> privilegesByPrincipalName = privilegesByPrincipalName(acl);
+        try {
+            CachedNode cacheNode = session.cachedNode(session.pathFactory().create(absPath), false);
+            SessionCache cache = session.cache();
+            MutableCachedNode mutableNode = cache.mutable(cacheNode.getKey());
+            MutableCachedNode.PermissionChanges permissionChanges = mutableNode.setPermissions(cache, privilegesByPrincipalName);
+            session.aclAdded(permissionChanges.addedPrincipalsCount());
+            session.aclRemoved(permissionChanges.removedPrincipalsCount());
+        } catch (UnsupportedOperationException e) {
+            throw new RepositoryException(e);
         }
     }
 
     @Override
-    public void removePolicy( String path,
+    public void removePolicy( String absPath,
                               AccessControlPolicy policy )
         throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException, VersionException,
         RepositoryException {
         if (session.isReadOnly()) {
-            throw new AccessDeniedException(JcrI18n.permissionDenied.text(path, "read access control content"));
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath, "read access control content"));
         }
+
+        if (!hasPrivileges(absPath, new Privilege[] { privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL) })) {
+            throw new AccessDeniedException();
+        }
+
         try {
-            if (!hasPrivileges(path, new Privilege[] {privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
-                throw new AccessDeniedException();
-            }
-            AbstractJcrNode node = session.getNode(path);
-            if (node.isExternal()) {
-                throw new RepositoryException(JcrI18n.aclsOnExternalNodesNotAllowed.text());
-            }
-            if (node.hasNode(ACCESS_LIST_NODE_NAME.getString())) {
-                AbstractJcrNode aclNode = node.getNode(ACCESS_LIST_NODE_NAME.getString(), true);
-                session.aclRemoved(aclNode.childCount());
-                aclNode.remove();
-                node.removeMixin(ACCESS_CONTROLLABLE.getString());
-            }
-        } catch (PathNotFoundException e) {
+            CachedNode cacheNode = session.cachedNode(session.pathFactory().create(absPath), false);
+            SessionCache cache = session.cache();
+            MutableCachedNode mutableNode = cache.mutable(cacheNode.getKey());
+            MutableCachedNode.PermissionChanges permissionChanges = mutableNode.removeACL(cache);
+            session.aclRemoved(permissionChanges.removedPrincipalsCount());
+        } catch (UnsupportedOperationException e) {
+            throw new RepositoryException(e);
         }
+    }
+
+    private Map<String, Set<String>> privilegesByPrincipalName(JcrAccessControlList acl) {
+        Map<String, Set<String>> result = new HashMap<>();
+        for (AccessControlEntry ace : acl.getAccessControlEntries()) {
+            assert (ace.getPrincipal() != null);
+            String name = ace.getPrincipal().getName();
+            Set<String> privileges = new HashSet<>();
+            for (Privilege privilege : ace.getPrivileges()) {
+                privileges.add(privilege.getName());
+            }
+            result.put(name, privileges);
+        }
+        return result;
     }
 
     /**
@@ -268,7 +253,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
      * @throws RepositoryException
      */
     private JcrAccessControlList findAccessList( String absPath, boolean searchParents ) throws PathNotFoundException, RepositoryException {
-        //this will not load any nodes in the JCR session, but will load the entire hierarchy in the node cache
+        //this will not load any nodes in the JCR session, but might load the entire hierarchy in the node cache
         CachedNode startingNode = session.cachedNode(session.pathFactory().create(absPath), false);
         SessionCache sessionCache = session.cache();
         Map<String, Set<String>> permissions = startingNode.getPermissions(sessionCache);
@@ -303,20 +288,6 @@ public class AccessControlManagerImpl implements AccessControlManager {
     }
 
     /**
-     * Extracts names of the given privileges.
-     * 
-     * @param privileges the list of privileges.
-     * @return names of the given privileges.
-     */
-    private String[] privileges( Privilege[] privileges ) {
-        String[] names = new String[privileges.length];
-        for (int i = 0; i < privileges.length; i++) {
-            names[i] = privileges[i].getName();
-        }
-        return names;
-    }
-
-    /**
      * Constructs list of Privilege objects using privilege's name.
      * 
      * @param names names of privileges
@@ -334,17 +305,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         return privileges;
     }
 
-    /**
-     * Tests given object for null.
-     * 
-     * @param o the given object
-     * @return true if the given object not null and false otherwise.
-     */
-    private boolean found( Object o ) {
-        return o != null;
-    }
-
-    public boolean hasPermission( Path absPath,
+    protected boolean hasPermission( Path absPath,
                                   String... actions ) {
         // convert actions to privileges
         Privilege[] permissions = new Privilege[actions.length];

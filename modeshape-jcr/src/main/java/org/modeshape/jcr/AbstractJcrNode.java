@@ -750,21 +750,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public AbstractJcrNode getNode( String relativePath ) throws PathNotFoundException, RepositoryException {
-        return getNode(relativePath, false);
-    }
-
-    /**
-     * Gets access to the node with given relative path with enabled or disabled permission testing.
-     * 
-     * @param relativePath the relative path of the node to access
-     * @param aclScope true to disable permissions testing and false otherwise
-     * @return the node under relative path
-     * @throws PathNotFoundException
-     * @throws RepositoryException
-     * @throws AccessControlException in case of negative results of permission check procedure.
-     */
-    protected AbstractJcrNode getNode( String relativePath,
-                                       boolean aclScope ) throws PathNotFoundException, RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
         checkSession();
         if (relativePath.equals(".")) {
@@ -772,9 +757,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         if (relativePath.equals("..")) {
-            if (!aclScope) {
-                session().checkPermission(this.getParent(), ModeShapePermissions.READ);
-            }
+            session().checkPermission(this.getParent(), ModeShapePermissions.READ);
             return this.getParent();
         }
 
@@ -794,18 +777,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 }
 
                 if (path.getLastSegment().isParentReference()) {
-                    if (!aclScope) {
-                        session().checkPermission(this.getParent(), ModeShapePermissions.READ);
-                    }
+                    session().checkPermission(this.getParent(), ModeShapePermissions.READ);
                     return this.getParent();
                 }
             }
             // We know it's a resolved relative path with more than one segment ...
             if (path.size() > 1) {
                 AbstractJcrNode node = session().node(node(), path);
-                if (!aclScope) {
-                    session().checkPermission(node, ModeShapePermissions.READ);
-                }
+                session().checkPermission(node, ModeShapePermissions.READ);
                 return node;
             }
             segment = path.getLastSegment();
@@ -822,9 +801,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
         try {
             AbstractJcrNode node = session().node(ref.getKey(), null, key());
-            if (!aclScope) {
-                session().checkPermission(node, ModeShapePermissions.READ);
-            }
+            session().checkPermission(node, ModeShapePermissions.READ);
             return node;
         } catch (ItemNotFoundException e) {
             // expected by TCK
@@ -2498,21 +2475,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     @Override
     public void addMixin( String mixinName )
         throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
-        addMixin(mixinName, true);
-    }
-
-    protected void addMixin( String mixinName,
-                             boolean checkPermissions )
-        throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
         CheckArg.isNotZeroLength(mixinName, "mixinName");
 
         checkSession();
         checkForLock();
         checkForCheckedOut();
 
-        if (checkPermissions) {
-            session.checkPermission(this, ModeShapePermissions.SET_PROPERTY);
-        }
+        session.checkPermission(this, ModeShapePermissions.SET_PROPERTY);
 
         if (!canAddMixin(mixinName)) {
             throw new ConstraintViolationException(JcrI18n.cannotAddMixin.text(mixinName));
