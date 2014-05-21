@@ -29,6 +29,7 @@ import java.util.List;
 import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
@@ -151,6 +152,11 @@ public class MappedAttributeDefinitionBuilder extends SimpleAttributeDefinitionB
 
     public MappedAttributeDefinitionBuilder setFieldPathInRepositoryConfiguration( String... pathToField ) {
         configPath = Collections.unmodifiableList(Arrays.asList(pathToField));
+        return this;
+    }
+
+    public MappedAttributeDefinitionBuilder setAccessConstraints(AccessConstraintDefinition...constraints) {
+        super.setAccessConstraints(constraints);
         return this;
     }
 

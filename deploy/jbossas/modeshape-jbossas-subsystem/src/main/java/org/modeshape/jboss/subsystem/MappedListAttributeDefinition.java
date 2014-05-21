@@ -37,6 +37,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -403,6 +404,11 @@ public class MappedListAttributeDefinition extends ListAttributeDefinition imple
 
         public Builder setFieldPathInRepositoryConfiguration( String... pathToField ) {
             configPath = Collections.unmodifiableList(Arrays.asList(pathToField));
+            return this;
+        }
+
+        public Builder setAccessConstraints(AccessConstraintDefinition...constraints) {
+            builder.setAccessConstraints(constraints);
             return this;
         }
     }

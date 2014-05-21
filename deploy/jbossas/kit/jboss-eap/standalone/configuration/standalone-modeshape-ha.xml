@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<server xmlns="urn:jboss:domain:1.4">
+<server xmlns="urn:jboss:domain:1.5">
     <extensions>
         <extension module="org.jboss.as.clustering.infinispan"/>
         <extension module="org.jboss.as.clustering.jgroups"/>
@@ -54,6 +54,15 @@
                 <socket-binding http="management-http"/>
             </http-interface>
         </management-interfaces>
+        <access-control provider="simple">
+            <role-mapping>
+                <role name="SuperUser">
+                    <include>
+                        <user name="$local"/>
+                    </include>
+                </role>
+            </role-mapping>
+        </access-control>
     </management>
     <profile>
         <subsystem xmlns="urn:jboss:domain:logging:1.2">
