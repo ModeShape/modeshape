@@ -23,8 +23,12 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import java.util.List;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.access.constraint.SensitivityClassification;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
@@ -33,6 +37,18 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
  */
 public class ModeShapeRootResource extends SimpleResourceDefinition {
     protected final static ModeShapeRootResource INSTANCE = new ModeShapeRootResource();
+
+    /**
+     * Set the default ModeShape RBAC access as follows:
+     *  Addressing is not sensitive: any management user can address (i.e. read the configuration)
+     *  Read is sensitive: only Auditor, Administrator, SuperUser can read attributes, resources etc.
+     *  Write is sensitive: only Administrator and SuperUser can write
+     */
+    protected static final SensitivityClassification MODESHAPE_SECURITY =
+            new SensitivityClassification(ModeShapeExtension.SUBSYSTEM_NAME, "modeshape-access-control", false, true, true);
+    protected static final SensitiveTargetAccessConstraintDefinition MODESHAPE_SECURITY_DEF =
+            new SensitiveTargetAccessConstraintDefinition(MODESHAPE_SECURITY);
+
 
     private ModeShapeRootResource() {
         super(ModeShapeExtension.SUBSYSTEM_PATH, ModeShapeExtension.getResourceDescriptionResolver(),
@@ -45,5 +61,10 @@ public class ModeShapeRootResource extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION,
                                                       GenericSubsystemDescribeHandler.INSTANCE,
                                                       false);
+    }
+
+    @Override
+    public List<AccessConstraintDefinition> getAccessConstraints() {
+        return MODESHAPE_SECURITY_DEF.wrapAsList();
     }
 }

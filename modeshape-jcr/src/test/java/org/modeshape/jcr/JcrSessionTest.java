@@ -1233,11 +1233,13 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         contentNode.setProperty("jcr:data", session().getValueFactory().createBinary("test".getBytes()));
 
         session().save();
+        Thread.sleep(200);
 
         queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder/%'", 1);
 
         folder.getSession().move(folder.getPath(), "/folder_1");
         folder.getSession().save();
+        Thread.sleep(200);
 
         queryAndExpectResults("SELECT * FROM [nt:file] WHERE [jcr:path] LIKE '/folder_1/%'", 1);
     }
