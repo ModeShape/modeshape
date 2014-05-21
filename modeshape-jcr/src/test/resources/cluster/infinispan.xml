@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
+            xmlns="urn:infinispan:config:5.2">
+
+    <global>
+
+        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
+        <transport clusterName="cluster-${cluster.testname}">
+            <properties>
+                <property
+                    name="configurationFile"
+                    value="../modeshape-jcr/target/test-classes/cluster/jgroups.xml" />
+            </properties>
+        </transport>
+    </global>
+
+    <namedCache name="metadata">
+        <clustering mode="replication">
+            <sync/>
+        </clustering>
+        <locking lockAcquisitionTimeout="60000"/>
+        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                     transactionMode="TRANSACTIONAL"
+                     lockingMode="PESSIMISTIC" />
+        <loaders passivation="false"
+                 shared="true"
+                 preload="false">
+            <loader class="org.infinispan.loaders.file.FileCacheStore"
+                    fetchPersistentState="true"
+                    purgeOnStartup="true">
+                <properties>
+                    <property name="location" value="../modeshape-jcr/target/clustered/${cluster.testname}/repository" />
+                </properties>
+            </loader>
+        </loaders>
+    </namedCache>
+</infinispan>

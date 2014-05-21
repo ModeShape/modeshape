@@ -1,0 +1,70 @@
+{
+    "name": "ClusteredRepository${cluster.testname}",
+    "jndiName": "",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "../modeshape-jcr/target/test-classes/cluster/initial-data.xml"
+        }
+    },
+    "monitoring" : {
+        "enabled" : true
+    },
+    "security": {
+        "anonymous": {
+            "roles": [
+                "readonly",
+                "readwrite",
+                "admin"
+            ],
+            "useOnFailedLogin": true
+        }
+    },
+    
+    "storage": {
+        "cacheName": "metadata",
+        "cacheConfiguration": "../modeshape-jcr/target/test-classes/cluster/infinispan.xml",
+        "binaryStorage": {
+            "type": "file",
+            "directory": "../modeshape-jcr/target/clustered/${cluster.testname}/node${cluster.item.number}/repository/binary",
+            "minimumBinarySizeInBytes": 4096
+        }
+    },
+    "query": {
+        "enabled": true,
+        "indexStorage": {
+            "type": "filesystem",
+            "location": "../modeshape-jcr/target/clustered/${cluster.testname}/node${cluster.item.number}/repository/index",
+            "lockingStrategy": "native",
+            "fileSystemAccessType": "auto"
+        },
+        "indexing": {
+            "threadPool": "modeshape-workers",
+            "analyzer": "org.apache.lucene.analysis.standard.StandardAnalyzer",
+            "similarity": "org.apache.lucene.search.DefaultSimilarity",
+            "batchSize": -1,
+            "indexFormat": "LUCENE_35",
+            "readerStrategy": "shared",
+            "mode": "async",
+            "asyncThreadPoolSize": 10,
+            "asyncMaxQueueSize": 50,
+            "hibernate.search.default.exclusive_index_use" : false,
+            "rebuildOnStartup": {
+                "when": "always",
+                "includeSystemContent": true,
+                "mode": "async"
+            },
+            "backend": {
+                "type": "lucene"
+            },
+            "hibernate.search.custom.overridden.property": "value"
+        }
+
+
+    },
+
+    "clustering" : {
+        "clusterName" : "cluster-${cluster.testname}"
+    }
+}
