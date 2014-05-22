@@ -435,6 +435,7 @@ public class JsonReader {
                 throw tokens.error("JSON arrays must begin with a '[' character");
             }
             BasicArray array = new BasicArray();
+            boolean expectValueSeparator = false;
             do {
                 // Peek at the next character on the stream ...
                 char c = tokens.peek();
@@ -446,11 +447,17 @@ public class JsonReader {
                         return array;
                     case ',':
                         tokens.next();
+                        expectValueSeparator = false;
                         break;
                     default:
+                        if (expectValueSeparator) {
+                            throw tokens.error("Invalid character in JSON array: '" + c + "'  at line " + tokens.lineNumber() +
+                                               " column " + tokens.columnNumber());
+                        }
                         // This should be a value ..
                         Object value = parseValue();
                         array.addValue(value);
+                        expectValueSeparator = true;
                         break;
                 }
             } while (true);
