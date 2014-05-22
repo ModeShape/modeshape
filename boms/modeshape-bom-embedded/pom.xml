@@ -50,7 +50,7 @@
 
     <properties>
         <jcr.version>2.0</jcr.version>
-        <infinispan.version>5.2.9.Final</infinispan.version>
+        <infinispan.version>5.2.10.Final</infinispan.version>
         <c3p0.version>0.9.2-pre5</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.17.SP2</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>

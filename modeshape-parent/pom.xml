@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.jboss.integration-platform</groupId>
         <artifactId>jboss-integration-platform-parent</artifactId>
-        <version>6.0.0.CR8</version>
+        <version>6.0.0.CR9</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -195,7 +195,7 @@
 
     <properties>
 
-        <version.ip-bom>6.0.0.CR8</version.ip-bom>
+        <version.ip-bom>6.0.0.CR9</version.ip-bom>
 
         <!--
             Versions of COMPILE artifacts *specific* to ModeShape, which do not appear in the BOM or are in conflict
@@ -672,6 +672,32 @@
             <properties>
                 <skipLongRunningTests>false</skipLongRunningTests>
             </properties>
+            <build>
+                <plugins>
+                    <!--By default (in the parent BOM), the victims rule is not run; so we want to run it only during assembly -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-victims-rule</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <rule implementation="com.redhat.victims.VictimsRule">
+                                            <metadata>warning</metadata>
+                                            <fingerprint>fatal</fingerprint>
+                                            <updates>${victims.updates}</updates>
+                                        </rule>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>
