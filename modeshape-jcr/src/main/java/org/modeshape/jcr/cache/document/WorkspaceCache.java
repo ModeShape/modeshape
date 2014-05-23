@@ -24,6 +24,7 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.api.BasicCache;
@@ -92,11 +93,9 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     }
 
     protected WorkspaceCache( WorkspaceCache original,
-                              ConcurrentMap<NodeKey, CachedNode> cache,
-                              ChangeSetListener changeSetListener ) {
+                              ConcurrentMap<NodeKey, CachedNode> cache) {
         this.context = original.context;
         this.documentStore = original.documentStore;
-        this.changeSetListener = changeSetListener;
         this.translator = original.translator;
         this.rootKey = original.rootKey;
         this.childReferenceForRoot = original.childReferenceForRoot;
@@ -107,6 +106,8 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.pathFactory = original.pathFactory;
         this.nameFactory = original.nameFactory;
         this.nodesByKey = cache;
+        //this is not copied on purpose, because this ctr should only be used to create "transient" caches
+        this.changeSetListener = null;
     }
 
     public void setMinimumStringLengthForBinaryStorage( long largeValueSize ) {
@@ -350,5 +351,25 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     @Override
     public String toString() {
         return workspaceName;
+    }
+
+    /**
+     * Returns a workspace cache which has the latest persisted information read from Infinispan for the given nodes.
+     * After reading each node from Infinispan, that node will also be updated/inserted into *this* workspace cache.
+     *
+     * @param nodeKeys an {@code Iterable} of {@code NodeKey}; may not be null
+     * @return a workspace cache instance which only contains the latest persisted information for the requested nodes.
+     */
+    protected WorkspaceCache persistedCache(Iterable<NodeKey> nodeKeys) {
+        ConcurrentHashMap<NodeKey, CachedNode> nodes = new ConcurrentHashMap<NodeKey, CachedNode>();
+        for (NodeKey nodeKey : nodeKeys) {
+            Document nodeData = documentFor(nodeKey);
+            if (nodeData != null) {
+                CachedNode persistedNode = new LazyCachedNode(nodeKey, nodeData);
+                nodes.put(nodeKey, persistedNode);
+                this.nodesByKey.put(nodeKey, persistedNode);
+            }
+        }
+        return new WorkspaceCache(this, nodes);
     }
 }
