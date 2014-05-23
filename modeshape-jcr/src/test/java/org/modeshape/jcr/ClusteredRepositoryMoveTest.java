@@ -50,15 +50,15 @@ public class ClusteredRepositoryMoveTest {
     protected static int CLUSTER_NODES_COUNT = 3;
 
 
-    private static final String SOURCE_PATH = "/source";
-    private static final String DEST_PATH = "/dest";
+    protected static final String SOURCE_PATH = "/source";
+    protected static final String DEST_PATH = "/dest";
     private static final String EXPECTED_CONTENT = "Lorem ipsum";
 
 
     protected JcrRepository[] repositories;
 
     private static final String OUTPUT_FOLDER = "../modeshape-jcr/target/clustered/%s";
-    private long sourceFolderSize;
+    protected long sourceFolderSize;
 
     /**
      * Cluster name
@@ -127,7 +127,7 @@ public class ClusteredRepositoryMoveTest {
         }
         Session session = repositories[RANDOM.nextInt(repositories.length)].login();
         sourceFolderSize = session.getNode(SOURCE_PATH).getNodes().getSize();
-
+        session.logout();
 
     }
 
