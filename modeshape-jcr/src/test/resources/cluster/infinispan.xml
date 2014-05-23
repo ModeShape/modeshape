@@ -19,18 +19,18 @@
         <clustering mode="replication">
             <sync/>
         </clustering>
-        <locking lockAcquisitionTimeout="60000"/>
+
         <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
                      transactionMode="TRANSACTIONAL"
                      lockingMode="PESSIMISTIC" />
         <loaders passivation="false"
-                 shared="true"
+                 shared="false"
                  preload="false">
             <loader class="org.infinispan.loaders.file.FileCacheStore"
                     fetchPersistentState="true"
                     purgeOnStartup="true">
                 <properties>
-                    <property name="location" value="../modeshape-jcr/target/clustered/${cluster.testname}/repository" />
+                    <property name="location" value="../modeshape-jcr/target/clustered/${cluster.testname}/node${cluster.item.number}/repository" />
                 </properties>
             </loader>
         </loaders>
