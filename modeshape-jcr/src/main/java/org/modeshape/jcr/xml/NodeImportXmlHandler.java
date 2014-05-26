@@ -18,11 +18,12 @@ package org.modeshape.jcr.xml;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
@@ -425,15 +426,20 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         this.parsedElements.clear();
     }
 
-    /**
-     * Returns an [elementPath, element] map, based on the parsed elements.
-     * 
-     * @return a {@link TreeMap} of the parsed elements, sorted in ascending order by path.
-     */
-    private TreeMap<Path, ImportElement> getParsedElementByPath() {
-        TreeMap<Path, ImportElement> result = new TreeMap<Path, ImportElement>();
-        for (ImportElement element : parsedElements) {
-            result.put(element.getPath(), element);
+    private LinkedHashMap<Path, ImportElement> getParsedElementByPath() {
+        LinkedHashMap<Path, ImportElement> result = new LinkedHashMap<>();
+        int depthLevel = 1;
+        //convert the list of parsed elements to a map making sure that the parents come before the children and the children
+        //order is preserved
+        while (!parsedElements.isEmpty()) {
+            for (Iterator<ImportElement> elementIterator = parsedElements.iterator(); elementIterator.hasNext();) {
+                ImportElement element = elementIterator.next();
+                if (element.getPath().size() == depthLevel) {
+                    result.put(element.getPath(), element);
+                    elementIterator.remove();
+                }
+            }
+            ++depthLevel;
         }
         return result;
     }
