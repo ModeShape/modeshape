@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
@@ -31,8 +30,6 @@ import org.modeshape.webdav.locking.IResourceLocks;
 import org.modeshape.webdav.locking.LockedObject;
 
 public class DoPut extends AbstractMethod {
-
-    private static Logger LOG = Logger.getLogger(DoPut.class);
 
     private final IWebdavStore store;
     private final IResourceLocks resourceLocks;
@@ -55,7 +52,7 @@ public class DoPut extends AbstractMethod {
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
-        LOG.trace("-- " + this.getClass().getName());
+        logger.trace("-- " + this.getClass().getName());
 
         if (!readOnly) {
             String path = getRelativePath(req);
@@ -66,7 +63,7 @@ public class DoPut extends AbstractMethod {
             if (isOSXFinder() && req.getContentLength() == 0) {
                 // OS X Finder sends 2 PUTs; first has 0 content, second has content.
                 // This is the first one, so we'll ignore it ...
-                LOG.trace("-- First of multiple OS-X Finder PUT calls at {0}", path);
+                logger.trace("-- First of multiple OS-X Finder PUT calls at {0}", path);
             }
 
             Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
@@ -76,13 +73,13 @@ public class DoPut extends AbstractMethod {
                 // This is the second one that was preceded by a LOCK, so don't need to check the locks ...
             } else {
                 if (!isUnlocked(transaction, req, resourceLocks, parentPath)) {
-                    LOG.trace("-- Locked parent at {0}", path);
+                    logger.trace("-- Locked parent at {0}", path);
                     resp.setStatus(WebdavStatus.SC_LOCKED);
                     return; // parent is locked
                 }
 
                 if (!isUnlocked(transaction, req, resourceLocks, path)) {
-                    LOG.trace("-- Locked resource at {0}", path);
+                    logger.trace("-- Locked resource at {0}", path);
                     resp.setStatus(WebdavStatus.SC_LOCKED);
                     return; // resource is locked
                 }
@@ -106,32 +103,32 @@ public class DoPut extends AbstractMethod {
                         return;
                     }
 
-                    LOG.trace("-- Looking for the stored object at {0}", path);
+                    logger.trace("-- Looking for the stored object at {0}", path);
                     so = store.getStoredObject(transaction, path);
 
                     if (so == null) {
-                        LOG.trace("-- Creating resource in the store at {0}", path);
+                        logger.trace("-- Creating resource in the store at {0}", path);
                         store.createResource(transaction, path);
                         // resp.setStatus(WebdavStatus.SC_CREATED);
                     } else {
                         // This has already been created, just update the data
-                        LOG.trace("-- There is already a resource at {0}", path);
+                        logger.trace("-- There is already a resource at {0}", path);
                         if (so.isNullResource()) {
 
                             LockedObject nullResourceLo = resourceLocks.getLockedObjectByPath(transaction, path);
                             if (nullResourceLo == null) {
-                                LOG.trace("-- Unable to obtain resource lock object at {0}", path);
+                                logger.trace("-- Unable to obtain resource lock object at {0}", path);
                                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                                 return;
                             }
-                            LOG.trace("-- Found resource lock object at {0}", path);
+                            logger.trace("-- Found resource lock object at {0}", path);
                             String nullResourceLockToken = nullResourceLo.getID();
                             String[] lockTokens = getLockIdFromIfHeader(req);
                             String lockToken = null;
                             if (lockTokens != null) {
                                 lockToken = lockTokens[0];
                             } else {
-                                LOG.trace("-- No lock tokens found in resource lock object at {0}", path);
+                                logger.trace("-- No lock tokens found in resource lock object at {0}", path);
                                 resp.sendError(WebdavStatus.SC_BAD_REQUEST);
                                 return;
                             }
@@ -153,14 +150,14 @@ public class DoPut extends AbstractMethod {
                                 sendReport(req, resp, errorList);
                             }
                         } else {
-                            LOG.trace("-- Found a lock for the (existing) resource at {0}", path);
+                            logger.trace("-- Found a lock for the (existing) resource at {0}", path);
                         }
                     }
                     // User-Agent workarounds
                     doUserAgentWorkaround(resp);
 
                     // setting resourceContent
-                    LOG.trace("-- Setting resource content at {0}", path);
+                    logger.trace("-- Setting resource content at {0}", path);
                     long resourceLength = store.setResourceContent(transaction, path, req.getInputStream(), null, null);
 
                     so = store.getStoredObject(transaction, path);
@@ -172,20 +169,20 @@ public class DoPut extends AbstractMethod {
                     // Now lets report back what was actually saved
 
                 } catch (AccessDeniedException e) {
-                    LOG.trace(e, "Access denied when working with {0}", path);
+                    logger.trace(e, "Access denied when working with {0}", path);
                     resp.sendError(WebdavStatus.SC_FORBIDDEN);
                 } catch (WebdavException e) {
-                    LOG.trace(e, "WebDAV exception when working with {0}", path);
+                    logger.trace(e, "WebDAV exception when working with {0}", path);
                     resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                 } finally {
                     resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
                 }
             } else {
-                LOG.trace("Lock was not acquired when working with {0}", path);
+                logger.trace("Lock was not acquired when working with {0}", path);
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } else {
-            LOG.trace("Readonly={0}", readOnly);
+            logger.trace("Readonly={0}", readOnly);
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
         }
 
@@ -196,12 +193,12 @@ public class DoPut extends AbstractMethod {
      */
     private void doUserAgentWorkaround( HttpServletResponse resp ) {
         if (isOSXFinder()) {
-            LOG.trace("DoPut.execute() : do workaround for user agent '" + userAgent + "'");
+            logger.trace("DoPut.execute() : do workaround for user agent '" + userAgent + "'");
             resp.setStatus(WebdavStatus.SC_CREATED);
         } else if (userAgent != null && userAgent.contains("Transmit")) {
             // Transmit also uses WEBDAVFS 1.x.x but crashes
             // with SC_CREATED response
-            LOG.trace("DoPut.execute() : do workaround for user agent '" + userAgent + "'");
+            logger.trace("DoPut.execute() : do workaround for user agent '" + userAgent + "'");
             resp.setStatus(WebdavStatus.SC_NO_CONTENT);
         } else {
             resp.setStatus(WebdavStatus.SC_CREATED);

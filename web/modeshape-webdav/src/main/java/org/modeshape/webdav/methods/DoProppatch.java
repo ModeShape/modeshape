@@ -27,7 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import org.modeshape.common.i18n.TextI18n;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
@@ -47,8 +46,6 @@ import org.xml.sax.InputSource;
 
 public class DoProppatch extends AbstractMethod {
 
-    private static Logger LOG = Logger.getLogger(DoProppatch.class);
-
     private boolean readOnly;
     private IWebdavStore store;
     private ResourceLocks resourceLocks;
@@ -65,7 +62,7 @@ public class DoProppatch extends AbstractMethod {
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
-        LOG.trace("-- " + this.getClass().getName());
+        logger.trace("-- " + this.getClass().getName());
 
         if (readOnly) {
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
@@ -214,13 +211,16 @@ public class DoProppatch extends AbstractMethod {
                 generatedXML.writeElement("DAV::response", XMLWriter.CLOSING);
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.CLOSING);
 
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Sending response: {0}", generatedXML.toString());
+                }
                 generatedXML.sendData();
             } catch (AccessDeniedException e) {
                 resp.sendError(WebdavStatus.SC_FORBIDDEN);
             } catch (WebdavException e) {
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             } catch (ServletException e) {
-                LOG.error(e, new TextI18n("Cannot create document builder"));
+                logger.error(e, new TextI18n("Cannot create document builder"));
             } finally {
                 resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }

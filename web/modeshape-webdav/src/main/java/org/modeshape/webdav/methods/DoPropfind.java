@@ -26,7 +26,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import org.modeshape.common.i18n.TextI18n;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.webdav.IMimeTyper;
 import org.modeshape.webdav.ITransaction;
@@ -47,8 +46,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
 public class DoPropfind extends AbstractMethod {
-
-    private static Logger LOG = Logger.getLogger(DoPropfind.class);
 
     /**
      * PROPFIND - Specify a property mask.
@@ -83,7 +80,7 @@ public class DoPropfind extends AbstractMethod {
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
-        LOG.trace("-- " + this.getClass().getName());
+        logger.trace("-- " + this.getClass().getName());
 
         // Retrieve the resources
         String path = getCleanPath(getRelativePath(req));
@@ -172,15 +169,17 @@ public class DoPropfind extends AbstractMethod {
                                              mimeTyper.getMimeType(transaction, path));
                 }
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.CLOSING);
-
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Sending response: {0}", generatedXML.toString());
+                }
                 generatedXML.sendData();
             } catch (AccessDeniedException e) {
                 resp.sendError(WebdavStatus.SC_FORBIDDEN);
             } catch (WebdavException e) {
-                LOG.warn(e, new TextI18n("Sending internal error!"));
+                logger.warn(e, new TextI18n("Sending internal error!"));
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             } catch (ServletException e) {
-                LOG.error(e, new TextI18n("Cannot create the xml document builder"));
+                logger.error(e, new TextI18n("Cannot create the xml document builder"));
             } finally {
                 resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }

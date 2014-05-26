@@ -24,7 +24,6 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.i18n.TextI18n;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.IMimeTyper;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
@@ -33,8 +32,6 @@ import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.locking.ResourceLocks;
 
 public class DoGet extends DoHead {
-
-    private static Logger LOG = Logger.getLogger(DoGet.class);
 
     public DoGet( IWebdavStore store,
                   String dftIndexFile,
@@ -78,17 +75,17 @@ public class DoGet extends DoHead {
                 try {
                     in.close();
                 } catch (Exception e) {
-                    LOG.warn(e, new TextI18n("Closing InputStream causes Exception!"));
+                    logger.warn(e, new TextI18n("Closing InputStream causes Exception!"));
                 }
                 try {
                     out.flush();
                     out.close();
                 } catch (Exception e) {
-                    LOG.warn(e, new TextI18n("Flushing OutputStream causes Exception!"));
+                    logger.warn(e, new TextI18n("Flushing OutputStream causes Exception!"));
                 }
             }
         } catch (Exception e) {
-            LOG.trace(e.toString());
+            logger.trace(e.toString());
         }
     }
 
@@ -154,7 +151,7 @@ public class DoGet extends DoHead {
 
                     StoredObject obj = store.getStoredObject(transaction, path + "/" + child);
                     if (obj == null) {
-                        LOG.error(new TextI18n("Should not return null for " + path + "/" + child));
+                        logger.error(new TextI18n("Should not return null for " + path + "/" + child));
                     }
                     if (obj != null && obj.isFolder()) {
                         childURL.append("/");
@@ -195,7 +192,11 @@ public class DoGet extends DoHead {
                 childrenTemp.append("</table>");
                 childrenTemp.append(getFooter(transaction, path, resp, req));
                 childrenTemp.append("</body></html>");
-                out.write(childrenTemp.toString().getBytes("UTF-8"));
+                String response = childrenTemp.toString();
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Sending response {0}", response);
+                }
+                out.write(response.getBytes("UTF-8"));
             }
         }
     }
@@ -227,7 +228,7 @@ public class DoGet extends DoHead {
                 retVal = out.toString();
             }
         } catch (Exception ex) {
-            LOG.error(ex, new TextI18n("Error in reading webdav.css"));
+            logger.error(ex, new TextI18n("Error in reading webdav.css"));
         }
 
         return retVal;
