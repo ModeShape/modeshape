@@ -563,26 +563,12 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                     logger().warn(WebdavI18n.warnMultiValuedProperty, property.getPath());
                     continue;
                 }
-                String webDavPropertyName = webdavPropertyName(property.getName());
-                response.put(webDavPropertyName, property.getString());
+                response.put(property.getName(), property.getString());
             }
             return response;
         } catch (RepositoryException e) {
             throw translate(e);
         }
-    }
-
-    private String webdavPropertyName( String jcrPropertyName ) {
-        String namespaceUri = "D";
-        String propertyName = jcrPropertyName;
-
-        if (jcrPropertyName.startsWith("{") && (jcrPropertyName.lastIndexOf("}") > 0)) {
-            int closingBracketIdx = jcrPropertyName.lastIndexOf("}");
-            namespaceUri = jcrPropertyName.substring(1, closingBracketIdx);
-            propertyName = jcrPropertyName.substring(closingBracketIdx + 1);
-        }
-
-        return namespaceUri + ":" + propertyName;
     }
 
     @Override

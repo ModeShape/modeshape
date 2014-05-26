@@ -185,7 +185,7 @@ public interface IWebdavStore {
      * 
      * @param transaction the {@link ITransaction} within which the operation takes place; may not be null
      * @param resourceUri the URI of the object on which the properties should be updated; may not be null
-     * @return a Map of (property name, property value) pair; may not be null; if the property name is namespace-aware it is
+     * @return a Map of (property name, property value) pairs; may not be null; if the property name is namespace-aware it is
      *         expected to have the [namespaceUri]:[localPropertyName] format
      */
     Map<String, Object> getCustomProperties( ITransaction transaction,

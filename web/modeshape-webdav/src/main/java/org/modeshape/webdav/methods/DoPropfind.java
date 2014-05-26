@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import org.modeshape.common.i18n.TextI18n;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.webdav.IMimeTyper;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
@@ -87,6 +88,12 @@ public class DoPropfind extends AbstractMethod {
         // Retrieve the resources
         String path = getCleanPath(getRelativePath(req));
         String tempLockOwner = "doPropfind" + System.currentTimeMillis() + req.toString();
+
+        String userAgent = req.getHeader("User-Agent");
+        if (ignoreRequest(userAgent, path)) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
         depth = getDepth(req);
 
         if (resourceLocks.lock(transaction, path, tempLockOwner, false, depth, TEMP_TIMEOUT, TEMPORARY)) {
@@ -619,5 +626,15 @@ public class DoPropfind extends AbstractMethod {
                 generatedXML.writeElement(propertyName, XMLWriter.NO_CONTENT);
             }
         }
+    }
+
+    private boolean ignoreRequest( String userAgent, String requestPath ) {
+        if (!StringUtil.isBlank(userAgent) && userAgent.toLowerCase().startsWith("microsoft")) {
+            //microsoft web explorer sends some funky propfind requests which we need to ignore
+             if (requestPath.endsWith("desktop.ini") || requestPath.endsWith("folder.jpg") || requestPath.endsWith("folder.gif")) {
+                 return true;
+             }
+        }
+        return false;
     }
 }
