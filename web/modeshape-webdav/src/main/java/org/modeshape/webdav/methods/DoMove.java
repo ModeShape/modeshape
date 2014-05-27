@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.exceptions.AccessDeniedException;
@@ -29,8 +28,6 @@ import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.ResourceLocks;
 
 public class DoMove extends AbstractMethod {
-
-    private static Logger LOG = Logger.getLogger(DoMove.class);
 
     private final ResourceLocks resourceLocks;
     private final DoDelete doDelete;
@@ -53,7 +50,7 @@ public class DoMove extends AbstractMethod {
                          HttpServletResponse resp ) throws IOException, LockFailedException {
 
         if (!readOnly) {
-            LOG.trace("-- " + this.getClass().getName());
+            logger.trace("-- " + this.getClass().getName());
 
             String sourcePath = getRelativePath(req);
             Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();

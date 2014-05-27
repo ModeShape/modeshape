@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import org.modeshape.common.i18n.TextI18n;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
@@ -41,8 +40,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class DoLock extends AbstractMethod {
-
-    private static Logger LOG = Logger.getLogger(DoLock.class);
 
     private final IWebdavStore store;
     private final IResourceLocks resourceLocks;
@@ -71,7 +68,7 @@ public class DoLock extends AbstractMethod {
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
-        LOG.trace("-- " + this.getClass().getName());
+        logger.trace("-- " + this.getClass().getName());
 
         if (readOnly) {
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
@@ -110,7 +107,7 @@ public class DoLock extends AbstractMethod {
                     }
                 } catch (LockFailedException e) {
                     resp.sendError(WebdavStatus.SC_LOCKED);
-                    LOG.error(e, new TextI18n("Lockfailed exception"));
+                    logger.error(e, new TextI18n("Lockfailed exception"));
                 } finally {
                     resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
                 }
@@ -157,7 +154,7 @@ public class DoLock extends AbstractMethod {
 
         } catch (ServletException e) {
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            LOG.trace(e.toString());
+            logger.trace(e.toString());
         } catch (LockFailedException e) {
             sendLockFailError(req, resp);
         } finally {
@@ -188,7 +185,7 @@ public class DoLock extends AbstractMethod {
 
                 // Transmit expects 204 response-code, not 201
                 if (userAgent != null && userAgent.contains("Transmit")) {
-                    LOG.trace("DoLock.execute() : do workaround for user agent '" + userAgent + "'");
+                    logger.trace("DoLock.execute() : do workaround for user agent '" + userAgent + "'");
                     resp.setStatus(WebdavStatus.SC_NO_CONTENT);
                 } else {
                     resp.setStatus(WebdavStatus.SC_CREATED);
@@ -213,10 +210,10 @@ public class DoLock extends AbstractMethod {
             sendLockFailError(req, resp);
         } catch (WebdavException e) {
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            LOG.error(e, new TextI18n("Webdav exception"));
+            logger.error(e, new TextI18n("Webdav exception"));
         } catch (ServletException e) {
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            LOG.error(e, new TextI18n("Servlet exception"));
+            logger.error(e, new TextI18n("Servlet exception"));
         } finally {
             parentSo = null;
             nullSo = null;
@@ -262,7 +259,7 @@ public class DoLock extends AbstractMethod {
 
         // Mac OS lock request workaround
         if (macLockRequest) {
-            LOG.trace("DoLock.execute() : do workaround for user agent '" + userAgent + "'");
+            logger.trace("DoLock.execute() : do workaround for user agent '" + userAgent + "'");
 
             doMacLockRequestWorkaround(transaction, req, resp);
         } else {
@@ -412,11 +409,11 @@ public class DoLock extends AbstractMethod {
 
         } catch (DOMException e) {
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            LOG.error(e, new TextI18n("DOM exception"));
+            logger.error(e, new TextI18n("DOM exception"));
             return false;
         } catch (SAXException e) {
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            LOG.error(e, new TextI18n("SAX exception"));
+            logger.error(e, new TextI18n("SAX exception"));
             return false;
         }
 

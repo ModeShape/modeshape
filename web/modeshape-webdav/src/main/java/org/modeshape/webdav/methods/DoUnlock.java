@@ -19,7 +19,6 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.i18n.TextI18n;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
@@ -29,8 +28,6 @@ import org.modeshape.webdav.locking.IResourceLocks;
 import org.modeshape.webdav.locking.LockedObject;
 
 public class DoUnlock extends DeterminableMethod {
-
-    private static Logger LOG = Logger.getLogger(DoUnlock.class);
 
     private final IWebdavStore store;
     private final IResourceLocks resourceLocks;
@@ -48,7 +45,7 @@ public class DoUnlock extends DeterminableMethod {
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
-        LOG.trace("-- " + this.getClass().getName());
+        logger.trace("-- " + this.getClass().getName());
 
         if (readOnly) {
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
@@ -91,7 +88,7 @@ public class DoUnlock extends DeterminableMethod {
                                 resp.setStatus(WebdavStatus.SC_NO_CONTENT);
                             }
                         } else {
-                            LOG.trace("DoUnlock failure at " + lo.getPath());
+                            logger.trace("DoUnlock failure at " + lo.getPath());
                             resp.sendError(WebdavStatus.SC_METHOD_FAILURE);
                         }
 
@@ -100,7 +97,7 @@ public class DoUnlock extends DeterminableMethod {
                     }
                 }
             } catch (LockFailedException e) {
-                LOG.warn(e, new TextI18n("Cannot unlock resource"));
+                logger.warn(e, new TextI18n("Cannot unlock resource"));
             } finally {
                 resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }

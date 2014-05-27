@@ -149,8 +149,6 @@ public class XMLWriter {
                 // there is a prefix
                 name = prefix + ":" + name.substring(pos + 1);
             }
-        } else {
-            throw new IllegalArgumentException("All XML elements must have a namespace");
         }
 
         switch (type) {
