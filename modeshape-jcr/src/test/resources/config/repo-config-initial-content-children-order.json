@@ -1,0 +1,11 @@
+{
+    "name" : "Repository with initial content",
+    "transactionMode" : "none",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "xmlImport/docWithChildren.xml"
+        }
+    }
+}

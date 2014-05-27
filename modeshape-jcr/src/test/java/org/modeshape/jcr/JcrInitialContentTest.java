@@ -16,14 +16,19 @@
 
 package org.modeshape.jcr;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemNotFoundException;
+import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Assert;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -32,10 +37,6 @@ import org.modeshape.common.collection.ListMultimap;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.value.Name;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Unit test for the initial content import feature.
@@ -116,6 +117,36 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
                                  JcrConstants.NT_UNSTRUCTURED, null,
                                  "{http://default.namespace.com}maker=Infiniti",
                                  "{http://default.namespace.com}model=G37");
+    }
+
+    @Test
+    @FixFor( "MODE-2217" )
+    public void shouldKeepChildrenOrder() throws Exception {
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
+                "config/repo-config-initial-content-children-order.json"));
+        JcrSession session = repository.login();
+        try {
+            NodeIterator children = session.getNode("/testRoot").getNodes();
+            assertEquals(3, children.getSize());
+
+            Node node3 = children.nextNode();
+            assertEquals("/testRoot/node3", node3.getPath());
+            NodeIterator subChildren = node3.getNodes();
+            assertEquals(2, subChildren.getSize());
+            assertEquals("/testRoot/node3/node3_2", subChildren.nextNode().getPath());
+            assertEquals("/testRoot/node3/node3_1", subChildren.nextNode().getPath());
+
+            assertEquals("/testRoot/node2", children.nextNode().getPath());
+
+            Node node1 = children.nextNode();
+            assertEquals("/testRoot/node1", node1.getPath());
+            subChildren = node1.getNodes();
+            assertEquals(2, subChildren.getSize());
+            assertEquals("/testRoot/node1/node1_2", subChildren.nextNode().getPath());
+            assertEquals("/testRoot/node1/node1_1", subChildren.nextNode().getPath());
+        } finally {
+            session.logout();
+        }
     }
 
     @Override

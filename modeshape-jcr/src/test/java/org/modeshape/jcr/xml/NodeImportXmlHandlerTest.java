@@ -25,8 +25,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -67,7 +67,7 @@ public class NodeImportXmlHandlerTest {
             }
 
             @Override
-            public void submit( TreeMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) {
+            public void submit( LinkedHashMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) {
                 NodeImportXmlHandlerTest.this.parseResults = parseResults;
             }
         };
