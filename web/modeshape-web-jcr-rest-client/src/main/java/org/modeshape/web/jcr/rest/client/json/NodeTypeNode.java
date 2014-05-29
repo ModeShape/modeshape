@@ -240,13 +240,15 @@ public final class NodeTypeNode extends JsonNode {
             for (Iterator<?> itr = children.keys(); itr.hasNext();) {
                 String key = JsonUtils.decode(itr.next().toString());
                 Object child = children.get(key);
-                if (child != null) {
-                    // and that means that each child is a JSONObject ...
-                    if (key.startsWith("jcr:propertyDefinition")) { // may contain a SNS index
-                        PropertyDefinition defn = createPropertyDefinition(key, (JSONObject)child, nodeTypeName, nodeTypes);
+                if (child instanceof JSONObject) {
+                    // Get the primary type of this child object ...
+                    JSONObject childObj = (JSONObject)child;
+                    String type = getPrimaryType(key, childObj);
+                    if (type.startsWith("nt:propertyDefinition") || type.startsWith("jcr:propertyDefinition")) {
+                        PropertyDefinition defn = createPropertyDefinition(key, childObj, nodeTypeName, nodeTypes);
                         if (defn != null) propDefns.add(defn);
-                    } else if (key.startsWith("jcr:childNodeDefinition")) { // may contain a SNS index
-                        ChildNodeDefinition defn = createChildNodeDefinition(key, (JSONObject)child, nodeTypeName, nodeTypes);
+                    } else if (type.startsWith("nt:childNodeDefinition") || type.startsWith("jcr:childNodeDefinition")) {
+                        ChildNodeDefinition defn = createChildNodeDefinition(key, childObj, nodeTypeName, nodeTypes);
                         if (defn != null) childDefns.add(defn);
                     }
                 }
@@ -256,6 +258,20 @@ public final class NodeTypeNode extends JsonNode {
         // Create the node, which is automatically added to the map ...
         new NodeType(nodeTypeName, isMixin, isAbstract, superTypeNames, propDefns, childDefns, primaryItemName,
                      orderableChildren, queryable, nodeTypes);
+    }
+
+    protected String getPrimaryType( String key,
+                                     JSONObject child ) throws Exception {
+        // older versions used to have "jcr:propertyDefinition" or "jcr:childNodeDefinition" as key
+        String type = key;
+        if (child.has("properties")) {
+            // Newer versions the primary type is listed under "properties/jcr:priamryType" ...
+            JSONObject childProps = child.getJSONObject("properties");
+            if (childProps.has("jcr:primaryType")) {
+                type = childProps.getString("jcr:primaryType");
+            }
+        }
+        return type;
     }
 
     protected PropertyDefinition createPropertyDefinition( String defnName,
