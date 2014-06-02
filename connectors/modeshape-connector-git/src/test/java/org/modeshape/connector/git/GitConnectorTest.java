@@ -272,11 +272,6 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         workspace.reindex(git.getPath() + "/tree/master/.gitignore");
         query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/master/%'", Query.JCR_SQL2);
         assertTrue(query.execute().getNodes().getSize() > 0);
-
-        //force reindexing of a file under another configured branch and check that it has been indexed
-        workspace.reindex(git.getPath() + "/tree/2.x/.gitignore");
-        query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/2.x/%'", Query.JCR_SQL2);
-        assertTrue(query.execute().getNodes().getSize() > 0);
     }
 
     protected void assertNodeHasObjectIdProperty( Node node ) throws Exception {
@@ -311,7 +306,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
      * @return the branch names; never null
      */
     protected String[] expectedBranchNames() {
-        return new String[] {"master", "2.2.x", "2.5.x", "2.8.x", "2.x", "3.0.x"};
+        return new String[] {"master"};
     }
 
     /**

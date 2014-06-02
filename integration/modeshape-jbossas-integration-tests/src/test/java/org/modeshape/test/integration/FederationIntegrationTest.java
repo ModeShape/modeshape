@@ -114,11 +114,6 @@ public class FederationIntegrationTest {
             Query query = workspace.getQueryManager()
                                    .createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/master/%'", Query.JCR_SQL2);
             assertEquals(2, query.execute().getNodes().getSize());
-
-            workspace.reindex(gitNode.getPath() + "/tree/2.x/.gitignore");
-            query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/2.x/%'",
-                                                            Query.JCR_SQL2);
-            assertEquals(2, query.execute().getNodes().getSize());
         } finally {
             testRoot.remove();
             session.save();
