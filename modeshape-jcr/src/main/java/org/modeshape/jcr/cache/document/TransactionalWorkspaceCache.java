@@ -61,7 +61,7 @@ public class TransactionalWorkspaceCache extends WorkspaceCache {
                                            TransactionalWorkspaceCaches cacheManager,
                                            Transaction txn ) {
         // Use a new in-memory map for the transactional cache ...
-        super(sharedWorkspaceCache, new ConcurrentHashMap<NodeKey, CachedNode>(), null);
+        super(sharedWorkspaceCache, new ConcurrentHashMap<NodeKey, CachedNode>());
         this.sharedWorkspaceCache = sharedWorkspaceCache;
         this.txn = txn;
         this.cacheManager = cacheManager;
