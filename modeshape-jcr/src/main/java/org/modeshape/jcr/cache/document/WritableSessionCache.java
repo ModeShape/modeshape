@@ -616,6 +616,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // Not associated with a txn??
                         throw new SystemFailureException(err);
                     } catch (Exception e) {
+                        LOGGER.debug(e, "Unexpected exception");
                         // Some error occurred (likely within our code) ...
                         txn.rollback();
                         throw e;
@@ -642,6 +643,10 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     // Commit the transaction ...
                     txn.commit();
+
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Altered {0} keys: {1}", numNodes, this.changedNodes.keySet());
+                    }
 
                     this.clearState();
                     that.clearState();
@@ -1385,7 +1390,11 @@ public class WritableSessionCache extends AbstractSessionCache {
         DocumentStore documentStore = workspaceCache().documentStore();
 
         if (documentStore.updatesRequirePreparing()) {
-            LOGGER.debug("Locking nodes in Infinispan");
+            if (LOGGER.isDebugEnabled()) {
+                if (!this.changedNodes.isEmpty()) {
+                    LOGGER.debug("Attempting to lock nodes in Infinispan: {0}", changedNodes.keySet());
+                }
+            }
             // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
             Set<String> keysToLock = new HashSet<String>();
 
@@ -1400,6 +1409,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                 // try again ...
                 if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
                     throw new org.infinispan.util.concurrent.TimeoutException("Unable to acquire storage locks: " + keysToLock);
+                } else if (LOGGER.isDebugEnabled()) {
+                    if (!keysToLock.isEmpty()) {
+                        LOGGER.debug("Locked the nodes: {0}", keysToLock);
+                    }
+                }
+            } else if (LOGGER.isDebugEnabled()) {
+                if (!keysToLock.isEmpty()) {
+                    LOGGER.debug("Locked the nodes: {0}", keysToLock);
                 }
             }
             // we need to purge those keys from the ws cache, otherwise we risk leaking changes, given that the WS cache is global
