@@ -144,7 +144,7 @@
                 </executions>
             </plugin>
 
-            <!--Copy & overwrite user & roles files (by default they are empty in the kit)
+            <!--Copy & overwrite user & roles files (by default they are empty in the kit) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -171,7 +171,6 @@
                     </execution>
                 </executions>
             </plugin>
-            -->
         </plugins>
     </build>
 </project>
