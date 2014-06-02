@@ -1329,7 +1329,8 @@ public class JcrRepositoryTest {
     public void shouldReturnStartupProblemsAfterStarting() throws Exception {
         shutdownDefaultRepository();
         RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResourceAsStream("config/repo-config-with-startup-problems.json"),
+                                                                                .getResourceAsStream(
+                                                                                        "config/repo-config-with-startup-problems.json"),
                                                                       "Deprecated config");
         repository = new JcrRepository(config);
         repository.start();
@@ -1344,7 +1345,8 @@ public class JcrRepositoryTest {
         FileUtil.delete("target/journal");
         shutdownDefaultRepository();
         RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResourceAsStream("config/repo-config-journaling.json"),
+                                                                                .getResourceAsStream(
+                                                                                        "config/repo-config-journaling.json"),
                                                                       "Deprecated config");
         repository = new JcrRepository(config);
         repository.start();
