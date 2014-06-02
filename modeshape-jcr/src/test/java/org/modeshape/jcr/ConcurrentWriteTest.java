@@ -24,12 +24,22 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -45,6 +55,7 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrTools;
 
@@ -204,6 +215,98 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
 
         run(2, numThreads, 1, operation);
         verify(new NumberOfChildren(2, "testRoot"));
+    }
+
+    @Test
+    @FixFor( "MODE-2216" )
+    public void shouldMoveFileAndFoldersConcurrently() throws Exception {
+        if (repository != null) {
+            try {
+                TestingUtil.killRepositories(repository);
+            } finally {
+                repository = null;
+                config = null;
+            }
+        }
+
+        FileUtil.delete("target/move_repository");
+
+        int threadCount = 50;
+        String sourcePath = "/source";
+        String destPath = "/dest";
+
+        //this will import initial content into the source folder (see above)
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-move.json");
+        Session session = repository.login();
+        NodeIterator sourceNodes = session.getNode(sourcePath).getNodes();
+        long expectedMoveCount = sourceNodes.getSize();
+
+        final List<Callable<String>> tasks = new ArrayList<Callable<String>>();
+        while (sourceNodes.hasNext()) {
+            final Node node = sourceNodes.nextNode();
+            final MoveNodeTask task = new MoveNodeTask(node.getIdentifier(), destPath);
+            tasks.add(task);
+        }
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        List<Future<String>> futures = new ArrayList<Future<String>>();
+        for (Callable<String> task : tasks) {
+            futures.add(executorService.submit(task));
+        }
+        Set<String> movedNodeIds = new HashSet<String>();
+        for (Future<String> future : futures) {
+            movedNodeIds.add(future.get());
+        }
+
+        for (String id : movedNodeIds) {
+            Node node = session.getNodeByIdentifier(id);
+            assertNotNull("The document with " + id + " was not found!", node);
+            assertTrue("The document was not moved to destination folder!", node.getPath().startsWith(destPath));
+        }
+
+        NodeIterator destNodeIterator = session.getNode(destPath).getNodes();
+        while (destNodeIterator.hasNext()) {
+            assertNotNull("Node could be read", destNodeIterator.nextNode());
+        }
+
+        assertThat("Incorrect number of nodes moved", (long)movedNodeIds.size(), is(expectedMoveCount));
+        assertFalse("The source parent is not empty", session.getNode(sourcePath).getNodes().hasNext());
+    }
+
+    private class MoveNodeTask implements Callable<String> {
+
+        private String sourceId;
+        private String destinationPath;
+
+        public MoveNodeTask( final String sourceId, final String destinationPath ) {
+            this.sourceId = sourceId;
+            this.destinationPath = destinationPath;
+        }
+
+        @Override
+        public String call() throws Exception {
+            JcrSession session = repository.login();
+            final Node item = session.getNodeByIdentifier(sourceId);
+            String destAbsPath = destinationPath + "/" + item.getName();
+            String sourceAbsPath = item.getPath();
+            try {
+                if (print) {
+                    System.out.println(Thread.currentThread().getName() + String.format(" Moving node from '%s' to '%s'", sourceAbsPath, destAbsPath));
+                }
+                session.move(item.getPath(), destAbsPath);
+                session.save();
+                session.save();
+                return item.getIdentifier();
+            } catch (Exception e) {
+                if (print) {
+                    System.out.println(Thread.currentThread().getName() + String.format(" Exception moving node from '%s' to '%s'", sourceAbsPath, destAbsPath));
+                }
+                throw e;
+            } finally {
+                session.logout();
+            }
+
+        }
     }
 
     /**
