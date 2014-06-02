@@ -16,7 +16,7 @@
 
 package org.modeshape.jcr.xml;
 
-import java.util.TreeMap;
+import java.util.LinkedHashMap;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.value.Path;
@@ -39,11 +39,10 @@ public interface NodeImportDestination {
     public ExecutionContext getExecutionContext();
 
     /**
-     * Processes the given [nodePath, parseElement] mappings, which represent the results of the xml parsing. The given map is
-     * always sorted in ascending order of the node paths.
+     * Processes the given [nodePath, parseElement] mappings, which represent the results of the xml parsing.
      * 
-     * @param parseResults a {@link java.util.TreeMap}, never null.
+     * @param parseResults a {@link java.util.Map} of import elements enqueued by path, never null.
      * @throws RepositoryException if any error occurs while processing the parse results
      */
-    public void submit( TreeMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) throws RepositoryException;
+    public void submit( LinkedHashMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) throws RepositoryException;
 }

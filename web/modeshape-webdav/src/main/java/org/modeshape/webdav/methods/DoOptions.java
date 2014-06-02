@@ -18,7 +18,6 @@ package org.modeshape.webdav.methods;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
@@ -29,8 +28,6 @@ import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.ResourceLocks;
 
 public class DoOptions extends DeterminableMethod {
-
-    private static Logger LOG = Logger.getLogger(DoOptions.class);
 
     private IWebdavStore store;
     private ResourceLocks resourceLocks;
@@ -46,7 +43,7 @@ public class DoOptions extends DeterminableMethod {
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
 
-        LOG.trace("-- " + this.getClass().getName());
+        logger.trace("-- " + this.getClass().getName());
 
         String tempLockOwner = "doOptions" + System.currentTimeMillis() + req.toString();
         String path = getRelativePath(req);

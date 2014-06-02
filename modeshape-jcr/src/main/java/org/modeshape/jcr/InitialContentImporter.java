@@ -19,7 +19,7 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.TreeMap;
+import java.util.LinkedHashMap;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.IoUtil;
@@ -129,7 +129,7 @@ public final class InitialContentImporter {
 
         @SuppressWarnings( "synthetic-access" )
         @Override
-        public void submit( TreeMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) throws RepositoryException {
+        public void submit( LinkedHashMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) throws RepositoryException {
             for (Path nodePath : parseResults.keySet()) {
                 LOGGER.debug("Importing node at path {0}", nodePath);
                 NodeImportXmlHandler.ImportElement element = parseResults.get(nodePath);

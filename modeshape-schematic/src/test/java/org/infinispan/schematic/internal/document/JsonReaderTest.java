@@ -159,6 +159,26 @@ public class JsonReaderTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2214" )
+    public void shouldNotParseJsonWithInvalidArray() throws Exception {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream("json/invalid-array-repo-config-1.json");
+        try {
+            doc = reader.read(stream);
+            fail("Expected parsing exception");
+        } catch (ParsingException e) {
+            // expected
+        }
+
+        stream = getClass().getClassLoader().getResourceAsStream("json/invalid-array-repo-config-2.json");
+        try {
+            doc = reader.read(stream);
+            fail("Expected parsing exception");
+        } catch (ParsingException e) {
+            // expected
+        }
+    }
+
     private int countFields( Document doc ) {
         int fieldCount = 0;
         for (Document.Field field : doc.fields()) {

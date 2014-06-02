@@ -1,0 +1,8 @@
+{
+    "name" : "testRepo",
+    "workspaces" : {
+        "default" : "default",
+        "value" : "=3:",
+        "initialContent" : [ "default = jcr/initial-content.xml" }
+    }
+}

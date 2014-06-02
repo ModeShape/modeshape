@@ -579,8 +579,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return node;
     }
 
-    final CachedNode cachedNode( Path absolutePath ) throws PathNotFoundException, RepositoryException {
-        return cachedNode(cache, getRootNode().node(), absolutePath, ModeShapePermissions.READ);
+    final CachedNode cachedNode( Path absolutePath, boolean checkReadPermission ) throws PathNotFoundException, RepositoryException {
+        return checkReadPermission ?
+               cachedNode(cache, getRootNode().node(), absolutePath, ModeShapePermissions.READ) :
+               cachedNode(cache, getRootNode().node(), absolutePath);
     }
 
     final CachedNode cachedNode( SessionCache cache,
@@ -608,7 +610,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         if (absPath == null) {
             try {
                 // We need to look up the absolute path ..
-                checkPermission(node, cache, actions);
+                if (actions.length > 0) {
+                    checkPermission(node, cache, actions);
+                }
             } catch (NodeNotFoundException e) {
                 throw new PathNotFoundException(JcrI18n.nodeNotFound.text(stringFactory().create(path), workspaceName()));
             }
@@ -625,7 +629,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     final AbstractJcrNode node( CachedNode node,
                                 Path path ) throws PathNotFoundException, AccessDeniedException, RepositoryException {
-        CachedNode child = cachedNode(cache, node, path, "read");
+        CachedNode child = cachedNode(cache, node, path, ModeShapePermissions.READ);
         AbstractJcrNode result = node(child, (Type)null, null);
         if (result.isShareable()) {
             // Find the shared node with the desired path ...
@@ -954,7 +958,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         try {
             // This will throw a PNFE if the parent path does not exist
-            CachedNode parentNode = cachedNode(path.getParent());
+            CachedNode parentNode = cachedNode(path.getParent(), true);
             return parentNode != null && parentNode.hasProperty(lastSegment.getName(), cache());
         } catch (PathNotFoundException e) {
             return false;

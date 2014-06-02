@@ -16,7 +16,7 @@
                     {
                         "key" : "source1system-jcrsystem",
                         "name" : "{http://www.jcp.org/jcr/1.0}system"
-                    }
+                    },
                     {
                         "key" : "source1works1-childA",
                         "name" : "childA"
@@ -207,7 +207,7 @@
                     {
                         "key" : "source1system-jcrsystem",
                         "name" : "{http://www.jcp.org/jcr/1.0}system"
-                    }
+                    },
                     {
                         "key" : "source1works2-childX",
                         "name" : "childX"

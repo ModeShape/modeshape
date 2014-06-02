@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
@@ -32,8 +31,6 @@ import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.ResourceLocks;
 
 public class DoDelete extends AbstractMethod {
-
-    private static Logger LOG = Logger.getLogger(DoDelete.class);
 
     private final IWebdavStore store;
     private final ResourceLocks resourceLocks;
@@ -51,7 +48,7 @@ public class DoDelete extends AbstractMethod {
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
-        LOG.trace("-- " + this.getClass().getName());
+        logger.trace("-- " + this.getClass().getName());
 
         if (readOnly) {
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
@@ -74,7 +71,7 @@ public class DoDelete extends AbstractMethod {
 
         try {
             if (!resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
-                LOG.debug("Resource lock failed.");
+                logger.debug("Resource lock failed.");
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                 return;
             }
@@ -84,13 +81,13 @@ public class DoDelete extends AbstractMethod {
                 sendReport(req, resp, errorList);
             }
         } catch (AccessDeniedException e) {
-            LOG.debug(e, "Access denied for " + path);
+            logger.debug(e, "Access denied for " + path);
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
         } catch (ObjectAlreadyExistsException e) {
-            LOG.debug(e, "Conflict for " + path);
+            logger.debug(e, "Conflict for " + path);
             resp.sendError(WebdavStatus.SC_NOT_FOUND, req.getRequestURI());
         } catch (WebdavException e) {
-            LOG.debug(e, "Error for " + path);
+            logger.debug(e, "Error for " + path);
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);

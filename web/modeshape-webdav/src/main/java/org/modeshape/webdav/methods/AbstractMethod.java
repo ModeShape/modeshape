@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.webdav.IMethodExecutor;
 import org.modeshape.webdav.ITransaction;
@@ -107,6 +108,12 @@ public abstract class AbstractMethod implements IMethodExecutor {
      * Timeout for temporary locks
      */
     protected static final int TEMP_TIMEOUT = 10;
+
+    protected Logger logger;
+
+    protected AbstractMethod() {
+        logger = Logger.getLogger(getClass());
+    }
 
     public static String lastModifiedDateFormat( final Date date ) {
         DateFormat df = thLastmodifiedDateFormat.get();

@@ -143,7 +143,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             while (nodes.hasNext()) {
                 Node child = nodes.nextNode();
                 //MODE-2171 Ignore any ACL nodes
-                if (!child.isNodeType(AccessControlManagerImpl.MODE_ACCESS_LIST_NODE)) {
+                if (!child.isNodeType(ModeShapeLexicon.ACCESS_LIST_NODE_TYPE_STRING)) {
                     exportNode(child, contentHandler, skipBinary, noRecurse);
                 }
             }

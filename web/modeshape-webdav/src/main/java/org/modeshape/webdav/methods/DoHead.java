@@ -18,7 +18,6 @@ package org.modeshape.webdav.methods;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.IMimeTyper;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
@@ -38,8 +37,6 @@ public class DoHead extends AbstractMethod {
     protected final ResourceLocks resourceLocks;
     protected final IMimeTyper mimeTyper;
     protected final int contentLength;
-
-    private static Logger LOG = Logger.getLogger(DoHead.class);
 
     public DoHead( IWebdavStore store,
                    String dftIndexFile,
@@ -65,7 +62,7 @@ public class DoHead extends AbstractMethod {
         boolean bUriExists = false;
 
         String path = getRelativePath(req);
-        LOG.trace("-- " + this.getClass().getName());
+        logger.trace("-- " + this.getClass().getName());
 
         StoredObject so = store.getStoredObject(transaction, path);
         if (so == null) {
