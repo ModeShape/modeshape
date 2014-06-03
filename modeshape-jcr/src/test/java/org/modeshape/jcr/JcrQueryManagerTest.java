@@ -3692,6 +3692,35 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2220" )
+    public void shouldSupportLowerCaseOperand() throws Exception {
+        Node nodeA = session.getRootNode().addNode("A");
+        nodeA.setProperty("something", "SOME UPPERCASE TEXT");
+        session.save();
+
+        try {
+            String sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE LOWER(node.something) LIKE '%uppercase%'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/A", nodes.nextNode().getPath());
+        } finally {
+            nodeA.remove();
+            session.save();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2220" )
+    public void shouldSupportUpperCaseOperand() throws Exception {
+        String sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE UPPER(node.something) LIKE '%FOX%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        NodeIterator nodes = query.execute().getNodes();
+        assertEquals(1, nodes.getSize());
+        assertEquals("/Other/NodeA", nodes.nextNode().getPath());
+    }
+
     private String idList(Node...nodes) throws RepositoryException {
         StringBuilder builder = new StringBuilder("(");
         for (int i = 0; i < nodes.length - 1; i++) {
