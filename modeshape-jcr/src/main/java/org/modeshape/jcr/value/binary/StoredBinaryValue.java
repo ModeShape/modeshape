@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.SelfClosingInputStream;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 
@@ -59,8 +60,8 @@ public class StoredBinaryValue extends AbstractBinary {
 
     @Override
     public InputStream getStream() throws BinaryStoreException {
-        // Delegate to the store ...
-        return store.getInputStream(getKey());
+        // Delegate to the store and then wrap the stream to make sure it's always closed
+        return new SelfClosingInputStream(this, store.getInputStream(getKey()));
     }
 
     @Override
