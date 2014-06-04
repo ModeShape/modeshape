@@ -523,6 +523,8 @@ public final class JcrI18n {
     public static I18n cannotRegisterMBean;
     public static I18n cannotUnRegisterMBean;
 
+    public static I18n errorClosingBinaryStream;
+
     public static I18n upgrade3_6_0Running;
     public static I18n upgrade3_6_0CannotUpdateNodeTypes;
     public static I18n upgrade3_6_0CannotUpdateLocks;

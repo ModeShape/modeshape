@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.value.BinaryValue;
 
 /**
@@ -40,7 +41,9 @@ import org.modeshape.jcr.value.BinaryValue;
  * </p>
  */
 @NotThreadSafe
-class SelfClosingInputStream extends InputStream {
+public class SelfClosingInputStream extends InputStream {
+
+    private static final Logger LOGGER = Logger.getLogger(SelfClosingInputStream.class);
 
     private final BinaryValue binary;
     private InputStream stream;
@@ -55,6 +58,20 @@ class SelfClosingInputStream extends InputStream {
         this.binary = binary;
     }
 
+    /**
+     * Create a self-closing {@link InputStream} to access the content of the supplied {@link BinaryValue} value, in case the
+     * stream is already known.
+     *
+     * @param binary the {@link BinaryValue} object that this stream accesses; may not be null
+     * @param stream the {@link java.io.InputStream} related to the associated binary; may not be null.
+     */
+    public SelfClosingInputStream( BinaryValue binary, InputStream stream ) {
+        assert binary != null;
+        assert stream != null;
+        this.binary = binary;
+        this.stream = stream;
+    }
+
     protected void open() throws RepositoryException {
         if (this.stream == null) {
             this.stream = binary.getStream();
@@ -67,13 +84,13 @@ class SelfClosingInputStream extends InputStream {
             open();
             return stream.available();
         } catch (RepositoryException e) {
-            this.binary.dispose();
+            releaseResources();
             throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         }
     }
@@ -105,10 +122,10 @@ class SelfClosingInputStream extends InputStream {
             open();
             stream.mark(readlimit);
         } catch (RepositoryException e) {
-            this.binary.dispose();
+            releaseResources();
             throw new RuntimeException(e);
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         }
     }
@@ -119,10 +136,10 @@ class SelfClosingInputStream extends InputStream {
             open();
             return stream.markSupported();
         } catch (RepositoryException e) {
-            this.binary.dispose();
+            releaseResources();
             throw new RuntimeException(e);
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         }
     }
@@ -136,17 +153,17 @@ class SelfClosingInputStream extends InputStream {
             int result = stream.read(b, off, len);
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.dispose();
+                releaseResources();
             }
             return result;
         } catch (RepositoryException e) {
-            this.binary.dispose();
+            releaseResources();
             throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         }
     }
@@ -158,17 +175,17 @@ class SelfClosingInputStream extends InputStream {
             int result = stream.read(b);
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.dispose();
+                releaseResources();
             }
             return result;
         } catch (RepositoryException e) {
-            this.binary.dispose();
+            releaseResources();
             throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         }
     }
@@ -180,17 +197,17 @@ class SelfClosingInputStream extends InputStream {
             int result = stream.read();
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.dispose();
+                releaseResources();
             }
             return result;
         } catch (RepositoryException e) {
-            this.binary.dispose();
+            releaseResources();
             throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         }
     }
@@ -201,10 +218,10 @@ class SelfClosingInputStream extends InputStream {
             try {
                 stream.reset();
             } catch (IOException e) {
-                this.binary.dispose();
+                releaseResources();
                 throw e;
             } catch (RuntimeException e) {
-                this.binary.dispose();
+                releaseResources();
                 throw e;
             }
         }
@@ -216,13 +233,13 @@ class SelfClosingInputStream extends InputStream {
             open();
             return stream.skip(n);
         } catch (RepositoryException e) {
-            this.binary.dispose();
+            releaseResources();
             throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            releaseResources();
             throw e;
         }
     }
@@ -230,5 +247,17 @@ class SelfClosingInputStream extends InputStream {
     @Override
     public String toString() {
         return binary.toString();
+    }
+
+    private void releaseResources() {
+        try {
+            if (stream != null) {
+                stream.close();
+            }
+        } catch (IOException e) {
+            LOGGER.error(e, JcrI18n.errorClosingBinaryStream);
+        } finally {
+            binary.dispose();
+        }
     }
 }
