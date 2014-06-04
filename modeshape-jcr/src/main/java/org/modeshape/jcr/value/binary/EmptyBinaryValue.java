@@ -47,11 +47,6 @@ public final class EmptyBinaryValue extends AbstractBinary {
     }
 
     @Override
-    public InputStream getStream() {
-        return new ByteArrayInputStream(EMPTY_CONTENT);
-    }
-
-    @Override
     public String getMimeType() {
         // There is no mime type ...
         return null;
@@ -61,5 +56,10 @@ public final class EmptyBinaryValue extends AbstractBinary {
     public String getMimeType( String name ) {
         // There is no mime type ...
         return null;
+    }
+
+    @Override
+    protected InputStream internalStream() {
+        return new ByteArrayInputStream(EMPTY_CONTENT);
     }
 }

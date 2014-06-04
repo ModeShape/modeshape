@@ -120,6 +120,7 @@ public final class CommonI18n {
     public static I18n jdkFallback;
 
     public static I18n errorWhileClosingRingBufferConsumer;
+    public static I18n errorClosingWrappedStream;
 
     private CommonI18n() {
     }
