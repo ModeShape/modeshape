@@ -26,7 +26,6 @@ package org.modeshape.connector.git;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.jcr.RepositoryException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
@@ -54,11 +53,7 @@ public class GitBinaryValue extends ExternalBinaryValue {
     }
 
     @Override
-    public InputStream getStream() throws RepositoryException {
-        try {
-            return new BufferedInputStream(loader.openStream());
-        } catch (IOException e) {
-            throw new RepositoryException(e);
-        }
+    protected InputStream internalStream() throws IOException {
+        return new BufferedInputStream(loader.openStream());
     }
 }

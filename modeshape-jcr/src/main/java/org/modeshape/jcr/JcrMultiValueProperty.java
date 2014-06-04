@@ -341,8 +341,12 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
                 InputStream[] result = property.getValuesAsArray(new Property.ValueTypeTransformer<InputStream>() {
                     @Override
                     public InputStream transform( Object value ) {
-                        BinaryValue binaryValue = binaryFactory.create(value);
-                        return new SelfClosingInputStream(binaryValue);
+                        try {
+                            BinaryValue binaryValue = binaryFactory.create(value);
+                            return binaryValue.getStream();
+                        } catch (RepositoryException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }, InputStream.class);
                 return type.cast(result);
