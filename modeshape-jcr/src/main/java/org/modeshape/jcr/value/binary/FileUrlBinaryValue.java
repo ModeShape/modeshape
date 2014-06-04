@@ -1,17 +1,12 @@
 package org.modeshape.jcr.value.binary;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import javax.jcr.RepositoryException;
 import org.apache.http.annotation.ThreadSafe;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * A subclass of {@link UrlBinaryValue} to lazily compute a contentBased Hash when the key is a URI based Hash

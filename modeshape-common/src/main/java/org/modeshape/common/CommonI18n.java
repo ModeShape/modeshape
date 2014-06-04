@@ -126,6 +126,8 @@ public final class CommonI18n {
     public static I18n log4jAvailable;
     public static I18n jdkFallback;
 
+    public static I18n errorClosingWrappedStream;
+
     static {
         try {
             I18n.initialize(CommonI18n.class);
