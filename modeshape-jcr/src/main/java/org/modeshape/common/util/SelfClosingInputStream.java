@@ -21,94 +21,64 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.common.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import javax.jcr.RepositoryException;
+import org.modeshape.common.CommonI18n;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.common.logging.Logger;
 
 /**
- * An {@link InputStream} implementation that can be used to access the content of a supplied {@link BinaryValue} value. This class,
- * however, guarantees that the binary lock is {@link BinaryValue#dispose() released} whenever this class throws an exception or when
- * the instance is {@link #close() closed}.
- * <p>
- * The draft version of the JSR-283 specification outlines a new mechanism for obtaining a lock on a binary value, and in fact
- * this mechanism was used as the baseline for the design of ModeShape's Binary value. Therefore, when ModeShape's JCR
- * implementation supports JCR-283, this class will probably no longer be needed.
- * </p>
+ * An {@link InputStream} implementation that wraps another stream and makes sure that {@link java.io.InputStream#close()}
+ * is always called on the wrapped stream when there is no more content to read or when an unexpected exception occurs.
  */
 @NotThreadSafe
-class SelfClosingInputStream extends InputStream {
+public class SelfClosingInputStream extends InputStream {
 
-    private final BinaryValue binary;
-    private InputStream stream;
+    private static final Logger LOGGER = Logger.getLogger(SelfClosingInputStream.class);
+
+    private final InputStream stream;
 
     /**
-     * Create a self-closing {@link InputStream} to access the content of the supplied {@link BinaryValue} value.
-     * 
-     * @param binary the {@link BinaryValue} object that this stream accesses; may not be null
+     * Create a self-closing {@link InputStream} that wraps another input stream.
+     *
+     * @param stream the wrapped {@link java.io.InputStream}; may not be null.
      */
-    public SelfClosingInputStream( BinaryValue binary ) {
-        assert binary != null;
-        this.binary = binary;
-    }
-
-    protected void open() throws RepositoryException {
-        if (this.stream == null) {
-            this.stream = binary.getStream();
-        }
+    public SelfClosingInputStream( InputStream stream ) {
+        assert stream != null;
+        this.stream = stream;
     }
 
     @Override
     public int available() throws IOException {
         try {
-            open();
             return stream.available();
-        } catch (RepositoryException e) {
-            this.binary.dispose();
-            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         }
     }
 
     @Override
     public void close() throws IOException {
-        if (stream != null) {
-            try {
-                stream.close();
-            } finally {
-                this.binary.dispose();
-            }
-        }
-    }
-
-    @Override
-    public boolean equals( Object obj ) {
-        return binary.equals(obj);
+        stream.close();
     }
 
     @Override
     public int hashCode() {
-        return binary.hashCode();
+        return stream.hashCode();
     }
 
     @Override
     public void mark( int readlimit ) {
         try {
-            open();
             stream.mark(readlimit);
-        } catch (RepositoryException e) {
-            this.binary.dispose();
-            throw new RuntimeException(e);
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         }
     }
@@ -116,13 +86,9 @@ class SelfClosingInputStream extends InputStream {
     @Override
     public boolean markSupported() {
         try {
-            open();
             return stream.markSupported();
-        } catch (RepositoryException e) {
-            this.binary.dispose();
-            throw new RuntimeException(e);
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         }
     }
@@ -132,21 +98,17 @@ class SelfClosingInputStream extends InputStream {
                      int off,
                      int len ) throws IOException {
         try {
-            open();
             int result = stream.read(b, off, len);
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.dispose();
+                closeStream();
             }
             return result;
-        } catch (RepositoryException e) {
-            this.binary.dispose();
-            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         }
     }
@@ -154,21 +116,17 @@ class SelfClosingInputStream extends InputStream {
     @Override
     public int read( byte[] b ) throws IOException {
         try {
-            open();
             int result = stream.read(b);
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.dispose();
+                closeStream();
             }
             return result;
-        } catch (RepositoryException e) {
-            this.binary.dispose();
-            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         }
     }
@@ -176,59 +134,66 @@ class SelfClosingInputStream extends InputStream {
     @Override
     public int read() throws IOException {
         try {
-            open();
             int result = stream.read();
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.dispose();
+                closeStream();
             }
             return result;
-        } catch (RepositoryException e) {
-            this.binary.dispose();
-            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         }
     }
 
     @Override
     public void reset() throws IOException {
-        if (stream != null) {
-            try {
-                stream.reset();
-            } catch (IOException e) {
-                this.binary.dispose();
-                throw e;
-            } catch (RuntimeException e) {
-                this.binary.dispose();
-                throw e;
-            }
+        try {
+            stream.reset();
+        } catch (IOException e) {
+            closeStream();
+            throw e;
+        } catch (RuntimeException e) {
+            closeStream();
+            throw e;
         }
     }
 
     @Override
     public long skip( long n ) throws IOException {
         try {
-            open();
             return stream.skip(n);
-        } catch (RepositoryException e) {
-            this.binary.dispose();
-            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.dispose();
+            closeStream();
             throw e;
         }
     }
 
     @Override
     public String toString() {
-        return binary.toString();
+        return stream.toString();
+    }
+
+    /**
+     * Returns the stream that this instance wraps.
+     *
+     * @return an {@link InputStream} instance, never null.
+     */
+    public InputStream wrappedStream() {
+        return stream;
+    }
+
+    private void closeStream() {
+        try {
+            stream.close();
+        } catch (IOException e) {
+            LOGGER.error(e, CommonI18n.errorClosingWrappedStream);
+        }
     }
 }

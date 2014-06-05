@@ -83,7 +83,7 @@ public class InMemoryBinaryValueTest {
     }
 
     @Test
-    public void shouldProvideInputStreamToContent() throws IOException {
+    public void shouldProvideInputStreamToContent() throws Exception {
         InputStream stream = binary.getStream();
         byte[] actual = IoUtil.readBytes(stream); // closes the stream
         assertThat(actual.length, is(validByteArrayContent.length));

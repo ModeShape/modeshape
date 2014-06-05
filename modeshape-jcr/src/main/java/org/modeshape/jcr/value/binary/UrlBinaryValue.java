@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import javax.jcr.RepositoryException;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -33,11 +32,7 @@ public class UrlBinaryValue extends ExternalBinaryValue {
     }
 
     @Override
-    public InputStream getStream() throws RepositoryException {
-        try {
-            return new BufferedInputStream(url.openStream());
-        } catch (IOException e) {
-            throw new RepositoryException(e);
-        }
+    protected InputStream internalStream() throws IOException {
+        return new BufferedInputStream(url.openStream());
     }
 }

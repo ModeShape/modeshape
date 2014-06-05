@@ -73,11 +73,6 @@ public class InMemoryBinaryValue extends AbstractBinary {
     }
 
     @Override
-    public InputStream getStream() {
-        return new ByteArrayInputStream(this.bytes);
-    }
-
-    @Override
     public String getMimeType() throws IOException, RepositoryException {
         if (mimeType == null) {
             mimeType = store.getMimeType(this, null);
@@ -91,5 +86,10 @@ public class InMemoryBinaryValue extends AbstractBinary {
             mimeType = store.getMimeType(this, name);
         }
         return mimeType;
+    }
+
+    @Override
+    protected InputStream internalStream() {
+        return new ByteArrayInputStream(this.bytes);
     }
 }

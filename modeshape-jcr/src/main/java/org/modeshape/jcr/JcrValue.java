@@ -176,10 +176,10 @@ final class JcrValue implements javax.jcr.Value {
         try {
             if (asStream == null) {
                 BinaryValue binary = factories().getBinaryFactory().create(value);
-                asStream = new SelfClosingInputStream(binary);
+                asStream = binary.getStream();
             }
             return asStream;
-        } catch (RuntimeException error) {
+        } catch (Exception error) {
             throw createValueFormatException(InputStream.class);
         }
     }
