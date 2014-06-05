@@ -44,6 +44,7 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.SelfClosingInputStream;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 
@@ -119,6 +120,10 @@ public final class TikaMimeTypeDetector implements MimeTypeDetector {
             autoDetectedMimeType = nameOnlyDetector.detect(null, metadata);
         } else {
             InputStream stream = binaryValue.getStream();
+            if (stream instanceof SelfClosingInputStream) {
+                //because of the "all detectors" approach (see below), we need to avoid a self-closing stream here
+                stream = ((SelfClosingInputStream) stream).wrappedStream();
+            }
             TemporaryResources tmp = new TemporaryResources();
             try {
                 TikaInputStream tikaInputStream = TikaInputStream.get(stream, tmp);

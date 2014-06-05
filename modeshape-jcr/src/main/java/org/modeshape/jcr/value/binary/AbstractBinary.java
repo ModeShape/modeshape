@@ -32,8 +32,9 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
-import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.common.util.SelfClosingInputStream;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.ValueComparators;
 
 /**
@@ -167,4 +168,16 @@ public abstract class AbstractBinary implements BinaryValue {
         return new DecimalFormat("#,##0.00").format(decimalInTb) + "TB";
     }
 
+    @Override
+    public InputStream getStream() throws RepositoryException {
+        try {
+            return new SelfClosingInputStream(internalStream());
+        } catch (RepositoryException re) {
+            throw re;
+        } catch (Exception e) {
+            throw new RepositoryException(e);
+        }
+    }
+
+    protected abstract InputStream internalStream() throws Exception;
 }

@@ -472,7 +472,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
                 convertedValue = context().getValueFactories().getDecimalFactory().create(value);
             } else if (java.io.InputStream.class.equals(type)) {
                 BinaryValue binary = context().getValueFactories().getBinaryFactory().create(value);
-                convertedValue = new SelfClosingInputStream(binary);
+                convertedValue = binary.getStream();
             } else if (javax.jcr.Binary.class.isAssignableFrom(type)) {
                 convertedValue = context().getValueFactories().getBinaryFactory().create(value);
             } else if (Node.class.equals(type)) {

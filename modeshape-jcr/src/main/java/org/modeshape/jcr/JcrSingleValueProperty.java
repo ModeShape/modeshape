@@ -26,11 +26,9 @@ package org.modeshape.jcr;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
-import java.util.Date;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -40,7 +38,6 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -173,7 +170,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         try {
             BinaryValue binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
-            return new SelfClosingInputStream(binary);
+            return binary.getStream();
         } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
