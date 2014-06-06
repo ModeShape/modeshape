@@ -48,6 +48,8 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
 
     public static final AddModeShapeSubsystem INSTANCE = new AddModeShapeSubsystem();
 
+    private static final Logger LOG = Logger.getLogger(AddModeShapeSubsystem.class.getPackage().getName());
+
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
@@ -106,7 +108,7 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
                                     binderService.getNamingStoreInjector());
         binderBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
-        Logger.getLogger(getClass()).debugv("Binding ModeShape to JNDI name {0}", bindInfo.getAbsoluteJndiName());
+        LOG.debugv("Binding ModeShape Engine to JNDI name: {0}", bindInfo.getAbsoluteJndiName());
 
         newControllers.add(referenceBuilder.install());
         newControllers.add(binderBuilder.install());

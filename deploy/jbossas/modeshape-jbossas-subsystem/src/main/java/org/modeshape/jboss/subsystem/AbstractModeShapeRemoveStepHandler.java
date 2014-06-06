@@ -67,7 +67,7 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
                     if (repositoryName == null) {
                         repositoryName = repositoryName(operation);
                     }
-                    log.debugf("service '%s' removed for repository '%s'", serviceName, repositoryName);
+                    log.debugv("service {0} removed for repository {1}", serviceName, repositoryName);
                 }
             }
         }
@@ -99,7 +99,7 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
                 if (repositoryName == null) {
                     repositoryName = repositoryName(operation);
                 }
-                log.debugf("service '%s' recovered for repository '%s'", serviceEntry.getKey(), repositoryName);
+                log.debugv("service {0} recovered for repository {1}", serviceEntry.getKey(), repositoryName);
             }
         }
     }

@@ -68,8 +68,7 @@ public class AddRepository extends AbstractAddStepHandler {
 
     public static final AddRepository INSTANCE = new AddRepository();
 
-    private static final org.jboss.logging.Logger LOG = org.jboss.logging.Logger.getLogger(AddRepository.class.getPackage()
-                                                                                                              .getName());
+    private static final Logger LOG = Logger.getLogger(AddRepository.class.getPackage().getName());
 
     private AddRepository() {
     }
@@ -271,12 +270,12 @@ public class AddRepository extends AbstractAddStepHandler {
             ContextNames.BindInfo aliasInfo = ContextNames.bindInfoFor(jndiAlias);
             ServiceName alias = aliasInfo.getBinderServiceName();
             binderBuilder.addAliases(alias);
-            Logger.getLogger(getClass()).debugv("Binding repository '{0}' to JNDI name '{1}' and '{2}'",
+            LOG.debugv("Binding repository: {0} to JNDI name: {1} and alias: {2}",
                                                repositoryName,
                                                bindInfo.getAbsoluteJndiName(),
                                                aliasInfo.getAbsoluteJndiName());
         } else {
-            Logger.getLogger(getClass()).debugv("Binding repository '{0}' to JNDI name '{1}'",
+            LOG.debugv("Binding repository: {0} to JNDI name: {1}",
                                                repositoryName,
                                                bindInfo.getAbsoluteJndiName());
         }
