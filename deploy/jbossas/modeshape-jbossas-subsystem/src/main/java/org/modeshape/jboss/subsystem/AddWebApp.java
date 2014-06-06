@@ -73,7 +73,8 @@ class AddWebApp extends AbstractAddStepHandler {
             Module module = Module.forClass(getClass());
             URL url = module.getExportedResource(webappName);
             if (url == null) {
-                LOGGER.error("Cannot deploy ModeShape webapp: " + webappName + " because it cannot be located by the main modeshape module");
+                LOGGER.errorv("Cannot deploy ModeShape webapp: {0} because it cannot be located by the main modeshape module",
+                              webappName);
                 return;
             }
             ModelNode contentItem = new ModelNode();

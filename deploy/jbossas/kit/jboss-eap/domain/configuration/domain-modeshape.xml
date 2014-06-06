@@ -77,6 +77,9 @@
                 <logger category="jacorb.config">
                     <level name="ERROR"/>
                 </logger>
+                <logger category="org.modeshape">
+                    <level name="INFO"/>
+                </logger>
                 <root-logger>
                     <level name="INFO"/>
                     <handlers>
@@ -413,6 +416,9 @@
                 </logger>
                 <logger category="jacorb.config">
                     <level name="ERROR"/>
+                </logger>
+                <logger category="org.modeshape">
+                    <level name="INFO"/>
                 </logger>
                 <root-logger>
                     <level name="INFO"/>
@@ -842,6 +848,9 @@
                 <logger category="jacorb.config">
                     <level name="ERROR"/>
                 </logger>
+                <logger category="org.modeshape">
+                    <level name="INFO"/>
+                </logger>
                 <root-logger>
                     <level name="INFO"/>
                     <handlers>
@@ -1261,6 +1270,9 @@
                 </logger>
                 <logger category="jacorb.config">
                     <level name="ERROR"/>
+                </logger>
+                <logger category="org.modeshape">
+                    <level name="INFO"/>
                 </logger>
                 <root-logger>
                     <level name="INFO"/>
