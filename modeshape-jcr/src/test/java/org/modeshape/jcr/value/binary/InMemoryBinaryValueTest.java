@@ -20,7 +20,6 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.modeshape.jcr.value.basic.BinaryContains.hasContent;
 import static org.modeshape.jcr.value.basic.BinaryContains.hasNoContent;
-import java.io.IOException;
 import java.io.InputStream;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,7 +74,7 @@ public class InMemoryBinaryValueTest {
     }
 
     @Test
-    public void shouldProvideInputStreamToContent() throws IOException {
+    public void shouldProvideInputStreamToContent() throws Exception {
         InputStream stream = binary.getStream();
         byte[] actual = IoUtil.readBytes(stream); // closes the stream
         assertThat(actual.length, is(validByteArrayContent.length));

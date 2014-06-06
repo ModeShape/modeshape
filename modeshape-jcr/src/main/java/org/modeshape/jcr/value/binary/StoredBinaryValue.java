@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * A {@link BinaryValue} implementation that gets the content from the {@link BinaryStore}.
@@ -50,12 +50,6 @@ public class StoredBinaryValue extends AbstractBinary {
     }
 
     @Override
-    public InputStream getStream() throws BinaryStoreException {
-        // Delegate to the store ...
-        return store.getInputStream(getKey());
-    }
-
-    @Override
     public String getMimeType() throws IOException, RepositoryException {
         if (mimeType == null) {
             mimeType = store.getMimeType(this, null);
@@ -69,5 +63,10 @@ public class StoredBinaryValue extends AbstractBinary {
             mimeType = store.getMimeType(this, name);
         }
         return mimeType;
+    }
+
+    @Override
+    protected InputStream internalStream() throws RepositoryException {
+        return store.getInputStream(getKey());
     }
 }

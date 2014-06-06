@@ -162,7 +162,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         try {
             BinaryValue binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
-            return new SelfClosingInputStream(binary);
+            return binary.getStream();
         } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
