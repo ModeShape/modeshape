@@ -139,6 +139,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private volatile boolean isLive = true;
     private final long nanosCreated;
     private volatile BufferManager bufferMgr;
+    private final boolean hasCustomAuthorizationProvider;
 
     private ExecutionContext context;
 
@@ -211,6 +212,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         repository.statistics().increment(ValueMetric.SESSION_COUNT);
 
         acm = new AccessControlManagerImpl(this);
+
+        SecurityContext securityContext = context.getSecurityContext();
+        this.hasCustomAuthorizationProvider = securityContext instanceof AuthorizationProvider ||
+                                              securityContext instanceof AdvancedAuthorizationProvider;
     }
 
     protected JcrSession( JcrSession original,
@@ -222,6 +227,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         this.valueFactory = original.valueFactory;
         this.sessionAttributes = original.sessionAttributes;
         this.workspace = original.workspace;
+        this.hasCustomAuthorizationProvider = original.hasCustomAuthorizationProvider;
 
         // Create a new session cache and root node ...
         this.cache = repository.repositoryCache().createSession(context, this.workspace.getName(), readOnly);
@@ -247,6 +253,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             bufferMgr = new BufferManager(this.context);
         }
         return bufferMgr;
+    }
+
+    final boolean checkPermissionsWhenIteratingChildren() {
+        //we cannot "cache" the ACL enabled/disabled state because it's dynamic
+        return this.hasCustomAuthorizationProvider || repository.repositoryCache().isAccessControlEnabled();
     }
 
     /**
