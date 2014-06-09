@@ -1,0 +1,19 @@
+{
+    "name" : "Custom Authentication Provider 1",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "xmlImport/docWithChildren.xml"
+        }
+    },
+    "security" : {
+        "providers" : [
+            {
+                "name" : "Custom Provider",
+                "classname" : "org.modeshape.jcr.AuthenticationAndAuthorizationTest$SimpleTestSecurityProvider"
+            }
+        ]
+    }
+}

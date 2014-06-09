@@ -3521,16 +3521,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         private final NodeKey parentKey;
         private final boolean checkPermission;
 
-        public ChildNodeResolver( JcrSession session, NodeKey parentKey, boolean checkPermission ) {
+        protected ChildNodeResolver( JcrSession session, NodeKey parentKey, boolean checkPermission ) {
             this.session = session;
             this.parentKey = parentKey;
-            // we only need to check permissions if ACLs are enabled
-            this.checkPermission = checkPermission && session.repository().repositoryCache().isAccessControlEnabled();
+            this.checkPermission = checkPermission;
         }
 
         protected ChildNodeResolver( JcrSession session,
                                      NodeKey parentKey ) {
-            this(session, parentKey, true);
+            this(session, parentKey, session.checkPermissionsWhenIteratingChildren());
         }
 
         @Override
