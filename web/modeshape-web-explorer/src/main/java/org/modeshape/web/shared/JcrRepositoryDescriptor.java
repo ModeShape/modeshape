@@ -20,22 +20,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
+ *
  * @author kulikov
  */
 public class JcrRepositoryDescriptor implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private ArrayList<Param> info = new ArrayList<Param>();
-
-    public JcrRepositoryDescriptor() {
+    private ArrayList<Param> info = new ArrayList();
+    
+    public JcrRepositoryDescriptor()  {
+        
     }
 
-    public void add( String name,
-                     String value ) {
+    public void add(String name, String value) {
         info.add(new Param(name, value));
     }
-
+    
     public Collection<Param> info() {
         return info;
     }
-
+    
 }

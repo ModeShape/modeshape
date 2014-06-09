@@ -15,10 +15,10 @@
  */
 package org.modeshape.web.shared;
 
+import com.google.gwt.user.client.rpc.IsSerializable;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
  * Jcr Node value object.
@@ -27,92 +27,98 @@ import com.google.gwt.user.client.rpc.IsSerializable;
  */
 public class JcrNode implements Serializable, IsSerializable {
     private static final long serialVersionUID = 1L;
-
+    
     private String name;
     private String path;
     private String primaryType;
-
+    
     private JcrAccessControlList acl;
+    private Acl acll;
+    
     private String[] mixins;
-
-    // children nodes
-    private ArrayList<JcrNode> children = new ArrayList<JcrNode>();
+    
+    //children nodes
+    private ArrayList<JcrNode> children = new ArrayList();
     private Collection<JcrProperty> properties;
     private String[] propertyDefs;
-
+    
     public JcrNode() {
     }
-
-    public JcrNode( String name,
-                    String path,
-                    String primaryType ) {
+    
+    public JcrNode(String name, String path, String primaryType) {
         this.name = name;
         this.path = path;
         this.primaryType = primaryType;
     }
-
-    public void setName( String name ) {
+    
+    public void setName(String name) {
         this.name = name;
     }
-
+       
     public String getName() {
         return name;
     }
-
-    public void setPath( String path ) {
+    
+    public void setPath(String path) {
         this.path = path;
     }
-
+    
     public String getPath() {
         return path;
     }
-
+    
     public String getPrimaryType() {
         return primaryType;
     }
-
+    
     public Collection<JcrNode> children() {
         return children;
     }
-
-    public void addChild( JcrNode child ) {
+    
+    public void addChild(JcrNode child) {
         children.add(child);
     }
-
-    public Collection<JcrProperty> getProperties() {
+    
+    public Collection getProperties() {
         return properties;
     }
-
-    public void setProperties( Collection<JcrProperty> properties ) {
+    
+    public void setProperties(Collection<JcrProperty> properties) {
         this.properties = properties;
     }
-
-    public void addProperty( String name,
-                             String type,
-                             String value ) {
+    
+    public void addProperty(String name, String type, String value) {
         properties.add(new JcrProperty(name, type, value));
     }
-
+    
     public JcrAccessControlList getAccessList() {
         return acl;
     }
-
-    public void setAcessControlList( JcrAccessControlList acl ) {
+    
+    public void setAcessControlList(JcrAccessControlList acl) {
         this.acl = acl;
     }
-
-    public void setMixins( String[] mixins ) {
+    
+    public Acl getAcl() {
+        return acll;
+    }
+    
+    public void setAcl(Acl acll) {
+        this.acll = acll;
+    }
+    
+    public void setMixins(String[] mixins) {
         this.mixins = mixins;
     }
-
+    
     public String[] getMixins() {
         return mixins;
     }
-
-    public void setPropertyDefs( String[] propertyDefs ) {
+    
+    public void setPropertyDefs(String[] propertyDefs) {
         this.propertyDefs = propertyDefs;
     }
-
+    
     public String[] getPropertyDefs() {
         return propertyDefs;
     }

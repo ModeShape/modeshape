@@ -15,8 +15,6 @@
  */
 package org.modeshape.web.client;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 
@@ -27,14 +25,13 @@ import com.smartgwt.client.widgets.form.fields.StaticTextItem;
  */
 public class AddMixinDialog extends ModalDialog {
 
-    protected ComboBoxItem name = new ComboBoxItem();
-    protected Console console;
-
-    public AddMixinDialog( String title,
-                           Console console ) {
-        super(title, 450, 150);
-        this.console = console;
-
+    private ComboBoxItem name = new ComboBoxItem();
+    private Contents contents;
+    
+    public AddMixinDialog(Contents contents) {
+        super("Add mixin", 450, 150);
+        this.contents = contents;
+        
         name.setName("name");
         name.setTitle("Mixin");
         name.setDefaultValue("");
@@ -49,41 +46,23 @@ public class AddMixinDialog extends ModalDialog {
         description.setTitle("");
         description.setStartRow(true);
         description.setEndRow(true);
-
+        
         setControls(description, name);
         name.focusInItem();
     }
 
     @Override
     public void showModal() {
-        console.jcrService.getMixinTypes(false, new AsyncCallback<String[]>() {
-            @Override
-            public void onFailure( Throwable caught ) {
-                SC.say(caught.getMessage());
-            }
-
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public void onSuccess( String[] result ) {
-                name.setValueMap(result);
-                AddMixinDialog.super.showModal();
-            }
-        });
+        contents.updateMixinTypes();
+        super.showModal();
     }
-
+    
+    protected void updateMixinTypes(String[] mixins) {
+        name.setValueMap(mixins);
+    }
+    
     @Override
-    public void onConfirm( com.smartgwt.client.widgets.form.fields.events.ClickEvent event ) {
-        String path = AddMixinDialog.this.console.navigator.getSelectedPath();
-        AddMixinDialog.this.console.jcrService.addMixin(path, name.getValueAsString(), new AsyncCallback<Object>() {
-            @Override
-            public void onFailure( Throwable caught ) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess( Object result ) {
-                AddMixinDialog.this.console.navigator.selectNode();
-            }
-        });
+    public void onConfirm(com.smartgwt.client.widgets.form.fields.events.ClickEvent event) {
+        contents.addMixin(name.getValueAsString());
     }
 }

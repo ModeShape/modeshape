@@ -20,31 +20,31 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
+ *
  * @author kulikov
  */
 public class ResultSet implements Serializable {
-    private static final long serialVersionUID = 1L;
     private String[] columnNames;
-    private ArrayList<String[]> result = new ArrayList<String[]>();
-
+    private ArrayList<String[]> result = new ArrayList();
+    
     public ResultSet() {
     }
-
+    
     public String[] getColumnNames() {
         return columnNames;
     }
-
-    public void setColumnNames( String[] columnNames ) {
+    
+    public void setColumnNames(String[] columnNames) {
         this.columnNames = columnNames;
     }
-
-    public void setRows( Collection<String[]> rows ) {
+    
+    public void setRows(Collection<String[]> rows) {
         this.result.clear();
         this.result.addAll(rows);
     }
-
+    
     public Collection<String[]> getRows() {
         return result;
     }
-
+    
 }

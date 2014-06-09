@@ -12,6 +12,14 @@
         <servlet-name>InitialServlet</servlet-name>
         <servlet-class>org.modeshape.web.InitialServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>BackupExportServlet</servlet-name>
+        <servlet-class>org.modeshape.web.BackupExportServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>RestoreImportServlet</servlet-name>
+        <servlet-class>org.modeshape.web.RestoreImportServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>jcrServlet</servlet-name>
         <url-pattern>/console/jcr</url-pattern>
@@ -20,6 +28,14 @@
     <servlet-mapping>
         <servlet-name>InitialServlet</servlet-name>
         <url-pattern>/tree/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>BackupExportServlet</servlet-name>
+        <url-pattern>/console/backup/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>RestoreImportServlet</servlet-name>
+        <url-pattern>/console/restore/*</url-pattern>
     </servlet-mapping>
     <welcome-file-list>
         <welcome-file>Console.html</welcome-file>
