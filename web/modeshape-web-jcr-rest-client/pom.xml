@@ -54,6 +54,16 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
+        <!--
+          The commons-logging dependency should not *normally* be required because it is a transitive dependency of
+          org.apache.httpcomponents:httpclient.
+          However, during the productization build process, the version of httpclient used excludes this dependency which
+          is otherwise required (https://hc.apache.org/httpcomponents-client-ga/httpclient/dependencies.html)
+         -->
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+        </dependency>
         <!-- Testing dependencies-->
         <dependency>
             <groupId>org.modeshape</groupId>
