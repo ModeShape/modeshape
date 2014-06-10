@@ -283,14 +283,14 @@
              JBOSS AS/EAP constants
          -->
         <!--Version of the artifacts (API) needed by the EAP subsystem and provided as part of EAP-->
-        <version.org.jboss.eap>7.3.1.Final-redhat-3</version.org.jboss.eap>
-        <version.org.jboss.eap.bom>6.2.1.GA</version.org.jboss.eap.bom>
+        <version.org.jboss.eap>7.4.0.Final-redhat-11</version.org.jboss.eap>
+        <version.org.jboss.eap.bom>6.3.0.Beta1</version.org.jboss.eap.bom>
 
         <!--Properties which must be used when installing locally an EAP ZIP distribution -->
         <jboss.eap.groupId>org.jboss.as</jboss.eap.groupId>
         <jboss.eap.artifactId>jboss-eap</jboss.eap.artifactId>
-        <jboss.eap.version>6.2.0.GA</jboss.eap.version>
-        <jboss.eap.root.folder>jboss-eap-6.2</jboss.eap.root.folder>
+        <jboss.eap.version>6.3.0.Beta1</jboss.eap.version>
+        <jboss.eap.root.folder>jboss-eap-6.3</jboss.eap.root.folder>
 
         <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
         <jboss.eap.modules.location>modules</jboss.eap.modules.location>
