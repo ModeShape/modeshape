@@ -146,6 +146,10 @@
             </activation>
             <dependencyManagement>
                 <dependencies>
+                    <!--
+                    Hack: Need to include these 'provided' dependencies and force 'compile' scope, because of a JavaDoc plugin issue;
+                    see http://jira.codehaus.org/browse/MJAVADOC-340 and other workarounds below
+                    -->
                     <dependency>
                         <groupId>org.mongodb</groupId>
                         <artifactId>mongo-java-driver</artifactId>
@@ -156,6 +160,28 @@
                         <groupId>org.jboss.as</groupId>
                         <artifactId>jboss-as-controller</artifactId>
                         <version>${version.org.jboss.eap}</version>
+                        <scope>compile</scope>
+                    </dependency>
+                    <!--
+                        The following HACKed dependencies (see above) are *specific* only to the product branch; for an unknown
+                        reason only the productization build fails if these are not present
+                    -->
+                    <dependency>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                        <version>${version.log4j}</version>
+                        <scope>compile</scope>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                        <version>${version.org.slf4j}</version>
+                        <scope>compile</scope>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jboss.spec.javax.servlet</groupId>
+                        <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+                        <version>${version.org.jboss.spec.javax.servlet.3.0}</version>
                         <scope>compile</scope>
                     </dependency>
                 </dependencies>
@@ -400,6 +426,18 @@
                 <dependency>
                     <groupId>org.jboss.as</groupId>
                     <artifactId>jboss-as-controller</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.spec.javax.servlet</groupId>
+                    <artifactId>jboss-servlet-api_3.0_spec</artifactId>
                 </dependency>
             </dependencies>
             <build>
