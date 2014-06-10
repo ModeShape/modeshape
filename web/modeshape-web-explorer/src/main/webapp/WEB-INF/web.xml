@@ -33,10 +33,6 @@
         <servlet-name>BackupExportServlet</servlet-name>
         <url-pattern>/console/backup/*</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>RestoreImportServlet</servlet-name>
-        <url-pattern>/console/restore/*</url-pattern>
-    </servlet-mapping>
     <welcome-file-list>
         <welcome-file>Console.html</welcome-file>
     </welcome-file-list>

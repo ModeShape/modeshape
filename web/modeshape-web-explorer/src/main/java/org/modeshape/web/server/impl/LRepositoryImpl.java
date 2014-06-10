@@ -22,7 +22,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
-import org.jboss.logging.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.RepositoryManager;
 import org.modeshape.web.client.RemoteException;
@@ -43,12 +43,12 @@ public class LRepositoryImpl implements LRepository {
         this.creds = creds;
         assert repository != null;
         this.repository = repository;
-        logger.info("Logging to repository " + repository + " as " + creds);
+        logger.debug("Logging to repository " + repository + " as " + creds);
         Session session = creds != null ? 
                 repository.login(creds) : repository.login();
         sessions.put(session.getWorkspace().getName(), session);
         workspaces = session.getWorkspace().getAccessibleWorkspaceNames();
-        logger.info("[" + this.repository.getName() + "] available workspaces " + wsnames());
+        logger.debug("[" + this.repository.getName() + "] available workspaces " + wsnames());
     }
     
     @Override
@@ -58,7 +58,7 @@ public class LRepositoryImpl implements LRepository {
     
     @Override
     public String[] getWorkspaces() {
-        logger.info("[" + this.repository.getName() + "] Requested workspaces " + wsnames());
+        logger.debug("[" + this.repository.getName() + "] Requested workspaces " + wsnames());
         return workspaces;
     }
 
@@ -77,12 +77,12 @@ public class LRepositoryImpl implements LRepository {
     @Override
     public Session session(String workspace) throws RemoteException {
         if (sessions.containsKey(workspace)) {
-            logger.info("[" + this.repository.getName() + "] has already session to " + workspace);
+            logger.debug("[" + this.repository.getName() + "] has already session to " + workspace);
             return sessions.get(workspace);
         }
         
         try {
-            logger.info("[" + this.repository.getName() + "] has not yet session to " + workspace);
+            logger.debug("[" + this.repository.getName() + "] has not yet session to " + workspace);
             Session session = creds != null ? 
                     repository.login(creds, workspace) : 
                     repository.login(workspace);

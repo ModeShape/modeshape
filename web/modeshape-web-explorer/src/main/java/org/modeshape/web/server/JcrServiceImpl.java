@@ -62,7 +62,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import javax.jcr.Credentials;
-import org.jboss.logging.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.web.server.impl.ConnectorImpl;
 import org.modeshape.web.shared.Acl;
 import org.modeshape.web.shared.Policy;
@@ -96,7 +96,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     public String getRequestedURI() {
         String uri = (String) getThreadLocalRequest().getSession(true).getAttribute("initial.uri");
         if (uri != null) {
-            logger.info("Requested URI " + uri);
+            logger.debug("Requested URI " + uri);
             return uri;
         }
 
@@ -104,7 +104,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         String servletPath = getThreadLocalRequest().getServletPath();
 
         String res = uri.substring(0, uri.indexOf(servletPath));
-        logger.info("Requested URI " + uri);
+        logger.debug("Requested URI " + uri);
         return res;
     }
 
@@ -159,7 +159,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public JcrNode node(String repository, String workspace, String path) throws RemoteException {
-        logger.info("Requested node in repository '" + repository + "', workspace '" + workspace
+        logger.debug("Requested node in repository '" + repository + "', workspace '" + workspace
                 + "', path '" + path + "'");
 
         if (repository == null || workspace == null) {
@@ -344,7 +344,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 desc.add(keys[i], value != null ? value.getString() : "N/A");
             }
         } catch (Exception e) {
-            logger.error("Error getting repository information", e);
+            logger.debug("Error getting repository information", e);
         }
         return desc;
     }
@@ -376,7 +376,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             }
 
             rs.setRows(rows);
-            logger.info("Query result: " + rs.getRows().size());
+            logger.debug("Query result: " + rs.getRows().size());
             return rs;
         } catch (Exception e) {
             throw new RemoteException(e.getMessage());
@@ -414,7 +414,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             Node node = (Node) session.getItem(path);
             node.remove();
         } catch (PathNotFoundException e) {
-            logger.error(e.getLocalizedMessage());
+            logger.debug(e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
@@ -428,7 +428,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             Node node = (Node) session.getItem(path);
             node.addMixin(mixin);
         } catch (PathNotFoundException e) {
-            logger.error(e.getLocalizedMessage());
+            logger.debug(e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
@@ -442,7 +442,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             Node node = (Node) session.getItem(path);
             node.removeMixin(mixin);
         } catch (PathNotFoundException e) {
-            logger.error(e.getLocalizedMessage());
+            logger.debug(e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }
@@ -488,9 +488,9 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
             }
         } catch (PathNotFoundException e) {
-            logger.error(e.getLocalizedMessage());
+            logger.debug(e.getLocalizedMessage());
         } catch (Exception e) {
-            logger.error("Unexpected error", e);
+            logger.debug("Unexpected error", e);
             throw new RemoteException(e.getMessage());
         }
     }
@@ -530,7 +530,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             acm.setPolicy(path, acl);
 //                session.save();
         } catch (PathNotFoundException e) {
-            logger.error(e.getLocalizedMessage());
+            logger.debug(e.getLocalizedMessage());
         } catch (RepositoryException e) {
             throw new RemoteException(e.getMessage());
         }

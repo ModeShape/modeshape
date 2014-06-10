@@ -21,7 +21,7 @@ import java.util.HashMap;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.naming.InitialContext;
-import org.jboss.logging.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.server.Connector;
@@ -93,12 +93,12 @@ public class ConnectorImpl implements Connector {
     public LRepository find(String name) throws RemoteException {
         if (!repositories.containsKey(name)) {
             try {
-                logger.info("Starting repository: " + name);
+                logger.debug("Starting repository: " + name);
                 InitialContext ic = new InitialContext();
                 ModeShapeEngine engine = (ModeShapeEngine) ic.lookup("jcr");
                 repositories.put(name, new LRepositoryImpl(engine.getRepository(name), credentials));
             } catch (Exception e) {
-                logger.error("Could not start repository " + name, e);
+                logger.debug("Could not start repository " + name, e);
                 throw new RemoteException(e.getMessage());
             }
         }
