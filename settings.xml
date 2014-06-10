@@ -61,12 +61,12 @@
             </repositories>
         </profile>
         <profile>
-            <id>redhat-techpreview-repository</id>
+            <id>eap</id>
             <repositories>
                 <repository>
-                    <id>redhat-techpreview-repository</id>
-                    <name>JBoss.org Techpreview Repository</name>
-                    <url>http://maven.repository.redhat.com/techpreview/all/</url>
+                    <id>eap</id>
+                    <name>EAP Repository</name>
+                    <url>http://maven.repository.redhat.com/techpreview/eap6/6.3.0.Beta/maven-repository</url>
                     <layout>default</layout>
                     <releases>
                         <enabled>true</enabled>
@@ -84,7 +84,7 @@
 
     <activeProfiles>
         <activeProfile>jboss-public-repository</activeProfile>
-        <activeProfile>redhat-techpreview-repository</activeProfile>
+        <activeProfile>eap</activeProfile>
         <activeProfile>jboss-thirdpartyuploads-repository</activeProfile>
     </activeProfiles>
 </settings>

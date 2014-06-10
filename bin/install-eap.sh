@@ -13,5 +13,5 @@ if [ "$#" -ne 1 ] ; then
 	echo "Usage: install-eap.sh <eap_zip_file>"
 	exit 1
 else
-	 mvn install:install-file -Dfile="$1" -DgroupId=org.jboss.as -DartifactId=jboss-eap -Dversion=6.2.0.GA -Dpackaging=zip
+	 mvn install:install-file -Dfile="$1" -DgroupId=org.jboss.as -DartifactId=jboss-eap -Dversion=6.3.0.Beta1 -Dpackaging=zip
 fi
