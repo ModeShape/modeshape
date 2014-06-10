@@ -401,6 +401,7 @@
                     <groupId>org.jboss.as</groupId>
                     <artifactId>jboss-as-controller</artifactId>
                 </dependency>
+
             </dependencies>
             <build>
                 <plugins>
