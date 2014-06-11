@@ -1,169 +1,218 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.web.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.smartgwt.client.util.BooleanCallback;
+import com.smartgwt.client.types.VerticalAlignment;
 import com.smartgwt.client.util.SC;
-import com.smartgwt.client.widgets.Button;
+import com.smartgwt.client.widgets.Img;
+import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
+import com.smartgwt.client.widgets.form.DynamicForm;
+import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.layout.HLayout;
+import com.smartgwt.client.widgets.layout.VLayout;
+import com.smartgwt.client.widgets.toolbar.ToolStrip;
+import com.smartgwt.client.widgets.toolbar.ToolStripButton;
+import java.util.Collection;
+import org.modeshape.web.shared.RepositoryName;
 
 /**
- * Tool bar for the repository management.
- * 
+ *
  * @author kulikov
  */
-@SuppressWarnings( "synthetic-access" )
 public class ToolBar extends HLayout {
-    private Console console;
+    
+    private final Console console;
+    private Label userName = new Label();
 
-    public ToolBar( Console console ) {
-        super();
+    public ToolBar(final Console console) {
+        super();        
         this.console = console;
-        this.setHeight(30);
-
-        // add node button
-        button("", "icons/folder_modernist_add.png", "Add new node", new ClickHandler() {
+        
+        setHeight(50);
+        setWidth100();
+        
+        Img logo = new Img();
+        logo.setSrc("icons/logo.png");
+        
+        logo.setHeight(30);
+        logo.setWidth(190);
+        logo.setValign(VerticalAlignment.CENTER);
+        
+        
+        ToolStrip strip = new ToolStrip();
+        strip.setHeight(50);
+        strip.setWidth100();
+        
+        strip.addSpacer(120);
+        strip.addMember(logo);
+        strip.addSpacer(10);
+        strip.addSeparator();
+        
+//        Img homeImg = new Img();
+//        homeImg.setSrc("icons/bullet_blue.png");
+//        homeImg.setWidth(5);
+//        homeImg.setHeight(5);
+                
+//        strip.addMember(homeImg);
+//        strip.addSeparator();
+        
+        strip.addFill();
+        
+        
+        VLayout p = new VLayout();
+        p.setAlign(VerticalAlignment.CENTER);
+        DynamicForm form = new DynamicForm();
+        
+//        form.setNumCols(1);
+        p.addMember(form);
+        p.setWidth(300);
+        
+        final TextItem search = new TextItem();
+        search.setTitle("Search");
+        search.setWidth(300);
+        search.setValue("");
+        search.setTop(30);
+        
+        form.setItems(search);
+        
+        strip.setAlign(VerticalAlignment.CENTER);
+        strip.addMember(p);
+       
+        ToolStripButton go = new ToolStripButton();
+        go.setTitle("Go");
+        go.addClickHandler(new ClickHandler() {
             @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.newNodeDialog.showModal();
-            }
-        });
+            public void onClick(ClickEvent event) {
+                console.jcrService.findRepositories(search.getValueAsString(), new AsyncCallback<Collection<RepositoryName>>() {
 
-        // remove node button
-        button("", "icons/folder_modernist_remove.png", "Delete node", new ClickHandler() {
-            @Override
-            public void onClick( ClickEvent event ) {
-                SC.ask("Remove node", "Do you want to remove node?", new BooleanCallback() {
                     @Override
-                    public void execute( Boolean confirmed ) {
-                        if (!confirmed) {
-                            return;
-                        }
-                        String path = ToolBar.this.console.navigator.getSelectedPath();
-                        ToolBar.this.console.jcrService.removeNode(path, new AsyncCallback() {
-                            @Override
-                            public void onFailure( Throwable caught ) {
-                                SC.say(caught.getMessage());
-                            }
+                    public void onFailure(Throwable caught) {
+                        SC.say(caught.getMessage());
+                    }
 
-                            @Override
-                            public void onSuccess( Object result ) {
-                                ToolBar.this.console.navigator.selectNode();
-                            }
-                        });
+                    @Override
+                    public void onSuccess(Collection<RepositoryName> result) {
+                        console.showRepositories(result);
                     }
                 });
             }
         });
+        
+        strip.addButton(go);
+        
+        userName.setContents("okulikov");
+        userName.setIcon("icons/bullet_blue.png");
+        
+        ToolStripButton backupButton = new ToolStripButton();
+        backupButton.setTitle("Backup repository");
+        backupButton.addClickHandler(new ClickHandler() {
 
-        // Add mixin
-        button("", "icons/hcards_add.png", "Add mixin to the node", new ClickHandler() {
             @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.addMixinDialog.showModal();
+            public void onClick(ClickEvent event) {
+                console.showRepositoryInfo();
             }
         });
 
-        // Remove mixin
-        button("", "icons/hcards_remove.png", "Remove mixin", new ClickHandler() {
+        ToolStripButton restoreButton = new ToolStripButton();
+        restoreButton.setTitle("Restore from backup");
+        restoreButton.addClickHandler(new ClickHandler() {
+
             @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.removeMixinDialog.showModal();
+            public void onClick(ClickEvent event) {
+                console.showContent();
             }
         });
-
-        // Remove mixin
-        button("", "icons/tag_add.png", "Add property", new ClickHandler() {
+        
+        ToolStripButton downloadButton = new ToolStripButton();
+        downloadButton.setTitle("Download back");
+        downloadButton.addClickHandler(new ClickHandler() {
             @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.addPropertyDialog.showModal();
+            public void onClick(ClickEvent event) {
+//                notebook.show(2);
             }
         });
+        
+        strip.addSpacer(140);
+        strip.addSeparator();
+        
+//        strip.addSpacer(70);
+//        strip.addButton(backupButton);
+//        strip.addButton(restoreButton);
+//        strip.addButton(downloadButton);
+//        strip.addSpacer(70);
+        
+        strip.addMember(userName);
+        strip.addSeparator();
 
-        spacer();
-
-        // Save button
-        button("", "icons/save.png", "Save", new ClickHandler() {
+        ToolStripButton loging = new ToolStripButton();
+        loging.setTitle("Log in");
+        loging.addClickHandler(new ClickHandler() {
             @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.addPropertyDialog.showModal();
+            public void onClick(ClickEvent event) {
+                new LoginDialog(console);
             }
         });
-
-        spacer();
-
-        button("", "icons/hcard_add.png", "Add access control list", new ClickHandler() {
+        
+        ToolStripButton logout = new ToolStripButton();
+        logout.setTitle("Log out");
+        logout.addClickHandler(new ClickHandler() {
             @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.addPropertyDialog.showModal();
+            public void onClick(ClickEvent event) {
+                console.jcrService.login(null, null, new AsyncCallback() {
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        SC.say(caught.getMessage());
+                    }
+
+                    @Override
+                    public void onSuccess(Object result) {
+                        console.updateUserName(null);
+                    }
+                });
             }
         });
+        
+        ToolStripButton save = new ToolStripButton();
+        save.setTitle("Save");
+        save.addClickHandler(new ClickHandler() {
 
-        button("", "icons/hcard_remove.png", "Remove access control list", new ClickHandler() {
             @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.addPropertyDialog.showModal();
+            public void onClick(ClickEvent event) {
+                console.save();
             }
         });
-
-        button("", "icons/group_blue_add.png", "Add principal", new ClickHandler() {
-            @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.addPropertyDialog.showModal();
-            }
-        });
-
-        button("", "icons/group_blue_remove.png", "Remove principal", new ClickHandler() {
-            @Override
-            public void onClick( ClickEvent event ) {
-                ToolBar.this.console.addPropertyDialog.showModal();
-            }
-        });
-
+        
+        strip.addButton(loging);
+        strip.addButton(logout);
+        strip.addButton(save);
+        
+        addMember(strip);
+        setBackgroundColor("#d3d3d3");
+        
     }
-
-    private void button( String title,
-                         String icon,
-                         String toolTip,
-                         ClickHandler handler ) {
-        Button button = new Button();
-        button.setWidth(30);
-        button.setHeight(30);
-        button.setTitle(title);
-        button.setIcon(icon);
-        button.setTooltip(toolTip);
-        button.setMargin(1);
-        button.addClickHandler(handler);
-        addMember(button);
+    
+    public void setUserName(String userName) {
+        if (userName != null && userName.length() > 0) {
+            this.userName.setContents(userName);
+        } else {
+            this.userName.setContents("anonymous");
+        }
     }
-
-    private void spacer() {
-        HLayout spacer = new HLayout();
-        spacer.setWidth(5);
-        addMember(spacer);
-    }
+    
 }

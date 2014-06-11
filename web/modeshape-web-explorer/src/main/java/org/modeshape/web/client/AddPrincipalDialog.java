@@ -1,32 +1,23 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.web.client;
 
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
-import org.modeshape.web.shared.JcrPolicy;
 
 /**
  * Dialog asking principal's name.
@@ -36,11 +27,11 @@ import org.modeshape.web.shared.JcrPolicy;
 public class AddPrincipalDialog extends ModalDialog {
     
     private TextItem name = new TextItem("Principal");
-    private Console console;
+    private Contents contents;
     
-    public AddPrincipalDialog(String title, Console console) {
-        super(title, 400, 200);
-        this.console = console;
+    public AddPrincipalDialog(Contents contents) {
+        super("Add access list", 400, 200);
+        this.contents = contents;
         
         StaticTextItem description = new StaticTextItem();
         description.setValue("Specify principal's name");
@@ -50,13 +41,7 @@ public class AddPrincipalDialog extends ModalDialog {
     
     @Override
     public void onConfirm(ClickEvent event) {
-        //pick up selected node and entered principal name
-        JcrTreeNode node = console.navigator.getSelectedNode();
-        String principal = name.getValueAsString();
-        
-        //add new entry with all permissions and display it
-        node.getAccessList().add(new JcrPolicy(principal));
-        console.nodePanel.display(node.getAccessList(), principal);
+        contents.addAccessList(name.getValueAsString());
     }
     
 }

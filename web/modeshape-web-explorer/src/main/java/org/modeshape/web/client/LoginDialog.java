@@ -1,29 +1,20 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.web.client;
 
-import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Window;
@@ -44,33 +35,15 @@ import com.smartgwt.client.widgets.layout.VStack;
 public class LoginDialog extends DynamicForm {
 
     private Window window = new Window();
-    private TextItem jndiName = new TextItem();
     private TextItem userName = new TextItem();
-    private TextItem workspace = new TextItem();
     private PasswordItem password = new PasswordItem();
 
-    private Console console;
-    
-    public LoginDialog(Console console) {
+    public LoginDialog(final Console console) {
         super();
-        this.console = console;
         
         setID("loginDialog");
         setNumCols(2);
         setPadding(25);
-
-        jndiName.setName("jndiName");
-        jndiName.setTitle("Repository name");
-        jndiName.setDefaultValue("jcr/sample");
-        jndiName.setWidth(250);
-        jndiName.setRequired(true);
-        jndiName.setVisible(true);
-
-        workspace.setName("workspace");
-        workspace.setTitle("Workspace");
-        workspace.setDefaultValue("default");
-        workspace.setWidth(250);
-        workspace.setRequired(true);
 
         userName.setName("username");
         userName.setTitle("Username");
@@ -99,16 +72,33 @@ public class LoginDialog extends DynamicForm {
         okButton.setStartRow(false);
         okButton.setEndRow(true);
         
-        this.addSubmitValuesHandler(new LoginHandler());
+        this.addSubmitValuesHandler(new SubmitValuesHandler() {
+            @Override
+            public void onSubmitValues(SubmitValuesEvent event) {
+                console.jcrService.login(userName.getValueAsString(), 
+                    password.getValueAsString(), new AsyncCallback() {
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        SC.say(caught.getMessage());
+                    }
+
+                    @Override
+                    public void onSuccess(Object result) {
+                        LoginDialog.this.hideDialog();
+                        console.updateUserName(userName.getValueAsString());
+                    }
+                });
+            }
+        });
         
         StaticTextItem description = new StaticTextItem();
         description.setTitle("");
-        description.setValue("Specify either repository name or jndi name");
+        description.setValue("Please specify your username and password");
         description.setStartRow(true);
         description.setEndRow(true);
         
-        setItems(spacerItem1, description, jndiName, workspace, spacerItem1, userName,
-                password,  spacerItem2, okButton);
+        setItems(description, userName, password,  spacerItem2, okButton);
 
         vStack.setTop(30);
         vStack.addMember(this);
@@ -119,7 +109,7 @@ public class LoginDialog extends DynamicForm {
         window.setCanDragResize(false);
         window.setShowMinimizeButton(false);
         window.setShowCloseButton(false);
-        window.setHeight(350);
+        window.setHeight(200);
         window.setWidth(400);
         window.setAutoCenter(true);
         window.show();
@@ -127,14 +117,6 @@ public class LoginDialog extends DynamicForm {
         userName.focusInItem();
     }
 
-    public void setJndiName(String name) {
-        this.jndiName.setValue(name);
-    }
-    
-    public void setWorkspace(String name) {
-        this.workspace.setValue(name);
-    }
-    
     public void showDialog() {
         window.show();
     }
@@ -143,30 +125,4 @@ public class LoginDialog extends DynamicForm {
         window.hide();
     }
     
-    private class LoginHandler implements SubmitValuesHandler {
-        @Override
-        public void onSubmitValues(SubmitValuesEvent event) {
-            console.jcrService.login(
-                    jndiName.getValueAsString(), 
-                    userName.getValueAsString(), 
-                    password.getValueAsString(),
-                    workspace.getValueAsString(), 
-                    new LoginCallback());
-        }        
-    }
-    
-    private class LoginCallback implements AsyncCallback {
-
-        @Override
-        public void onFailure(Throwable caught) {
-            SC.say(caught.getMessage());
-        }
-
-        @Override
-        public void onSuccess(Object result) {
-            LoginDialog.this.hideDialog();
-            console.showMainForm(jndiName.getValueAsString(), workspace.getValueAsString());
-        }
-        
-    }
 }

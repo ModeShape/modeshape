@@ -1,11 +1,23 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.web.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.ListGridFieldType;
+import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.events.SubmitValuesEvent;
 import com.smartgwt.client.widgets.form.events.SubmitValuesHandler;
@@ -16,7 +28,6 @@ import com.smartgwt.client.widgets.grid.ListGrid;
 import com.smartgwt.client.widgets.grid.ListGridField;
 import com.smartgwt.client.widgets.grid.ListGridRecord;
 import com.smartgwt.client.widgets.layout.VLayout;
-import com.smartgwt.client.widgets.tab.Tab;
 import java.util.Collection;
 import org.modeshape.web.shared.ResultSet;
 
@@ -24,7 +35,7 @@ import org.modeshape.web.shared.ResultSet;
  *
  * @author kulikov
  */
-public class QueryPanel extends Tab {
+public class QueryPanel extends View {
     private TextAreaItem queryEditor = new TextAreaItem();
     private SubmitItem execButton = new SubmitItem("Execute");
     private ListGrid grid = new ListGrid();
@@ -32,13 +43,12 @@ public class QueryPanel extends Tab {
     private ComboBoxItem langBox = new ComboBoxItem();
     
     private Console console;
-    
-    public QueryPanel(Console console) {        
-        super();
+    public QueryPanel(Console console, JcrServiceAsync jcrService, ViewPort viewPort) {        
+        super(viewPort, null);
         this.console = console;
         
         setTitle("Query");
-        setIcon("icons/data.png");
+//        setIcon("icons/data.png");
         
         langBox.setTitle("Query language");
         
@@ -61,20 +71,24 @@ public class QueryPanel extends Tab {
         
         layout.addMember(queryForm);
         layout.addMember(grid);
-
+        layout.setHeight100();
+        
         queryForm.addSubmitValuesHandler(new ButtonClickHandler());
-        this.setPane(layout);
+        this.addMember(layout);
     }
     
     public void init() {
-        console.jcrService.supportedQueryLanguages(new SupportedLangsQueryHandler());
+        console.jcrService.supportedQueryLanguages(console.contents().repository(),
+                console.contents().workspace(),
+                new SupportedLangsQueryHandler());
     }
     
     public class ButtonClickHandler implements SubmitValuesHandler {
 
         @Override
         public void onSubmitValues(SubmitValuesEvent event) {
-            console.jcrService.query(
+            console.jcrService.query(console.contents().repository(),
+                    console.contents().workspace(),
                     queryEditor.getEnteredValue(), 
                     langBox.getEnteredValue(), 
                     new QueryResultHandler());
@@ -86,12 +100,13 @@ public class QueryPanel extends Tab {
 
         @Override
         public void onFailure(Throwable caught) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            SC.say(caught.getMessage());
         }
 
         @Override
         public void onSuccess(String[] result) {
             langBox.setValueMap(result);
+            console.display(QueryPanel.this);
         }
     
     }
@@ -100,7 +115,7 @@ public class QueryPanel extends Tab {
 
         @Override
         public void onFailure(Throwable caught) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            SC.say(caught.getMessage());
         }
 
         @Override
@@ -135,6 +150,7 @@ public class QueryPanel extends Tab {
             
             grid.setFields(fields);
             grid.setData(tbl);
+            grid.show();
         }
         
     }
