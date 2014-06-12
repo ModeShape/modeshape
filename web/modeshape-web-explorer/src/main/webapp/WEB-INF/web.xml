@@ -16,10 +16,6 @@
         <servlet-name>BackupExportServlet</servlet-name>
         <servlet-class>org.modeshape.web.BackupExportServlet</servlet-class>
     </servlet>
-    <servlet>
-        <servlet-name>RestoreImportServlet</servlet-name>
-        <servlet-class>org.modeshape.web.RestoreImportServlet</servlet-class>
-    </servlet>
     <servlet-mapping>
         <servlet-name>jcrServlet</servlet-name>
         <url-pattern>/console/jcr</url-pattern>
