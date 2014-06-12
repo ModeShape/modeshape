@@ -52,18 +52,26 @@ public class ClusteredConfigurationIntegrationTest {
         return archive;
     }
 
-    @Resource( mappedName = "java:/jcr/repo-clustered" )
-    private JcrRepository clusteredRepository;
+    @Resource( mappedName = "java:/jcr/repo-clustered1" )
+    private JcrRepository clusteredRepository1;
+
+    @Resource( mappedName = "java:/jcr/repo-clustered2" )
+    private JcrRepository clusteredRepository2;
 
     @Before
     public void before() {
-        assertNotNull(clusteredRepository);
+        assertNotNull(clusteredRepository1);
+        assertNotNull(clusteredRepository2);
     }
 
     @Test
-    @FixFor({"MODE-1923", "MODE-1929"})
+    @FixFor({"MODE-1923", "MODE-1929", "MODE-2226"})
     public void clusteredRepositoryShouldHaveStartedUp() throws Exception {
-        Session session = clusteredRepository.login();
+        Session session = clusteredRepository1.login();
+        assertNotNull(session);
+        session.logout();
+
+        session = clusteredRepository2.login();
         assertNotNull(session);
         session.logout();
     }
@@ -71,7 +79,7 @@ public class ClusteredConfigurationIntegrationTest {
     @Test
     @FixFor( "MODE-1935" )
     public void shouldIndexNodesOnMaster() throws Exception {
-        Session session = clusteredRepository.login();
+        Session session = clusteredRepository1.login();
         session.getRootNode().addNode("test");
         session.save();
 

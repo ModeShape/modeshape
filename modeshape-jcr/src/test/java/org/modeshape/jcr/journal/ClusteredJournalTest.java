@@ -104,7 +104,7 @@ public class ClusteredJournalTest extends LocalJournalTest {
         journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
 
         // start the 2nd journal back and verify it received a 1 delta from the 1st journal
-        journal2.clusteringService().startStandalone("journal-cluster-1", "config/jgroups-test-config.xml");
+        journal2.clusteringService().restart();
         journal2.start();
 
         Assert.assertEquals(4, journal2.allRecords(false).size());
@@ -114,7 +114,7 @@ public class ClusteredJournalTest extends LocalJournalTest {
 
     private ClusteredJournal startNewJournal( String fileLocation,
                                               String clusterName ) throws Exception {
-        ClusteringService clusteringService = new ClusteringService().startStandalone(clusterName, "config/jgroups-test-config.xml");
+        ClusteringService clusteringService = ClusteringService.startStandalone(clusterName, "config/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
 
         FileUtil.delete(fileLocation);
