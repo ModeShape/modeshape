@@ -515,7 +515,18 @@ public class RepositoryCache {
             if (workspaceCacheManager instanceof EmbeddedCacheManager) {
                 EmbeddedCacheManager embeddedCacheManager = (EmbeddedCacheManager)workspaceCacheManager;
                 if (embeddedCacheManager.getStatus().equals(ComponentStatus.RUNNING)) {
-                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(workspaceName));
+                    String cacheName = cacheNameForWorkspace(workspaceName);
+                    try {
+                        ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheName);
+                    } catch (Exception e) {
+                        if (e.getCause() instanceof javax.management.InstanceNotFoundException) {
+                            //sometimes ISPN throws *WEIRD* JMX exceptions, especially in container like Wildfly
+                            //if that is the case, we shouldn't really care about these
+                            LOGGER.debug(e.getCause(), "Infinispan JMX exception");
+                        } else {
+                            LOGGER.error(e, JcrI18n.errorRemovingISPNCache, cacheName);
+                        }
+                    }
                 }
             }
         }

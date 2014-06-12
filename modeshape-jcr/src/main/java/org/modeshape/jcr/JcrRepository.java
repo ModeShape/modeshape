@@ -1087,10 +1087,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     SchematicDb database = Schematic.get(container, cacheName);
 
                     Channel cacheChannel = checkClustering(database);
-                    this.clusteringService = cacheChannel != null ? new ClusteringService().startForked(cacheChannel) : null;
+                    //the name of the fork stack is based on the name of the cache; this will allow multiple caches to share the same JG stack
+                    String forkStackId = "modeshape-" + cacheName + "-fork-stack";
+                    this.clusteringService = cacheChannel != null ? ClusteringService.startForked(forkStackId, cacheChannel) : null;
 
-                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
-                                                                                                                                                database);
+                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(database);
                     this.txnMgr = this.documentStore.transactionManager();
                     MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                     this.transactions = createTransactions(cacheName, config.getTransactionMode(), monitorFactory, this.txnMgr);

@@ -484,11 +484,15 @@
                 </local-cache>
             </cache-container>
             <!--Clustered cache container-->
-            <cache-container name="modeshape-repository-clustered" default-cache="clustered-repo" module="org.modeshape">
+            <cache-container name="modeshape-repository-clustered" default-cache="repo-clustered1" module="org.modeshape">
                 <transport lock-timeout="60000"/>
-                <replicated-cache name="repo-clustered" mode="SYNC">
+                <replicated-cache name="repo-clustered1" mode="SYNC">
                     <transaction mode="NON_XA"/>
-                    <file-store path="modeshape/store/repo-clustered" passivation="false" purge="false"/>
+                    <file-store path="modeshape/store/repo-clustered1" passivation="false" purge="false"/>
+                </replicated-cache>
+                <replicated-cache name="repo-clustered2" mode="SYNC">
+                    <transaction mode="NON_XA"/>
+                    <file-store path="modeshape/store/repo-clustered2" passivation="false" purge="false"/>
                 </replicated-cache>
             </cache-container>
         </subsystem>
@@ -659,8 +663,8 @@
                                       data-cache-name="binaryJDBCRepository-binary-data-wb"
                                       metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"/>
             </repository>
-            <repository name="repo-clustered" cache-container="modeshape-repository-clustered" cache-name="repo-clustered">
-            </repository>
+            <repository name="repo-clustered1" cache-container="modeshape-repository-clustered" cache-name="repo-clustered1"/>
+            <repository name="repo-clustered2" cache-container="modeshape-repository-clustered" cache-name="repo-clustered2"/>
 
             <repository name="compositeBinaryStoreRepository" cache-container="modeshape">
                 <composite-binary-storage min-value-size="100">
