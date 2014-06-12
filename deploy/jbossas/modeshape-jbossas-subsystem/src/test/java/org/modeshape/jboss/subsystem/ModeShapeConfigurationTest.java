@@ -113,6 +113,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
+    public void testAnonymousRolesConfiguration() throws Exception {
+        standardSubsystemTest("anonymous");
+    }
+
+    @Test
     public void testSchema() throws Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
         validate(subsystemXml);

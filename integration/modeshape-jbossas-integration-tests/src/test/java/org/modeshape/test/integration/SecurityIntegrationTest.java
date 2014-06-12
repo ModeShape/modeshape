@@ -24,11 +24,17 @@
 
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Iterator;
 import javax.annotation.Resource;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -39,13 +45,10 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.ModeShapePermissions;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Integration test around various authentication and authorization providers.
@@ -57,6 +60,12 @@ public class SecurityIntegrationTest {
 
     @Resource( mappedName = "java:/jcr/sample" )
     private JcrRepository sampleRepo;
+
+    @Resource( mappedName = "java:/jcr/anonymousRepository" )
+    private JcrRepository anonymousRepository;
+
+    @Resource( mappedName = "java:/jcr/defaultAnonymousRepository" )
+    private JcrRepository defaultAnonymousRepository;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -70,6 +79,8 @@ public class SecurityIntegrationTest {
     @Before
     public void before() {
         assertNotNull(sampleRepo);
+        assertNotNull(anonymousRepository);
+        assertNotNull(defaultAnonymousRepository);
     }
 
     @Test
@@ -123,5 +134,29 @@ public class SecurityIntegrationTest {
         assertTrue(anonymousSession.isAnonymous());
         //readonly,readwrite,admin roles are configured as default by the subsystem
         assertTrue(anonymousSession.hasPermission("/", permissionsString(ModeShapePermissions.ALL_PERMISSIONS)));
+    }
+
+    @Test
+    @FixFor( "MODE-2228" )
+    public void shouldAllowDisablingOfAnonymousRoles() throws Exception {
+        try {
+            anonymousRepository.login();
+            fail("Should not allow anonymous logins");
+        } catch (javax.jcr.LoginException e) {
+            //expected
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2228" )
+    public void readonlyShouldBeTheDefaultAnonymousRole() throws Exception {
+        Session session = defaultAnonymousRepository.login();
+        session.getRootNode();
+        try {
+            session.getRootNode().addNode("test");
+            fail("The default anonymous role should be 'readonly'");
+        } catch (AccessDeniedException e) {
+           //expected
+        }
     }
 }

@@ -62,7 +62,7 @@ public class MappedListAttributeDefinition extends ListAttributeDefinition imple
     protected MappedListAttributeDefinition( SimpleListAttributeDefinition simpleList,
                                              SimpleAttributeDefinition valueType,
                                              List<String> pathToFieldInConfiguration ) {
-        super(simpleList.getName(), simpleList.isAllowNull(), simpleList.getElementValidator());
+        super(simpleList.getName(), simpleList.isAllowNull(), simpleList.getElementValidator(), (AttributeAccess.Flag[]) null);
         this.simpleList = simpleList;
         this.valueType = valueType;
         assert pathToFieldInConfiguration != null;
@@ -148,7 +148,29 @@ public class MappedListAttributeDefinition extends ListAttributeDefinition imple
 
     @Override
     public ModelNode getDefaultValue() {
-        return simpleList.getDefaultValue();
+        ModelNode listDefault = simpleList.getDefaultValue();
+        if (listDefault != null) {
+            return listDefault;
+        }
+        //attempt to resolve the default against the value type (not that this is a bit of hack because SimpleListAttributeDefinition
+        //simply do not support default values (because of its builder)
+        ModelNode valueTypeDefault = valueType.getDefaultValue();
+        if (valueTypeDefault == null) {
+            return null;
+        }
+        switch (valueTypeDefault.getType()) {
+            case LIST: {
+                return valueTypeDefault;
+            }
+            default: {
+                ModelNode result = new ModelNode();
+                String[] segments = valueTypeDefault.asString().split(" ");
+                for (String segment : segments) {
+                    result.add(segment);
+                }
+                return result;
+            }
+        }
     }
 
     @Override
