@@ -226,9 +226,9 @@
             <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
-            <repository name="sample"/>
+            <repository name="sample" anonymous-roles="admin"/>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
-            <repository name="artifacts">
+            <repository name="artifacts" anonymous-roles="admin">
                 <indexing rebuild-upon-startup="never"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">

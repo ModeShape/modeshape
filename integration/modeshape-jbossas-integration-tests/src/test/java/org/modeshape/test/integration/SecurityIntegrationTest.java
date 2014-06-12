@@ -39,6 +39,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.ModeShapePermissions;
@@ -58,6 +59,9 @@ public class SecurityIntegrationTest {
     @Resource( mappedName = "java:/jcr/sample" )
     private JcrRepository sampleRepo;
 
+    @Resource( mappedName = "java:/jcr/anonymousRepository" )
+    private JcrRepository anonymousRepository;
+
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class, "security-test.war")
@@ -70,6 +74,7 @@ public class SecurityIntegrationTest {
     @Before
     public void before() {
         assertNotNull(sampleRepo);
+        assertNotNull(anonymousRepository);
     }
 
     @Test
@@ -123,5 +128,16 @@ public class SecurityIntegrationTest {
         assertTrue(anonymousSession.isAnonymous());
         //readonly,readwrite,admin roles are configured as default by the subsystem
         assertTrue(anonymousSession.hasPermission("/", permissionsString(ModeShapePermissions.ALL_PERMISSIONS)));
+    }
+
+    @Test
+    @FixFor( "MODE-2228" )
+    public void shouldAllowDisablingOfAnonymousRoles() throws Exception {
+        try {
+            anonymousRepository.login();
+            fail("Should not allow anonymous logins");
+        } catch (javax.jcr.LoginException e) {
+            //expected
+        }
     }
 }

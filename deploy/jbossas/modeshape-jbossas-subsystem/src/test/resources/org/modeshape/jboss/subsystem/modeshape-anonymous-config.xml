@@ -1,0 +1,5 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+    <repository name="anon-disabled" anonymous-roles=""/>
+    <repository name="anon-readonly" anonymous-roles="readonly"/>
+    <repository name="anon-full" anonymous-roles="readonly admin"/>
+</subsystem>

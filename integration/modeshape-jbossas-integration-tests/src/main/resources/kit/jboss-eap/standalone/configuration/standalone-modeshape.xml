@@ -359,6 +359,13 @@
                 <local-cache name="compositeBinaryStoreRepository">
                     <transaction mode="NON_XA"/>
                 </local-cache>
+                <local-cache name="anonymousRepository">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
+                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
+                    <file-store passivation="false" path="modeshape/store/anonymousRepository" relative-to="jboss.server.data.dir"
+                                purge="false"/>
+                </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
@@ -468,11 +475,11 @@
             <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
-            <repository name="sample">
+            <repository name="sample" anonymous-roles="admin">
                 <indexing rebuild-upon-startup-include-system-content="true" rebuild-upon-startup-mode="sync"/>
             </repository>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
-            <repository name="artifacts">
+            <repository name="artifacts" anonymous-roles="admin">
                 <indexing rebuild-upon-startup="never"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
@@ -557,7 +564,7 @@
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
             </repository>
-            <repository name="preconfiguredRepository">
+            <repository name="preconfiguredRepository" anonymous-roles="admin">
                 <indexing rebuild-upon-startup="never"/>
                 <workspaces>
                     <workspace name="default"/>
@@ -576,7 +583,7 @@
                 </node-types>
                 <local-file-index-storage/>
             </repository>
-            <repository name="federatedRepository">
+            <repository name="federatedRepository" anonymous-roles="admin">
                 <!--Turn off initial indexing for performance reasons-->
                 <indexing rebuild-upon-startup="never" rebuild-upon-startup-include-system-content="false"
                           rebuild-upon-startup-mode="sync"/>
@@ -600,20 +607,20 @@
                     </source>
                 </external-sources>
             </repository>
-            <repository name="noQueryRepository" enable-queries="false"/>
-            <repository name="jdbcRepository">
+            <repository name="noQueryRepository" enable-queries="false" anonymous-roles="admin"/>
+            <repository name="jdbcRepository" anonymous-roles="admin">
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <initial-content>initial-content-default.xml</initial-content>
                 </workspaces>
             </repository>
-            <repository name="jdbcRepositoryWithEviction">
+            <repository name="jdbcRepositoryWithEviction" anonymous-roles="admin">
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <initial-content>initial-content-default.xml</initial-content>
                 </workspaces>
             </repository>
-            <repository name="infinispanRepository">
+            <repository name="infinispanRepository" anonymous-roles="admin">
                 <workspaces cache-container="ws-cache-container">
                     <workspace name="default"/>
                 </workspaces>
@@ -625,20 +632,20 @@
                                       chunk-size="1000"/>
                 <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
-            <repository name="binaryJDBCRepository" enable-queries="false">
+            <repository name="binaryJDBCRepository" enable-queries="false" anonymous-roles="admin">
                 <cache-binary-storage cache-container="jdbc-binary-cache-container"/>
             </repository>
-            <repository name="dbBinaryJDBCRepository">
+            <repository name="dbBinaryJDBCRepository" anonymous-roles="admin">
                 <db-binary-storage data-source-jndi-name="java:jboss/datasources/ExampleDS"/>
             </repository>
-            <repository name="binaryIndexingJDBCRepository">
+            <repository name="binaryIndexingJDBCRepository" anonymous-roles="admin">
                 <indexing rebuild-upon-startup-mode="sync"/>
                 <cache-binary-storage cache-container="jdbc-binary-cache-container"
                                       data-cache-name="binaryJDBCRepository-binary-data-wb"
                                       metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"/>
             </repository>
             <repository name="repo-clustered" cache-container="modeshape-repository-clustered" cache-name="repo-clustered"
-                        cluster-name="modeshape-cluster" cluster-stack="tcp">
+                        cluster-name="modeshape-cluster" cluster-stack="tcp" anonymous-roles="admin">
                 <indexing rebuild-upon-startup="never"/>
                 <master-file-index-storage source-path="modeshape/clustered-repo/master-indexes"
                                            path="modeshape/clustered-repo/indexes/repo-clustered"
@@ -647,7 +654,7 @@
                                            refresh-period="1"/>
             </repository>
 
-            <repository name="compositeBinaryStoreRepository" cache-container="modeshape" enable-queries="false">
+            <repository name="compositeBinaryStoreRepository" cache-container="modeshape" enable-queries="false" anonymous-roles="admin">
                 <composite-binary-storage min-value-size="100">
                     <file-binary-storage store-name="fs1"
                                          path="modeshape/compositeBinaryStoreRepository/binaries/fs1"
@@ -661,6 +668,8 @@
                                           cache-container="binary-cache-container"/>
                 </composite-binary-storage>
             </repository>
+
+            <repository name="anonymousRepository" cache-container="modeshape" anonymous-roles=""/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="tcp">
             <stack name="udp">
