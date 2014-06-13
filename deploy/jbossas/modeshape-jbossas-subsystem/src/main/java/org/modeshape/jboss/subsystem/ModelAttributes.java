@@ -29,6 +29,7 @@ import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.spi.index.IndexDefinition.IndexKind;
@@ -43,9 +44,11 @@ public class ModelAttributes {
         public void validateParameter( String parameterName,
                                        ModelNode value ) throws OperationFailedException {
             super.validateParameter(parameterName, value); // checks null
-            String str = value.asString();
-            if (!ModeShapeRoles.ADMIN.equals(str) && !ModeShapeRoles.READONLY.equals(str)
-                && !ModeShapeRoles.READWRITE.equals(str)) {
+            String str = value.asString().toLowerCase();
+            if (!StringUtil.isBlank(str) &&
+                !ModeShapeRoles.ADMIN.equals(str) &&
+                !ModeShapeRoles.READONLY.equals(str) &&
+                !ModeShapeRoles.READWRITE.equals(str)) {
                 throw new OperationFailedException("Invalid anonymous role name: '" + str + "'");
             }
         }
@@ -89,9 +92,7 @@ public class ModelAttributes {
                                                                                                                                                 ModelKeys.ANONYMOUS_ROLE,
                                                                                                                                                 ModelType.STRING).setAllowExpression(true)
                                                                                                                                                                  .setAllowNull(true)
-                                                                                                                                                                 .setDefaultValue(new ModelNode().add(new ModelNode().set(ModeShapeRoles.ADMIN))
-                                                                                                                                                                                                 .add(new ModelNode().set(ModeShapeRoles.READONLY))
-                                                                                                                                                                                                 .add(new ModelNode().set(ModeShapeRoles.READWRITE)))
+                                                                                                                                                                 .setDefaultValue(new ModelNode().add(new ModelNode().set(ModeShapeRoles.READONLY)))
                                                                                                                                                                  .setValidator(ROLE_NAME_VALIDATOR)
                                                                                                                                                                  .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                                                                  .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN_REF)
