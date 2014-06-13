@@ -50,6 +50,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jboss.metric.ModelMetrics;
 import org.modeshape.jboss.metric.MonitorService;
 import org.modeshape.jboss.service.BinaryStorage;
@@ -356,9 +357,14 @@ public class AddRepository extends AbstractAddStepHandler {
         boolean useAnonIfFailed = attribute(context, model, ModelAttributes.USE_ANONYMOUS_IF_AUTH_FAILED).asBoolean();
         anon.set(FieldName.ANONYMOUS_USERNAME, anonUsername);
         anon.set(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS, useAnonIfFailed);
-        if (model.hasDefined(ModelKeys.ANONYMOUS_ROLES)) {
-            for (ModelNode roleNode : model.get(ModelKeys.ANONYMOUS_ROLES).asList()) {
-                anon.getOrCreateArray(FieldName.ANONYMOUS_ROLES).addString(roleNode.asString());
+        List<ModelNode> modelNodes = model.hasDefined(ModelKeys.ANONYMOUS_ROLES) ?
+                                     model.get(ModelKeys.ANONYMOUS_ROLES).asList():
+                                     ModelAttributes.ANONYMOUS_ROLES.getDefaultValue().asList();
+        for (ModelNode roleNode : modelNodes) {
+            EditableArray anonymousRolesArray = anon.getOrCreateArray(FieldName.ANONYMOUS_ROLES);
+            String roleName = roleNode.asString();
+            if (!StringUtil.isBlank(roleName)) {
+                anonymousRolesArray.addString(roleName);
             }
         }
 
