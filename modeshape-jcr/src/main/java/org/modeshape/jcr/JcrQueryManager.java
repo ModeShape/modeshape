@@ -72,7 +72,7 @@ import org.modeshape.jcr.value.ValueFactories;
 @Immutable
 class JcrQueryManager implements QueryManager {
 
-    private static final Logger LOGGER = Logger.getLogger(JcrQueryManager.class);
+    protected static final Logger LOGGER = Logger.getLogger(JcrQueryManager.class);
 
     private final JcrSession session;
     private final JcrQueryContext context;
@@ -103,7 +103,7 @@ class JcrQueryManager implements QueryManager {
      * Creates a new JCR {@link Query} by specifying the query expression itself, the language in which the query is stated, the
      * {@link QueryCommand} representation and, optionally, the node from which the query was loaded. The language must be a
      * string from among those returned by {@code QueryManager#getSupportedQueryLanguages()}.
-     *
+     * 
      * @param expression the original query expression as supplied by the client; may not be null
      * @param language the language in which the expression is represented; may not be null
      * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
@@ -153,7 +153,7 @@ class JcrQueryManager implements QueryManager {
      * Creates a new JCR {@link Query} by specifying the query expression itself, the language in which the query is stated, the
      * {@link QueryCommand} representation. This method is more efficient than {@link #createQuery(String, String, Path)} if the
      * QueryCommand is created directly.
-     *
+     * 
      * @param command the query command; may not be null
      * @return query the JCR query object; never null
      * @throws InvalidQueryException if expression is invalid or language is unsupported
@@ -295,7 +295,7 @@ class JcrQueryManager implements QueryManager {
             Path path = getPath(node);
             try {
                 session.checkPermission(path, ModeShapePermissions.READ);
-                return session.node(node, (AbstractJcrNode.Type) null);
+                return session.node(node, (AbstractJcrNode.Type)null);
             } catch (AccessDeniedException ade) {
                 LOGGER.debug("READ access denied on '{0}'", path);
                 return null;

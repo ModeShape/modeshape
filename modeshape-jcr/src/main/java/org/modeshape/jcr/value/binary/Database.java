@@ -35,8 +35,8 @@ import org.modeshape.jcr.value.BinaryKey;
  * Helper class for manipulation with database.
  * <p>
  * This class looks for database SQL statements in properties files named "<code>binary_store_{type}_database.properties</code>"
- * located within the "org/modeshape/jcr/database" area of the classpath, where "<code>{type}</code>" is {@link #determineType(java.sql.DatabaseMetaData)
- * determined} from the connection, and matches one of the following:
+ * located within the "org/modeshape/jcr/database" area of the classpath, where "<code>{type}</code>" is
+ * {@link #determineType(java.sql.DatabaseMetaData) determined} from the connection, and matches one of the following:
  * <ul>
  * <li><code>mysql</code></li>
  * <li><code>postgres</code></li>
@@ -126,7 +126,7 @@ public class Database {
 
     /**
      * Creates new instance of the database.
-     *
+     * 
      * @param connection a {@link java.sql.Connection} instance; may not be null
      * @throws java.io.IOException if the statements cannot be processed
      * @throws java.sql.SQLException if the db initialization sequence fails
@@ -137,7 +137,7 @@ public class Database {
 
     /**
      * Creates new instance of the database.
-     *
+     * 
      * @param connection a {@link java.sql.Connection} instance; may not be null
      * @param type the type of database; may be null if the type is to be determined
      * @param prefix the prefix for the table name; may be null or blank
@@ -145,8 +145,8 @@ public class Database {
      * @throws java.sql.SQLException if the db initialization sequence fails
      */
     protected Database( Connection connection,
-                     Type type,
-                     String prefix ) throws IOException, SQLException {
+                        Type type,
+                        String prefix ) throws IOException, SQLException {
         assert connection != null;
         DatabaseMetaData metaData = connection.getMetaData();
         this.databaseType = type != null ? type : determineType(metaData);
@@ -193,7 +193,7 @@ public class Database {
     }
 
     private void initializeStorage( Connection connection ) throws SQLException {
-        //First, prepare a statement to see if the table exists ...
+        // First, prepare a statement to see if the table exists ...
         boolean createTable = true;
         PreparedStatement exists = null;
         try {
@@ -203,7 +203,7 @@ public class Database {
         } catch (SQLException e) {
             // proceed to create the table ...
         } finally {
-           tryToClose(exists);
+            tryToClose(exists);
         }
 
         if (createTable) {
@@ -218,7 +218,7 @@ public class Database {
                 String msg = JcrI18n.errorCreatingDatabaseTable.text(tableName, databaseType);
                 throw new RuntimeException(msg, e);
             } finally {
-               tryToClose(create);
+                tryToClose(create);
             }
         }
     }
@@ -227,7 +227,8 @@ public class Database {
         return tableName;
     }
 
-    protected PreparedStatement prepareStatement( String statementKey, Connection connection ) throws SQLException {
+    protected PreparedStatement prepareStatement( String statementKey,
+                                                  Connection connection ) throws SQLException {
         String statementString = statements.getProperty(statementKey);
         statementString = StringUtil.createString(statementString, tableName);
         LOGGER.trace("Preparing statement: {0}", statementString);
@@ -283,19 +284,20 @@ public class Database {
             execute(addContentSql);
         } finally {
             try {
-                //it's not guaranteed that the driver will close the stream, so we mush always close it to prevent read-locks
+                // it's not guaranteed that the driver will close the stream, so we mush always close it to prevent read-locks
                 stream.close();
             } catch (IOException e) {
-                //ignore
+                // ignore
             }
             tryToClose(addContentSql);
         }
     }
 
-    protected boolean contentExists(BinaryKey key, boolean inUse, Connection connection) throws SQLException {
-        PreparedStatement readContentStatement = inUse ?
-                                prepareStatement(USED_CONTENT_STMT_KEY, connection) :
-                                prepareStatement(UNUSED_CONTENT_STMT_KEY, connection);
+    protected boolean contentExists( BinaryKey key,
+                                     boolean inUse,
+                                     Connection connection ) throws SQLException {
+        PreparedStatement readContentStatement = inUse ? prepareStatement(USED_CONTENT_STMT_KEY, connection) : prepareStatement(UNUSED_CONTENT_STMT_KEY,
+                                                                                                                                connection);
         try {
             readContentStatement.setString(1, key.toString());
             ResultSet rs = executeQuery(readContentStatement);
@@ -304,21 +306,22 @@ public class Database {
             LOGGER.debug("Cannot determine if content exists under key '{0}'", key.toString());
             return false;
         } finally {
-            //always closes the result set
+            // always closes the result set
             tryToClose(readContentStatement);
         }
     }
 
     /**
      * Attempts to return the content stream for a given binary value.
+     * 
      * @param key a {@link org.modeshape.jcr.value.BinaryKey} the key of the binary value, may not be null
      * @param connection a {@link java.sql.Connection} instance, may not be null
-     * @return either a stream that wraps the input stream of the binary value and closes the connection and the statement
-     * when it terminates or {@code null}, meaning that the binary was not found.
-     *
+     * @return either a stream that wraps the input stream of the binary value and closes the connection and the statement when it
+     *         terminates or {@code null}, meaning that the binary was not found.
      * @throws SQLException if anything unexpected fails
      */
-    protected InputStream readContent(BinaryKey key, Connection connection) throws SQLException {
+    protected InputStream readContent( BinaryKey key,
+                                       Connection connection ) throws SQLException {
         PreparedStatement readContentStatement = prepareStatement(USED_CONTENT_STMT_KEY, connection);
         try {
             readContentStatement.setString(1, key.toString());
@@ -327,9 +330,8 @@ public class Database {
                 tryToClose(readContentStatement);
                 tryToClose(connection);
                 return null;
-            } else {
-                return new DatabaseBinaryStream(connection, readContentStatement, rs.getBinaryStream(1));
             }
+            return new DatabaseBinaryStream(connection, readContentStatement, rs.getBinaryStream(1));
         } catch (SQLException e) {
             tryToClose(readContentStatement);
             tryToClose(connection);
@@ -341,7 +343,8 @@ public class Database {
         }
     }
 
-    protected void markUnused( Iterable<BinaryKey> keys, Connection connection ) throws SQLException {
+    protected void markUnused( Iterable<BinaryKey> keys,
+                               Connection connection ) throws SQLException {
         PreparedStatement markUnusedSql = prepareStatement(MARK_UNUSED_STMT_KEY, connection);
         try {
             Timestamp now = new Timestamp(System.currentTimeMillis());
@@ -355,7 +358,8 @@ public class Database {
         }
     }
 
-    protected void restoreContent( BinaryKey key, Connection connection ) throws SQLException {
+    protected void restoreContent( BinaryKey key,
+                                   Connection connection ) throws SQLException {
         PreparedStatement markUsedSql = prepareStatement(MARK_USED_STMT_KEY, connection);
         try {
             markUsedSql.setString(1, key.toString());
@@ -365,7 +369,8 @@ public class Database {
         }
     }
 
-    protected void removeExpiredContent( long deadline, Connection connection ) throws SQLException {
+    protected void removeExpiredContent( long deadline,
+                                         Connection connection ) throws SQLException {
         PreparedStatement removedExpiredSql = prepareStatement(REMOVE_EXPIRED_STMT_KEY, connection);
         try {
             removedExpiredSql.setTimestamp(1, new java.sql.Timestamp(deadline));
@@ -375,25 +380,25 @@ public class Database {
         }
     }
 
-    protected String getMimeType( BinaryKey key, Connection connection ) throws SQLException {
+    protected String getMimeType( BinaryKey key,
+                                  Connection connection ) throws SQLException {
         PreparedStatement getMimeType = prepareStatement(GET_MIMETYPE_STMT_KEY, connection);
         try {
             getMimeType.setString(1, key.toString());
             ResultSet rs = executeQuery(getMimeType);
             if (rs.next()) {
                 return rs.getString(1);
-            } else {
-                return null;
             }
+            return null;
         } finally {
-            //will also close the result set
+            // will also close the result set
             tryToClose(getMimeType);
         }
     }
 
     protected void setMimeType( BinaryKey key,
                                 String mimeType,
-                                Connection connection) throws SQLException {
+                                Connection connection ) throws SQLException {
         PreparedStatement setMimeTypeSQL = prepareStatement(SET_MIMETYPE_STMT_KEY, connection);
         try {
             setMimeTypeSQL.setString(1, mimeType);
@@ -404,18 +409,18 @@ public class Database {
         }
     }
 
-    protected String getExtractedText( BinaryKey key, Connection connection ) throws SQLException {
+    protected String getExtractedText( BinaryKey key,
+                                       Connection connection ) throws SQLException {
         PreparedStatement getExtractedTextSql = prepareStatement(GET_EXTRACTED_TEXT_STMT_KEY, connection);
         try {
             getExtractedTextSql.setString(1, key.toString());
             ResultSet rs = executeQuery(getExtractedTextSql);
             if (rs.next()) {
                 return rs.getString(1);
-            } else {
-                return null;
             }
+            return null;
         } finally {
-            //will also close the result set
+            // will also close the result set
             tryToClose(getExtractedTextSql);
         }
     }
@@ -468,7 +473,9 @@ public class Database {
         private final PreparedStatement statement;
         private final InputStream jdbcBinaryStream;
 
-        protected DatabaseBinaryStream( Connection connection, PreparedStatement statement, InputStream jdbcBinaryStream ) {
+        protected DatabaseBinaryStream( Connection connection,
+                                        PreparedStatement statement,
+                                        InputStream jdbcBinaryStream ) {
             this.connection = connection;
             this.statement = statement;
             this.jdbcBinaryStream = jdbcBinaryStream;
@@ -485,7 +492,9 @@ public class Database {
         }
 
         @Override
-        public int read( byte[] b, int off, int len ) throws IOException {
+        public int read( byte[] b,
+                         int off,
+                         int len ) throws IOException {
             return jdbcBinaryStream.read(b, off, len);
         }
 
@@ -500,7 +509,7 @@ public class Database {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             tryToClose(statement);
             tryToClose(connection);
         }
@@ -521,7 +530,7 @@ public class Database {
         }
     }
 
-    protected static void tryToClose(PreparedStatement statement) {
+    protected static void tryToClose( PreparedStatement statement ) {
         if (statement != null) {
             try {
                 statement.close();
@@ -531,7 +540,7 @@ public class Database {
         }
     }
 
-    protected static void tryToClose(Connection connection) {
+    protected static void tryToClose( Connection connection ) {
         if (connection != null) {
             try {
                 connection.close();

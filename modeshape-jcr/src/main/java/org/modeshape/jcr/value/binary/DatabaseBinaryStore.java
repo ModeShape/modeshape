@@ -74,8 +74,8 @@ import org.modeshape.jcr.value.BinaryValue;
  * be sure to place the file on the classpath before the ModeShape JARs so that your file will be discovered first.
  * </p>
  * <p>
- * The JDBC driver used needs to be at least JDBC 1.4 (JDK 6) compliant,
- * because {@link PreparedStatement#setBinaryStream(int parameterIndex, java.io.InputStream x)} is being used.
+ * The JDBC driver used needs to be at least JDBC 1.4 (JDK 6) compliant, because
+ * {@link PreparedStatement#setBinaryStream(int parameterIndex, java.io.InputStream x)} is being used.
  * </p>
  */
 @ThreadSafe
@@ -147,14 +147,21 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             lookupDriver();
         }
 
-        Connection connection = newConnection();
-        try {
-            this.database = new Database(connection);
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        } finally {
-            Database.tryToClose(connection);
+        database();
+    }
+
+    protected Database database() {
+        if (this.database == null) {
+            Connection connection = newConnection();
+            try {
+                this.database = new Database(connection);
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            } finally {
+                Database.tryToClose(connection);
+            }
         }
+        return database;
     }
 
     @Override
@@ -169,16 +176,16 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                     BinaryKey key = new BinaryKey(temp.getKey().toString());
 
                     // check for duplicate content
-                    if (database.contentExists(key, ALIVE, connection)) {
+                    if (database().contentExists(key, ALIVE, connection)) {
                         return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
                     }
 
                     // check unused content
-                    if (database.contentExists(key, UNUSED, connection)) {
-                        database.restoreContent(key, connection);
+                    if (database().contentExists(key, UNUSED, connection)) {
+                        database().restoreContent(key, connection);
                     } else {
                         // store the content
-                        database.insertContent(key, temp.getStream(), temp.getSize(), connection);
+                        database().insertContent(key, temp.getStream(), temp.getSize(), connection);
                     }
                     return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
                 }
@@ -197,7 +204,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             if (inputStream == null) {
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
             }
-            //the connection & statement will be left open until the stream is closed !
+            // the connection & statement will be left open until the stream is closed !
             return inputStream;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -209,7 +216,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         dbCall(new DBCallable<Void>() {
             @Override
             public Void execute( Connection connection ) throws Exception {
-                database.markUnused(keys, connection);
+                database().markUnused(keys, connection);
                 return null;
             }
         });
@@ -222,7 +229,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             @Override
             public Void execute( Connection connection ) throws Exception {
                 long deadline = System.currentTimeMillis() - unit.toMillis(minimumAge);
-                database.removeExpiredContent(deadline, connection);
+                database().removeExpiredContent(deadline, connection);
                 return null;
             }
         });
@@ -234,10 +241,10 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             @Override
             public String execute( Connection connection ) throws Exception {
                 BinaryKey key = source.getKey();
-                if (!database.contentExists(key, true, connection)) {
-                    throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
+                if (!database().contentExists(key, true, connection)) {
+                    throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database().getTableName()));
                 }
-                return database.getMimeType(key, connection);
+                return database().getMimeType(key, connection);
             }
         });
     }
@@ -248,7 +255,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         dbCall(new DBCallable<Void>() {
             @Override
             public Void execute( Connection connection ) throws Exception {
-                database.setMimeType(source.getKey(), mimeType, connection);
+                database().setMimeType(source.getKey(), mimeType, connection);
                 return null;
             }
         });
@@ -260,10 +267,10 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             @Override
             public String execute( Connection connection ) throws Exception {
                 BinaryKey key = source.getKey();
-                if (!database.contentExists(key, true, connection)) {
-                    throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
+                if (!database().contentExists(key, true, connection)) {
+                    throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database().getTableName()));
                 }
-                return database.getExtractedText(key, connection);
+                return database().getExtractedText(key, connection);
             }
         });
     }
@@ -274,7 +281,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         dbCall(new DBCallable<Void>() {
             @Override
             public Void execute( Connection connection ) throws Exception {
-                database.setExtractedText(source.getKey(), extractedText, connection);
+                database().setExtractedText(source.getKey(), extractedText, connection);
                 return null;
             }
         });
@@ -285,7 +292,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         return dbCall(new DBCallable<Iterable<BinaryKey>>() {
             @Override
             public Iterable<BinaryKey> execute( Connection connection ) throws Exception {
-                return database.getBinaryKeys(connection);
+                return database().getBinaryKeys(connection);
             }
         });
     }
@@ -295,10 +302,9 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         super.shutdown();
     }
 
-    private Connection newConnection()  {
+    private Connection newConnection() {
         try {
-            return dataSource != null ? dataSource.getConnection() : DriverManager.getConnection(connectionURL,
-                                                                                                 username,
+            return dataSource != null ? dataSource.getConnection() : DriverManager.getConnection(connectionURL, username,
                                                                                                  password);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -314,7 +320,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         }
     }
 
-    private void lookupDriver()  {
+    private void lookupDriver() {
         try {
             Class.forName(driverClass);
         } catch (ClassNotFoundException e) {
@@ -323,19 +329,19 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     }
 
     private interface DBCallable<T> {
-        public T execute(Connection connection) throws Exception;
+        public T execute( Connection connection ) throws Exception;
     }
 
     private <T> T dbCall( DBCallable<T> callable ) throws BinaryStoreException {
         Connection connection = newConnection();
         try {
             return callable.execute(connection);
-        } catch(BinaryStoreException bse) {
+        } catch (BinaryStoreException bse) {
             throw bse;
         } catch (Exception e) {
             throw new BinaryStoreException(e);
         } finally {
-           Database.tryToClose(connection);
+            Database.tryToClose(connection);
         }
     }
 }

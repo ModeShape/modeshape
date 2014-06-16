@@ -134,7 +134,7 @@ public abstract class ClusteringService {
 
     /**
      * Performs a shutdown/startup sequence.
-     *
+     * 
      * @throws java.lang.Exception if anything unexpected fails
      */
     public void restart() throws Exception {
@@ -154,7 +154,7 @@ public abstract class ClusteringService {
 
     /**
      * Shuts down and clears resources held by this service.
-     *
+     * 
      * @return {@code true} if the service has been shutdown or {@code false} if it had already been shut down.
      */
     public synchronized boolean shutdown() {
@@ -281,13 +281,13 @@ public abstract class ClusteringService {
 
     /**
      * Starts a standalone clustering service which in turn will start & connect its own JGroup channel.
-     *
+     * 
      * @param clusterName the name of the cluster to which the JGroups channel should connect; may not be null
      * @param jgroupsConfig either the path or the XML content of a JGroups configuration file; may not be null
-     *
      * @return a {@link org.modeshape.jcr.clustering.ClusteringService} instance, never null
      */
-    public static ClusteringService startStandalone(String clusterName, String jgroupsConfig) {
+    public static ClusteringService startStandalone( String clusterName,
+                                                     String jgroupsConfig ) {
         ClusteringService clusteringService = new StandaloneClusteringService(clusterName, jgroupsConfig);
         clusteringService.init();
         return clusteringService;
@@ -295,14 +295,14 @@ public abstract class ClusteringService {
 
     /**
      * Starts a new clustering service by forking a channel of an existing JGroups channel.
-     *
+     * 
      * @param forkStackId a {@link String} representing the JGroups stack ID of the fork stack. Services which are supposed to
-     * communicate with each other should use the same stack id; may not be null
+     *        communicate with each other should use the same stack id; may not be null
      * @param mainChannel a {@link org.jgroups.Channel} instance; may not be null.
-     *
      * @return a {@link org.modeshape.jcr.clustering.ClusteringService} instance, never null
      */
-    public static ClusteringService startForked(String forkStackId, Channel mainChannel) {
+    public static ClusteringService startForked( String forkStackId,
+                                                 Channel mainChannel ) {
         ClusteringService clusteringService = new ForkedClusteringService(forkStackId, mainChannel);
         clusteringService.init();
         return clusteringService;
@@ -333,6 +333,7 @@ public abstract class ClusteringService {
 
     protected abstract void init();
 
+    @SuppressWarnings( "synthetic-access" )
     protected final class Receiver extends ReceiverAdapter {
 
         @Override
@@ -385,6 +386,7 @@ public abstract class ClusteringService {
         }
     }
 
+    @SuppressWarnings( "synthetic-access" )
     protected class Listener implements ChannelListener {
         @Override
         public void channelClosed( Channel channel ) {
@@ -437,7 +439,8 @@ public abstract class ClusteringService {
     private static class StandaloneClusteringService extends ClusteringService {
         private final String jgroupsConfig;
 
-        private StandaloneClusteringService( String clusterName, String jgroupsConfig) {
+        protected StandaloneClusteringService( String clusterName,
+                                               String jgroupsConfig ) {
             super(clusterName);
             this.jgroupsConfig = jgroupsConfig;
         }
@@ -450,9 +453,9 @@ public abstract class ClusteringService {
                 ProtocolStack protocolStack = channel.getProtocolStack();
                 Protocol centralLock = protocolStack.findProtocol(CENTRAL_LOCK.class);
                 if (centralLock == null) {
-                    //add the locking protocol
+                    // add the locking protocol
                     CENTRAL_LOCK lockingProtocol = new CENTRAL_LOCK();
-                    //we have to call init because the channel has already been created
+                    // we have to call init because the channel has already been created
                     lockingProtocol.init();
                     protocolStack.addProtocol(lockingProtocol);
                 }
@@ -512,7 +515,8 @@ public abstract class ClusteringService {
         private final static Map<String, List<String>> FORK_STACKS_BY_CHANNEL_NAME = new HashMap<>();
         private final Channel mainChannel;
 
-        private ForkedClusteringService( String forkStackId, Channel mainChannel ) {
+        protected ForkedClusteringService( String forkStackId,
+                                           Channel mainChannel ) {
             super(forkStackId);
             this.mainChannel = mainChannel;
         }
@@ -530,7 +534,7 @@ public abstract class ClusteringService {
                 this.channel = new ForkChannel(mainChannel, forkStackId, FORK_CHANNEL_NAME, true, ProtocolStack.ABOVE,
                                                topProtocol.getClass(), new CENTRAL_LOCK());
 
-                //always add central lock to the stack
+                // always add central lock to the stack
                 this.lockService = new LockService(this.channel);
 
                 // Add a listener through which we'll know what's going on within the cluster ...
@@ -577,9 +581,8 @@ public abstract class ClusteringService {
                     }
                 }
                 return true;
-            } else {
-                return false;
             }
+            return false;
         }
     }
 }
