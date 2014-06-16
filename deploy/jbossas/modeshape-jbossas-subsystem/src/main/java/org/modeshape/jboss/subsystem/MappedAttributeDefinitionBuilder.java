@@ -129,7 +129,8 @@ public class MappedAttributeDefinitionBuilder extends SimpleAttributeDefinitionB
         return this;
     }
 
-    public MappedAttributeDefinitionBuilder setAccessConstraints(AccessConstraintDefinition...constraints) {
+    @Override
+    public MappedAttributeDefinitionBuilder setAccessConstraints( AccessConstraintDefinition... constraints ) {
         super.setAccessConstraints(constraints);
         return this;
     }

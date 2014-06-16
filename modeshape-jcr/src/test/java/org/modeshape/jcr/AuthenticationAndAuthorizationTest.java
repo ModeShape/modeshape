@@ -446,7 +446,6 @@ public class AuthenticationAndAuthorizationTest {
 
     public static abstract class TestSecurityProvider implements AuthenticationProvider, SecurityContext {
         protected final Map<String, String> actionsByNodePath = new HashMap<>();
-        private String name;
         protected StringFactory stringFactory;
 
         @Override
