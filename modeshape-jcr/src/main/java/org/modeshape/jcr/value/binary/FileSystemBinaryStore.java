@@ -111,8 +111,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
             // Write the contents to a temporary file, and while we do grab the SHA-1 hash and the length ...
             HashingInputStream hashingStream = SecureHash.createHashingStream(Algorithm.SHA_1, stream);
             tmpFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
-            IoUtil.write(hashingStream,
-                         new BufferedOutputStream(new FileOutputStream(tmpFile)),
+            IoUtil.write(hashingStream, new BufferedOutputStream(new FileOutputStream(tmpFile)),
                          AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
             hashingStream.close();
             byte[] sha1 = hashingStream.getHash();
@@ -142,9 +141,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 try {
                     tmpFile.delete();
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass()).warn(t,
-                                                      JcrI18n.unableToDeleteTemporaryFile,
-                                                      tmpFile.getAbsolutePath(),
+                    Logger.getLogger(getClass()).warn(t, JcrI18n.unableToDeleteTemporaryFile, tmpFile.getAbsolutePath(),
                                                       t.getMessage());
                 }
             }
@@ -167,7 +164,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
             }
 
             // Otherwise, we need to persist the data, which we'll do by moving our temporary file ...
-            moveFileExclusively(tmpFile, persistedFile);
+            moveFileExclusively(tmpFile, persistedFile, key);
 
         } finally {
             lock.unlock();
@@ -175,11 +172,28 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         return new StoredBinaryValue(this, key, persistedFile.length());
     }
 
-    protected final void moveFileExclusively( File original,
-                                              File destination ) throws BinaryStoreException {
+    private void sleep( long millis ) {
         try {
-            // Make any missing directories ...
-            destination.getParentFile().mkdirs();
+            Thread.sleep(millis);
+        } catch (Exception e) {
+            // do nothing
+        }
+    }
+
+    protected final void moveFileExclusively( File original,
+                                              File destination,
+                                              BinaryKey key ) throws BinaryStoreException {
+        try {
+            // Make any missing directories, and try repeatedly (on Windows, this might fail the first few times) ...
+            for (int i = 0; i != 5; ++i) {
+                destination.getParentFile().mkdirs();
+                if (destination.getParentFile().exists()) break;
+                sleep(500L); // wait 500 seconds before trying again
+            }
+            if (!destination.getParentFile().exists()) {
+                String path = destination.getParentFile().getAbsolutePath();
+                throw new BinaryStoreException(JcrI18n.unableToCreateDirectoryForBinaryStore.text(path, key));
+            }
 
             // First, obtain an exclusive lock on the original file ...
             FileLocks.WrappedLock fileLock = FileLocks.get().writeLock(original);
@@ -258,7 +272,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, directory.getPath()));
             }
             // Otherwise, we found it in the trash, so move it from the trash into the regular storage ...
-            moveFileExclusively(trashedFile, persistedFile);
+            moveFileExclusively(trashedFile, persistedFile, key);
 
             // Clean up any empty directories in the trash ...
             pruneEmptyDirectories(trash, trashedFile);
@@ -300,7 +314,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         File trashed = findFile(trash, key, true);
 
         // Move the file into the trash ...
-        moveFileExclusively(persisted, trashed);
+        moveFileExclusively(persisted, trashed, key);
 
         // And change the timestamp of the trashed file ...
         touch(trashed);
@@ -515,11 +529,11 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                                         BinaryKey key = new BinaryKey(file.getName());
                                         keys.add(key);
 
-                                        //exclude mime types (which will be seen as binaries)
+                                        // exclude mime types (which will be seen as binaries)
                                         BinaryKey mimeTypeKey = createKeyFromSourceWithSuffix(key, MIME_TYPE_SUFFIX);
                                         keysToExclude.add(mimeTypeKey);
 
-                                        //exclude extracted text
+                                        // exclude extracted text
                                         BinaryKey textKey = createKeyFromSourceWithSuffix(key, EXTRACTED_TEXT_SUFFIX);
                                         keysToExclude.add(textKey);
                                     }
