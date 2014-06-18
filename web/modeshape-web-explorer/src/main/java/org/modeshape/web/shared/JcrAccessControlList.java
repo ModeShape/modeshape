@@ -1,28 +1,21 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.web.shared;
 
+import com.smartgwt.client.util.SC;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,10 +29,19 @@ import com.smartgwt.client.widgets.grid.ListGridRecord;
  */
 public class JcrAccessControlList implements Serializable {
 
-    private static JcrPermission[] PERMISSIONS = new JcrPermission[] {JcrPermission.ALL, JcrPermission.LIFECYCLE_MANAGEMENT,
-        JcrPermission.LOCK_MANAGEMENT, JcrPermission.NODE_TYPE_MANAGEMENT, JcrPermission.RETENTION_MANAGEMENT,
-        JcrPermission.VERSION_MANAGEMENT, JcrPermission.READ_ACCESS_CONTROL, JcrPermission.MODIFY_ACCESS_CONTROL,
-        JcrPermission.READ, JcrPermission.WRITE, JcrPermission.ADD_CHILD_NODES, JcrPermission.MODIFY_PROPERTIES,
+    private static JcrPermission[] PERMISSIONS = new JcrPermission[] {
+        JcrPermission.ALL, 
+        JcrPermission.LIFECYCLE_MANAGEMENT,
+        JcrPermission.LOCK_MANAGEMENT, 
+        JcrPermission.NODE_TYPE_MANAGEMENT, 
+        JcrPermission.RETENTION_MANAGEMENT,
+        JcrPermission.VERSION_MANAGEMENT, 
+        JcrPermission.READ_ACCESS_CONTROL, 
+        JcrPermission.MODIFY_ACCESS_CONTROL,
+        JcrPermission.READ, 
+        JcrPermission.WRITE, 
+        JcrPermission.ADD_CHILD_NODES, 
+        JcrPermission.MODIFY_PROPERTIES,
         JcrPermission.REMOVE_CHILD_NODES};
 
     private ArrayList<JcrPolicy> entries = new ArrayList();
@@ -91,6 +93,8 @@ public class JcrAccessControlList implements Serializable {
         if (policy != null) {
             entries.remove(policy);
             this.isModified = true;
+        } else {
+            SC.say("principal not found");
         }
     }
 
@@ -160,5 +164,14 @@ public class JcrAccessControlList implements Serializable {
 
     public void cleanModificationFlag() {
         this.isModified = false;
+    }
+    
+    public String[] principals() {
+        String[] res = new String[entries.size()];
+        int i = 0;
+        for (JcrPolicy p : entries) {
+            res[i++] = p.getPrincipal();
+        }
+        return res;
     }
 }

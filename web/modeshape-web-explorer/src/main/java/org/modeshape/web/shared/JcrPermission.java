@@ -1,29 +1,20 @@
 /*
  * ModeShape (http://www.modeshape.org)
- * See the COPYRIGHT.txt file distributed with this work for information
- * regarding copyright ownership.  Some portions may be licensed
- * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
- * individual contributors.
  *
- * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
- * is licensed to you under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ModeShape is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.modeshape.web.shared;
 
-import com.smartgwt.client.util.SC;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +29,8 @@ public class JcrPermission implements Serializable {
     
     private String name;
     private String displayName;
+    private String jcrName;
+    
     private ArrayList<JcrPermission> aggregates = new ArrayList();
     
     public static final JcrPermission LIFECYCLE_MANAGEMENT = new JcrPermission(Privilege.JCR_LIFECYCLE_MANAGEMENT, "Life cycle management");
@@ -92,21 +85,35 @@ public class JcrPermission implements Serializable {
         }
         return null;
     }
+
+    public static JcrPermission forName(String name) {
+        for (int i = 0; i < PERMISSIONS.length; i++) {
+            if (PERMISSIONS[i].getName().equalsIgnoreCase(name)) {
+                return PERMISSIONS[i];
+            }
+        }
+        return null;
+    }
     
     public JcrPermission() {
     }
     
-    public JcrPermission(String name) {
-        this.name = name;
+    protected JcrPermission(String name) {
+        if (name.startsWith("{")) {
+            this.name = "jcr:" + name.substring(name.indexOf("}") + 1);
+            this.jcrName = name;
+        } else {
+            this.name = name;
+        }
     }
     
-    public JcrPermission(String name, String displayName) {
-        this.name = name;
+    protected JcrPermission(String name, String displayName) {
+        this(name);
         this.displayName = displayName;
     }
     
-    public JcrPermission(String name, String displayName, JcrPermission... aggregates) {
-        this.name = name;
+    protected JcrPermission(String name, String displayName, JcrPermission... aggregates) {
+        this(name);
         this.displayName = displayName;
         this.aggregates.addAll(Arrays.asList(aggregates));
     }
@@ -127,8 +134,12 @@ public class JcrPermission implements Serializable {
         this.displayName = displayName;
     }
     
+    public String getJcrName() {
+        return jcrName;
+    }
+    
     public boolean matches(JcrPermission permission) {
-        if (this.name.equals(permission.name)) {
+        if (this.name.equalsIgnoreCase(permission.name)) {
             return true;
         }
         
