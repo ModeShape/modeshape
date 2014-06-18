@@ -18,17 +18,16 @@ package org.modeshape.web.shared;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
+ *
  * @author kulikov
  */
 public class RemoteException extends Exception implements IsSerializable {
-
-    private static final long serialVersionUID = 1L;
 
     public RemoteException() {
         super();
     }
 
-    public RemoteException( String e ) {
+    public RemoteException(String e) {
         super(e);
     }
 }

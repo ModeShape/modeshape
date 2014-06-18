@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.client;
 
+import com.smartgwt.client.widgets.Canvas;
 import com.smartgwt.client.widgets.Window;
 import com.smartgwt.client.widgets.events.CloseClickHandler;
 import com.smartgwt.client.widgets.events.CloseClientEvent;
@@ -39,6 +40,7 @@ public abstract class ModalDialog {
     //ok and cancel buttons
     private SubmitItem confirmButton = new SubmitItem("OK");
     private SubmitItem cancelButton = new SubmitItem("Cancel");
+    private VStack vStack = new VStack();
     
     /**
      * Creates new Dialog.
@@ -51,7 +53,6 @@ public abstract class ModalDialog {
         form.setNumCols(2);
         form.setPadding(25);
         
-        VStack vStack = new VStack();
         vStack.setTop(10);
         vStack.addMember(form);
         
@@ -96,6 +97,10 @@ public abstract class ModalDialog {
         });
         
     }
+
+    protected void addMember(Canvas canvas) {
+        vStack.addMember(canvas);
+    }
     
     /**
      * Adds controls to this dialog.
@@ -137,4 +142,20 @@ public abstract class ModalDialog {
      * @param event 
      */
     public abstract void onConfirm(ClickEvent event);
+    
+    public void setAction(String action) {
+        form.setAction(action);
+    }
+    
+    public void submitForm() {
+        form.submitForm();
+    }
+    
+    protected DynamicForm form() {
+        return form;
+    }
+    
+    protected Window window() {
+        return window;
+    }
 }

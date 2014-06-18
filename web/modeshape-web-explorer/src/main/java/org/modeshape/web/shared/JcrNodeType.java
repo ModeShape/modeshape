@@ -23,12 +23,11 @@ import java.io.Serializable;
  * @author kulikov
  */
 public class JcrNodeType implements Serializable {
-    private static final long serialVersionUID = 1L;
     private String name;
     private boolean isPrimary;
     private boolean isMixin;
     private boolean isAbstract;
-
+    
     public JcrNodeType() {
     }
 
@@ -48,20 +47,21 @@ public class JcrNodeType implements Serializable {
         return isAbstract;
     }
 
-    public void setName( String name ) {
+    public void setName(String name) {
         this.name = name;
     }
 
-    public void setPrimary( boolean isPrimary ) {
+    public void setPrimary(boolean isPrimary) {
         this.isPrimary = isPrimary;
     }
 
-    public void setMixin( boolean isMixin ) {
+    public void setMixin(boolean isMixin) {
         this.isMixin = isMixin;
     }
 
-    public void setAbstract( boolean isAbstract ) {
+    public void setAbstract(boolean isAbstract) {
         this.isAbstract = isAbstract;
     }
-
+    
+    
 }
