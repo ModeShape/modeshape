@@ -10,7 +10,7 @@
         <transport clusterName="modeshape-cluster">
           <!-- Use the property below to point to a specific JGroups configuration file on your classpath -->
           <properties>
-             <property name="configurationFile" value="jgroups-tcp.xml" />
+             <property name="configurationFile" value="config/jgroups-test-config.xml" />
           </properties>
         </transport>
     </global>
