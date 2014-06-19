@@ -24,7 +24,7 @@
         "minimum-binary-size" : 4096,
         "predefined-workspace-names" : null,
         "rebuild-indexes-upon-startup" : "IF_MISSING",
-        "security-domain" : "modeshape-security",
+        "security-domain" : "other",
         "sequencer" : null,
         "system-content-indexing-mode" : "DISABLED",
         "text-extractor" : null,

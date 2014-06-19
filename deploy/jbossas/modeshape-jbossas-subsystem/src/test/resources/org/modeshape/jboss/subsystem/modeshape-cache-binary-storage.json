@@ -32,7 +32,7 @@
             "predefinedWorkspace3"
         ],
         "rebuild-indexes-upon-startup" : "IF_MISSING",
-        "security-domain" : "modeshape-security",
+        "security-domain" : "other",
         "system-content-indexing-mode" : "DISABLED",
         "text-extractor" : null,
         "use-anonymous-upon-failed-authentication" : false,

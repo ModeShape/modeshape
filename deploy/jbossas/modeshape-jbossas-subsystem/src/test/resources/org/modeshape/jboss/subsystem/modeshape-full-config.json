@@ -31,7 +31,7 @@
             "predefinedWorkspace3"
         ],
         "rebuild-indexes-upon-startup" : "IF_MISSING",
-        "security-domain" : "modeshape-security",
+        "security-domain" : "other",
         "system-content-indexing-mode" : "ASYNC",
         "use-anonymous-upon-failed-authentication" : false,
         "index-storage" : {"INDEXES" : {
