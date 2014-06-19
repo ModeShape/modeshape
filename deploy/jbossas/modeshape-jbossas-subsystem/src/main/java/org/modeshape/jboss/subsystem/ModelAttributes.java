@@ -790,7 +790,7 @@ public class ModelAttributes {
                                                                                                          ModelType.STRING).setXmlName(Attribute.SECURITY_DOMAIN.getLocalName())
                                                                                                                           .setAllowExpression(true)
                                                                                                                           .setAllowNull(true)
-                                                                                                                          .setDefaultValue(new ModelNode().set("modeshape-security"))
+                                                                                                                          .setDefaultValue(new ModelNode().set("other"))
                                                                                                                           .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                           .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN_REF)
                                                                                                                           .setFieldPathInRepositoryConfiguration(FieldName.SECURITY,

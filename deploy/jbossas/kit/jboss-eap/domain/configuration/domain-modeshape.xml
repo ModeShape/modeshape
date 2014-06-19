@@ -188,7 +188,6 @@
                 <!--The list of web applications that is packaged inside the kit and should be deployed when the subsystem starts up-->
                 <webapp name="modeshape-rest.war"/>
                 <webapp name="modeshape-webdav.war"/>
-		<webapp name="modeshape-explorer.war"/>
 
                 <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
                      and indexes are stored within the server's data directory. This is the simplest way to configure a repository
@@ -342,14 +341,6 @@
                         <authorization>
                             <policy-module code="Delegating" flag="required"/>
                         </authorization>
-                    </security-domain>
-                    <security-domain name="modeshape-security" cache-type="default">
-                        <authentication>
-                            <login-module code="UsersRoles" flag="required">
-                                <module-option name="usersProperties" value="${jboss.server.config.dir}/modeshape-users.properties"/>
-                                <module-option name="rolesProperties" value="${jboss.server.config.dir}/modeshape-roles.properties"/>
-                            </login-module>
-                        </authentication>
                     </security-domain>
                 </security-domains>
             </subsystem>
@@ -1196,14 +1187,6 @@
                         <authorization>
                             <policy-module code="Delegating" flag="required"/>
                         </authorization>
-                    </security-domain>
-                    <security-domain name="modeshape-security" cache-type="default">
-                        <authentication>
-                            <login-module code="UsersRoles" flag="required">
-                                <module-option name="usersProperties" value="${jboss.server.config.dir}/modeshape-users.properties"/>
-                                <module-option name="rolesProperties" value="${jboss.server.config.dir}/modeshape-roles.properties"/>
-                            </login-module>
-                        </authentication>
                     </security-domain>
                 </security-domains>
             </subsystem>

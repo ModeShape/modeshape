@@ -2,5 +2,5 @@
 <jboss-web>
     <!-- Servlets -->
     <security-domain>other</security-domain>
-    <context-root>modeshape-explorer </context-root>
+    <context-root>modeshape-explorer</context-root>
 </jboss-web>

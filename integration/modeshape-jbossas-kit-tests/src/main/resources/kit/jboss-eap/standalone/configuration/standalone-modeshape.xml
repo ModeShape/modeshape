@@ -379,10 +379,14 @@
             <security-domains>
                 <security-domain name="other" cache-type="default">
                     <authentication>
+                        <login-module code="UsersRoles" flag="required">
+                            <module-option name="usersProperties" value="${jboss.server.config.dir}/modeshape-users.properties"/>
+                            <module-option name="rolesProperties" value="${jboss.server.config.dir}/modeshape-roles.properties"/>
+                        </login-module>
                         <login-module code="Remoting" flag="optional">
                             <module-option name="password-stacking" value="useFirstPass"/>
                         </login-module>
-                        <login-module code="RealmDirect" flag="required">
+                        <login-module code="RealmDirect" flag="optional">
                             <module-option name="password-stacking" value="useFirstPass"/>
                         </login-module>
                     </authentication>

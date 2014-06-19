@@ -29,6 +29,22 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <!--Since we're using the WAR artifact packaged somewhere else, we need to overwrite the WEB-INF/ files-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <webResources>
+                        <resource>
+                            <filtering>true</filtering>
+                            <directory>src/main/webapp</directory>
+                            <includes>
+                                <include>**/*.*</include>
+                            </includes>
+                        </resource>
+                    </webResources>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
