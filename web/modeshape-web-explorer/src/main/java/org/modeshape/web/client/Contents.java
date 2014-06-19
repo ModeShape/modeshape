@@ -541,6 +541,7 @@ public class Contents extends View {
     private class PathLabel extends HLayout {
 
         private Label[] segments = new Label[50];
+        private Label[] separators = new Label[50];
         private String url;
 
         public PathLabel() {
@@ -566,7 +567,16 @@ public class Contents extends View {
                         select(label.getDataPath());
                     }
                 });
+                
+                separators[i] = new Label();
+                separators[i].setContents("/");
+                separators[i].setVisible(false);
+                separators[i].setAutoWidth();
+                separators[i].setStyleName("segment-separator");
+                separators[i].setMargin(3);
+                
                 addMember(segments[i]);
+                addMember(separators[i]);
             }
         }
 
@@ -574,6 +584,7 @@ public class Contents extends View {
             this.url = url;
             for (int i = 0; i < segments.length; i++) {
                 segments[i].setContents("");
+                separators[i].setVisible(false);
             }
 
             String[] tokens = url.split("/");
@@ -582,9 +593,9 @@ public class Contents extends View {
             }
 
             for (int i = 0; i < tokens.length; i++) {
-                String s = i >= 1 ? "/" + tokens[i] : tokens[i];
+//                String s = i >= 1 ? "/" + tokens[i] : tokens[i];
 
-                segments[i].setContents(s);
+                segments[i].setContents(tokens[i]);
 
                 String path = "";
                 for (int j = 0; j <= i; j++) {
@@ -594,6 +605,10 @@ public class Contents extends View {
                 segments[i].setTooltip(path);
                 segments[i].setDataPath(path);
                 segments[i].draw();
+                
+                if (i < tokens.length - 1) {
+                    separators[i].setVisible(true);
+                }
             }
         }
 

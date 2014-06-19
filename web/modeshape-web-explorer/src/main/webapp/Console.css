@@ -54,12 +54,17 @@ h1 {
 }
 
 .segment {
-    color: blue;
+    color: #4194e1;
     font-family:Arial, Helvetica, sans-serif;
-    font-size: 14px;
-    text-decoration:underline;
+    font-size: 18px;
     font-weight: bold;
-    cursor: pointer;    
+    cursor: pointer; 
+}
+
+.segment-separator {
+    color: #b3b3b3;
+    font-family:Arial, Helvetica, sans-serif;
+    font-size: 20px;
 }
 
 .viewport {
