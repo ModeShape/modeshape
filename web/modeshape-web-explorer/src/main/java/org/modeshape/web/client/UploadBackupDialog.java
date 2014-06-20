@@ -31,11 +31,9 @@ import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 public class UploadBackupDialog extends ModalDialog {
     final String TARGET = "uploadTarget";
     private FileItem name = new FileItem();
-    private Contents contents;
 
     public UploadBackupDialog(Contents contents) {
         super("Backup", 400, 200);
-        this.contents = contents;
 
         StaticTextItem description = new StaticTextItem("");
         description.setValue("Specify backup name");

@@ -24,8 +24,9 @@ import java.util.Collection;
  * @author kulikov
  */
 public class Policy implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String principal;
-    private ArrayList<JcrPermission> permissions = new ArrayList();
+    private ArrayList<JcrPermission> permissions = new ArrayList<JcrPermission>();
     
     public String getPrincipal() {
         return principal;

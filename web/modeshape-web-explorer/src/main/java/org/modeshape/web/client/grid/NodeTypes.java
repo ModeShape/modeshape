@@ -78,6 +78,7 @@ public class NodeTypes extends Grid<TypeRecord, JcrNodeType> {
         return null;
     }
 
+    @SuppressWarnings( "synthetic-access" )
     @Override
     protected void updateRecord(int pos, TypeRecord record, JcrNodeType value) {
         record.setValue(value);

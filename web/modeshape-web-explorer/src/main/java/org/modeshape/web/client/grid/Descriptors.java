@@ -69,6 +69,7 @@ public class Descriptors extends Grid<DescriptorRecord, Param> {
         return null;
     }
 
+    @SuppressWarnings( "synthetic-access" )
     @Override
     protected void updateRecord(int pos, DescriptorRecord record, Param value) {
         record.name.setContents(value.getName());

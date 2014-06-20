@@ -66,6 +66,7 @@ public class Console implements EntryPoint {
                 SC.say("Error" + caught.getMessage());
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public void onSuccess( String result ) {
                 //parse requested url to determine navigation
@@ -78,16 +79,6 @@ public class Console implements EntryPoint {
         });
     }
 
-    /**
-     * Test given URL.
-     * 
-     * @param url
-     * @return 
-     */
-    private boolean isInitial(JcrURL url) {
-        return url.getRepository() == null || url.getRepository().length() == 0;
-    }
-    
     /**
      * Checks user's credentials.
      */
@@ -107,9 +98,6 @@ public class Console implements EntryPoint {
     
     /**
      * Reconstructs URL and points browser to the requested node path.
-     * 
-     * @param repository
-     * @param workspace
      */
     public void init() {
         String path = jcrURL.getPath();
@@ -158,7 +146,7 @@ public class Console implements EntryPoint {
     }
 
     public void save() {
-        jcrService.save(contents.repository(), contents.workspace(), new AsyncCallback() {
+        jcrService.save(contents.repository(), contents.workspace(), new AsyncCallback<Object>() {
 
             @Override
             public void onFailure(Throwable caught) {
@@ -200,10 +188,6 @@ public class Console implements EntryPoint {
         repositoryNamePanel.hide();
     }
     
-    private String parent( String path ) {
-        return path == null ? null : path.substring(0, path.lastIndexOf('/'));
-    }
-
     public void updateRepository(String repository) {
         jcrURL.setRepository(repository);
         htmlHistory.newItem(jcrURL.toString(), false);
@@ -236,6 +220,7 @@ public class Console implements EntryPoint {
                 SC.say(caught.getMessage());
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public void onSuccess(JcrRepositoryDescriptor result) {
                 hideLoadingIcon();

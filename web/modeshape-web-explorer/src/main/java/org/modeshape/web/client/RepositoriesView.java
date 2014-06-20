@@ -69,6 +69,7 @@ public class RepositoriesView extends View {
                 SC.say(caught.getMessage());
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public void onSuccess(Collection<RepositoryName> result) {
                 try {
@@ -100,6 +101,7 @@ public class RepositoriesView extends View {
             name.setStyleName("repository-name");
             name.setIcon("icons/logo-1.png");
             name.addClickHandler(new ClickHandler() {
+                @SuppressWarnings( "synthetic-access" )
                 @Override
                 public void onClick(ClickEvent event) {
                     Label repo = (Label)event.getSource(); 

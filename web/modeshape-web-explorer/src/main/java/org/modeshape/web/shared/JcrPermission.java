@@ -26,12 +26,12 @@ import javax.jcr.security.Privilege;
  * @author kulikov
  */
 public class JcrPermission implements Serializable {
-    
+    private static final long serialVersionUID = 1L;
     private String name;
     private String displayName;
     private String jcrName;
     
-    private ArrayList<JcrPermission> aggregates = new ArrayList();
+    private ArrayList<JcrPermission> aggregates = new ArrayList<JcrPermission>();
     
     public static final JcrPermission LIFECYCLE_MANAGEMENT = new JcrPermission(Privilege.JCR_LIFECYCLE_MANAGEMENT, "Life cycle management");
     public static final JcrPermission LOCK_MANAGEMENT = new JcrPermission(Privilege.JCR_LOCK_MANAGEMENT, "Lock management");

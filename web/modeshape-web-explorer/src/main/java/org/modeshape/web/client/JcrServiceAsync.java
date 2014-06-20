@@ -40,7 +40,7 @@ public interface JcrServiceAsync {
 
     public void getUserName(AsyncCallback<String> cb);
     
-    public void login(String userName, String password, AsyncCallback cb);
+    public void login(String userName, String password, AsyncCallback<?> cb);
     
     public void node(String repository, String workspace, String path, AsyncCallback<JcrNode> result);
 
@@ -52,37 +52,37 @@ public interface JcrServiceAsync {
 
     public void supportedQueryLanguages(String repository, String worspace, AsyncCallback<String[]> result);
 
-    public void addNode(String repository, String workspace, String path, String name, String primaryType, AsyncCallback cb);
+    public void addNode(String repository, String workspace, String path, String name, String primaryType, AsyncCallback<?> cb);
 
-    public void removeNode(String repository, String workspace, String path, AsyncCallback cb);
+    public void removeNode(String repository, String workspace, String path, AsyncCallback<?> cb);
 
-    public void renameNode(String repository, String workspace, String path, String name, AsyncCallback cb);
+    public void renameNode(String repository, String workspace, String path, String name, AsyncCallback<?> cb);
     
-    public void addMixin(String repository, String workspace, String path, String mixin, AsyncCallback cb);
+    public void addMixin(String repository, String workspace, String path, String mixin, AsyncCallback<?> cb);
 
-    public void removeMixin(String repository, String workspace, String path, String mixin, AsyncCallback cb);
+    public void removeMixin(String repository, String workspace, String path, String mixin, AsyncCallback<?> cb);
 
-    public void setProperty(String repository, String workspace, String path, String name, String value, AsyncCallback cb);
+    public void setProperty(String repository, String workspace, String path, String name, String value, AsyncCallback<?> cb);
 
-    public void addAccessList(String repository, String workspace, String path, String principal, AsyncCallback cb);
+    public void addAccessList(String repository, String workspace, String path, String principal, AsyncCallback<?> cb);
 
-    public void updateAccessList(String repository, String workspace, String path, JcrAccessControlList acl, AsyncCallback cb);
+    public void updateAccessList(String repository, String workspace, String path, JcrAccessControlList acl, AsyncCallback<?> cb);
 
     public void updateAccessList(String repository, String workspace, String path, String principal,
-            JcrPermission permission, boolean enabled, AsyncCallback cb);
+            JcrPermission permission, boolean enabled, AsyncCallback<?> cb);
 
     public void getPrimaryTypes(String repository, String workspace, boolean allowAbstract, AsyncCallback<String[]> cb);
 
     public void getMixinTypes(String repository, String workspace, boolean allowAbstract, AsyncCallback<String[]> cb);
 
-    public void save(String repository, String workspace, AsyncCallback cb);
+    public void save(String repository, String workspace, AsyncCallback<?> cb);
     
-    public void backup(String repositoy, String workspace, String name, AsyncCallback cb);
-    public void restore(String repositoy, String workspace, String name, AsyncCallback cb);
+    public void backup(String repositoy, String workspace, String name, AsyncCallback<?> cb);
+    public void restore(String repositoy, String workspace, String name, AsyncCallback<?> cb);
     
     public void export(String repository, String workspace, String path, String location, 
-            boolean skipBinary, boolean noRecurse, AsyncCallback cb) ;
+            boolean skipBinary, boolean noRecurse, AsyncCallback<?> cb) ;
     public void importXML(String repository, String workspace, String path, String location, 
-            int option, AsyncCallback cb) ;
+            int option, AsyncCallback<?> cb) ;
     
 }

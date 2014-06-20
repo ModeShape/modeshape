@@ -33,7 +33,7 @@ import org.modeshape.web.shared.RepositoryName;
  * @author kulikov
  */
 public class ConnectorImpl implements Connector {
-    private HashMap<String, LRepository> repositories = new HashMap();
+    private HashMap<String, LRepository> repositories = new HashMap<>();
     
     //names of the available repositories
     private final Collection<RepositoryName> repositoryNames;
@@ -44,7 +44,7 @@ public class ConnectorImpl implements Connector {
     private final static Logger logger = Logger.getLogger(ConnectorImpl.class);
     
     public ConnectorImpl() throws RemoteException {
-        repositoryNames = new ArrayList();
+        repositoryNames = new ArrayList<>();
         ModeShapeEngine engine;
         try {
             InitialContext ic = new InitialContext();
@@ -106,8 +106,8 @@ public class ConnectorImpl implements Connector {
     }
 
     @Override
-    public Collection<RepositoryName> search(String name) throws RemoteException {
-        ArrayList<RepositoryName> list = new ArrayList();
+    public Collection<RepositoryName> search(String name) {
+        ArrayList<RepositoryName> list = new ArrayList<>();
         for (RepositoryName n : repositoryNames) {
             if (n.getName().contains(name) || n.getDescriptor().contains(name)) {
                 list.add(n);

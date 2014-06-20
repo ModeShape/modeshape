@@ -39,6 +39,7 @@ public class MappedSimpleAttributeDefinition extends SimpleAttributeDefinition i
      * @param defn the simple attribute definition
      * @param pathToFieldInConfiguration the path to the field within the {@link RepositoryConfiguration} document
      */
+    @SuppressWarnings( "deprecation" )
     protected MappedSimpleAttributeDefinition( SimpleAttributeDefinition defn,
                                                List<String> pathToFieldInConfiguration ) {
         super(defn.getName(), defn.getXmlName(), defn.getDefaultValue(), defn.getType(), defn.isAllowNull(),

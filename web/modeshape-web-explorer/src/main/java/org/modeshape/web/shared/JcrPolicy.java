@@ -23,8 +23,9 @@ import java.util.Collection;
  * @author kulikov
  */
 public class JcrPolicy implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String principal;
-    private ArrayList<JcrPermission> permissions = new ArrayList();
+    private ArrayList<JcrPermission> permissions = new ArrayList<JcrPermission>();
 
     public static JcrPolicy everyone() {
         return new JcrPolicy("EVERYONE");
@@ -70,7 +71,7 @@ public class JcrPolicy implements Serializable {
             permissions.add(JcrPermission.fromDisplayName(action));
         } else {
             JcrPermission p = find(action);
-            permissions.remove(find(action));
+            permissions.remove(p);
         }
     }
 

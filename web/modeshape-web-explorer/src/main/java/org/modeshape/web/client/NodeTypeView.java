@@ -93,6 +93,7 @@ public class NodeTypeView extends View {
                 SC.say(caught.getMessage());
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public void onSuccess(String[] result) {
                 workspaces.setValueMap(result);
@@ -114,6 +115,7 @@ public class NodeTypeView extends View {
                 SC.say(caught.getMessage());
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public void onSuccess(Collection<JcrNodeType> result) {
 //                hideLoadingIcon();

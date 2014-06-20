@@ -45,6 +45,7 @@ import org.modeshape.web.shared.Policy;
  *
  * @author kulikov
  */
+@SuppressWarnings( "synthetic-access" )
 public class Contents extends View {
 
     private Console console;
@@ -72,7 +73,6 @@ public class Contents extends View {
     private AddPrincipalDialog addAccessListDialog = new AddPrincipalDialog(this);
     private BackupDialog backupDialog = new BackupDialog(this);
     private RestoreDialog restoreDialog = new RestoreDialog(this);
-    private UploadBackupDialog uploadBakDialog = new UploadBackupDialog(this);
     private ExportDialog exportDialog = new ExportDialog(this);
     private ImportDialog importDialog = new ImportDialog(this);
     
@@ -141,7 +141,7 @@ public class Contents extends View {
         importButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                jcrService.backup(repository(), workspace(), "zzz", new AsyncCallback() {
+                jcrService.backup(repository(), workspace(), "zzz", new AsyncCallback<Object>() {
                     @Override
                     public void onFailure(Throwable caught) {
                         SC.say(caught.getMessage());
@@ -247,7 +247,7 @@ public class Contents extends View {
     }
     
     public void backup(String name) {
-        jcrService.backup(repository, workspace(), name, new AsyncCallback() {
+        jcrService.backup(repository, workspace(), name, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -261,7 +261,7 @@ public class Contents extends View {
     }
 
     public void restore(String name) {
-        jcrService.restore(repository, workspace(), name, new AsyncCallback() {
+        jcrService.restore(repository, workspace(), name, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -284,7 +284,7 @@ public class Contents extends View {
     }
     
     public void export(String name, boolean skipBinary, boolean noRecurse) {
-        jcrService.export(repository, workspace(), path(), name, true, true, new AsyncCallback() {
+        jcrService.export(repository, workspace(), path(), name, true, true, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -299,7 +299,7 @@ public class Contents extends View {
 
     public void importXML(String name, int option) {
         jcrService.importXML(repository, workspace(), path(), name, 
-                option, new AsyncCallback() {
+                option, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -315,7 +315,7 @@ public class Contents extends View {
     
     public void removeNode() {
         final String path = parent(path());
-        jcrService.removeNode(repository(), workspace(), path(), new AsyncCallback() {
+        jcrService.removeNode(repository(), workspace(), path(), new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -356,7 +356,7 @@ public class Contents extends View {
     }
     
     public void addMixin(String name) {
-        jcrService.addMixin(repository(), workspace(), path(), name, new AsyncCallback() {
+        jcrService.addMixin(repository(), workspace(), path(), name, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -374,7 +374,7 @@ public class Contents extends View {
     }
     
     public void removeMixin(String name) {
-        jcrService.removeMixin(repository(), workspace(), path(), name, new AsyncCallback() {
+        jcrService.removeMixin(repository(), workspace(), path(), name, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -396,7 +396,7 @@ public class Contents extends View {
     }
     
     protected void setNodeProperty(String name, String value) {
-        jcrService.setProperty(repository(), workspace(), path(), name, value, new AsyncCallback() {
+        jcrService.setProperty(repository(), workspace(), path(), name, value, new AsyncCallback<Object>() {
 
             @Override
             public void onFailure(Throwable caught) {
@@ -410,7 +410,7 @@ public class Contents extends View {
         });
     }
     protected void addNode(String name, String primaryType) {
-        jcrService.addNode(repository(), workspace(), path(), name, primaryType, new AsyncCallback() {
+        jcrService.addNode(repository(), workspace(), path(), name, primaryType, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -424,7 +424,7 @@ public class Contents extends View {
     }
     
     protected void renameNode(String name) {
-        jcrService.renameNode(repository(), workspace(), path(), name, new AsyncCallback() {
+        jcrService.renameNode(repository(), workspace(), path(), name, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -471,7 +471,7 @@ public class Contents extends View {
     }
 
     public void updateAccessList(String principal, JcrPermission permission, boolean enabled) {
-        jcrService.updateAccessList(repository, workspace(), path(), principal, permission, enabled, new AsyncCallback() {
+        jcrService.updateAccessList(repository, workspace(), path(), principal, permission, enabled, new AsyncCallback<Object>() {
 
             @Override
             public void onFailure(Throwable caught) {
@@ -491,7 +491,7 @@ public class Contents extends View {
     }
     
     public void applyAccessList() {
-        jcrService.updateAccessList(repository(), workspace(), path(), node.getAccessList(), new AsyncCallback() {
+        jcrService.updateAccessList(repository(), workspace(), path(), node.getAccessList(), new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -542,7 +542,6 @@ public class Contents extends View {
 
         private Label[] segments = new Label[50];
         private Label[] separators = new Label[50];
-        private String url;
 
         public PathLabel() {
             super();
@@ -581,7 +580,6 @@ public class Contents extends View {
         }
 
         public void display(String url) {
-            this.url = url;
             for (int i = 0; i < segments.length; i++) {
                 segments[i].setContents("");
                 separators[i].setVisible(false);
@@ -609,13 +607,6 @@ public class Contents extends View {
                 if (i < tokens.length - 1) {
                     separators[i].setVisible(true);
                 }
-            }
-        }
-
-        public void clean() {
-            for (int i = 0; i < segments.length; i++) {
-                segments[i].setContents("");
-                segments[i].setDataPath("");
             }
         }
     }

@@ -20,17 +20,15 @@ import javax.jcr.Session;
 import org.modeshape.web.client.RemoteException;
 
 /**
- *
  * @author kulikov
  */
 public interface LRepository {
     /**
      * Name of the repository.
      * 
-     * @return 
+     * @return the repository name
      */
     public String name();
-    
 
     /**
      * Provides access to the original repository.
@@ -38,24 +36,27 @@ public interface LRepository {
      * @return original JCR repository;
      */
     public Repository repository();
-    
+
     /**
      * Gets list of available workspaces.
      * 
-     * @return 
+     * @return the names of the workspaces that are available
      */
     public String[] getWorkspaces();
-    
+
     /**
      * Gets session to the given workspace.
      * 
      * @param workspace the name of the workspace.
      * @return jcr session object.
+     * @throws RemoteException if there is a problem talking to a remote service
      */
-    public Session session(String workspace) throws RemoteException;
-    
-    
-    public void backup(String workspace, String name) throws RemoteException;
-    public void restore(String workspace, String name) throws RemoteException;
-    
+    public Session session( String workspace ) throws RemoteException;
+
+    public void backup( String workspace,
+                        String name ) throws RemoteException;
+
+    public void restore( String workspace,
+                         String name ) throws RemoteException;
+
 }

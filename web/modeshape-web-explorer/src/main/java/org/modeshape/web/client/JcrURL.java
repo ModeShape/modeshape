@@ -23,6 +23,7 @@ import java.io.Serializable;
  * @author kulikov
  */
 public class JcrURL implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String context;
     private String repository;
     private String workspace;

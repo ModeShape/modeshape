@@ -37,12 +37,10 @@ import org.modeshape.web.shared.RepositoryName;
  */
 public class ToolBar extends HLayout {
     
-    private final Console console;
     private Label userName = new Label();
 
     public ToolBar(final Console console) {
         super();        
-        this.console = console;
         
         setHeight(50);
         setWidth100();
@@ -174,7 +172,7 @@ public class ToolBar extends HLayout {
         logout.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                console.jcrService.login(null, null, new AsyncCallback() {
+                console.jcrService.login(null, null, new AsyncCallback<Object>() {
                     @Override
                     public void onFailure(Throwable caught) {
                         SC.say(caught.getMessage());

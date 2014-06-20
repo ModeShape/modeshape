@@ -29,8 +29,6 @@ public class ViewPort extends VLayout {
     private VLayout frame;
     private Label caption = new Label();
     
-    private View view;
-    
     private final JcrServiceAsync jcrService;
     
     

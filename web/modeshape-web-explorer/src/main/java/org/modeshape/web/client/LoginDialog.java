@@ -73,10 +73,11 @@ public class LoginDialog extends DynamicForm {
         okButton.setEndRow(true);
         
         this.addSubmitValuesHandler(new SubmitValuesHandler() {
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public void onSubmitValues(SubmitValuesEvent event) {
                 console.jcrService.login(userName.getValueAsString(), 
-                    password.getValueAsString(), new AsyncCallback() {
+                    password.getValueAsString(), new AsyncCallback<Object>() {
 
                     @Override
                     public void onFailure(Throwable caught) {

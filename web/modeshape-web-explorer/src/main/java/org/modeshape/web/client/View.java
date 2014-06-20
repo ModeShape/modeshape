@@ -25,7 +25,7 @@ import java.util.HashMap;
 public class View extends VLayout {
     private ViewPort viewPort;
     private View parent;
-    private HashMap<String, View> children = new HashMap();
+    private HashMap<String, View> children = new HashMap<String,View>();
     
     public View(ViewPort viewPort, View parent) {
         super();

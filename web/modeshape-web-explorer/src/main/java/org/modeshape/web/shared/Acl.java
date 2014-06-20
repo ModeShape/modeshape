@@ -23,7 +23,8 @@ import java.util.HashMap;
  * @author kulikov
  */
 public class Acl implements Serializable {
-    private HashMap<String, Policy> policies = new HashMap();
+    private static final long serialVersionUID = 1L;
+    private HashMap<String, Policy> policies = new HashMap<String,Policy>();
     
     public String[] principals() {
         String[] principals = new String[policies.size()];

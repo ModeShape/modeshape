@@ -150,7 +150,7 @@ public class RepositoryNameView extends VLayout {
 
     private class Spacer extends HLayout {
 
-        private Spacer(int size) {
+        protected Spacer(int size) {
             super();
             setWidth(size);
         }

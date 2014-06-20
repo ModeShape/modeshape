@@ -26,14 +26,10 @@ import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.layout.HLayout;
-import com.smartgwt.client.widgets.layout.VLayout;
-import java.util.Collection;
 import org.modeshape.web.client.Contents;
 import org.modeshape.web.client.grid.AccessList.AclRecord;
-import org.modeshape.web.shared.JcrAccessControlList;
 import org.modeshape.web.shared.JcrNode;
 import org.modeshape.web.shared.JcrPermission;
-import org.modeshape.web.shared.JcrPolicy;
 import org.modeshape.web.shared.Policy;
 
 /**
@@ -57,11 +53,11 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
         new AclRecord(JcrPermission.WRITE)
     };
     
-    private final EmptyRecord emptyRecord = new EmptyRecord();
+    //private final EmptyRecord emptyRecord = new EmptyRecord();
     
-    private VLayout viewPort = new VLayout();
+    //private VLayout viewPort = new VLayout();
     private JcrNode node;
-    private final Contents contents;
+    protected final Contents contents;
     private ComboBoxItem principal;
     
     public AccessList(Contents contents) {
@@ -120,30 +116,30 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
 */ 
     }
     
-    private void hideRecords() {
-        for (int i = 0; i < records.length; i++) {
-            records[i].setVisible(false);
-            viewPort.removeMember(records[i]);
-        }
-        emptyRecord.setVisible(true);
-        viewPort.addMember(emptyRecord);
-    }
-
-    private void displayRecords() {
-        emptyRecord.setVisible(false);
-        viewPort.removeChild(emptyRecord);
-        for (int i = 0; i < records.length; i++) {
-            records[i].setVisible(true);
-            viewPort.addMember(records[i]);
-        }
-    }
-    
-    private void showPermissions(Policy policy) {
-        displayRecords();
-        for (int i = 0; i < records.length; i++) {            
-            records[i].test(policy);
-        }
-    }
+//    private void hideRecords() {
+//        for (int i = 0; i < records.length; i++) {
+//            records[i].setVisible(false);
+//            viewPort.removeMember(records[i]);
+//        }
+//        emptyRecord.setVisible(true);
+//        viewPort.addMember(emptyRecord);
+//    }
+//
+//    private void displayRecords() {
+//        emptyRecord.setVisible(false);
+//        viewPort.removeChild(emptyRecord);
+//        for (int i = 0; i < records.length; i++) {
+//            records[i].setVisible(true);
+//            viewPort.addMember(records[i]);
+//        }
+//    }
+//    
+//    private void showPermissions(Policy policy) {
+//        displayRecords();
+//        for (int i = 0; i < records.length; i++) {            
+//            records[i].test(policy);
+//        }
+//    }
 
     @Override
     protected AclRecord[] records() {
@@ -220,6 +216,7 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
         remButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
+                @SuppressWarnings( "synthetic-access" )
                 final String name = principal.getValueAsString();
                 SC.ask("Remove acl for " + name + "?", new BooleanCallback() {
                     @Override
@@ -268,35 +265,37 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
         
     }
 
+    @SuppressWarnings( "synthetic-access" )
     @Override
     protected void updateRecord(int pos, AclRecord record, Policy value) {
         record.test(value);
     }
     
     
-    private class EmptyRecord extends HLayout {
-        private Label label = new Label();
-        public EmptyRecord() {
-            super();
-
-            setStyleName("grid");
-            setHeight(30);
-            setWidth100();
-            setDefaultLayoutAlign(VerticalAlignment.CENTER);
-            setDefaultLayoutAlign(Alignment.CENTER);
-
-            setLayoutAlign(VerticalAlignment.CENTER);
-            setLayoutAlign(Alignment.CENTER);
-
-            setAlign(VerticalAlignment.CENTER);
-            setAlign(Alignment.CENTER);
-            label.setContents("No access list defined");
-            label.setWidth100();
-            label.setAlign(Alignment.CENTER);
-            addMember(label);
-        }
-    }
+//    private class EmptyRecord extends HLayout {
+//        private Label label = new Label();
+//        public EmptyRecord() {
+//            super();
+//
+//            setStyleName("grid");
+//            setHeight(30);
+//            setWidth100();
+//            setDefaultLayoutAlign(VerticalAlignment.CENTER);
+//            setDefaultLayoutAlign(Alignment.CENTER);
+//
+//            setLayoutAlign(VerticalAlignment.CENTER);
+//            setLayoutAlign(Alignment.CENTER);
+//
+//            setAlign(VerticalAlignment.CENTER);
+//            setAlign(Alignment.CENTER);
+//            label.setContents("No access list defined");
+//            label.setWidth100();
+//            label.setAlign(Alignment.CENTER);
+//            addMember(label);
+//        }
+//    }
     
+    @SuppressWarnings( "synthetic-access" )
     public class AclRecord extends HLayout {
 
         private final JcrPermission permission;
@@ -349,23 +348,23 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
             return val;
         }
         
-        private void test(String principal, JcrAccessControlList acl) {
-            Collection<JcrPolicy> entries = acl.entries();
-            for (JcrPolicy policy : entries) {
-                if (policy.getPrincipal().equals(principal)) {
-//                    SC.say("Principal=" + policy.getPrincipal());
-                    Collection<JcrPermission> permissions = policy.getPermissions();
-                    for (JcrPermission p : permissions) {
-                       if (p.matches(permission)) {
-                           value.setValue(true);
-                           return;
-                       } 
-                    }
-                }
-//                SC.say("Set false");
-                value.setValue(false);
-            }
-        }
+//        private void test(String principal, JcrAccessControlList acl) {
+//            Collection<JcrPolicy> entries = acl.entries();
+//            for (JcrPolicy policy : entries) {
+//                if (policy.getPrincipal().equals(principal)) {
+////                    SC.say("Principal=" + policy.getPrincipal());
+//                    Collection<JcrPermission> permissions = policy.getPermissions();
+//                    for (JcrPermission p : permissions) {
+//                       if (p.matches(permission)) {
+//                           value.setValue(true);
+//                           return;
+//                       } 
+//                    }
+//                }
+////                SC.say("Set false");
+//                value.setValue(false);
+//            }
+//        }
         
     }
         
