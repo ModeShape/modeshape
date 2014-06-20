@@ -3,7 +3,7 @@
               cache-name="sample" cache-container="modeshape"
               jndi-name="jcr/local/sample"
               enable-monitoring="true"
-              security-domain="other"
+              security-domain="modeshape-security"
               anonymous-roles="readonly readwrite admin connect" 
               anonymous-username="&lt;anonymous&gt;" 
               use-anonymous-upon-failed-authentication="false"

@@ -395,6 +395,13 @@
                             <policy-module code="Delegating" flag="required"/>
                         </authorization>
                     </security-domain>
+                    <security-domain name="modeshape-security" cache-type="default">
+                        <authentication>
+                            <login-module code="RealmDirect" flag="required">
+                                <module-option name="password-stacking" value="useFirstPass"/>
+                            </login-module>
+                        </authentication>
+                    </security-domain>
                 </security-domains>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:threads:1.1"/>
@@ -842,6 +849,13 @@
                         <authorization>
                             <policy-module code="Delegating" flag="required"/>
                         </authorization>
+                    </security-domain>
+                    <security-domain name="modeshape-security" cache-type="default">
+                        <authentication>
+                            <login-module code="RealmDirect" flag="required">
+                                <module-option name="password-stacking" value="useFirstPass"/>
+                            </login-module>
+                        </authentication>
                     </security-domain>
                 </security-domains>
             </subsystem>
@@ -1321,6 +1335,13 @@
                         <authorization>
                             <policy-module code="Delegating" flag="required"/>
                         </authorization>
+                    </security-domain>
+                    <security-domain name="modeshape-security" cache-type="default">
+                        <authentication>
+                            <login-module code="RealmDirect" flag="required">
+                                <module-option name="password-stacking" value="useFirstPass"/>
+                            </login-module>
+                        </authentication>
                     </security-domain>
                 </security-domains>
             </subsystem>
@@ -1889,6 +1910,14 @@
                             <policy-module code="Delegating" flag="required"/>
                         </authorization>
                     </security-domain>
+                    <security-domain name="modeshape-security" cache-type="default">
+                        <authentication>
+                            <login-module code="RealmDirect" flag="required">
+                                <module-option name="password-stacking" value="useFirstPass"/>
+                            </login-module>
+                        </authentication>
+                    </security-domain>
+                </security-domains>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:threads:1.1"/>
             <subsystem xmlns="urn:jboss:domain:transactions:2.0">

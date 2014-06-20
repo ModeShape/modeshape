@@ -181,10 +181,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="security-domain" type="xs:string" default="other">
+        <xs:attribute name="security-domain" type="xs:string" default="modeshape-security">
             <xs:annotation>
                 <xs:documentation>The name of the security domain that should be used for JAAS authentication.
-                    The default is the 'other' security domain which uses the default ApplicationRealm security realm.
+                    The default is the 'modeshape-security' security domain which uses the default ApplicationRealm security realm.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
