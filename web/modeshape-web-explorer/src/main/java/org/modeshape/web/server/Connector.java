@@ -21,39 +21,39 @@ import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.shared.RepositoryName;
 
 /**
- *
  * @author kulikov
  */
 public interface Connector {
     /**
      * Logs in with given credentials.
      * 
-     * @param creds 
+     * @param creds
      */
-    public void login(Credentials creds);
-    
+    public void login( Credentials creds );
+
     /**
      * Gets name of user currently logged in.
      * 
      * @return user name or null if not logged yet.
      */
     public String userName();
-    
+
     /**
      * Gets list of all available repositories.
      * 
-     * @return 
+     * @return the collection of repository names
      */
     public Collection<RepositoryName> getRepositories();
-    
+
     /**
      * Searches repository with given name.
      * 
      * @param name the name of the repository to search.
      * @return repository instance or null if not found.
+     * @throws RemoteException if there is an error getting the repository
      */
-    public LRepository find(String name) throws RemoteException;
-    
-    public Collection<RepositoryName> search(String name) throws RemoteException;
-    
+    public LRepository find( String name ) throws RemoteException;
+
+    public Collection<RepositoryName> search( String name ) throws RemoteException;
+
 }

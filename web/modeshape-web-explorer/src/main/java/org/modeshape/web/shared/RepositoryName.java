@@ -22,6 +22,7 @@ import java.io.Serializable;
  * @author kulikov
  */
 public class RepositoryName implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String name;
     private String descriptor;
 

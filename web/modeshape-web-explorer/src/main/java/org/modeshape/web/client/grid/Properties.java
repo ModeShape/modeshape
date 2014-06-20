@@ -31,6 +31,7 @@ import org.modeshape.web.shared.JcrProperty;
  *
  * @author kulikov
  */
+@SuppressWarnings( "synthetic-access" )
 public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
 
     private final Contents contents;
@@ -163,7 +164,6 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
         private BooleanField isProtected = new BooleanField();
         private BooleanField isMultiple = new BooleanField();
         private Label value = new Label();
-        private JcrNode node;
 
         public PropertyRecord() {
             super();

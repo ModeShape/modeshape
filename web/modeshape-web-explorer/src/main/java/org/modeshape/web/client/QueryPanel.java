@@ -85,6 +85,7 @@ public class QueryPanel extends View {
     
     public class ButtonClickHandler implements SubmitValuesHandler {
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void onSubmitValues(SubmitValuesEvent event) {
             console.jcrService.query(console.contents().repository(),
@@ -103,6 +104,7 @@ public class QueryPanel extends View {
             SC.say(caught.getMessage());
         }
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void onSuccess(String[] result) {
             langBox.setValueMap(result);
@@ -118,6 +120,7 @@ public class QueryPanel extends View {
             SC.say(caught.getMessage());
         }
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void onSuccess(ResultSet rs) {
             String[] columnNames = rs.getColumnNames();

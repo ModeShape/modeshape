@@ -35,7 +35,7 @@ import org.modeshape.web.server.LRepository;
 public class LRepositoryImpl implements LRepository {
     private Credentials creds;
     private JcrRepository repository;
-    private HashMap<String, Session> sessions = new HashMap();
+    private HashMap<String, Session> sessions = new HashMap<>();
     private String[] workspaces;
     private final static Logger logger = Logger.getLogger(LRepositoryImpl.class);
     

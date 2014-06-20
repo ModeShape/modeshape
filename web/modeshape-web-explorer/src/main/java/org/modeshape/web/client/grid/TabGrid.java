@@ -24,16 +24,13 @@ import java.util.Collection;
  * Pattern for grid view.
  * 
  * @author kulikov
+ * @param <R>
+ * @param <V>
  */
 public abstract class TabGrid<R extends HLayout, V> extends VLayout {
     private R[] records;
     private final VLayout viewPort = new VLayout();
 
-    /**
-     * New grid instance.
-     * 
-     * @param records 
-     */
     public TabGrid(String caption) {
         super();
         init(caption);
@@ -67,18 +64,7 @@ public abstract class TabGrid<R extends HLayout, V> extends VLayout {
     }
     
     protected abstract R[] records();
-    /**
-     * Builds table header panel.
-     * 
-     * @return 
-     */
     protected abstract HLayout tableHeader();
-    
-    /**
-     * Builds tool bar.
-     * 
-     * @return 
-     */
     protected abstract HLayout toolBar();
     
     protected void setValues(Collection<V> values) {

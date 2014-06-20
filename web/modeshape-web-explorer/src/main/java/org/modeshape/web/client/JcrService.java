@@ -51,6 +51,7 @@ public interface JcrService extends RemoteService {
      * Lists all available repositories.
      *
      * @return collection of object representing repository.
+     * @throws RemoteException if there is a problem communicating with a remote service
      */
     public Collection<RepositoryName> getRepositories() throws RemoteException;
 
@@ -59,6 +60,7 @@ public interface JcrService extends RemoteService {
      *
      * @param criteria the parameter for searching repository
      * @return collection of object representing repository.
+     * @throws RemoteException if there is a problem communicating with a remote service
      */
     public Collection<RepositoryName> findRepositories(String criteria) throws RemoteException;
     
@@ -87,6 +89,7 @@ public interface JcrService extends RemoteService {
     /**
      * Gets repository capabilities.
      *
+     *@param repository the repository
      * @return description of the repository capabilities.
      */
     public JcrRepositoryDescriptor repositoryInfo(String repository);
@@ -94,6 +97,8 @@ public interface JcrService extends RemoteService {
     /**
      * Gets all registered node types.
      *
+     * @param repository
+     * @param workspace
      * @return the node types
      * @throws RemoteException if there is a problem using the repository
      */
@@ -102,16 +107,22 @@ public interface JcrService extends RemoteService {
     /**
      * Gets supported query languages.
      *
+     * @param repository
+     * @param workspace
      * @return language names
+     * @throws RemoteException if there is a problem using the repository
      */
     public String[] supportedQueryLanguages(String repository, String workspace) throws RemoteException;
 
     /**
      * Executes query.
      *
+     * @param repository
+     * @param workspace
      * @param text the query text.
      * @param lang query language name
      * @return Query result
+     * @throws RemoteException if there is a problem using the repository
      */
     public ResultSet query(String repository, String workspace, String text,
             String lang) throws RemoteException;
@@ -119,6 +130,8 @@ public interface JcrService extends RemoteService {
     /**
      * Adds new node.
      *
+     * @param repository
+     * @param workspace
      * @param path the path to the parent node
      * @param name the name of node to add
      * @param primaryType the primary type of the node to add.
@@ -144,6 +157,8 @@ public interface JcrService extends RemoteService {
     /**
      * Deletes node.
      *
+     * @param repository
+     * @param workspace
      * @param path the pass to the node to be deleted.
      * @throws RemoteException if there is a problem using the repository
      */
@@ -152,6 +167,8 @@ public interface JcrService extends RemoteService {
     /**
      * Adds mixin to the node.
      *
+     * @param repository
+     * @param workspace
      * @param path the path to the node
      * @param mixin mixin to add
      * @throws RemoteException Any exception on the server side
@@ -162,6 +179,8 @@ public interface JcrService extends RemoteService {
     /**
      * Removes mixin from the given node.
      *
+     * @param repository
+     * @param workspace
      * @param path the path to the node
      * @param mixin mixin to remove
      * @throws RemoteException any server side exception.
@@ -172,6 +191,8 @@ public interface JcrService extends RemoteService {
     /**
      * Set's property value.
      *
+     * @param repository
+     * @param workspace
      * @param path the path to the node.
      * @param name the name of the property to add.
      * @param value the text representation of the value
@@ -187,6 +208,8 @@ public interface JcrService extends RemoteService {
     /**
      * Creates empty access list for given principal.
      *
+     * @param repository
+     * @param workspace
      * @param path the path to the node.
      * @param principal the principal name
      * @throws RemoteException
@@ -201,6 +224,8 @@ public interface JcrService extends RemoteService {
     /**
      * Reads list of primary types.
      *
+     * @param repository
+     * @param workspace
      * @param allowAbstract true if allow to load abstract node types.
      * @return list of type names.
      * @throws RemoteException
@@ -210,6 +235,8 @@ public interface JcrService extends RemoteService {
     /**
      * Reads list of mixin types.
      *
+     * @param repository
+     * @param workspace
      * @param allowAbstract true if allow to load abstract node types.
      * @return list of type names.
      * @throws RemoteException
@@ -219,6 +246,8 @@ public interface JcrService extends RemoteService {
     /**
      * Saves changes in the current session.
      *
+     * @param repository
+     * @param workspace
      * @throws RemoteException if there is a problem using the repository
      */
     public void save(String repository, String workspace) throws RemoteException;

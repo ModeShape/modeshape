@@ -24,8 +24,9 @@ import java.util.Collection;
  * @author kulikov
  */
 public class ResultSet implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String[] columnNames;
-    private ArrayList<String[]> result = new ArrayList();
+    private ArrayList<String[]> result = new ArrayList<String[]>();
     
     public ResultSet() {
     }

@@ -36,7 +36,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
 
     
     private JcrNode node;
-    private final Contents contents;
+    protected final Contents contents;
     
     public Children(Contents contents) {
         super("Child nodes");
@@ -177,6 +177,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         return recs;
     }
 
+    @SuppressWarnings( "synthetic-access" )
     @Override
     protected void updateRecord(int pos, NodeRecord record, JcrNode value) {
         if (node.getPath().equals("/")) {
@@ -215,6 +216,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
             name.setStyleName("node-name");
             name.setIcon("icons/folder.png");
             name.addClickHandler(new ClickHandler() {
+                @SuppressWarnings( "synthetic-access" )
                 @Override
                 public void onClick(ClickEvent event) {
                     contents.select(path());

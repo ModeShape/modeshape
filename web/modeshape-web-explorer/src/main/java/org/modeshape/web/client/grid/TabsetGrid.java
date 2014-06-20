@@ -29,15 +29,9 @@ import com.smartgwt.client.widgets.layout.VLayout;
  * @author kulikov
  */
 public class TabsetGrid extends VLayout {
-    private final VLayout viewPort = new VLayout();
-    private final TabGrid[] tabs;
+    private final TabGrid<?,?>[] tabs;
     private Label[] labels;
-    /**
-     * New grid instance.
-     * 
-     * @param records 
-     */
-    public TabsetGrid(String[] caption, TabGrid[] tbs) {
+    public TabsetGrid(String[] caption, TabGrid<?,?>[] tbs) {
         super();
         this.tabs = tbs;
         
@@ -101,7 +95,7 @@ public class TabsetGrid extends VLayout {
         showTab(0);
     }
     
-    private void showTab(int k) {
+    protected void showTab(int k) {
         for (int i = 0; i < tabs.length; i++) {
             tabs[i].setVisible(i == k);
         }
