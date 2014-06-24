@@ -1,0 +1,10 @@
+{
+    "name" : "Repository with initial content",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "xmlImport/docWithReferences.xml"
+        }
+    }
+}
