@@ -284,45 +284,188 @@ public class NodeImportXmlHandlerTest {
     @FixFor("MODE-1788")
     public void shouldParseXmlDocumentWithPropertiesCustomSeparator() throws Exception {
         parse("xmlImport/docWithPropertiesCustomSeparator.xml");
-        assertNodeUsingSeparator("story", ";",
-                                 "title=Story with commas in the text lead and body text",
-                                 "lead=Lead text in attribute, split with a comma.",
-                                 "body=Body text in sub element, split by the comma.",
-                                 "multiBody=Body text in sub element; split by semicolon");
+        assertImportElementWithStrings("story", ";",
+                                       "title=Story with commas in the text lead and body text",
+                                       "lead=Lead text in attribute, split with a comma.",
+                                       "body=Body text in sub element, split by the comma.",
+                                       "multiBody=Body text in sub element; split by semicolon");
+    }
+
+    @Test
+    @FixFor( "MODE-2241" )
+    public void shouldParseXmlDocumentWithReferences() throws Exception {
+        parse("xmlImport/docWithReferences.xml");
+        assertImportElementWithReferences("node1", "hard_ref11=/node2", "hard_ref12=/node2,/node3");
+        assertImportElementWithReferences("node2", "hard_ref21=/node1", "hard_ref22=/node1,/node3");
+
+        assertImportElementWithWeakReferences("node1", "weak_ref11=/node2", "weak_ref12=/node2");
+        assertImportElementWithWeakReferences("node2", "weak_ref21=/node1", "weak_ref22=/node1");
+
+        assertImportElementWithSimpleReferences("node1", "simple_ref11=/node2", "simple_ref12=/node2");
+        assertImportElementWithSimpleReferences("node2", "simple_ref21=/node1", "simple_ref22=/node1");
+    }
+
+    @Test
+    @FixFor( "MODE-2241" )
+    public void shouldParseXmlDocumentWithPropertyTypes() throws Exception {
+        parse("xmlImport/docWithPropertyTypes.xml");
+        assertImportElementWithStrings("node1", "string_prop=string");
+        assertImportElementWithBooleans("node1", "boolean_prop=true");
+        assertImportElementWithDecimals("node1", "decimal_prop=12.3");
+        assertImportElementWithDoubles("node1", "double_prop=12.3");
+        assertImportElementWithLongs("node1", "long_prop=123456");
+        assertImportElementWithDates("node1", "date_prop=1994-11-05T13:15:30Z");
+        assertImportElementWithNames("node1", "name_prop=nt:undefined");
+        assertImportElementWithURIs("node1", "uri_prop=http://www.google.com");
+        assertImportElementWithPaths("node1", "path_prop=/a/b/c");
+        assertImportElementWithBinaries("node1", "binary_prop=io/file1.txt");
+        assertImportElementWithReferences("node1", "reference_prop=/node2");
+        assertImportElementWithWeakReferences("node1", "weakreference_prop=/node2");
+        assertImportElementWithSimpleReferences("node1", "simplereference_prop=/node2");
     }
 
     private void assertNode( String path,
-                             String... properties ) {
-      assertNodeUsingSeparator(path, ",", properties);
+                             String... expectedProperties ) {
+        assertImportElementWithStrings(path, NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR, expectedProperties);
     }
 
-    private void assertNodeUsingSeparator( String path,
-                                           String multiValueSeparator,
-                                           String... properties ) {
-        Path expectedPath = context.getValueFactories().getPathFactory().create("/" + path);
+    private void assertImportElementWithReferences( String path, String... expectedReferences ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.REFERENCE,
+                                         expectedReferences);
+    }
 
-        NodeImportXmlHandler.ImportElement element = parseResults.get(expectedPath);
-        assertNotNull(path + " not found among parsed elements", element);
+    private void assertImportElementWithWeakReferences( String path, String... expectedReferences ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.WEAKREFERENCE,
+                                         expectedReferences);
+    }
 
-        for (String propertyValueString : properties) {
+    private void assertImportElementWithSimpleReferences( String path, String... expectedReferences ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.SIMPLEREFERENCE,
+                                         expectedReferences);
+    }
+
+    private void assertImportElementWithBooleans( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.BOOLEAN,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithDoubles( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.DOUBLE,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithDecimals( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.DECIMAL,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithDates( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.DATE,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithLongs( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.LONG,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithURIs( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.URI,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithNames( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.NAME,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithPaths( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.PATH,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithBinaries( String path, String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element,
+                                         NodeImportXmlHandler.DEFAULT_MULTI_VALUE_SEPARATOR,
+                                         org.modeshape.jcr.value.PropertyType.BINARY,
+                                         expectedProperties);
+    }
+
+    private void assertImportElementWithStrings( String path,
+                                                 String multiValueSeparator,
+                                                 String... expectedProperties ) {
+        NodeImportXmlHandler.ImportElement element = assertImportElementExists(path);
+        assertImportElementHasProperties(element, multiValueSeparator, org.modeshape.jcr.value.PropertyType.STRING, expectedProperties);
+    }
+
+    private void assertImportElementHasProperties( NodeImportXmlHandler.ImportElement element,
+                                                   String multiValueSeparator,
+                                                   org.modeshape.jcr.value.PropertyType expectedPropertyType,
+                                                   String... expectedProperties ) {
+        for (String propertyValueString : expectedProperties) {
             String[] parts = propertyValueString.split("=");
             String propertyName = context.getValueFactories()
                                          .getNameFactory()
                                          .create(parts[0])
                                          .getString(NoOpEncoder.getInstance());
             String propertyValue = parts[1];
+            org.modeshape.jcr.value.PropertyType propertyType = element.getPropertyType(propertyName);
+
             if (propertyName.equals(JcrConstants.JCR_PRIMARY_TYPE)) {
                 assertEquals(propertyValue, element.getType());
             } else {
-                Collection<String> actualPropertyValue = propertyName.equalsIgnoreCase(JcrConstants.JCR_MIXIN_TYPES) ? element.getMixins() : element.getProperties()
-                                                                                                                                                    .get(propertyName);
+                Collection<String> actualPropertyValue = propertyName.equalsIgnoreCase(JcrConstants.JCR_MIXIN_TYPES)
+                                                         ? element.getMixins() : element.getProperties().get(propertyName);
                 assertNotNull(actualPropertyValue);
                 String[] values = propertyValue.split(multiValueSeparator);
                 for (String value : values) {
                     assertTrue("Expected property not found: " + value, actualPropertyValue.contains(value));
                 }
+                assertEquals("Invalid property type: " + propertyType, expectedPropertyType, propertyType);
             }
         }
+    }
+
+    private NodeImportXmlHandler.ImportElement assertImportElementExists( String path ) {
+        Path expectedPath = context.getValueFactories().getPathFactory().create("/" + path);
+
+        NodeImportXmlHandler.ImportElement element = parseResults.get(expectedPath);
+        assertNotNull(path + " not found among parsed elements", element);
+        return element;
     }
 
     private void parse( String relativePathToXmlFile ) throws Exception {
