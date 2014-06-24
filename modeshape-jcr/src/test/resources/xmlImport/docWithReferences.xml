@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <node1 jcr:mixinTypes="mix:referenceable">
+        <hard_ref11 type="Reference">/node2</hard_ref11>
+        <property jcr:name="hard_ref12" type="Reference">/node2, /node3</property>
+
+        <weak_ref11 type="WeakReference">/node2</weak_ref11>
+        <property jcr:name="weak_ref12" type="WeakReference">/node2</property>
+
+        <simple_ref11 type="SimpleReference">/node2</simple_ref11>
+        <property jcr:name="simple_ref12" type="SimpleReference">/node2</property>
+    </node1>
+    <node2 jcr:mixinTypes="mix:referenceable">
+        <hard_ref21 type="Reference">/node1</hard_ref21>
+        <property jcr:name="hard_ref22" type="Reference">/node1, /node3</property>
+
+        <weak_ref21 type="WeakReference">/node1</weak_ref21>
+        <property jcr:name="weak_ref22" type="WeakReference">/node1</property>
+
+        <simple_ref21 type="SimpleReference">/node1</simple_ref21>
+        <property jcr:name="simple_ref22" type="SimpleReference">/node1</property>
+    </node2>
+    <node3 jcr:mixinTypes="mix:referenceable"/>
+</jcr:root>

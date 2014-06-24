@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <node1>
+        <string_prop type="string">string</string_prop>
+        <boolean_prop type="boolean">true</boolean_prop>
+        <long_prop type="long">123456</long_prop>
+        <decimal_prop type="decimal">12.3</decimal_prop>
+        <date_prop type="date">1994-11-05T13:15:30Z</date_prop>
+        <double_prop type="double">12.3</double_prop>
+        <name_prop type="name">nt:undefined</name_prop>
+        <path_prop type="path">/a/b/c</path_prop>
+        <uri_prop type="uri">http://www.google.com</uri_prop>
+        <binary_prop type="binary">io/file1.txt</binary_prop>
+        <reference_prop type="reference">/node2</reference_prop>
+        <weakreference_prop type="weakreference">/node2</weakreference_prop>
+        <simplereference_prop type="simplereference">/node2</simplereference_prop>
+    </node1>
+    <node2 jcr:mixinTypes="mix:referenceable"/>
+</jcr:root>

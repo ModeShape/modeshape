@@ -74,6 +74,11 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
     }
 
     /**
+     * The default multi-valued delimiter string.
+     */
+    protected static final String DEFAULT_MULTI_VALUE_SEPARATOR = ",";
+
+    /**
      * Decoder for XML names, to turn '_xHHHH_' sequences in the XML element and attribute names into the corresponding UTF-16
      * characters.
      */
@@ -83,11 +88,6 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      * The default {@link AttributeScoping}.
      */
     private static final AttributeScoping DEFAULT_ATTRIBUTE_SCOPING = AttributeScoping.USE_DEFAULT_NAMESPACE;
-
-    /**
-     * The default multi-valued delimiter string.
-     */
-    private static final String DEFAULT_MULTI_VALUE_SEPARATOR = ",";
 
     /**
      * The mandatory name of the xml root element
@@ -108,6 +108,11 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      * The name of the property that is to be set with the type of the XML element. For example, "jcr:primaryType".
      */
     private final String typeAttribute;
+
+    /**
+     * The name of the XML attribute which represents the type of a property. By default, this is "type".
+     */
+    private final String propertyTypeAttribute;
 
     /**
      * The value of the node type property, if the node's name is set with the {@link #nameAttribute}.
@@ -138,7 +143,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      * The stack of prefixes for each namespace, which is used to keep the {@link #namespaceRegistry local namespace registry} in
      * sync with the namespaces in the XML document.
      */
-    private final Map<String, LinkedList<String>> prefixStackByUri = new HashMap<String, LinkedList<String>>();
+    private final Map<String, LinkedList<String>> prefixStackByUri = new HashMap<>();
 
     /**
      * The import destination.
@@ -155,8 +160,10 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      */
     protected String multiValueSeparator;
 
-    private final Stack<ImportElement> elementsStack = new Stack<ImportElement>();
-    private final List<ImportElement> parsedElements = new ArrayList<ImportElement>();
+    private final Stack<ImportElement> elementsStack = new Stack<>();
+    private final List<ImportElement> parsedElements = new ArrayList<>();
+
+    private LinkedHashMap<Path, ImportElement> parsedElementsByPath;
     private boolean validateRootElement;
 
     /**
@@ -208,6 +215,8 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         this.pathFactory = localContext.getValueFactories().getPathFactory();
         this.namespaceRegistry = localContext.getNamespaceRegistry();
 
+        this.propertyTypeAttribute = createName(null, "type");
+
         assert this.nameFactory != null;
         assert this.namespaceRegistry != null;
     }
@@ -229,7 +238,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         // Add the prefix to the stack ...
         LinkedList<String> prefixStack = this.prefixStackByUri.get(uri);
         if (prefixStack == null) {
-            prefixStack = new LinkedList<String>();
+            prefixStack = new LinkedList<>();
             this.prefixStackByUri.put(uri, prefixStack);
         }
         prefixStack.addFirst(prefix);
@@ -332,7 +341,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
                 continue;
             }
             // Create a property for this attribute ...
-            element.addProperty(attributeName, attributes.getValue(i));
+            element.addProperty(attributeName, attributes.getValue(i), org.modeshape.jcr.value.PropertyType.STRING);
         }
 
         // Create the default node name if no explicit name has been configured
@@ -385,10 +394,10 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             // there is char data
             if (entry.looksLikeProperty()) {
                 // This is just a child element that is really a property ...
-                entry.addAsPropertyValue(s);
+                entry.setPropertyOnParent(s);
             } else {
                 // This is actually a child node that fits the JCR 'jcr:xmlcharacters' pattern ...
-                entry.addProperty(JcrLexicon.XMLCHARACTERS.toString(), s);
+                entry.addProperty(JcrLexicon.XMLCHARACTERS.toString(), s, org.modeshape.jcr.value.PropertyType.STRING);
                 parsedElements.add(entry);
             }
         } else {
@@ -427,21 +436,23 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
     }
 
     private LinkedHashMap<Path, ImportElement> getParsedElementByPath() {
-        LinkedHashMap<Path, ImportElement> result = new LinkedHashMap<>();
-        int depthLevel = 1;
-        //convert the list of parsed elements to a map making sure that the parents come before the children and the children
-        //order is preserved
-        while (!parsedElements.isEmpty()) {
-            for (Iterator<ImportElement> elementIterator = parsedElements.iterator(); elementIterator.hasNext();) {
-                ImportElement element = elementIterator.next();
-                if (element.getPath().size() == depthLevel) {
-                    result.put(element.getPath(), element);
-                    elementIterator.remove();
+        if (parsedElementsByPath == null) {
+            parsedElementsByPath = new LinkedHashMap<>();
+            int depthLevel = 1;
+            //convert the list of parsed elements to a map making sure that the parents come before the children and the children
+            //order is preserved
+            while (!parsedElements.isEmpty()) {
+                for (Iterator<ImportElement> elementIterator = parsedElements.iterator(); elementIterator.hasNext();) {
+                    ImportElement element = elementIterator.next();
+                    if (element.getPath().size() == depthLevel) {
+                        parsedElementsByPath.put(element.getPath(), element);
+                        elementIterator.remove();
+                    }
                 }
+                ++depthLevel;
             }
-            ++depthLevel;
         }
-        return result;
+        return parsedElementsByPath;
     }
 
     /**
@@ -452,25 +463,28 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
     public class ImportElement {
 
         private final Multimap<String, String> properties = LinkedHashMultimap.create();
-        private final List<String> mixins = new ArrayList<String>();
-        private final Map<String, AtomicInteger> childSnsIndexes = new HashMap<String, AtomicInteger>();
+        private final Map<String, org.modeshape.jcr.value.PropertyType> propertyTypes = new HashMap<>();
+        private final List<String> mixins = new ArrayList<>();
+        private final Map<String, AtomicInteger> childSnsIndexes = new HashMap<>();
 
         private String name;
         private String type;
         private Path path;
         private ImportElement parent;
+        private String propertyType;
 
         protected ImportElement( ImportElement parent ) {
             this.parent = parent;
         }
 
         /**
-         * Returns whether this element entry looks (at this point) like a property element: it has no properties
+         * Returns whether this element entry looks (at this point) like a property element: either it has no properties
+         * or has just one {@link org.modeshape.jcr.xml.NodeImportXmlHandler#propertyTypeAttribute} type attribute.
          * 
          * @return true if this looks like a property element, or false otherwise
          */
         protected final boolean looksLikeProperty() {
-            return properties.size() == 0;
+            return properties.size() == 0 || (properties.size() == 1 && properties.containsKey(propertyTypeAttribute));
         }
 
         private int getNextSnsForChildNamed( String childName ) {
@@ -497,19 +511,90 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         }
 
         protected void addProperty( String propertyName,
-                                    String propertyValue ) {
+                                    String propertyValue,
+                                    org.modeshape.jcr.value.PropertyType jcrPropertyType) {
+            if (propertyName.equalsIgnoreCase(propertyTypeAttribute)) {
+                propertyType = propertyValue;
+            }
             String[] values = propertyValue.split(multiValueSeparator);
             for (String value : values) {
+                if (jcrPropertyType != org.modeshape.jcr.value.PropertyType.STRING) {
+                    //for everything but strings we trim the value
+                    value = value.trim();
+                }
                 if (propertyName.equals(JcrConstants.JCR_MIXIN_TYPES)) {
                     mixins.add(createName(null, value.trim()));
                 } else {
                     properties.put(propertyName, value);
                 }
             }
+            propertyTypes.put(propertyName, jcrPropertyType);
         }
 
-        protected void addAsPropertyValue( String value ) {
-            parent.addProperty(name, value);
+        protected void setPropertyOnParent( String value ) {
+            parent.addPropertyWithType(name, value, propertyType);
+        }
+
+        private void addPropertyWithType(String propertyName, String propertyValue, String propertyType) {
+
+            if (propertyType == null) {
+                //there is no specified type, so add it as a simple string
+                propertyType = "string";
+            }
+            switch (propertyType.toLowerCase()) {
+                case "simplereference": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.SIMPLEREFERENCE);
+                    break;
+                }
+                case "weakreference": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.WEAKREFERENCE);
+                    break;
+                }
+                case "reference": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.REFERENCE);
+                    break;
+                }
+                case "long": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.LONG);
+                    break;
+                }
+                case "double": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.DOUBLE);
+                    break;
+                }
+                case "date": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.DATE);
+                    break;
+                }
+                case "decimal": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.DECIMAL);
+                    break;
+                }
+                case "boolean": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.BOOLEAN);
+                    break;
+                }
+                case "name": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.NAME);
+                    break;
+                }
+                case "path": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.PATH);
+                    break;
+                }
+                case "uri": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.URI);
+                    break;
+                }
+                case "binary": {
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.BINARY);
+                    break;
+                }
+                default: {
+                    //by default we treat it a string
+                    addProperty(propertyName, propertyValue, org.modeshape.jcr.value.PropertyType.STRING);
+                }
+            }
         }
 
         /**
@@ -550,6 +635,17 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         }
 
         /**
+         * Returns the JCR property type of the property with the given name.
+         *
+         * @param propertyName a {@link String} the name of a property; never null
+         * @return either a {@link org.modeshape.jcr.value.PropertyType} representing the JCR type
+         * of the property or {@code null} if the no property with the given name was parsed.
+         */
+        public org.modeshape.jcr.value.PropertyType getPropertyType(String propertyName) {
+            return propertyTypes.get(propertyName);
+        }
+
+        /**
          * Returns the path of this import element, which translates to the path of the jcr node.
          * 
          * @return a non-null {@link Path}
@@ -565,8 +661,13 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             sb.append("{name='").append(name).append('\'');
             sb.append(", path=").append(path);
             sb.append(", type='").append(type).append('\'');
-            sb.append(", properties=").append(properties);
-            sb.append(", mixins=").append(mixins);
+            if (!properties.isEmpty()) {
+                sb.append(", properties=").append(properties);
+                sb.append(", types=").append(propertyTypes);
+            }
+            if (!mixins.isEmpty()) {
+                sb.append(", mixins=").append(mixins);
+            }
             sb.append('}');
             return sb.toString();
         }
