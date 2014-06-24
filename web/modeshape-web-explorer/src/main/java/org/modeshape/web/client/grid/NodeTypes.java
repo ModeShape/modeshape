@@ -28,7 +28,9 @@ import org.modeshape.web.shared.JcrNodeType;
  * @author kulikov
  */
 public class NodeTypes extends Grid<TypeRecord, JcrNodeType> {
-
+    
+    private final static int RECORDS_PER_PAGE = 500;
+    
     public NodeTypes() {
         super("Node types");
     }
@@ -39,7 +41,7 @@ public class NodeTypes extends Grid<TypeRecord, JcrNodeType> {
 
     @Override
     protected TypeRecord[] records() {
-        TypeRecord[] records = new TypeRecord[300];
+        TypeRecord[] records = new TypeRecord[RECORDS_PER_PAGE];
         for (int i = 0; i < records.length; i++) {
             records[i] = new TypeRecord();
         }

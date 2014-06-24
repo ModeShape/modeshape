@@ -57,14 +57,7 @@ public class NodeTypeView extends View {
         
         nodeTypes = new NodeTypes();
         
-        HLayout vstrut = new HLayout();
-        vstrut.setHeight(15);
-
-        HLayout bottomStrut = new HLayout();
-        bottomStrut.setHeight(15);
-        
         addMember(text);
-//        addMember(vstrut);
         
         DynamicForm form = new DynamicForm();
         form.setFields(workspaces);
@@ -82,6 +75,7 @@ public class NodeTypeView extends View {
         strut.setHeight(20);
         
         addMember(panel);
+        addMember(strut);
         addMember(nodeTypes);
     }
 
@@ -101,7 +95,6 @@ public class NodeTypeView extends View {
                     workspaces.setValue(result[0]);
                 }
                 showTypes();
-                SC.say("123");
             }
         });
     }
@@ -119,7 +112,6 @@ public class NodeTypeView extends View {
             @Override
             public void onSuccess(Collection<JcrNodeType> result) {
 //                hideLoadingIcon();
-                SC.say("124");
                 try {
                     nodeTypes.show(result);
                 } catch (Exception e) {
