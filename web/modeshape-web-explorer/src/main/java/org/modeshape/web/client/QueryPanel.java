@@ -36,6 +36,8 @@ import org.modeshape.web.shared.ResultSet;
  * @author kulikov
  */
 public class QueryPanel extends View {
+    private final static String DEFAULT_LANG = "JCR-SQL2";
+    
     private TextAreaItem queryEditor = new TextAreaItem();
     private SubmitItem execButton = new SubmitItem("Execute");
     private ListGrid grid = new ListGrid();
@@ -108,9 +110,19 @@ public class QueryPanel extends View {
         @Override
         public void onSuccess(String[] result) {
             langBox.setValueMap(result);
+            langBox.setValue(defaultLang(result));
             console.display(QueryPanel.this);
         }
     
+    }
+    
+    private String defaultLang(String[] options) {
+        for (String option : options) {
+            if (option.toUpperCase().equals(DEFAULT_LANG)) {
+                return option;
+            }
+        }
+        return "";
     }
     
     public class QueryResultHandler implements AsyncCallback<ResultSet> {
