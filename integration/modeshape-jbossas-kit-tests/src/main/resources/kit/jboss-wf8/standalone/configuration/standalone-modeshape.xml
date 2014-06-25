@@ -448,7 +448,7 @@
                         <login-module code="RealmDirect" flag="optional">
                             <module-option name="password-stacking" value="useFirstPass"/>
                         </login-module>
-                    </authorization>
+                    </authentication>
                 </security-domain>
             </security-domains>
         </subsystem>
