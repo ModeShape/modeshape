@@ -42,9 +42,10 @@ public class NodeSequencingFailure extends AbstractSequencingChange {
                                   String userId,
                                   String selectedPath,
                                   String sequencerName,
+                                  boolean queryable,
                                   Throwable cause ) {
-        super(sequencedNodeKey, sequencedNodePath, sequencedNodePrimaryType, sequencedNodeMixinTypes, outputPath, userId,
-              selectedPath, sequencerName);
+        super(sequencedNodeKey, sequencedNodePath, sequencedNodePrimaryType, sequencedNodeMixinTypes, queryable, outputPath,
+              userId, selectedPath, sequencerName);
         assert cause != null;
         this.cause = cause;
     }

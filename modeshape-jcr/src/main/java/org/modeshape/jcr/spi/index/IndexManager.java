@@ -17,25 +17,16 @@
 package org.modeshape.jcr.spi.index;
 
 import java.security.NoSuchProviderException;
-import java.util.Map;
-import java.util.Set;
 import javax.jcr.RepositoryException;
-import org.modeshape.jcr.spi.index.provider.IndexProviderExistsException;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
+import org.modeshape.jcr.spi.index.provider.IndexProviderExistsException;
 
 /**
  * An interface for programmatically adding or removing index providers and index definitions.
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public interface IndexManager {
-
-    /**
-     * Get the names of the registered {@link IndexProvider}s.
-     * 
-     * @return the names of the providers; never null but possibly empty
-     */
-    Set<String> getProviderNames();
+public interface IndexManager extends org.modeshape.jcr.api.index.IndexManager {
 
     /**
      * Get the query index provider registered with the given name.
@@ -44,13 +35,6 @@ public interface IndexManager {
      * @return the query index provider instance, or null if there is no provider registered with the supplied name
      */
     IndexProvider getProvider( String name );
-
-    /**
-     * Get a map of the registered index definitions keyed by their names.
-     * 
-     * @return the index definitions; never null but possibly empty
-     */
-    Map<String, IndexDefinition> getIndexDefinitions();
 
     /**
      * Register a new already-instantiated {@link IndexProvider}.
@@ -69,56 +53,4 @@ public interface IndexManager {
      * @throws RepositoryException if there is a problem unregistering the provider
      */
     void unregister( String providerName ) throws NoSuchProviderException, RepositoryException;
-
-    /**
-     * Register a new definition for an index.
-     * 
-     * @param indexDefinition the definition; may not be null
-     * @param allowUpdate true if the definition can update or ovewrite an existing definition with the same name, or false if
-     *        calling this method when a definition with the same name already exists should result in an exception
-     * @throws InvalidIndexDefinitionException if the new definition is invalid
-     * @throws IndexExistsException if <code>allowUpdate</code> is <code>false</code> and the <code>NodeTypeDefinition</code>
-     *         specifies a node type name that is already registered.
-     * @throws RepositoryException if there is a problem registering the new definition, or if an existing index
-     */
-    void registerIndex( IndexDefinition indexDefinition,
-                        boolean allowUpdate ) throws InvalidIndexDefinitionException, IndexExistsException, RepositoryException;
-
-    /**
-     * Register new definitions for several indexes.
-     * 
-     * @param indexDefinitions the definitions; may not be null
-     * @param allowUpdate true if each of the definition can update or ovewrite an existing definition with the same name, or
-     *        false if calling this method when a definition with the same name already exists should result in an exception
-     * @throws InvalidIndexDefinitionException if the new definition is invalid
-     * @throws IndexExistsException if <code>allowUpdate</code> is <code>false</code> and the <code>NodeTypeDefinition</code>
-     *         specifies a node type name that is already registered.
-     * @throws RepositoryException if there is a problem registering the new definition, or if an existing index
-     */
-    void registerIndexes( IndexDefinition[] indexDefinitions,
-                          boolean allowUpdate ) throws InvalidIndexDefinitionException, IndexExistsException, RepositoryException;
-
-    /**
-     * Removes an existing index definition.
-     * 
-     * @param indexName the name of the index definition to be removed; may not be null
-     * @throws NoSuchIndexException there is no index with the supplied name
-     * @throws RepositoryException if there is a problem registering the new definition, or if an existing index
-     */
-    void unregisterIndex( String indexName ) throws NoSuchIndexException, RepositoryException;
-
-    /**
-     * Create a new template that can be used to programmatically define an index.
-     * 
-     * @return the new template; may not be null
-     */
-    IndexDefinitionTemplate createIndexDefinitionTemplate();
-
-    /**
-     * Create a new template that can be used to programmatically define a column on an index.
-     * 
-     * @return the new template; may not be null
-     */
-    IndexColumnDefinitionTemplate createIndexColumnDefinitionTemplate();
-
 }

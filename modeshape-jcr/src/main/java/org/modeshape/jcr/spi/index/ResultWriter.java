@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.spi.index.provider;
+package org.modeshape.jcr.spi.index;
 
 import java.util.Iterator;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.spi.index.provider.Index.Operation;
 
 /**
- * A writer passed by ModeShape to a {@link Operation} instance when the query engine needs additional results for the query.
+ * A writer passed by ModeShape to a {@link org.modeshape.jcr.spi.index.provider.Filter.Results} instance when the query engine
+ * needs additional results for the query.
  * <p>
- * Instances of this type are created by ModeShape and passed into the {@link Operation#getNextBatch(ResultWriter, int)}
- * method. Thus, providers do not need to implement this interface (except maybe for testing purposes).
+ * Instances of this type are created by ModeShape and passed into the
+ * {@link org.modeshape.jcr.spi.index.provider.Filter.Results#getNextBatch(ResultWriter, int)} method. Thus, providers do not need
+ * to implement this interface (except maybe for testing purposes).
  * </p>
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
 @NotThreadSafe
-public
-interface ResultWriter {
+public interface ResultWriter {
     /**
      * Add to the current batch a single node key with a score.
      * 

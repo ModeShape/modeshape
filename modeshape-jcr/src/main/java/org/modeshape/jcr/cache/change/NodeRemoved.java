@@ -21,7 +21,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
- *  Change representing the removal of a node.
+ * Change representing the removal of a node.
  */
 public class NodeRemoved extends AbstractNodeChange {
 
@@ -33,8 +33,9 @@ public class NodeRemoved extends AbstractNodeChange {
                         NodeKey parentKey,
                         Path path,
                         Name primaryType,
-                        Set<Name> mixinTypes ) {
-        super(key, path, primaryType, mixinTypes);
+                        Set<Name> mixinTypes,
+                        boolean queryable ) {
+        super(key, path, primaryType, mixinTypes, queryable);
         this.parentKey = parentKey;
     }
 

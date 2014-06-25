@@ -18,38 +18,36 @@ package org.modeshape.jcr;
 
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.spi.index.IndexColumnDefinitionTemplate;
-import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.PropertyType;
+import org.modeshape.jcr.api.index.IndexColumnDefinitionTemplate;
 
 @Immutable
 class RepositoryIndexColumnDefinitionTemplate implements IndexColumnDefinitionTemplate {
 
-    private Name propertyTypeName;
-    private PropertyType columnType = PropertyType.STRING;
+    private String propertyTypeName;
+    private int columnType = javax.jcr.PropertyType.STRING;
 
     RepositoryIndexColumnDefinitionTemplate() {
     }
 
     @Override
-    public Name getPropertyName() {
+    public String getPropertyName() {
         return propertyTypeName;
     }
 
     @Override
-    public PropertyType getColumnType() {
+    public int getColumnType() {
         return columnType;
     }
 
     @Override
-    public IndexColumnDefinitionTemplate setPropertyTypeName( Name propertyTypeName ) {
+    public IndexColumnDefinitionTemplate setPropertyTypeName( String propertyTypeName ) {
         CheckArg.isNotNull(propertyTypeName, "propertyTypeName");
         this.propertyTypeName = propertyTypeName;
         return this;
     }
 
     @Override
-    public IndexColumnDefinitionTemplate getColumnType( PropertyType type ) {
+    public IndexColumnDefinitionTemplate getColumnType( int type ) {
         CheckArg.isNotNull(type, "type");
         this.columnType = type;
         return this;

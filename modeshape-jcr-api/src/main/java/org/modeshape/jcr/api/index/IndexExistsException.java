@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.spi.index;
+package org.modeshape.jcr.api.index;
 
 import javax.jcr.RepositoryException;
 
 /**
- * Exception used when an index does not exist.
+ * Exception used when an index already exists.
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public class NoSuchIndexException extends RepositoryException {
+public class IndexExistsException extends RepositoryException {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new instance of this class with <code>null</code> as its detail message.
      */
-    public NoSuchIndexException() {
+    public IndexExistsException() {
     }
 
     /**
@@ -38,7 +38,7 @@ public class NoSuchIndexException extends RepositoryException {
      * 
      * @param message the detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
      */
-    public NoSuchIndexException( String message ) {
+    public IndexExistsException( String message ) {
         super(message);
     }
 
@@ -47,7 +47,7 @@ public class NoSuchIndexException extends RepositoryException {
      * 
      * @param rootCause root failure cause
      */
-    public NoSuchIndexException( Throwable rootCause ) {
+    public IndexExistsException( Throwable rootCause ) {
         super(rootCause);
     }
 
@@ -57,7 +57,7 @@ public class NoSuchIndexException extends RepositoryException {
      * @param message the detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
      * @param rootCause root failure cause
      */
-    public NoSuchIndexException( String message,
+    public IndexExistsException( String message,
                                  Throwable rootCause ) {
         super(message, rootCause);
     }

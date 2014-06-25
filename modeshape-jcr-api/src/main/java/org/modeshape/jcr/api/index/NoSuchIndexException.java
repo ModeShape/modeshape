@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.spi.index;
+package org.modeshape.jcr.api.index;
 
 import javax.jcr.RepositoryException;
 
 /**
- * Exception used when an index definition is invalid.
+ * Exception used when an index does not exist.
  * 
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public class InvalidIndexDefinitionException extends RepositoryException {
+public class NoSuchIndexException extends RepositoryException {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new instance of this class with <code>null</code> as its detail message.
      */
-    public InvalidIndexDefinitionException() {
+    public NoSuchIndexException() {
     }
 
     /**
@@ -38,7 +38,7 @@ public class InvalidIndexDefinitionException extends RepositoryException {
      * 
      * @param message the detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
      */
-    public InvalidIndexDefinitionException( String message ) {
+    public NoSuchIndexException( String message ) {
         super(message);
     }
 
@@ -47,7 +47,7 @@ public class InvalidIndexDefinitionException extends RepositoryException {
      * 
      * @param rootCause root failure cause
      */
-    public InvalidIndexDefinitionException( Throwable rootCause ) {
+    public NoSuchIndexException( Throwable rootCause ) {
         super(rootCause);
     }
 
@@ -57,8 +57,8 @@ public class InvalidIndexDefinitionException extends RepositoryException {
      * @param message the detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
      * @param rootCause root failure cause
      */
-    public InvalidIndexDefinitionException( String message,
-                                            Throwable rootCause ) {
+    public NoSuchIndexException( String message,
+                                 Throwable rootCause ) {
         super(message, rootCause);
     }
 

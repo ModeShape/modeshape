@@ -400,6 +400,26 @@ public class LazyCachedNode implements CachedNode, Serializable {
     }
 
     @Override
+    public Properties getPropertiesByName( NodeCache cache ) {
+        if (!propertiesFullyLoaded) {
+            WorkspaceCache wsCache = workspaceCache(cache);
+            wsCache.translator().getProperties(document(wsCache), properties());
+            this.propertiesFullyLoaded = true;
+        }
+        return new Properties() {
+            @Override
+            public Property getProperty( Name name ) {
+                return properties().get(name);
+            }
+
+            @Override
+            public Iterator<Property> iterator() {
+                return properties().values().iterator();
+            }
+        };
+    }
+
+    @Override
     public Iterator<Property> getProperties( NodeCache cache ) {
         if (!propertiesFullyLoaded) {
             WorkspaceCache wsCache = workspaceCache(cache);

@@ -19,8 +19,8 @@ import java.util.Iterator;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 
 /**
  * An immutable wrapper for a mutable {@link Problems}.
@@ -280,7 +280,7 @@ public class ImmutableProblems implements Problems {
 
     @Override
     public Iterator<Problem> iterator() {
-        return new ReadOnlyIterator<Problem>(delegate.iterator());
+        return ReadOnlyIterator.around(delegate.iterator());
     }
 
     @Override

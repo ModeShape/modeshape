@@ -112,11 +112,11 @@ public final class InitialContentImporter {
         }
     }
 
-    private InputStream getInitialContentFileStream( String workspaceName )  {
+    private InputStream getInitialContentFileStream( String workspaceName ) {
         String initialContentFileString = initialContentConfig.getInitialContentFile(workspaceName);
         InputStream stream = IoUtil.getResourceAsStream(initialContentFileString,
-                                                        repository.environment().getClassLoader(
-                                                                InitialContentImporter.class.getClassLoader()),
+                                                        repository.environment()
+                                                                  .getClassLoader(InitialContentImporter.class.getClassLoader()),
                                                         null);
         if (stream == null) {
             repository.warn(JcrI18n.cannotLoadInitialContentFile, initialContentFileString);
@@ -136,7 +136,7 @@ public final class InitialContentImporter {
             return session.context();
         }
 
-        @SuppressWarnings( {"synthetic-access", "unchecked"} )
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void submit( LinkedHashMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) throws RepositoryException {
             List<NodeImportXmlHandler.ImportElement> elementsWithReferences = new ArrayList<>();
@@ -150,7 +150,7 @@ public final class InitialContentImporter {
 
                 // create the new node
                 AbstractJcrNode newNode = null;
-                //make sure the path is not encoded, because that's how the node xml handler generates it
+                // make sure the path is not encoded, because that's how the node xml handler generates it
                 String newNodeRelativePath = nodePath.getLastSegment().getName().toString();
                 if (StringUtil.isBlank(element.getType())) {
                     newNode = parentNode.addNode(newNodeRelativePath);
@@ -168,34 +168,34 @@ public final class InitialContentImporter {
                     org.modeshape.jcr.value.PropertyType propertyType = element.getPropertyType(propertyName);
                     if (isReference(propertyType)) {
                         elementsWithReferences.add(element);
-                        //references will be processed later
+                        // references will be processed later
                         continue;
                     }
                     Collection<String> propertyValues = element.getProperties().get(propertyName);
                     if (propertyValues.size() == 1) {
                         String stringValue = propertyValues.iterator().next();
                         if (isBinary(propertyType)) {
-                            //we have a binary prop, try to resolve its stream
+                            // we have a binary prop, try to resolve its stream
                             InputStream inputStream = readBinaryStream(stringValue);
                             if (inputStream != null) {
                                 newNode.setProperty(propertyName, inputStream);
                                 continue;
                             }
-                            //we were unable to read its stream, to we'll set the binary value UTF-8 bytes (default behavior)
+                            // we were unable to read its stream, to we'll set the binary value UTF-8 bytes (default behavior)
                         }
                         newNode.setProperty(propertyName, stringValue, propertyType.jcrType());
                     } else {
                         String[] stringValues = propertyValues.toArray(new String[propertyValues.size()]);
                         if (isBinary(propertyType)) {
-                            //try to parse each individual binary value and read its stream
+                            // try to parse each individual binary value and read its stream
                             boolean allValuesRead = true;
                             Value[] binaryValues = new Value[propertyValues.size()];
                             for (int i = 0; i < stringValues.length; i++) {
                                 String stringValue = stringValues[i];
                                 InputStream inputStream = readBinaryStream(stringValue);
                                 if (inputStream == null) {
-                                    //we were unable to read the stream, so we abort this approach altogether and we'll
-                                    //set the binary value using the string bytes
+                                    // we were unable to read the stream, so we abort this approach altogether and we'll
+                                    // set the binary value using the string bytes
                                     allValuesRead = false;
                                     break;
                                 }
@@ -203,7 +203,7 @@ public final class InitialContentImporter {
                             }
                             if (allValuesRead) {
                                 newNode.setProperty(propertyName, binaryValues);
-                                //we managed to set the binary multi value streams, so move onto the next property
+                                // we managed to set the binary multi value streams, so move onto the next property
                                 continue;
                             }
                         }
@@ -213,37 +213,37 @@ public final class InitialContentImporter {
             }
 
             if (!elementsWithReferences.isEmpty()) {
-                //after we've processed all the nodes (and created them) set the reference properties
+                // after we've processed all the nodes (and created them) set the reference properties
                 setReferenceProperties(elementsWithReferences);
             }
         }
 
         private boolean isReference( org.modeshape.jcr.value.PropertyType propertyType ) {
-            return org.modeshape.jcr.value.PropertyType.REFERENCE == propertyType ||
-                org.modeshape.jcr.value.PropertyType.WEAKREFERENCE == propertyType ||
-                org.modeshape.jcr.value.PropertyType.SIMPLEREFERENCE == propertyType;
+            return org.modeshape.jcr.value.PropertyType.REFERENCE == propertyType
+                   || org.modeshape.jcr.value.PropertyType.WEAKREFERENCE == propertyType
+                   || org.modeshape.jcr.value.PropertyType.SIMPLEREFERENCE == propertyType;
         }
 
-        private boolean isBinary(org.modeshape.jcr.value.PropertyType propertyType) {
-            return  PropertyType.BINARY == propertyType;
+        private boolean isBinary( org.modeshape.jcr.value.PropertyType propertyType ) {
+            return PropertyType.BINARY == propertyType;
         }
 
-        private InputStream readBinaryStream(String resourcePath) {
-            //attempt to resolve the resource as the path to a file
+        private InputStream readBinaryStream( String resourcePath ) {
+            // attempt to resolve the resource as the path to a file
             File file = new File(resourcePath);
             if (file.exists() && file.canRead()) {
                 try {
                     return new FileInputStream(file);
                 } catch (FileNotFoundException e) {
-                   //we cannot locate/read the file
+                    // we cannot locate/read the file
                 }
             }
-            //try resolving it via the classpath
+            // try resolving it via the classpath
             return InitialContentImporter.class.getClassLoader().getResourceAsStream(resourcePath);
         }
 
-        private void setReferenceProperties(
-                List<NodeImportXmlHandler.ImportElement> elementsWithReferences ) throws RepositoryException {
+        private void setReferenceProperties( List<NodeImportXmlHandler.ImportElement> elementsWithReferences )
+            throws RepositoryException {
             for (NodeImportXmlHandler.ImportElement element : elementsWithReferences) {
                 Node node = session.node(element.getPath());
                 Multimap<String, String> properties = element.getProperties();

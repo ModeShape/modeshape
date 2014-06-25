@@ -15,17 +15,13 @@
  */
 package org.modeshape.jcr.query.engine;
 
-import java.util.Iterator;
 import java.util.Set;
-import javax.transaction.Transaction;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.NodeTypeSchemata;
-import org.modeshape.jcr.api.Binary;
+import org.modeshape.jcr.cache.CachedNode.Properties;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.spi.index.provider.IndexWriter;
+import org.modeshape.jcr.spi.index.IndexWriter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
-import org.modeshape.jcr.value.Property;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -44,50 +40,15 @@ public final class NoOpQueryIndexWriter implements IndexWriter {
     }
 
     @Override
-    public IndexingContext createIndexingContext( Transaction txn ) {
-        return null;
-    }
-
-    @Override
     public void clearAllIndexes() {
     }
 
     @Override
-    public void addToIndex( String workspace,
-                            NodeKey key,
-                            Path path,
-                            Name primaryType,
-                            Set<Name> mixinTypes,
-                            Iterator<Property> propertiesIterator,
-                            NodeTypeSchemata schemata,
-                            IndexingContext txnCtx ) {
+    public void add( String workspace,
+                     NodeKey key,
+                     Path path,
+                     Name primaryType,
+                     Set<Name> mixinTypes,
+                     Properties properties ) {
     }
-
-    @Override
-    public void updateIndex( String workspace,
-                             NodeKey key,
-                             Path path,
-                             Name primaryType,
-                             Set<Name> mixinTypes,
-                             Iterator<Property> properties,
-                             NodeTypeSchemata schemata,
-                             IndexingContext txnCtx ) {
-    }
-
-    @Override
-    public void removeFromIndex( String workspace,
-                                 Iterable<NodeKey> keys,
-                                 IndexingContext txnCtx ) {
-    }
-
-    @Override
-    public void addBinaryToIndex( Binary binary,
-                                  IndexingContext txnCtx ) {
-    }
-
-    @Override
-    public void removeBinariesFromIndex( Iterable<String> sha1s,
-                                         IndexingContext txnCtx ) {
-    }
-
 }

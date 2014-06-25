@@ -18,6 +18,7 @@ package org.modeshape.jcr.spi.index;
 
 import java.util.Map;
 import java.util.Set;
+import org.modeshape.jcr.api.index.IndexDefinition;
 
 /**
  * A description of the changes to {@link IndexDefinition}s.
@@ -39,5 +40,4 @@ public interface IndexDefinitionChanges {
      * @return the set of removed index definition names; never null but possibly empty
      */
     Set<String> getRemovedIndexDefinitions();
-
 }

@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.spi.index;
-
-import org.modeshape.jcr.spi.index.provider.IndexProvider;
-import org.modeshape.jcr.value.Name;
+package org.modeshape.jcr.api.index;
 
 /**
  * A mutable form of the {@link IndexDefinition}.
@@ -51,7 +48,7 @@ public interface IndexDefinitionTemplate extends IndexDefinition {
     IndexDefinitionTemplate setName( String name );
 
     /**
-     * Set the name of the {@link IndexProvider provider} that owns this index.
+     * Set the name of the index provider implementation that owns this index.
      * 
      * @param providerName the provider's name; may not be null
      * @return this instance for method chaining; never null
@@ -73,7 +70,7 @@ public interface IndexDefinitionTemplate extends IndexDefinition {
      *        (e.g., {@code nt:base}).
      * @return this instance for method chaining; never null
      */
-    IndexDefinitionTemplate setNodeTypeName( Name name );
+    IndexDefinitionTemplate setNodeTypeName( String name );
 
     /**
      * Set the description for this index.
@@ -90,4 +87,35 @@ public interface IndexDefinitionTemplate extends IndexDefinition {
      * @return this instance for method chaining; never null
      */
     IndexDefinitionTemplate setColumnDefinitions( Iterable<? extends IndexColumnDefinition> columnDefinitions );
+
+    /**
+     * Set this index definition to apply to all workspaces.
+     * 
+     * @return this instance for method chaining; never null
+     */
+    IndexDefinitionTemplate setAllWorkspaces();
+
+    /**
+     * Set the name of the workspace to which this definition applies.
+     * 
+     * @param workspaceName the workspace name; may not be null
+     * @return this instance for method chaining; never null
+     */
+    IndexDefinitionTemplate setWorkspace( String workspaceName );
+
+    /**
+     * Set the names of the workspaces to which this definition applies.
+     * 
+     * @param workspaceNames the workspace names; may not be null
+     * @return this instance for method chaining; never null
+     */
+    IndexDefinitionTemplate setWorkspaces( String... workspaceNames );
+
+    /**
+     * Set the names of the workspaces to which this definition applies using a regular expression pattern.
+     * 
+     * @param regex the regular expression that matches the workspaces to which this index applies; may not be null
+     * @return this instance for method chaining; never null
+     */
+    IndexDefinitionTemplate setWorkspaceNamePattern( String regex );
 }

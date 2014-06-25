@@ -17,7 +17,7 @@
  * This package contains the Service Provider Interface (SPI) for custom index providers, which are components that encapsulate
  * how ModeShape updates and uses a set of particular indexes. To integrate your own indexing technology into ModeShape,
  * start by create a concrete subclass of {@link org.modeshape.jcr.spi.index.provider.IndexProvider}, as well as the necessary 
- * {@link org.modeshape.jcr.spi.index.provider.IndexWriter}, {@link org.modeshape.jcr.spi.index.provider.Index}, and 
+ * {@link org.modeshape.jcr.spi.index.IndexWriter}, {@link org.modeshape.jcr.spi.index.Index}, and 
  * {@link org.modeshape.jcr.spi.index.provider.IndexPlanner} interfaces.
  */
 

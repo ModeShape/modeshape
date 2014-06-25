@@ -39,7 +39,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import org.modeshape.jcr.spi.index.IndexDefinition.IndexKind;
+import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 
 public class AddIndexDefinition extends AbstractAddStepHandler {
 

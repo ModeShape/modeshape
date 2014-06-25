@@ -14,31 +14,22 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.spi.index;
+package org.modeshape.jcr.index.local;
 
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.PropertyType;
+import java.io.Closeable;
+import org.modeshape.jcr.spi.index.Index;
 
 /**
- * An immutable definition of a column used in an {@link IndexDefinition}.
- * 
+ * @param <T> the type of value that is added to the index
  * @author Randall Hauch (rhauch@redhat.com)
  */
-@Immutable
-public interface IndexColumnDefinition {
+public interface LocalIndex<T> extends Index, Closeable {
 
-    /**
-     * Get the name of the property for which this index column applies.
-     * 
-     * @return the property name; never null
-     */
-    Name getPropertyName();
+    void add( String nodeKey,
+              T value );
 
-    /**
-     * Get the type of value for this index column applies.
-     * 
-     * @return the type; never null
-     */
-    PropertyType getColumnType();
+    void remove( String nodeKey );
+
+    @Override
+    void close();
 }

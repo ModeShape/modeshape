@@ -34,43 +34,51 @@ import javax.jcr.RepositoryException;
 import org.infinispan.commons.util.ReflectionUtil;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.ArrayListMultimap;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.common.collection.Multimap;
+import org.modeshape.common.collection.ReadOnlyIterator;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
+import org.modeshape.jcr.api.index.IndexColumnDefinitionTemplate;
+import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
+import org.modeshape.jcr.api.index.IndexExistsException;
+import org.modeshape.jcr.api.index.InvalidIndexDefinitionException;
+import org.modeshape.jcr.api.index.NoSuchIndexException;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.NodeAdded;
 import org.modeshape.jcr.cache.change.NodeRemoved;
 import org.modeshape.jcr.cache.change.PropertyChanged;
+import org.modeshape.jcr.cache.change.WorkspaceAdded;
+import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.query.CompositeIndexWriter;
 import org.modeshape.jcr.query.engine.ScanningQueryEngine;
-import org.modeshape.jcr.spi.index.IndexColumnDefinitionTemplate;
-import org.modeshape.jcr.spi.index.IndexDefinition;
 import org.modeshape.jcr.spi.index.IndexDefinitionChanges;
-import org.modeshape.jcr.spi.index.IndexDefinitionTemplate;
-import org.modeshape.jcr.spi.index.IndexExistsException;
+import org.modeshape.jcr.spi.index.IndexFeedback;
 import org.modeshape.jcr.spi.index.IndexManager;
-import org.modeshape.jcr.spi.index.InvalidIndexDefinitionException;
-import org.modeshape.jcr.spi.index.NoSuchIndexException;
+import org.modeshape.jcr.spi.index.IndexWriter;
+import org.modeshape.jcr.spi.index.WorkspaceChanges;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 import org.modeshape.jcr.spi.index.provider.IndexProviderExistsException;
-import org.modeshape.jcr.spi.index.provider.IndexWriter;
 import org.modeshape.jcr.spi.index.provider.NoSuchProviderException;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.WorkspaceAndPath;
 
 /**
  * The {@link RepositoryIndexManager} is the maintainer of index definitions for the entire repository at run-time. The repository
  * index manager maintains an immutable view of all index definitions.
  */
 @ThreadSafe
-class RepositoryIndexManager implements ChangeSetListener, IndexManager {
+class RepositoryIndexManager implements IndexManager {
 
     private final JcrRepository.RunningState repository;
     private final RepositoryConfiguration config;
@@ -112,11 +120,14 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
 
     /**
      * Initialize this manager by calling {@link IndexProvider#initialize()} on each of the currently-registered providers.
+     * 
+     * @return the information about the portions of the repository that need to be scanned to (re)build indexes; null if no
+     *         scanning is required
      */
-    protected synchronized void initialize() {
+    protected synchronized ScanningTasks initialize() {
         if (initialized.get()) {
             // nothing to do ...
-            return;
+            return null;
         }
 
         // Initialize each of the providers, removing any that are not properly initialized ...
@@ -133,8 +144,36 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
                 providerIter.remove();
             }
         }
+        // Re-read the index definitions in case there were disabled index definitions that used the now-available provider ...
+        readIndexDefinitions();
+
+        // Notify the providers of all the index definitions (which we'll treat as "new" since we're just starting up) ...
+        RepositoryIndexes indexes = this.indexes;
+        ScanningTasks feedback = new ScanningTasks();
+        for (Iterator<Map.Entry<String, IndexProvider>> providerIter = providers.entrySet().iterator(); providerIter.hasNext();) {
+            IndexProvider provider = providerIter.next().getValue();
+            if (provider == null) continue;
+            final String providerName = provider.getName();
+
+            IndexChanges changes = new IndexChanges();
+            for (IndexDefinition indexDefn : indexes.getIndexDefinitions().values()) {
+                if (!providerName.equals(indexDefn.getProviderName())) continue;
+                changes.change(indexDefn);
+            }
+            // Even if there are no definitions, we still want to notify each of the providers ...
+            try {
+                provider.notify(changes, repository.changeBus(), repository.nodeTypeManager(), repository.repositoryCache()
+                                                                                                         .getWorkspaceNames(),
+                                feedback.forProvider(providerName));
+            } catch (RuntimeException e) {
+                logger.error(e, JcrI18n.errorNotifyingProviderOfIndexChanges, providerName, repository.name(), e.getMessage());
+            }
+        }
+
+        // Refresh the index writer ...
         refreshIndexWriter();
         initialized.set(true);
+        return feedback;
     }
 
     protected void refreshIndexWriter() {
@@ -148,6 +187,10 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
      * @throws RepositoryException if there is a problem initializing the provider
      */
     protected void doInitialize( IndexProvider provider ) throws RepositoryException {
+
+        // Set the execution context instance ...
+        ReflectionUtil.setValue(provider, "context", repository.context());
+
         provider.initialize();
 
         // If successful, call the 'postInitialize' method reflectively (due to inability to call directly) ...
@@ -181,15 +224,15 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
     }
 
     /**
-     * Get the query index writer that will delegate to only those registered providers that also need to be
-     * {@link IndexProvider#isReindexingRequired() reindexed}.
+     * Get the query index writer that will delegate to only those registered providers with the given names.
      * 
+     * @param providerNames the names of the providers that require indexing
      * @return a query index writer instance; never null
      */
-    IndexWriter getIndexWriterForProvidersNeedingReindexing() {
+    IndexWriter getIndexWriterForProviders( Set<String> providerNames ) {
         List<IndexProvider> reindexProviders = new LinkedList<>();
         for (IndexProvider provider : providers.values()) {
-            if (provider.isReindexingRequired()) {
+            if (providerNames.contains(provider.getName())) {
                 reindexProviders.add(provider);
             }
         }
@@ -344,11 +387,55 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
         return indexes;
     }
 
-    @Override
-    public void notify( ChangeSet changeSet ) {
+    protected ScanningTasks notify( ChangeSet changeSet ) {
+        if (changeSet.getWorkspaceName() == null) {
+            // This is a change to the workspaces or repository metadata ...
+
+            // Refresh the index definitions ...
+            RepositoryIndexes indexes = readIndexDefinitions();
+            ScanningTasks feedback = new ScanningTasks();
+            if (!indexes.getIndexDefinitions().isEmpty()) {
+                // Build up the names of the added and removed workspace names ...
+                Set<String> addedWorkspaces = new HashSet<>();
+                Set<String> removedWorkspaces = new HashSet<>();
+                for (Change change : changeSet) {
+                    if (change instanceof WorkspaceAdded) {
+                        WorkspaceAdded added = (WorkspaceAdded)change;
+                        addedWorkspaces.add(added.getWorkspaceName());
+                    } else if (change instanceof WorkspaceRemoved) {
+                        WorkspaceRemoved removed = (WorkspaceRemoved)change;
+                        removedWorkspaces.add(removed.getWorkspaceName());
+                    }
+                }
+                if (!addedWorkspaces.isEmpty() || !removedWorkspaces.isEmpty()) {
+                    // Figure out which providers need to be called, and which definitions go with those providers ...
+                    Map<String, List<IndexDefinition>> defnsByProvider = new HashMap<>();
+                    for (IndexDefinition defn : indexes.getIndexDefinitions().values()) {
+                        String providerName = defn.getProviderName();
+                        List<IndexDefinition> defns = defnsByProvider.get(providerName);
+                        if (defns == null) {
+                            defns = new ArrayList<>();
+                            defnsByProvider.put(providerName, defns);
+                        }
+                        defns.add(defn);
+                    }
+                    // Then for each provider ...
+                    for (Map.Entry<String, List<IndexDefinition>> entry : defnsByProvider.entrySet()) {
+                        String providerName = entry.getKey();
+                        WorkspaceIndexChanges changes = new WorkspaceIndexChanges(entry.getValue(), addedWorkspaces,
+                                                                                  removedWorkspaces);
+                        IndexProvider provider = providers.get(providerName);
+                        if (provider == null) continue;
+                        provider.notify(changes, repository.changeBus(), repository.nodeTypeManager(),
+                                        repository.repositoryCache().getWorkspaceNames(), feedback.forProvider(providerName));
+                    }
+                }
+            }
+            return feedback;
+        }
         if (!systemWorkspaceName.equals(changeSet.getWorkspaceName())) {
             // The change does not affect the 'system' workspace, so skip it ...
-            return;
+            return null;
         }
 
         // It is simple to listen to all local and remote changes. Therefore, any changes made locally to the index definitions
@@ -402,13 +489,14 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
 
         if (changesByProviderName.get() == null || changesByProviderName.get().isEmpty()) {
             // No changes to the indexes ...
-            return;
+            return null;
         }
         // Refresh the index definitions ...
         RepositoryIndexes indexes = readIndexDefinitions();
 
         // And notify the affected providers ...
         StringFactory strings = context.getValueFactories().getStringFactory();
+        ScanningTasks feedback = new ScanningTasks();
         for (Map.Entry<Name, IndexChangeInfo> entry : changesByProviderName.get().entrySet()) {
             String providerName = strings.create(entry.getKey());
             IndexProvider provider = providers.get(providerName);
@@ -432,7 +520,9 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
             }
             // Notify the provider ...
             try {
-                provider.notify(changes);
+                provider.notify(changes, repository.changeBus(), repository.nodeTypeManager(), repository.repositoryCache()
+                                                                                                         .getWorkspaceNames(),
+                                feedback.forProvider(providerName));
             } catch (RuntimeException e) {
                 logger.error(e, JcrI18n.errorNotifyingProviderOfIndexChanges, providerName, repository.name(), e.getMessage());
             }
@@ -440,6 +530,7 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
 
         // Finally swap the snapshot of indexes ...
         this.indexes = indexes;
+        return feedback;
     }
 
     protected static IndexChangeInfo changeInfoForProvider( AtomicReference<Map<Name, IndexChangeInfo>> changesByProviderName,
@@ -502,6 +593,35 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
         }
     }
 
+    protected static final class WorkspaceIndexChanges implements WorkspaceChanges {
+        private final List<IndexDefinition> definitions;
+        private final Set<String> addedWorkspaceNames;
+        private final Set<String> removedWorkspaceNames;
+
+        protected WorkspaceIndexChanges( List<IndexDefinition> defns,
+                                         Set<String> addedWorkspaces,
+                                         Set<String> removedWorkspaces ) {
+            this.definitions = defns;
+            this.addedWorkspaceNames = addedWorkspaces;
+            this.removedWorkspaceNames = removedWorkspaces;
+        }
+
+        @Override
+        public Collection<IndexDefinition> getIndexDefinitions() {
+            return definitions;
+        }
+
+        @Override
+        public Set<String> getAddedWorkspaces() {
+            return addedWorkspaceNames;
+        }
+
+        @Override
+        public Set<String> getRemovedWorkspaces() {
+            return removedWorkspaceNames;
+        }
+    }
+
     protected RepositoryIndexes readIndexDefinitions() {
         // There were at least some changes ...
         NodeTypes nodeTypes = repository.nodeTypeManager().getNodeTypes();
@@ -510,7 +630,7 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
             SessionCache systemCache = repository.createSystemSession(context, false);
             SystemContent system = new SystemContent(systemCache);
             Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions(providers.keySet());
-            return new Indexes(indexDefns, nodeTypes);
+            return new Indexes(context, indexDefns, nodeTypes);
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingIndexDefinitions, repository.name());
         }
@@ -527,7 +647,8 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
         private final Map<String, IndexDefinition> indexByName = new HashMap<>();
         private final Map<String, Map<String, Collection<IndexDefinition>>> indexesByProviderByNodeTypeName = new HashMap<>();
 
-        protected Indexes( Collection<IndexDefinition> defns,
+        protected Indexes( ExecutionContext context,
+                           Collection<IndexDefinition> defns,
                            NodeTypes nodeTypes ) {
             // Identify the subtypes for each node type, and do this before we build any views ...
             if (!defns.isEmpty()) {
@@ -545,12 +666,13 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
                 }
 
                 // Now process all of the indexes ...
+                NameFactory names = context.getValueFactories().getNameFactory();
                 Set<Name> nodeTypeNames = new HashSet<>();
                 for (IndexDefinition defn : defns) {
                     indexByName.put(defn.getName(), defn);
                     // Determine all of the node types that are subtypes of any columns
                     nodeTypeNames.clear();
-                    Name nodeTypeName = defn.getNodeTypeName();
+                    Name nodeTypeName = names.create(defn.getNodeTypeName());
                     // Now find out all of the node types that are or subtype the named node types ...
                     for (String typeAndSubtype : subtypesByName.get(nodeTypeName)) {
                         Map<String, Collection<IndexDefinition>> byProvider = indexesByProviderByNodeTypeName.get(typeAndSubtype);
@@ -581,5 +703,160 @@ class RepositoryIndexManager implements ChangeSetListener, IndexManager {
             if (defnsByProvider == null) return null;
             return defnsByProvider.get(providerName);
         }
+    }
+
+    /**
+     * An immutable set of provider names and non-overlapping workspace-path pairs.
+     * 
+     * @author Randall Hauch (rhauch@redhat.com)
+     */
+    @Immutable
+    static class ScanningRequest implements Iterable<WorkspaceAndPath> {
+
+        protected static final ScanningRequest EMPTY = new ScanningRequest();
+
+        private final Set<String> providerNames;
+        private final List<WorkspaceAndPath> workspaceAndPaths;
+
+        protected ScanningRequest() {
+            this.providerNames = java.util.Collections.emptySet();
+            this.workspaceAndPaths = java.util.Collections.emptyList();
+        }
+
+        protected ScanningRequest( List<WorkspaceAndPath> workspaceAndPaths,
+                                   Set<String> providerNames ) {
+            assert workspaceAndPaths != null;
+            assert providerNames != null;
+            this.providerNames = Collections.unmodifiableSet(providerNames);
+            this.workspaceAndPaths = workspaceAndPaths;
+        }
+
+        /**
+         * Determine if this has no providers or workspace-path pairs.
+         * 
+         * @return true if this request is empty, or false otherwise
+         */
+        public boolean isEmpty() {
+            return providerNames.isEmpty();
+        }
+
+        @Override
+        public Iterator<WorkspaceAndPath> iterator() {
+            return ReadOnlyIterator.around(workspaceAndPaths.iterator());
+        }
+
+        /**
+         * Get the set of provider names that are to be included in the scanning.
+         * 
+         * @return the provider names; never null but possibly empty if {@link #isEmpty()} returns true
+         */
+        public Set<String> providerNames() {
+            return providerNames;
+        }
+    }
+
+    /**
+     * Threadsafe utility class for maintaining the list of providers and workspace-path pairs that need to be scanned. Instances
+     * can be safely combined using {@link #add(ScanningTasks)}, and immutable snapshots of the information can be obtained via
+     * {@link #drain()} (which atomically empties the providers and workspace-path pairs into the immutable
+     * {@link ScanningRequest}).
+     * 
+     * @author Randall Hauch (rhauch@redhat.com)
+     */
+    @ThreadSafe
+    static class ScanningTasks {
+        private final Set<String> providerNames = new HashSet<>();
+        private final Multimap<String, Path> pathsByWorkspaceName = ArrayListMultimap.create();
+
+        /**
+         * Add all of the provider names and workspace-path pairs from the supplied scanning task.
+         * 
+         * @param other the other scanning task; may be null
+         * @return true if there is at least one workspace-path pair and provider, or false if there are none
+         */
+        public synchronized boolean add( ScanningTasks other ) {
+            if (other != null) {
+                this.providerNames.addAll(other.providerNames);
+                for (Map.Entry<String, Path> entry : other.pathsByWorkspaceName.entries()) {
+                    add(entry.getKey(), entry.getValue());
+                }
+            }
+            return !this.providerNames.isEmpty();
+        }
+
+        /**
+         * Atomically drain all of the provider names and workspace-path pairs from this object and return them in an immutable
+         * {@link ScanningRequest}.
+         * 
+         * @return the immutable set of provider names and workspace-path pairs; never null
+         */
+        public synchronized ScanningRequest drain() {
+            if (this.providerNames.isEmpty()) return ScanningRequest.EMPTY;
+
+            Set<String> providerNames = new HashSet<>(this.providerNames);
+            List<WorkspaceAndPath> workspaceAndPaths = new ArrayList<>(this.pathsByWorkspaceName.size());
+            for (Map.Entry<String, Path> entry : pathsByWorkspaceName.entries()) {
+                workspaceAndPaths.add(new WorkspaceAndPath(entry.getKey(), entry.getValue()));
+            }
+            this.providerNames.clear();
+            this.pathsByWorkspaceName.clear();
+            return new ScanningRequest(workspaceAndPaths, providerNames);
+        }
+
+        protected synchronized void add( String providerName,
+                                         String workspaceName,
+                                         Path path ) {
+            assert providerName != null;
+            assert workspaceName != null;
+            assert path != null;
+            providerNames.add(providerName);
+            add(workspaceName, path);
+        }
+
+        private void add( String workspaceName,
+                          Path path ) {
+            Collection<Path> paths = pathsByWorkspaceName.get(workspaceName);
+            if (paths.isEmpty()) {
+                paths.add(path);
+            } else {
+                Iterator<Path> iter = paths.iterator();
+                boolean add = true;
+                while (iter.hasNext()) {
+                    Path existing = iter.next();
+                    if (path.isAtOrAbove(existing)) {
+                        // Remove all of the existing paths that are at or above this path (we'll add it back in ...)
+                        iter.remove();
+                    } else if (path.isDescendantOf(existing)) {
+                        // The new path is a descendant of an existing path, so we can stop now and do nothing ...
+                        add = false;
+                        break;
+                    }
+                }
+                if (add) pathsByWorkspaceName.put(workspaceName, path);
+            }
+        }
+
+        /**
+         * Obtain an {@link IndexFeedback} instance that can be used to gather feedback from the named provider.
+         * 
+         * @param providerName the name of the index provider; may not be null
+         * @return the custom IndexFeedback instance; never null
+         */
+        protected IndexFeedback forProvider( final String providerName ) {
+            assert providerName != null;
+            return new IndexFeedback() {
+                @Override
+                public void scan( String workspaceName ) {
+                    add(providerName, workspaceName, Path.ROOT_PATH);
+                }
+
+                @Override
+                public void scan( String workspaceName,
+                                  Path path ) {
+                    add(providerName, workspaceName, path);
+                }
+            };
+        }
+
     }
 }

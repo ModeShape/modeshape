@@ -21,23 +21,25 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import org.modeshape.common.collection.ReadOnlyIterator;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.spi.index.IndexColumnDefinition;
-import org.modeshape.jcr.spi.index.IndexDefinitionTemplate;
-import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.api.index.IndexColumnDefinition;
+import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
 
 class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
+
+    private final String DEFAULT_NODE_TYPE_NAME = JcrNtLexicon.BASE.getString();
 
     private String name;
     private String providerName;
     private IndexKind kind = IndexKind.DUPLICATES;
-    private Name nodeTypeName = JcrNtLexicon.BASE;
+    private String nodeTypeName = DEFAULT_NODE_TYPE_NAME;
     private String description = "";
     private boolean enabled = true;
     private List<IndexColumnDefinition> columnDefns = new ArrayList<>();
-    private Map<Name, Property> extendedProperties = new HashMap<>();
+    private Map<String, Object> extendedProperties = new HashMap<>();
+    private WorkspaceMatchRule workspaceRule = RepositoryIndexDefinition.MATCH_ALL_WORKSPACES_RULE;
 
     RepositoryIndexDefinitionTemplate() {
     }
@@ -58,7 +60,7 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
     }
 
     @Override
-    public Name getNodeTypeName() {
+    public String getNodeTypeName() {
         return nodeTypeName;
     }
 
@@ -78,18 +80,33 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
     }
 
     @Override
-    public Property getProperty( Name propertyName ) {
+    public int size() {
+        return columnDefns.size();
+    }
+
+    @Override
+    public IndexColumnDefinition getColumnDefinition( int position ) throws NoSuchElementException {
+        return columnDefns.get(position);
+    }
+
+    @Override
+    public Object getIndexProperty( String propertyName ) {
         return extendedProperties.get(propertyName);
     }
 
     @Override
-    public Map<Name, Property> getProperties() {
+    public Map<String, Object> getIndexProperties() {
         return extendedProperties;
     }
 
     @Override
+    public WorkspaceMatchRule getWorkspaceMatchRule() {
+        return workspaceRule;
+    }
+
+    @Override
     public Iterator<IndexColumnDefinition> iterator() {
-        return new ReadOnlyIterator<>(columnDefns.iterator());
+        return ReadOnlyIterator.around(columnDefns.iterator());
     }
 
     @Override
@@ -114,8 +131,8 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
     }
 
     @Override
-    public IndexDefinitionTemplate setNodeTypeName( Name name ) {
-        this.nodeTypeName = name != null ? name : JcrNtLexicon.BASE;
+    public IndexDefinitionTemplate setNodeTypeName( String name ) {
+        this.nodeTypeName = name != null ? name : DEFAULT_NODE_TYPE_NAME;
         return this;
     }
 
@@ -133,4 +150,31 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
         }
         return this;
     }
+
+    @Override
+    public IndexDefinitionTemplate setAllWorkspaces() {
+        this.workspaceRule = RepositoryIndexDefinition.MATCH_ALL_WORKSPACES_RULE;
+        return this;
+    }
+
+    @Override
+    public IndexDefinitionTemplate setWorkspace( String workspaceName ) {
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceRule = new RepositoryIndexDefinition.ExactWorkspaceMatchRule(workspaceName);
+        return this;
+    }
+
+    @Override
+    public IndexDefinitionTemplate setWorkspaces( String... workspaceNames ) {
+        CheckArg.isNotEmpty(workspaceNames, "workspaceNames");
+        this.workspaceRule = RepositoryIndexDefinition.workspaceMatchRule(workspaceNames);
+        return this;
+    }
+
+    @Override
+    public IndexDefinitionTemplate setWorkspaceNamePattern( String regex ) {
+        this.workspaceRule = new RepositoryIndexDefinition.ExactWorkspaceMatchRule(regex);
+        return this;
+    }
+
 }

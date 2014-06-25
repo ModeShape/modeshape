@@ -249,8 +249,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
      * Recursively searches for the available access list.
      * 
      * @param absPath the absolute path of the node
-     * @param searchParents true if the search for the access list should include parents (and ancestors), or false if only this
-     *        node should be checked
+     * @param searchParents flag specifying whether the ancestors should be searched for the access control list
      * @return JCR defined access list object.
      * @throws PathNotFoundException
      * @throws RepositoryException
@@ -277,7 +276,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
             }
         }
 
-        if (node == null || permissions == null) {
+        if (permissions == null || node == null) {
             return null;
         }
 

@@ -23,7 +23,6 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 
 /**
  * An implementation of {@link Transactions} that does not even check whether there is a current transaction and instead always
@@ -41,12 +40,11 @@ public final class NoClientTransactions extends Transactions {
 
     /**
      * Creates a new instance passing in the given monitor factory and transaction manager
-     * @param monitorFactory a {@link MonitorFactory} instance; never null
+     * 
      * @param txnMgr a {@link TransactionManager} instance; never null
      */
-    public NoClientTransactions( MonitorFactory monitorFactory,
-                                 TransactionManager txnMgr ) {
-        super(monitorFactory, txnMgr);
+    public NoClientTransactions( TransactionManager txnMgr ) {
+        super(txnMgr);
     }
 
     @Override

@@ -45,6 +45,11 @@ import org.modeshape.jcr.api.monitor.Statistics;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.change.Change;
+import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.cache.change.WorkspaceAdded;
+import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.value.DateTimeFactory;
 
 /**
@@ -89,7 +94,7 @@ import org.modeshape.jcr.value.DateTimeFactory;
  * </p>
  */
 @ThreadSafe
-public class RepositoryStatistics implements RepositoryMonitor {
+public class RepositoryStatistics implements RepositoryMonitor, ChangeSetListener {
 
     /**
      * The maximum number of longest-running queries to retain.
@@ -366,6 +371,24 @@ public class RepositoryStatistics implements RepositoryMonitor {
         assert metric != null;
         DurationHistory history = durations.get(metric);
         if (history != null) history.recordDuration(duration, timeUnit, payload);
+    }
+
+    @Override
+    public void notify( ChangeSet changeSet ) {
+        // Track all changes, even those that originate in remote processes ...
+
+        increment(ValueMetric.NODE_CHANGES, changeSet.changedNodes().size());
+        if (changeSet.getWorkspaceName() == null) {
+            // This is a change in the workspaces or repository metadata ...
+            for (Change change : changeSet) {
+                if (change instanceof WorkspaceAdded) {
+                    increment(ValueMetric.WORKSPACE_COUNT);
+                } else if (change instanceof WorkspaceRemoved) {
+                    decrement(ValueMetric.WORKSPACE_COUNT);
+                }
+            }
+        }
+        // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
     }
 
     /**
@@ -745,10 +768,10 @@ public class RepositoryStatistics implements RepositoryMonitor {
         private final double variance; // just the square of the standard deviation
 
         protected StatisticsImpl( int count,
-                              long min,
-                              long max,
-                              double mean,
-                              double variance ) {
+                                  long min,
+                                  long max,
+                                  double mean,
+                                  double variance ) {
             this.count = count;
             this.maximum = max;
             this.minimum = min;
@@ -790,13 +813,8 @@ public class RepositoryStatistics implements RepositoryMonitor {
         public String toString() {
             long count = this.getCount();
             String samples = Inflector.getInstance().pluralize("sample", count > 1L ? 2 : 1);
-            return StringUtil.createString("{0} {1}: min={2}; avg={3}; max={4}; dev={5}",
-                                           count,
-                                           samples,
-                                           this.minimum,
-                                           this.mean,
-                                           this.maximum,
-                                           this.getStandardDeviation());
+            return StringUtil.createString("{0} {1}: min={2}; avg={3}; max={4}; dev={5}", count, samples, this.minimum,
+                                           this.mean, this.maximum, this.getStandardDeviation());
         }
     }
 
