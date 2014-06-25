@@ -86,7 +86,7 @@ public class FullTextSearchParser implements QueryParser {
                                                                                                                           SCORE_COLUMN_NAME),
                                                                                                         Order.DESCENDING,
                                                                                                         NullOrder.NULLS_LAST));
-    private static boolean FULL_TEXT_DISTINCT = true;
+    private static boolean FULL_TEXT_DISTINCT = false;
 
     private static FullTextSearchParser PARSER = new FullTextSearchParser();
 
