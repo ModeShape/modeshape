@@ -25,7 +25,6 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.SingleUseAbstractTest;
@@ -39,8 +38,6 @@ import org.modeshape.jcr.query.JcrQuery;
  * 
  * @author Horia Chiorean
  */
-// TODO: MODE-2178
-@Ignore
 public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
 
     private JcrTools jcrTools = new JcrTools();

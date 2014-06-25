@@ -2364,111 +2364,113 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
     }
 
-    // @FixFor( "MODE-1418" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
-    // throws RepositoryException {
-    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'cat wearing')";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-1418" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndAllProperties()
-    // throws RepositoryException {
-    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.*, 'cat wearing')";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-1418" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithNoSelectorAndOneProperty()
-    // throws RepositoryException {
-    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Other/NodeA[2]").validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-1829" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingLeadingWildcard() throws RepositoryException {
-    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing')";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
-    //
-    // sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing*')";
-    // query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-1829" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingTrailingWildcard() throws RepositoryException
-    // {
-    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'wea*')";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
-    // }
-    //
-    // @Test
-    // @FixFor( "MODE-1547" )
-    // public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeStopWords() throws Exception {
-    // String propertyText = "the quick Brown fox jumps over to the dog in at the gate";
-    // Node ftsNode = session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText).getParent();
-    // try {
-    // session.save();
-    //
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'"
-    // + propertyText + "')");
-    //
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText
-    // + "')");
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText
-    // + "')");
-    //
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
-    // + propertyText.toUpperCase() + "')");
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
-    // + propertyText.toUpperCase() + "')");
-    //
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
-    //
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
-    //
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
-    // executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
-    // } finally {
-    // // Try to remove the node (which messes up the expected results from subsequent tests) ...
-    // ftsNode.remove();
-    // session.save();
-    // }
-    // }
-    //
-    // private void executeQueryWithSingleResult( String sql ) throws RepositoryException {
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, JcrRepository.QueryLanguage.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-1840" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithBindVariableInsideContains() throws RepositoryException {
-    // String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, $expression)";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // query.bindValue("expression", session.getValueFactory().createValue("cat wearing"));
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Other/NodeA[2]").validate(query, result);
-    // }
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
+            throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndAllProperties()
+            throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.*, 'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithNoSelectorAndOneProperty()
+            throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Other/NodeA[2]").validate(query, result);
+    }
+
+    @FixFor( "MODE-1829" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingLeadingWildcard() throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+
+        sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing*')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @FixFor( "MODE-1829" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingTrailingWildcard() throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'wea*')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @Test
+    @FixFor( "MODE-1547" )
+    public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeStopWords() throws Exception {
+        String propertyText = "the quick Brown fox jumps over to the dog in at the gate";
+        Node ftsNode = session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText).getParent();
+        try {
+            session.save();
+
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'"
+                                         + propertyText + "')");
+
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText
+                                         + "')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText
+                                         + "')");
+
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
+                                         + propertyText.toUpperCase() + "')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
+                                         + propertyText.toUpperCase() + "')");
+
+            executeQueryWithSingleResult(
+                    "select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
+
+            executeQueryWithSingleResult(
+                    "select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
+            executeQueryWithSingleResult(
+                    "select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
+
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
+        } finally {
+            // Try to remove the node (which messes up the expected results from subsequent tests) ...
+            ftsNode.remove();
+            session.save();
+        }
+    }
+
+    private void executeQueryWithSingleResult( String sql ) throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, JcrRepository.QueryLanguage.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").validate(query, result);
+    }
+
+    @FixFor( "MODE-1840" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithBindVariableInsideContains() throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, $expression)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        query.bindValue("expression", session.getValueFactory().createValue("cat wearing"));
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Other/NodeA[2]").validate(query, result);
+    }
 
     @FixFor( "MODE-1840" )
     @Test( expected = InvalidQueryException.class )
@@ -2922,65 +2924,64 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    //
-    // @FixFor( "MODE-2027" )
-    // @Test
-    // public void shouldSearchAllPropertiesUsingDotSelectorJCRSql2FullTextSearch() throws RepositoryException {
-    // String sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(., 'Toyota') ";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // final List<String> actual = new ArrayList<String>();
-    // validateQuery().onEachRow(new Predicate() {
-    // @Override
-    // public void validate( int rowNumber,
-    // Row row ) throws RepositoryException {
-    // actual.add(row.getNode().getIdentifier());
-    // }
-    // }).validate(query, query.execute());
-    //
-    // sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(cars.*, 'Toyota')";
-    // query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // final List<String> expected = new ArrayList<String>();
-    // validateQuery().rowCount(actual.size()).onEachRow(new Predicate() {
-    // @Override
-    // public void validate( int rowNumber,
-    // Row row ) throws RepositoryException {
-    // expected.add(row.getNode().getIdentifier());
-    // }
-    // }).validate(query, query.execute());
-    //
-    // assertEquals(expected, actual);
-    // }
-    //
-    // @FixFor( "MODE-2062" )
-    // @Test
-    // public void fullTextShouldWorkWithBindVar() throws Exception {
-    // Node n1 = session.getRootNode().addNode("n1");
-    // n1.setProperty("n1-prop-1", "wow");
-    // n1.setProperty("n1-prop-2", "any");
-    //
-    // Node n2 = session.getRootNode().addNode("n2");
-    // n2.setProperty("n2-prop-1", "test");
-    //
-    // try {
-    // session.save();
-    //
-    // // test with literal
-    // String queryString = "select * from [nt:unstructured] as a where contains(a.*, 'wow')";
-    // assertNodesAreFound(queryString, Query.JCR_SQL2, "/n1");
-    //
-    // // test with bind
-    // String queryStringWithBind = "select * from [nt:unstructured] as a where contains(a.*, $text)";
-    // QueryManager queryManager = session.getWorkspace().getQueryManager();
-    // Query query = queryManager.createQuery(queryStringWithBind, Query.JCR_SQL2);
-    // query.bindValue("text", session.getValueFactory().createValue("wow"));
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasNodesAtPaths("/n1").validate(query, result);
-    // } finally {
-    // n1.remove();
-    // n2.remove();
-    // session.save();
-    // }
-    // }
+    @FixFor( "MODE-2027" )
+    @Test
+    public void shouldSearchAllPropertiesUsingDotSelectorJCRSql2FullTextSearch() throws RepositoryException {
+        String sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(., 'Toyota') ";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        final List<String> actual = new ArrayList<String>();
+        validateQuery().onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                actual.add(row.getNode().getIdentifier());
+            }
+        }).validate(query, query.execute());
+
+        sql = "SELECT cars.[jcr:path] FROM [car:Car] AS cars WHERE contains(cars.*, 'Toyota')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        final List<String> expected = new ArrayList<String>();
+        validateQuery().rowCount(actual.size()).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                expected.add(row.getNode().getIdentifier());
+            }
+        }).validate(query, query.execute());
+
+        assertEquals(expected, actual);
+    }
+
+    @FixFor( "MODE-2062" )
+    @Test
+    public void fullTextShouldWorkWithBindVar() throws Exception {
+        Node n1 = session.getRootNode().addNode("n1");
+        n1.setProperty("n1-prop-1", "wow");
+        n1.setProperty("n1-prop-2", "any");
+
+        Node n2 = session.getRootNode().addNode("n2");
+        n2.setProperty("n2-prop-1", "test");
+
+        try {
+            session.save();
+
+            // test with literal
+            String queryString = "select * from [nt:unstructured] as a where contains(a.*, 'wow')";
+            assertNodesAreFound(queryString, Query.JCR_SQL2, "/n1");
+
+            // test with bind
+            String queryStringWithBind = "select * from [nt:unstructured] as a where contains(a.*, $text)";
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery(queryStringWithBind, Query.JCR_SQL2);
+            query.bindValue("text", session.getValueFactory().createValue("wow"));
+            QueryResult result = query.execute();
+            validateQuery().rowCount(1).hasNodesAtPaths("/n1").validate(query, result);
+        } finally {
+            n1.remove();
+            n2.remove();
+            session.save();
+        }
+    }
 
     @FixFor( "MODE-2095" )
     @Test
@@ -3006,29 +3007,29 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     // // Full-text Search Queries
     // // ----------------------------------------------------------------------------------------------------------------
     //
-    // @FixFor( "MODE-1418" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryOfPhrase() throws RepositoryException {
-    // Query query = session.getWorkspace().getQueryManager().createQuery("cat wearing", JcrRepository.QueryLanguage.SEARCH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns(searchColumnNames()).validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-905" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteFullTextSearchQuery() throws RepositoryException {
-    // Query query = session.getWorkspace().getQueryManager().createQuery("land", JcrRepository.QueryLanguage.SEARCH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(3).hasColumns(searchColumnNames()).validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-905" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryWithName() throws RepositoryException {
-    // Query query = session.getWorkspace().getQueryManager().createQuery("highlander", JcrRepository.QueryLanguage.SEARCH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns(searchColumnNames()).validate(query, result);
-    // }
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryOfPhrase() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("cat wearing", JcrRepository.QueryLanguage.SEARCH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns(searchColumnNames()).validate(query, result);
+    }
+
+    @FixFor( "MODE-905" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQuery() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("land", JcrRepository.QueryLanguage.SEARCH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(4).hasColumns(searchColumnNames()).validate(query, result);
+    }
+
+    @FixFor( "MODE-905" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryWithName() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("highlander", JcrRepository.QueryLanguage.SEARCH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns(searchColumnNames()).validate(query, result);
+    }
 
     // ----------------------------------------------------------------------------------------------------------------
     // JCR-SQL Queries
@@ -3423,134 +3424,134 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., 'liter')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // assertThat(query, is(notNullValue()));
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithContainsCriteriaAndPluralWord() throws RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., 'liters')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // assertThat(query, is(notNullValue()));
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"liters V 12\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // assertThat(query, is(notNullValue()));
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphen() throws RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"5-speed\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNumberAndWildcard()
-    // throws RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"spee*\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(2).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws
-    // RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"heavy duty\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNoWildcard() throws RepositoryException
-    // {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"heavy-duty\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndWildcard() throws RepositoryException
-    // {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"heavy du*\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndLeadingWildcard()
-    // throws RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"*avy duty\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndWildcard() throws RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"heavy-du*\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @Ignore
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndLeadingWildcard()
-    // throws RepositoryException {
-    // String xpath = "/jcr:root//*[jcr:contains(., '\"*-speed\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(2).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-790" )
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldBeAbleToExecuteXPathQueryWithCompoundCriteria() throws Exception {
-    // String xpath = "/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liters V 12\"')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // String[] columnNames = {"jcr:primaryType", "jcr:mixinTypes", "jcr:path", "jcr:score", "jcr:created",
-    // "jcr:createdBy", "jcr:name", "mode:localName", "mode:depth", "car:mpgCity", "car:userRating",
-    // "car:mpgHighway", "car:engine", "car:model", "car:year", "car:maker", "car:lengthInInches",
-    // "car:valueRating", "car:wheelbaseInInches", "car:msrp", "car:alternateModels"};
-    // validateQuery().rowCount(1).hasColumns(columnNames).validate(query, result);
-    //
-    // // Query again with a different criteria that should return no nodes ...
-    // xpath = "/jcr:root/Cars//element(*,car:Car)[@car:year='2007' and jcr:contains(., '\"liter V 12\"')]";
-    // query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // result = query.execute();
-    // validateQuery().rowCount(0).hasColumns(columnNames).validate(query, result);
-    // }
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., 'liter')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        validateQuery().rowCount(2).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithContainsCriteriaAndPluralWord() throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., 'liters')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"liters V 12\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphen() throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"5-speed\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNumberAndWildcard()
+            throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"spee*\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(2).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws
+                                                                                                      RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"heavy duty\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+
+        //by default there is no stemming or punctuation replacement
+        assertFalse(result.getRows().hasNext());
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNoWildcard() throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"heavy-duty\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndWildcard() throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"heavy-du*\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndLeadingWildcard()
+            throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"*avy-duty\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndWildcard() throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"heavy-du*\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @Ignore
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndLeadingWildcard()
+            throws RepositoryException {
+        String xpath = "/jcr:root//*[jcr:contains(., '\"*-speed\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(2).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").validate(query, result);
+    }
+
+    @FixFor( "MODE-790" )
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithCompoundCriteria() throws Exception {
+        String xpath = "/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liters V 12\"')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        String[] columnNames = { "jcr:primaryType", "jcr:mixinTypes", "jcr:path", "jcr:score", "jcr:created",
+                                 "jcr:createdBy", "jcr:name", "mode:localName", "mode:depth", "car:mpgCity", "car:userRating",
+                                 "car:mpgHighway", "car:engine", "car:model", "car:year", "car:maker", "car:lengthInInches",
+                                 "car:valueRating", "car:wheelbaseInInches", "car:msrp", "car:alternateModels" };
+        validateQuery().rowCount(1).hasColumns(columnNames).validate(query, result);
+
+        // Query again with a different criteria that should return no nodes ...
+        xpath = "/jcr:root/Cars//element(*,car:Car)[@car:year='2007' and jcr:contains(., '\"liter V 12\"')]";
+        query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        result = query.execute();
+        validateQuery().rowCount(0).hasColumns(columnNames).validate(query, result);
+    }
 
     @SuppressWarnings( "deprecation" )
     @Test
@@ -3656,21 +3657,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }).validate(query, result);
     }
 
-    // @FixFor( "MODE-1144" )
-    // @SuppressWarnings( "deprecation" )
-    // @Test
-    // public void shouldParseMagnoliaXPathQuery() throws Exception {
-    // String xpath = "//*[@jcr:primaryType='mgnl:content']//*[jcr:contains(., 'paragraph')]";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("jcr:primaryType", "jcr:path", "jcr:score").onEachRow(new Predicate() {
-    // @Override
-    // public void validate( int rowNumber,
-    // Row row ) throws RepositoryException {
-    // assertThat(row.getNode().hasProperty("car:wheelbaseInInches"), is(true));
-    // }
-    // }).validate(query, result);
-    // }
+    @FixFor( "MODE-1144" )
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldParseMagnoliaXPathQuery() throws Exception {
+        String xpath = "//*[@jcr:primaryType='mgnl:content']//*[jcr:contains(., 'paragraph')]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
+        QueryResult result = query.execute();
+        assertNotNull(result);
+        assertFalse(result.getRows().hasNext());
+    }
 
     // ----------------------------------------------------------------------------------------------------------------
     // QOM Queries

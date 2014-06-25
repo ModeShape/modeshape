@@ -784,7 +784,7 @@ public class RowExtractors {
     public static interface ExtractFromRow {
 
         /**
-         * Get the type of value that this extrator will return from {@link #getValueInRow}.
+         * Get the type of value that this extractor will return from {@link #getValueInRow}.
          * 
          * @return the type; never null
          */

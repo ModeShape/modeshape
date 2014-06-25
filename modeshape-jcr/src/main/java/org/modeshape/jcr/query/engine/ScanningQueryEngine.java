@@ -1442,10 +1442,21 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             };
         }
         if (constraint instanceof FullTextSearch) {
-            FullTextSearch fts = (FullTextSearch)constraint;
-            final StaticOperand ftsExpression = fts.getFullTextSearchExpression();
-            final NodeCache cache = context.getNodeCache(sources.getWorkspaceName());
             final TypeFactory<String> strings = context.getTypeSystem().getStringFactory();
+            final StaticOperand ftsExpression = ((FullTextSearch) constraint).getFullTextSearchExpression();
+            final FullTextSearch fts;
+            if (ftsExpression instanceof BindVariableName) {
+                Object searchExpression = literalValue(ftsExpression, context, strings);
+                if (searchExpression != null) {
+                    fts = ((FullTextSearch)constraint).withFullTextExpression(searchExpression.toString());
+                } else {
+                    fts = (FullTextSearch)constraint;
+                }
+            } else {
+                fts = (FullTextSearch)constraint;
+            }
+
+            final NodeCache cache = context.getNodeCache(sources.getWorkspaceName());
             final BinaryStore binaries = context.getExecutionContext().getBinaryStore();
             String selectorName = fts.getSelectorName();
             String propertyName = fts.getPropertyName();
@@ -1476,8 +1487,19 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             }
             // Return a filter that processes all of the text ...
             final ExtractFromRow extractor = fullTextExtractor;
-            // TODO
-            throw new UnsupportedOperationException();
+            return new DynamicOperandFilter(extractor) {
+                @Override
+                protected boolean evaluate( Object leftHandValue ) {
+                    /**
+                     * The term will match the extracted value "as-is" via regex, without any stemming or punctuation removal.
+                     * This means that the matching is done in a much more strict way than what Lucene did in 3.x
+                     *
+                     * If we were to implement stemming or hyphen removal, we would need to do it *both* in the row extractor
+                     * (RowExtractors.extractFullText) and in the term where the regex is built
+                     */
+                    return fts.getTerm().matches(leftHandValue.toString());
+                }
+            };
         }
         if (constraint instanceof Relike) {
             Relike relike = (Relike)constraint;

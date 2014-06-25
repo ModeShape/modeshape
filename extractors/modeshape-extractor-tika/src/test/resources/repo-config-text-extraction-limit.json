@@ -5,24 +5,12 @@
         "default" : "default",
         "allowCreation" : true
     },
-    "query" : {
-        "enabled" : true,
-        "enableFullTextSearch" : true,
-        "indexing" : {
-            "rebuildOnStartup": {
-                "when": "if_missing"
-            }
-        },
-        "indexStorage" : {
-            "type" : "ram"
-        },
-        "textExtracting": {
-            "extractors" : {
-                "tikaExtractor":{
-                    "name" : "Tika content-based extractor",
-                    "classname" : "tika",
-                    "writeLimit" : 100
-                }
+    "textExtraction": {
+        "extractors": {
+            "tikaExtractor": {
+                "name": "Tika content-based extractor",
+                "classname": "tika",
+                "writeLimit": 100
             }
         }
     }

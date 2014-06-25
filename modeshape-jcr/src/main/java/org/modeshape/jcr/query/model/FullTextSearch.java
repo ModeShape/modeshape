@@ -22,6 +22,7 @@ import java.text.StringCharacterIterator;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.jcr.Binary;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -32,6 +33,7 @@ import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.ObjectUtil;
+import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.query.parse.FullTextSearchParser;
 
 /**
@@ -294,6 +296,13 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
      * The general notion of a term that makes up a full-text search.
      */
     public static interface Term {
+        /**
+         * Checks if the term matches (from a FTS perspective) the given value.
+         *
+         * @param value a non-null string
+         * @return {@code true} if the term matches the value, {@code false} otherwise
+         */
+        public boolean matches(String value);
     }
 
     /**
@@ -314,6 +323,11 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
          */
         public Term getNegatedTerm() {
             return negated;
+        }
+
+        @Override
+        public boolean matches( String value ) {
+            return !negated.matches(value);
         }
 
         @Override
@@ -343,6 +357,7 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
     public static class SimpleTerm implements Term {
         private final String value;
         private final boolean quoted;
+        private final Pattern pattern;
 
         /**
          * Create a simple term with the value and whether the term is excluded or included.
@@ -354,6 +369,20 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
             assert value.trim().length() > 0;
             this.value = value;
             this.quoted = this.value.indexOf(' ') != -1;
+            this.pattern = Pattern.compile(regexFromValue(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+        }
+
+        private String regexFromValue() {
+            String value = this.value;
+            //parse a LIKE-style expression around the value which should ensure that any JCR wildcards are converted
+            //to regex wildcards
+            if (!value.startsWith("%") && !value.startsWith("*")) {
+                value = "%" + value;
+            }
+            if (!value.endsWith("%") && !value.endsWith("*")) {
+                value = value + "%";
+            }
+            return ScanningQueryEngine.toRegularExpression(value);
         }
 
         /**
@@ -402,6 +431,11 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
                 if (c == '\\') skipNext = true;
             }
             return false;
+        }
+
+        @Override
+        public boolean matches( String value ) {
+            return pattern.matcher(value).matches();
         }
 
         @Override
@@ -499,6 +533,16 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
         }
 
         @Override
+        public boolean matches( String value ) {
+            for (Term term : getTerms()) {
+                if (term.matches(value)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
         public String toString() {
             return toString("OR");
         }
@@ -516,6 +560,16 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
          */
         public Conjunction( List<Term> terms ) {
             super(terms);
+        }
+
+        @Override
+        public boolean matches( String value ) {
+            for (Term term : getTerms()) {
+                if (!term.matches(value)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         @Override
