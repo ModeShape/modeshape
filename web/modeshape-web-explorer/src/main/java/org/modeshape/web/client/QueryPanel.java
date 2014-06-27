@@ -47,15 +47,20 @@ public class QueryPanel extends View {
     private Console console;
     public QueryPanel(Console console, JcrServiceAsync jcrService, ViewPort viewPort) {        
         super(viewPort, null);
+        this.setHeight(500);
         this.console = console;
         
-        setTitle("Query");
-//        setIcon("icons/data.png");
+        this.setStyleName("grid-bg");
+        this.setLayoutMargin(1);
+
+        VLayout background = new VLayout();
+        background.setWidth100();
+        background.setHeight100();
+        background.setStyleName("grid-panel");
+        addMember(background);
         
         langBox.setTitle("Query language");
-        
-        VLayout layout = new VLayout();
-        
+                
         DynamicForm queryForm = new DynamicForm(); 
         queryForm.setBackgroundColor("#d3d3d3");
         queryForm.setID("query-form");
@@ -71,12 +76,10 @@ public class QueryPanel extends View {
         execButton.setEndRow(true);
         queryForm.setItems(queryEditor, execButton, langBox);
         
-        layout.addMember(queryForm);
-        layout.addMember(grid);
-        layout.setHeight100();
+        background.addMember(queryForm);
+        background.addMember(grid);
         
         queryForm.addSubmitValuesHandler(new ButtonClickHandler());
-        this.addMember(layout);
     }
     
     public void init() {
