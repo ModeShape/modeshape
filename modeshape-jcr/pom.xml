@@ -291,12 +291,6 @@
                                         of the form "package#method". One per line. For example:
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
                                         -->
-                                        org.apache.jackrabbit.test.api.query.qom.ChildNodeJoinConditionTest#testLeftOuterJoin
-                                        org.apache.jackrabbit.test.api.query.qom.DescendantNodeJoinConditionTest#testLeftOuterJoin
-                                        org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest#testRightOuterJoin1
-                                        org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest#testRightOuterJoin2
-                                        org.apache.jackrabbit.test.api.query.qom.SameNodeJoinConditionTest#testRightOuterJoin
-                                        org.apache.jackrabbit.test.api.query.qom.SameNodeJoinConditionTest#testRightOuterJoinWithPath
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testSearch
                                     </value>
                                 </property>

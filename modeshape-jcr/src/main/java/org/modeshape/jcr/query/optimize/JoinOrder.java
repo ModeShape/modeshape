@@ -21,6 +21,7 @@ import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
 import org.modeshape.jcr.query.model.DescendantNodeJoinCondition;
+import org.modeshape.jcr.query.model.JoinType;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.PlanNode.Property;
@@ -46,19 +47,27 @@ public class JoinOrder implements OptimizerRule {
             if (joinCondition instanceof DescendantNodeJoinCondition) {
                 DescendantNodeJoinCondition condition = (DescendantNodeJoinCondition)joinCondition;
                 SelectorName ancestorSelector = condition.ancestorSelectorName();
-                // The ascestor needs to be on the left side of the join ...
+                // The ancestor needs to be on the left side of the join ...
                 swapChildren = !join.getFirstChild().getSelectors().contains(ancestorSelector);
             } else if (joinCondition instanceof ChildNodeJoinCondition) {
                 ChildNodeJoinCondition condition = (ChildNodeJoinCondition)joinCondition;
                 SelectorName parentSelector = condition.parentSelectorName();
-                // The ascestor needs to be on the left side of the join ...
+                // The ancestor needs to be on the left side of the join ...
                 swapChildren = !join.getFirstChild().getSelectors().contains(parentSelector);
             }
 
+            JoinType joinType = join.getProperty(Property.JOIN_TYPE, JoinType.class);
             if (swapChildren) {
                 PlanNode first = join.getFirstChild();
                 first.removeFromParent();
                 join.addLastChild(first);
+                if (joinType == JoinType.LEFT_OUTER){
+                    //we've reversed an outer join, so we need to change the join type
+                    join.setProperty(Property.JOIN_TYPE, JoinType.RIGHT_OUTER);
+                } else if (joinType == JoinType.RIGHT_OUTER) {
+                    //we've reversed an outer join, so we need to change the join type
+                    join.setProperty(Property.JOIN_TYPE, JoinType.LEFT_OUTER);
+                }
             }
         }
         return plan;

@@ -1991,6 +1991,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(13).hasColumns("car1.jcr:name").validate(query, result);
     }
 
+    @FixFor( "MODE-2187" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinOnIsChildNode() throws RepositoryException {
+        String sql = "SELECT left.[jcr:path] FROM [nt:unstructured] AS left LEFT OUTER JOIN [nt:unstructured] AS right ON ISCHILDNODE(left,right) WHERE ISDESCENDANTNODE(left,'/Cars')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(17).hasColumns("left.jcr:path").validate(query, result);
+    }
+
     @FixFor( "MODE-1750" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithRightOuterJoinOnNullCondition() throws RepositoryException {
@@ -2027,37 +2036,37 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(17).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
-    // @FixFor( "MODE-2450" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinWithFullTextSearch() throws RepositoryException {
-    // String sql =
-    // "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-2450" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinWithFullTextSearch() throws RepositoryException {
-    // String sql =
-    // "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
-    // }
-    //
-    // @FixFor( "MODE-2450" )
-    // @Test
-    // public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithUnionAndFullTextSearch() throws RepositoryException {
-    // String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE contains(category.*, 'Utility')"
-    // + "UNION "
-    // +
-    // "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(cars.*, 'Toyota') ";
-    // Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-    // QueryResult result = query.execute();
-    // validateQuery().rowCount(2).hasColumns("p").validate(query, result);
-    // }
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinWithFullTextSearch() throws RepositoryException {
+        String sql =
+                "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
+    }
+
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinWithFullTextSearch() throws RepositoryException {
+        String sql =
+                "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
+    }
+
+    @FixFor( "MODE-2450" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithUnionAndFullTextSearch() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE contains(category.*, 'Utility')"
+                     + "UNION "
+                     +
+                     "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(cars.*, 'Toyota') ";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(2).hasColumns("p").validate(query, result);
+    }
 
     @FixFor( "MODE-1679" )
     @Test

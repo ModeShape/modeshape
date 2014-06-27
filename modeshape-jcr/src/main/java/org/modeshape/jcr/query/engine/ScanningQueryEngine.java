@@ -587,25 +587,30 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     case MERGE:
                         if (joinCondition instanceof SameNodeJoinCondition) {
                             SameNodeJoinCondition condition = (SameNodeJoinCondition)joinCondition;
-                            // figure out the row indexes for the different selectors ...
-                            if (!leftColumns.getSelectorNames().contains(condition.getSelector1Name())) {
-                                // The JOIN was reversed in optimization ...
-                                Columns temp = leftColumns;
-                                leftColumns = rightColumns;
-                                rightColumns = temp;
-                                NodeSequence tempSeq = left;
-                                left = right;
-                                right = tempSeq;
+                            // check if the JOIN was not reversed by an optimization
+                            boolean joinReversed = !leftColumns.getSelectorNames().contains(condition.getSelector1Name());
+                            int leftIndex;
+                            int rightIndex;
+                            if (joinReversed) {
+                                // figure out the row indexes for the different selectors ...
+                                leftIndex = leftColumns.getSelectorIndex(condition.getSelector2Name());
+                                rightIndex = rightColumns.getSelectorIndex(condition.getSelector1Name());
+                            } else {
+                                leftIndex = leftColumns.getSelectorIndex(condition.getSelector1Name());
+                                rightIndex = rightColumns.getSelectorIndex(condition.getSelector2Name());
                             }
-                            int leftIndex = leftColumns.getSelectorIndex(condition.getSelector1Name());
-                            int rightIndex = rightColumns.getSelectorIndex(condition.getSelector2Name());
                             String relativePath = condition.getSelector2Path();
                             if (relativePath != null) {
                                 // Get extractors that will get the path of the nodes ...
                                 PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
                                 Path relPath = pathFactory.create(relativePath);
-                                leftExtractor = RowExtractors.extractPath(leftIndex, cache, types);
-                                rightExtractor = RowExtractors.extractRelativePath(rightIndex, relPath, cache, types);
+                                if (joinReversed) {
+                                    leftExtractor = RowExtractors.extractRelativePath(leftIndex, relPath, cache, types);
+                                    rightExtractor = RowExtractors.extractPath(rightIndex, cache, types);
+                                } else {
+                                    leftExtractor = RowExtractors.extractPath(leftIndex, cache, types);
+                                    rightExtractor = RowExtractors.extractRelativePath(rightIndex, relPath, cache, types);
+                                }
                             } else {
                                 // The nodes must be the same node ...
                                 leftExtractor = RowExtractors.extractNodeKey(leftIndex, cache, types);
@@ -620,22 +625,25 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                             rightExtractor = RowExtractors.extractParentNodeKey(rightIndex, cache, types);
                         } else if (joinCondition instanceof EquiJoinCondition) {
                             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
-                            if (!leftColumns.getSelectorNames().contains(condition.getSelector1Name())) {
-                                // The JOIN was reversed in optimization ...
-                                Columns temp = leftColumns;
-                                leftColumns = rightColumns;
-                                rightColumns = temp;
-                                NodeSequence tempSeq = left;
-                                left = right;
-                                right = tempSeq;
-                            }
+                            // check if the JOIN was not reversed by an optimization
+                            boolean joinReversed = !leftColumns.getSelectorNames().contains(condition.getSelector1Name());
+
                             String sel1 = condition.getSelector1Name();
                             String sel2 = condition.getSelector2Name();
                             String prop1 = condition.getProperty1Name();
                             String prop2 = condition.getProperty2Name();
-                            leftExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, leftColumns, sources, null, true);
-                            rightExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, rightColumns, sources, null,
-                                                                  true);
+                            if (joinReversed) {
+                                leftExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, leftColumns, sources,
+                                                                     null, true);
+                                rightExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, rightColumns, sources,
+                                                                      null, true);
+                            } else {
+                                leftExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, leftColumns, sources,
+                                                                     null, true);
+                                rightExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, rightColumns, sources,
+                                                                      null, true);
+                            }
+
                         } else if (joinCondition instanceof DescendantNodeJoinCondition) {
                             DescendantNodeJoinCondition condition = (DescendantNodeJoinCondition)joinCondition;
                             // For this to work, we want the ancestors to be on the left, so that the descendants can quickly
