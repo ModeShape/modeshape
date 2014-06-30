@@ -291,7 +291,6 @@
                                         of the form "package#method". One per line. For example:
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
                                         -->
-                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testSearch
                                     </value>
                                 </property>
                             </systemProperties>

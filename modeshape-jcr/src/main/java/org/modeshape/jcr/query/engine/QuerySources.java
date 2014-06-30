@@ -16,14 +16,18 @@
 package org.modeshape.jcr.query.engine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -170,6 +174,8 @@ public class QuerySources {
         // Get the node filter to use ...
         NodeFilter nodeFilter = nodeFilterForWorkspace(workspaceName);
         if (nodeFilter != null) {
+            //always append a shared nodes filter to the end of the workspace filter,
+            NodeFilter compositeFilter = new CompositeNodeFilter(nodeFilter, sharedNodesFilter());
 
             // Find the node by path ...
             NodeCache cache = repo.getWorkspaceCache(workspaceName);
@@ -180,7 +186,7 @@ public class QuerySources {
                 List<CachedNode> results = new ArrayList<CachedNode>((int)childRefs.size());
                 for (ChildReference childRef : childRefs) {
                     CachedNode child = cache.getNode(childRef);
-                    if (nodeFilter.includeNode(child, cache)) {
+                    if (compositeFilter.includeNode(child, cache)) {
                         results.add(child);
                     }
                 }
@@ -396,6 +402,47 @@ public class QuerySources {
         }
     }
 
+    protected static class CompositeNodeFilter implements NodeFilter {
+        private final List<NodeFilter> filters;
+
+        protected CompositeNodeFilter( NodeFilter... filters ) {
+            this.filters = Arrays.asList(filters);
+        }
+
+        @Override
+        public boolean includeNode( CachedNode node, NodeCache cache ) {
+            for (NodeFilter filter : filters) {
+                if (!filter.includeNode(node, cache)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    protected NodeFilter sharedNodesFilter() {
+        return new NodeFilter() {
+            private final Set<NodeKey> shareableNodeKeys = new HashSet<>();
+
+            @Override
+            public boolean includeNode( CachedNode node, NodeCache cache ) {
+                if (node.getMixinTypes(cache).contains(JcrMixLexicon.SHAREABLE)) {
+                    NodeKey key = node.getKey();
+                    if (shareableNodeKeys.contains(key)) {
+                        //we've already visited the original node, so this must be part of the shared set which we should
+                        //ignore (JCR #14.16)
+                        return false;
+                    }
+                    //we're seeing the original shareable node, so we need to process it
+                    shareableNodeKeys.add(key);
+                    return true;
+                } else {
+                    return true;
+                }
+            }
+        };
+    }
+
     /**
      * Return an iterator over all nodes at or below the specified path in the named workspace, using the supplied filter.
      * 
@@ -408,8 +455,10 @@ public class QuerySources {
         // Determine which filter we should use based upon the workspace name. For the system workspace,
         // all queryable nodes are included. For all other workspaces, all queryable nodes are included except
         // for those that are actually stored in the system workspace (e.g., the "/jcr:system" nodes).
-        NodeFilter nodeFilter = nodeFilterForWorkspace(workspaceName);
-        if (nodeFilter == null) return null;
+        NodeFilter nodeFilterForWorkspace = nodeFilterForWorkspace(workspaceName);
+        if (nodeFilterForWorkspace == null) return null;
+        //always append a shared nodes filter to the end of the workspace filter,
+        NodeFilter compositeFilter = new CompositeNodeFilter(nodeFilterForWorkspace, sharedNodesFilter());
 
         // Then create an iterator over that workspace ...
         NodeCache cache = repo.getWorkspaceCache(workspaceName);
@@ -421,7 +470,7 @@ public class QuerySources {
             startingNode = cache.getRootKey();
         }
         if (startingNode != null) {
-            return new NodeCacheIterator(cache, startingNode, nodeFilter);
+            return new NodeCacheIterator(cache, startingNode, compositeFilter);
         }
         return null;
     }
