@@ -184,15 +184,15 @@
         <xs:attribute name="security-domain" type="xs:string" default="modeshape-security">
             <xs:annotation>
                 <xs:documentation>The name of the security domain that should be used for JAAS authentication.
-                    The default is 'modeshape-security'.
+                    The default is the 'modeshape-security' security domain which uses the default ApplicationRealm security realm.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="anonymous-roles" type="roleNames" default="readonly readwrite admin">
+        <xs:attribute name="anonymous-roles" type="roleNames" default="readonly">
             <xs:annotation>
                 <xs:documentation>The space-separated names of the roles for anonymous users.
                     Anonymous logins will be disabled if the roles consists of an empty string.
-                    By default, the roles are 'readonly', 'readwrite', and 'admin'.
+                    By default, the role is 'readonly'.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

@@ -256,7 +256,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Checks if this node belongs to an external source.
-     *
+     * 
      * @return true if the node is not repository-local
      */
     protected final boolean isExternal() {
@@ -2329,17 +2329,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             CachedNode node = node();
             // Check the primary type ...
             Name primaryTypeName = node.getPrimaryType(cache);
-            JcrNodeType primaryType = nodeTypes.getNodeType(primaryTypeName);
-            if (primaryType.isNodeType(nodeTypeName)) {
-                return true;
-            }
+            if (nodeTypes.isTypeOrSubtype(primaryTypeName, nodeTypeName)) return true;
+            // Check the mixins ...
             Set<Name> mixinTypes = node.getMixinTypes(cache);
-            for (Name mixinTypeName : mixinTypes) {
-                JcrNodeType mixinType = nodeTypes.getNodeType(mixinTypeName);
-                if (mixinType != null && mixinType.isNodeType(nodeTypeName)) {
-                    return true;
-                }
-            }
+            if (nodeTypes.isTypeOrSubtype(mixinTypes, nodeTypeName)) return true;
         } catch (ItemNotFoundException e) {
             // The node has been removed, so do nothing
         }
@@ -2753,7 +2746,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
         }
 
-        //do not allow versionable mixin on external nodes
+        // do not allow versionable mixin on external nodes
         if (isExternal() && mixinName.equalsIgnoreCase(JcrMixLexicon.VERSIONABLE.getString())) {
             return false;
         }
@@ -3521,23 +3514,24 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         private final NodeKey parentKey;
         private final boolean checkPermission;
 
-        public ChildNodeResolver( JcrSession session, NodeKey parentKey, boolean checkPermission ) {
+        public ChildNodeResolver( JcrSession session,
+                                  NodeKey parentKey,
+                                  boolean checkPermission ) {
             this.session = session;
             this.parentKey = parentKey;
-            // we only need to check permissions if ACLs are enabled
-            this.checkPermission = checkPermission && session.repository().repositoryCache().isAccessControlEnabled();
+            this.checkPermission = checkPermission;
         }
 
         protected ChildNodeResolver( JcrSession session,
                                      NodeKey parentKey ) {
-            this(session, parentKey, true);
+            this(session, parentKey, session.checkPermissionsWhenIteratingChildren());
         }
 
         @Override
         public Node nodeFrom( ChildReference ref ) {
             try {
-                AbstractJcrNode node =  session.node(ref.getKey(), null, parentKey);
-                if (checkPermission  && !node.isExternal() && !session.hasPermission(node.getPath(), ModeShapePermissions.READ)) {
+                AbstractJcrNode node = session.node(ref.getKey(), null, parentKey);
+                if (checkPermission && !node.isExternal() && !session.hasPermission(node.getPath(), ModeShapePermissions.READ)) {
                     return null;
                 }
                 return node;

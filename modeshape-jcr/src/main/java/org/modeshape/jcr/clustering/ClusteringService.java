@@ -24,6 +24,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +53,6 @@ import org.jgroups.stack.ProtocolStack;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 
 /**
@@ -58,14 +61,9 @@ import org.modeshape.common.util.StringUtil;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @ThreadSafe
-public final class ClusteringService {
+public abstract class ClusteringService {
 
     protected static final Logger LOGGER = Logger.getLogger(ClusteringService.class);
-
-    /**
-     * The name of the fork channel
-     */
-    private static final String FORK_CHANNEL_NAME = "modeshape-fork-channel";
 
     /**
      * An approximation about the maximum delay in local time that we consider acceptable.
@@ -80,42 +78,22 @@ public final class ClusteringService {
     /**
      * The listener for channel changes.
      */
-    private final Listener listener;
+    protected final Listener listener;
 
     /**
      * The component that will receive the JGroups messages.
      */
-    private final Receiver receiver;
+    protected final Receiver receiver;
 
     /**
-     * Flag that dictates whether this service has connected to the cluster.
+     * The name of the cluster (in standalone mode) or the ID of the fork stack (in forked mode)
      */
-    protected final AtomicBoolean isOpen;
-
-    /**
-     * The numbers of members in the cluster
-     */
-    protected final AtomicInteger membersInCluster;
-
-    /**
-     * The maximum accepted clock delay between cluster members
-     */
-    private final long maxAllowedClockDelayMillis;
+    protected final String clusterName;
 
     /**
      * The JGroups channel which will be used to send/receive event across the cluster
      */
-    private Channel channel;
-
-    /**
-     * A JGroups channel off of which a fork channel may have been created.
-     */
-    private Channel originalChannel;
-
-    /**
-     * The JGroups fork channel which will be used for cluster-wide locking.
-     */
-    private JChannel lockChannel;
+    protected JChannel channel;
 
     /**
      * The service used for cluster-wide locking
@@ -123,14 +101,29 @@ public final class ClusteringService {
     protected LockService lockService;
 
     /**
-     * A list of message consumers which register themselves with this service.
+     * The maximum accepted clock delay between cluster members
      */
-    protected final Set<MessageConsumer<Serializable>> consumers;
+    private final long maxAllowedClockDelayMillis;
 
     /**
-     * Creates an empty, not started clustering service.
+     * The numbers of members in the cluster
      */
-    public ClusteringService() {
+    private final AtomicInteger membersInCluster;
+
+    /**
+     * Flag that dictates whether this service has connected to the cluster.
+     */
+    private final AtomicBoolean isOpen;
+
+    /**
+     * A list of message consumers which register themselves with this service.
+     */
+    private final Set<MessageConsumer<Serializable>> consumers;
+
+    protected ClusteringService( String clusterName ) {
+        assert clusterName != null;
+        this.clusterName = clusterName;
+
         this.listener = new Listener();
         this.receiver = new Receiver();
         this.isOpen = new AtomicBoolean(false);
@@ -140,117 +133,13 @@ public final class ClusteringService {
     }
 
     /**
-     * Starts a standalone clustering service which in turn will start & connect its own JGroup channel.
+     * Performs a shutdown/startup sequence.
      * 
-     * @param clusterName the name of the cluster to which the JGroups channel should connect.
-     * @param jgroupsConfig either the path or the XML content of a JGroups configuration file; may be null
-     * @return this instance
+     * @throws java.lang.Exception if anything unexpected fails
      */
-    public synchronized ClusteringService startStandalone( String clusterName,
-                                                           String jgroupsConfig ) {
-        if (StringUtil.isBlank(clusterName)) {
-            clusterName = "modeshape-cluster";
-        }
-        try {
-            // Create the new channel by calling the delegate method ...
-            this.channel = newChannel(jgroupsConfig);
-
-            initChannel(clusterName);
-            initLockService(this.channel);
-
-            return this;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Starts a new clustering service by forking a channel of an existing JGroups channel.
-     * 
-     * @param mainChannel a {@link org.jgroups.Channel} instance; may not be null.
-     * @return this instance
-     */
-    public synchronized ClusteringService startForked( Channel mainChannel ) {
-        CheckArg.isNotNull(mainChannel, "mainChannel");
-        try {
-            Protocol topProtocol = mainChannel.getProtocolStack().getTopProtocol();
-            // add the fork at the top of the stack (the bottom should be either TCP/UDP) to preserve the default configuration
-            this.channel = new ForkChannel(mainChannel, "modeshape-stack", FORK_CHANNEL_NAME, true, ProtocolStack.ABOVE,
-                                           topProtocol.getClass());
-            this.originalChannel = mainChannel;
-            initChannel(FORK_CHANNEL_NAME);
-            initLockService(mainChannel);
-
-            return this;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void initLockService( Channel mainChannel ) throws Exception {
-        Protocol bottomProtocol = mainChannel.getProtocolStack().getBottomProtocol();
-        this.lockChannel = new ForkChannel(mainChannel, "modeshape-lock-stack", "modeshape-lock-channel", true,
-                                           ProtocolStack.ABOVE, bottomProtocol.getClass(), new CENTRAL_LOCK());
-        this.lockChannel.setReceiver(new ReceiverAdapter() {
-            @Override
-            public void viewAccepted( View view ) {
-                if (view instanceof MergeView) {
-                    // see JGroups docs in case of a cluster split-merge case
-                    lockService.unlockAll();
-                }
-            }
-        });
-        // channel name is ignored for fork channels
-        this.lockChannel.connect("ignored");
-
-        this.lockService = new LockService(this.lockChannel);
-    }
-
-    private void initChannel( String clusterName ) throws Exception {
-        // Add a listener through which we'll know what's going on within the cluster ...
-        this.channel.addChannelListener(listener);
-
-        // Set the receiver through which we'll receive all of the changes ...
-        this.channel.setReceiver(receiver);
-
-        // Now connect to the cluster ...
-        this.channel.connect(clusterName);
-    }
-
-    private Channel newChannel( String jgroupsConfig ) throws Exception {
-
-        if (StringUtil.isBlank(jgroupsConfig)) {
-            return new JChannel();
-        }
-
-        ProtocolStackConfigurator configurator = null;
-        // check if it points to a file accessible via the class loader
-        InputStream stream = ClusteringService.class.getClassLoader().getResourceAsStream(jgroupsConfig);
-        try {
-            configurator = XmlConfigurator.getInstance(stream);
-        } catch (IOException e) {
-            LOGGER.debug(e, "Channel configuration is not a classpath resource");
-            // check if the configuration is valid xml content
-            stream = new ByteArrayInputStream(jgroupsConfig.getBytes());
-            try {
-                configurator = XmlConfigurator.getInstance(stream);
-            } catch (IOException e1) {
-                LOGGER.debug(e, "Channel configuration is not valid XML content");
-            }
-        } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    // ignore this
-                }
-            }
-        }
-
-        if (configurator == null) {
-            throw new RepositoryException(ClusteringI18n.channelConfigurationError.text(jgroupsConfig));
-        }
-        return new JChannel(configurator);
+    public void restart() throws Exception {
+        shutdown();
+        init();
     }
 
     /**
@@ -265,44 +154,30 @@ public final class ClusteringService {
 
     /**
      * Shuts down and clears resources held by this service.
+     * 
+     * @return {@code true} if the service has been shutdown or {@code false} if it had already been shut down.
      */
-    public synchronized void shutdown() {
-        LOGGER.debug("Shutting down cluster service");
+    public synchronized boolean shutdown() {
+        if (channel == null) {
+            return false;
+        }
+        LOGGER.debug("Shutting down clustering service...");
         consumers.clear();
-        if (lockChannel != null) {
-            try {
-                lockService.unlockAll();
-                lockChannel.close();
-                LOGGER.debug("Successfully closed lock channel");
-            } finally {
-                lockService = null;
-                lockChannel = null;
-            }
-        }
 
-        if (channel != null) {
-            // Mark this as not accepting any more ...
-            isOpen.set(false);
-            try {
-                // Disconnect from the channel and close it ...
-                channel.removeChannelListener(listener);
-                channel.setReceiver(null);
-                channel.close();
-                LOGGER.debug("Successfully closed main channel");
-            } finally {
-                channel = null;
-            }
-            membersInCluster.set(1);
-
-            if (originalChannel != null) {
-                //we were started in forked mode, so remove the fork stack (but don't change anything else around the original channel)
-                Protocol removed = this.originalChannel.getProtocolStack().removeProtocol(FORK.class);
-                if (removed == null) {
-                    LOGGER.debug("FORK protocol not found in original channel stack");
-                }
-                this.originalChannel = null;
-            }
+        // Mark this as not accepting any more ...
+        isOpen.set(false);
+        lockService.unlockAll();
+        try {
+            // Disconnect from the channel and close it ...
+            channel.removeChannelListener(listener);
+            channel.setReceiver(null);
+            channel.close();
+            LOGGER.debug("Successfully closed main channel");
+        } finally {
+            channel = null;
         }
+        membersInCluster.set(1);
+        return true;
     }
 
     /**
@@ -404,13 +279,39 @@ public final class ClusteringService {
         }
     }
 
+    /**
+     * Starts a standalone clustering service which in turn will start & connect its own JGroup channel.
+     * 
+     * @param clusterName the name of the cluster to which the JGroups channel should connect; may not be null
+     * @param jgroupsConfig either the path or the XML content of a JGroups configuration file; may not be null
+     * @return a {@link org.modeshape.jcr.clustering.ClusteringService} instance, never null
+     */
+    public static ClusteringService startStandalone( String clusterName,
+                                                     String jgroupsConfig ) {
+        ClusteringService clusteringService = new StandaloneClusteringService(clusterName, jgroupsConfig);
+        clusteringService.init();
+        return clusteringService;
+    }
+
+    /**
+     * Starts a new clustering service by forking a channel of an existing JGroups channel.
+     * 
+     * @param forkStackId a {@link String} representing the JGroups stack ID of the fork stack. Services which are supposed to
+     *        communicate with each other should use the same stack id; may not be null
+     * @param mainChannel a {@link org.jgroups.Channel} instance; may not be null.
+     * @return a {@link org.modeshape.jcr.clustering.ClusteringService} instance, never null
+     */
+    public static ClusteringService startForked( String forkStackId,
+                                                 Channel mainChannel ) {
+        ClusteringService clusteringService = new ForkedClusteringService(forkStackId, mainChannel);
+        clusteringService.init();
+        return clusteringService;
+    }
+
     private byte[] toByteArray( Object payload ) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ObjectOutputStream stream = new ObjectOutputStream(output);
-        try {
+        try (ObjectOutputStream stream = new ObjectOutputStream(output)) {
             stream.writeObject(payload);
-        } finally {
-            stream.close();
         }
         return output.toByteArray();
     }
@@ -420,14 +321,19 @@ public final class ClusteringService {
         if (classLoader == null) {
             classLoader = ClusteringService.class.getClassLoader();
         }
-        ObjectInputStreamWithClassLoader input = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(data), classLoader);
-        try {
+        try (ObjectInputStreamWithClassLoader input = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(data),
+                                                                                           classLoader)) {
             return (Serializable)input.readObject();
-        } finally {
-            input.close();
         }
     }
 
+    protected JChannel getChannel() {
+        return channel;
+    }
+
+    protected abstract void init();
+
+    @SuppressWarnings( "synthetic-access" )
     protected final class Receiver extends ReceiverAdapter {
 
         @Override
@@ -465,6 +371,11 @@ public final class ClusteringService {
         public void viewAccepted( View newView ) {
             LOGGER.trace("Members of '{0}' cluster have changed: {1}, total count: {2}", clusterName(), newView,
                          newView.getMembers().size());
+            if (newView instanceof MergeView) {
+                LOGGER.trace("Received a merged view in cluster {0}. Releasing all locks...", clusterName());
+                // see JGroups docs in case of a cluster split-merge case
+                lockService.unlockAll();
+            }
             membersInCluster.set(newView.getMembers().size());
             if (membersInCluster.get() > 1) {
                 LOGGER.debug("There are now multiple members of cluster '{0}'; changes will be propagated throughout the cluster",
@@ -475,6 +386,7 @@ public final class ClusteringService {
         }
     }
 
+    @SuppressWarnings( "synthetic-access" )
     protected class Listener implements ChannelListener {
         @Override
         public void channelClosed( Channel channel ) {
@@ -521,6 +433,156 @@ public final class ClusteringService {
         public void close() throws IOException {
             super.close();
             this.cl = null;
+        }
+    }
+
+    private static class StandaloneClusteringService extends ClusteringService {
+        private final String jgroupsConfig;
+
+        protected StandaloneClusteringService( String clusterName,
+                                               String jgroupsConfig ) {
+            super(clusterName);
+            this.jgroupsConfig = jgroupsConfig;
+        }
+
+        @Override
+        protected void init() {
+            try {
+                this.channel = newChannel(jgroupsConfig);
+
+                ProtocolStack protocolStack = channel.getProtocolStack();
+                Protocol centralLock = protocolStack.findProtocol(CENTRAL_LOCK.class);
+                if (centralLock == null) {
+                    // add the locking protocol
+                    CENTRAL_LOCK lockingProtocol = new CENTRAL_LOCK();
+                    // we have to call init because the channel has already been created
+                    lockingProtocol.init();
+                    protocolStack.addProtocol(lockingProtocol);
+                }
+                this.lockService = new LockService(this.channel);
+
+                // Add a listener through which we'll know what's going on within the cluster ...
+                this.channel.addChannelListener(listener);
+
+                // Set the receiver through which we'll receive all of the changes ...
+                this.channel.setReceiver(receiver);
+
+                // Now connect to the cluster ...
+                this.channel.connect(clusterName);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private JChannel newChannel( String jgroupsConfig ) throws Exception {
+            if (StringUtil.isBlank(jgroupsConfig)) {
+                return new JChannel();
+            }
+
+            ProtocolStackConfigurator configurator = null;
+            // check if it points to a file accessible via the class loader
+            InputStream stream = ClusteringService.class.getClassLoader().getResourceAsStream(jgroupsConfig);
+            try {
+                configurator = XmlConfigurator.getInstance(stream);
+            } catch (IOException e) {
+                LOGGER.debug(e, "Channel configuration is not a classpath resource");
+                // check if the configuration is valid xml content
+                stream = new ByteArrayInputStream(jgroupsConfig.getBytes());
+                try {
+                    configurator = XmlConfigurator.getInstance(stream);
+                } catch (IOException e1) {
+                    LOGGER.debug(e, "Channel configuration is not valid XML content");
+                }
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (IOException e) {
+                        // ignore this
+                    }
+                }
+            }
+
+            if (configurator == null) {
+                throw new RepositoryException(ClusteringI18n.channelConfigurationError.text(jgroupsConfig));
+            }
+            return new JChannel(configurator);
+        }
+    }
+
+    private static class ForkedClusteringService extends ClusteringService {
+        private final static String FORK_CHANNEL_NAME = "modeshape-fork-channel";
+        private final static Map<String, List<String>> FORK_STACKS_BY_CHANNEL_NAME = new HashMap<>();
+        private final Channel mainChannel;
+
+        protected ForkedClusteringService( String forkStackId,
+                                           Channel mainChannel ) {
+            super(forkStackId);
+            this.mainChannel = mainChannel;
+        }
+
+        @Override
+        protected void init() {
+            try {
+                Protocol topProtocol = mainChannel.getProtocolStack().getTopProtocol();
+                String forkStackId = this.clusterName;
+
+                boolean alreadyHasForkProtocol = mainChannel.getProtocolStack().findProtocol(FORK.class) != null;
+
+                // add the fork at the top of the stack to preserve the default configuration
+                // and use the name of the cluster as the stack id
+                this.channel = new ForkChannel(mainChannel, forkStackId, FORK_CHANNEL_NAME, true, ProtocolStack.ABOVE,
+                                               topProtocol.getClass(), new CENTRAL_LOCK());
+
+                // always add central lock to the stack
+                this.lockService = new LockService(this.channel);
+
+                // Add a listener through which we'll know what's going on within the cluster ...
+                this.channel.addChannelListener(listener);
+
+                // Set the receiver through which we'll receive all of the changes ...
+                this.channel.setReceiver(receiver);
+
+                // Now connect to the cluster ...
+                this.channel.connect(FORK_CHANNEL_NAME);
+
+                // and add the id of the fork only if we added the FORK protocol. Otherwise, the protocol was already there to
+                // begin with, so we shouldn't remove it.
+                if (!alreadyHasForkProtocol) {
+                    String mainChannelName = mainChannel.getName();
+                    List<String> existingForksForChannel = FORK_STACKS_BY_CHANNEL_NAME.get(mainChannelName);
+                    if (existingForksForChannel == null) {
+                        existingForksForChannel = new ArrayList<>();
+                        FORK_STACKS_BY_CHANNEL_NAME.put(mainChannelName, existingForksForChannel);
+                    }
+                    existingForksForChannel.add(forkStackId);
+                }
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public synchronized boolean shutdown() {
+            if (super.shutdown()) {
+                String mainChannelName = mainChannel.getName();
+                List<String> forksForChannel = FORK_STACKS_BY_CHANNEL_NAME.get(mainChannelName);
+                if (forksForChannel != null) {
+                    forksForChannel.remove(clusterName);
+                    if (forksForChannel.isEmpty()) {
+                        FORK_STACKS_BY_CHANNEL_NAME.remove(mainChannelName);
+                        Protocol removed = this.mainChannel.getProtocolStack().removeProtocol(FORK.class);
+                        if (removed != null) {
+                            LOGGER.debug("FORK protocol removed from original channel stack for channel {0}", mainChannelName);
+                        } else {
+                            LOGGER.debug("FORK protocol not found in original channel stack for channel {0}", mainChannelName);
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
         }
     }
 }

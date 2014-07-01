@@ -14,10 +14,10 @@ by ModeShape's service.
 
 As of 4.0.0.Alpha1, ModeShape is licensed under the Apache Software License, 2.0.
 
-This is the third alpha release of the 4.0 stream, and it includes several fixes
-and new features. Of note is that the event system now uses a uses our new ring buffer
-that is substantially faster. Of course, there's no change in the event APIs so 
-your listener implementations will continue to work unchanged.
+This is the fourth alpha release of the 4.0 stream, and it includes quite a few fixes
+and new features. There is a newly redesigned Repository Explorer web application that
+can be deployed in a web server alongside ModeShape, including on Wildfly 8. The query
+system has matured, and we're still trying to solidy the index provider framework.
 
 The first alpha release introduced a new query engine that allows 
 clients to explicitly define the indexes used in the query system, and the second
@@ -26,7 +26,10 @@ query providers and introduced a programmatic API and configuration
 modifications for defining indexes, although no complete query providers are included
 (see next release). Alpha2 had support for the JCR event journal feature, allowing
 applications to poll for changes that occurred during time ranges. This is a useful
-alternative to listeners that may be expensive or time-consuming.
+alternative to listeners that may be expensive or time-consuming. Alpha3 introduced
+a new event system and our new ring buffer that is substantially faster than what
+we had in 3.x; of course, there's no change in the event APIs so your listener 
+implementations will continue to work unchanged.
 
 ## What to test
 

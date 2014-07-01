@@ -18,8 +18,13 @@ package org.modeshape.jcr;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.util.HashMap;
+import java.util.Map;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.Subject;
@@ -39,10 +44,17 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.security.AdvancedAuthorizationProvider;
+import org.modeshape.jcr.security.AuthenticationProvider;
+import org.modeshape.jcr.security.AuthorizationProvider;
 import org.modeshape.jcr.security.JaasSecurityContext.UserPasswordCallbackHandler;
+import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.StringFactory;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AuthenticationAndAuthorizationTest {
@@ -397,6 +409,91 @@ public class AuthenticationAndAuthorizationTest {
             beforeEach();
             shouldLogInAsAnonymousUserIfNoProviderAuthenticatesCredentials();
             afterEach();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2225" )
+    public void shouldInvokeAuthorizationProviderWhenIteratingNodes() throws Exception {
+        //this will import an initial structure of nodes (see xmlImport/docWithChildren.xml)
+        repository = TestingUtil.startRepositoryWithConfig("config/custom-authentication-provider-config-1.json");
+        assertPermissionsCheckedWhenIteratingChildren();
+    }
+
+    @Test
+    @FixFor( "MODE-2225" )
+    public void shouldInvokeAdvancedAuthorizationProviderWhenIteratingNodes() throws Exception {
+        //this will import an initial structure of nodes (see xmlImport/docWithChildren.xml)
+        repository = TestingUtil.startRepositoryWithConfig("config/custom-authentication-provider-config-2.json");
+        assertPermissionsCheckedWhenIteratingChildren();
+    }
+
+    private void assertPermissionsCheckedWhenIteratingChildren() throws RepositoryException {
+        session = repository.login();
+        Node testRoot = session.getNode("/testRoot");
+        NodeIterator children = testRoot.getNodes();
+        while (children.hasNext()) {
+            children.nextNode();
+        }
+        TestSecurityProvider provider = (TestSecurityProvider) session.context().getSecurityContext();
+
+        Map<String, String> actionsByNodePath = provider.getActionsByNodePath();
+        assertTrue("READ permission not checked for node", actionsByNodePath.containsKey("/testRoot"));
+        assertTrue("READ permission not checked for node", actionsByNodePath.containsKey("/testRoot/node3"));
+        assertTrue("READ permission not checked for node", actionsByNodePath.containsKey("/testRoot/node2"));
+        assertTrue("READ permission not checked for node", actionsByNodePath.containsKey("/testRoot/node1"));
+    }
+
+    public static abstract class TestSecurityProvider implements AuthenticationProvider, SecurityContext {
+        protected final Map<String, String> actionsByNodePath = new HashMap<>();
+        protected StringFactory stringFactory;
+
+        @Override
+        public ExecutionContext authenticate( Credentials credentials, String repositoryName, String workspaceName,
+                                              ExecutionContext repositoryContext, Map<String, Object> sessionAttributes ) {
+            stringFactory = repositoryContext.getValueFactories().getStringFactory();
+            return repositoryContext.with(this);
+        }
+
+        @Override
+        public boolean isAnonymous() {
+            return false;
+        }
+
+        @Override
+        public String getUserName() {
+            return "test user";
+        }
+
+        @Override
+        public boolean hasRole( String roleName ) {
+            return true;
+        }
+
+        @Override
+        public void logout() {
+        }
+
+        public Map<String, String> getActionsByNodePath() {
+            return actionsByNodePath;
+        }
+    }
+
+    public static class SimpleTestSecurityProvider extends TestSecurityProvider implements AuthorizationProvider {
+        @Override
+        public boolean hasPermission( ExecutionContext context, String repositoryName, String repositorySourceName,
+                                      String workspaceName, Path absPath, String... actions ) {
+            actionsByNodePath.put(stringFactory.create(absPath), actions[0]);
+            return true;
+        }
+
+    }
+
+    public static class AdvancedTestSecurityProvider extends TestSecurityProvider implements AdvancedAuthorizationProvider {
+        @Override
+        public boolean hasPermission( Context context, Path absPath, String... actions ) {
+            actionsByNodePath.put(stringFactory.create(absPath), actions[0]);
+            return true;
         }
     }
 }

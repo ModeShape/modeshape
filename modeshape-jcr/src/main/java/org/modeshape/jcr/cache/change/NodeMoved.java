@@ -37,14 +37,15 @@ public class NodeMoved extends AbstractNodeChange {
                       NodeKey oldParent,
                       NodeKey newParent,
                       Path newPath,
-                      Path oldPath ) {
-        super(key, newPath, primaryType, mixinTypes);
+                      Path oldPath,
+                      boolean queryable ) {
+        super(key, newPath, primaryType, mixinTypes, queryable);
         this.oldParent = oldParent;
         this.newParent = newParent;
         this.oldPath = oldPath;
         assert this.oldParent != null;
         assert this.newParent != null;
-        assert this.newParent != this.oldParent;
+        // assert this.newParent != this.oldParent; // we sometimes use NodeMoved to signify a change in path when a parent moves
     }
 
     /**

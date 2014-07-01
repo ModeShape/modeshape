@@ -90,9 +90,8 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
-            <scope>test</scope>
+            <type>jar</type>
         </dependency>
-
     </dependencies>
     <build>
         <finalName>modeshape-explorer-${project.version}</finalName>

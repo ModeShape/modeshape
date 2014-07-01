@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.RepositoryIndexes;
+import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.query.qom.NodePath;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.query.QueryContext;
@@ -35,7 +36,6 @@ import org.modeshape.jcr.query.model.SameNode;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.StaticOperand;
 import org.modeshape.jcr.spi.index.IndexCollector;
-import org.modeshape.jcr.spi.index.IndexDefinition;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 
 /**
@@ -135,15 +135,16 @@ public abstract class IndexPlanners {
                 if (constraint instanceof SameNode) {
                     SameNode sameNode = (SameNode)constraint;
                     String path = sameNode.getPath();
-                    indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, singletonList(constraint), 1, 1L, PATH_PARAMETER, path);
+                    indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, PATH_PARAMETER, path);
                 } else if (constraint instanceof ChildNode) {
                     ChildNode childNode = (ChildNode)constraint;
                     String path = childNode.getParentPath();
-                    indexes.addIndex(CHILDREN_BY_PATH_INDEX_NAME, null, singletonList(constraint), 10, 100L, PATH_PARAMETER, path);
+                    indexes.addIndex(CHILDREN_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 10, 100L,
+                                     PATH_PARAMETER, path);
                 } else if (constraint instanceof DescendantNode) {
                     DescendantNode descendantNode = (DescendantNode)constraint;
                     String path = descendantNode.getAncestorPath();
-                    indexes.addIndex(DESCENDANTS_BY_PATH_INDEX_NAME, null, singletonList(constraint), 1000, 10000L,
+                    indexes.addIndex(DESCENDANTS_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1000, 10000L,
                                      PATH_PARAMETER, path);
                 } else if (constraint instanceof Comparison) {
                     Comparison comparison = (Comparison)constraint;
@@ -165,8 +166,8 @@ public abstract class IndexPlanners {
                             path = (String)value;
                         }
                         if (path != null) {
-                            indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, singletonList(constraint), 1, 1L, PATH_PARAMETER,
-                                             path);
+                            indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L,
+                                             PATH_PARAMETER, path);
                         }
                     }
                 }

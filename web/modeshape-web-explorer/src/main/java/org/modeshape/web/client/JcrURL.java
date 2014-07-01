@@ -28,42 +28,42 @@ public class JcrURL implements Serializable {
     private String repository;
     private String workspace;
     private String path;
-
-    public void parse( String uri ) {
+    
+    public void parse(String uri) {
         if (uri.startsWith("/")) {
             uri = uri.substring(1);
         }
-
+        
         int pos = uri.indexOf("/");
         if (pos == -1) {
             context = uri;
             repository = "";
             workspace = "";
-            path = "/";
+            path="/";
             return;
         }
-
+        
         if (pos > 0) {
             context = uri.substring(0, pos);
             uri = uri.substring(pos + 1);
         }
-
-        // expecting tree here
-        uri = uri.substring(5);
-
-        pos = uri.indexOf("/ws-");
-        repository = uri.substring(0, pos);
-
-        uri = uri.substring(repository.length() + 1);
-        pos = uri.indexOf("/");
-
-        workspace = uri.substring(3, pos);
-        path = uri.substring(workspace.length() + 3);
+        
+        //expecting tree here
+         uri = uri.substring(5);
+        
+         pos = uri.indexOf("/ws-");
+         repository = uri.substring(0, pos);
+         
+         uri = uri.substring(repository.length() + 1);
+         pos = uri.indexOf("/");
+         
+         workspace = uri.substring(3, pos);
+         path = uri.substring(workspace.length() + 3);
     }
-
+    
     public JcrURL() {
     }
-
+    
     /**
      * Creates locator.
      * 
@@ -71,18 +71,16 @@ public class JcrURL implements Serializable {
      * @param workspace the name of the workspace.
      * @param path path to the node;
      */
-    public JcrURL( String repository,
-                   String workspace,
-                   String path ) {
+    public JcrURL(String repository, String workspace, String path) {
         this.repository = repository;
         this.workspace = workspace;
         this.path = path;
-    }
-
+    } 
+    
     public String getContext() {
         return context;
     }
-
+    
     /**
      * Gets repository name encoded in this locator.
      * 
@@ -91,11 +89,10 @@ public class JcrURL implements Serializable {
     public String getRepository() {
         return repository;
     }
-
-    public void setRepository( String repository ) {
+    
+    public void setRepository(String repository) {
         this.repository = repository;
     }
-
     /**
      * Gets workspace name encoded in this locator.
      * 
@@ -104,11 +101,11 @@ public class JcrURL implements Serializable {
     public String getWorkspace() {
         return workspace;
     }
-
-    public void setWorkspace( String workspace ) {
+    
+    public void setWorkspace(String workspace) {
         this.workspace = workspace;
     }
-
+    
     /**
      * Gets node path encoded in this locator.
      * 
@@ -117,16 +114,16 @@ public class JcrURL implements Serializable {
     public String getPath() {
         return path;
     }
-
+    
     /**
      * Modify node path.
      * 
      * @param path the new path value.
      */
-    public void setPath( String path ) {
+    public void setPath(String path) {
         this.path = path;
     }
-
+    
     @Override
     public String toString() {
         return "/" + context + "/tree/" + repository + "/ws-" + workspace + path;

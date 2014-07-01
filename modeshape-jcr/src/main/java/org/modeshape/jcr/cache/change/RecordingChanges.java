@@ -43,8 +43,8 @@ public class RecordingChanges implements Changes, ChangeSet {
     private static final long serialVersionUID = 1L;
 
     /**
-     * A map used to make sure that Name instances are reused, i.e. the same name instance is used for the same type.
-     * The main purpose of this is to reduce the serialized footprint of the change set.
+     * A map used to make sure that Name instances are reused, i.e. the same name instance is used for the same type. The main
+     * purpose of this is to reduce the serialized footprint of the change set.
      */
     private static final transient ConcurrentHashMap<Name, Name> NAME_INSTANCES_MAP = new ConcurrentHashMap<Name, Name>();
 
@@ -61,7 +61,7 @@ public class RecordingChanges implements Changes, ChangeSet {
 
     /**
      * Creates a new change set.
-     *
+     * 
      * @param processKey the UUID of the process which created the change set; may not be null
      * @param repositoryKey the key of the repository for which the changes set is created; may not be null.
      * @param workspaceName the name of the workspace in which the changes occurred; may be null.
@@ -101,8 +101,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                              Path path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             Map<Name, Property> properties ) {
-        events.add(new NodeAdded(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), properties));
+                             Map<Name, Property> properties,
+                             boolean queryable ) {
+        events.add(new NodeAdded(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), properties, queryable));
     }
 
     @Override
@@ -110,8 +111,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                              NodeKey parentKey,
                              Path path,
                              Name primaryType,
-                             Set<Name> mixinTypes ) {
-        events.add(new NodeRemoved(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes)));
+                             Set<Name> mixinTypes,
+                             boolean queryable ) {
+        events.add(new NodeRemoved(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), queryable));
     }
 
     @Override
@@ -119,8 +121,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                              Path newPath,
                              Segment oldName,
                              Name primaryType,
-                             Set<Name> mixinTypes ) {
-        events.add(new NodeRenamed(key, newPath, oldName, filterName(primaryType), filterNameSet(mixinTypes)));
+                             Set<Name> mixinTypes,
+                             boolean queryable ) {
+        events.add(new NodeRenamed(key, newPath, oldName, filterName(primaryType), filterNameSet(mixinTypes), queryable));
     }
 
     @Override
@@ -130,8 +133,10 @@ public class RecordingChanges implements Changes, ChangeSet {
                            NodeKey newParent,
                            NodeKey oldParent,
                            Path newPath,
-                           Path oldPath ) {
-        events.add(new NodeMoved(key, filterName(primaryType), filterNameSet(mixinTypes), newParent, oldParent, newPath, oldPath));
+                           Path oldPath,
+                           boolean queryable ) {
+        events.add(new NodeMoved(key, filterName(primaryType), filterNameSet(mixinTypes), newParent, oldParent, newPath, oldPath,
+                                 queryable));
     }
 
     @Override
@@ -141,16 +146,19 @@ public class RecordingChanges implements Changes, ChangeSet {
                                NodeKey parent,
                                Path newPath,
                                Path oldPath,
-                               Path reorderedBeforePath ) {
-        events.add(new NodeReordered(key, filterName(primaryType), filterNameSet(mixinTypes), parent, newPath, oldPath, reorderedBeforePath));
+                               Path reorderedBeforePath,
+                               boolean queryable ) {
+        events.add(new NodeReordered(key, filterName(primaryType), filterNameSet(mixinTypes), parent, newPath, oldPath,
+                                     reorderedBeforePath, queryable));
     }
 
     @Override
     public void nodeChanged( NodeKey key,
                              Path path,
                              Name primaryType,
-                             Set<Name> mixinTypes ) {
-        events.add(new NodeChanged(key, path, filterName(primaryType), filterNameSet(mixinTypes)));
+                             Set<Name> mixinTypes,
+                             boolean queryable ) {
+        events.add(new NodeChanged(key, path, filterName(primaryType), filterNameSet(mixinTypes), queryable));
     }
 
     @Override
@@ -163,10 +171,11 @@ public class RecordingChanges implements Changes, ChangeSet {
                                String outputPath,
                                String userId,
                                String selectedPath,
-                               String sequencerName ) {
+                               String sequencerName,
+                               boolean queryable ) {
         events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, filterName(sequencedNodePrimaryType),
                                      filterNameSet(sequencedNodeMixinTypes), outputNodeKey, outputNodePath, outputPath, userId,
-                                     selectedPath, sequencerName));
+                                     selectedPath, sequencerName, queryable));
     }
 
     @Override
@@ -178,10 +187,11 @@ public class RecordingChanges implements Changes, ChangeSet {
                                        String userId,
                                        String selectedPath,
                                        String sequencerName,
+                                       boolean queryable,
                                        Throwable cause ) {
         events.add(new NodeSequencingFailure(sequencedNodeKey, sequencedNodePath, filterName(sequencedNodePrimaryType),
                                              filterNameSet(sequencedNodeMixinTypes), outputPath, userId, selectedPath,
-                                             sequencerName, cause));
+                                             sequencerName, queryable, cause));
     }
 
     @Override
@@ -189,8 +199,10 @@ public class RecordingChanges implements Changes, ChangeSet {
                                Name nodePrimaryType,
                                Set<Name> nodeMixinTypes,
                                Path nodePath,
-                               Property property ) {
-        events.add(new PropertyAdded(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property));
+                               Property property,
+                               boolean queryable ) {
+        events.add(new PropertyAdded(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property,
+                                     queryable));
     }
 
     @Override
@@ -198,8 +210,10 @@ public class RecordingChanges implements Changes, ChangeSet {
                                  Name nodePrimaryType,
                                  Set<Name> nodeMixinTypes,
                                  Path nodePath,
-                                 Property property ) {
-        events.add(new PropertyRemoved(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property));
+                                 Property property,
+                                 boolean queryable ) {
+        events.add(new PropertyRemoved(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property,
+                                       queryable));
     }
 
     @Override
@@ -208,8 +222,10 @@ public class RecordingChanges implements Changes, ChangeSet {
                                  Set<Name> nodeMixinTypes,
                                  Path nodePath,
                                  Property newProperty,
-                                 Property oldProperty ) {
-        events.add(new PropertyChanged(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, newProperty, oldProperty));
+                                 Property oldProperty,
+                                 boolean queryable ) {
+        events.add(new PropertyChanged(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, newProperty,
+                                       oldProperty, queryable));
     }
 
     @Override
@@ -247,7 +263,7 @@ public class RecordingChanges implements Changes, ChangeSet {
 
     /**
      * Sets the list of node keys involved in this change set.
-     *
+     * 
      * @param keys a Set<NodeKey>; may not be null
      */
     public void setChangedNodes( Set<NodeKey> keys ) {
@@ -258,7 +274,7 @@ public class RecordingChanges implements Changes, ChangeSet {
 
     /**
      * Marks this change set as frozen (aka. closed). This means it should not accept any more changes.
-     *
+     * 
      * @param userId the username from the session which originated the changes; may not be null
      * @param userData a Map which can contains arbitrary information; may be null
      * @param timestamp a {@link DateTime} at which the changes set was created.
@@ -316,15 +332,8 @@ public class RecordingChanges implements Changes, ChangeSet {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Save by '")
-          .append(getUserId())
-          .append("' at ")
-          .append(getTimestamp())
-          .append(" with user data = ")
-          .append(userData)
-          .append(" in repository with key '")
-          .append(repositoryKey)
-          .append("' and workspace '")
+        sb.append("Save by '").append(getUserId()).append("' at ").append(getTimestamp()).append(" with user data = ")
+          .append(userData).append(" in repository with key '").append(repositoryKey).append("' and workspace '")
           .append(workspaceName);
 
         if (journalId != null) {
@@ -343,7 +352,7 @@ public class RecordingChanges implements Changes, ChangeSet {
         return sb.toString();
     }
 
-    private Name filterName(Name input) {
+    private Name filterName( Name input ) {
         if (input == null) {
             return null;
         }
@@ -351,7 +360,7 @@ public class RecordingChanges implements Changes, ChangeSet {
         return name != null ? name : input;
     }
 
-    private Set<Name> filterNameSet(Set<Name> input) {
+    private Set<Name> filterNameSet( Set<Name> input ) {
         Set<Name> result = new HashSet<Name>(input.size());
         for (Name name : input) {
             result.add(filterName(name));

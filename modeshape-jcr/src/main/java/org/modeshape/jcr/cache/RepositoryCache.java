@@ -515,7 +515,8 @@ public class RepositoryCache {
             if (workspaceCacheManager instanceof EmbeddedCacheManager) {
                 EmbeddedCacheManager embeddedCacheManager = (EmbeddedCacheManager)workspaceCacheManager;
                 if (embeddedCacheManager.getStatus().equals(ComponentStatus.RUNNING)) {
-                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(workspaceName));
+                    String cacheName = cacheNameForWorkspace(workspaceName);
+                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheName);
                 }
             }
         }

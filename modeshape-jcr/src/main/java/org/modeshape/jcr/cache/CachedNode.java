@@ -35,6 +35,10 @@ public interface CachedNode {
         BOTH;
     }
 
+    public interface Properties extends Iterable<Property> {
+        Property getProperty( Name name );
+    }
+
     /**
      * Get the key for the node.
      * 
@@ -182,6 +186,14 @@ public interface CachedNode {
      */
     Property getProperty( Name name,
                           NodeCache cache );
+
+    /**
+     * Get the properties collection.
+     * 
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @return the properties; never null but possibly empty
+     */
+    Properties getPropertiesByName( NodeCache cache );
 
     /**
      * Get an iterator over all of the node's properties.

@@ -28,7 +28,7 @@
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
                 <artifactId>jboss-javaee-7.0-with-tools</artifactId>
-                <version>${jboss.server.version}</version>
+                <version>${jboss.server.bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -145,6 +145,36 @@
                                     <outputDirectory>${project.build.directory}/${jboss.server.root.folder}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--Copy & overwrite the default configuration to enable a simple login module (MODE-2242) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <skip>${skipTests}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>overwrite-configuration</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/${jboss.server.root.folder}</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/resources/kit/jboss-wf8</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>standalone/**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>

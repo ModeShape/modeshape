@@ -135,7 +135,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         }
 
         AccessControlList acl = findAccessList(absPath, false);
-        return acl == null ?  EMPTY_POLICIES : new AccessControlPolicy[] {acl};
+        return acl == null ? EMPTY_POLICIES : new AccessControlPolicy[] {acl};
     }
 
     private SecurityContext securityContext() {
@@ -160,18 +160,19 @@ public class AccessControlManagerImpl implements AccessControlManager {
         }
 
         JcrAccessControlList acl = getApplicableACL(absPath);
-        if (!acl.isEmpty() && !acl.hasPrivileges(securityContext(), new Privilege[] { privileges.forName(Privilege.JCR_READ_ACCESS_CONTROL) })) {
+        if (!acl.isEmpty()
+            && !acl.hasPrivileges(securityContext(), new Privilege[] {privileges.forName(Privilege.JCR_READ_ACCESS_CONTROL)})) {
             throw new AccessDeniedException();
         }
 
         CachedNode node = session.cachedNode(session.pathFactory().create(absPath), false);
         if (node.hasACL(session.cache())) {
-            // we only support 1 ACL per node; therefore if the node already has an ACL, we don't want to allow any additional ones
+            // we only support 1 ACL per node; therefore if the node already has an ACL, we don't want to allow any additional
+            // ones
             return AccessControlPolicyIteratorImpl.EMPTY;
-        } else {
-            // the node doesn't have an ACL yet, so return a new, empty ACL which can be used by clients to set privileges
-            return new AccessControlPolicyIteratorImpl(new JcrAccessControlList(this, absPath));
         }
+        // the node doesn't have an ACL yet, so return a new, empty ACL which can be used by clients to set privileges
+        return new AccessControlPolicyIteratorImpl(new JcrAccessControlList(this, absPath));
     }
 
     @Override
@@ -215,7 +216,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
             throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath, "read access control content"));
         }
 
-        if (!hasPrivileges(absPath, new Privilege[] { privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL) })) {
+        if (!hasPrivileges(absPath, new Privilege[] {privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
             throw new AccessDeniedException();
         }
 
@@ -230,7 +231,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         }
     }
 
-    private Map<String, Set<String>> privilegesByPrincipalName(JcrAccessControlList acl) {
+    private Map<String, Set<String>> privilegesByPrincipalName( JcrAccessControlList acl ) {
         Map<String, Set<String>> result = new HashMap<>();
         for (AccessControlEntry ace : acl.getAccessControlEntries()) {
             assert (ace.getPrincipal() != null);
@@ -248,18 +249,20 @@ public class AccessControlManagerImpl implements AccessControlManager {
      * Recursively searches for the available access list.
      * 
      * @param absPath the absolute path of the node
+     * @param searchParents flag specifying whether the ancestors should be searched for the access control list
      * @return JCR defined access list object.
      * @throws PathNotFoundException
      * @throws RepositoryException
      */
-    private JcrAccessControlList findAccessList( String absPath, boolean searchParents ) throws PathNotFoundException, RepositoryException {
-        //this will not load any nodes in the JCR session, but might load the entire hierarchy in the node cache
+    private JcrAccessControlList findAccessList( String absPath,
+                                                 boolean searchParents ) throws PathNotFoundException, RepositoryException {
+        // this will not load any nodes in the JCR session, but might load the entire hierarchy in the node cache
         CachedNode startingNode = session.cachedNode(session.pathFactory().create(absPath), false);
         SessionCache sessionCache = session.cache();
         Map<String, Set<String>> permissions = startingNode.getPermissions(sessionCache);
         CachedNode node = startingNode;
         if (permissions == null && searchParents) {
-            //walk up the hierarchy until we get a set of permissions or we reach the root or a missing parent
+            // walk up the hierarchy until we get a set of permissions or we reach the root or a missing parent
             while (permissions == null) {
                 NodeKey parentKey = node.getParentKey(sessionCache);
                 if (parentKey == null) {
@@ -273,7 +276,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
             }
         }
 
-        if (permissions == null) {
+        if (permissions == null || node == null) {
             return null;
         }
 
@@ -306,7 +309,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
     }
 
     protected boolean hasPermission( Path absPath,
-                                  String... actions ) {
+                                     String... actions ) {
         // convert actions to privileges
         Privilege[] permissions = new Privilege[actions.length];
         for (int i = 0; i < actions.length; i++) {

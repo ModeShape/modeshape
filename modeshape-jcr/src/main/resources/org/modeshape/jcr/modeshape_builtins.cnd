@@ -127,6 +127,7 @@
 - mode:kind (string) mandatory protected ignore
     < 'UNIQUE', 'DUPLICATES', 'ENUMERATED', 'FULLTEXT', 'NODETYPE'
 - mode:nodeTypeName (name) = 'nt:base' mandatory protected ignore
+- mode:workspaces (string) = "*" mandatory protected ignore
 - jcr:description (string) protected ignore
 - * (undefined) protected ignore
 - * (undefined) multiple protected ignore

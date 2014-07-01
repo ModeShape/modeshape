@@ -26,6 +26,7 @@ import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryEngine;
@@ -39,10 +40,9 @@ import org.modeshape.jcr.query.optimize.RuleBasedOptimizer;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.Planner;
+import org.modeshape.jcr.spi.index.Index;
 import org.modeshape.jcr.spi.index.IndexCollector;
-import org.modeshape.jcr.spi.index.IndexDefinition;
 import org.modeshape.jcr.spi.index.IndexManager;
-import org.modeshape.jcr.spi.index.provider.Index;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 
@@ -224,9 +224,10 @@ public class IndexQueryEngine extends ScanningQueryEngine {
         IndexProvider provider = indexManager.getProvider(providerName);
         if (provider != null) {
             // Use the index to get a NodeSequence ...
-            Index index = provider.getIndex(indexPlan.getName());
+            Index index = provider.getIndex(indexPlan.getName(), indexPlan.getWorkspaceName());
             if (index != null) {
-                return sources.fromIndex(index, indexPlan.getConstraints(), indexPlan.getParameters(), 100);
+                return sources.fromIndex(index, indexPlan.getConstraints(), context.getVariables(), indexPlan.getParameters(),
+                                         context.getExecutionContext().getValueFactories(), 100);
             }
         }
         return null;

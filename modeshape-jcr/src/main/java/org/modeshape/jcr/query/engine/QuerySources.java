@@ -34,11 +34,12 @@ import org.modeshape.jcr.cache.document.NodeCacheIterator;
 import org.modeshape.jcr.cache.document.NodeCacheIterator.NodeFilter;
 import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.NodeSequence.Batch;
-import org.modeshape.jcr.spi.index.provider.IndexFilter;
-import org.modeshape.jcr.spi.index.provider.Index;
-import org.modeshape.jcr.spi.index.provider.ResultWriter;
+import org.modeshape.jcr.spi.index.Index;
+import org.modeshape.jcr.spi.index.IndexConstraints;
+import org.modeshape.jcr.spi.index.ResultWriter;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
+import org.modeshape.jcr.value.ValueFactories;
 
 /**
  * A factory for creating {@link NodeSequence} instances.
@@ -220,15 +221,19 @@ public class QuerySources {
      * 
      * @param index the index; may not be null
      * @param constraints the constraints that apply to the index; may not be null or empty
+     * @param variables the immutable map of variable values keyed by their name; never null but possibly empty
      * @param parameters the provider-specific index parameters; may not be null, but may be empty
+     * @param valueFactories the value factories; never null
      * @param batchSize the ideal number of nodes that are to be included in each batch; always positive
      * @return the sequence of nodes; never null
      */
     public NodeSequence fromIndex( final Index index,
                                    final Collection<Constraint> constraints,
+                                   final Map<String, Object> variables,
                                    final Map<String, Object> parameters,
+                                   final ValueFactories valueFactories,
                                    final int batchSize ) {
-        final Index.Operation operation = index.filter(new IndexFilter() {
+        final Index.Results operation = index.filter(new IndexConstraints() {
 
             @Override
             public boolean hasConstraints() {
@@ -238,6 +243,16 @@ public class QuerySources {
             @Override
             public Collection<Constraint> getConstraints() {
                 return constraints;
+            }
+
+            @Override
+            public Map<String, Object> getVariables() {
+                return variables;
+            }
+
+            @Override
+            public ValueFactories getValueFactories() {
+                return valueFactories;
             }
 
             @Override
@@ -358,7 +373,7 @@ public class QuerySources {
             return keys.size();
         }
 
-        protected boolean consumeOperation( Index.Operation operation ) {
+        protected boolean consumeOperation( Index.Results operation ) {
             if (!keys.isEmpty()) {
                 // We've already read some, but have to get ready to read more ...
                 preloadedBatches.add(convertToBatch(false));

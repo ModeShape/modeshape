@@ -51,24 +51,33 @@ import org.modeshape.jcr.value.basic.StringReference;
 @Immutable
 public enum PropertyType {
 
-    STRING("String", ValueComparators.STRING_COMPARATOR, new ObjectCanonicalizer(), String.class),
-    BINARY("Binary", ValueComparators.BINARY_COMPARATOR, new ObjectCanonicalizer(), BinaryValue.class),
-    LONG("Long", ValueComparators.LONG_COMPARATOR, new LongCanonicalizer(), Long.class, Integer.class, Short.class),
-    DOUBLE("Double", ValueComparators.DOUBLE_COMPARATOR, new DoubleCanonicalizer(), Double.class, Float.class),
-    DECIMAL("Decimal", ValueComparators.DECIMAL_COMPARATOR, new ObjectCanonicalizer(), BigDecimal.class),
-    DATE("Date", ValueComparators.DATE_TIME_COMPARATOR, new DateCanonicalizer(), DateTime.class, Calendar.class, Date.class),
-    BOOLEAN("Boolean", ValueComparators.BOOLEAN_COMPARATOR, new ObjectCanonicalizer(), Boolean.class),
-    NAME("Name", ValueComparators.NAME_COMPARATOR, new ObjectCanonicalizer(), Name.class, BasicName.class),
-    PATH("Path", ValueComparators.PATH_COMPARATOR, new ObjectCanonicalizer(), Path.class, BasicPath.class, ChildPath.class,
-         IdentifierPath.class, RootPath.class),
+    STRING("String", ValueComparators.STRING_COMPARATOR, new ObjectCanonicalizer(), String.class, javax.jcr.PropertyType.STRING),
+    BINARY("Binary", ValueComparators.BINARY_COMPARATOR, new ObjectCanonicalizer(), BinaryValue.class,
+           javax.jcr.PropertyType.BINARY),
+    LONG("Long", ValueComparators.LONG_COMPARATOR, new LongCanonicalizer(), Long.class, javax.jcr.PropertyType.LONG,
+         Integer.class, Short.class),
+    DOUBLE("Double", ValueComparators.DOUBLE_COMPARATOR, new DoubleCanonicalizer(), Double.class, javax.jcr.PropertyType.DOUBLE,
+           Float.class),
+    DECIMAL("Decimal", ValueComparators.DECIMAL_COMPARATOR, new ObjectCanonicalizer(), BigDecimal.class,
+            javax.jcr.PropertyType.DECIMAL),
+    DATE("Date", ValueComparators.DATE_TIME_COMPARATOR, new DateCanonicalizer(), DateTime.class, javax.jcr.PropertyType.DATE,
+         Calendar.class, Date.class),
+    BOOLEAN("Boolean", ValueComparators.BOOLEAN_COMPARATOR, new ObjectCanonicalizer(), Boolean.class,
+            javax.jcr.PropertyType.BOOLEAN),
+    NAME("Name", ValueComparators.NAME_COMPARATOR, new ObjectCanonicalizer(), Name.class, javax.jcr.PropertyType.NAME,
+         BasicName.class),
+    PATH("Path", ValueComparators.PATH_COMPARATOR, new ObjectCanonicalizer(), Path.class, javax.jcr.PropertyType.PATH,
+         BasicPath.class, ChildPath.class, IdentifierPath.class, RootPath.class),
     REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
-              NodeKeyReference.class, StringReference.class),
+              javax.jcr.PropertyType.REFERENCE, NodeKeyReference.class, StringReference.class),
     WEAKREFERENCE("WeakReference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
-                  NodeKeyReference.class, StringReference.class),
-    SIMPLEREFERENCE(org.modeshape.jcr.api.PropertyType.TYPENAME_SIMPLE_REFERENCE,
-                    ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class, NodeKeyReference.class),
-    URI("URI", ValueComparators.URI_COMPARATOR, new ObjectCanonicalizer(), URI.class),
-    OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, new ObjectCanonicalizer(), Object.class);
+                  javax.jcr.PropertyType.WEAKREFERENCE, NodeKeyReference.class, StringReference.class),
+    SIMPLEREFERENCE(org.modeshape.jcr.api.PropertyType.TYPENAME_SIMPLE_REFERENCE, ValueComparators.REFERENCE_COMPARATOR,
+                    new ObjectCanonicalizer(), Reference.class, org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE,
+                    NodeKeyReference.class),
+    URI("URI", ValueComparators.URI_COMPARATOR, new ObjectCanonicalizer(), URI.class, javax.jcr.PropertyType.URI),
+    OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, new ObjectCanonicalizer(), Object.class,
+           javax.jcr.PropertyType.UNDEFINED);
 
     private static interface Canonicalizer {
         Object canonicalizeValue( Object value );
@@ -164,13 +173,15 @@ public enum PropertyType {
     private final Class<?> valueClass;
     private final Set<Class<?>> castableValueClasses;
     private final TypeChecker typeChecker;
+    private final int jcrType;
 
     private PropertyType( String name,
                           Comparator<?> comparator,
                           Canonicalizer canonicalizer,
                           Class<?> valueClass,
+                          int jcrType,
                           Class<?>... castableClasses ) {
-        this(name, comparator, canonicalizer, valueClass, null, castableClasses);
+        this(name, comparator, canonicalizer, valueClass, null, jcrType, castableClasses);
     }
 
     private PropertyType( String name,
@@ -178,11 +189,13 @@ public enum PropertyType {
                           Canonicalizer canonicalizer,
                           Class<?> valueClass,
                           TypeChecker typeChecker,
+                          int jcrType,
                           Class<?>... castableClasses ) {
         this.name = name;
         this.comparator = comparator;
         this.canonicalizer = canonicalizer;
         this.valueClass = valueClass;
+        this.jcrType = jcrType;
         if (castableClasses != null && castableClasses.length != 0) {
             castableValueClasses = Collections.unmodifiableSet(new HashSet<Class<?>>(Arrays.asList(castableClasses)));
         } else {
@@ -248,6 +261,16 @@ public enum PropertyType {
             if (!isTypeFor(value)) return false;
         }
         return true;
+    }
+
+    /**
+     * Returns the JCR numeric constant which represents the current type.
+     * 
+     * @return an {@code int} value
+     * @see javax.jcr.PropertyType
+     */
+    public final int jcrType() {
+        return this.jcrType;
     }
 
     public static PropertyType discoverType( Object value ) {
@@ -323,5 +346,37 @@ public enum PropertyType {
     public static PropertyType valueFor( String typeNameInAnyCase ) {
         PropertyType type = PROPERTY_TYPE_BY_LOWERCASE_NAME.get(typeNameInAnyCase);
         return type != null ? type : PropertyType.STRING;
+    }
+
+    public static PropertyType valueFor( int jcrPropertyType ) {
+        switch (jcrPropertyType) {
+            case javax.jcr.PropertyType.BINARY:
+                return PropertyType.BINARY;
+            case javax.jcr.PropertyType.BOOLEAN:
+                return PropertyType.BOOLEAN;
+            case javax.jcr.PropertyType.DATE:
+                return PropertyType.DATE;
+            case javax.jcr.PropertyType.DECIMAL:
+                return PropertyType.DECIMAL;
+            case javax.jcr.PropertyType.DOUBLE:
+                return PropertyType.DOUBLE;
+            case javax.jcr.PropertyType.LONG:
+                return PropertyType.LONG;
+            case javax.jcr.PropertyType.NAME:
+                return PropertyType.NAME;
+            case javax.jcr.PropertyType.PATH:
+                return PropertyType.PATH;
+            case javax.jcr.PropertyType.REFERENCE:
+                return PropertyType.REFERENCE;
+            case javax.jcr.PropertyType.STRING:
+                return PropertyType.STRING;
+            case javax.jcr.PropertyType.URI:
+                return PropertyType.URI;
+            case javax.jcr.PropertyType.WEAKREFERENCE:
+                return PropertyType.WEAKREFERENCE;
+            case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                return PropertyType.SIMPLEREFERENCE;
+        }
+        return PropertyType.OBJECT;
     }
 }

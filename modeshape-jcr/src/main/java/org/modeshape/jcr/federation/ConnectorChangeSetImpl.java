@@ -92,13 +92,14 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                              String path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             Map<Name, Property> properties ) {
+                             Map<Name, Property> properties,
+                             boolean queryable ) {
         NodeKey key = nodeKey(docId);
         NodeKey parentKey = nodeKey(parentDocId);
         Path externalPath = pathMappings.getPathFactory().create(path);
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(externalPath)) {
-            changesFor(wsAndPath).nodeCreated(key, parentKey, wsAndPath.getPath(), primaryType, mixinTypes, properties);
+            changesFor(wsAndPath).nodeCreated(key, parentKey, wsAndPath.getPath(), primaryType, mixinTypes, properties, queryable);
         }
     }
 
@@ -107,13 +108,14 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                              String parentDocId,
                              String path,
                              Name primaryType,
-                             Set<Name> mixinTypes ) {
+                             Set<Name> mixinTypes,
+                             boolean queryable ) {
         NodeKey key = nodeKey(docId);
         NodeKey parentKey = nodeKey(parentDocId);
         Path externalPath = pathMappings.getPathFactory().create(path);
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(externalPath)) {
-            changesFor(wsAndPath).nodeRemoved(key, parentKey, wsAndPath.getPath(), primaryType, mixinTypes);
+            changesFor(wsAndPath).nodeRemoved(key, parentKey, wsAndPath.getPath(), primaryType, mixinTypes, queryable);
         }
         // Signal to the manager of the Connector instances that an external node was removed. If this external
         // node is used in a projection, that projection will be removed...
@@ -127,7 +129,8 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                            String newParentDocId,
                            String oldParentDocId,
                            String newPath,
-                           String oldPath ) {
+                           String oldPath,
+                           boolean queryable ) {
         NodeKey key = nodeKey(docId);
         NodeKey newParentKey = nodeKey(newParentDocId);
         NodeKey oldParentKey = nodeKey(oldParentDocId);
@@ -158,11 +161,8 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
             }
             // There are only old locations, so treat as NODE_REMOVED.
             for (WorkspaceAndPath wsAndOldPath : oldWsAndPaths) {
-                changesFor(wsAndOldPath.getWorkspaceName()).nodeRemoved(key,
-                                                                        oldParentKey,
-                                                                        wsAndOldPath.getPath(),
-                                                                        primaryType,
-                                                                        mixinTypes);
+                changesFor(wsAndOldPath.getWorkspaceName()).nodeRemoved(key, oldParentKey, wsAndOldPath.getPath(), primaryType,
+                                                                        mixinTypes, queryable);
             }
             return;
         } else if (numOld == 0) {
@@ -170,12 +170,8 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
             // Note that we do not know the properties ...
             Map<Name, Property> properties = Collections.emptyMap();
             for (WorkspaceAndPath wsAndNewPath : newWsAndPaths) {
-                changesFor(wsAndNewPath.getWorkspaceName()).nodeCreated(key,
-                                                                        newParentKey,
-                                                                        wsAndNewPath.getPath(),
-                                                                        primaryType,
-                                                                        mixinTypes,
-                                                                        properties);
+                changesFor(wsAndNewPath.getWorkspaceName()).nodeCreated(key, newParentKey, wsAndNewPath.getPath(), primaryType,
+                                                                        mixinTypes, properties, queryable);
             }
             return;
         }
@@ -191,30 +187,18 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
             String oldWorkspace = oldWsAndPath.getWorkspaceName();
             if (newWorkspace.equals(oldWorkspace)) {
                 // The workspaces are the same, so this is the case of a simple move
-                changesFor(newWorkspace).nodeMoved(key,
-                                                   primaryType,
-                                                   mixinTypes,
-                                                   newParentKey,
-                                                   oldParentKey,
-                                                   newWsAndPath.getPath(),
-                                                   oldWsAndPath.getPath());
+                changesFor(newWorkspace).nodeMoved(key, primaryType, mixinTypes, newParentKey, oldParentKey,
+                                                   newWsAndPath.getPath(), oldWsAndPath.getPath(), queryable);
                 return;
             }
             // The workspace names don't match, so treat the old as a NODE_REMOVED ...
-            changesFor(oldWsAndPath.getWorkspaceName()).nodeRemoved(key,
-                                                                    oldParentKey,
-                                                                    oldWsAndPath.getPath(),
-                                                                    primaryType,
-                                                                    mixinTypes);
+            changesFor(oldWsAndPath.getWorkspaceName()).nodeRemoved(key, oldParentKey, oldWsAndPath.getPath(), primaryType,
+                                                                    mixinTypes, queryable);
             // And the new as NODE_CREATED (in a separate workspace) ...
             // Note that we do not know the properties ...
             Map<Name, Property> properties = Collections.emptyMap();
-            changesFor(newWsAndPath.getWorkspaceName()).nodeCreated(key,
-                                                                    newParentKey,
-                                                                    newWsAndPath.getPath(),
-                                                                    primaryType,
-                                                                    mixinTypes,
-                                                                    properties);
+            changesFor(newWsAndPath.getWorkspaceName()).nodeCreated(key, newParentKey, newWsAndPath.getPath(), primaryType,
+                                                                    mixinTypes, properties, queryable);
             return;
         }
 
@@ -234,13 +218,8 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                 String oldWorkspace = wsAndOldPath.getWorkspaceName();
                 if (newWorkspace.equals(oldWorkspace)) {
                     found = true;
-                    changesFor(newWorkspace).nodeMoved(key,
-                                                       primaryType,
-                                                       mixinTypes,
-                                                       newParentKey,
-                                                       oldParentKey,
-                                                       wsAndNewPath.getPath(),
-                                                       wsAndOldPath.getPath());
+                    changesFor(newWorkspace).nodeMoved(key, primaryType, mixinTypes, newParentKey, oldParentKey,
+                                                       wsAndNewPath.getPath(), wsAndOldPath.getPath(), queryable);
                     oldWsAndPathsIter.remove(); // we don't want to deal with this WorkspaceAndPath as the 'from' of another move
                 }
             }
@@ -249,18 +228,14 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                 // so treat it as a NODE_CREATED in the new workspace.
                 // Note that we do not know the properties ...
                 Map<Name, Property> properties = Collections.emptyMap();
-                changesFor(wsAndNewPath).nodeCreated(key,
-                                                     newParentKey,
-                                                     wsAndNewPath.getPath(),
-                                                     primaryType,
-                                                     mixinTypes,
-                                                     properties);
+                changesFor(wsAndNewPath).nodeCreated(key, newParentKey, wsAndNewPath.getPath(), primaryType, mixinTypes,
+                                                     properties, queryable);
             }
         }
 
         // If there are any old paths left, we need to treat them as NODE_REMOVED ...
         for (WorkspaceAndPath oldWsAndPath : oldWsAndPaths) {
-            changesFor(oldWsAndPath).nodeRemoved(key, oldParentKey, oldWsAndPath.getPath(), primaryType, mixinTypes);
+            changesFor(oldWsAndPath).nodeRemoved(key, oldParentKey, oldWsAndPath.getPath(), primaryType, mixinTypes, queryable);
         }
     }
 
@@ -271,7 +246,8 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                                String parentDocId,
                                String newPath,
                                String oldNameSegment,
-                               String reorderedBeforeNameSegment ) {
+                               String reorderedBeforeNameSegment,
+                               boolean queryable ) {
         NodeKey key = nodeKey(docId);
         NodeKey parentKey = nodeKey(parentDocId);
         PathFactory pathFactory = pathMappings.getPathFactory();
@@ -282,13 +258,8 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                                                                                                   pathFactory.createSegment(reorderedBeforeNameSegment));
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(newExternalPath)) {
-            changesFor(wsAndPath).nodeReordered(key,
-                                                primaryType,
-                                                mixinTypes,
-                                                parentKey,
-                                                wsAndPath.getPath(),
-                                                oldExternalPath,
-                                                reorderedBeforePath);
+            changesFor(wsAndPath).nodeReordered(key, primaryType, mixinTypes, parentKey, wsAndPath.getPath(), oldExternalPath,
+                                                reorderedBeforePath, queryable);
         }
     }
 
@@ -297,12 +268,13 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                                Name nodePrimaryType,
                                Set<Name> nodeMixinTypes,
                                String nodePath,
-                               Property property ) {
+                               Property property,
+                               boolean queryable ) {
         NodeKey key = nodeKey(docId);
         Path externalPath = pathMappings.getPathFactory().create(nodePath);
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(externalPath)) {
-            changesFor(wsAndPath).propertyAdded(key, nodePrimaryType, nodeMixinTypes, wsAndPath.getPath(), property);
+            changesFor(wsAndPath).propertyAdded(key, nodePrimaryType, nodeMixinTypes, wsAndPath.getPath(), property, queryable);
         }
     }
 
@@ -311,12 +283,13 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                                  Name nodePrimaryType,
                                  Set<Name> nodeMixinTypes,
                                  String nodePath,
-                                 Property property ) {
+                                 Property property,
+                                 boolean queryable ) {
         NodeKey key = nodeKey(docId);
         Path externalPath = pathMappings.getPathFactory().create(nodePath);
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(externalPath)) {
-            changesFor(wsAndPath).propertyRemoved(key, nodePrimaryType, nodeMixinTypes, wsAndPath.getPath(), property);
+            changesFor(wsAndPath).propertyRemoved(key, nodePrimaryType, nodeMixinTypes, wsAndPath.getPath(), property, queryable);
         }
     }
 
@@ -326,17 +299,14 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                                  Set<Name> nodeMixinTypes,
                                  String nodePath,
                                  Property oldProperty,
-                                 Property newProperty ) {
+                                 Property newProperty,
+                                 boolean queryable ) {
         NodeKey key = nodeKey(docId);
         Path externalPath = pathMappings.getPathFactory().create(nodePath);
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(externalPath)) {
-            changesFor(wsAndPath).propertyChanged(key,
-                                                  nodePrimaryType,
-                                                  nodeMixinTypes,
-                                                  wsAndPath.getPath(),
-                                                  newProperty,
-                                                  oldProperty);
+            changesFor(wsAndPath).propertyChanged(key, nodePrimaryType, nodeMixinTypes, wsAndPath.getPath(), newProperty,
+                                                  oldProperty, queryable);
         }
     }
 

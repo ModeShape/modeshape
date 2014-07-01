@@ -54,7 +54,26 @@ public final class NoOpChanges implements Changes {
                              Path path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             Map<Name, Property> properties ) {
+                             Map<Name, Property> properties,
+                             boolean queryable ) {
+    }
+
+    @Override
+    public void nodeRemoved( NodeKey key,
+                             NodeKey parentKey,
+                             Path path,
+                             Name primaryType,
+                             Set<Name> mixinTypes,
+                             boolean queryable ) {
+    }
+
+    @Override
+    public void nodeRenamed( NodeKey key,
+                             Path newPath,
+                             Segment oldName,
+                             Name primaryType,
+                             Set<Name> mixinTypes,
+                             boolean queryable ) {
     }
 
     @Override
@@ -64,59 +83,8 @@ public final class NoOpChanges implements Changes {
                            NodeKey newParent,
                            NodeKey oldParent,
                            Path newPath,
-                           Path oldPath ) {
-    }
-
-    @Override
-    public void nodeChanged( NodeKey key,
-                             Path path,
-                             Name primaryType,
-                             Set<Name> mixinTypes ) {
-    }
-
-    @Override
-    public void nodeRemoved( NodeKey key,
-                             NodeKey parentKey,
-                             Path path,
-                             Name primaryType,
-                             Set<Name> mixinTypes ) {
-    }
-
-    @Override
-    public void nodeRenamed( NodeKey key,
-                             Path path,
-                             Segment oldName,
-                             Name primaryType,
-                             Set<Name> mixinTypes ) {
-    }
-
-    @Override
-    public void propertyAdded( NodeKey key,
-                               Name nodePrimaryType,
-                               Set<Name> nodeMixinTypes,
-                               Path nodePath,
-                               Property property ) {
-    }
-
-    @Override
-    public void propertyRemoved( NodeKey key,
-                                 Name nodePrimaryType,
-                                 Set<Name> nodeMixinTypes,
-                                 Path nodePath,
-                                 Property property ) {
-    }
-
-    @Override
-    public void propertyChanged( NodeKey key,
-                                 Name nodePrimaryType,
-                                 Set<Name> nodeMixinTypes,
-                                 Path nodePath,
-                                 Property newProperty,
-                                 Property oldProperty ) {
-    }
-
-    @Override
-    public void binaryValueNoLongerUsed( BinaryKey key ) {
+                           Path oldPath,
+                           boolean queryable ) {
     }
 
     @Override
@@ -126,7 +94,16 @@ public final class NoOpChanges implements Changes {
                                NodeKey parent,
                                Path newPath,
                                Path oldPath,
-                               Path reorderedBeforePath ) {
+                               Path reorderedBeforePath,
+                               boolean queryable ) {
+    }
+
+    @Override
+    public void nodeChanged( NodeKey key,
+                             Path path,
+                             Name primaryType,
+                             Set<Name> mixinTypes,
+                             boolean queryable ) {
     }
 
     @Override
@@ -139,7 +116,8 @@ public final class NoOpChanges implements Changes {
                                String outputPath,
                                String userId,
                                String selectedPath,
-                               String sequencerName ) {
+                               String sequencerName,
+                               boolean queryable ) {
     }
 
     @Override
@@ -151,6 +129,39 @@ public final class NoOpChanges implements Changes {
                                        String userId,
                                        String selectedPath,
                                        String sequencerName,
+                                       boolean queryable,
                                        Throwable cause ) {
+    }
+
+    @Override
+    public void propertyAdded( NodeKey key,
+                               Name nodePrimaryType,
+                               Set<Name> nodeMixinTypes,
+                               Path nodePath,
+                               Property property,
+                               boolean queryable ) {
+    }
+
+    @Override
+    public void propertyRemoved( NodeKey key,
+                                 Name nodePrimaryType,
+                                 Set<Name> nodeMixinTypes,
+                                 Path nodePath,
+                                 Property property,
+                                 boolean queryable ) {
+    }
+
+    @Override
+    public void propertyChanged( NodeKey key,
+                                 Name nodePrimaryType,
+                                 Set<Name> nodeMixinTypes,
+                                 Path nodePath,
+                                 Property newProperty,
+                                 Property oldProperty,
+                                 boolean queryable ) {
+    }
+
+    @Override
+    public void binaryValueNoLongerUsed( BinaryKey key ) {
     }
 }

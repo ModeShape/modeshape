@@ -139,6 +139,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private volatile boolean isLive = true;
     private final long nanosCreated;
     private volatile BufferManager bufferMgr;
+    private final boolean hasCustomAuthorizationProvider;
 
     private ExecutionContext context;
 
@@ -211,6 +212,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         repository.statistics().increment(ValueMetric.SESSION_COUNT);
 
         acm = new AccessControlManagerImpl(this);
+
+        SecurityContext securityContext = context.getSecurityContext();
+        this.hasCustomAuthorizationProvider = securityContext instanceof AuthorizationProvider
+                                              || securityContext instanceof AdvancedAuthorizationProvider;
     }
 
     protected JcrSession( JcrSession original,
@@ -222,6 +227,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         this.valueFactory = original.valueFactory;
         this.sessionAttributes = original.sessionAttributes;
         this.workspace = original.workspace;
+        this.hasCustomAuthorizationProvider = original.hasCustomAuthorizationProvider;
 
         // Create a new session cache and root node ...
         this.cache = repository.repositoryCache().createSession(context, this.workspace.getName(), readOnly);
@@ -247,6 +253,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             bufferMgr = new BufferManager(this.context);
         }
         return bufferMgr;
+    }
+
+    final boolean checkPermissionsWhenIteratingChildren() {
+        // we cannot "cache" the ACL enabled/disabled state because it's dynamic
+        return this.hasCustomAuthorizationProvider || repository.repositoryCache().isAccessControlEnabled();
     }
 
     /**
@@ -440,11 +451,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return aclChangesCount.longValue();
     }
 
-    protected final long aclAdded(long count) {
+    protected final long aclAdded( long count ) {
         return aclChangesCount.addAndGet(count);
     }
 
-    protected final long aclRemoved(long count) {
+    protected final long aclRemoved( long count ) {
         return aclChangesCount.addAndGet(-count);
     }
 
@@ -579,10 +590,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return node;
     }
 
-    final CachedNode cachedNode( Path absolutePath, boolean checkReadPermission ) throws PathNotFoundException, RepositoryException {
-        return checkReadPermission ?
-               cachedNode(cache, getRootNode().node(), absolutePath, ModeShapePermissions.READ) :
-               cachedNode(cache, getRootNode().node(), absolutePath);
+    final CachedNode cachedNode( Path absolutePath,
+                                 boolean checkReadPermission ) throws PathNotFoundException, RepositoryException {
+        return checkReadPermission ? cachedNode(cache, getRootNode().node(), absolutePath, ModeShapePermissions.READ) : cachedNode(cache,
+                                                                                                                                   getRootNode().node(),
+                                                                                                                                   absolutePath);
     }
 
     final CachedNode cachedNode( SessionCache cache,
@@ -1286,7 +1298,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                           final NodeCache nodeCache ) {
         return new PathSupplier() {
             @Override
-            public Path getAbsolutePath() throws ItemNotFoundException {
+            public Path getAbsolutePath() {
                 return node.getPath(nodeCache);
             }
         };
@@ -1339,8 +1351,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 Path path = pathSupplier != null ? pathSupplier.getAbsolutePath() : null;
                 if (path != null) {
                     assert path.isAbsolute() : "The path (if provided) must be absolute";
-                    hasPermission = authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
-    
+                    hasPermission = authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path,
+                                                             actions);
+
                     if (checkAcl && hasPermission) {
                         hasPermission = acm.hasPermission(path, actions);
                     }
@@ -1355,7 +1368,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 if (path != null) {
                     assert path.isAbsolute() : "The path (if provided) must be absolute";
                     hasPermission = authorizer.hasPermission(authorizerContext, path, actions);
-    
+
                     if (checkAcl && hasPermission) {
                         hasPermission = acm.hasPermission(path, actions);
                     }

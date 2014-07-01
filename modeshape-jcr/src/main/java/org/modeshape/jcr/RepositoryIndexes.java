@@ -19,7 +19,7 @@ package org.modeshape.jcr;
 import java.util.Collections;
 import java.util.Map;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.spi.index.IndexDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition;
 
 /**
  * An immutable set of {@link IndexDefinition} instances describing all of the currently available indexes.
@@ -64,5 +64,4 @@ public abstract class RepositoryIndexes {
      */
     public abstract Iterable<IndexDefinition> indexesFor( String nodeTypeName,
                                                           String providerName );
-
 }

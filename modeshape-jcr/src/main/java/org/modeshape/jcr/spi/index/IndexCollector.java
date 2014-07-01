@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.Map;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.spi.index.provider.Index;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 
@@ -50,13 +49,15 @@ public interface IndexCollector {
      * Add to the query plan the information necessary to signal that the supplied index can be used to answer the query.
      * 
      * @param name the name of the index; may not be null
-     * @param providerName the name of the provider; may not be null
+     * @param workspaceName the name of the workspace for which the index is used; may be null if the index is built-in
+     * @param providerName the name of the provider; may be null if the index is built-in
      * @param constraints the constraints that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
      * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
      *        must be non-negative
      */
     void addIndex( String name,
+                   String workspaceName,
                    String providerName,
                    Collection<Constraint> constraints,
                    int costEstimate,
@@ -66,17 +67,19 @@ public interface IndexCollector {
      * Add to the query plan the information necessary to signal that the supplied index can be used to answer the query
      * 
      * @param name the name of the index; may not be null
-     * @param providerName the name of the provider; may not be null
+     * @param workspaceName the name of the workspace for which the index is used; may be null if the index is built-in
+     * @param providerName the name of the provider; may be null if the index is built-in
      * @param constraints the constraints that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
      * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
      *        must be non-negative
      * @param parameterName the name of a parameter that is to be supplied back to the {@link Index} if/when this index is
-     *        {@link Index#filter(org.modeshape.jcr.spi.index.provider.IndexFilter)} called; may not be null
+     *        {@link Index#filter} called; may not be null
      * @param parameterValue the value of a parameter that is to be supplied back to the {@link Index} if/when this index is
-     *        {@link Index#filter(org.modeshape.jcr.spi.index.provider.IndexFilter)} called; may not be null
+     *        {@link Index#filter} called; may not be null
      */
     void addIndex( String name,
+                   String workspaceName,
                    String providerName,
                    Collection<Constraint> constraints,
                    int costEstimate,
@@ -88,7 +91,8 @@ public interface IndexCollector {
      * Add to the query plan the information necessary to signal that the supplied index can be used to answer the query.
      * 
      * @param name the name of the index; may not be null
-     * @param providerName the name of the provider; may not be null
+     * @param workspaceName the name of the workspace for which the index is used; may be null if the index is built-in
+     * @param providerName the name of the provider; may be null if the index is built-in
      * @param constraints the constraints that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
      * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
@@ -99,6 +103,7 @@ public interface IndexCollector {
      * @param parameterValue2 the value of the second parameter
      */
     void addIndex( String name,
+                   String workspaceName,
                    String providerName,
                    Collection<Constraint> constraints,
                    int costEstimate,
@@ -112,7 +117,8 @@ public interface IndexCollector {
      * Add to the query plan the information necessary to signal that the supplied index can be used to answer the query.
      * 
      * @param name the name of the index; may not be null
-     * @param providerName the name of the provider; may not be null
+     * @param workspaceName the name of the workspace for which the index is used; may be null if the index is built-in
+     * @param providerName the name of the provider; may be null if the index is built-in
      * @param constraints the constraints that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
      * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
@@ -120,6 +126,7 @@ public interface IndexCollector {
      * @param parameters the parameter values by name; may be null or empty
      */
     void addIndex( String name,
+                   String workspaceName,
                    String providerName,
                    Collection<Constraint> constraints,
                    int costEstimate,

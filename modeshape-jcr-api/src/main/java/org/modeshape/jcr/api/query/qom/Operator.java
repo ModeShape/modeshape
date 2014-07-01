@@ -77,6 +77,31 @@ public enum Operator {
     }
 
     /**
+     * Get the NOT of this operator.
+     * 
+     * @return the operator after a NOT operation; never null
+     */
+    public Operator not() {
+        switch (this) {
+            case GREATER_THAN:
+                return LESS_THAN_OR_EQUAL_TO;
+            case GREATER_THAN_OR_EQUAL_TO:
+                return LESS_THAN;
+            case LESS_THAN:
+                return GREATER_THAN_OR_EQUAL_TO;
+            case LESS_THAN_OR_EQUAL_TO:
+                return GREATER_THAN;
+            case EQUAL_TO:
+                return NOT_EQUAL_TO;
+            case NOT_EQUAL_TO:
+                return EQUAL_TO;
+            case LIKE:
+            default:
+                return this;
+        }
+    }
+
+    /**
      * Determine whether this operator is one that is used to define a range of values: {@link #LESS_THAN <},
      * {@link #GREATER_THAN >}, {@link #LESS_THAN_OR_EQUAL_TO <=}, or {@link #GREATER_THAN_OR_EQUAL_TO >=}.
      * 

@@ -120,6 +120,7 @@ public final class JcrI18n {
     public static I18n indexMustHaveName;
     public static I18n indexMustHaveProviderName;
     public static I18n errorRefreshingIndexDefinitions;
+    public static I18n errorNotifyingProviderOfInitialIndexDefinitions;
     public static I18n errorNotifyingProviderOfIndexChanges;
 
     public static I18n rootNodeHasNoParent;
@@ -437,6 +438,7 @@ public final class JcrI18n {
     public static I18n errorWhileShuttingDownEngineInJndi;
     public static I18n nodeModifiedBySessionWasRemovedByAnotherSession;
     public static I18n nodeCreatedBySessionUsedExistingKey;
+    public static I18n errorRemovingISPNCache;
 
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
     public static I18n unexpectedException;
@@ -452,6 +454,7 @@ public final class JcrI18n {
     public static I18n errorStoringMimeType;
     public static I18n errorStoringExtractedText;
     public static I18n errorReadingExtractedText;
+    public static I18n unableToCreateDirectoryForBinaryStore;
 
     public static I18n unableToReadTemporaryDirectory;
     public static I18n unableToWriteTemporaryDirectory;

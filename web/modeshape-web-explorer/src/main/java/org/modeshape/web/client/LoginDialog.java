@@ -29,38 +29,21 @@ import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.layout.VStack;
 
 /**
+ *
  * @author kulikov
  */
 public class LoginDialog extends DynamicForm {
 
-    protected Window window = new Window();
-    protected TextItem jndiName = new TextItem();
-    protected TextItem userName = new TextItem();
-    protected TextItem workspace = new TextItem();
-    protected PasswordItem password = new PasswordItem();
+    private Window window = new Window();
+    private TextItem userName = new TextItem();
+    private PasswordItem password = new PasswordItem();
 
-    protected Console console;
-
-    public LoginDialog( Console console ) {
+    public LoginDialog(final Console console) {
         super();
-        this.console = console;
-
+        
         setID("loginDialog");
         setNumCols(2);
         setPadding(25);
-
-        jndiName.setName("jndiName");
-        jndiName.setTitle("Repository name");
-        jndiName.setDefaultValue("jcr/sample");
-        jndiName.setWidth(250);
-        jndiName.setRequired(true);
-        jndiName.setVisible(true);
-
-        workspace.setName("workspace");
-        workspace.setTitle("Workspace");
-        workspace.setDefaultValue("default");
-        workspace.setWidth(250);
-        workspace.setRequired(true);
 
         userName.setName("username");
         userName.setTitle("Username");
@@ -88,16 +71,35 @@ public class LoginDialog extends DynamicForm {
 
         okButton.setStartRow(false);
         okButton.setEndRow(true);
+        
+        this.addSubmitValuesHandler(new SubmitValuesHandler() {
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void onSubmitValues(SubmitValuesEvent event) {
+                console.jcrService.login(userName.getValueAsString(), 
+                    password.getValueAsString(), new AsyncCallback<Object>() {
 
-        this.addSubmitValuesHandler(new LoginHandler());
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        SC.say(caught.getMessage());
+                    }
 
+                    @Override
+                    public void onSuccess(Object result) {
+                        LoginDialog.this.hideDialog();
+                        console.updateUserName(userName.getValueAsString());
+                    }
+                });
+            }
+        });
+        
         StaticTextItem description = new StaticTextItem();
         description.setTitle("");
-        description.setValue("Specify either repository name or jndi name");
+        description.setValue("Please specify your username and password");
         description.setStartRow(true);
         description.setEndRow(true);
-
-        setItems(spacerItem1, description, jndiName, workspace, spacerItem1, userName, password, spacerItem2, okButton);
+        
+        setItems(description, userName, password,  spacerItem2, okButton);
 
         vStack.setTop(30);
         vStack.addMember(this);
@@ -108,20 +110,12 @@ public class LoginDialog extends DynamicForm {
         window.setCanDragResize(false);
         window.setShowMinimizeButton(false);
         window.setShowCloseButton(false);
-        window.setHeight(350);
+        window.setHeight(200);
         window.setWidth(400);
         window.setAutoCenter(true);
         window.show();
 
         userName.focusInItem();
-    }
-
-    public void setJndiName( String name ) {
-        this.jndiName.setValue(name);
-    }
-
-    public void setWorkspace( String name ) {
-        this.workspace.setValue(name);
     }
 
     public void showDialog() {
@@ -131,30 +125,5 @@ public class LoginDialog extends DynamicForm {
     public void hideDialog() {
         window.hide();
     }
-
-    protected class LoginHandler implements SubmitValuesHandler {
-        @Override
-        public void onSubmitValues( SubmitValuesEvent event ) {
-            console.jcrService.login(jndiName.getValueAsString(),
-                                     userName.getValueAsString(),
-                                     password.getValueAsString(),
-                                     workspace.getValueAsString(),
-                                     new LoginCallback());
-        }
-    }
-
-    protected class LoginCallback implements AsyncCallback<Object> {
-
-        @Override
-        public void onFailure( Throwable caught ) {
-            SC.say(caught.getMessage());
-        }
-
-        @Override
-        public void onSuccess( Object result ) {
-            LoginDialog.this.hideDialog();
-            console.showMainForm(jndiName.getValueAsString(), workspace.getValueAsString());
-        }
-
-    }
+    
 }

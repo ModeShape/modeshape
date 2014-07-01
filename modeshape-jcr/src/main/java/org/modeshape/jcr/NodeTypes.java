@@ -46,6 +46,16 @@ import org.modeshape.jcr.value.NameFactory;
 
 @Immutable
 public class NodeTypes {
+
+    public static interface Supplier {
+        /**
+         * Get the immutable cache of node types.
+         * 
+         * @return the immutable node types cache; never null
+         */
+        NodeTypes getNodeTypes();
+    }
+
     /**
      * List of ways to filter the returned property definitions
      * 
@@ -347,6 +357,55 @@ public class NodeTypes {
             }
         }
         return true;
+    }
+
+    /**
+     * Determine whether the node's given node type matches or extends the node type with the supplied name.
+     * 
+     * @param nodeTypeName the name of the node type of a node; may not be null
+     * @param candidateSupertypeName the name of the potential supertype node type; may not be null
+     * @return true if the node type does extend or match the node type given by the supplied name, or false otherwise
+     */
+    public boolean isTypeOrSubtype( Name nodeTypeName,
+                                    Name candidateSupertypeName ) {
+        if (nodeTypeName.equals(candidateSupertypeName)) return true;
+        JcrNodeType primaryType = getNodeType(nodeTypeName);
+        if (primaryType.isNodeType(candidateSupertypeName)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determine whether at least one of the node's given node types matches or extends the node type with the supplied name.
+     * 
+     * @param nodeTypeNames the names of the node types of a node; may not be null
+     * @param candidateSupertypeName the name of the potential supertype node type; may not be null
+     * @return true if the node type does extend or match the node type given by at least one of the supplied names, or false
+     *         otherwise
+     */
+    public boolean isTypeOrSubtype( Set<Name> nodeTypeNames,
+                                    Name candidateSupertypeName ) {
+        for (Name nodeTypeName : nodeTypeNames) {
+            if (isTypeOrSubtype(nodeTypeName, candidateSupertypeName)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determine whether at least one of the node's given node types matches or extends the node type with the supplied name.
+     * 
+     * @param nodeTypeNames the names of the node types of a node; may not be null
+     * @param candidateSupertypeName the name of the potential supertype node type; may not be null
+     * @return true if the node type does extend or match the node type given by at least one of the supplied names, or false
+     *         otherwise
+     */
+    public boolean isTypeOrSubtype( Name[] nodeTypeNames,
+                                    Name candidateSupertypeName ) {
+        for (Name nodeTypeName : nodeTypeNames) {
+            if (isTypeOrSubtype(nodeTypeName, candidateSupertypeName)) return true;
+        }
+        return false;
     }
 
     /**

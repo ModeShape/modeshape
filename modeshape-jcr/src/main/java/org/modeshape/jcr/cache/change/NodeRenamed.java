@@ -34,8 +34,9 @@ public class NodeRenamed extends AbstractNodeChange {
                         Path newPath,
                         Segment oldSegment,
                         Name primaryType,
-                        Set<Name> mixinTypes ) {
-        super(key, newPath, primaryType, mixinTypes);
+                        Set<Name> mixinTypes,
+                        boolean queryable ) {
+        super(key, newPath, primaryType, mixinTypes, queryable);
         this.oldSegment = oldSegment;
         assert !this.oldSegment.equals(newPath.getLastSegment());
     }
