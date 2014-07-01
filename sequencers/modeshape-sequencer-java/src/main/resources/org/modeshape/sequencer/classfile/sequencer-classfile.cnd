@@ -16,20 +16,66 @@
  
 <class='http://www.modeshape.org/sequencer/javaclass/1.0'>
 
-[class:package] mixin
+[class:sourceLocation] mixin
+- class:startPosition (long) = '-1' autocreated < '[-1,]' // a value equal to or greater than -1
+- class:length (long) = '0' autocreated < '[0,]' // a value equal to or greater than zero
 
-[class:annotationMember]
-- class:name (string) mandatory
-- class:value (string) 
+[class:comment] > class:sourceLocation
+- class:commentType (string) mandatory < 'JAVADOC', 'LINE', 'BLOCK'
+- class:comment (string)
 
-[class:annotation]
+[class:javadoc] > class:comment
+- class:commentType (string) = 'JAVADOC' mandatory autocreated protected < 'JAVADOC'
+
+[class:expression] > class:sourceLocation
+- class:content (string) mandatory
+
+[class:type] > class:sourceLocation abstract
+- class:typeClassName (string) mandatory 
+
+[class:primitiveType] > class:type
+
+[class:arrayType] > class:type
+- class:dimensions (long) mandatory
++ class:componentType (class:type) = class:type
+
+[class:simpleType] > class:type
+
+[class:qualifiedType] > class:type
++ class:qualifier (class:type) = class:type
+
+[class:parameterizedType] > class:type
++ class:baseType (class:type) = class:type
++ class:arguments (class:types) = class:types 
+
+[class:wildcardType] > class:type
+- class:boundType (string) = 'UPPER' autocreated < 'LOWER', 'UPPER' 
++ class:bound (class:type) = class:type
+
+[class:statement] > class:sourceLocation
+- class:content (string) mandatory
+
+[class:statements]
++ class:statement (class:statement) = class:statement sns
+
+[class:package] > class:sourceLocation mixin
++ class:annotations (class:annotations) = class:annotations
++ class:javadoc (class:javadoc) = class:javadoc
+
+[class:annotationMember] > class:sourceLocation
 - class:name (string) mandatory
+- class:value (string)
++ * (class:expression) = class:expression
+
+[class:annotation] > class:sourceLocation
+- class:name (string) mandatory
+- class:annotationType (string) < 'MARKER', 'NORMAL', 'SINGLE_MEMBER' 
 + * (class:annotationMember) = class:annotationMember
 
 [class:annotations]
 + * (class:annotation) = class:annotation
 
-[class:field]
+[class:field] > class:sourceLocation
 - class:name (string) mandatory 
 - class:typeClassName (string) mandatory 
 - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
@@ -38,6 +84,9 @@
 - class:transient (boolean) mandatory
 - class:volatile (boolean) mandatory
 + class:annotations (class:annotations) = class:annotations
++ class:type (class:type) = class:type
++ class:initializer (class:expression) = class:expression
++ class:javadoc (class:javadoc) = class:javadoc
 
 [class:fields]
 + * (class:field) = class:field
@@ -45,7 +94,25 @@
 [class:interfaces]
 - * (string)
 
-[class:method]
+[class:typeParameter] > class:sourceLocation
++ class:bounds (class:types) = class:types
+
+[class:typeParameters]
++ * (class:typeParameter) = class:typeParameters
+
+[class:parameter] > class:sourceLocation
+- class:name (string) mandatory 
+- class:typeClassName (string) mandatory 
+- class:final (boolean) mandatory
+- class:varargs (boolean) = 'false' autocreated
++ class:annotations (class:annotations) = class:annotations
++ class:type (class:type) = class:type
++ class:initializer (class:statements) = class:statements
+
+[class:parameters]
++ * (class:parameter) = class:parameter
+
+[class:method] > class:sourceLocation
 - class:name (string) mandatory 
 - class:returnTypeClassName (string) mandatory 
 - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
@@ -56,25 +123,27 @@
 - class:native (boolean) mandatory
 - class:synchronized (boolean) mandatory
 - class:parameters (string) multiple
+- class:thrownExceptions (string) multiple
 + class:annotations (class:annotations) = class:annotations
++ class:typeParameters (class:typeParameters) = class:typeParameters
 + class:methodParameters (class:parameters) = class:parameters
++ class:returnType (class:type) = class:type
++ class:javadoc (class:javadoc) = class:javadoc
++ class:body (class:statements) = class:statements
 
 [class:methods]
-+ * (class:method) = class:method
++ * (class:method) = class:method sns
 
 [class:constructors]
-+ * (class:method) = class:method
++ * (class:method) = class:method sns
 
-[class:parameters]
-+ * (class:parameter) = class:parameter
+[class:types]
++ * (class:type) = class:type sns
 
-[class:parameter]
-- class:name (string) mandatory 
-- class:typeClassName (string) mandatory 
-- class:final (boolean) mandatory
-+ class:annotations (class:annotations) = class:annotations
+[class:nestedTypes]
++ * (class:class) = class:class
 
-[class:class]
+[class:class] > class:sourceLocation, mix:referenceable
 - class:name (string) mandatory
 - class:sequencedDate (date) 
 - class:superClassName (string) 
@@ -83,12 +152,82 @@
 - class:interface (boolean) mandatory
 - class:final (boolean) mandatory
 - class:strictFp (boolean) mandatory
+- class:static (boolean)
 - class:interfaces (string) multiple
 - class:imports (string) multiple
 + class:annotations (class:annotations) = class:annotations
 + class:constructors (class:constructors) = class:constructors
 + class:methods (class:methods) = class:methods
 + class:fields (class:fields) = class:fields
++ class:typeParameters (class:typeParameters) = class:typeParameters
++ class:implements (class:types) = class:types
++ class:extends (class:types) = class:types
++ class:javadoc (class:javadoc) = class:javadoc
++ class:nestedTypes (class:nestedTypes) = class:nestedTypes
++ class:initializer (class:statements) = class:statements
+
+[class:arguments]
++ class:argument (class:expression) = class:expression sns
+
+[class:enumConstants]
++ * (class:enumConstant) = class:enumConstant
+
+// node name is the enum value
+[class:enumConstant] > class:sourceLocation
++ class:annotations (class:annotations) = class:annotations
++ class:arguments (class:arguments) = class:arguments
++ class:javadoc (class:javadoc) = class:javadoc
++ class:methods (class:methods) = class:methods
++ class:fields (class:fields) = class:fields
++ class:nestedTypes (class:nestedTypes) = class:nestedTypes
 
 [class:enum] > class:class
 - class:enumValues (string) mandatory multiple
++ class:enumConstants (class:enumConstants) = class:enumConstants
+
+// name is the package or qualified type
+[class:import] > class:sourceLocation
+- class:static (boolean) = 'false' autocreated
+- class:onDemand (boolean) = 'false' autocreated
+
+[class:imports]
++ * (class:import) = class:import
+
+[class:comments]
++ class:comment (class:comment) = class:comment sns
+
+[class:message] > class:sourceLocation
+- class:message (string)
+
+[class:messages]
++ class:message (class:message) = class:messages sns
+
+[class:compilationUnit] > class:sourceLocation mixin
+- class:sequencedDate (date) 
+- class:types (reference) multiple
++ class:imports (class:imports) = class:imports
++ class:comments (class:comments) = class:comments
++ class:messages (class:messages) = class:messages
+
+[class:annotationTypeMember] > class:sourceLocation
+- class:name (string) mandatory
+- class:abstract (boolean) = 'false' mandatory autocreated
+- class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
++ class:type (class:type) = class:type
++ class:annotations (class:annotations) = class:annotations
++ class:javadoc (class:javadoc) = class:javadoc
++ class:default (class:expression) = class:expression
+
+[class:annotationTypeMembers]
++ class:annotationTypeMember (class:annotationTypeMember) = class:annotationTypeMember sns
+
+// node name is annotation type name
+[class:annotationType] > class:sourceLocation, mix:referenceable
+- class:name (string) mandatory
+- class:sequencedDate (date) 
+- class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
++ class:annotations (class:annotations) = class:annotations
++ class:javadoc (class:javadoc) = class:javadoc
++ class:fields (class:fields) = class:fields
++ class:nestedTypes (class:nestedTypes) = class:nestedTypes
++ class:annotationTypeMembers (class:annotationTypeMembers) = class:annotationTypeMembers

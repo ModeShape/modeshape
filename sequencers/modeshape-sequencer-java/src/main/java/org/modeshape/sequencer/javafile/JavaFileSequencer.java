@@ -26,17 +26,19 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.classfile.ClassFileSequencer;
-import org.modeshape.sequencer.javafile.metadata.JavaMetadata;
 
 /**
  * Sequencer which handles java source files.
- * 
+ *
  * @author ?
  * @author Horia Chiorean
  */
 public class JavaFileSequencer extends Sequencer {
 
-    private static final SourceFileRecorder DEFAULT_SOURCE_FILE_RECORDER = new ClassSourceFileRecorder();
+    @SuppressWarnings( "unused" )
+    private static final SourceFileRecorder OLD_SOURCE_FILE_RECORDER = new ClassSourceFileRecorder();
+    private static final SourceFileRecorder DEFAULT_SOURCE_FILE_RECORDER = new JdtRecorder();
+
     private SourceFileRecorder sourceFileRecorder = DEFAULT_SOURCE_FILE_RECORDER;
 
     @Override
@@ -54,9 +56,9 @@ public class JavaFileSequencer extends Sequencer {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
         InputStream stream = binaryValue.getStream();
+
         try {
-            JavaMetadata javaMetadata = JavaMetadata.instance(stream, binaryValue.getSize(), null);
-            sourceFileRecorder.record(context, outputNode, javaMetadata);
+            sourceFileRecorder.record(context, stream, binaryValue.getSize(), null, outputNode);
             return true;
         } catch (Exception ex) {
             getLogger().error(ex, "Error sequencing file");
@@ -69,7 +71,7 @@ public class JavaFileSequencer extends Sequencer {
     /**
      * Sets the custom {@link SourceFileRecorder} by specifying a class name. This method attempts to instantiate an instance of
      * the custom {@link SourceFileRecorder} class prior to ensure that the new value represents a valid implementation.
-     * 
+     *
      * @param sourceFileRecorderClassName the fully-qualified class name of the new custom class file recorder implementation;
      *        null indicates that {@link org.modeshape.sequencer.javafile.ClassSourceFileRecorder the class file recorder} should
      *        be used.

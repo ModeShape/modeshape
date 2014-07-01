@@ -48,6 +48,7 @@ import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.TYPE_C
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VALUE;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VISIBILITY;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VOLATILE;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.jcr.api.sequencer.Sequencer.Context;
 import org.modeshape.sequencer.classfile.metadata.Visibility;
 import org.modeshape.sequencer.javafile.metadata.AbstractMetadata;
 import org.modeshape.sequencer.javafile.metadata.AnnotationMetadata;
@@ -71,8 +73,22 @@ import org.modeshape.sequencer.javafile.metadata.TypeMetadata;
  */
 public class ClassSourceFileRecorder implements SourceFileRecorder {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.modeshape.sequencer.javafile.SourceFileRecorder#record(org.modeshape.jcr.api.sequencer.Sequencer.Context, java.io.InputStream, long, java.lang.String, javax.jcr.Node)
+     */
     @Override
-    public void record( Sequencer.Context context,
+    public void record( final Context context,
+                        final InputStream inputStream,
+                        final long length,
+                        final String encoding,
+                        final Node outputNode ) throws Exception {
+            JavaMetadata javaMetadata = JavaMetadata.instance(inputStream, length, encoding);
+            record(context, outputNode, javaMetadata);
+    }
+
+    private void record( Sequencer.Context context,
                         Node outputNode,
                         JavaMetadata javaMetadata ) throws RepositoryException {
         String packageName = javaMetadata.getPackageMetadata().getName();
@@ -134,8 +150,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
                                          Node typeNode,
                                          TypeMetadata typeMetadata ) throws RepositoryException {
         /*
-        - class:name (string) mandatory 
-        - class:superTypeName (string) 
+        - class:name (string) mandatory
+        - class:superTypeName (string)
         - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
         - class:abstract (boolean) mandatory
         - class:interface (boolean) mandatory
@@ -187,12 +203,12 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         /*
         [class:annotationMember]
         - class:name (string) mandatory
-        - class:value (string) 
-        
+        - class:value (string)
+
         [class:annotation]
         - class:name (string) mandatory
         + * (class:annotationMember) = class:annotationMember
-        
+
         [class:annotations]
         + * (class:annotation) = class:annotation
          */
@@ -223,15 +239,15 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
 
         /*
             [class:field]
-            - class:name (string) mandatory 
-            - class:typeClassName (string) mandatory 
+            - class:name (string) mandatory
+            - class:typeClassName (string) mandatory
             - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
             - class:static (boolean) mandatory
             - class:final (boolean) mandatory
             - class:transient (boolean) mandatory
             - class:volatile (boolean) mandatory
             + class:annotations (class:annotations) = class:annotations
-            
+
             [class:fields]
             + * (class:field) = class:field
          */
@@ -254,8 +270,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
 
         /*
             [class:method]
-            - class:name (string) mandatory 
-            - class:returnTypeClassName (string) mandatory 
+            - class:name (string) mandatory
+            - class:returnTypeClassName (string) mandatory
             - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
             - class:static (boolean) mandatory
             - class:final (boolean) mandatory
@@ -296,8 +312,8 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
                 + * (class:parameter) = class:parameter
 
                 [class:parameter]
-                - class:name (string) mandatory 
-                - class:typeClassName (string) mandatory 
+                - class:name (string) mandatory
+                - class:typeClassName (string) mandatory
                 - class:final (boolean) mandatory
                 + class:annotations (class:annotations) = class:annotations
              */
