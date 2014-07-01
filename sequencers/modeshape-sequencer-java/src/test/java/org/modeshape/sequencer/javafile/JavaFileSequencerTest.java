@@ -16,50 +16,51 @@
 package org.modeshape.sequencer.javafile;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsCollectionContaining.hasItems;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.modeshape.sequencer.JavaSequencerHelper.JAVA_FILE_HELPER;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.IMPORTS;
-import java.util.ArrayList;
-import java.util.List;
 import javax.jcr.Node;
-import javax.jcr.Value;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import org.modeshape.sequencer.classfile.ClassFileSequencerLexicon;
 import org.modeshape.sequencer.testdata.MockClass;
 import org.modeshape.sequencer.testdata.MockEnum;
 
 /**
  * Unit test for {@link JavaFileSequencer}
- * 
+ *
  * @author Horia Chiorean
  */
 public class JavaFileSequencerTest extends AbstractSequencerTest {
 
-    private void assertClassImports( final Node classNode ) throws Exception {
-        assertThat(classNode.hasProperty(IMPORTS), is(true));
+    private void assertClassImports( final Node compilationUnitNode ) throws Exception {
+        assertThat(compilationUnitNode.hasNode(IMPORTS), is(true));
 
-        final Value[] values = classNode.getProperty(IMPORTS).getValues();
-        assertThat(values.length, is(3));
+        final Node importsNode = compilationUnitNode.getNode(IMPORTS);
+        assertThat(importsNode.getNodes().getSize(), is(3L));
 
-        final List<String> items = new ArrayList<String>(3);
-        items.add(values[0].getString());
-        items.add(values[1].getString());
-        items.add(values[2].getString());
-        assertThat(items, hasItems("java.io.Serializable", "java.util.ArrayList", "java.util.List"));
+        final Node serializableImport = importsNode.getNode("java.io.Serializable");
+        assertThat(serializableImport.getPrimaryNodeType().getName(), is(ClassFileSequencerLexicon.IMPORT));
+
+        final Node arrayListImport = importsNode.getNode("java.util.ArrayList");
+        assertThat(arrayListImport.getPrimaryNodeType().getName(), is(ClassFileSequencerLexicon.IMPORT));
+
+        final Node listImport = importsNode.getNode("java.util.List");
+        assertThat(listImport.getPrimaryNodeType().getName(), is(ClassFileSequencerLexicon.IMPORT));
     }
 
-    private void assertEnumImports( final Node classNode ) throws Exception {
-        assertThat(classNode.hasProperty(IMPORTS), is(true));
+    private void assertEnumImports( final Node compilationUnitNode ) throws Exception {
+        assertThat(compilationUnitNode.hasNode(IMPORTS), is(true));
 
-        final Value[] values = classNode.getProperty(IMPORTS).getValues();
-        assertThat(values.length, is(2));
+        final Node importsNode = compilationUnitNode.getNode(IMPORTS);
+        assertThat(importsNode.getNodes().getSize(), is(2L));
 
-        final List<String> items = new ArrayList<String>(2);
-        items.add(values[0].getString());
-        items.add(values[1].getString());
-        assertThat(items, hasItems("java.util.Random", "java.text.DateFormat"));
+        final Node randomImport = importsNode.getNode("java.util.Random");
+        assertThat(randomImport.getPrimaryNodeType().getName(), is(ClassFileSequencerLexicon.IMPORT));
+
+        final Node dateFormatImport = importsNode.getNode("java.text.DateFormat");
+        assertThat(dateFormatImport.getPrimaryNodeType().getName(), is(ClassFileSequencerLexicon.IMPORT));
     }
 
     @Test
@@ -73,7 +74,8 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         Node enumNode = outputNode.getNode(packagePath);
         JAVA_FILE_HELPER.assertSequencedMockEnum(enumNode);
-        assertEnumImports(enumNode);
+
+        assertEnumImports(outputNode);
     }
 
     @Test
@@ -87,7 +89,8 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         Node javaNode = outputNode.getNode(packagePath);
         JAVA_FILE_HELPER.assertSequencedMockClass(javaNode);
-        assertClassImports(javaNode);
+
+        assertClassImports(outputNode);
     }
 
 }

@@ -30,7 +30,7 @@ public class CompilationUnitParser {
      * Parses and process the java source code as a compilation unit and the result it abstract syntax tree (AST) representation
      * and this action uses the third edition of java Language Specification, that gets the possibility to support J2SE 5 during
      * the parsing.
-     * 
+     *
      * @param source - the java source to be parsed (i.e. the char[] contains Java source).
      * @param resolveBindings - for resolving bindings to get more informations from the unit.
      * @return Abstract syntax tree representation.
@@ -53,9 +53,9 @@ public class CompilationUnitParser {
     @SuppressWarnings( "unchecked" )
     private static Map<?, ?> createCompilerParameters() {
         Map<Object, Object> options = JavaCore.getOptions();
-        options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_5);
-        options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_5);
-        options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_5);
+        options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_7);
+        options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_7);
+        options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_7);
         return options;
     }
 
