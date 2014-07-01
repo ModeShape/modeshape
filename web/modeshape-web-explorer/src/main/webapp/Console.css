@@ -98,7 +98,6 @@ h1 {
 .node-name {
     color: blue;
     font-family:Arial, Helvetica, sans-serif;
-    text-decoration:underline;
     font-size: 13px;
     cursor: pointer;    
 }
@@ -135,7 +134,6 @@ h1 {
 .repository-name {
     color: blue;
     font-family:Arial, Helvetica, sans-serif;
-    text-decoration:underline;
     font-weight: bold;
     font-size: 25px;
     cursor: pointer;    
