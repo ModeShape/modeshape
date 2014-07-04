@@ -76,6 +76,7 @@ public class MapDB {
     }
 
     protected final static Serializer<?> DEFAULT_SERIALIZER = Serializer.BASIC;
+    protected final static Serializer<NodeKey> NODE_KEY_SERIALIZER = new NodeKeySerializer();
     protected final static BTreeKeySerializer<?> DEFAULT_BTREE_KEY_SERIALIZER = BTreeKeySerializer.BASIC;
 
     public static final class SerializerSupplier implements Serializers {
@@ -103,25 +104,7 @@ public class MapDB {
             serializersByClass.put(Path.class, new ValueSerializer<Path>(stringFactory, pathFactory));
             serializersByClass.put(Name.class, new ValueSerializer<Name>(stringFactory, nameFactory));
             serializersByClass.put(Reference.class, new ValueSerializer<Reference>(stringFactory, refFactory));
-            serializersByClass.put(NodeKey.class, new Serializer<NodeKey>() {
-                @Override
-                public void serialize( DataOutput out,
-                                       NodeKey value ) throws IOException {
-                    out.writeUTF(value.toString());
-                }
-
-                @Override
-                public NodeKey deserialize( DataInput in,
-                                            int available ) throws IOException {
-                    String keyStr = in.readUTF();
-                    return new NodeKey(keyStr);
-                }
-
-                @Override
-                public int fixedSize() {
-                    return -1; // not fixed size
-                }
-            });
+            serializersByClass.put(NodeKey.class, NODE_KEY_SERIALIZER);
 
             bTreeKeySerializersByClass = new HashMap<Class<?>, BTreeKeySerializer<?>>();
             packedBTreeKeySerializersByClass = new HashMap<Class<?>, BTreeKeySerializer<?>>();
@@ -173,6 +156,31 @@ public class MapDB {
         private <T> BTreeKeySerializer<T> bTreeKeySerializerWith( final BTreeKeySerializer<?> original,
                                                                   final Comparator<T> comparator ) {
             return new BTreeKeySerializerWitheComparator<T>(original, comparator);
+        }
+    }
+
+    /**
+     * NodeKey serializer for MapDB (which must be in turn, Serializable)
+     */
+    private static class NodeKeySerializer implements Serializer<NodeKey>, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public void serialize( DataOutput out,
+                               NodeKey value ) throws IOException {
+            out.writeUTF(value.toString());
+        }
+
+        @Override
+        public NodeKey deserialize( DataInput in,
+                                    int available ) throws IOException {
+            String keyStr = in.readUTF();
+            return new NodeKey(keyStr);
+        }
+
+        @Override
+        public int fixedSize() {
+            return -1; // not fixed size
         }
     }
 

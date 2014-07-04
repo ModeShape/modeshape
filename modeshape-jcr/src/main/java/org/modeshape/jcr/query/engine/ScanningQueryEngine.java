@@ -69,7 +69,9 @@ import org.modeshape.jcr.query.RowExtractors;
 import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.engine.process.DependentQuery;
 import org.modeshape.jcr.query.engine.process.DistinctSequence;
+import org.modeshape.jcr.query.engine.process.ExceptSequence;
 import org.modeshape.jcr.query.engine.process.HashJoinSequence;
+import org.modeshape.jcr.query.engine.process.IntersectSequence;
 import org.modeshape.jcr.query.engine.process.JoinSequence.Range;
 import org.modeshape.jcr.query.engine.process.JoinSequence.RangeProducer;
 import org.modeshape.jcr.query.engine.process.SortingSequence;
@@ -494,6 +496,11 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                                Columns columns,
                                                QuerySources sources ) {
         NodeSequence rows = null;
+        final String workspaceName = sources.getWorkspaceName();
+        final NodeCache cache = context.getNodeCache(workspaceName);
+        final TypeSystem types = context.getTypeSystem();
+        final BufferManager bufferManager = context.getBufferManager();
+
         switch (plan.getType()) {
             case ACCESS:
                 // If the ACCESS node is known to never have results ...
@@ -574,9 +581,6 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 boolean pack = false;
                 boolean useHeap = false;
                 if (0 >= right.getRowCount() && right.getRowCount() < 100) useHeap = true;
-                String workspaceName = sources.getWorkspaceName();
-                NodeCache cache = context.getNodeCache(workspaceName);
-                TypeSystem types = context.getTypeSystem();
                 ExtractFromRow leftExtractor = null;
                 ExtractFromRow rightExtractor = null;
                 RangeProducer<?> rangeProducer = null;
@@ -750,12 +754,22 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 Columns secondColumns = context.columnsFor(secondPlan);
                 NodeSequence first = createNodeSequence(originalQuery, context, firstPlan, firstColumns, sources);
                 NodeSequence second = createNodeSequence(originalQuery, context, secondPlan, secondColumns, sources);
+                useHeap = 0 >= second.getRowCount() && second.getRowCount() < 100;
+                pack = false;
                 switch (operation) {
-                    case UNION:
+                    case UNION: {
                         // This is really just a sequence with the two parts ...
                         rows = NodeSequence.append(first, second);
                         break;
-                // TODO: Add support for INSERSECT and EXCEPT
+                    }
+                    case INTERSECT: {
+                        rows = new IntersectSequence(workspaceName, first, second, types, bufferManager, cache, pack, useHeap);
+                        break;
+                    }
+                    case EXCEPT: {
+                        rows = new ExceptSequence(workspaceName, first, second, types, bufferManager, cache, pack, useHeap);
+                        break;
+                    }
                 }
                 if (!all) {
                     useHeap = false;
@@ -835,9 +849,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
                         // Now create the sorting sequence ...
                         if (sortExtractor != null) {
-                            workspaceName = sources.getWorkspaceName();
-                            cache = context.getNodeCache(workspaceName);
-                            rows = new SortingSequence(workspaceName, rows, sortExtractor, context.getBufferManager(), cache,
+                            rows = new SortingSequence(workspaceName, rows, sortExtractor, bufferManager, cache,
                                                        pack, useHeap, allowDuplicates, nullOrder);
                         }
                     }
@@ -2696,7 +2708,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             if (other == null) return false;
             if (this.hasFullTextSearchScores() != other.hasFullTextSearchScores()) return false;
             if (this.getColumns().size() != other.getColumns().size()) return false;
-            return this.getColumns().containsAll(other.getColumns()) && other.getColumns().containsAll(this.getColumns());
+            return this.getColumnNames().containsAll(other.getColumnNames()) && other.getColumnNames().containsAll(this.getColumnNames());
         }
 
         @Override

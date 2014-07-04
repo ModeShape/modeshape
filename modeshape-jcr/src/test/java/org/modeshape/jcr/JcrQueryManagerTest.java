@@ -2009,7 +2009,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(13).hasColumns("car2.jcr:name").validate(query, result);
     }
 
-    @FixFor( "MODE-2450" )
+    @FixFor( "MODE-2057" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinAndNoCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category)";
@@ -2018,7 +2018,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(13).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
-    @FixFor( "MODE-2450" )
+    @FixFor( "MODE-2057" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinAndDepthCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE DEPTH(category) = 2";
@@ -2027,7 +2027,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(13).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
-    @FixFor( "MODE-2450" )
+    @FixFor( "MODE-2057" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinAndDepthCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE DEPTH(category) = 2";
@@ -2036,7 +2036,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(17).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
-    @FixFor( "MODE-2450" )
+    @FixFor( "MODE-2057" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinWithFullTextSearch() throws RepositoryException {
         String sql =
@@ -2046,7 +2046,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
-    @FixFor( "MODE-2450" )
+    @FixFor( "MODE-2057" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinWithFullTextSearch() throws RepositoryException {
         String sql =
@@ -2056,7 +2056,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
     }
 
-    @FixFor( "MODE-2450" )
+    @FixFor( "MODE-2057" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithUnionAndFullTextSearch() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE contains(category.*, 'Utility')"
@@ -3824,6 +3824,90 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         NodeIterator nodes = query.execute().getNodes();
         assertEquals(1, nodes.getSize());
         assertEquals("/Other/NodeA", nodes.nextNode().getPath());
+    }
+
+    @Test
+    @FixFor( "MODE-2247" )
+    public void shouldBeAbleToExecuteIntersectOperationWithSimpleCriteria() throws Exception {
+        String sql1 = "SELECT car1.[jcr:path] FROM [car:Car] AS car1";
+        String sql2 = "SELECT car2.[jcr:path] FROM [car:Car] AS car2 WHERE car2.[car:mpgCity] = 12";
+        String queryString = sql1 + " INTERSECT " + sql2;
+
+        List<String> expectedPaths = new ArrayList<>(Arrays.asList("/Cars/Sports/Aston Martin DB9",
+                                                                   "/Cars/Utility/Land Rover LR3"));
+
+        Query query = session.getWorkspace().getQueryManager().createQuery(queryString, Query.JCR_SQL2);
+        NodeIterator nodes = query.execute().getNodes();
+        assertEquals(2, nodes.getSize());
+        while (nodes.hasNext()) {
+            String path = nodes.nextNode().getPath();
+            assertTrue(path + " not found", expectedPaths.remove(path));
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2247" )
+    public void shouldBeAbleToExecuteIntersectOperationWithJoinCriteria() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category "
+                     + " INTERSECT  "
+                     + "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE cars.[jcr:name]='Land Rover LR3'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("p").hasNodesAtPaths("/Cars/Utility").validate(query, result);
+    }
+
+    @Test
+    @FixFor( "MODE-2247" )
+    public void shouldBeAbleToExecuteIntersectAllOperation() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category "
+                     + " INTERSECT ALL "
+                     + "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE cars.[jcr:name] LIKE '%Rover%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(2).hasColumns("p").hasNodesAtPaths("/Cars/Utility", "/Cars/Utility").validate(query, result);
+    }
+
+    @Test
+    @FixFor( "MODE-2247" )
+    public void shouldBeAbleToExecuteExceptOperationWithSimpleCriteria() throws Exception {
+        String sql1 = "SELECT car1.[jcr:path] FROM [car:Car] AS car1 WHERE car1.[jcr:name] LIKE '%Land Rover%'";
+        String sql2 = "SELECT car2.[jcr:path] FROM [car:Car] AS car2 WHERE car2.[jcr:name] LIKE '%LR3%'";
+        String queryString = sql1 + " EXCEPT " + sql2;
+        Query query = session.getWorkspace().getQueryManager().createQuery(queryString, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Cars/Utility/Land Rover LR2").validate(query, result);
+    }
+
+
+    @Test
+    @FixFor( "MODE-2247" )
+    public void shouldBeAbleToExecuteExceptOperationWithJoinCriteria() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE ISCHILDNODE(category,'/Cars')"
+                     + "EXCEPT "
+                     + "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) " +
+                     " WHERE cars.[jcr:name] LIKE '%Rover%' OR cars.[jcr:name] LIKE '%Toyota%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        List<String> expectedPaths = new ArrayList<>(Arrays.asList("/Cars/Sports",
+                                                                   "/Cars/Luxury"));
+
+        NodeIterator nodes = query.execute().getNodes();
+        assertEquals(2, nodes.getSize());
+        while (nodes.hasNext()) {
+            String path = nodes.nextNode().getPath();
+            assertTrue(path + " not found", expectedPaths.remove(path));
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2247" )
+    public void shouldBeAbleToExecuteExceptAllOperation() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) "
+                     +" WHERE cars.[jcr:name] LIKE '%Rover%' "
+                     + "EXCEPT ALL "
+                     + "SELECT node.[jcr:path] AS p FROM [nt:unstructured] AS node WHERE NOT ISCHILDNODE(node,'/Cars')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(2).hasColumns("p").hasNodesAtPaths("/Cars/Utility", "/Cars/Utility").validate(query, result);
     }
 
     private String idList( Node... nodes ) throws RepositoryException {

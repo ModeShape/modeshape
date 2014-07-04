@@ -36,7 +36,6 @@ import org.modeshape.jcr.value.InvalidPathException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
-import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
 
@@ -474,12 +473,12 @@ public class RowExtractors {
      */
     public static ExtractFromRow extractUniqueKey( final int rowWidth,
                                                    TypeSystem types ) {
-        final TypeFactory<Reference> keyType = types.getReferenceFactory();
+        final TypeFactory<NodeKey> keyType = types.getNodeKeyFactory();
         assert rowWidth > 0;
         if (rowWidth == 1) {
             return new ExtractFromRow() {
                 @Override
-                public TypeFactory<Reference> getType() {
+                public TypeFactory<NodeKey> getType() {
                     return keyType;
                 }
 
