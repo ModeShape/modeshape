@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<jboss-web>
-    <!-- Servlets -->
-    <security-domain>modeshape-security</security-domain>
-    <context-root>modeshape-explorer</context-root>
-</jboss-web>
