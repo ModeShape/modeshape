@@ -3750,14 +3750,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(2).hasColumns(columnNames).validate(query2, result2);
     }
 
-    @Ignore
     @Test
-    @FixFor( {"MODE-2173", "MODE-2209"} )
+    @FixFor( "MODE-2209" )
     public void queriesShouldTakePermissionsIntoAccount() throws Exception {
         AccessControlManager acm = session.getAccessControlManager();
 
         Node parent = session.getRootNode().addNode("parent");
         parent.addNode("child1");
+        AccessControlList acl = acl("/parent/child1");
         parent.addNode("child2");
         session.save();
 
@@ -3765,11 +3765,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             String queryString = "select [jcr:path] from [nt:unstructured] as node where ISCHILDNODE(node, '/parent')";
             assertNodesAreFound(queryString, Query.JCR_SQL2, "/parent/child1", "/parent/child2");
 
-            // remove the READ permission for child1
-            AccessControlList acl = acl("/parent/child1");
+            //remove the READ permission for child1
             acl.addAccessControlEntry(SimplePrincipal.EVERYONE,
-                                      new Privilege[] {acm.privilegeFromName(Privilege.JCR_WRITE),
-                                          acm.privilegeFromName(Privilege.JCR_REMOVE_NODE)});
+                                      new Privilege[] { acm.privilegeFromName(Privilege.JCR_WRITE),
+                                                        acm.privilegeFromName(Privilege.JCR_REMOVE_NODE),
+                                                        acm.privilegeFromName(Privilege.JCR_MODIFY_ACCESS_CONTROL)});
             acm.setPolicy("/parent/child1", acl);
             session.save();
 
@@ -3777,21 +3777,22 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
             QueryResult result = query.execute();
 
-            // assert that only child2 is still visible in the query results
+            //assert that only child2 is still visible in the query results
             NodeIterator nodes = result.getNodes();
-            if (nodes.getSize() != -1) {
-                assertEquals(1, nodes.getSize());
-            }
+            assertEquals(1, nodes.getSize());
             assertEquals("/parent/child2", nodes.nextNode().getPath());
             assertFalse(nodes.hasNext());
 
             RowIterator rows = result.getRows();
-            if (rows.getSize() != -1) {
-                assertEquals(1, rows.getSize());
-            }
+            assertEquals(1, rows.getSize());
             assertEquals("/parent/child2", rows.nextRow().getNode().getPath());
             assertFalse(rows.hasNext());
         } finally {
+            acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[] {acm.privilegeFromName(Privilege.JCR_ALL)});
+            acm.setPolicy("/parent/child1", acl);
+            session.save();
+
+            acm.removePolicy("/parent/child1", null);
             parent.remove();
             session.save();
         }

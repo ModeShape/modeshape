@@ -42,6 +42,7 @@ import org.modeshape.jcr.query.NodeSequence.Batch;
 import org.modeshape.jcr.query.NodeSequence.Restartable;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.engine.process.RestartableSequence;
+import org.modeshape.jcr.query.engine.process.SecureSequence;
 
 /**
  * The results of a query. This is not thread-safe because it relies upon JcrSession, which is not thread-safe. Also, although the
@@ -80,14 +81,19 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         this.results = results;
         this.queryStatement = query;
         this.restartable = restartable;
-        if (!restartable || results.getRows().isEmpty()) {
-            this.sequence = results.getRows();
+        NodeSequence rows = results.getRows();
+        if (rows.isEmpty()) {
+            this.sequence = rows;
+        } else if (!restartable) {
+            this.sequence = new SecureSequence(rows, context, false);
         } else {
             String workspace = context.getWorkspaceName();
             BufferManager bufferMgr = context.getBufferManager();
             CachedNodeSupplier nodeCache = results.getCachedNodes();
-            this.sequence = new RestartableSequence(workspace, results.getRows(), bufferMgr, nodeCache, numRowsInMemory);
+            NodeSequence secureSequence = new SecureSequence(rows, context, false);
+            this.sequence = new RestartableSequence(workspace, secureSequence, bufferMgr, nodeCache, numRowsInMemory);
         }
+
         assert this.context != null;
         assert this.results != null;
         assert this.queryStatement != null;

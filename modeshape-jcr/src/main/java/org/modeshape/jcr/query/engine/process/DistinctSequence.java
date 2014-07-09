@@ -64,7 +64,7 @@ public class DistinctSequence extends DelegatingSequence {
             @Override
             public boolean isCurrentRowValid( Batch batch ) {
                 Object key = keyExtractor.getValueInRow(batch);
-                if (rowsSeen.contains(key)) {
+                if (!rowsSeen.add(key)) {
                     if (trace) LOGGER.trace("Distinct found existing key: {0}", key);
                     return false;
                 }

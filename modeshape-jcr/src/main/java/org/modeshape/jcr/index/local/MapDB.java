@@ -74,9 +74,9 @@ public class MapDB {
     public static Serializers serializers( ValueFactories factories ) {
         return new SerializerSupplier(factories);
     }
+    public final static Serializer<NodeKey> NODE_KEY_SERIALIZER = new NodeKeySerializer();
 
     protected final static Serializer<?> DEFAULT_SERIALIZER = Serializer.BASIC;
-    protected final static Serializer<NodeKey> NODE_KEY_SERIALIZER = new NodeKeySerializer();
     protected final static BTreeKeySerializer<?> DEFAULT_BTREE_KEY_SERIALIZER = BTreeKeySerializer.BASIC;
 
     public static final class SerializerSupplier implements Serializers {

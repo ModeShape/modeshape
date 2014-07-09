@@ -114,6 +114,14 @@ public class BufferManager implements Serializers, AutoCloseable {
          * @return true if the buffer already has seen that value, or false otherwise
          */
         boolean contains( T value );
+
+        /**
+         * Add the value to the buffer.
+         *
+         * @param value the value
+         * @return true if the buffer has not yet seen that value, or false otherwise
+         */
+        boolean add(T value);
     }
 
     /**
@@ -556,7 +564,12 @@ public class BufferManager implements Serializers, AutoCloseable {
 
         @Override
         public boolean contains( T value ) {
-            return !buffer.add(value);
+            return buffer.contains(value);
+        }
+
+        @Override
+        public boolean add( T value ) {
+            return buffer.add(value);
         }
 
         @Override

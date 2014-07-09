@@ -56,14 +56,14 @@ public class BufferManagerTest {
     @Test
     public void shouldCreateDistinctBufferOnHeap() {
         try (DistinctBuffer<String> buffer = mgr.createDistinctBuffer(Serializer.STRING).useHeap(true).keepSize(true).make()) {
-            assertTrue(!buffer.contains("first"));
-            assertTrue(!buffer.contains("second"));
-            assertTrue(!buffer.contains("third"));
-            assertTrue(!buffer.contains("fourth"));
-            assertTrue(buffer.contains("first"));
-            assertTrue(buffer.contains("second"));
-            assertTrue(buffer.contains("fourth"));
-            assertTrue(buffer.contains("third"));
+            assertTrue(buffer.add("first"));
+            assertTrue(buffer.add("second"));
+            assertTrue(buffer.add("third"));
+            assertTrue(buffer.add("fourth"));
+            assertTrue(!buffer.add("first"));
+            assertTrue(!buffer.add("second"));
+            assertTrue(!buffer.add("fourth"));
+            assertTrue(!buffer.add("third"));
             assertThat(buffer.size(), is(4L));
         }
     }
@@ -71,14 +71,14 @@ public class BufferManagerTest {
     @Test
     public void shouldCreateDistinctBufferOffHeap() {
         try (DistinctBuffer<String> buffer = mgr.createDistinctBuffer(Serializer.STRING).useHeap(false).keepSize(true).make()) {
-            assertTrue(!buffer.contains("first"));
-            assertTrue(!buffer.contains("second"));
-            assertTrue(!buffer.contains("third"));
-            assertTrue(!buffer.contains("fourth"));
-            assertTrue(buffer.contains("first"));
-            assertTrue(buffer.contains("second"));
-            assertTrue(buffer.contains("fourth"));
-            assertTrue(buffer.contains("third"));
+            assertTrue(buffer.add("first"));
+            assertTrue(buffer.add("second"));
+            assertTrue(buffer.add("third"));
+            assertTrue(buffer.add("fourth"));
+            assertTrue(!buffer.add("first"));
+            assertTrue(!buffer.add("second"));
+            assertTrue(!buffer.add("fourth"));
+            assertTrue(!buffer.add("third"));
             assertThat(buffer.size(), is(4L));
         }
     }
