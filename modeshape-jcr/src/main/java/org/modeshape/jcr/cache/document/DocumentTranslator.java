@@ -756,7 +756,9 @@ public class DocumentTranslator implements DocumentConstants {
             if (lastKey != null && !lastKey.equals(lastDocKey)) {
                 // Find the last document ...
                 SchematicEntry lastBlockEntry = documentStore.get(lastKey);
-                lastDoc = lastBlockEntry.editDocumentContent();
+                if ( lastBlockEntry != null ) {
+                    lastDoc = lastBlockEntry.editDocumentContent();
+                }
             } else {
                 lastKey = null;
             }

@@ -402,6 +402,31 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
+    public void shouldAllowCreatingManyNodesInWritableJsonBasedProjection() throws Exception {
+        createManyFiles( jsonProjection, "json" );
+    }
+    @Test
+    public void shouldAllowCreatingManyNodesInWritableStoreBasedProjection() throws Exception {
+        createManyFiles( storeProjection, "store" );
+    }
+
+    private void createManyFiles( Projection projection, String baseDir ) throws Exception {
+        int tooMany = 22;
+        for ( int i = 0; i < tooMany; i++ ) {
+            String actualContent = "This is the content of the file: " + i;
+            tools.uploadFile(session, "/testRoot/" + baseDir + "/tooMany/newFile" + i + ".txt", new ByteArrayInputStream(actualContent.getBytes()));
+            session.save();
+
+            // Make sure the file on the file system contains what we put in ...
+            assertFileContains(projection, "tooMany/newFile" + i + ".txt", actualContent.getBytes());
+
+            // Make sure that we can re-read the binary content via JCR ...
+            Node contentNode = session.getNode("/testRoot/" + baseDir + "/tooMany/newFile" + i + ".txt/jcr:content");
+            Binary value = (Binary)contentNode.getProperty("jcr:data").getBinary();
+        }
+    }
+
+    @Test
     @FixFor( "MODE-1802" )
     public void shouldSupportRootProjection() throws Exception {
         // Clean up the folder that the test creates
