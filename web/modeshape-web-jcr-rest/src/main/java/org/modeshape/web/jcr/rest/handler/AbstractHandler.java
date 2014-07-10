@@ -281,7 +281,7 @@ public abstract class AbstractHandler {
                                                                                                                     encodedPath(
                                                                                                                             node.getParent()
                                                                                                                                     .getPath()));
-        RestNode restNode = new RestNode(node.getName(), node.getIdentifier(), nodeUrl, parentUrl);
+        RestNode restNode = new RestNode(nodeName(node), node.getIdentifier(), nodeUrl, parentUrl);
 
         // add the properties
         for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext();) {
@@ -293,8 +293,10 @@ public abstract class AbstractHandler {
         for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext();) {
             Node childNode = nodeIterator.nextNode();
             RestNode restChild = null;
-            if (depth != 0) {
+            if (depth > 0) {
                 restChild = createRestNode(session, childNode, baseUrl, depth - 1);
+            } else if (depth < 0) {
+                restChild = createRestNode(session, childNode, baseUrl, -1);
             } else {
                 String childUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, encodedPath(childNode.getPath()));
                 restChild = new RestNode(nodeName(childNode), childNode.getIdentifier(), childUrl, nodeUrl);
