@@ -249,8 +249,18 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
-            String docId = documentIdFromNodeKey(key);
-            Document document = connector.getDocumentById(docId);
+            Document document = null;
+            if (connector instanceof Pageable && PageKey.isValidFormat(key)) {
+                //a page was requested
+                PageKey pageKey = new PageKey(key);
+                String parentId = pageKey.getParentId();
+                pageKey = pageKey.withParentId(documentIdFromNodeKey(parentId));
+                document = ((Pageable) connector).getChildren(pageKey);
+            } else {
+                //interpret the key as a regular node id
+                String docId = documentIdFromNodeKey(key);
+                document = connector.getDocumentById(docId);
+            }
             if (document != null) {
                 // clone the document, so we don't alter the original
                 EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
