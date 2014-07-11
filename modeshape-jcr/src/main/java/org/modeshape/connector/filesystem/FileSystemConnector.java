@@ -112,6 +112,7 @@ import org.modeshape.jcr.value.binary.UrlBinaryValue;
  * </table>
  */
 public class FileSystemConnector extends WritableConnector implements Pageable {
+    protected static final int DEFAULT_PAGE_SIZE = 20;
 
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
     private static final String DELIMITER = "/";
@@ -169,7 +170,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     /**
      * The maximum number of children a folder will expose at any given time.
      */
-    private int pageSize = 20;
+    private int pageSize = DEFAULT_PAGE_SIZE;
 
     /**
      * The {@link FilenameFilter} implementation that is instantiated in the

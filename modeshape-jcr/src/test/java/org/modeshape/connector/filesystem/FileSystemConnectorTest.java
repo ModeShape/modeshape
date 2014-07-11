@@ -450,6 +450,27 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertArrayEquals(IoUtil.readBytes(externalBinary.getStream()), IoUtil.readBytes(copiedBinary.getStream()));
     }
 
+    @Test
+    @FixFor( "MODE-2252" )
+    public void shouldStoreFilesOnMultiplePagesInWritableProjection() throws Exception {
+        int count = FileSystemConnector.DEFAULT_PAGE_SIZE + 1;
+        for (int i = 1; i <= count; i++) {
+            String actualContent = "This is the content of the file "  + i;
+            String filePath = "dir3/newFile_" + i + ".txt";
+            tools.uploadFile(session, "/testRoot/store/" + filePath, new ByteArrayInputStream(actualContent.getBytes()));
+            session.save();
+
+            // Make sure the file on the file system contains what we put in ...
+            assertFileContains(storeProjection, filePath, actualContent.getBytes());
+
+            // Make sure that we can re-read the binary content via JCR ...
+            Node contentNode = session.getNode("/testRoot/store/" + filePath + "/jcr:content");
+            Binary value = (Binary)contentNode.getProperty("jcr:data").getBinary();
+            assertBinaryContains(value, actualContent.getBytes());
+        }
+        assertTrue(((Node)session.getNode("/testRoot/store/dir3")).getNodes().getSize() >= count);
+    }
+
     protected void assertNoSidecarFile( Projection projection,
                                         String filePath ) {
         assertThat(projection.getTestFile(filePath + JsonSidecarExtraPropertyStore.DEFAULT_EXTENSION).exists(), is(false));

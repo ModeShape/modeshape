@@ -24,6 +24,8 @@
 
 package org.modeshape.jcr.federation.spi;
 
+import org.modeshape.common.util.StringUtil;
+
 /**
  * The key used to uniquely identify a page of children. A page key
  * is formed by joining together the id of the owning document, the offset of the page and the size of the block.
@@ -58,12 +60,32 @@ public final class PageKey {
         }
     }
 
+    /**
+     * Creates a new page key instance passing in each individual page component
+     *
+     * @param parentId the id of the parent node; may not be {@code null}
+     * @param offset the offset of the page withing the total list of children; may not be {@code null}
+     * @param blockSize the number of children in a page.
+     */
     public PageKey( String parentId,
                     String offset,
                     long blockSize ) {
         this.blockSize = blockSize;
         this.offset = offset;
         this.parentId = parentId;
+    }
+
+    /**
+     * Creates a new {@link org.modeshape.jcr.spi.federation.PageKey} instance which has the given parent ID and the same
+     * offset & block size as this page.
+     * @param parentId a {@link String} representing the ID of the new parent; may not be null.
+     * @return a new {@link org.modeshape.jcr.spi.federation.PageKey} instance; never null.
+     */
+    public PageKey withParentId(String parentId) {
+        if (StringUtil.isBlank(parentId)) {
+            throw new IllegalArgumentException("Parent ID cannot be empty");
+        }
+        return new PageKey(parentId, this.offset, this.blockSize);
     }
 
     /**
@@ -105,6 +127,32 @@ public final class PageKey {
      */
     public String getParentId() {
         return parentId;
+    }
+
+    /**
+     * Checks if the given string is a valid {@link org.modeshape.jcr.spi.federation.PageKey} format.
+     * @param string a {@link String} instance; may be null
+     * @return {@code true} if the string is a valid {@link org.modeshape.jcr.spi.federation.PageKey}, {@code false} otherwise.
+     */
+    public static boolean isValidFormat(String string) {
+        if (StringUtil.isBlank(string)) {
+            return false;
+        }
+        String[] parts = string.split(SEPARATOR);
+        if (parts.length != 3) {
+            return false;
+        }
+        try {
+            Integer.valueOf(parts[1]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        try {
+            Long.valueOf(parts[2]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
