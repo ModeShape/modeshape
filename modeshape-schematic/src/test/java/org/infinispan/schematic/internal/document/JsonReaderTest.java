@@ -198,4 +198,17 @@ public class JsonReaderTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2254" )
+    public void dateParsingShouldFailGracefully() throws Exception {
+        int maxLength = 128;
+        StringBuilder buf = new StringBuilder("0");
+        for ( int i = 0; i < maxLength; i++ ) {
+            buf.append("x");
+            Object o = reader.DATE_VALUE_MATCHER.parseValue( buf.toString() );
+            assertEquals( buf.toString(), o );
+        }
+        long dur = System.currentTimeMillis() - start;
+    }
+
 }
