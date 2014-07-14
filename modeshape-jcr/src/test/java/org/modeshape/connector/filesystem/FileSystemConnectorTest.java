@@ -39,8 +39,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -469,6 +475,32 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             assertBinaryContains(value, actualContent.getBytes());
         }
         assertTrue(((Node)session.getNode("/testRoot/store/dir3")).getNodes().getSize() >= count);
+    }
+
+    @Test
+    @FixFor( "MODE-2254" )
+    public void shouldSupportVariousPropertyTypesInJsonSidecar() throws Exception {
+        Node file = session.getNode("/testRoot/json/dir3/simple.json");
+        file.addMixin("flex:anyProperties");
+        file.setProperty("string1", "extraValue");
+        file.setProperty("string2", "111111111111111111111");
+        file.setProperty("boolean", true);
+        file.setProperty("double", 12.4);
+        file.setProperty("decimal", BigDecimal.valueOf(12.4));
+        file.setProperty("long", 12l);
+        Calendar now = Calendar.getInstance();
+        file.setProperty("date", now);
+
+        session.save();
+        assertThat(file.getProperty("string1").getString(), is("extraValue"));
+        assertThat(file.getProperty("string2").getString(), is("111111111111111111111"));
+        assertThat(file.getProperty("boolean").getBoolean(), is(true));
+        assertThat(file.getProperty("double").getDouble(), is(12.4));
+        assertThat(file.getProperty("decimal").getDecimal(), is(BigDecimal.valueOf(12.4)));
+        assertThat(file.getProperty("long").getLong(), is(12l));
+        assertThat(file.getProperty("date").getDate(), is(now));
+
+        assertJsonSidecarFile(jsonProjection, "dir3/simple.json");
     }
 
     protected void assertNoSidecarFile( Projection projection,

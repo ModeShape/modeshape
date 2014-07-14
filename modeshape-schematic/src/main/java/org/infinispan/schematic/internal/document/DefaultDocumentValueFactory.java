@@ -77,10 +77,10 @@ public class DefaultDocumentValueFactory implements DocumentValueFactory, Serial
       if (lastChar == 'Z' || lastChar == 'z') {
          // the date format doesn't like 'Z', so use timezone and offset (e.g., "GMT+00:00") ...
          iso = iso.substring(0, indexOfLastChar) + "GMT+00:00";
-      } else {
-         // 1997-07-16T19:20:30.45
-         // 0123456789012345678901
-         iso = iso.substring(0, 22) + "GMT" + iso.substring(22);
+      } else if (iso.length() >= 22) {
+          // 1997-07-16T19:20:30.45
+          // 0123456789012345678901
+          iso = iso.substring(0, 22) + "GMT" + iso.substring(22);
       }
       return Bson.getDateParsingFormatter().parse(iso);
    }
