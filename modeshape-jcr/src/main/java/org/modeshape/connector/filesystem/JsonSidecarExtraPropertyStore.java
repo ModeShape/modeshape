@@ -119,7 +119,7 @@ class JsonSidecarExtraPropertyStore implements ExtraPropertiesStore {
     }
 
     protected Document read( InputStream stream ) throws IOException {
-        return Json.read(stream);
+        return Json.read(stream, false);
     }
 
     protected void write( Document document,
