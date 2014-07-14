@@ -330,10 +330,12 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( {"MODE-1971", "MODE-1977"} )
+    @FixFor( {"MODE-1971", "MODE-1977", "MODE-2256"} )
     public void shouldBeAbleToMoveExternalNodes() throws Exception {
         ((Workspace)session.getWorkspace()).move("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
         Node file = session.getNode("/testRoot/store/dir3/simple2.json");
+        file.addMixin("flex:anyProperties");
+        file.setProperty("extraProp", "extraValue");
         assertNotNull(file);
         assertEquals("nt:file", file.getPrimaryNodeType().getName());
 
@@ -341,6 +343,9 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         Node folder = session.getNode("/testRoot/store/dir4");
         assertNotNull(folder);
         assertEquals("nt:folder", folder.getPrimaryNodeType().getName());
+
+        Node file2 = session.getNode("/testRoot/store/dir4/simple2.json");
+        assertThat(file2.getProperty("extraProp").getString(), is("extraValue"));
     }
 
     @Test
