@@ -203,6 +203,24 @@ public class Json {
 
     /**
      * Read the JSON representation from supplied input stream and construct the {@link Document} representation, using the
+     * {@link Charset#defaultCharset() default character set}.
+     * <p>
+     * This method will read standard JSON and modified JSON, and tolerates whitespace and use of several delimeters, including
+     * the standard ':' as well as '=' and '=>'.
+     * </p>
+     *
+     * @param stream the input stream; may not be null
+     * @param introspectStringValues true if the string values should be examined for common patterns, or false otherwise
+     *
+     * @return the in-memory {@link Document} representation
+     * @throws ParsingException if there was a problem reading from the stream
+     */
+    public static Document read( InputStream stream, boolean introspectStringValues ) throws ParsingException {
+        return SHARED_READER.read(stream, introspectStringValues);
+    }
+
+    /**
+     * Read the JSON representation from supplied input stream and construct the {@link Document} representation, using the
      * supplied {@link Charset character set}.
      * <p>
      * This method will read standard JSON and modified JSON, and tolerates whitespace and use of several delimeters, including
