@@ -21,6 +21,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
@@ -743,6 +744,26 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         } finally {
             doDelete(itemsUrl("node1"));
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2250" )
+    public void shouldReturnAllSNSForNegativeDepth() throws Exception {
+        doPost("v2/post/node_with_nested_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        JSONObject children = doGet(itemsUrl(TEST_NODE) + "?depth=-1").isOk().children();
+        JSONObject foo1 = children.getJSONObject("foo");
+        assertNotNull(foo1);
+        JSONObject foo1Children = foo1.getJSONObject("children");
+        assertNotNull(foo1Children);
+        assertTrue(foo1Children.has("bar"));
+        assertTrue(foo1Children.has("bar[2]"));
+
+        JSONObject foo2 = children.getJSONObject("foo[2]");
+        assertNotNull(foo2);
+        JSONObject foo2Children = foo1.getJSONObject("children");
+        assertNotNull(foo2Children);
+        assertTrue(foo2Children.has("bar"));
+        assertTrue(foo2Children.has("bar[2]"));
     }
 
     private void assertUpload( String url, boolean expectCreated, boolean useMultiPart ) throws Exception {
