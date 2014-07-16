@@ -357,4 +357,10 @@ class LegacySidecarExtraPropertyStore implements ExtraPropertiesStore {
         if (values.isEmpty()) return null;
         return propertyFactory.create(name, type, values);
     }
+
+    @Override
+    public boolean contains( String id ) {
+        File file = sidecarFile(id);
+        return file.exists();
+    }
 }

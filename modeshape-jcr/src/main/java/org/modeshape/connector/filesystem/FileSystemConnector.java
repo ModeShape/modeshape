@@ -736,27 +736,30 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         // if we're dealing with the root of the connector, we can't process any moves/removes because that would go "outside" the
         // connector scope
         if (!isRoot(id)) {
-            String parentId = reader.getParentIds().get(0);
+            String newParentId = reader.getParentIds().get(0);
             File parent = file.getParentFile();
-            String newParentId = idFor(parent);
-            if (!parentId.equals(newParentId)) {
+            String oldParentId = idFor(parent);
+            if (!oldParentId.equals(newParentId)) {
                 // The node has a new parent (via the 'update' method), meaning it was moved ...
                 File newParent = fileFor(newParentId);
                 File newFile = new File(newParent, file.getName());
-                file.renameTo(newFile);
-                if (!parent.exists()) {
+                if (!newParent.exists()) {
                     parent.mkdirs(); // in case they were removed since we created them ...
                 }
-                if (!parent.canWrite()) {
+                if (!newParent.canWrite()) {
                     String parentPath = newParent.getAbsolutePath();
                     String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
                     throw new DocumentStoreException(id, msg);
                 }
-                parent = newParent;
-                // Remove the extra properties at the old location ...
-                extraPropertiesStore().removeProperties(id);
-                // Set the id to the new location ...
-                id = idFor(newFile);
+                if (!file.renameTo(newFile)) {
+                    getLogger().debug("Cannot move {0} to {1}", file.getAbsolutePath(), newFile.getAbsolutePath());
+                } else {
+                    id = idFor(newFile);
+                    // Make sure any existing extra properties are also kept up-to-date
+                    // Note that if the children ar folders, we don't need to walk them recursively because the node id will
+                    // reflect the new folder structure of the rename
+                    moveExtraProperties(idOrig, id);
+                }
             } else {
                 // It is the same parent as before ...
                 if (!parent.exists()) {
@@ -780,6 +783,11 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             File renamedChild = new File(file, newNameStr);
             if (!child.renameTo(renamedChild)) {
                 getLogger().debug("Cannot rename {0} to {1}", child, renamedChild);
+            } else {
+                // Make sure any existing extra properties are also kept up-to-date
+                // Note that if the children ar folders, we don't need to walk them recursively because the node id will reflect
+                // the new folder structure of the rename
+                moveExtraProperties(idFor(child), idFor(renamedChild));
             }
         }
 

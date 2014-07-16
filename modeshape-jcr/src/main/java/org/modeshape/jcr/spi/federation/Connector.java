@@ -291,6 +291,22 @@ public abstract class Connector {
     }
 
     /**
+     * Moves a set of extra properties from an old to a new node after their IDs have changed.
+     *
+     * @param oldNodeId the old identifier for the node; may not be null
+     * @param newNodeId the new identifier for the node; may not be null
+     */
+    protected void moveExtraProperties( String oldNodeId, String newNodeId ) {
+        ExtraPropertiesStore extraPropertiesStore = extraPropertiesStore();
+        if (extraPropertiesStore == null || !extraPropertiesStore.contains(oldNodeId)) {
+            return;
+        }
+        Map<Name, Property> existingExtraProps = extraPropertiesStore.getProperties(oldNodeId);
+        extraPropertiesStore.removeProperties(oldNodeId);
+        extraPropertiesStore.storeProperties(newNodeId, existingExtraProps);
+    }
+
+    /**
      * Returns the transaction manager instance that was set on the connector during initialization.
      * 
      * @return a {@code non-null} {@link TransactionManager} instance

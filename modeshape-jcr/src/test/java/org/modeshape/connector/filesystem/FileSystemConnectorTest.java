@@ -332,17 +332,40 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( {"MODE-1971", "MODE-1977"} )
-    public void shouldBeAbleToMoveExternalNodes() throws Exception {
-        ((Workspace)session.getWorkspace()).move("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
-        Node file = session.getNode("/testRoot/store/dir3/simple2.json");
-        assertNotNull(file);
+    @FixFor( {"MODE-1971", "MODE-1977", "MODE-2256"} )
+    public void shouldBeAbleToRenameExternalNodes() throws Exception {
+        Node file = session.getNode("/testRoot/json/dir3/simple.json");
+        file.addMixin("flex:anyProperties");
+        file.setProperty("extraProp", "extraValue");
         assertEquals("nt:file", file.getPrimaryNodeType().getName());
+        session.save();
 
-        ((Workspace)session.getWorkspace()).move("/testRoot/store/dir3", "/testRoot/store/dir4");
-        Node folder = session.getNode("/testRoot/store/dir4");
-        assertNotNull(folder);
-        assertEquals("nt:folder", folder.getPrimaryNodeType().getName());
+        //rename the file
+        ((Workspace)session.getWorkspace()).move("/testRoot/json/dir3/simple.json", "/testRoot/json/dir3/simple2.json");
+
+        Node renamedFile = session.getNode("/testRoot/json/dir3/simple2.json");
+        assertThat(renamedFile.getProperty("extraProp").getString(), is("extraValue"));
+    }
+
+    @Test
+    @FixFor( {"MODE-1971", "MODE-1977", "MODE-2256"} )
+    public void shouldBeAbleToMoveExternalNodes() throws Exception {
+        Node dir3 = session.getNode("/testRoot/json/dir3");
+        dir3.addNode("dir4", "nt:folder");
+        session.save();
+        assertEquals("nt:folder", ((Node)session.getNode("/testRoot/json/dir3/dir4")).getPrimaryNodeType().getName());
+
+        Node file = session.getNode("/testRoot/json/dir3/simple.json");
+        file.addMixin("flex:anyProperties");
+        file.setProperty("extraProp", "extraValue");
+        assertEquals("nt:file", file.getPrimaryNodeType().getName());
+        session.save();
+
+        ((Workspace)session.getWorkspace()).move("/testRoot/json/dir3/simple.json", "/testRoot/json/dir3/dir4/simple.json");
+
+        Node movedFile = session.getNode("/testRoot/json/dir3/dir4/simple.json");
+        assertEquals("nt:file", movedFile.getPrimaryNodeType().getName());
+        assertThat(movedFile.getProperty("extraProp").getString(), is("extraValue"));
     }
 
     @Test

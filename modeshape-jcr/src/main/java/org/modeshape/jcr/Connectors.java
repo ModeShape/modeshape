@@ -1381,5 +1381,12 @@ public final class Connectors {
             }
             localStore.storeDocument(key, doc);
         }
+
+        @Override
+        public boolean contains( String id ) {
+            String key = keyFor(id);
+            SchematicEntry entry = localStore.get(key);
+            return entry != null;
+        }
     }
 }

@@ -78,4 +78,9 @@ public class NoExtraPropertiesStorage implements ExtraPropertiesStore {
                                   Map<Name, Property> properties ) {
         storeProperties(id, properties);
     }
+
+    @Override
+    public boolean contains( String id ) {
+        return false;
+    }
 }
