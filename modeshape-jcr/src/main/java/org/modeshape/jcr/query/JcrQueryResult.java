@@ -85,12 +85,12 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         if (rows.isEmpty()) {
             this.sequence = rows;
         } else if (!restartable) {
-            this.sequence = new SecureSequence(rows, context, false);
+            this.sequence = new SecureSequence(rows, context);
         } else {
             String workspace = context.getWorkspaceName();
             BufferManager bufferMgr = context.getBufferManager();
             CachedNodeSupplier nodeCache = results.getCachedNodes();
-            NodeSequence secureSequence = new SecureSequence(rows, context, false);
+            NodeSequence secureSequence = new SecureSequence(rows, context);
             this.sequence = new RestartableSequence(workspace, secureSequence, bufferMgr, nodeCache, numRowsInMemory);
         }
 

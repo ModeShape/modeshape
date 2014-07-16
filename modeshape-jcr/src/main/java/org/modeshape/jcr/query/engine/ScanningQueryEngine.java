@@ -458,7 +458,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 rows = NodeSequence.emptySequence(columns.getColumns().size());
             } else {
                 boolean includeSystemContent = context.getHints().includeSystemContent;
-                final QuerySources sources = new QuerySources(context.getRepositoryCache(), workspaceName, includeSystemContent);
+                final QuerySources sources = new QuerySources(context.getRepositoryCache(), context.getNodeTypes(),
+                                                              workspaceName, includeSystemContent);
                 rows = createNodeSequence(command, context, plan, columns, sources);
                 long nanos2 = System.nanoTime();
                 statistics = statistics.withResultsFormulationTime(Math.abs(nanos2 - nanos));

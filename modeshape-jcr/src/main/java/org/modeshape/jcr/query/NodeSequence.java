@@ -987,8 +987,9 @@ public abstract class NodeSequence {
         if (second == null) return first;
         int firstWidth = first.width();
         final int secondWidth = second.width();
-        //TODO author=Horia Chiorean date=01-Jul-14 description=Not sure if this is correct, but this needs to be able to handle different-width sequences (i.e. 1 join & 1 non-join)
-        final int sequenceWidth = Math.min(firstWidth, secondWidth);
+        if (firstWidth > 0 && secondWidth > 0 && firstWidth != secondWidth) {
+            throw new IllegalArgumentException("The sequences must have the same width: " + first + " and " + second);
+        }
         if (first.isEmpty()) return second;
         if (second.isEmpty()) return first;
         long firstCount = first.getRowCount();
@@ -999,7 +1000,7 @@ public abstract class NodeSequence {
 
             @Override
             public int width() {
-                return sequenceWidth;
+                return secondWidth;
             }
 
             @Override

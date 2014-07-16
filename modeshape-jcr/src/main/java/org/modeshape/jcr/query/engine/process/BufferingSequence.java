@@ -130,7 +130,7 @@ public abstract class BufferingSequence extends DelegatingSequence {
                 } else if (value != null) {
                     buffer.put(value, createRow(batch));
                 } else if (rowsWithNullKey != null) {
-                    rowsWithNullKey.add(createRow(batch));
+                    rowsWithNullKey.addIfAbsent(createRow(batch));
                 }
                 ++batchSize;
             }
@@ -148,7 +148,7 @@ public abstract class BufferingSequence extends DelegatingSequence {
                 } else if (value != null) {
                     buffer.put(value, createRow(batch));
                 } else if (rowsWithNullKey != null) {
-                    rowsWithNullKey.add(createRow(batch));
+                    rowsWithNullKey.addIfAbsent(createRow(batch));
                 }
             }
             batch = sequence.nextBatch();

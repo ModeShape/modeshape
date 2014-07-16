@@ -259,7 +259,7 @@ public class HashJoinSequence extends JoinSequence {
             if (rightMatchedRowKeys != null) {
                 // We only record the non-null values, since NULL never matches and they will always be unmatched ...
                 // logger.trace("Join found matching rows on right with value {0}", matchingValue);
-                rightMatchedRowKeys.add(rightKey);
+                rightMatchedRowKeys.addIfAbsent(rightKey);
             }
         }
 
@@ -411,7 +411,7 @@ public class HashJoinSequence extends JoinSequence {
             while (rightRows.hasNext() && count < maxSize) {
                 currentRight = rightRows.next();
                 Object key = extractor.getValueInRow(currentRight);
-                if (key == null || rightMatchedRowKeys.add(key)) {
+                if (key == null || rightMatchedRowKeys.addIfAbsent(key)) {
                     logger.trace("Join found non-matched rows on right with value {0}", key);
                     ++count;
                     return true;

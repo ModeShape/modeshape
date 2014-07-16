@@ -17,6 +17,7 @@
 package org.modeshape.jcr.query;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.util.Comparator;
@@ -56,14 +57,14 @@ public class BufferManagerTest {
     @Test
     public void shouldCreateDistinctBufferOnHeap() {
         try (DistinctBuffer<String> buffer = mgr.createDistinctBuffer(Serializer.STRING).useHeap(true).keepSize(true).make()) {
-            assertTrue(buffer.add("first"));
-            assertTrue(buffer.add("second"));
-            assertTrue(buffer.add("third"));
-            assertTrue(buffer.add("fourth"));
-            assertTrue(!buffer.add("first"));
-            assertTrue(!buffer.add("second"));
-            assertTrue(!buffer.add("fourth"));
-            assertTrue(!buffer.add("third"));
+            assertTrue(buffer.addIfAbsent("first"));
+            assertTrue(buffer.addIfAbsent("second"));
+            assertTrue(buffer.addIfAbsent("third"));
+            assertTrue(buffer.addIfAbsent("fourth"));
+            assertFalse(buffer.addIfAbsent("first"));
+            assertFalse(buffer.addIfAbsent("second"));
+            assertFalse(buffer.addIfAbsent("fourth"));
+            assertFalse(buffer.addIfAbsent("third"));
             assertThat(buffer.size(), is(4L));
         }
     }
@@ -71,14 +72,14 @@ public class BufferManagerTest {
     @Test
     public void shouldCreateDistinctBufferOffHeap() {
         try (DistinctBuffer<String> buffer = mgr.createDistinctBuffer(Serializer.STRING).useHeap(false).keepSize(true).make()) {
-            assertTrue(buffer.add("first"));
-            assertTrue(buffer.add("second"));
-            assertTrue(buffer.add("third"));
-            assertTrue(buffer.add("fourth"));
-            assertTrue(!buffer.add("first"));
-            assertTrue(!buffer.add("second"));
-            assertTrue(!buffer.add("fourth"));
-            assertTrue(!buffer.add("third"));
+            assertTrue(buffer.addIfAbsent("first"));
+            assertTrue(buffer.addIfAbsent("second"));
+            assertTrue(buffer.addIfAbsent("third"));
+            assertTrue(buffer.addIfAbsent("fourth"));
+            assertFalse(buffer.addIfAbsent("first"));
+            assertFalse(buffer.addIfAbsent("second"));
+            assertFalse(buffer.addIfAbsent("fourth"));
+            assertFalse(buffer.addIfAbsent("third"));
             assertThat(buffer.size(), is(4L));
         }
     }

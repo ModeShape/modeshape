@@ -46,16 +46,14 @@ public abstract class AbstractNodeKeysSequence extends BufferingSequence {
                                         CachedNodeSupplier nodeCache,
                                         boolean pack,
                                         boolean useHeap ) {
-        //TODO author=Horia Chiorean date=01-Jul-14 description=Not sure how to handle different width sequences - i.e. one sequence is a JOIN while the other is not
-        super(workspaceName,
-              rightSequence,
-              RowExtractors.extractUniqueKey(Math.min(leftSequence.width(), rightSequence.width()), types),
-              bufferMgr,
-              nodeCache,
-              pack,
-              useHeap,
-              true);
-        this.totalWidth = Math.min(leftSequence.width(), rightSequence.width());
+        super(workspaceName, rightSequence, RowExtractors.extractUniqueKey(leftSequence.width(), types), bufferMgr, nodeCache,
+              pack, useHeap, true);
+        int leftWidth =  leftSequence.width();
+        int rightWidth = rightSequence.width();
+        if (leftWidth > 0 && rightWidth > 0 && leftWidth != rightWidth) {
+            throw new IllegalArgumentException("The sequences must have the same width: " + leftSequence + " and " + rightSequence);
+        }
+        this.totalWidth = leftWidth;
         this.leftSequence = leftSequence;
     }
 

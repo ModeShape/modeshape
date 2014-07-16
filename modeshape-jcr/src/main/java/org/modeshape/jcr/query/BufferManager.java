@@ -107,21 +107,14 @@ public class BufferManager implements Serializers, AutoCloseable {
     }
 
     public static interface Predicate<T> {
-        /**
-         * Determine whether the buffer has seen this value.
-         * 
-         * @param value the value
-         * @return true if the buffer already has seen that value, or false otherwise
-         */
-        boolean contains( T value );
 
         /**
-         * Add the value to the buffer.
+         * Add the value to the buffer only if the buffer does not yet contain the value.
          *
          * @param value the value
          * @return true if the buffer has not yet seen that value, or false otherwise
          */
-        boolean add(T value);
+        boolean addIfAbsent( T value );
     }
 
     /**
@@ -563,12 +556,7 @@ public class BufferManager implements Serializers, AutoCloseable {
         }
 
         @Override
-        public boolean contains( T value ) {
-            return buffer.contains(value);
-        }
-
-        @Override
-        public boolean add( T value ) {
+        public boolean addIfAbsent( T value ) {
             return buffer.add(value);
         }
 
