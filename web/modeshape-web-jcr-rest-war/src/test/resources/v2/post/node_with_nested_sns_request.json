@@ -1,0 +1,38 @@
+{
+    "children": [
+        {
+            "foo": {
+                "name": "first foo",
+                "children" : [
+                    {
+                        "bar": {
+                            "name": "first foo first bar"
+                        }
+                    },
+                    {
+                        "bar": {
+                            "name": "first foo second bar"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "foo": {
+                "name": "second foo",
+                "children" : [
+                    {
+                        "bar": {
+                            "name": "second foo first bar"
+                        }
+                    },
+                    {
+                        "bar": {
+                            "name": "second foo second bar"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
