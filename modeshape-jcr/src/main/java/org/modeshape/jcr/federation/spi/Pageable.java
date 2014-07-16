@@ -36,7 +36,7 @@ import org.infinispan.schematic.document.Document;
 public interface Pageable {
 
     /**
-     * Returns a document which represents the document of a parent node to which an optiona page of children has been added.
+     * Returns a document which represents the document of a parent node to which an optional page of children has been added.
      * In order to add a next page, {@link PageWriter#addPage(String, String, long, long)} should be used to add a
      * new page of children.
      * 
