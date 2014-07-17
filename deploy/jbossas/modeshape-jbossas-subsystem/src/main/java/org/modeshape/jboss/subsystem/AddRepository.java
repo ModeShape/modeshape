@@ -23,7 +23,6 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
@@ -34,7 +33,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.services.path.RelativePathService;
 import org.jboss.as.naming.ManagedReferenceFactory;
@@ -120,9 +118,8 @@ public class AddRepository extends AbstractAddStepHandler {
                                    final List<ServiceController<?>> newControllers ) throws OperationFailedException {
 
         final ServiceTarget target = context.getServiceTarget();
-        final ModelNode address = operation.require(OP_ADDR);
-        final PathAddress pathAddress = PathAddress.pathAddress(address);
-        final String repositoryName = pathAddress.getLastElement().getValue();
+        final AddressContext addressContext = AddressContext.forOperation(operation);
+        final String repositoryName = addressContext.repositoryName();
         final String cacheName = attribute(context, model, ModelAttributes.CACHE_NAME, repositoryName);
         final String clusterChannelName = attribute(context, model, ModelAttributes.CLUSTER_NAME, null);
         final String clusterStackName = attribute(context, model, ModelAttributes.CLUSTER_STACK, null);
@@ -326,11 +323,6 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(indexBuilder.install());
         newControllers.add(binaryStorageBuilder.install());
         newControllers.add(monitorBuilder.install());
-    }
-
-    @Override
-    protected boolean requiresRuntime( OperationContext context ) {
-        return true;
     }
 
     private void parseClustering( String clusterChannelName,

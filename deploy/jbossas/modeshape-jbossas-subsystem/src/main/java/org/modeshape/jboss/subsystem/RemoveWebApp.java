@@ -48,19 +48,19 @@ class RemoveWebApp extends AbstractRemoveStepHandler {
     protected void performRemove( OperationContext context,
                                   ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-
-        if (requiresRuntime(context)) {
-            ModelNode address = operation.require(ModelDescriptionConstants.OP_ADDR);
-            PathAddress pathAddress = PathAddress.pathAddress(address);
-            String webappName = pathAddress.getLastElement().getValue();
-
-            PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT, webappName));
-            ModelNode op = Util.createOperation(ModelDescriptionConstants.DEPLOYMENT, deploymentAddress);
-
-            ImmutableManagementResourceRegistration rootResourceRegistration = context.getRootResourceRegistration();
-            OperationStepHandler handler = rootResourceRegistration.getOperationHandler(deploymentAddress, ModelDescriptionConstants.REMOVE);
-            context.addStep(op, handler, OperationContext.Stage.MODEL);
+        if (!model.isDefined()) {
+            //the model hasn't been defined, which means the Add Step did not succeed
+            return;
         }
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        String webappName = addressContext.lastPathElementValue();
+
+        PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT, webappName));
+        ModelNode op = Util.createOperation(ModelDescriptionConstants.DEPLOYMENT, deploymentAddress);
+
+        ImmutableManagementResourceRegistration rootResourceRegistration = context.getRootResourceRegistration();
+        OperationStepHandler handler = rootResourceRegistration.getOperationHandler(deploymentAddress, ModelDescriptionConstants.REMOVE);
+        context.addStep(op, handler, OperationContext.Stage.MODEL);
 
         super.performRemove(context, operation, model);
     }

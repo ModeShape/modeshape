@@ -67,19 +67,13 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
         initializeModeShapeEngine(context, operation, model, newControllers);
     }
 
-    @Override
-    protected boolean requiresRuntime( OperationContext context ) {
-        return true;
-    }
-
     private void initializeModeShapeEngine( final OperationContext context,
                                             final ModelNode operation,
                                             ModelNode model,
                                             final List<ServiceController<?>> newControllers ) {
         ServiceTarget target = context.getServiceTarget();
 
-        final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener(); // what is right, this or one defined in
-                                                                                      // top?
+        final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
 
         EngineService engine = new EngineService(new ModeShapeEngine());
 

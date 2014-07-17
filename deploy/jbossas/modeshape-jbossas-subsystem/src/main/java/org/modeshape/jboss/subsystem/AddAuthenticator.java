@@ -26,14 +26,12 @@ package org.modeshape.jboss.subsystem;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
 import java.util.Properties;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -67,11 +65,6 @@ public class AddAuthenticator extends AbstractAddStepHandler {
     }
 
     @Override
-    protected boolean requiresRuntime( OperationContext context ) {
-        return true;
-    }
-
-    @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
                                    final ModelNode model,
@@ -79,13 +72,11 @@ public class AddAuthenticator extends AbstractAddStepHandler {
                                    final List<ServiceController<?>> newControllers ) {
 
         ServiceTarget target = context.getServiceTarget();
-
         Properties props = new Properties();
+        final AddressContext addressContext = AddressContext.forOperation(operation);
 
-        final ModelNode address = operation.require(OP_ADDR);
-        final PathAddress pathAddress = PathAddress.pathAddress(address);
-        final String repositoryName = pathAddress.getElement(1).getValue();
-        final String authenticatorName = pathAddress.getLastElement().getValue();
+        final String repositoryName = addressContext.repositoryName();
+        final String authenticatorName = addressContext.lastPathElementValue();
 
         // Record the properties ...
         props.put(FieldName.NAME, authenticatorName);
