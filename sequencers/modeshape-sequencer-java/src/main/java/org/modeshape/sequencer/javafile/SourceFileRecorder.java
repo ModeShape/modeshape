@@ -15,11 +15,10 @@
  */
 package org.modeshape.sequencer.javafile;
 
+import java.io.InputStream;
 import javax.jcr.Node;
-import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.modeshape.sequencer.javafile.metadata.JavaMetadata;
 
 /**
  * A simple interface that allows an implementer to control how Java source file metadata is mapped to properties (including
@@ -38,13 +37,18 @@ public interface SourceFileRecorder {
 
     /**
      * Records a source file.
-     * 
-     * @param context the sequencer context
-     * @param outputNode the {@link Node} output
-     * @param javaMetadata the metadata for the Java source file
-     * @throws javax.jcr.RepositoryException if anything fails during the sequencing process
+     *
+     * @param context the sequencer context (cannot be <code>null</code>)
+     * @param inputStream the stream being processed (cannot be <code>null</code>)
+     * @param length the length of the java file
+     * @param encoding the encoding to use (can be <code>null</code>)
+     * @param outputNode the {@link Node} output (cannot be <code>null</code>)
+     * @throws Exception if anything fails during the sequencing process
      */
-    void record( Sequencer.Context context,
-                 Node outputNode,
-                 JavaMetadata javaMetadata ) throws RepositoryException;
+    void record( final Sequencer.Context context,
+                 final InputStream inputStream,
+                 final long length,
+                 final String encoding,
+                 final Node outputNode ) throws Exception;
+
 }
