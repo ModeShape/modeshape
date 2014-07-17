@@ -151,4 +151,10 @@ class JsonSidecarExtraPropertyStore implements ExtraPropertiesStore {
         }
         return new File(actualFile.getAbsolutePath() + extension);
     }
+
+    @Override
+    public boolean contains( String id ) {
+        File file = sidecarFile(id);
+        return file.exists();
+    }
 }

@@ -67,4 +67,12 @@ public interface ExtraPropertiesStore {
      */
     boolean removeProperties( String id );
 
+    /**
+     * Check if this store contains any extra properties for the node with the given ID.
+     *
+     * @param id the identifier for the node; may not be null
+     * @return {@code true} if this store contains extra properties, {@code false} otherwise.
+     */
+    boolean contains(String id);
+
 }
