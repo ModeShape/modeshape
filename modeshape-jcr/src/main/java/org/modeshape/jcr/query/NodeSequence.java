@@ -27,6 +27,7 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.query.QueryResults.Columns;
 
 /**
  * A sequence of nodes that is accessed by batches and that is accessible only once.
@@ -1035,6 +1036,126 @@ public abstract class NodeSequence {
             @Override
             public String toString() {
                 return "(append width=" + width() + " " + first + "," + second + " )";
+            }
+        };
+    }
+
+    /**
+     * Create a sequence of nodes that include only those selectors defined by the given columns.
+     * 
+     * @param original the original node sequence that might have more selectors than specified by the columns
+     * @param columns the columns defining the selectors that are to be exposed
+     * @return the node sequence; never null but possibly the original if it has exactly the selectors described by the columns
+     */
+    public static NodeSequence slice( final NodeSequence original,
+                                      Columns columns ) {
+        final int newWidth = columns.getSelectorNames().size();
+        if (original.width() == newWidth) {
+            return original;
+        }
+        // We need to return a NodeSequence that includes only the specified selectors.
+
+        // Step 1: figure out which selector indexes we'll use ...
+        final int[] selectorIndexes = new int[newWidth];
+        int i = 0;
+        for (String selectorName : columns.getSelectorNames()) {
+            selectorIndexes[i++] = columns.getSelectorIndex(selectorName);
+        }
+
+        // Step 2: create a NodeSequence that delegates to the original but that returns Batch instances that
+        // return the desired indexes ...
+        return new NodeSequence() {
+            @Override
+            public int width() {
+                return 1;
+            }
+
+            @Override
+            public long getRowCount() {
+                return original.getRowCount();
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return original.isEmpty();
+            }
+
+            @Override
+            public Batch nextBatch() {
+                return slicingBatch(original.nextBatch(), selectorIndexes);
+            }
+
+            @Override
+            public void close() {
+                original.close();
+            }
+
+            @Override
+            public String toString() {
+                return "(slice width=" + newWidth + " indexes=" + selectorIndexes + " " + original + " )";
+            }
+        };
+    }
+
+    protected static Batch slicingBatch( final Batch original,
+                                         final int[] selectorIndexes ) {
+        if (original == null) return null;
+        return new Batch() {
+            @Override
+            public int width() {
+                return selectorIndexes.length;
+            }
+
+            @Override
+            public CachedNode getNode() {
+                return original.getNode(selectorIndexes[0]);
+            }
+
+            @Override
+            public CachedNode getNode( int index ) {
+                assert index == 0;
+                return original.getNode(selectorIndexes[index]);
+            }
+
+            @Override
+            public float getScore() {
+                return original.getScore(selectorIndexes[0]);
+            }
+
+            @Override
+            public float getScore( int index ) {
+                assert index == 0;
+                return original.getScore(selectorIndexes[index]);
+            }
+
+            @Override
+            public String getWorkspaceName() {
+                return original.getWorkspaceName();
+            }
+
+            @Override
+            public boolean hasNext() {
+                return original.hasNext();
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return original.isEmpty();
+            }
+
+            @Override
+            public void nextRow() {
+                original.nextRow();
+            }
+
+            @Override
+            public long rowCount() {
+                return original.rowCount();
+            }
+
+            @Override
+            public String toString() {
+                return original.toString();
             }
         };
     }

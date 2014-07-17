@@ -27,7 +27,7 @@ import org.modeshape.jcr.query.NodeSequence;
  */
 public class SecureSequence extends DelegatingSequence {
 
-    private final JcrQueryContext context;
+    protected final JcrQueryContext context;
 
     /**
      * Creates a new secure sequence over an existing sequence.
