@@ -23,15 +23,14 @@
  */
 package org.modeshape.jboss.metric;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceController;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jboss.subsystem.AddressContext;
 import org.modeshape.jboss.subsystem.ModeShapeServiceNames;
 import org.modeshape.jcr.api.monitor.History;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
@@ -61,9 +60,8 @@ public abstract class ModeShapeMetricHandler extends AbstractRuntimeOnlyHandler 
     @Override
     protected void executeRuntimeStep( final OperationContext context,
                                        final ModelNode operation ) throws OperationFailedException {
-        final ModelNode address = operation.require(OP_ADDR);
-        final PathAddress pathAddress = PathAddress.pathAddress(address);
-        final String repositoryName = pathAddress.getLastElement().getValue();
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        final String repositoryName = addressContext.repositoryName();
         final ServiceController<?> sc = context.getServiceRegistry(false).getService(ModeShapeServiceNames.monitorServiceName(repositoryName));
         if (sc == null) {
             logger().debugv("ModeShape metric handler for repository {0} ignoring runtime step because the monitoring service is unavailable." +

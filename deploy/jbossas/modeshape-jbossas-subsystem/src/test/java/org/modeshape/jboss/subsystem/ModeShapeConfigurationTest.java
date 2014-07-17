@@ -1,6 +1,31 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
 package org.modeshape.jboss.subsystem;
 
 import static org.junit.Assert.fail;
+import static org.modeshape.jboss.subsystem.ModeShapeExtension.SUBSYSTEM_NAME;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -13,23 +38,35 @@ import javax.xml.validation.Validator;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 import org.junit.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+/**
+ * Unit test for the ModeShape AS7 subsystem.
+ */
 @SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
+    /**
+     * An initialization mode which tells the base test class that the container should be started/simulated in "normal" mode.
+     * This is required in order to make sure that all the ModeShape service have been started.
+     */
+    private static final AdditionalInitialization NORMAL_INITIALIZATION_MODE = new AdditionalInitialization();
+
     public ModeShapeConfigurationTest() {
-        super(ModeShapeExtension.SUBSYSTEM_NAME, new ModeShapeExtension());
+        super(SUBSYSTEM_NAME, new ModeShapeExtension());
     }
 
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("modeshape-sample-config.xml");
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return NORMAL_INITIALIZATION_MODE;
     }
 
     @Override
@@ -40,6 +77,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     @Test
     public void testMinimalConfigurationWithOneMinimalRepository() throws Exception {
         standardSubsystemTest("minimal");
+    }
+
+    @Test
+    public void testFullConfiguration() throws Exception {
+        standardSubsystemTest("full");
     }
 
     @Test
@@ -130,7 +172,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     private KernelServices initKernel( String subsystemXml ) throws Exception {
-        return super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(subsystemXml).build();
+        return super.createKernelServicesBuilder(NORMAL_INITIALIZATION_MODE).setSubsystemXml(subsystemXml).build();
     }
 
     private void validate( String marshalled ) throws SAXException, IOException {
@@ -163,47 +205,5 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         });
 
         validator.validate(source);
-    }
-
-    /**
-     * When JSON strings are parsed into ModelNode structures, any integer values are parsed into org.jboss.dmr.BigIntegerValue
-     * instances rather than org.jboss.dmr.IntegerValue instances. This method converts all BigIntegerValue instances into a
-     * IntegerValue instance.
-     * 
-     * @param node the model
-     * @return the updated model
-     */
-    protected ModelNode filterValues( ModelNode node ) {
-        ModelNode result = new ModelNode();
-        switch (node.getType()) {
-            case OBJECT:
-                for (String key : node.keys()) {
-                    ModelNode value = node.get(key);
-                    result.get(key).set(filterValues(value));
-                }
-                break;
-            case LIST:
-                for (ModelNode value : node.asList()) {
-                    result.add(filterValues(value));
-                }
-                break;
-            case PROPERTY:
-                Property prop = node.asProperty();
-                ModelNode propValue = prop.getValue();
-                ModelNode filteredValue = filterValues(propValue);
-                if (propValue != filteredValue) {
-                    Property newProp = new Property(prop.getName(), filteredValue);
-                    result.set(newProp);
-                } else {
-                    result = node;
-                }
-                break;
-            case BIG_INTEGER:
-                result.set(node.asBigInteger().intValue());
-                break;
-            default:
-                result = node;
-        }
-        return result;
     }
 }

@@ -23,14 +23,12 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
@@ -66,9 +64,9 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
 
         ServiceTarget target = context.getServiceTarget();
 
-        final ModelNode address = operation.require(OP_ADDR);
-        final PathAddress pathAddress = PathAddress.pathAddress(address);
-        final String repositoryName = pathAddress.getElement(1).getValue();
+
+        final AddressContext addressContext = AddressContext.forOperation(operation);
+        final String repositoryName = addressContext.repositoryName();
         ServiceName indexStorageServiceName = ModeShapeServiceNames.indexStorageServiceName(repositoryName);
 
         //get the default service registered by "AddRepository
@@ -97,11 +95,6 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
         //remove the default service added by "AddRepository"
         context.removeService(indexStorageServiceName);
         newControllers.add(indexBuilder.install());
-    }
-
-    @Override
-    protected boolean requiresRuntime( OperationContext context ) {
-        return true;
     }
 
     protected abstract void writeIndexStorageConfiguration( final OperationContext context,

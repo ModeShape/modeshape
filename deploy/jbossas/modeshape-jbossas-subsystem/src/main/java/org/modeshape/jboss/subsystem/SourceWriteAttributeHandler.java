@@ -26,11 +26,8 @@ package org.modeshape.jboss.subsystem;
 import javax.jcr.RepositoryException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.dmr.ModelNode;
 import org.modeshape.jboss.service.RepositoryService;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  * An {@link org.jboss.as.controller.OperationStepHandler} implementation that handles changes to the model values for an external
@@ -59,9 +56,8 @@ public class SourceWriteAttributeHandler extends AbstractRepositoryConfigWriteAt
     }
 
     protected final String sourceName( ModelNode operation ) {
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        PathElement element = address.getElement(2);
-        return element.getValue();
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        return addressContext.lastPathElementValue();
     }
 
 }
