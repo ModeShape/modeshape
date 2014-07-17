@@ -37,7 +37,6 @@ public abstract class AbstractNodeKeysSequence extends BufferingSequence {
 
     private boolean initialized = false;
 
-    @SuppressWarnings( { "rawtypes", "unchecked" } )
     protected AbstractNodeKeysSequence( String workspaceName,
                                         NodeSequence leftSequence,
                                         NodeSequence rightSequence,

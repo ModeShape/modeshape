@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
@@ -42,7 +41,6 @@ import org.modeshape.jcr.query.NodeSequence.Batch;
 import org.modeshape.jcr.spi.index.Index;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.spi.index.ResultWriter;
-import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.ValueFactories;
@@ -66,6 +64,7 @@ public class QuerySources {
      * Construct a new instance.
      * 
      * @param repository the repository cache; may not be null
+     * @param nodeTypes the node types cache; may not be null
      * @param workspaceName the name of the main workspace to be queried; may not be null
      * @param includeSystemContent true if the system content is to be included in the query results, or false otherwise
      */
@@ -73,6 +72,9 @@ public class QuerySources {
                          NodeTypes nodeTypes,
                          String workspaceName,
                          boolean includeSystemContent ) {
+        assert repository != null;
+        assert nodeTypes != null;
+        assert workspaceName != null;
         this.repo = repository;
         this.nodeTypes = nodeTypes;
         this.workspaceName = workspaceName;
@@ -438,8 +440,9 @@ public class QuerySources {
             private final Set<NodeKey> shareableNodeKeys = new HashSet<>();
 
             @Override
-            public boolean includeNode( CachedNode node, NodeCache cache ) {
-                if (isShareable(node, cache)) {
+            public boolean includeNode( CachedNode node,
+                                        NodeCache cache ) {
+                if (nodeTypes.isShareable(node.getPrimaryType(cache), node.getMixinTypes(cache))) {
                     NodeKey key = node.getKey();
                     if (shareableNodeKeys.contains(key)) {
                         return false;
@@ -447,25 +450,10 @@ public class QuerySources {
                     //we're seeing the original shareable node, so we need to process it
                     shareableNodeKeys.add(key);
                     return true;
-                } else {
-                    return true;
                 }
+                return true;
             }
         };
-    }
-
-    private boolean isShareable(CachedNode node, NodeCache cache) {
-        // Check the primary type ...
-        Name primaryTypeName = node.getPrimaryType(cache);
-        if (nodeTypes.isTypeOrSubtype(primaryTypeName, JcrMixLexicon.SHAREABLE)) {
-            return true;
-        }
-        // Check the mixins ...
-        Set<Name> mixinTypes = node.getMixinTypes(cache);
-        if (nodeTypes.isTypeOrSubtype(mixinTypes, JcrMixLexicon.SHAREABLE)) {
-            return true;
-        }
-        return false;
     }
 
     /**

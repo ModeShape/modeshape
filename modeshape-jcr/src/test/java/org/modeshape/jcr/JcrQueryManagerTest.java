@@ -2058,7 +2058,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @FixFor( "MODE-2057" )
     @Test
-    @Ignore("Need to handle sequences of different widths...")
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithUnionAndFullTextSearch() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE contains(category.*, 'Utility')"
                      + "UNION "
@@ -3849,7 +3848,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2247" )
-    @Ignore("Need to handle sequences of different widths...")
     public void shouldBeAbleToExecuteIntersectOperationWithJoinCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category "
                      + " INTERSECT  "
@@ -3861,7 +3859,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2247" )
-    @Ignore("Need to handle sequences of different widths...")
     public void shouldBeAbleToExecuteIntersectAllOperation() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category "
                      + " INTERSECT ALL "
@@ -3885,7 +3882,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2247" )
-    @Ignore("Need to handle sequences of different widths...")
     public void shouldBeAbleToExecuteExceptOperationWithJoinCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE ISCHILDNODE(category,'/Cars')"
                      + "EXCEPT "
@@ -3905,7 +3901,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2247" )
-    @Ignore("Need to handle sequences of different widths...")
     public void shouldBeAbleToExecuteExceptAllOperation() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) "
                      +" WHERE cars.[jcr:name] LIKE '%Rover%' "

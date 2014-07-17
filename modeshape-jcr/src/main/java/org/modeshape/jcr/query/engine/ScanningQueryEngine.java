@@ -756,6 +756,14 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 NodeSequence first = createNodeSequence(originalQuery, context, firstPlan, firstColumns, sources);
                 NodeSequence second = createNodeSequence(originalQuery, context, secondPlan, secondColumns, sources);
                 useHeap = 0 >= second.getRowCount() && second.getRowCount() < 100;
+                if (first.width() != second.width()) {
+                    // A set operation requires that the 'first' and 'second' sequences have the same width, but this is
+                    // not necessarily the case (e.g., when one side involves a JOIN but the other does not). The columns
+                    // will dictate which subset of selector indexes in the sequences should be used.
+                    first = NodeSequence.slice(first, firstColumns);
+                    second = NodeSequence.slice(second, secondColumns);
+                    assert first.width() == second.width();
+                }
                 pack = false;
                 switch (operation) {
                     case UNION: {

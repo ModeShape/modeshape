@@ -131,6 +131,9 @@ public class NodeTypes {
     private final Set<Name> nodeTypeNamesThatAllowSameNameSiblings = new HashSet<>();
 
     private final Set<Name> nodeTypeNamesThatAreReferenceable = new HashSet<>();
+
+    private final Set<Name> nodeTypeNamesThatAreShareable = new HashSet<>();
+
     /**
      * The map of mandatory (and perhaps auto-created) property definitions for a node type keyed by the name of the node type.
      * See {@link #hasMandatoryPropertyDefinitions}
@@ -195,6 +198,10 @@ public class NodeTypes {
 
                 if (nodeType.isNodeType(JcrMixLexicon.REFERENCEABLE)) {
                     nodeTypeNamesThatAreReferenceable.add(name);
+                }
+
+                if (nodeType.isNodeType(JcrMixLexicon.SHAREABLE)) {
+                    nodeTypeNamesThatAreShareable.add(name);
                 }
 
                 boolean fullyDefined = true;
@@ -486,6 +493,24 @@ public class NodeTypes {
         if (mixinTypes != null) {
             for (Name mixinType : mixinTypes) {
                 if (nodeTypeNamesThatAreReferenceable.contains(mixinType)) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determine if at least one of the named primary node type or mixin types is or subtypes the 'mix:shareable' mixin type.
+     * 
+     * @param primaryType the primary type name; may not be null
+     * @param mixinTypes the mixin type names; may be null or empty
+     * @return true if the primary node type is an 'mix:shareable' node type (or subtype), or false otherwise
+     */
+    public boolean isShareable( Name primaryType,
+                                Set<Name> mixinTypes ) {
+        if (nodeTypeNamesThatAreShareable.contains(primaryType)) return true;
+        if (mixinTypes != null) {
+            for (Name mixinType : mixinTypes) {
+                if (nodeTypeNamesThatAreShareable.contains(mixinType)) return true;
             }
         }
         return false;
