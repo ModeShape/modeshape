@@ -55,7 +55,7 @@ public class DistinctSequence extends DelegatingSequence {
                              boolean useHeap ) {
         super(delegate);
         this.keyExtractor = RowExtractors.extractUniqueKey(delegate.width(), types);
-        TypeFactory<?> keyType = types.getReferenceFactory();
+        TypeFactory<?> keyType = types.getNodeKeyFactory();
         Serializer<?> keySerializer = bufferMgr.serializerFor(keyType);
         Serializer<?> serializer = Tuples.serializer(keySerializer, delegate.width());
         final DistinctBuffer<Object> rowsSeen = (DistinctBuffer<Object>)bufferMgr.createDistinctBuffer(serializer).keepSize(true)
@@ -64,7 +64,7 @@ public class DistinctSequence extends DelegatingSequence {
             @Override
             public boolean isCurrentRowValid( Batch batch ) {
                 Object key = keyExtractor.getValueInRow(batch);
-                if (rowsSeen.contains(key)) {
+                if (!rowsSeen.addIfAbsent(key)) {
                     if (trace) LOGGER.trace("Distinct found existing key: {0}", key);
                     return false;
                 }

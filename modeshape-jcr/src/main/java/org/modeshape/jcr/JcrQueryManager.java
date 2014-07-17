@@ -292,13 +292,23 @@ class JcrQueryManager implements QueryManager {
             if (node == null) {
                 return null;
             }
+            //this *does not* check permissions because it is expected that the correct sequence already wraps the results and
+            //therefore it should not be possible to return a Node/Row from a batch on which there aren't any read permissions
+            return session.node(node, (AbstractJcrNode.Type)null);
+        }
+
+        @Override
+        public boolean canRead( CachedNode node ) {
+            if (node == null) {
+                return false;
+            }
             Path path = getPath(node);
             try {
                 session.checkPermission(path, ModeShapePermissions.READ);
-                return session.node(node, (AbstractJcrNode.Type)null);
+                return true;
             } catch (AccessDeniedException ade) {
                 LOGGER.debug("READ access denied on '{0}'", path);
-                return null;
+                return false;
             }
         }
 

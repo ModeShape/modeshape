@@ -99,6 +99,15 @@ public interface JcrQueryContext {
      */
     Node getNode( CachedNode node );
 
+
+    /**
+     * Checks if there is a {@link org.modeshape.jcr.ModeShapePermissions#READ} permission for the given node in this context.
+     *
+     * @param node a {@link org.modeshape.jcr.cache.CachedNode}, never {@code null}
+     * @return {@code true} if the current context can read the given node, {@code false} otherwise
+     */
+    boolean canRead(CachedNode node);
+
     /**
      * Create a JCR {@link Value} instance given the supplied value and property type.
      * 

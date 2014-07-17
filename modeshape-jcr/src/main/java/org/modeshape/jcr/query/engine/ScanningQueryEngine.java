@@ -69,7 +69,9 @@ import org.modeshape.jcr.query.RowExtractors;
 import org.modeshape.jcr.query.RowExtractors.ExtractFromRow;
 import org.modeshape.jcr.query.engine.process.DependentQuery;
 import org.modeshape.jcr.query.engine.process.DistinctSequence;
+import org.modeshape.jcr.query.engine.process.ExceptSequence;
 import org.modeshape.jcr.query.engine.process.HashJoinSequence;
+import org.modeshape.jcr.query.engine.process.IntersectSequence;
 import org.modeshape.jcr.query.engine.process.JoinSequence.Range;
 import org.modeshape.jcr.query.engine.process.JoinSequence.RangeProducer;
 import org.modeshape.jcr.query.engine.process.SortingSequence;
@@ -456,7 +458,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 rows = NodeSequence.emptySequence(columns.getColumns().size());
             } else {
                 boolean includeSystemContent = context.getHints().includeSystemContent;
-                final QuerySources sources = new QuerySources(context.getRepositoryCache(), workspaceName, includeSystemContent);
+                final QuerySources sources = new QuerySources(context.getRepositoryCache(), context.getNodeTypes(),
+                                                              workspaceName, includeSystemContent);
                 rows = createNodeSequence(command, context, plan, columns, sources);
                 long nanos2 = System.nanoTime();
                 statistics = statistics.withResultsFormulationTime(Math.abs(nanos2 - nanos));
@@ -494,6 +497,11 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                                Columns columns,
                                                QuerySources sources ) {
         NodeSequence rows = null;
+        final String workspaceName = sources.getWorkspaceName();
+        final NodeCache cache = context.getNodeCache(workspaceName);
+        final TypeSystem types = context.getTypeSystem();
+        final BufferManager bufferManager = context.getBufferManager();
+
         switch (plan.getType()) {
             case ACCESS:
                 // If the ACCESS node is known to never have results ...
@@ -574,9 +582,6 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 boolean pack = false;
                 boolean useHeap = false;
                 if (0 >= right.getRowCount() && right.getRowCount() < 100) useHeap = true;
-                String workspaceName = sources.getWorkspaceName();
-                NodeCache cache = context.getNodeCache(workspaceName);
-                TypeSystem types = context.getTypeSystem();
                 ExtractFromRow leftExtractor = null;
                 ExtractFromRow rightExtractor = null;
                 RangeProducer<?> rangeProducer = null;
@@ -587,25 +592,30 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     case MERGE:
                         if (joinCondition instanceof SameNodeJoinCondition) {
                             SameNodeJoinCondition condition = (SameNodeJoinCondition)joinCondition;
-                            // figure out the row indexes for the different selectors ...
-                            if (!leftColumns.getSelectorNames().contains(condition.getSelector1Name())) {
-                                // The JOIN was reversed in optimization ...
-                                Columns temp = leftColumns;
-                                leftColumns = rightColumns;
-                                rightColumns = temp;
-                                NodeSequence tempSeq = left;
-                                left = right;
-                                right = tempSeq;
+                            // check if the JOIN was not reversed by an optimization
+                            boolean joinReversed = !leftColumns.getSelectorNames().contains(condition.getSelector1Name());
+                            int leftIndex;
+                            int rightIndex;
+                            if (joinReversed) {
+                                // figure out the row indexes for the different selectors ...
+                                leftIndex = leftColumns.getSelectorIndex(condition.getSelector2Name());
+                                rightIndex = rightColumns.getSelectorIndex(condition.getSelector1Name());
+                            } else {
+                                leftIndex = leftColumns.getSelectorIndex(condition.getSelector1Name());
+                                rightIndex = rightColumns.getSelectorIndex(condition.getSelector2Name());
                             }
-                            int leftIndex = leftColumns.getSelectorIndex(condition.getSelector1Name());
-                            int rightIndex = rightColumns.getSelectorIndex(condition.getSelector2Name());
                             String relativePath = condition.getSelector2Path();
                             if (relativePath != null) {
                                 // Get extractors that will get the path of the nodes ...
                                 PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
                                 Path relPath = pathFactory.create(relativePath);
-                                leftExtractor = RowExtractors.extractPath(leftIndex, cache, types);
-                                rightExtractor = RowExtractors.extractRelativePath(rightIndex, relPath, cache, types);
+                                if (joinReversed) {
+                                    leftExtractor = RowExtractors.extractRelativePath(leftIndex, relPath, cache, types);
+                                    rightExtractor = RowExtractors.extractPath(rightIndex, cache, types);
+                                } else {
+                                    leftExtractor = RowExtractors.extractPath(leftIndex, cache, types);
+                                    rightExtractor = RowExtractors.extractRelativePath(rightIndex, relPath, cache, types);
+                                }
                             } else {
                                 // The nodes must be the same node ...
                                 leftExtractor = RowExtractors.extractNodeKey(leftIndex, cache, types);
@@ -620,22 +630,25 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                             rightExtractor = RowExtractors.extractParentNodeKey(rightIndex, cache, types);
                         } else if (joinCondition instanceof EquiJoinCondition) {
                             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
-                            if (!leftColumns.getSelectorNames().contains(condition.getSelector1Name())) {
-                                // The JOIN was reversed in optimization ...
-                                Columns temp = leftColumns;
-                                leftColumns = rightColumns;
-                                rightColumns = temp;
-                                NodeSequence tempSeq = left;
-                                left = right;
-                                right = tempSeq;
-                            }
+                            // check if the JOIN was not reversed by an optimization
+                            boolean joinReversed = !leftColumns.getSelectorNames().contains(condition.getSelector1Name());
+
                             String sel1 = condition.getSelector1Name();
                             String sel2 = condition.getSelector2Name();
                             String prop1 = condition.getProperty1Name();
                             String prop2 = condition.getProperty2Name();
-                            leftExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, leftColumns, sources, null, true);
-                            rightExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, rightColumns, sources, null,
-                                                                  true);
+                            if (joinReversed) {
+                                leftExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, leftColumns, sources,
+                                                                     null, true);
+                                rightExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, rightColumns, sources,
+                                                                      null, true);
+                            } else {
+                                leftExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, leftColumns, sources,
+                                                                     null, true);
+                                rightExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, rightColumns, sources,
+                                                                      null, true);
+                            }
+
                         } else if (joinCondition instanceof DescendantNodeJoinCondition) {
                             DescendantNodeJoinCondition condition = (DescendantNodeJoinCondition)joinCondition;
                             // For this to work, we want the ancestors to be on the left, so that the descendants can quickly
@@ -742,12 +755,22 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 Columns secondColumns = context.columnsFor(secondPlan);
                 NodeSequence first = createNodeSequence(originalQuery, context, firstPlan, firstColumns, sources);
                 NodeSequence second = createNodeSequence(originalQuery, context, secondPlan, secondColumns, sources);
+                useHeap = 0 >= second.getRowCount() && second.getRowCount() < 100;
+                pack = false;
                 switch (operation) {
-                    case UNION:
+                    case UNION: {
                         // This is really just a sequence with the two parts ...
                         rows = NodeSequence.append(first, second);
                         break;
-                // TODO: Add support for INSERSECT and EXCEPT
+                    }
+                    case INTERSECT: {
+                        rows = new IntersectSequence(workspaceName, first, second, types, bufferManager, cache, pack, useHeap);
+                        break;
+                    }
+                    case EXCEPT: {
+                        rows = new ExceptSequence(workspaceName, first, second, types, bufferManager, cache, pack, useHeap);
+                        break;
+                    }
                 }
                 if (!all) {
                     useHeap = false;
@@ -827,9 +850,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
                         // Now create the sorting sequence ...
                         if (sortExtractor != null) {
-                            workspaceName = sources.getWorkspaceName();
-                            cache = context.getNodeCache(workspaceName);
-                            rows = new SortingSequence(workspaceName, rows, sortExtractor, context.getBufferManager(), cache,
+                            rows = new SortingSequence(workspaceName, rows, sortExtractor, bufferManager, cache,
                                                        pack, useHeap, allowDuplicates, nullOrder);
                         }
                     }
@@ -2688,7 +2709,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             if (other == null) return false;
             if (this.hasFullTextSearchScores() != other.hasFullTextSearchScores()) return false;
             if (this.getColumns().size() != other.getColumns().size()) return false;
-            return this.getColumns().containsAll(other.getColumns()) && other.getColumns().containsAll(this.getColumns());
+            return this.getColumnNames().containsAll(other.getColumnNames()) && other.getColumnNames().containsAll(this.getColumnNames());
         }
 
         @Override

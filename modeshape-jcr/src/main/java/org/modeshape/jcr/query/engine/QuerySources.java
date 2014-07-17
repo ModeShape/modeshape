@@ -16,14 +16,19 @@
 package org.modeshape.jcr.query.engine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.JcrMixLexicon;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -37,6 +42,7 @@ import org.modeshape.jcr.query.NodeSequence.Batch;
 import org.modeshape.jcr.spi.index.Index;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.spi.index.ResultWriter;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.ValueFactories;
@@ -54,6 +60,7 @@ public class QuerySources {
     protected final boolean includeSystemContent;
     protected final NodeFilter queryableFilter;
     protected final NodeFilter queryableAndNonSystemFilter;
+    protected final NodeTypes nodeTypes;
 
     /**
      * Construct a new instance.
@@ -63,9 +70,11 @@ public class QuerySources {
      * @param includeSystemContent true if the system content is to be included in the query results, or false otherwise
      */
     public QuerySources( RepositoryCache repository,
+                         NodeTypes nodeTypes,
                          String workspaceName,
                          boolean includeSystemContent ) {
         this.repo = repository;
+        this.nodeTypes = nodeTypes;
         this.workspaceName = workspaceName;
         this.includeSystemContent = includeSystemContent;
         this.systemWorkspaceName = includeSystemContent ? repo.getSystemWorkspaceName() : null;
@@ -170,6 +179,9 @@ public class QuerySources {
         // Get the node filter to use ...
         NodeFilter nodeFilter = nodeFilterForWorkspace(workspaceName);
         if (nodeFilter != null) {
+            //always append a shared nodes filter to the end of the workspace filter
+            //JCR #14.16 -If a query matches a descendant node of a shared set, it appears in query results only once.
+            NodeFilter compositeFilter = new CompositeNodeFilter(nodeFilter, sharedNodesFilter());
 
             // Find the node by path ...
             NodeCache cache = repo.getWorkspaceCache(workspaceName);
@@ -180,7 +192,7 @@ public class QuerySources {
                 List<CachedNode> results = new ArrayList<CachedNode>((int)childRefs.size());
                 for (ChildReference childRef : childRefs) {
                     CachedNode child = cache.getNode(childRef);
-                    if (nodeFilter.includeNode(child, cache)) {
+                    if (compositeFilter.includeNode(child, cache)) {
                         results.add(child);
                     }
                 }
@@ -396,6 +408,66 @@ public class QuerySources {
         }
     }
 
+    protected static class CompositeNodeFilter implements NodeFilter {
+        private final List<NodeFilter> filters;
+
+        protected CompositeNodeFilter( NodeFilter... filters ) {
+            this.filters = Arrays.asList(filters);
+        }
+
+        @Override
+        public boolean includeNode( CachedNode node, NodeCache cache ) {
+            for (NodeFilter filter : filters) {
+                if (!filter.includeNode(node, cache)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    /**
+     * Creates a node filter which doesn't include any of the nodes from the shared set in the query result.
+     * This is per JSR-283/#14.16: if a query matches a descendant node of a shared set, it appears in query results
+     * only once.
+     *
+     * @return a new {@link org.modeshape.jcr.cache.document.NodeCacheIterator.NodeFilter} instance
+     */
+    protected NodeFilter sharedNodesFilter() {
+        return new NodeFilter() {
+            private final Set<NodeKey> shareableNodeKeys = new HashSet<>();
+
+            @Override
+            public boolean includeNode( CachedNode node, NodeCache cache ) {
+                if (isShareable(node, cache)) {
+                    NodeKey key = node.getKey();
+                    if (shareableNodeKeys.contains(key)) {
+                        return false;
+                    }
+                    //we're seeing the original shareable node, so we need to process it
+                    shareableNodeKeys.add(key);
+                    return true;
+                } else {
+                    return true;
+                }
+            }
+        };
+    }
+
+    private boolean isShareable(CachedNode node, NodeCache cache) {
+        // Check the primary type ...
+        Name primaryTypeName = node.getPrimaryType(cache);
+        if (nodeTypes.isTypeOrSubtype(primaryTypeName, JcrMixLexicon.SHAREABLE)) {
+            return true;
+        }
+        // Check the mixins ...
+        Set<Name> mixinTypes = node.getMixinTypes(cache);
+        if (nodeTypes.isTypeOrSubtype(mixinTypes, JcrMixLexicon.SHAREABLE)) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Return an iterator over all nodes at or below the specified path in the named workspace, using the supplied filter.
      * 
@@ -408,8 +480,11 @@ public class QuerySources {
         // Determine which filter we should use based upon the workspace name. For the system workspace,
         // all queryable nodes are included. For all other workspaces, all queryable nodes are included except
         // for those that are actually stored in the system workspace (e.g., the "/jcr:system" nodes).
-        NodeFilter nodeFilter = nodeFilterForWorkspace(workspaceName);
-        if (nodeFilter == null) return null;
+        NodeFilter nodeFilterForWorkspace = nodeFilterForWorkspace(workspaceName);
+        if (nodeFilterForWorkspace == null) return null;
+        //always append a shared nodes filter to the end of the workspace filter,
+        //JCR #14.16 -If a query matches a descendant node of a shared set, it appears in query results only once.
+        NodeFilter compositeFilter = new CompositeNodeFilter(nodeFilterForWorkspace, sharedNodesFilter());
 
         // Then create an iterator over that workspace ...
         NodeCache cache = repo.getWorkspaceCache(workspaceName);
@@ -421,7 +496,7 @@ public class QuerySources {
             startingNode = cache.getRootKey();
         }
         if (startingNode != null) {
-            return new NodeCacheIterator(cache, startingNode, nodeFilter);
+            return new NodeCacheIterator(cache, startingNode, compositeFilter);
         }
         return null;
     }

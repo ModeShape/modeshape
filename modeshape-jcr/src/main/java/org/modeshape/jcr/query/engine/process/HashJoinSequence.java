@@ -217,8 +217,7 @@ public class HashJoinSequence extends JoinSequence {
                 Object matchingValue = leftExtractor.getValueInRow(currentLeft);
                 rightMatchingRows = getAllRightRowsFor(matchingValue);
                 if (rightMatchingRows != null && rightMatchingRows.hasNext()) {
-                    // Found a match ...
-                    recordRightRowsMatched(matchingValue);
+                    // Found a match which will be recorded when we go through the right matching rows...
                     return true;
                 }
                 // Did not find any matching rows on the right ...
@@ -260,7 +259,7 @@ public class HashJoinSequence extends JoinSequence {
             if (rightMatchedRowKeys != null) {
                 // We only record the non-null values, since NULL never matches and they will always be unmatched ...
                 // logger.trace("Join found matching rows on right with value {0}", matchingValue);
-                rightMatchedRowKeys.contains(rightKey);
+                rightMatchedRowKeys.addIfAbsent(rightKey);
             }
         }
 
@@ -268,7 +267,13 @@ public class HashJoinSequence extends JoinSequence {
         public void nextRow() {
             // This current presumes that 'hasNext' was called and that either 'rightMatchingRows' is null (because there
             // was no match (e.g., left outer join) or that it is non-null and has at least one value ...
-            currentRight = rightMatchingRows != null ? rightMatchingRows.next() : null;
+            if (rightMatchingRows != null) {
+                currentRight = rightMatchingRows.next();
+                //since there might be multiple rows on the right, we need to make sure we record each one
+                recordRightRowsMatched(extractor.getValueInRow(currentRight));
+            } else {
+                currentRight = null;
+            }
         }
 
         @Override
@@ -406,7 +411,7 @@ public class HashJoinSequence extends JoinSequence {
             while (rightRows.hasNext() && count < maxSize) {
                 currentRight = rightRows.next();
                 Object key = extractor.getValueInRow(currentRight);
-                if (key == null || !rightMatchedRowKeys.contains(key)) {
+                if (key == null || rightMatchedRowKeys.addIfAbsent(key)) {
                     logger.trace("Join found non-matched rows on right with value {0}", key);
                     ++count;
                     return true;
