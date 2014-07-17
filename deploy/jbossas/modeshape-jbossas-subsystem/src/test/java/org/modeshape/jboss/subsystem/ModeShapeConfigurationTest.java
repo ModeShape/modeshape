@@ -15,17 +15,17 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.modeshape.jboss.subsystem.ModeShapeExtension.SUBSYSTEM_NAME;
-import static org.modeshape.jboss.subsystem.ModelKeys.REPOSITORY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.modeshape.jboss.subsystem.ModeShapeExtension.SUBSYSTEM_NAME;
+import static org.modeshape.jboss.subsystem.ModelKeys.REPOSITORY;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -58,6 +58,12 @@ import org.xml.sax.SAXParseException;
 @SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
+    /**
+     * An initialization mode which tells the base test class that the container should be started/simulated in "normal" mode.
+     * This is required in order to make sure that all the ModeShape service have been started.
+     */
+    private static final AdditionalInitialization NORMAL_INITIALIZATION_MODE = new AdditionalInitialization();
+
     public ModeShapeConfigurationTest() {
         super(SUBSYSTEM_NAME, new ModeShapeExtension());
     }
@@ -65,6 +71,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("modeshape-sample-config.xml");
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return NORMAL_INITIALIZATION_MODE;
     }
 
     @Override
@@ -237,7 +248,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     private KernelServices initKernel( String subsystemXml ) throws Exception {
-        return super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(subsystemXml).build();
+        return super.createKernelServicesBuilder(NORMAL_INITIALIZATION_MODE).setSubsystemXml(subsystemXml).build();
     }
 
     @Test

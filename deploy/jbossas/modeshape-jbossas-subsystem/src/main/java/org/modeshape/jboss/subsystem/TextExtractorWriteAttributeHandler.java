@@ -18,8 +18,6 @@ package org.modeshape.jboss.subsystem;
 import javax.jcr.RepositoryException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import org.jboss.dmr.ModelNode;
 import org.modeshape.jboss.service.RepositoryService;
 
@@ -49,8 +47,8 @@ public class TextExtractorWriteAttributeHandler extends AbstractRepositoryConfig
     }
 
     protected final String extractorName( ModelNode operation ) {
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        return address.getLastElement().getValue();
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        return addressContext.lastPathElementValue();
     }
 
 }

@@ -78,7 +78,7 @@ public enum Attribute {
     JOURNAL_PATH("journal-path"),
     JOURNAL_RELATIVE_TO("journal-relative-to"),
 
-    INDEX_KIND("index-kind"),
+    INDEX_KIND("kind"),
     PROVIDER_NAME("provider-name"),
     NODE_TYPE("node-type"),
     COLUMNS("columns");

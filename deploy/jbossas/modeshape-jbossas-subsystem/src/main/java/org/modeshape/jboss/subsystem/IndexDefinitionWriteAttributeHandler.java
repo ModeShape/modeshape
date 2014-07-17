@@ -15,14 +15,11 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import javax.jcr.RepositoryException;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.dmr.ModelNode;
 import org.modeshape.jboss.service.RepositoryService;
 
@@ -37,7 +34,7 @@ public class IndexDefinitionWriteAttributeHandler extends AbstractRepositoryConf
     static final IndexDefinitionWriteAttributeHandler INSTANCE = new IndexDefinitionWriteAttributeHandler();
 
     private IndexDefinitionWriteAttributeHandler() {
-        super(ModelAttributes.INDEX_PROVIDER_ATTRIBUTES);
+        super(ModelAttributes.INDEX_DEFINITION_ATTRIBUTES);
     }
 
     @Override
@@ -46,15 +43,14 @@ public class IndexDefinitionWriteAttributeHandler extends AbstractRepositoryConf
                                    RepositoryService repositoryService,
                                    MappedAttributeDefinition defn,
                                    ModelNode newValue ) throws RepositoryException, OperationFailedException {
-        String sequencerName = providerName(operation);
-        repositoryService.changeIndexDefinitionField(defn, newValue, sequencerName);
+        String indexDefinitionName = indexDefinitionName(operation);
+        repositoryService.changeIndexDefinitionField(defn, newValue, indexDefinitionName);
         return true;
     }
 
-    protected final String providerName( ModelNode operation ) {
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        PathElement element = address.getElement(2);
-        return element.getValue();
+    protected final String indexDefinitionName( ModelNode operation ) {
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        return addressContext.lastPathElementValue();
     }
 
 }
