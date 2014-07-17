@@ -15,12 +15,10 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.Arrays;
 import java.util.List;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -35,10 +33,11 @@ class RemoveIndexProvider extends AbstractModeShapeRemoveStepHandler {
     List<ServiceName> servicesToRemove( OperationContext context,
                                         ModelNode operation,
                                         ModelNode model ) throws OperationFailedException {
+        AddressContext addressContext = AddressContext.forOperation(operation);
         // Get the service addresses ...
-        final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String providerName = serviceAddress.getLastElement().getValue();
+        final String providerName = addressContext.lastPathElementValue();
+        final String repositoryName = addressContext.repositoryName();
 
-        return Arrays.asList(ModeShapeServiceNames.indexProviderServiceName(repositoryName(operation), providerName));
+        return Arrays.asList(ModeShapeServiceNames.indexProviderServiceName(repositoryName, providerName));
     }
 }
