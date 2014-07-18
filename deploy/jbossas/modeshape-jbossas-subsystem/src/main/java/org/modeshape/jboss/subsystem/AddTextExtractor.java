@@ -26,14 +26,12 @@ package org.modeshape.jboss.subsystem;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
 import java.util.Properties;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -82,10 +80,9 @@ public class AddTextExtractor extends AbstractAddStepHandler {
 
         Properties props = new Properties();
 
-        final ModelNode address = operation.require(OP_ADDR);
-        final PathAddress pathAddress = PathAddress.pathAddress(address);
-        final String repositoryName = pathAddress.getElement(1).getValue();
-        final String extractorName = pathAddress.getLastElement().getValue();
+        final AddressContext addressContext = AddressContext.forOperation(operation);
+        final String repositoryName = addressContext.repositoryName();
+        final String extractorName = addressContext.lastPathElementValue();
 
         // Record the properties ...
         props.put(FieldName.NAME, extractorName);
@@ -124,11 +121,6 @@ public class AddTextExtractor extends AbstractAddStepHandler {
         extractorBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
         ServiceController<JcrRepository> controller = extractorBuilder.install();
         newControllers.add(controller);
-    }
-
-    @Override
-    protected boolean requiresRuntime( OperationContext context ) {
-        return true;
     }
 
     private void ensureClassLoadingPropertyIsSet( Properties properties ) {

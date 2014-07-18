@@ -24,15 +24,12 @@
 
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.Service;
@@ -105,13 +102,12 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
     }
 
     String repositoryName( ModelNode operation ) throws OperationFailedException {
-        PathAddress pathAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-        for (PathElement pathElement : pathAddress) {
-            if (pathElement.getKey().equalsIgnoreCase(ModelKeys.REPOSITORY)) {
-                return pathElement.getValue();
-            }
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        String repositoryName = addressContext.repositoryName();
+        if (repositoryName == null) {
+            throw new OperationFailedException("Cannot determine repository name for: " + operation.asString());
         }
-        throw new OperationFailedException("Cannot determine repository name for: " + operation.asString());
+        return repositoryName;
     }
 
     abstract List<ServiceName> servicesToRemove( OperationContext context,

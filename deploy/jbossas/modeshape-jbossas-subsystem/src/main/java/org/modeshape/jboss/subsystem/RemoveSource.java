@@ -28,10 +28,8 @@ import java.util.List;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  * {@link AbstractRemoveStepHandler} implementation for external sources.
@@ -49,8 +47,10 @@ class RemoveSource extends AbstractModeShapeRemoveStepHandler {
     List<ServiceName> servicesToRemove( OperationContext context,
                                         ModelNode operation,
                                         ModelNode model ) throws OperationFailedException {
-        final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String sourceName = serviceAddress.getLastElement().getValue();
-        return Arrays.asList(ModeShapeServiceNames.sourceServiceName(repositoryName(operation), sourceName));
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        // Get the service addresses ...
+        final String sourceName = addressContext.lastPathElementValue();
+        final String repositoryName = addressContext.repositoryName();
+        return Arrays.asList(ModeShapeServiceNames.sourceServiceName(repositoryName, sourceName));
     }
 }

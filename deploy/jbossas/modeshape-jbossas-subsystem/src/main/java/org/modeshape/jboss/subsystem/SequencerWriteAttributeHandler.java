@@ -23,14 +23,11 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import javax.jcr.RepositoryException;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.dmr.ModelNode;
 import org.modeshape.jboss.service.RepositoryService;
 
@@ -60,9 +57,8 @@ public class SequencerWriteAttributeHandler extends AbstractRepositoryConfigWrit
     }
 
     protected final String sequencerName( ModelNode operation ) {
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        PathElement element = address.getElement(2);
-        return element.getValue();
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        return addressContext.lastPathElementValue();
     }
 
 }
