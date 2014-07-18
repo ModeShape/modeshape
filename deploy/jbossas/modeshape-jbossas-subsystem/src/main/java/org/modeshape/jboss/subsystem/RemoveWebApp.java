@@ -48,6 +48,14 @@ class RemoveWebApp extends AbstractRemoveStepHandler {
     protected void performRemove( OperationContext context,
                                   ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
+        if (!requiresRuntime(context)) {
+            //we need to skip the execution of this handler if it does not require a "runtime mode", because its corresponding
+            //AddWebApp handler only deploys the webapp in runtime mode, so there's nothing to clean up.
+            //Runtime mode is something that seems to be required only for "normal" servers, as opposed to domain controllers,
+            //admin-mode servers and the likes. A standalone or a host in a group of servers will be considered "normal".
+            return;
+        }
+
         if (!model.isDefined()) {
             //the model hasn't been defined, which means the Add Step did not succeed
             return;
@@ -56,11 +64,11 @@ class RemoveWebApp extends AbstractRemoveStepHandler {
         String webappName = addressContext.lastPathElementValue();
 
         PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT, webappName));
-        ModelNode op = Util.createOperation(ModelDescriptionConstants.DEPLOYMENT, deploymentAddress);
+        ModelNode deploymentOp = Util.createOperation(ModelDescriptionConstants.DEPLOYMENT, deploymentAddress);
 
         ImmutableManagementResourceRegistration rootResourceRegistration = context.getRootResourceRegistration();
-        OperationStepHandler handler = rootResourceRegistration.getOperationHandler(deploymentAddress, ModelDescriptionConstants.REMOVE);
-        context.addStep(op, handler, OperationContext.Stage.MODEL);
+        OperationStepHandler removeDeploymentHandler = rootResourceRegistration.getOperationHandler(deploymentAddress, ModelDescriptionConstants.REMOVE);
+        context.addStep(deploymentOp, removeDeploymentHandler, OperationContext.Stage.MODEL);
 
         super.performRemove(context, operation, model);
     }

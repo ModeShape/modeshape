@@ -56,12 +56,19 @@ class AddWebApp extends AbstractAddStepHandler {
     protected void populateModel( OperationContext context,
                                   ModelNode operation,
                                   org.jboss.as.controller.registry.Resource resource ) throws OperationFailedException {
+        if (!requiresRuntime(context)) {
+            //we need to skip the execution of this handler if it does not require a "runtime mode". Runtime mode is something
+            //that seems to be required only for "normal" servers, as opposed to domain controllers, admin-mode servers and
+            //the likes. A standalone or a host in a group of servers will be considered "normal".
+            return;
+        }
+
         AddressContext addressContext = AddressContext.forOperation(operation);
         String webappName = addressContext.lastPathElementValue();
 
         Module module = Module.forClass(AddWebApp.class);
         if (module == null) {
-            LOGGER.warnv(
+            LOGGER.debugv(
                     "Skipping the deployment of {0} because the module which contains the {1} class cannot be loaded", webappName,
                     AddWebApp.class.getName());
             return;
@@ -79,9 +86,9 @@ class AddWebApp extends AbstractAddStepHandler {
 
         PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT,
                                                                                         webappName));
-        ModelNode op = Util.createOperation(ModelDescriptionConstants.ADD, deploymentAddress);
-        op.get(ModelDescriptionConstants.ENABLED).set(true);
-        op.get(ModelDescriptionConstants.PERSISTENT).set(false); // prevents writing this deployment out to standalone.xml
+        ModelNode deploymentOp = Util.createOperation(ModelDescriptionConstants.ADD, deploymentAddress);
+        deploymentOp.get(ModelDescriptionConstants.ENABLED).set(true);
+        deploymentOp.get(ModelDescriptionConstants.PERSISTENT).set(false); // prevents writing this deployment out to standalone.xml
 
 
         ModelNode contentItem = new ModelNode();
@@ -99,12 +106,12 @@ class AddWebApp extends AbstractAddStepHandler {
             contentItem.get(ModelDescriptionConstants.URL).set(url.toExternalForm());
         }
 
-        op.get(ModelDescriptionConstants.CONTENT).add(contentItem);
+        deploymentOp.get(ModelDescriptionConstants.CONTENT).add(contentItem);
 
         ImmutableManagementResourceRegistration rootResourceRegistration = context.getRootResourceRegistration();
-        OperationStepHandler handler = rootResourceRegistration.getOperationHandler(deploymentAddress,
+        OperationStepHandler addDeploymentHandler = rootResourceRegistration.getOperationHandler(deploymentAddress,
                                                                                     ModelDescriptionConstants.ADD);
-        context.addStep(op, handler, OperationContext.Stage.MODEL);
+        context.addStep(deploymentOp, addDeploymentHandler, OperationContext.Stage.MODEL);
     }
 
     private ModelNode attribute( OperationContext context,
