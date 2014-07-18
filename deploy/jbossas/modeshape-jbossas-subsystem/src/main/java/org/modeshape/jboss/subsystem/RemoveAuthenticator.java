@@ -26,10 +26,8 @@ package org.modeshape.jboss.subsystem;
 import java.util.Arrays;
 import java.util.List;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 class RemoveAuthenticator extends AbstractModeShapeRemoveStepHandler {
 
@@ -42,11 +40,11 @@ class RemoveAuthenticator extends AbstractModeShapeRemoveStepHandler {
     List<ServiceName> servicesToRemove( OperationContext context,
                                         ModelNode operation,
                                         ModelNode model ) {
-        // Get the service addresses ...
-        final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+        AddressContext addressContext = AddressContext.forOperation(operation);
+
         // Get the repository name ...
-        final String authenticatorName = serviceAddress.getLastElement().getValue();
-        final String repositoryName = serviceAddress.getElement(1).getValue();
+        final String authenticatorName = addressContext.lastPathElementValue();
+        final String repositoryName = addressContext.repositoryName();
 
         return Arrays.asList(ModeShapeServiceNames.authenticatorServiceName(repositoryName, authenticatorName));
     }

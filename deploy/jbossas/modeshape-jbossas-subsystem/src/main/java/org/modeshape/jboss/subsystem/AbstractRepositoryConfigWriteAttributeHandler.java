@@ -23,7 +23,6 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -34,8 +33,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -92,9 +89,8 @@ public abstract class AbstractRepositoryConfigWriteAttributeHandler extends Abst
     }
 
     protected final String repositoryName( ModelNode operation ) {
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        PathElement element = address.getElement(1);
-        return element.getValue();
+        AddressContext addressContext = AddressContext.forOperation(operation);
+        return addressContext.repositoryName();
     }
 
     protected boolean changeConfiguration( OperationContext context,

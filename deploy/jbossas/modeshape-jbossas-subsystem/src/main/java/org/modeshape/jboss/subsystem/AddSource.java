@@ -27,7 +27,6 @@ package org.modeshape.jboss.subsystem;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,7 +35,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -93,10 +91,9 @@ public class AddSource extends AbstractAddStepHandler {
         ServiceTarget target = context.getServiceTarget();
 
 
-        final ModelNode address = operation.require(OP_ADDR);
-        final PathAddress pathAddress = PathAddress.pathAddress(address);
-        final String repositoryName = pathAddress.getElement(1).getValue();
-        final String sourceName = pathAddress.getLastElement().getValue();
+        final AddressContext addressContext = AddressContext.forOperation(operation);
+        final String repositoryName = addressContext.repositoryName();
+        final String sourceName = addressContext.lastPathElementValue();
 
         Properties props = new Properties();
 
@@ -149,11 +146,6 @@ public class AddSource extends AbstractAddStepHandler {
         sourceServiceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
         ServiceController<JcrRepository> controller = sourceServiceBuilder.install();
         newControllers.add(controller);
-    }
-
-    @Override
-    protected boolean requiresRuntime( OperationContext context ) {
-        return true;
     }
 
     private Object propertyValue(Property property) {
