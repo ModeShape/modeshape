@@ -597,7 +597,7 @@ public class Contents extends View {
 
                 String path = "";
                 for (int j = 0; j <= i; j++) {
-                    path += segments[j].getContents();
+                    path += ("/" + segments[j].getContents());
                 }
 
                 segments[i].setTooltip(path);
