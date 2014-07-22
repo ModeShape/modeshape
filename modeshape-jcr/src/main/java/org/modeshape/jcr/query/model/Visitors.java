@@ -460,6 +460,10 @@ public class Visitors {
         }
 
         @Override
+        public void visit( NodeId obj ) {
+        }
+
+        @Override
         public void visit( NodeDepth obj ) {
         }
 
@@ -736,6 +740,12 @@ public class Visitors {
         @Override
         public void visit( NodeDepth depth ) {
             strategy.visit(depth);
+            visitNext();
+        }
+
+        @Override
+        public void visit( NodeId id ) {
+            strategy.visit(id);
             visitNext();
         }
 
@@ -1219,6 +1229,11 @@ public class Visitors {
         @Override
         public void visit( NodeDepth depth ) {
             append("DEPTH(").append(depth.selectorName()).append(')');
+        }
+
+        @Override
+        public void visit( NodeId id ) {
+            append("ID(").append(id.selectorName()).append(')');
         }
 
         @Override

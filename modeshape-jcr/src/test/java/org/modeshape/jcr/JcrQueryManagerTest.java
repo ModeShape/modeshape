@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -40,11 +41,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
@@ -155,7 +158,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     protected static String[] carColumnNames() {
         return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:mpgHighway", "car:engine",
             "car:valueRating", "jcr:primaryType", "jcr:mixinTypes", "car:wheelbaseInInches", "car:model", "car:year", "car:msrp",
-            "jcr:created", "jcr:createdBy", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:localName",
+            "jcr:created", "jcr:createdBy", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:id", "mode:localName",
             "car:alternateModels"};
     }
 
@@ -164,7 +167,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     }
 
     protected static String[] allColumnNames() {
-        return new String[] {"jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path", "jcr:score", "mode:depth",
+        return new String[] {"jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:id",
             "mode:localName"};
     }
 
@@ -177,7 +180,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             "notion:booleanCreatedPropertyWithDefault", "notion:stringPropertyWithDefault",
             "notion:booleanAutoCreatedPropertyWithDefault", "notion:stringAutoCreatedPropertyWithDefault", "notion:longProperty",
             "notion:singleReference", "notion:multipleReferences", "jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path",
-            "jcr:score", "mode:depth", "mode:localName"};
+            "jcr:score", "mode:depth", "mode:id", "mode:localName"};
     }
 
     protected static String[] typedColumnNames( String selectorName ) {
@@ -792,6 +795,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(24).noWarnings().hasColumns("jcr:path").validate(query, result);
     }
 
+    @FixFor( "MODE-1671" )
+    @Test
+    public void shouldNotCaptureWarningAboutUseOfNodeIdPseudoColumn() throws RepositoryException {
+        String sql = "SELECT [mode:id] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(24).noWarnings().hasColumns("mode:id").validate(query, result);
+    }
+
     @FixFor( "MODE-1888" )
     @Test
     public void shouldCaptureWarningAboutUseOfPseudoColumnWithPeriodInsteadOfColonDelimiter() throws RepositoryException {
@@ -808,6 +820,63 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         validateQuery().rowCount(24).warnings(1).hasColumns("jcr_path").validate(query, result);
+    }
+
+    @FixFor( "MODE-1671" )
+    @Test
+    public void shouldReturnResolvableNodeIdentifierFromQuery() throws RepositoryException {
+        String sql = "SELECT [mode:id] AS reallylongvaluethatwillprintcompletely  FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        final Map<String, Node> nodesById = new HashMap<>();
+        validateQuery().rowCount(24).noWarnings().hasColumns("reallylongvaluethatwillprintcompletely").onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                String id = row.getValue("mode:id").getString();
+                Node nodeFromQuery = row.getNode();
+                Node resolvedNode = session().getNodeByIdentifier(id);
+                assertSame(nodeFromQuery, resolvedNode);
+                nodesById.put(id, nodeFromQuery);
+            }
+        }).validate(query, result);
+
+        for (Map.Entry<String, Node> entry : nodesById.entrySet()) {
+            final String id = entry.getKey();
+            final Node expectedNode = entry.getValue();
+
+            sql = "SELECT [mode:id] AS reallylongvaluethatwillprintcompletely FROM [nt:unstructured] WHERE [mode:id] = '" + id
+                  + "'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            result = query.execute();
+            validateQuery().rowCount(1).noWarnings().hasColumns("reallylongvaluethatwillprintcompletely")
+                           .onEachRow(new Predicate() {
+                               @Override
+                               public void validate( int rowNumber,
+                                                     Row row ) throws RepositoryException {
+                                   String id = row.getValue("mode:id").getString();
+                                   Node nodeFromQuery = row.getNode();
+                                   String nodeId = nodeFromQuery.getIdentifier();
+                                   assertSame(nodeFromQuery, expectedNode);
+                                   assertSame(nodeId, id);
+                               }
+                           }).validate(query, result);
+
+            sql = "SELECT [mode:id] FROM [nt:unstructured] WHERE [mode:id] = $id";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            query.bindValue("id", session().getValueFactory().createValue(id));
+            result = query.execute();
+            validateQuery().rowCount(1).noWarnings().hasColumns("mode:id").onEachRow(new Predicate() {
+                @Override
+                public void validate( int rowNumber,
+                                      Row row ) throws RepositoryException {
+                    String id = row.getValue("mode:id").getString();
+                    Node nodeFromQuery = row.getNode();
+                    assertSame(nodeFromQuery, expectedNode);
+                    assertSame(nodeFromQuery.getIdentifier(), id);
+                }
+            }).validate(query, result);
+        }
     }
 
     @FixFor( "MODE-1888" )
@@ -840,6 +909,26 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithOrderByPathUsingAlias() throws RepositoryException {
         String sql = "SELECT * FROM [nt:base] AS all ORDER BY all.[jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        String[] columnNames = allColumnNames("all");
+        validateQuery().rowCount(totalNodeCount).noWarnings().hasColumns(columnNames).validate(query, result);
+    }
+
+    @FixFor( "MODE-1671" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithOrderByNodeId() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:base] ORDER BY [mode:id]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        String[] columnNames = allColumnNames("nt:base");
+        validateQuery().rowCount(totalNodeCount).noWarnings().hasColumns(columnNames).validate(query, result);
+    }
+
+    @FixFor( "MODE-1671" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithOrderByNodeIdUsingAlias() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:base] AS all ORDER BY all.[mode:id]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         String[] columnNames = allColumnNames("all");
@@ -1797,9 +1886,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         String[] columnNames = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
-            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
+            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth", "cars.mode:id",
             "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
-            "category.mode:localName"};
+            "category.mode:id", "category.mode:localName"};
         validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
     }
 
@@ -1811,9 +1900,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         String[] columnNames = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
-            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
+            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth", "cars.mode:id",
             "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
-            "category.mode:localName"};
+            "category.mode:id", "category.mode:localName"};
         validateQuery().rowCount(3).hasColumns(columnNames).validate(query, result);
     }
 
@@ -1825,9 +1914,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         String[] columnNames = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
-            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
+            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth", "cars.mode:id",
             "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
-            "category.mode:localName"};
+            "category.mode:id", "category.mode:localName"};
         // no nodes have a 'name' property (strictly speaking)
         validateQuery().rowCount(0).hasColumns(columnNames).validate(query, result);
     }
@@ -1840,9 +1929,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         String[] columnNames = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
-            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
+            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth", "cars.mode:id",
             "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
-            "category.mode:localName"};
+            "category.mode:id", "category.mode:localName"};
         // no results, because one side of the join has criteria on a non-existant column
         validateQuery().rowCount(0).hasColumns(columnNames).validate(query, result);
     }
@@ -2039,8 +2128,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @FixFor( "MODE-2057" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinWithFullTextSearch() throws RepositoryException {
-        String sql =
-                "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
+        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category LEFT OUTER JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
@@ -2049,8 +2137,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @FixFor( "MODE-2057" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinWithFullTextSearch() throws RepositoryException {
-        String sql =
-                "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
+        String sql = "SELECT category.[jcr:path], cars.[jcr:path] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(category.*, 'Utility') AND contains(cars.*, 'Toyota') ";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         validateQuery().rowCount(1).hasColumns("category.jcr:path", "cars.jcr:path").validate(query, result);
@@ -2061,8 +2148,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithUnionAndFullTextSearch() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE contains(category.*, 'Utility')"
                      + "UNION "
-                     +
-                     "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(cars.*, 'Toyota') ";
+                     + "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) WHERE contains(cars.*, 'Toyota') ";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         validateQuery().rowCount(2).hasColumns("p").validate(query, result);
@@ -2376,7 +2462,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @FixFor( "MODE-1418" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
-            throws RepositoryException {
+        throws RepositoryException {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'cat wearing')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
@@ -2386,7 +2472,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @FixFor( "MODE-1418" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndAllProperties()
-            throws RepositoryException {
+        throws RepositoryException {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.*, 'cat wearing')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
@@ -2396,7 +2482,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @FixFor( "MODE-1418" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithNoSelectorAndOneProperty()
-            throws RepositoryException {
+        throws RepositoryException {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
@@ -2447,14 +2533,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
                                          + propertyText.toUpperCase() + "')");
 
-            executeQueryWithSingleResult(
-                    "select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
             executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
 
-            executeQueryWithSingleResult(
-                    "select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
-            executeQueryWithSingleResult(
-                    "select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
 
             executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
             executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
@@ -3337,9 +3420,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car)", Query.XPATH);
         QueryResult result = query.execute();
         String[] columnNames = {"jcr:primaryType", "jcr:mixinTypes", "jcr:path", "jcr:score", "jcr:created", "jcr:createdBy",
-            "jcr:name", "mode:localName", "mode:depth", "car:mpgCity", "car:userRating", "car:mpgHighway", "car:engine",
-            "car:model", "car:year", "car:maker", "car:lengthInInches", "car:valueRating", "car:wheelbaseInInches", "car:msrp",
-            "car:alternateModels"};
+            "jcr:name", "mode:localName", "mode:depth", "mode:id", "car:mpgCity", "car:userRating", "car:mpgHighway",
+            "car:engine", "car:model", "car:year", "car:maker", "car:lengthInInches", "car:valueRating", "car:wheelbaseInInches",
+            "car:msrp", "car:alternateModels"};
         validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
     }
 
@@ -3475,7 +3558,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNumberAndWildcard()
-            throws RepositoryException {
+        throws RepositoryException {
         String xpath = "/jcr:root//*[jcr:contains(., '\"spee*\"')]";
         Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
         QueryResult result = query.execute();
@@ -3484,13 +3567,12 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @SuppressWarnings( "deprecation" )
     @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws
-                                                                                                      RepositoryException {
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws RepositoryException {
         String xpath = "/jcr:root//*[jcr:contains(., '\"heavy duty\"')]";
         Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
         QueryResult result = query.execute();
 
-        //by default there is no stemming or punctuation replacement
+        // by default there is no stemming or punctuation replacement
         assertFalse(result.getRows().hasNext());
     }
 
@@ -3515,7 +3597,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndLeadingWildcard()
-            throws RepositoryException {
+        throws RepositoryException {
         String xpath = "/jcr:root//*[jcr:contains(., '\"*avy-duty\"')]";
         Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
         QueryResult result = query.execute();
@@ -3535,7 +3617,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndLeadingWildcard()
-            throws RepositoryException {
+        throws RepositoryException {
         String xpath = "/jcr:root//*[jcr:contains(., '\"*-speed\"')]";
         Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
         QueryResult result = query.execute();
@@ -3549,10 +3631,10 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String xpath = "/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liters V 12\"')]";
         Query query = session.getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
         QueryResult result = query.execute();
-        String[] columnNames = { "jcr:primaryType", "jcr:mixinTypes", "jcr:path", "jcr:score", "jcr:created",
-                                 "jcr:createdBy", "jcr:name", "mode:localName", "mode:depth", "car:mpgCity", "car:userRating",
-                                 "car:mpgHighway", "car:engine", "car:model", "car:year", "car:maker", "car:lengthInInches",
-                                 "car:valueRating", "car:wheelbaseInInches", "car:msrp", "car:alternateModels" };
+        String[] columnNames = {"jcr:primaryType", "jcr:mixinTypes", "jcr:path", "jcr:score", "jcr:created", "jcr:createdBy",
+            "jcr:name", "mode:localName", "mode:depth", "mode:id", "car:mpgCity", "car:userRating", "car:mpgHighway",
+            "car:engine", "car:model", "car:year", "car:maker", "car:lengthInInches", "car:valueRating", "car:wheelbaseInInches",
+            "car:msrp", "car:alternateModels"};
         validateQuery().rowCount(1).hasColumns(columnNames).validate(query, result);
 
         // Query again with a different criteria that should return no nodes ...
@@ -3765,11 +3847,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             String queryString = "select [jcr:path] from [nt:unstructured] as node where ISCHILDNODE(node, '/parent')";
             assertNodesAreFound(queryString, Query.JCR_SQL2, "/parent/child1", "/parent/child2");
 
-            //remove the READ permission for child1
+            // remove the READ permission for child1
             acl.addAccessControlEntry(SimplePrincipal.EVERYONE,
-                                      new Privilege[] { acm.privilegeFromName(Privilege.JCR_WRITE),
-                                                        acm.privilegeFromName(Privilege.JCR_REMOVE_NODE),
-                                                        acm.privilegeFromName(Privilege.JCR_MODIFY_ACCESS_CONTROL)});
+                                      new Privilege[] {acm.privilegeFromName(Privilege.JCR_WRITE),
+                                          acm.privilegeFromName(Privilege.JCR_REMOVE_NODE),
+                                          acm.privilegeFromName(Privilege.JCR_MODIFY_ACCESS_CONTROL)});
             acm.setPolicy("/parent/child1", acl);
             session.save();
 
@@ -3777,7 +3859,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             Query query = queryManager.createQuery(queryString, Query.JCR_SQL2);
             QueryResult result = query.execute();
 
-            //assert that only child2 is still visible in the query results
+            // assert that only child2 is still visible in the query results
             NodeIterator nodes = result.getNodes();
             assertEquals(1, nodes.getSize());
             assertEquals("/parent/child2", nodes.nextNode().getPath());
@@ -3876,20 +3958,19 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String queryString = sql1 + " EXCEPT " + sql2;
         Query query = session.getWorkspace().getQueryManager().createQuery(queryString, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Cars/Utility/Land Rover LR2").validate(query, result);
+        validateQuery().rowCount(1).hasColumns("jcr:path").hasNodesAtPaths("/Cars/Utility/Land Rover LR2")
+                       .validate(query, result);
     }
-
 
     @Test
     @FixFor( "MODE-2247" )
     public void shouldBeAbleToExecuteExceptOperationWithJoinCriteria() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category WHERE ISCHILDNODE(category,'/Cars')"
                      + "EXCEPT "
-                     + "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) " +
-                     " WHERE cars.[jcr:name] LIKE '%Rover%' OR cars.[jcr:name] LIKE '%Toyota%'";
+                     + "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) "
+                     + " WHERE cars.[jcr:name] LIKE '%Rover%' OR cars.[jcr:name] LIKE '%Toyota%'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        List<String> expectedPaths = new ArrayList<>(Arrays.asList("/Cars/Sports",
-                                                                   "/Cars/Luxury"));
+        List<String> expectedPaths = new ArrayList<>(Arrays.asList("/Cars/Sports", "/Cars/Luxury"));
 
         NodeIterator nodes = query.execute().getNodes();
         assertEquals(2, nodes.getSize());
@@ -3903,7 +3984,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @FixFor( "MODE-2247" )
     public void shouldBeAbleToExecuteExceptAllOperation() throws RepositoryException {
         String sql = "SELECT category.[jcr:path] AS p FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISCHILDNODE(cars,category) "
-                     +" WHERE cars.[jcr:name] LIKE '%Rover%' "
+                     + " WHERE cars.[jcr:name] LIKE '%Rover%' "
                      + "EXCEPT ALL "
                      + "SELECT node.[jcr:path] AS p FROM [nt:unstructured] AS node WHERE NOT ISCHILDNODE(node,'/Cars')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);

@@ -58,6 +58,7 @@ import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.LowerCase;
 import org.modeshape.jcr.query.model.NamedSelector;
 import org.modeshape.jcr.query.model.NodeDepth;
+import org.modeshape.jcr.query.model.NodeId;
 import org.modeshape.jcr.query.model.NodeLocalName;
 import org.modeshape.jcr.query.model.NodeName;
 import org.modeshape.jcr.query.model.NodePath;
@@ -97,8 +98,8 @@ import org.modeshape.jcr.value.ValueFormatException;
  * <li>"<code>LIMIT count [OFFSET number]</code>" clauses to control the number of results returned as well as the number of rows
  * that should be skipped</li>
  * <li>Support for additional join types, including "<code>FULL OUTER JOIN</code>" and "<code>CROSS JOIN</code>"</li>
- * <li>Additional dynamic operands "<code>DEPTH([&lt;selectorName>])</code>" and "<code>PATH([&lt;selectorName>])</code>" that
- * enables placing constraints on the node depth and path, respectively, and which can be used in a manner similar to "
+ * <li>Additional dynamic operands "<code>DEPTH([&lt;selectorName>])</code>", "<code>PATH([&lt;selectorName>])</code>" and "<code>ID([&lt;selectorName>])</code>" that
+ * enables placing constraints on the node depth, path, and identifier, respectively, and which can be used in a manner similar to "
  * <code>NAME([&lt;selectorName>])</code>" and "<code>LOCALNAME([&lt;selectorName>])</code>. Note in each of these cases, the
  * selector name is optional if there is only one selector in the query.</li>
  * <li>Additional dynamic operand "<code>REFERENCE([&lt;selectorName>.]&lt;propertyName>])</code>" that
@@ -351,7 +352,7 @@ import org.modeshape.jcr.value.ValueFormatException;
  * <h4>Dynamic operands</h4>
  * 
  * <pre>
- * DynamicOperand ::= PropertyValue | ReferenceValue | Length | NodeName | NodeLocalName | NodePath | NodeDepth | 
+ * DynamicOperand ::= PropertyValue | ReferenceValue | Length | NodeName | NodeLocalName | NodePath | NodeDepth | NodeId |
  *                    FullTextSearchScore | LowerCase | UpperCase | Arithmetic |
  *                    '(' DynamicOperand ')'
  * </pre>
@@ -395,6 +396,12 @@ import org.modeshape.jcr.value.ValueFormatException;
  * <h5>Node depth</h5>
  * <pre>
  * NodeDepth ::= 'DEPTH(' [selectorName] ')'
+ *                    /* If only one selector exists in this query, explicit specification of the selectorName
+ *                       is optional *&#47;
+ * </pre>
+ * <h5>Node identifier</h5>
+ * <pre>
+ * NodeId ::= 'ID(' [selectorName] ')'
  *                    /* If only one selector exists in this query, explicit specification of the selectorName
  *                       is optional *&#47;
  * </pre>
@@ -1148,6 +1155,16 @@ public class BasicSqlQueryParser implements QueryParser {
             }
             result = nodeDepth(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
+        } else if (tokens.canConsume("ID", "(")) {
+            if (tokens.canConsume(")")) {
+                if (source instanceof Selector) {
+                    return nodeId(((Selector)source).name());
+                }
+                String msg = GraphI18n.functionIsAmbiguous.text("ID()", pos.getLine(), pos.getColumn());
+                throw new ParsingException(pos, msg);
+            }
+            result = nodeId(parseSelectorName(tokens, typeSystem));
+            tokens.consume(")");
         } else if (tokens.canConsume("PATH", "(")) {
             if (tokens.canConsume(")")) {
                 if (source instanceof Selector) {
@@ -1412,6 +1429,10 @@ public class BasicSqlQueryParser implements QueryParser {
 
     protected NodeDepth nodeDepth( SelectorName selector ) {
         return new NodeDepth(selector);
+    }
+
+    protected NodeId nodeId( SelectorName selector ) {
+        return new NodeId(selector);
     }
 
     protected NodePath nodePath( SelectorName selector ) {

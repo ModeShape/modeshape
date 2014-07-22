@@ -280,6 +280,7 @@ public final class JcrI18n {
     public static I18n multipleSelectorsAppearInQueryUnableToCallMethod;
     public static I18n multipleCallsToGetRowsOrNodesIsNotAllowed;
     public static I18n equiJoinWithOneJcrPathPseudoColumnIsInvalid;
+    public static I18n equiJoinWithOneNodeIdPseudoColumnIsInvalid;
     public static I18n noSuchVariableInQuery;
 
     // Type registration messages

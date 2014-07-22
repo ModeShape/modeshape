@@ -20,8 +20,8 @@ package org.modeshape.jcr.query.model;
  */
 public interface Visitor {
 
-    void visit(Relike obj);
-    
+    void visit( Relike obj );
+
     void visit( AllNodes obj );
 
     void visit( And obj );
@@ -65,6 +65,8 @@ public interface Visitor {
     void visit( NodePath obj );
 
     void visit( NodeDepth obj );
+
+    void visit( NodeId obj );
 
     void visit( NamedSelector obj );
 

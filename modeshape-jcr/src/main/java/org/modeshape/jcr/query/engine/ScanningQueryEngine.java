@@ -98,6 +98,7 @@ import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.LiteralValue;
 import org.modeshape.jcr.query.model.LowerCase;
 import org.modeshape.jcr.query.model.NodeDepth;
+import org.modeshape.jcr.query.model.NodeId;
 import org.modeshape.jcr.query.model.NodeLocalName;
 import org.modeshape.jcr.query.model.NodeName;
 import org.modeshape.jcr.query.model.NodePath;
@@ -134,6 +135,7 @@ import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyType;
+import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.binary.BinaryStore;
 
 /**
@@ -165,6 +167,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         names.add(JcrLexicon.UUID);
         names.add(ModeShapeLexicon.LOCALNAME);
         names.add(ModeShapeLexicon.DEPTH);
+        names.add(ModeShapeLexicon.ID);
         PSEUDO_COLUMN_NAMES = Collections.unmodifiableSet(names);
     }
 
@@ -638,15 +641,15 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                             String prop1 = condition.getProperty1Name();
                             String prop2 = condition.getProperty2Name();
                             if (joinReversed) {
-                                leftExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, leftColumns, sources,
-                                                                     null, true);
-                                rightExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, rightColumns, sources,
-                                                                      null, true);
+                                leftExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, leftColumns, sources, null,
+                                                                     true);
+                                rightExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, rightColumns, sources, null,
+                                                                      true);
                             } else {
-                                leftExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, leftColumns, sources,
-                                                                     null, true);
-                                rightExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, rightColumns, sources,
-                                                                      null, true);
+                                leftExtractor = createExtractFromRow(sel1, prop1, joinQueryContext, leftColumns, sources, null,
+                                                                     true);
+                                rightExtractor = createExtractFromRow(sel2, prop2, joinQueryContext, rightColumns, sources, null,
+                                                                      true);
                             }
 
                         } else if (joinCondition instanceof DescendantNodeJoinCondition) {
@@ -858,8 +861,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
                         // Now create the sorting sequence ...
                         if (sortExtractor != null) {
-                            rows = new SortingSequence(workspaceName, rows, sortExtractor, bufferManager, cache,
-                                                       pack, useHeap, allowDuplicates, nullOrder);
+                            rows = new SortingSequence(workspaceName, rows, sortExtractor, bufferManager, cache, pack, useHeap,
+                                                       allowDuplicates, nullOrder);
                         }
                     }
                 }
@@ -922,7 +925,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                                         IndexPlan index,
                                                         Columns columns,
                                                         QuerySources sources ) {
-        if (index.getProviderName() != null) {
+        if (index.getProviderName() == null) {
             String name = index.getName();
             String pathStr = (String)index.getParameters().get(IndexPlanners.PATH_PARAMETER);
             if (pathStr != null) {
@@ -940,6 +943,15 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     PathFactory paths = context.getExecutionContext().getValueFactories().getPathFactory();
                     Path path = paths.create(pathStr);
                     return sources.descendantNodes(path, 1.0f);
+                }
+            }
+            String idStr = (String)index.getParameters().get(IndexPlanners.ID_PARAMETER);
+            if (idStr != null) {
+                if (IndexPlanners.NODE_BY_ID_INDEX_NAME.equals(name)) {
+                    StringFactory string = context.getExecutionContext().getValueFactories().getStringFactory();
+                    String id = string.create(idStr);
+                    final String workspaceName = context.getWorkspaceNames().iterator().next();
+                    return sources.singleNode(workspaceName, id, 1.0f);
                 }
             }
         }
@@ -1630,7 +1642,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
     protected ExtractFromRow createExtractFromRow( DynamicOperand operand,
                                                    QueryContext context,
                                                    Columns columns,
-                                                   QuerySources sources,
+                                                   final QuerySources sources,
                                                    TypeFactory<?> defaultType,
                                                    boolean allowMultiValued,
                                                    boolean isLike ) {
@@ -1745,6 +1757,31 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 @Override
                 public String toString() {
                     return "(nodeDepth " + nodeDepth.getSelectorName() + ")";
+                }
+            };
+        }
+        if (operand instanceof NodeId) {
+            final NodeId nodeId = (NodeId)operand;
+            final int indexInRow = columns.getSelectorIndex(nodeId.getSelectorName());
+            final NodeCache cache = context.getNodeCache(sources.getWorkspaceName());
+            final NodeKey root = cache.getRootKey();
+            final TypeFactory<?> stringType = context.getTypeSystem().getStringFactory();
+            return new ExtractFromRow() {
+                @Override
+                public TypeFactory<?> getType() {
+                    return stringType; // ID is always a string type
+                }
+
+                @Override
+                public Object getValueInRow( RowAccessor row ) {
+                    CachedNode node = row.getNode(indexInRow);
+                    if (node == null) return null;
+                    return sources.getIdentifier(node, root);
+                }
+
+                @Override
+                public String toString() {
+                    return "(nodeId " + nodeId.getSelectorName() + ")";
                 }
             };
         }
@@ -2181,6 +2218,19 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                         CachedNode node = row.getNode(indexInRow);
                         if (node == null) return null;
                         return node.getName(cache).getLocalName();
+                    }
+                };
+            }
+            if (ModeShapeLexicon.ID.equals(propName)) {
+                // This is a special case of obtaining the identifier from the row ...
+                final TypeFactory<?> typeFactory = context.getTypeSystem().getStringFactory();
+                return new PropertyValueExtractor(selectorName, propertyName, typeFactory) {
+
+                    @Override
+                    public Object getValueInRow( RowAccessor row ) {
+                        CachedNode node = row.getNode(indexInRow);
+                        if (node == null) return null;
+                        return node.getKey().toString();
                     }
                 };
             }
@@ -2717,7 +2767,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             if (other == null) return false;
             if (this.hasFullTextSearchScores() != other.hasFullTextSearchScores()) return false;
             if (this.getColumns().size() != other.getColumns().size()) return false;
-            return this.getColumnNames().containsAll(other.getColumnNames()) && other.getColumnNames().containsAll(this.getColumnNames());
+            return this.getColumnNames().containsAll(other.getColumnNames())
+                   && other.getColumnNames().containsAll(this.getColumnNames());
         }
 
         @Override

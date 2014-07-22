@@ -182,10 +182,13 @@ public class ResultSetReader extends StringLineReader {
             } else if (colName.equalsIgnoreCase("mode:depth")) {
                 JcrType jcrType = JcrType.typeInfo(JcrType.DefaultDataTypes.LONG);
                 assertThat(colTypeName, is(jcrType.getJcrName()));
+            } else if (colName.equalsIgnoreCase("mode:id")) {
+                JcrType jcrType = JcrType.typeInfo(JcrType.DefaultDataTypes.STRING);
+                assertThat(colTypeName, is(jcrType.getJcrName()));
             }
 
             sb.append(colName).append("[") //$NON-NLS-1$
-            .append(colTypeName).append("]"); //$NON-NLS-1$
+              .append(colTypeName).append("]"); //$NON-NLS-1$
             if (col != columnCount) {
                 sb.append(delimiter);
             }
