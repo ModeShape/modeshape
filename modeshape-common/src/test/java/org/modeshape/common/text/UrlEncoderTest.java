@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 /**
  * @author Randall Hauch
@@ -146,5 +147,12 @@ public class UrlEncoderTest {
     public void shouldEncodeAndDecodeUrlsCorrectly() {
         this.encoder.setSlashEncoded(false);
         checkEncoding("http://acme.com/this is %something?get=true;something=false", "http%3a//acme.com/this%20is%20%25something%3fget%3dtrue%3bsomething%3dfalse");
+    }
+
+    @Test
+    @FixFor( "MODE-2258" )
+    public void shouldEncodeNonReservedNonAsciiCharacter() {
+        this.encoder.setSlashEncoded(false);
+        checkEncoding(":Тест:的", "%3a%d0%a2%d0%b5%d1%81%d1%82%3a%e7%9a%84");
     }
 }

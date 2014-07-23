@@ -23,6 +23,7 @@
  */
 package org.modeshape.common.text;
 
+import java.io.UnsupportedEncodingException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.BitSet;
@@ -35,6 +36,8 @@ import org.modeshape.common.annotation.Immutable;
  */
 @Immutable
 public class UrlEncoder implements TextEncoder, TextDecoder {
+
+    public static final char ESCAPE_CHARACTER = '%';
 
     /**
      * Data characters that are allowed in a URI but do not have a reserved purpose are called unreserved. These include upper and
@@ -51,7 +54,10 @@ public class UrlEncoder implements TextEncoder, TextDecoder {
     private static final BitSet RFC2396_UNRESERVED_CHARACTERS = new BitSet(256);
     private static final BitSet RFC2396_UNRESERVED_WITH_SLASH_CHARACTERS;
 
-    public static final char ESCAPE_CHARACTER = '%';
+    /**
+     * Lookup table which is used to determine, based on a hex char, how many bytes were needed in UTF-8 encoding to store that char
+     */
+    private static final byte[] BYTES_PER_CHAR = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4};
 
     static {
         RFC2396_UNRESERVED_CHARACTERS.set('a', 'z' + 1);
@@ -73,9 +79,6 @@ public class UrlEncoder implements TextEncoder, TextDecoder {
 
     private boolean slashEncoded = true;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String encode( String text ) {
         if (text == null) return null;
@@ -92,24 +95,34 @@ public class UrlEncoder implements TextEncoder, TextDecoder {
                 // Safe character, so just pass through ...
                 result.append(c);
             } else {
-                // The character is not a safe character, and must be escaped ...
-                result.append(ESCAPE_CHARACTER);
-                result.append(Character.toLowerCase(Character.forDigit(c / 16, 16)));
-                result.append(Character.toLowerCase(Character.forDigit(c % 16, 16)));
+                try {
+                    // The character is not a safe character, and must be escaped in UTF-8 form (see http://tools.ietf.org/html/rfc3629)
+                    byte[] utf8Bytes = Character.toString(c).getBytes("UTF-8");
+                    for (byte utf8Byte : utf8Bytes) {
+                        result.append(ESCAPE_CHARACTER);
+                        int high = (utf8Byte & 0xf0) >> 4;
+                        int low = utf8Byte & 0x0f;
+                        result.append(Integer.toHexString(high));
+                        result.append(Integer.toHexString(low));
+                    }
+                } catch (UnsupportedEncodingException e) {
+                    //should never happen
+                    throw new IllegalStateException(e);
+                }
             }
         }
         return result.toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String decode( String encodedText ) {
         if (encodedText == null) return null;
         if (encodedText.length() == 0) return encodedText;
         final StringBuilder result = new StringBuilder();
         final CharacterIterator iter = new StringCharacterIterator(encodedText);
+        byte[] escapedCharBytes = new byte[4];
+        int byteIdx = 0;
+        int bytesPerChar = -1;
         for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
             if (c == ESCAPE_CHARACTER) {
                 boolean foundEscapedCharacter = false;
@@ -122,7 +135,24 @@ public class UrlEncoder implements TextEncoder, TextDecoder {
                     int hexNum2 = Character.digit(hexChar2, 16);
                     if (hexNum1 > -1 && hexNum2 > -1) {
                         foundEscapedCharacter = true;
-                        result.append((char)(hexNum1 * 16 + hexNum2));
+                        //since we're dealing with UTF-8, we need to figure out how many bytes were used to encode the original
+                        //character by reading the number of leading 1 bits from the 1st high order byte
+                        if (bytesPerChar == -1) {
+                            bytesPerChar = BYTES_PER_CHAR[hexNum1];
+                        }
+                        //record the next byte into the array
+                        escapedCharBytes[byteIdx++] = (byte) (hexNum1 * 16 + hexNum2);
+                        if (byteIdx == bytesPerChar) {
+                            //we've filled the buffer of bytes
+                            try {
+                                result.append(new String(escapedCharBytes, 0, bytesPerChar, "UTF-8"));
+                            } catch (UnsupportedEncodingException e) {
+                                //should never happen
+                                throw new IllegalStateException(e);
+                            }
+                            byteIdx = 0;
+                            bytesPerChar = -1;
+                        }
                     }
                 }
                 if (!foundEscapedCharacter) {
