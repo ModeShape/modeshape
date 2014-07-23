@@ -167,6 +167,52 @@ public class QuerySources {
     }
 
     /**
+     * Obtain a {@link NodeSequence} that returns the (queryable) node with the given key in the workspace, where the node is
+     * assigned the given score.
+     * 
+     * @param workspaceName the name of the workspace; may not be null
+     * @param identifier the {@link NodeKey#getIdentifier() identifier} of the node; may not be null
+     * @param score the score for the node
+     * @return the sequence of node(s); never null
+     */
+    public NodeSequence singleNode( String workspaceName,
+                                    String identifier,
+                                    float score ) {
+        // Get the node filter to use ...
+        NodeFilter nodeFilter = nodeFilterForWorkspace(workspaceName);
+        if (nodeFilter != null) {
+
+            // Find the node by path ...
+            NodeCache cache = repo.getWorkspaceCache(workspaceName);
+            if (NodeKey.isValidFormat(identifier)) {
+                NodeKey key = new NodeKey(identifier);
+                CachedNode node = cache.getNode(key);
+                if (node != null && nodeFilter.includeNode(node, cache)) {
+                    return NodeSequence.withNodes(Collections.singleton(node), score, workspaceName);
+                }
+            }
+            // Try with the same source and workspace key as the root node ...
+            NodeKey key = cache.getRootKey().withId(identifier);
+            CachedNode node = cache.getNode(key);
+            if (node != null && nodeFilter.includeNode(node, cache)) {
+                return NodeSequence.withNodes(Collections.singleton(node), score, workspaceName);
+            }
+        }
+        return NodeSequence.emptySequence(1);
+    }
+
+    protected String getIdentifier( CachedNode node,
+                                    NodeKey workspaceRootKey ) {
+        NodeKey key = node.getKey();
+        if (!key.getSourceKey().equals(workspaceRootKey.getSourceKey())) {
+            // return the whole thing ...
+            return key.toString();
+        }
+        // return just the identifier part ...
+        return key.getIdentifier();
+    }
+
+    /**
      * Obtain a {@link NodeSequence} that returns the (queryable) children of the node at the given path in the workspace, where
      * each child node is assigned the given score.
      * 
@@ -181,8 +227,8 @@ public class QuerySources {
         // Get the node filter to use ...
         NodeFilter nodeFilter = nodeFilterForWorkspace(workspaceName);
         if (nodeFilter != null) {
-            //always append a shared nodes filter to the end of the workspace filter
-            //JCR #14.16 -If a query matches a descendant node of a shared set, it appears in query results only once.
+            // always append a shared nodes filter to the end of the workspace filter
+            // JCR #14.16 -If a query matches a descendant node of a shared set, it appears in query results only once.
             NodeFilter compositeFilter = new CompositeNodeFilter(nodeFilter, sharedNodesFilter());
 
             // Find the node by path ...
@@ -418,7 +464,8 @@ public class QuerySources {
         }
 
         @Override
-        public boolean includeNode( CachedNode node, NodeCache cache ) {
+        public boolean includeNode( CachedNode node,
+                                    NodeCache cache ) {
             for (NodeFilter filter : filters) {
                 if (!filter.includeNode(node, cache)) {
                     return false;
@@ -429,10 +476,9 @@ public class QuerySources {
     }
 
     /**
-     * Creates a node filter which doesn't include any of the nodes from the shared set in the query result.
-     * This is per JSR-283/#14.16: if a query matches a descendant node of a shared set, it appears in query results
-     * only once.
-     *
+     * Creates a node filter which doesn't include any of the nodes from the shared set in the query result. This is per
+     * JSR-283/#14.16: if a query matches a descendant node of a shared set, it appears in query results only once.
+     * 
      * @return a new {@link org.modeshape.jcr.cache.document.NodeCacheIterator.NodeFilter} instance
      */
     protected NodeFilter sharedNodesFilter() {
@@ -447,7 +493,7 @@ public class QuerySources {
                     if (shareableNodeKeys.contains(key)) {
                         return false;
                     }
-                    //we're seeing the original shareable node, so we need to process it
+                    // we're seeing the original shareable node, so we need to process it
                     shareableNodeKeys.add(key);
                     return true;
                 }
@@ -470,8 +516,8 @@ public class QuerySources {
         // for those that are actually stored in the system workspace (e.g., the "/jcr:system" nodes).
         NodeFilter nodeFilterForWorkspace = nodeFilterForWorkspace(workspaceName);
         if (nodeFilterForWorkspace == null) return null;
-        //always append a shared nodes filter to the end of the workspace filter,
-        //JCR #14.16 -If a query matches a descendant node of a shared set, it appears in query results only once.
+        // always append a shared nodes filter to the end of the workspace filter,
+        // JCR #14.16 -If a query matches a descendant node of a shared set, it appears in query results only once.
         NodeFilter compositeFilter = new CompositeNodeFilter(nodeFilterForWorkspace, sharedNodesFilter());
 
         // Then create an iterator over that workspace ...

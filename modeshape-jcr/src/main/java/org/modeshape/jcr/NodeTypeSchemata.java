@@ -114,6 +114,7 @@ public class NodeTypeSchemata implements Schemata {
         pseudoProperties.add(pseudoProperty(context, JcrLexicon.SCORE, PropertyType.DOUBLE));
         pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.LOCALNAME, PropertyType.STRING));
         pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.DEPTH, PropertyType.LONG));
+        pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.ID, PropertyType.STRING));
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
         addAllNodesTable(builder, context, pseudoProperties);

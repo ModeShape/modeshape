@@ -32,6 +32,7 @@ import org.modeshape.jcr.query.model.Comparison;
 import org.modeshape.jcr.query.model.DescendantNode;
 import org.modeshape.jcr.query.model.DynamicOperand;
 import org.modeshape.jcr.query.model.Literal;
+import org.modeshape.jcr.query.model.NodeId;
 import org.modeshape.jcr.query.model.SameNode;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.StaticOperand;
@@ -117,9 +118,11 @@ public abstract class IndexPlanners {
     }
 
     protected static final String NODE_BY_PATH_INDEX_NAME = "NodeByPath";
+    protected static final String NODE_BY_ID_INDEX_NAME = "NodeById";
     protected static final String CHILDREN_BY_PATH_INDEX_NAME = "ChildrenByPath";
     protected static final String DESCENDANTS_BY_PATH_INDEX_NAME = "DescendantsByPath";
     protected static final String PATH_PARAMETER = "path";
+    protected static final String ID_PARAMETER = "id";
 
     @Immutable
     private static class StandardIndexPlanner extends IndexPlanner {
@@ -168,6 +171,26 @@ public abstract class IndexPlanners {
                         if (path != null) {
                             indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L,
                                              PATH_PARAMETER, path);
+                        }
+                    }
+                    if (leftSide instanceof NodeId) {
+                        // This is a constraint on the ID of a node ...
+                        StaticOperand rightSide = comparison.getOperand2();
+                        Object value = null;
+                        if (rightSide instanceof BindVariableName) {
+                            BindVariableName varName = (BindVariableName)rightSide;
+                            value = context.getVariables().get(varName.getBindVariableName());
+                        } else if (rightSide instanceof Literal) {
+                            value = ((Literal)rightSide).value();
+                        }
+                        if (value == null) return;
+                        String id = null;
+                        if (value instanceof String) {
+                            id = (String)value;
+                        }
+                        if (id != null) {
+                            indexes.addIndex(NODE_BY_ID_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, ID_PARAMETER,
+                                             id);
                         }
                     }
                 }

@@ -373,7 +373,8 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "cars    null    car:Car    jcr:primaryType    12    STRING    20    null    0    0    1        null    0    0    0    14    NO    null    null    null    0",
             "cars    null    car:Car    jcr:score    8    DOUBLE    20    null    0    0    2        null    0    0    0    15    YES    null    null    null    0",
             "cars    null    car:Car    mode:depth    -5    LONG    20    null    0    0    2        null    0    0    0    16    YES    null    null    null    0",
-            "cars    null    car:Car    mode:localName    12    STRING    50    null    0    0    2        null    0    0    0    17    YES    null    null    null    0"};
+            "cars    null    car:Car    mode:id    12    STRING    50    null    0    0    2        null    0    0    0    17    YES    null    null    null    0",
+            "cars    null    car:Car    mode:localName    12    STRING    50    null    0    0    2        null    0    0    0    18    YES    null    null    null    0"};
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
 
         assertResultsSetEquals(rs, expected);
@@ -403,7 +404,8 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
             "cars    null    car:Car    jcr:primaryType    12    STRING    20    null    0    0    1        null    0    0    0    14    NO    null    null    null    0",
             "cars    null    car:Car    jcr:score    8    DOUBLE    20    null    0    0    2        null    0    0    0    15    YES    null    null    null    0",
             "cars    null    car:Car    mode:depth    -5    LONG    20    null    0    0    2        null    0    0    0    16    YES    null    null    null    0",
-            "cars    null    car:Car    mode:localName    12    STRING    50    null    0    0    2        null    0    0    0    17    YES    null    null    null    0"};
+            "cars    null    car:Car    mode:id    12    STRING    50    null    0    0    2        null    0    0    0    17    YES    null    null    null    0",
+            "cars    null    car:Car    mode:localName    12    STRING    50    null    0    0    2        null    0    0    0    18    YES    null    null    null    0"};
 
         ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");
 

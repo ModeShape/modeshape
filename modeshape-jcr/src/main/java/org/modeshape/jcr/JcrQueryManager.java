@@ -292,8 +292,8 @@ class JcrQueryManager implements QueryManager {
             if (node == null) {
                 return null;
             }
-            //this *does not* check permissions because it is expected that the correct sequence already wraps the results and
-            //therefore it should not be possible to return a Node/Row from a batch on which there aren't any read permissions
+            // this *does not* check permissions because it is expected that the correct sequence already wraps the results and
+            // therefore it should not be possible to return a Node/Row from a batch on which there aren't any read permissions
             return session.node(node, (AbstractJcrNode.Type)null);
         }
 
@@ -342,6 +342,12 @@ class JcrQueryManager implements QueryManager {
         public long getDepth( CachedNode node ) {
             assert node != null;
             return node.getDepth(session.cache());
+        }
+
+        @Override
+        public String getIdentifier( CachedNode node ) {
+            // the identifier format varies depending upon the node ...
+            return session.nodeIdentifier(node.getKey());
         }
 
         @Override

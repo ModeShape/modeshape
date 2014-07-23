@@ -59,10 +59,11 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
     public static final String JCR_UUID_COLUMN_NAME = "jcr:uuid";
     public static final String MODE_LOCALNAME_COLUMN_NAME = "mode:localName";
     public static final String MODE_DEPTH_COLUMN_NAME = "mode:depth";
+    public static final String MODE_ID_COLUMN_NAME = "mode:id";
     protected static final Set<String> PSEUDO_COLUMNS = Collections.unmodifiableSet(JCR_SCORE_COLUMN_NAME, JCR_PATH_COLUMN_NAME,
                                                                                     JCR_NAME_COLUMN_NAME, JCR_UUID_COLUMN_NAME,
                                                                                     MODE_LOCALNAME_COLUMN_NAME,
-                                                                                    MODE_DEPTH_COLUMN_NAME);
+                                                                                    MODE_DEPTH_COLUMN_NAME, MODE_ID_COLUMN_NAME);
 
     protected final JcrQueryContext context;
     protected final QueryResults results;
@@ -388,6 +389,12 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return context.createValue(PropertyType.LONG, context.getDepth(node));
         }
 
+        protected Value jcrId( CachedNode node ) {
+            assert node != null;
+            // Every node has an identifier, but we need to figure out the correct version that's exposed
+            return context.createValue(PropertyType.STRING, context.getIdentifier(node));
+        }
+
         protected Value jcrPath( String path ) {
             return context.createValue(PropertyType.PATH, path);
         }
@@ -485,6 +492,9 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
                 }
                 if (MODE_DEPTH_COLUMN_NAME.equals(propertyName)) {
                     return iterator.jcrDepth(cachedNode);
+                }
+                if (MODE_ID_COLUMN_NAME.equals(propertyName)) {
+                    return iterator.jcrId(cachedNode);
                 }
                 if (JCR_SCORE_COLUMN_NAME.equals(propertyName)) {
                     float score = batchAtRow.getScore(nodeIndex);

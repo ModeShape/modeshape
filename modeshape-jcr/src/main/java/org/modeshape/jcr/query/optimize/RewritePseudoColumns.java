@@ -30,6 +30,7 @@ import org.modeshape.jcr.query.model.EquiJoinCondition;
 import org.modeshape.jcr.query.model.FullTextSearchScore;
 import org.modeshape.jcr.query.model.JoinCondition;
 import org.modeshape.jcr.query.model.NodeDepth;
+import org.modeshape.jcr.query.model.NodeId;
 import org.modeshape.jcr.query.model.NodeLocalName;
 import org.modeshape.jcr.query.model.NodeName;
 import org.modeshape.jcr.query.model.NodePath;
@@ -101,6 +102,20 @@ public class RewritePseudoColumns implements OptimizerRule {
                 SelectorName selector2 = equiJoin.selector2Name();
                 // Only one side uses "jcr:path", and we cannot handle this ...
                 context.getProblems().addError(JcrI18n.equiJoinWithOneJcrPathPseudoColumnIsInvalid, selector1, selector2);
+            } else if ("mode:id".equals(equiJoin.getProperty1Name())) {
+                SelectorName selector1 = equiJoin.selector1Name();
+                SelectorName selector2 = equiJoin.selector2Name();
+                if ("mode:id".equals(equiJoin.getProperty2Name())) {
+                    // This equijoin should be rewritten as a ISSAMENODE condition ...
+                    return new SameNodeJoinCondition(selector1, selector2);
+                }
+                // Only one side uses "jcr:path", and we cannot handle this ...
+                context.getProblems().addError(JcrI18n.equiJoinWithOneNodeIdPseudoColumnIsInvalid, selector1, selector2);
+            } else if ("mode:id".equals(equiJoin.getProperty2Name())) {
+                SelectorName selector1 = equiJoin.selector1Name();
+                SelectorName selector2 = equiJoin.selector2Name();
+                // Only one side uses "jcr:path", and we cannot handle this ...
+                context.getProblems().addError(JcrI18n.equiJoinWithOneNodeIdPseudoColumnIsInvalid, selector1, selector2);
             }
         }
         return condition;
@@ -170,7 +185,7 @@ public class RewritePseudoColumns implements OptimizerRule {
             String property = exist.getPropertyName();
             if ("jcr:path".equals(property) || "jcr:name".equals(property) || "mode:localName".equals(property)
                 || "jcr:localName".equals(property) || "mode:depth".equals(property) || "jcr:depth".equals(property)
-                || "jcr:score".equals(property)) {
+                || "jcr:score".equals(property) || "mode:id".equals(property)) {
                 // This constraint will always be true, so use this constraint that always is true ...
                 return new PropertyExistence(exist.selectorName(), "jcr:primaryType");
             }
@@ -194,6 +209,9 @@ public class RewritePseudoColumns implements OptimizerRule {
             }
             if ("mode:depth".equals(property) || "jcr:depth".equals(property)) {
                 return new NodeDepth(propValue.selectorName());
+            }
+            if ("mode:id".equals(property)) {
+                return new NodeId(propValue.selectorName());
             }
             if ("jcr:score".equals(property)) {
                 return new FullTextSearchScore(propValue.selectorName());
