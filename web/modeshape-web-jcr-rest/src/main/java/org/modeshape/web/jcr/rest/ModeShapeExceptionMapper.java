@@ -35,7 +35,9 @@ import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import org.codehaus.jettison.json.JSONException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.NoSuchRepositoryException;
+import org.modeshape.web.jcr.WebLogger;
 import org.modeshape.web.jcr.rest.handler.AbstractHandler;
 import org.modeshape.web.jcr.rest.model.RestException;
 
@@ -47,6 +49,8 @@ import org.modeshape.web.jcr.rest.model.RestException;
  */
 @Provider
 public class ModeShapeExceptionMapper<T extends Throwable> implements ExceptionMapper<T> {
+
+    private static final Logger LOGGER = WebLogger.getLogger(ModeShapeExceptionMapper.class);
 
     @Override
     public Response toResponse( T throwable ) {
@@ -74,6 +78,16 @@ public class ModeShapeExceptionMapper<T extends Throwable> implements ExceptionM
 
     private Response exceptionResponse( Throwable t,
                                         Status status ) {
+        switch (status) {
+            case NOT_FOUND: {
+                LOGGER.debug(t, "Item not found");
+                break;
+            }
+            default: {
+                LOGGER.error(t, "Server error");
+                break;
+            }
+        }
         return Response.status(status).entity(new RestException(t)).build();
     }
 }
