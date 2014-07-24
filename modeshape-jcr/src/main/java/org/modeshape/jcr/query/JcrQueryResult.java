@@ -625,7 +625,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
                     return iterator.jcrLong(depth);
                 }
                 if (JCR_SCORE_COLUMN_NAME.equals(propertyName)) {
-                    int scoreIndex = iterator.columns.getFullTextSearchScoreIndexFor(columnName);
+                    int scoreIndex = iterator.columns.getFullTextSearchScoreIndexFor(selectorName);
                     Double score = scoreIndex == -1 ? 0.0d : (Double)tuple[scoreIndex];
                     return iterator.jcrDouble(score);
                 }
