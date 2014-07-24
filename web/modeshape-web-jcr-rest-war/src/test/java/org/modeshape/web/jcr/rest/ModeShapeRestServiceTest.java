@@ -30,7 +30,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
@@ -700,5 +699,14 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         assertNotNull(foo2Children);
         assertTrue(foo2Children.has("bar"));
         assertTrue(foo2Children.has("bar[2]"));
+    }
+
+    @Test
+    @FixFor( "MODE-2261" )
+    public void shouldRunQueryWithMultipleSelectors() throws Exception {
+        doPost("v2/post/node_with_nested_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        String query = "SELECT parent.[jcr:path], child.* FROM [nt:unstructured] as parent INNER JOIN [nt:unstructured] as child " +
+                       "ON ISCHILDNODE(parent, child) WHERE parent.[jcr:path] LIKE '/" + TEST_NODE +"/%'";
+        jcrSQL2Query(query, queryUrl()).isOk();
     }
 }
