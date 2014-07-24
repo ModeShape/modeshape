@@ -3992,6 +3992,29 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(2).hasColumns("p").hasNodesAtPaths("/Cars/Utility", "/Cars/Utility").validate(query, result);
     }
 
+    @Test
+    @FixFor( "MODE-2267" )
+    public void shouldAllowNameAndLocalNameConstraints() throws Exception {
+        Node node1 = session.getRootNode().addNode("test:testNode1");
+        Node node2 = session.getRootNode().addNode("test:testNode2");
+        session.save();
+        try {
+            String sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE node.[mode:localName] LIKE '%testNode%'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(2, nodes.getSize());
+
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE node.[jcr:name] LIKE '%test%'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(2, nodes.getSize());
+        } finally {
+            node1.remove();
+            node2.remove();
+            session.save();
+        }
+    }
+
     private String idList( Node... nodes ) throws RepositoryException {
         StringBuilder builder = new StringBuilder("(");
         for (int i = 0; i < nodes.length - 1; i++) {
