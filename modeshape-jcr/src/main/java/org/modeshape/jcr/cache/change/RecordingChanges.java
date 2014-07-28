@@ -51,25 +51,31 @@ public class RecordingChanges implements Changes, ChangeSet {
     private final String processKey;
     private final String repositoryKey;
     private final String workspaceName;
+    private final String sessionId;
     private final Queue<Change> events = new ConcurrentLinkedQueue<Change>();
     private Set<NodeKey> nodeKeys = Collections.emptySet();
     private Map<String, String> userData = Collections.emptyMap();
     private String userId;
     private DateTime timestamp;
 
-    public RecordingChanges( String processKey,
-                             String repositoryKey ) {
-        this(processKey, repositoryKey, null);
-    }
-
-    public RecordingChanges( String processKey,
+    /**
+     * Creates a new change set.
+     * @param sessionId  the ID of the session in which the change set was created; may not be null;
+     * @param processKey the UUID of the process which created the change set; may not be null
+     * @param repositoryKey the key of the repository for which the changes set is created; may not be null.
+     * @param workspaceName the name of the workspace in which the changes occurred; may be null.
+     */
+    public RecordingChanges( String sessionId,
+                             String processKey,
                              String repositoryKey,
-                             String workspaceName ) {
+                             String workspaceName) {
+        this.sessionId = sessionId;
         this.processKey = processKey;
         this.repositoryKey = repositoryKey;
         this.workspaceName = workspaceName;
         assert this.processKey != null;
         assert this.repositoryKey != null;
+        assert this.sessionId != null;
     }
 
     @Override
@@ -260,6 +266,9 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
+    public String getSessionId() {
+        return sessionId;
+    }
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Save by '")

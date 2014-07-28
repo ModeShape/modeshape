@@ -120,10 +120,6 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return this;
     }
 
-    public final String getProcessKey() {
-        return context.getProcessId();
-    }
-
     public final String getRepositoryKey() {
         return repositoryKey;
     }
