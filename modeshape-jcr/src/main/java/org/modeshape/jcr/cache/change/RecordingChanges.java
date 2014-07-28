@@ -52,6 +52,7 @@ public class RecordingChanges implements Changes, ChangeSet {
     private final String repositoryKey;
     private final String workspaceName;
     private final String journalId;
+    private final String sessionId;
     private final Queue<Change> events = new ConcurrentLinkedQueue<Change>();
     private final String uuid = UUID.randomUUID().toString();
     private Set<NodeKey> nodeKeys = Collections.emptySet();
@@ -61,21 +62,24 @@ public class RecordingChanges implements Changes, ChangeSet {
 
     /**
      * Creates a new change set.
-     * 
+     * @param sessionId  the ID of the session in which the change set was created; may not be null;
      * @param processKey the UUID of the process which created the change set; may not be null
      * @param repositoryKey the key of the repository for which the changes set is created; may not be null.
      * @param workspaceName the name of the workspace in which the changes occurred; may be null.
      * @param journalId the ID of the journal where this change set will be saved; may be null
      */
-    public RecordingChanges( String processKey,
+    public RecordingChanges( String sessionId,
+                             String processKey,
                              String repositoryKey,
                              String workspaceName,
                              String journalId ) {
+        this.sessionId = sessionId;
         this.processKey = processKey;
         this.repositoryKey = repositoryKey;
         this.workspaceName = workspaceName;
         this.journalId = journalId;
 
+        assert this.sessionId != null;
         assert this.processKey != null;
         assert this.repositoryKey != null;
     }
@@ -317,6 +321,11 @@ public class RecordingChanges implements Changes, ChangeSet {
     @Override
     public String getUserId() {
         return userId;
+    }
+
+    @Override
+    public String getSessionId() {
+        return sessionId;
     }
 
     @Override

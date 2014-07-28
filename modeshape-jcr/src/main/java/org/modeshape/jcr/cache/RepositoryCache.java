@@ -398,7 +398,8 @@ public class RepositoryCache {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey(), null, sessionContext.journalId());
+            RecordingChanges changes = new RecordingChanges(context.getId(),
+                    context.getProcessId(), this.getKey(), null, sessionContext.journalId());
             changes.repositoryMetadataChanged();
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -885,7 +886,8 @@ public class RepositoryCache {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey(), null, sessionContext.journalId());
+            RecordingChanges changes = new RecordingChanges(context.getId(),
+                    context.getProcessId(), this.getKey(), null, sessionContext.journalId());
             changes.workspaceAdded(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -941,7 +943,8 @@ public class RepositoryCache {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey(), null, sessionContext.journalId());
+            RecordingChanges changes = new RecordingChanges(context.getId(),
+                    context.getProcessId(), this.getKey(), null, sessionContext.journalId());
             changes.workspaceRemoved(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);

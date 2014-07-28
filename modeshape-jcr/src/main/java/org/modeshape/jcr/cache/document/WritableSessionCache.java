@@ -834,8 +834,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         DateTime timestamp = context.getValueFactories().getDateFactory().create();
         String workspaceName = persistedCache.getWorkspaceName();
         String repositoryKey = persistedCache.getRepositoryKey();
-        String processKey = persistedCache.getProcessKey();
-        RecordingChanges changes = new RecordingChanges(processKey, repositoryKey, workspaceName, sessionContext().journalId());
+        RecordingChanges changes = new RecordingChanges(context.getId(),
+                context.getProcessId(), repositoryKey, workspaceName, sessionContext().journalId());
 
         // Get the documentStore ...
         DocumentStore documentStore = persistedCache.documentStore();

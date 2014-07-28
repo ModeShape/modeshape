@@ -499,9 +499,11 @@ public final class Connectors {
             public ConnectorChangeSet newChangeSet() {
                 PathMappings mappings = getPathMappings(c);
                 RunningState repository = repository();
-                return new ConnectorChangeSetImpl(Connectors.this, mappings, repository.context().getProcessId(),
+                final ExecutionContext context = repository.context();
+                return new ConnectorChangeSetImpl(Connectors.this, mappings,
+                                                  context.getId(), context.getProcessId(),
                                                   repository.repositoryKey(), repository.changeBus(),
-                                                  repository.context().getValueFactories().getDateFactory(),
+                                                  context.getValueFactories().getDateFactory(),
                                                   repository().journalId());
             }
         };
