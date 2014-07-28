@@ -72,4 +72,10 @@ public interface ChangeSet extends Iterable<Change>, Serializable {
 
     public Set<NodeKey> changedNodes();
 
+    /**
+     * Returns the ID of the session in which the changes occurred.
+     *
+     * @return the id of a session, never {@code null}
+     */
+    public String getSessionId();
 }
