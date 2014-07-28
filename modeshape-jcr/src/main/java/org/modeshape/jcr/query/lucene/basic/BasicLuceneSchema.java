@@ -233,7 +233,7 @@ public class BasicLuceneSchema implements LuceneSchema {
         }
 
         // Return the node information object ...
-        return new NodeInfo(id, workspace, pathStr, name, localName, snsIndex, depth, dynamicField);
+        return new NodeInfo(id, workspace, pathStr, localName, name, snsIndex, depth, dynamicField);
     }
 
     /**
