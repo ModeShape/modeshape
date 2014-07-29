@@ -29,8 +29,6 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
@@ -56,16 +54,8 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public class NameValueFactory extends AbstractValueFactory<Name> implements NameFactory {
 
-    // Non-escaped pattern: (\{([^}]*)\})?(.*)
-    protected static final String FULLY_QUALFIED_NAME_PATTERN_STRING = "\\{([^}]*)\\}(.*)";
-    protected static final Pattern FULLY_QUALIFIED_NAME_PATTERN = Pattern.compile(FULLY_QUALFIED_NAME_PATTERN_STRING);
-
-    // Original pattern: (([^:/]*):)?([^:]*)
-    private static final String PREFIXED_NAME_PATTERN_STRING = "(([^:/]+):)?([^:]*)";
-    private static final Pattern PREFIXED_NAME_PATTERN = Pattern.compile(PREFIXED_NAME_PATTERN_STRING);
-
-    private static Name BLANK_NAME;
-    private static Name ANY_NAME;
+    private static final Name BLANK_NAME = new BasicName("", "");
+    private static final Name ANY_NAME = new BasicName("", "*");
 
     private final NamespaceRegistry.Holder namespaceRegistryHolder;
 
@@ -110,45 +100,70 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
         if (decoder == null) decoder = getDecoder();
         try {
             if (value.length() == 0) {
-                if (BLANK_NAME == null) BLANK_NAME = new BasicName("", "");
                 return BLANK_NAME;
             }
             char firstChar = value.charAt(0);
             if (value.length() == 1 && firstChar == '*') {
-                if (ANY_NAME == null) ANY_NAME = new BasicName("", "*");
                 return ANY_NAME;
             }
-            if (firstChar != '{') {
-                // First, see whether the value fits the prefixed name pattern ...
-                Matcher matcher = PREFIXED_NAME_PATTERN.matcher(value);
-                if (matcher.matches()) {
-                    String prefix = matcher.group(2);
-                    String localName = matcher.group(3);
-                    // Decode the parts ...
-                    prefix = prefix == null ? "" : decoder.decode(prefix);
-                    localName = decoder.decode(localName);
-                    // Look for a namespace match ...
-                    String namespaceUri = this.namespaceRegistryHolder.getNamespaceRegistry().getNamespaceForPrefix(prefix);
-                    // Fail if no namespace is found ...
-                    if (namespaceUri == null) {
-                        throw new NamespaceException(GraphI18n.noNamespaceRegisteredForPrefix.text(prefix));
+            if (firstChar == ':') {
+                if (value.length() == 1) {
+                    // This is completely blank (just a ':') ...
+                    return BLANK_NAME;
+                }
+                // Otherwise, it's invalid with a blank prefix and non-blank local name
+                throw new ValueFormatException(value, getPropertyType(),
+                                               GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                                  Name.class.getSimpleName(), value));
+            }
+            if (firstChar == '{') {
+                // This might be fully-qualified ...
+                int closingBraceIndex = value.indexOf('}', 1);
+                if (closingBraceIndex == 1) {
+                    // It's an empty pair of braces, so treat it as the blank namespace ...
+                    if (value.length() == 2) {
+                        // There's nothing else ...
+                        return BLANK_NAME;
                     }
+                    String namespaceUri = this.namespaceRegistryHolder.getNamespaceRegistry().getNamespaceForPrefix("");
+                    String localName = decoder.decode(value.substring(2));
                     return new BasicName(namespaceUri, localName);
                 }
-            }
-            // If it doesn't fit the prefixed pattern, then try the internal pattern
-            Matcher matcher = FULLY_QUALIFIED_NAME_PATTERN.matcher(value);
-            if (matcher.matches()) {
-                String namespaceUri = matcher.group(1);
-                String localName = matcher.group(2);
-                // Decode the parts ...
-                return create(namespaceUri, localName, decoder);
+                if (closingBraceIndex > 1) {
+                    // Closing brace found with chars between ...
+                    String namespaceUri = value.substring(1, closingBraceIndex);
+                    int nextIndexAfterClosingBrace = closingBraceIndex + 1;
+                    String localName = nextIndexAfterClosingBrace < value.length() ? value.substring(nextIndexAfterClosingBrace) : "";
+                    // Decode the parts ...
+                    return create(namespaceUri, localName, decoder);
+                }
+            } else {
+                // This is not fully-qualified, so see whether the value fits the prefixed name pattern ...
+                int colonIndex = value.indexOf(':');
+                if (colonIndex < 1) {
+                    // There is no namespace prefix ...
+                    String namespaceUri = this.namespaceRegistryHolder.getNamespaceRegistry().getNamespaceForPrefix("");
+                    String localName = decoder.decode(value);
+                    return new BasicName(namespaceUri, localName);
+                }
+                // There is a namespace ...
+                String prefix = value.substring(0, colonIndex);
+                prefix = decoder.decode(prefix);
+                // Look for a namespace match ...
+                String namespaceUri = this.namespaceRegistryHolder.getNamespaceRegistry().getNamespaceForPrefix(prefix);
+                // Fail if no namespace is found ...
+                if (namespaceUri == null) {
+                    throw new NamespaceException(GraphI18n.noNamespaceRegisteredForPrefix.text(prefix));
+                }
+                int nextIndexAfterColon = colonIndex + 1;
+                String localName = nextIndexAfterColon < value.length() ? value.substring(nextIndexAfterColon) : "";
+                localName = decoder.decode(localName);
+                return new BasicName(namespaceUri, localName);
             }
         } catch (NamespaceException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                              Name.class.getSimpleName(),
-                                                                              value), err);
+                                                                              Name.class.getSimpleName(), value), err);
         }
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
                                                                                                     Name.class.getSimpleName(),
@@ -176,8 +191,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public Name create( int value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                          Integer.class.getSimpleName(),
-                                                                          value));
+                                                                          Integer.class.getSimpleName(), value));
     }
 
     @Override
@@ -191,8 +205,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public Name create( boolean value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                          Boolean.class.getSimpleName(),
-                                                                          value));
+                                                                          Boolean.class.getSimpleName(), value));
     }
 
     @Override
@@ -213,16 +226,14 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public Name create( BigDecimal value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                          BigDecimal.class.getSimpleName(),
-                                                                          value));
+                                                                          BigDecimal.class.getSimpleName(), value));
     }
 
     @Override
     public Name create( Calendar value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                          Calendar.class.getSimpleName(),
-                                                                          value));
+                                                                          Calendar.class.getSimpleName(), value));
     }
 
     @Override
@@ -236,8 +247,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public Name create( DateTime value ) throws ValueFormatException {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                          DateTime.class.getSimpleName(),
-                                                                          value));
+                                                                          DateTime.class.getSimpleName(), value));
     }
 
     @Override
@@ -266,16 +276,14 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
         if (!segment.hasIndex()) return segment.getName();
         throw new ValueFormatException(segment, getPropertyType(),
                                        GraphI18n.errorConvertingType.text(Path.Segment.class.getSimpleName(),
-                                                                          Name.class.getSimpleName(),
-                                                                          segment));
+                                                                          Name.class.getSimpleName(), segment));
     }
 
     @Override
     public Name create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                          Reference.class.getSimpleName(),
-                                                                          value));
+                                                                          Reference.class.getSimpleName(), value));
     }
 
     @Override
@@ -305,8 +313,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public Name create( NodeKey value ) throws ValueFormatException {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                          NodeKey.class.getSimpleName(),
-                                                                          value));
+                                                                          NodeKey.class.getSimpleName(), value));
     }
 
     @Override
