@@ -290,6 +290,11 @@ public abstract class AbstractChangeBusTest {
         }
 
         @Override
+        public String getSessionId() {
+            return null;
+        }
+
+        @Override
         public String getRepositoryKey() {
             return null;
         }

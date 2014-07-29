@@ -90,6 +90,13 @@ public interface ChangeSet extends Iterable<Change>, Serializable {
     public Set<NodeKey> changedNodes();
 
     /**
+     * Returns the ID of the session in which the changes occurred.
+     *
+     * @return the id of a session, never {@code null}
+     */
+    public String getSessionId();
+
+    /**
      * Returns the identifier of the local {@link org.modeshape.jcr.journal.ChangeJournal} instance.
      * 
      * @return either a non-null {@link String} if journaling is enabled, or {@code null} if journaling isn't enabled.

@@ -248,6 +248,11 @@ public class LocalJournalTest {
         }
 
         @Override
+        public String getSessionId() {
+            return null;
+        }
+
+        @Override
         public String getJournalId() {
             return journalId;
         }

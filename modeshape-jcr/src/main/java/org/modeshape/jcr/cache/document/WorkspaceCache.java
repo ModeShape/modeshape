@@ -138,10 +138,6 @@ public class WorkspaceCache implements DocumentCache {
         return this;
     }
 
-    public final String getProcessKey() {
-        return context.getProcessId();
-    }
-
     public final String getRepositoryKey() {
         return repositoryKey;
     }

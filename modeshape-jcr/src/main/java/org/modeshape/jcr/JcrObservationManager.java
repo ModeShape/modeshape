@@ -1095,7 +1095,7 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
          * @return <code>true</code> if event occurred in a different session or if events from same session should be processed
          */
         private boolean acceptBasedOnOriginatingSession( ChangeSet changeSet ) {
-            return !this.noLocal || !getSessionId().equals(changeSet.getProcessKey());
+            return !this.noLocal || !getSessionId().equals(changeSet.getSessionId());
         }
 
         /**
@@ -1187,7 +1187,7 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
         }
 
         private String getSessionId() {
-            return session.context().getProcessId();
+            return session.sessionId();
         }
 
         private String getWorkspaceName() {

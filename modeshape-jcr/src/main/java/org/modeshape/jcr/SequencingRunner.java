@@ -304,7 +304,8 @@ final class SequencingRunner implements Runnable {
                                       JcrSession outputSession,
                                       String sequencerName ) throws RepositoryException {
 
-        RecordingChanges sequencingChanges = new RecordingChanges(outputSession.context().getProcessId(),
+        final ExecutionContext context = outputSession.context();
+        RecordingChanges sequencingChanges = new RecordingChanges(outputSession.sessionId(), context.getProcessId(),
                                                                   outputSession.getRepository().repositoryKey(),
                                                                   outputSession.workspaceName(), outputSession.getRepository()
                                                                                                               .journalId());
@@ -316,7 +317,7 @@ final class SequencingRunner implements Runnable {
                                             outputNode.path(), work.getOutputPath(), work.getUserId(), work.getSelectedPath(),
                                             sequencerName, sequencedNode.node().isQueryable(outputSession.cache()));
         }
-        sequencingChanges.freeze(outputSession.getUserID(), null, outputSession.context().getValueFactories().getDateFactory().create());
+        sequencingChanges.freeze(outputSession.getUserID(), null, context.getValueFactories().getDateFactory().create());
         repository.changeBus().notify(sequencingChanges);
     }
 
@@ -328,7 +329,8 @@ final class SequencingRunner implements Runnable {
         assert inputSession != null;
         Name primaryType = sequencedNode.getPrimaryTypeName();
         Set<Name> mixinTypes = sequencedNode.getMixinTypeNames();
-        RecordingChanges sequencingChanges = new RecordingChanges(inputSession.context().getProcessId(),
+        final ExecutionContext context = inputSession.context();
+        RecordingChanges sequencingChanges = new RecordingChanges(inputSession.sessionId(), context.getProcessId(),
                                                                   inputSession.getRepository().repositoryKey(),
                                                                   inputSession.workspaceName(), inputSession.getRepository()
                                                                                                             .journalId());

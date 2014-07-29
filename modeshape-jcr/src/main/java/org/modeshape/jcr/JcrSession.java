@@ -198,7 +198,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         this.workspace = new JcrWorkspace(this, workspaceName);
 
         // Create the session cache ...
-        this.cache = repositoryCache.createSession(context, workspaceName, readOnly);
+        this.cache = repositoryCache.createSession(this.context, workspaceName, readOnly);
         this.rootNode = new JcrRootNode(this, this.cache.getRootKey());
         this.jcrNodes.put(this.rootNode.key(), this.rootNode);
         this.sessionAttributes = sessionAttributes != null ? sessionAttributes : Collections.<String, Object>emptyMap();
