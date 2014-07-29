@@ -2171,6 +2171,36 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
             assertThat(receivedUserData, is(nullValue()));
         }
     }
+    @Test
+    @FixFor( "MODE-2268" )
+    public void shouldReceiveNonLocalEvents() throws Exception {
+        // register a non-local listener with the 1st session
+        SimpleListener listener = new SimpleListener(1, 1, Event.NODE_ADDED);
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, Event.NODE_ADDED, null, true, null, null, true);
+
+        //create a node in the 1st session - the listener should not get this event
+        session.getRootNode().addNode("session1Node");
+        session.save();
+
+        // Create a new session ...
+        Session session2 = login(WORKSPACE);
+
+        // add node and save
+        Node addedNode = session2.getRootNode().addNode("session2Node");
+        session2.save();
+
+        // event handling
+        listener.waitForEvents();
+        removeListener(listener);
+
+        // tests
+        checkResults(listener);
+        assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
+    }
 
     protected void assertNoRepositoryNamespace( String uri,
                                                 String prefix ) throws RepositoryException {

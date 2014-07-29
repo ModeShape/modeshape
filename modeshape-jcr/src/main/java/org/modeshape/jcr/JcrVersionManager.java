@@ -1616,12 +1616,20 @@ final class JcrVersionManager implements VersionManager {
             List<DateTime> versionDates = new ArrayList<DateTime>(versions.keySet());
             Collections.sort(versionDates);
 
+            Version versionSameDateTime = null;
             for (int i = versionDates.size() - 1; i >= 0; i--) {
                 DateTime versionDate = versionDates.get(i);
                 if (versionDate.isBefore(checkinTime)) {
                     Version version = versions.get(versionDate);
                     return ((JcrVersionNode)version).getFrozenNode();
+                } else if (versionDate.equals(checkinTime)) {
+                    versionSameDateTime = versions.get(versionDate);
                 }
+            }
+
+            // we weren't able to find a version with a "before" timestamp, so check for one with the same timestamp
+            if (versionSameDateTime != null) {
+                return ((JcrVersionNode)versionSameDateTime).getFrozenNode();
             }
 
             throw new IllegalStateException("First checkin must be before the checkin time of the node to be restored");
