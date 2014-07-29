@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -122,6 +124,16 @@ public class NameValueFactoryTest extends BaseValueFactoryTest {
         nameFactory.create("a:b:c");
     }
 
+    @Test( expected = ValueFormatException.class )
+    public void shouldNotAllowStringWithUnclosedBrace() {
+        nameFactory.create("{something");
+    }
+
+    @Test( expected = ValueFormatException.class )
+    public void shouldNotAllowLocalNameWithBlankPrefix() {
+        name = nameFactory.create(":something");
+    }
+
     @Test
     public void shouldCreateIteratorOverValuesWhenSuppliedIteratorOfUnknownObjects() {
         List<String> values = new ArrayList<String>();
@@ -133,5 +145,59 @@ public class NameValueFactoryTest extends BaseValueFactoryTest {
         while (iter.hasNext()) {
             assertThat(iter.next(), is(nameFactory.create(valueIter.next())));
         }
+    }
+
+    @Test
+    public void shouldCreateNameWithBlankUri() {
+        name = nameFactory.create("{}something");
+        assertThat(name.getNamespaceUri(), is(""));
+        assertThat(name.getLocalName(), is("something"));
+        assertThat(name.getString(NO_OP_ENCODER), is("something"));
+    }
+
+    @Test
+    public void shouldCreateNameWithBlankUriAndBlankName() {
+        name = nameFactory.create("{}");
+        assertThat(name.getNamespaceUri(), is(""));
+        assertThat(name.getLocalName(), is(""));
+        assertThat(name.getString(NO_OP_ENCODER), is(""));
+    }
+
+    @Test
+    public void shouldCreateNameWithBlankPrefixAndBlankLocalName() {
+        name = nameFactory.create(":");
+        assertThat(name.getNamespaceUri(), is(""));
+        assertThat(name.getLocalName(), is(""));
+        assertThat(name.getString(NO_OP_ENCODER), is(""));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToCreateNameWithUriAndBlankLocalName() {
+        name = nameFactory.create("{http://www.modeshape.org/namespace}");
+    }
+
+    @Test
+    public void shouldCreateNameWithPrefixAndBlankLocalName() {
+        name = nameFactory.create("dna:");
+        assertThat(name.getNamespaceUri(), is("http://www.modeshape.org/namespace"));
+        assertThat(name.getLocalName(), is(""));
+        assertThat(name.getString(NO_OP_ENCODER), is("{http://www.modeshape.org/namespace}"));
+    }
+
+    @Ignore
+    @Test
+    public void shouldCreateFromNonEncodedString() {
+        // Warm up ...
+        for (int i = 0; i != 10; ++i) {
+            name = nameFactory.create("dna:something");
+        }
+        Stopwatch sw = new Stopwatch();
+        int count = 20000000;
+        sw.start();
+        for (int i = 0; i != count; ++i) {
+            name = nameFactory.create("dna:something");
+        }
+        sw.stop();
+        System.out.println("Total duration for " + count + " calls: " + sw.getTotalDuration());
     }
 }
