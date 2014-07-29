@@ -33,6 +33,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.jcr.RepositoryException;
+import javax.transaction.SystemException;
 import org.infinispan.Cache;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
@@ -130,8 +131,20 @@ public class BackupService {
         // Create the activity ...
         final BackupActivity backupActivity = createBackupActivity(backupDirectory, documentsPerFile, compress);
 
-        // Run the backup and return the problems ...
-        return new JcrProblems(backupActivity.execute());
+        //suspend any existing transactions
+        try {
+            if (runningState.suspendExistingUserTransaction()) {
+                LOGGER.debug("Suspended existing active user transaction before the backup operation starts");
+            }
+            try {
+                // Run the backup and return the problems ...
+                return new JcrProblems(backupActivity.execute());
+            } finally {
+                runningState.resumeExistingUserTransaction();
+            }
+        } catch (SystemException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -152,15 +165,26 @@ public class BackupService {
         // Create the activity ...
         final RestoreActivity restoreActivity = createRestoreActivity(backupDirectory);
 
-        org.modeshape.jcr.api.Problems problems = new JcrProblems(restoreActivity.execute());
-        if (!problems.hasProblems()) {
-            // restart the repository ...
-            try {
-                repository.completeRestore();
-            } catch (Throwable t) {
-                restoreActivity.problems.addError(JcrI18n.repositoryCannotBeRestartedAfterRestore, repository.getName(),
-                                                  t.getMessage());
+        org.modeshape.jcr.api.Problems problems = null;
+        try {
+            if (runningState.suspendExistingUserTransaction()) {
+                LOGGER.debug("Suspended existing active user transaction before the restore operation starts");
             }
+
+            problems = new JcrProblems(restoreActivity.execute());
+            if (!problems.hasProblems()) {
+                // restart the repository ...
+                try {
+                    repository.completeRestore();
+                } catch (Throwable t) {
+                    restoreActivity.problems.addError(JcrI18n.repositoryCannotBeRestartedAfterRestore, repository.getName(),
+                                                      t.getMessage());
+                } finally {
+                    runningState.resumeExistingUserTransaction();
+                }
+            }
+        } catch (SystemException e) {
+            throw new RuntimeException(e);
         }
         LOGGER.debug("Completed restore of '{0}' repository from {1}", repository.getName(), backupLocString);
         return problems;
