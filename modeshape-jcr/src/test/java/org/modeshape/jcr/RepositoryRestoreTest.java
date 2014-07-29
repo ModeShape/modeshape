@@ -37,9 +37,16 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
+import javax.transaction.TransactionManager;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.Problems;
@@ -186,6 +193,38 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         } finally {
             session.logout();
         }
+        queryContentInWorkspace(repository(), null);
+    }
+
+    @Test
+    @FixFor( "MODE-2253" )
+    public void shouldBackupAndRestoreWithExistingUserTransaction() throws Exception {
+        loadContent();
+
+        startTransaction();
+
+        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
+        assertNoProblems(problems);
+        problems = session().getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
+        assertNoProblems(problems);
+
+        rollbackTransaction();
+
+        assertContentInWorkspace(repository(), "default");
+        assertContentInWorkspace(repository(), "ws2");
+        assertContentInWorkspace(repository(), "ws3");
+    }
+
+    private void startTransaction() throws NotSupportedException, SystemException {
+        TransactionManager txnMgr = session.repository.transactionManager();
+        txnMgr.begin();
+    }
+
+    private void rollbackTransaction()
+            throws SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException,
+                   HeuristicRollbackException {
+        TransactionManager txnMgr = session.repository.transactionManager();
+        txnMgr.rollback();
     }
 
     protected void assertNoProblems( Problems problems ) {

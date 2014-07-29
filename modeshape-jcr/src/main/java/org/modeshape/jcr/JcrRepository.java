@@ -1840,9 +1840,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                                                           processId) : standaloneBus;
         }
 
-        void suspendExistingUserTransaction() throws SystemException {
+        boolean suspendExistingUserTransaction() throws SystemException {
             // suspend any potential existing transaction, so that the initialization is "atomic"
             this.existingUserTransaction = this.transactions.suspend();
+            return this.existingUserTransaction != null;
         }
 
         void resumeExistingUserTransaction() throws SystemException {
