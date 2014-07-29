@@ -31,9 +31,11 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
     private final ChangeBus bus;
     private final Map<String, RecordingChanges> changesByWorkspace = new HashMap<String, RecordingChanges>();
     private final DateTimeFactory timeFactory;
+    private final String sessionId;
 
     public ConnectorChangeSetImpl( Connectors connectors,
                                    PathMappings mappings,
+                                   String sessionId,
                                    String processId,
                                    String repositoryKey,
                                    ChangeBus bus,
@@ -45,6 +47,7 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
         this.processId = processId;
         this.repositoryKey = repositoryKey;
         this.bus = bus;
+        this.sessionId = sessionId;
         assert this.connectors != null;
         assert this.connectorSourceName != null;
         assert this.pathMappings != null;
@@ -61,7 +64,7 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
     protected final RecordingChanges changesFor( String workspaceName ) {
         RecordingChanges changes = changesByWorkspace.get(workspaceName);
         if (changes == null) {
-            changes = new RecordingChanges(processId, repositoryKey, workspaceName);
+            changes = new RecordingChanges(sessionId, processId, repositoryKey, workspaceName);
             changesByWorkspace.put(workspaceName, changes);
         }
         return changes;

@@ -391,7 +391,7 @@ public class RepositoryCache implements Observable {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey());
+            RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null);
             changes.repositoryMetadataChanged();
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -976,7 +976,7 @@ public class RepositoryCache implements Observable {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey());
+            RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null);
             changes.workspaceAdded(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -1032,7 +1032,7 @@ public class RepositoryCache implements Observable {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey());
+            RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null);
             changes.workspaceRemoved(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);

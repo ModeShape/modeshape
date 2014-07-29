@@ -332,7 +332,8 @@ final class SequencingRunner implements Runnable {
                                       JcrSession outputSession,
                                       String sequencerName ) throws RepositoryException {
 
-        RecordingChanges sequencingChanges = new RecordingChanges(outputSession.context().getProcessId(),
+        final ExecutionContext context = outputSession.context();
+        RecordingChanges sequencingChanges = new RecordingChanges(outputSession.sessionId(), context.getProcessId(),
                                                                   outputSession.getRepository().repositoryKey(),
                                                                   outputSession.workspaceName());
         for (AbstractJcrNode outputNode : outputNodes) {
@@ -345,6 +346,7 @@ final class SequencingRunner implements Runnable {
                                             work.getSelectedPath(),
                                             sequencerName);
         }
+        sequencingChanges.freeze(outputSession.getUserID(), null, context.getValueFactories().getDateFactory().create());
 
         repository.changeBus().notify(sequencingChanges);
     }
@@ -355,7 +357,8 @@ final class SequencingRunner implements Runnable {
                                              String sequencerName ) throws RepositoryException {
         assert sequencedNode != null;
         assert inputSession != null;
-        RecordingChanges sequencingChanges = new RecordingChanges(inputSession.context().getProcessId(),
+        RecordingChanges sequencingChanges = new RecordingChanges(inputSession.sessionId(),
+                                                                  inputSession.context().getProcessId(),
                                                                   inputSession.getRepository().repositoryKey(),
                                                                   inputSession.workspaceName());
         sequencingChanges.nodeSequencingFailure(sequencedNode.key(),
