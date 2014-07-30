@@ -83,9 +83,9 @@ public class RepositoriesView extends View {
         });
     }
     
-    public void select(String repository, String workspace, String path) {
+    public void select(String repository, String workspace, String path, boolean changeHistory) {
         selected = repository;
-        console.showContent(repository, workspace, path);
+        console.showContent(repository, workspace, path, changeHistory);
     }
     
     private class RepositoryItem extends VLayout {
@@ -106,7 +106,7 @@ public class RepositoriesView extends View {
                 public void onClick(ClickEvent event) {
                     Label repo = (Label)event.getSource(); 
                     selected = repo.getContents();
-                    console.showContent(selected);
+                    console.showContent(selected, true);
                 }
             });
             addMember(name);

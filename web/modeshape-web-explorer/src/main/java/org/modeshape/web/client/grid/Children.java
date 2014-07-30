@@ -219,7 +219,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
                 @SuppressWarnings( "synthetic-access" )
                 @Override
                 public void onClick(ClickEvent event) {
-                    contents.select(path());
+                    contents.select(path(), true);
                 }
             });
 

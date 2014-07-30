@@ -29,6 +29,14 @@ public class JcrURL implements Serializable {
     private String workspace;
     private String path;
     
+    public void parse2(String uri) {
+        String path = uri;
+        path = path.replace("http://", "");
+        int pos = path.indexOf("/");
+        path = path.substring(pos);
+        parse(path);
+    }
+    
     public void parse(String uri) {
         if (uri.startsWith("/")) {
             uri = uri.substring(1);

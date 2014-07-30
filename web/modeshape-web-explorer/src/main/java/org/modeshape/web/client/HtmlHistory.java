@@ -65,15 +65,18 @@ public class HtmlHistory implements Historian,
      var that = this;
      var oldHandler = $wnd.onpopstate;
      $wnd.onpopstate = $entry(function(e) {
-     that.@org.modeshape.web.client.HtmlHistory::onPopState()();
+     var uri = $wnd.location
+     that.@org.modeshape.web.client.HtmlHistory::onPopState(Ljava/lang/String;)(uri);
      if (oldHandler) {
      oldHandler();
      }
      });
      }-*/;
 
-    private void onPopState() {
-        ValueChangeEvent.fire(this, getToken());
+    private void onPopState(String url) {
+        StringBuilder b = new StringBuilder();
+        b.append(url);
+        ValueChangeEvent.fire(this, b.toString());
     }
 
     private native void pushState(String url) /*-{

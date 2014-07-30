@@ -98,7 +98,7 @@ public class Contents extends View {
         workspaces.addChangedHandler(new ChangedHandler() {
             @Override
             public void onChanged(ChangedEvent event) {
-                select(repository(), (String)event.getValue(), path());
+                select(repository(), (String)event.getValue(), path(), true);
             }
         });
         
@@ -180,7 +180,7 @@ public class Contents extends View {
         */ 
     }
 
-    public void show(String repository) {
+    public void show(String repository, final boolean changeHistory) {
         this.repository = repository;
         jcrService.getWorkspaces(repository, new AsyncCallback<String[]>() {
             @Override
@@ -194,12 +194,13 @@ public class Contents extends View {
                 if (result.length > 0) {
                     workspaces.setValue(result[0]);
                 }
-                select(path());
+                select(path(), changeHistory);
             }
         });
     }
 
-    public void select(final String repository, final String workspace, final String path) {
+    public void select(final String repository, final String workspace, 
+            final String path, final boolean changeHistory) {
         this.repository = repository;
         jcrService.getWorkspaces(repository, new AsyncCallback<String[]>() {
             @Override
@@ -211,12 +212,12 @@ public class Contents extends View {
             public void onSuccess(String[] result) {
                 workspaces.setValueMap(result);
                 workspaces.setValue(workspace);
-                select(path);
+                select(path, changeHistory);
             }
         });        
     }
     
-    public void select(final String path) {
+    public void select(final String path, final boolean changeHistory) {
         console.showLoadingIcon();
         this.path = path;
         jcrService.node(repository(), workspace(), path, new AsyncCallback<JcrNode>() {
@@ -234,8 +235,8 @@ public class Contents extends View {
                 Contents.this.path = result.getPath();
                 pathLabel.display(result.getPath());
                 
-                console.updateWorkspace(workspace());
-                console.updatePath(path);
+                console.updateWorkspace(workspace(), changeHistory);
+                console.updatePath(path, changeHistory);
                 
                 children.show(node);
                 properties.show(node);
@@ -323,7 +324,7 @@ public class Contents extends View {
 
             @Override
             public void onSuccess(Object result) {
-                select(path);
+                select(path, true);
             }
         });
     }
@@ -563,7 +564,7 @@ public class Contents extends View {
                     @Override
                     public void onClick(ClickEvent event) {
                         Label label = (Label) event.getSource();
-                        select(label.getDataPath());
+                        select(label.getDataPath(), true);
                     }
                 });
                 

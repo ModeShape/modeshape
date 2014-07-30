@@ -17,6 +17,8 @@ package org.modeshape.web.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.Alignment;
 import com.smartgwt.client.util.SC;
@@ -30,7 +32,7 @@ import org.modeshape.web.shared.RepositoryName;
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
-public class Console implements EntryPoint {
+public class Console implements EntryPoint, ValueChangeHandler<String> {
 
     /**
      * Create a remote service proxy to talk to the server-side Greeting service.
@@ -102,7 +104,7 @@ public class Console implements EntryPoint {
     public void init() {
         String path = jcrURL.getPath();
         if (path == null) path = "/";
-        repos.select(jcrURL.getRepository(), jcrURL.getWorkspace(), path);
+        repos.select(jcrURL.getRepository(), jcrURL.getWorkspace(), path, true);
     }
 
     protected void updateUserName(String userName) {
@@ -142,6 +144,7 @@ public class Console implements EntryPoint {
             repos.load();
         }
         
+        htmlHistory.addValueChangeHandler(this);
         mainForm.draw();        
     }
 
@@ -188,19 +191,31 @@ public class Console implements EntryPoint {
         repositoryNamePanel.hide();
     }
     
-    public void updateRepository(String repository) {
+    public void updateRepository(String repository, boolean changeHistory) {
         jcrURL.setRepository(repository);
-        htmlHistory.newItem(jcrURL.toString(), false);
+        if (changeHistory) {
+            htmlHistory.newItem(jcrURL.toString(), false);
+        }
     }
 
-    public void updateWorkspace(String workspace) {
+    public void updateWorkspace(String workspace, boolean changeHistory) {
         jcrURL.setWorkspace(workspace);
-        htmlHistory.newItem(jcrURL.toString(), false);
+        if (changeHistory) {
+            htmlHistory.newItem(jcrURL.toString(), false);
+        }
     }
     
-    public void updatePath(String path) {
+    public void updatePath(String path, boolean changeHistory) {
         jcrURL.setPath(path);
-        htmlHistory.newItem(jcrURL.toString(), false);
+        if (changeHistory) {
+            htmlHistory.newItem(jcrURL.toString(), false);
+        }
+    }
+
+    @Override
+    public void onValueChange(ValueChangeEvent<String> event) {
+        jcrURL.parse2(event.getValue());
+        repos.select(jcrURL.getRepository(), jcrURL.getWorkspace(), jcrURL.getPath(), false);
     }
     
     private class Strut extends VLayout {
@@ -252,19 +267,20 @@ public class Console implements EntryPoint {
         queryView.init();
     }
     
-    protected void showContent(String repository, String workspace, String path) {
-        contents.select(repository, workspace, path);
+    protected void showContent(String repository, String workspace, String path,
+            boolean changeHistory) {
+        contents.select(repository, workspace, path, changeHistory);
 //        contents.select(workspace, path);
         showRepo(repository);
         viewPort.display(contents);
-        updateRepository(repository);
+        updateRepository(repository, changeHistory);
     }
     
-    protected void showContent(String repository) {
-        contents.show(repository);
+    protected void showContent(String repository, boolean changeHistory) {
+        contents.show(repository, changeHistory);
         showRepo(repository);
         viewPort.display(contents);
-        updateRepository(repository);
+        updateRepository(repository, changeHistory);
     }
     
     protected void display(View view) {
