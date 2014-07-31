@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd
+                            urn:infinispan:config:store:leveldb:6.0 http://www.infinispan.org/schemas/infinispan-cachestore-leveldb-config-6.0.xsd"
+        xmlns="urn:infinispan:config:6.0">
+    <namedCache name="levelDBRepository">
+        <persistence passivation="false">
+            <leveldbStore xmlns="urn:infinispan:config:store:leveldb:6.0"
+                          fetchPersistentState="false"
+                          ignoreModifications="false"
+                          purgeOnStartup="false"
+                          shared="false"
+                          location="target/leveldb/content"
+                          expiredLocation="target/leveldb/expired"
+                          implementationType="JAVA">
+            </leveldbStore>
+        </persistence>
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+    </namedCache>
+</infinispan>

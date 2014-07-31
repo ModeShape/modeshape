@@ -1,8 +1,8 @@
 {
-    "name" : "In Memory Repository",
+    "name" : "Level DB Repository",
     "storage" : {
-        "cacheName" : "inmemoryRepository",
-        "cacheConfiguration" : "config/infinispan-inmemory-jbosstxn.xml",
+        "cacheName" : "levelDBRepository",
+        "cacheConfiguration" : "config/infinispan-leveldb-jbosstxn.xml"
     },
     "workspaces" : {
         "default" : "default",

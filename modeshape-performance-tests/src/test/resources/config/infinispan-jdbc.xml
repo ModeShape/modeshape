@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd
+                            urn:infinispan:config:jdbc:6.0 http://www.infinispan.org/schemas/infinispan-cachestore-jdbc-config-6.0.xsd"
+        xmlns="urn:infinispan:config:6.0">
+    <global>
+        <globalJmxStatistics allowDuplicateDomains="true"/>
+    </global>
+    <namedCache name="db_repository">
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+
+        <persistence passivation="false">
+            <stringKeyedJdbcStore xmlns="urn:infinispan:config:jdbc:6.0"
+                                  fetchPersistentState="false"
+                                  ignoreModifications="false"
+                                  purgeOnStartup="false">
+                <connectionPool
+                        connectionUrl="${dataSource.url}"
+                        driverClass="${dataSource.driverClassName}"
+                        username="${dataSource.username}"
+                        password="${dataSource.password}"
+                />
+                <stringKeyedTable
+                        prefix="ISPN_"
+                        createOnStart="true"
+                        dropOnExit="false">
+                    <idColumn name="ID_COLUMN" type="${infinispan.jdbc.id_column.type}"/>
+                    <dataColumn name="DATA_COLUMN" type="${infinispan.jdbc.data_column.type}"/>
+                    <timestampColumn name="TIMESTAMP_COLUMN" type="${infinispan.jdbc.timestamp_column.type}"/>
+                </stringKeyedTable>
+            </stringKeyedJdbcStore>
+        </persistence>
+    </namedCache>
+</infinispan>
