@@ -1,11 +1,25 @@
 {
-    "name" : "Test Repository",
+    "name" : "BDB Repository",
+    "storage" : {
+        "cacheName" : "bdbRepository",
+        "cacheConfiguration" : "config/infinispan-bdb-jbosstxn.xml"
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
     "query" : {
         "indexStorage" : {
             "type" : "ram"
         },
         "indexing" : {
-            "mode" : "sync",
+            "mode" : "sync"
         }
     }
 }

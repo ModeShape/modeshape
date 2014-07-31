@@ -29,24 +29,22 @@ import static org.junit.Assert.assertThat;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.jcr.CustomLoaderTest;
-import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.TestingEnvironment;
 
-public class InMemoryPerformanceTest implements CustomLoaderTest {
+public class InMemoryPerformanceTest {
 
     private static final String LARGE_STRING_VALUE = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed fermentum iaculis placerat. Mauris condimentum dapibus pretium. Vestibulum gravida sodales tellus vitae porttitor. Nunc dictum, eros vel adipiscing pellentesque, sem mi iaculis dui, a aliquam neque magna non turpis. Maecenas imperdiet est eu lorem placerat mattis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vestibulum scelerisque molestie tristique. Mauris nibh diam, vestibulum eu condimentum at, facilisis at nisi. Maecenas vehicula accumsan lacus in venenatis. Nulla nisi eros, fringilla at dapibus mollis, pharetra at urna. Praesent in risus magna, at iaculis sapien. Fusce id velit id dui tempor hendrerit semper a nunc. Nam eget mauris tellus.";
     private static final String SMALL_STRING_VALUE = "The quick brown fox jumped over the moon. What? ";
@@ -57,7 +55,6 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
 
     private static final int MANY_NODES_COUNT = 10000;
 
-    private Environment environment;
     private RepositoryConfiguration config;
     protected ModeShapeEngine engine;
     protected Repository repository;
@@ -75,11 +72,9 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
 
         Document configDoc = Json.read(configStream);
 
-        environment = new TestingEnvironment(this);
-
         STARTUP.start();
         INFINISPAN_STARTUP.start();
-        config = new RepositoryConfiguration(configDoc, configFileName, environment);
+        config = new RepositoryConfiguration(configDoc, configFileName);
         INFINISPAN_STARTUP.stop();
 
         MODESHAPE_STARTUP.start();
@@ -100,11 +95,7 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
             engine = null;
             repository = null;
             config = null;
-            try {
-                environment.shutdown();
-            } finally {
-                cleanUpFileSystem();
-            }
+            cleanUpFileSystem();
         }
     }
 
@@ -117,10 +108,6 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
 
     protected void cleanUpFileSystem() throws Exception {
         // do nothing by default
-    }
-
-    @Override
-    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
     }
 
     @Test
@@ -266,6 +253,97 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
         }
     }
 
+    @Test
+    @Performance
+    public void shouldGetNodePathsInFlatLargeHierarchyWithSns() throws Exception {
+        boolean print = true;
+        int initialNodeCount = 1000;
+        int propertiesPerChild = 0;
+
+        //create a parent with a number of nodes initially
+        Node parent = session.getRootNode().addNode("testRoot");
+        session.save();
+        createSubgraph(session, parent, 1, initialNodeCount,  propertiesPerChild, true, 1);
+
+        Stopwatch globalSw = new Stopwatch();
+        globalSw.start();
+        Stopwatch readSW = new Stopwatch();
+        //add additional batches of nodes while reading the paths after each batch of children was added
+        int batchCount = 36;
+        int batchSize = 100;
+        for (int i = 0; i < batchCount; i++) {
+            long childCountBeforeBath = session.getNode("/testRoot").getNodes().getSize();
+            //creates batchSize
+            int newChildrenCount = createSubgraph(session, parent, 1, batchSize, propertiesPerChild, true, 1);
+            readSW.start();
+
+            //load each of newly added children into the session and get their paths
+            final long newChildCount = childCountBeforeBath + newChildrenCount;
+
+            for (long j = 1; j <= newChildCount; j++) {
+                final String childAbsPath = "/testRoot/childNode[" + j + "]";
+                final Node child = session.getNode(childAbsPath);
+                child.getPath();
+                child.getName();
+            }
+            readSW.stop();
+            if (print) {
+                System.out.println(
+                        "Time to read " + newChildCount + " via absolute path:" + readSW.getSimpleStatistics());
+            }
+            readSW.reset();
+
+            //change the parent & save so that it's flushed from the cache
+            session.getNode("/testRoot").setProperty("test", "test");
+            session.save();
+
+            readSW.start();
+            //now get the paths of each child via parent relative path navigation
+            for (long j = 1; j <= newChildCount; j++) {
+                final String childName = "childNode[" + j + "]";
+                final Node child = session.getNode("/testRoot").getNode(childName);
+                child.getPath();
+                child.getName();
+            }
+            readSW.stop();
+            if (print) {
+                System.out.println(
+                        "Time to read " + newChildCount + " via relative path:" + readSW.getSimpleStatistics());
+            }
+            readSW.reset();
+
+            //change the parent & save so that it's flushed from the cache
+            session.getNode("/testRoot").setProperty("test", "test1");
+            session.save();
+
+            readSW.start();
+            //iterate through all the children of the parent and read the path
+            NodeIterator nodeIterator = session.getNode("/testRoot").getNodes();
+            while ( nodeIterator.hasNext()) {
+                final Node child = nodeIterator.nextNode();
+                child.getPath();
+                child.getName();
+            }
+            readSW.stop();
+            if (print) {
+                System.out.println(
+                        "Time to iterate through " + newChildCount + " children :" + readSW.getSimpleStatistics());
+            }
+            readSW.reset();
+            if (print) {
+                System.out.println(" ");
+            }
+
+            //change the parent & save so that it's flushed from the cache
+            session.getNode("/testRoot").setProperty("test", "test2");
+            session.save();
+        }
+        globalSw.stop();
+        if (print) {
+            System.out.println("Overall time to read:" + globalSw.getSimpleStatistics());
+        }
+    }
+
     /**
      * Create a structured subgraph by generating nodes with the supplied number of properties and children, to the supplied
      * maximum subgraph depth.
@@ -295,7 +373,7 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
                 String value = (i % 10 == 0) ? LARGE_STRING_VALUE : SMALL_STRING_VALUE;
                 child.setProperty("property" + j, value);
             }
-            numberCreated += numberOfChildrenPerNode;
+            numberCreated += 1;
             if (depthRemaining > 1) {
                 numberCreated += createSubgraph(session,
                                                 child,

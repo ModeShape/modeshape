@@ -1,11 +1,25 @@
 {
-    "name" : "Test Repository",
+    "name" : "In Memory Repository",
+    "storage" : {
+        "cacheName" : "inmemoryRepository",
+        "cacheConfiguration" : "config/infinispan-inmemory-jbosstxn.xml"
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
     "query" : {
         "indexStorage" : {
             "type" : "ram"
         },
         "indexing" : {
-            "mode" : "sync",
+            "mode" : "sync"
         }
     }
 }

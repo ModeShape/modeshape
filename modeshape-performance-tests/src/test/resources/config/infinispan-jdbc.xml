@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:5.1 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
+            xmlns="urn:infinispan:config:5.2">
+    <global>
+        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
+    </global>
+
+    <namedCache name="db_repository">
+        <loaders passivation="false" shared="false" preload="false">
+            <loader class="org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStore"
+                    fetchPersistentState="false" ignoreModifications="false"
+                    purgeOnStartup="false">
+                <properties>
+                    <property name="stringsTableNamePrefix" value="ISPN_"/>
+                    <property name="idColumnName" value="ID_COLUMN"/>
+                    <property name="idColumnType" value="${infinispan.jdbc.id_column.type}"/>
+
+                    <property name="dataColumnName" value="DATA_COLUMN"/>
+                    <property name="timestampColumnName" value="TIMESTAMP_COLUMN"/>
+
+                    <property name="dataColumnType" value="${infinispan.jdbc.data_column.type}"/>
+                    <property name="timestampColumnType" value="${infinispan.jdbc.timestamp_column.type}"/>
+
+                    <property name="connectionFactoryClass" value="org.infinispan.loaders.jdbc.connectionfactory.PooledConnectionFactory"/>
+                    <property name="connectionUrl" value="${dataSource.url}"/>
+                    <property name="userName" value="${dataSource.username}"/>
+                    <property name="password" value="${dataSource.password}"/>
+                    <property name="driverClass" value="${dataSource.driverClassName}"/>
+
+                    <property name="dropTableOnExit" value="false"/>
+                    <property name="createTableOnStart" value="true"/>
+                </properties>
+            </loader>
+        </loaders>
+
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+    </namedCache>
+</infinispan>
