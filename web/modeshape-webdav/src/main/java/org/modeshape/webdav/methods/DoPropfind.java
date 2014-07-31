@@ -613,7 +613,10 @@ public class DoPropfind extends AbstractMethod {
                 continue;
             }
             if (includeValue) {
-                generatedXML.writeProperty(propertyName, customProperties.get(propertyName).toString());
+                generatedXML.writeElement(propertyName, XMLWriter.OPENING);
+                final String value = customProperties.get(propertyName).toString();
+                generatedXML.writeData(value);
+                generatedXML.writeElement(propertyName, XMLWriter.CLOSING);
             } else {
                 generatedXML.writeElement(propertyName, XMLWriter.NO_CONTENT);
             }

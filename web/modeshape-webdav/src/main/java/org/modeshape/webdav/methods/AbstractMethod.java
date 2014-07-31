@@ -324,12 +324,8 @@ public abstract class AbstractMethod implements IMethodExecutor {
                                   String path ) throws IOException, LockFailedException {
 
         LockedObject resourceLock = resourceLocks.getLockedObjectByPath(transaction, path);
-        if (resourceLock == null) {
+        if (resourceLock == null || resourceLock.isShared()) {
             return true;
-        }
-
-        if (resourceLock.isShared()) {
-            return false;
         }
 
         // the resource is locked

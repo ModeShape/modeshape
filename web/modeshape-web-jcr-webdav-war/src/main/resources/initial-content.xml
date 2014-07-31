@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" >
     <node multi-value-prop="value1,value2" single-value-prop="value"/>
+    <folder jcr:primaryType="nt:folder" jcr:mixinTypes="mode:publishArea"/>
 </jcr:root>
