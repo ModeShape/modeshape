@@ -1039,7 +1039,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         // check whether the parent definition allows children which match the source
         final Name newChildName = destPath.getLastSegment().getName();
-        destParentNode.validateChildNodeDefinition(newChildName, srcNode.getPrimaryTypeName(), true);
+        ChildReferences childReferences = destParentNode.node().getChildReferences(cache());
+        int numExistingSns = childReferences.getChildCount(newChildName);
+        destParentNode.validateChildNodeDefinition(newChildName, numExistingSns, srcNode.getPrimaryTypeName(), true);
 
         // We already checked whether the supplied destination path is below the supplied source path, but this isn't
         // sufficient if any of the ancestors are shared nodes. Therefore, check whether the destination node
@@ -2358,10 +2360,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // look at the information that was already persisted to determine whether some other thread has already
                 // created a child with the same name
                 CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
+                ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
 
                 // process appended/renamed children
                 for (Name childName : appendedOrRenamedChildrenByName.keySet()) {
-                    ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
                     int existingChildrenWithSameName = persistedChildReferences.getChildCount(childName);
                     if (existingChildrenWithSameName == 0) {
                         continue;

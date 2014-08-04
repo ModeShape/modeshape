@@ -1155,7 +1155,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         NodeTypes nodeTypes = session.nodeTypes();
 
         // validate there is an appropriate child node definition
-        JcrNodeDefinition childDefn = validateChildNodeDefinition(childName, childPrimaryNodeTypeName, !aclScope);
+        JcrNodeDefinition childDefn = validateChildNodeDefinition(childName, numExistingSns, childPrimaryNodeTypeName, !aclScope);
         if (childPrimaryNodeTypeName == null) {
             childPrimaryNodeTypeName = childDefn.getDefaultPrimaryType().getInternalName();
         }
@@ -1251,6 +1251,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws NoSuchNodeTypeException if the named primary type does not exist
      */
     JcrNodeDefinition validateChildNodeDefinition( Name childName,
+                                                   int numExistingSns,
                                                    Name childPrimaryNodeTypeName,
                                                    boolean skipProtected )
         throws ItemNotFoundException, InvalidItemStateException, ItemExistsException, ConstraintViolationException,
@@ -1261,7 +1262,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Name primaryTypeName = node.getPrimaryType(cache);
         Set<Name> mixins = node.getMixinTypes(cache);
         NodeTypes nodeTypes = session().nodeTypes();
-        int numExistingSns = node.getChildReferences(cache).getChildCount(childName);
 
         if (childPrimaryNodeTypeName != null) {
             if (INTERNAL_NODE_TYPE_NAMES.contains(childPrimaryNodeTypeName)) {
@@ -2454,10 +2454,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
         }
 
+        ChildReferences refs = node.getChildReferences(cache);
         for (JcrNodeDefinition nodeDefn : nodeType.allChildNodeDefinitions()) {
             if (nodeDefn.isAutoCreated() && !nodeDefn.isProtected()) {
                 Name nodeName = nodeDefn.getInternalName();
-                ChildReferences refs = node.getChildReferences(cache);
                 if (refs.getChildCount(nodeName) == 0) {
                     JcrNodeType defaultPrimaryType = nodeDefn.getDefaultPrimaryType();
                     assert defaultPrimaryType != null;
@@ -2839,9 +2839,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CachedNode node = node();
         NodeCache cache = cache();
         NodeTypes nodeTypes = session.nodeTypes();
+        // Need to figure out if the child node requires an SNS definition
+        ChildReferences refs = node.getChildReferences(cache());
         for (Name nodeName : mixinChildNodeNames) {
-            // Need to figure out if the child node requires an SNS definition
-            ChildReferences refs = node.getChildReferences(cache());
             int snsCount = refs.getChildCount(nodeName);
             if (snsCount == 0) continue;
 
@@ -3133,7 +3133,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         int numExistingSns = node.getChildReferences(cache).getChildCount(newNodeName);
 
         // validate there is an appropriate child node definition
-        JcrNodeDefinition childDefn = validateChildNodeDefinition(newNodeName, shareableNode.getPrimaryTypeName(), true);
+        JcrNodeDefinition childDefn = validateChildNodeDefinition(newNodeName, numExistingSns, shareableNode.getPrimaryTypeName(), true);
 
         // See if this node is checked in. If so, then we can only create children if the child
         // node definition has an OPV of 'ignore'. See Section 15.2.2 of the JSR-283 spec for details ...

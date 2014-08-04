@@ -257,66 +257,71 @@ public class InMemoryPerformanceTest {
     @Performance
     public void shouldGetNodePathsInFlatLargeHierarchyWithSns() throws Exception {
         boolean print = true;
-        int initialNodeCount = 1000;
-        int propertiesPerChild = 0;
+
+        //insert 100k nodes with 10 props each under the same parent in batches of 500
+        int initialNodeCount = 100000;
+        int insertBatchSize = 500;
+        int insertBatches = initialNodeCount / insertBatchSize;
+        int propertiesPerChild = 10;
 
         //create a parent with a number of nodes initially
         Node parent = session.getRootNode().addNode("testRoot");
         session.save();
-        createSubgraph(session, parent, 1, initialNodeCount,  propertiesPerChild, true, 1);
 
         Stopwatch globalSw = new Stopwatch();
+        globalSw.start();
+        if (print) {
+            System.out.println("Starting to insert batches...");
+        }
+        for (int i = 0; i < insertBatches; i++) {
+            //reload the parent in the session after it was saved
+            parent = session.getNode("/testRoot");
+            createSubgraph(session, parent, 1, insertBatchSize,  propertiesPerChild, true, 1);
+        }
+        globalSw.stop();
+        if (print) {
+            System.out.println("Inserted " + initialNodeCount + " nodes in: " + globalSw.getSimpleStatistics());
+        }
+        globalSw.reset();
         globalSw.start();
         Stopwatch readSW = new Stopwatch();
         //add additional batches of nodes while reading the paths after each batch of children was added
         int batchCount = 36;
-        int batchSize = 100;
+        int batchSize = 1000;
         for (int i = 0; i < batchCount; i++) {
-            long childCountBeforeBath = session.getNode("/testRoot").getNodes().getSize();
             //creates batchSize
+            long childCountAtBatchStart = session.getNode("/testRoot").getNodes().getSize();
             int newChildrenCount = createSubgraph(session, parent, 1, batchSize, propertiesPerChild, true, 1);
             readSW.start();
 
-            //load each of newly added children into the session and get their paths
-            final long newChildCount = childCountBeforeBath + newChildrenCount;
+            //load each of the newly added children into the session and get their paths
+            final long newChildCount = childCountAtBatchStart + newChildrenCount;
 
-            for (long j = 1; j <= newChildCount; j++) {
+            for (long j = childCountAtBatchStart; j < newChildCount; j++) {
                 final String childAbsPath = "/testRoot/childNode[" + j + "]";
                 final Node child = session.getNode(childAbsPath);
                 child.getPath();
                 child.getName();
             }
-            readSW.stop();
-            if (print) {
-                System.out.println(
-                        "Time to read " + newChildCount + " via absolute path:" + readSW.getSimpleStatistics());
-            }
-            readSW.reset();
+            readSW.lap();
 
             //change the parent & save so that it's flushed from the cache
             session.getNode("/testRoot").setProperty("test", "test");
             session.save();
 
-            readSW.start();
             //now get the paths of each child via parent relative path navigation
-            for (long j = 1; j <= newChildCount; j++) {
+            for (long j = childCountAtBatchStart; j <= newChildCount; j++) {
                 final String childName = "childNode[" + j + "]";
                 final Node child = session.getNode("/testRoot").getNode(childName);
                 child.getPath();
                 child.getName();
             }
-            readSW.stop();
-            if (print) {
-                System.out.println(
-                        "Time to read " + newChildCount + " via relative path:" + readSW.getSimpleStatistics());
-            }
-            readSW.reset();
+            readSW.lap();
 
             //change the parent & save so that it's flushed from the cache
             session.getNode("/testRoot").setProperty("test", "test1");
             session.save();
 
-            readSW.start();
             //iterate through all the children of the parent and read the path
             NodeIterator nodeIterator = session.getNode("/testRoot").getNodes();
             while ( nodeIterator.hasNext()) {
@@ -326,19 +331,16 @@ public class InMemoryPerformanceTest {
             }
             readSW.stop();
             if (print) {
-                System.out.println(
-                        "Time to iterate through " + newChildCount + " children :" + readSW.getSimpleStatistics());
+                System.out.println("Time to read batch " + i + " : " + readSW.getSimpleStatistics());
             }
             readSW.reset();
-            if (print) {
-                System.out.println(" ");
-            }
 
             //change the parent & save so that it's flushed from the cache
             session.getNode("/testRoot").setProperty("test", "test2");
             session.save();
+
+            globalSw.lap();
         }
-        globalSw.stop();
         if (print) {
             System.out.println("Overall time to read:" + globalSw.getSimpleStatistics());
         }

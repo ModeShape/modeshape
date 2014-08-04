@@ -65,18 +65,17 @@ public class SessionChildReferences extends AbstractChildReferences {
     @Override
     public int getChildCount( Name name ) {
         int appendedChildren = appended != null ? appended.getChildCount(name) : 0;
-        int persistedChildrenCount = persisted.getChildCount(name);
+        int persistedChildrenCount = 0;
 
         int removedChildren = 0;
         int renamedChildren = 0;
         int appendedThenReorderedChildren = 0;
 
-        if (changedChildren != null) {
-            appendedThenReorderedChildren = changedChildren.insertionCount(name);
+        for (Iterator<ChildReference> childReferenceIterator = persisted.iterator(name); childReferenceIterator.hasNext(); ) {
+            ChildReference persistedChild = childReferenceIterator.next();
+            ++persistedChildrenCount;
 
-            for (Iterator<ChildReference> childReferenceIterator = persisted.iterator(name); childReferenceIterator.hasNext(); ) {
-                ChildReference persistedChild = childReferenceIterator.next();
-
+            if (changedChildren != null) {
                 if (changedChildren.isRemoved(persistedChild)) {
                     --removedChildren;
                     continue;
@@ -86,6 +85,10 @@ public class SessionChildReferences extends AbstractChildReferences {
                     --renamedChildren;
                 }
             }
+        }
+
+        if (changedChildren != null) {
+            appendedThenReorderedChildren = changedChildren.insertionCount(name);
 
             if (changedChildren.isRenamed(name)) {
                 ++renamedChildren;
@@ -163,11 +166,6 @@ public class SessionChildReferences extends AbstractChildReferences {
             }
         }
         return ref;
-    }
-
-    @Override
-    public Iterator<ChildReference> iterator() {
-        return iterator(new BasicContext());
     }
 
     @Override
