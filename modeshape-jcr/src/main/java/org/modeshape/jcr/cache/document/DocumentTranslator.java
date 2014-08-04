@@ -859,33 +859,57 @@ public class DocumentTranslator implements DocumentConstants {
 
     public ChildReferences getChildReferences( WorkspaceCache cache,
                                                Document document ) {
-        List<?> children = document.getArray(CHILDREN);
-        List<?> externalSegments = document.getArray(FEDERATED_SEGMENTS);
-
-        if (children == null && externalSegments == null) {
+        boolean hasChildren = document.containsField(CHILDREN);
+        boolean hasFederatedSegments = document.containsField(FEDERATED_SEGMENTS);
+        if (!hasChildren && !hasFederatedSegments) {
             return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         }
 
-        // Materialize the ChildReference objects in the 'children' document ...
-        List<ChildReference> internalChildRefsList = childReferencesListFromArray(children);
+        boolean lazy = true;
 
-        // Materialize the ChildReference objects in the 'federated segments' document ...
-        List<ChildReference> externalChildRefsList = childReferencesListFromArray(externalSegments);
+        if (!lazy) {
+            List<?> children = document.getArray(CHILDREN);
+            List<?> externalSegments = document.getArray(FEDERATED_SEGMENTS);
 
-        // Now look at the 'childrenInfo' document for info about the next block of children ...
-        ChildReferencesInfo info = getChildReferencesInfo(document);
-        if (info != null) {
-            // The children are segmented ...
-            ChildReferences internalChildRefs = ImmutableChildReferences.create(internalChildRefsList);
-            ChildReferences externalChildRefs = ImmutableChildReferences.create(externalChildRefsList);
+            // Materialize the ChildReference objects in the 'children' document ...
+            List<ChildReference> internalChildRefsList = childReferencesListFromArray(children);
 
-            return ImmutableChildReferences.create(internalChildRefs, info, externalChildRefs, cache);
+            // Materialize the ChildReference objects in the 'federated segments' document ...
+            List<ChildReference> externalChildRefsList = childReferencesListFromArray(externalSegments);
+
+            // Now look at the 'childrenInfo' document for info about the next block of children ...
+            ChildReferencesInfo info = getChildReferencesInfo(document);
+            if (info != null) {
+                // The children are segmented ...
+                ChildReferences internalChildRefs = ImmutableChildReferences.create(internalChildRefsList);
+                ChildReferences externalChildRefs = ImmutableChildReferences.create(externalChildRefsList);
+
+                return ImmutableChildReferences.create(internalChildRefs, info, externalChildRefs, cache);
+            }
+            if (externalSegments != null) {
+                // There is no segmenting, so just add the federated references at the end
+                internalChildRefsList.addAll(externalChildRefsList);
+            }
+            return ImmutableChildReferences.create(internalChildRefsList);
+        } else {
+            ChildReferences internalChildRefs = hasChildren ?
+                                                ImmutableChildReferences.createLazy(this, document, CHILDREN) :
+                                                ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+            ChildReferences externalChildRefs = hasFederatedSegments ?
+                                                ImmutableChildReferences.createLazy(this, document, FEDERATED_SEGMENTS) :
+                                                ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+
+            // Now look at the 'childrenInfo' document for info about the next block of children ...
+            ChildReferencesInfo info = getChildReferencesInfo(document);
+            if (!hasChildren) {
+                return info != null ? ImmutableChildReferences.create(externalChildRefs, info, cache) : externalChildRefs;
+            } else if (!hasFederatedSegments) {
+                return info != null ? ImmutableChildReferences.create(internalChildRefs, info, cache) : internalChildRefs;
+            } else {
+                return info != null ? ImmutableChildReferences.create(internalChildRefs, info, externalChildRefs, cache) :
+                       ImmutableChildReferences.union(internalChildRefs, externalChildRefs);
+            }
         }
-        if (externalSegments != null) {
-            // There is no segmenting, so just add the federated references at the end
-            internalChildRefsList.addAll(externalChildRefsList);
-        }
-        return ImmutableChildReferences.create(internalChildRefsList);
     }
 
     /**
