@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.EmptyIterator;
@@ -57,7 +57,9 @@ public class ImmutableChildReferences {
     protected static final Iterator<ChildReference> EMPTY_ITERATOR = new EmptyIterator<ChildReference>();
     protected static final Iterator<NodeKey> EMPTY_KEY_ITERATOR = new EmptyIterator<NodeKey>();
 
-    public static ChildReferences createLazy(DocumentTranslator documentTranslator, Document document, String childrenFieldName) {
+    public static ChildReferences createLazy(DocumentTranslator documentTranslator,
+                                             Document document,
+                                             String childrenFieldName) {
         return new LazyMedium(documentTranslator, document, childrenFieldName);
     }
 
@@ -83,19 +85,19 @@ public class ImmutableChildReferences {
     }
 
     public static ChildReferences create( ChildReferences first,
-                                          ChildReferencesInfo segmentingInfo,
+                                          ChildReferencesInfo firstSegmentingInfo,
                                           WorkspaceCache cache ) {
-        if (segmentingInfo.nextKey == null) return first;
-        return new Segmented(cache, first, segmentingInfo);
+        if (firstSegmentingInfo == null || firstSegmentingInfo.nextKey == null) return first;
+        return new Segmented(cache, first, firstSegmentingInfo);
     }
 
     public static ChildReferences create( ChildReferences first,
-                                          ChildReferencesInfo segmentingInfo,
-                                          ChildReferences externalReferences,
+                                          ChildReferencesInfo firstSegmentingInfo,
+                                          ChildReferences second,
                                           WorkspaceCache cache ) {
-        if (segmentingInfo.nextKey == null && externalReferences.isEmpty()) return first;
-        Segmented segmentedReferences = new Segmented(cache, first, segmentingInfo);
-        return !externalReferences.isEmpty() ? new ReferencesUnion(externalReferences, segmentedReferences) : segmentedReferences;
+        if (firstSegmentingInfo == null || firstSegmentingInfo.nextKey == null) return union(first, second);
+        Segmented segmentedReferences = new Segmented(cache, first, firstSegmentingInfo);
+        return union(segmentedReferences, second);
     }
 
     @Immutable
@@ -216,10 +218,7 @@ public class ImmutableChildReferences {
             this.childReferencesByKey = new HashMap<NodeKey, ChildReference>();
             for (ChildReference ref : children) {
                 Name refName = ref.getName();
-                //we can precompute the SNS index up front
-                int currentSNS = this.childReferences.get(refName).size();
-                ChildReference refWithSNS = ref.with(currentSNS + 1);
-                ChildReference old = this.childReferencesByKey.put(ref.getKey(), refWithSNS);
+                ChildReference old = this.childReferencesByKey.get(ref.getKey());
                 if (old != null && old.getName().equals(ref.getName())) {
                     // We already have this key/name pair, so we don't need to add it again ...
                     continue;
@@ -227,6 +226,11 @@ public class ImmutableChildReferences {
                 // We've not seen this NodeKey/Name combination yet, so it is okay. In fact, we should not see any
                 // node key more than once, since that is clearly an unexpected condition (as a child may not appear
                 // more than once in its parent's list of child nodes). See MODE-2120.
+
+                //we can precompute the SNS index up front
+                int currentSNS = this.childReferences.get(refName).size();
+                ChildReference refWithSNS = ref.with(currentSNS + 1);
+                this.childReferencesByKey.put(ref.getKey(), refWithSNS);
                 this.childReferences.put(ref.getName(), refWithSNS);
             }
         }
@@ -829,63 +833,41 @@ public class ImmutableChildReferences {
     @Immutable
     protected static class LazyMedium extends AbstractChildReferences {
         private final DocumentTranslator documentTranslator;
-        private final Document document;
-        private final AtomicReference<List<?>> childrenArray;
-        private final AtomicLong childrenCount;
-        private final AtomicReference<Medium> cachedReferences;
-        private final String childrenFieldName;
+        private final long childrenCount;
+        private final Lock cachedReferencesLock;
 
-        LazyMedium( DocumentTranslator documentTranslator, Document document, String childrenFieldName ) {
+        private Medium cachedReferences;
+        private List<?> childrenArray;
+
+        protected LazyMedium( DocumentTranslator documentTranslator, Document document, String childrenFieldName ) {
             this.documentTranslator = documentTranslator;
-            this.document = document;
-            this.cachedReferences = new AtomicReference<Medium>(null);
-            this.childrenArray = new AtomicReference<List<?>>();
-            this.childrenCount = new AtomicLong(ChildReferences.UNKNOWN_SIZE);
-            this.childrenFieldName = childrenFieldName;
-        }
-
-        private List<?> children() {
-            List<?> children = childrenArray.get();
-            if (children == null) {
-                final List<?> documentArray = document.getArray(childrenFieldName);
-                children = documentArray != null ? documentArray : Collections.emptyList();
-                return childrenArray.compareAndSet(null, children) ? children : childrenArray.get();
-            } else {
-                return children;
-            }
-        }
-
-        private long childrenCount() {
-            Long count = childrenCount.get();
-            if (count == ChildReferences.UNKNOWN_SIZE) {
-                long size = children().size();
-                return childrenCount.compareAndSet(ChildReferences.UNKNOWN_SIZE, size) ? size : childrenCount.get();
-            } else {
-                return count;
-            }
+            this.cachedReferencesLock = new ReentrantLock();
+            final List<?> documentArray = document.getArray(childrenFieldName);
+            this.childrenArray = documentArray != null ? documentArray : Collections.emptyList();
+            this.childrenCount = childrenArray.size();
         }
 
         private Medium cachedReferences() {
-            Medium cachedReferences = this.cachedReferences.get();
             if (cachedReferences == null) {
-                List<?> children = children();
-                long count = childrenCount();
-                List<ChildReference> childrenReferences = new ArrayList<ChildReference>((int)count);
-                for (int i = 0; i < count; i++) {
-                    Object value = children.get(i);
-                    ChildReference childReference = documentTranslator.childReferenceFrom(value);
-                    if (childReference != null) {
-                        childrenReferences.add(childReference);
+                cachedReferencesLock.lock();
+                try {
+                    if (cachedReferences == null) {
+                        List<ChildReference> childrenReferences = new ArrayList<ChildReference>((int)childrenCount);
+                        for (int i = 0; i < childrenCount; i++) {
+                            Object value = childrenArray.get(i);
+                            ChildReference childReference = documentTranslator.childReferenceFrom(value);
+                            if (childReference != null) {
+                                childrenReferences.add(childReference);
+                            }
+                        }
+                        cachedReferences = new Medium(childrenReferences);
+                        childrenArray = null;
                     }
+                } finally {
+                    cachedReferencesLock.unlock();
                 }
-                cachedReferences = new Medium(childrenReferences);
-                this.cachedReferences.compareAndSet(null, cachedReferences);
-                //clear out the array, since we don't need it anymore
-                this.childrenArray.set(null);
-                return this.cachedReferences.get();
-            } else {
-                return cachedReferences;
             }
+            return cachedReferences;
         }
 
         @Override
@@ -896,7 +878,7 @@ public class ImmutableChildReferences {
 
         @Override
         public long size() {
-            return childrenCount();
+            return childrenCount;
         }
 
         @Override
@@ -911,7 +893,6 @@ public class ImmutableChildReferences {
 
         @Override
         public boolean hasChild(final NodeKey key ) {
-            //we've already loaded everything up front so just use the cached reference...
             return cachedReferences().hasChild(key);
         }
 

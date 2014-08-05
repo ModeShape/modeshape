@@ -89,7 +89,7 @@ public class ChildReference implements Comparable<ChildReference> {
         if (obj == this) return true;
         if (obj instanceof ChildReference) {
             ChildReference that = (ChildReference)obj;
-            return this.segment.equals(that.segment) && this.key.equals(that.key);
+            return this.key.equals(that.key);
         }
         return false;
     }
