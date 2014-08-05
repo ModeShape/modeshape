@@ -168,6 +168,20 @@ public class ModeShapeWebdavStoreClientTest extends WebdavStoreClientTest {
         assertEquals("value", customProperties.get("single-value-prop"));
     }
 
+    @Test
+    @FixFor( "MODE-2243" )
+    public void shouldEscapeIllegalCharsInXMLValues() throws Exception {
+        //created via initial content
+        String folderUri = resourceUri("folder");
+        DavResource folder = sardine.getResources(folderUri).get(0);
+        Map<String, String> customProperties = folder.getCustomProps();
+        assertTrue(!customProperties.isEmpty());
+        assertEquals("nt:folder", customProperties.get("primaryType"));
+        //nt:folder has a created mixin which will auto-set the next 2 props
+        assertNotNull(customProperties.get("created"));
+        assertEquals("<modeshape-worker>", customProperties.get("createdBy"));
+    }
+
     private String testFolder() {
         return "testDirectory" + UUID.randomUUID().toString();
     }

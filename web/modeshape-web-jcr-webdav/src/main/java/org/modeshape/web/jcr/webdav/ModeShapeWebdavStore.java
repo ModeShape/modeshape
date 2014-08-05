@@ -54,6 +54,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.NamespaceRegistry;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
@@ -81,6 +82,14 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     private static final Map<String, byte[]> OSX_DOUBLE_DATA = Collections.synchronizedMap(new WeakHashMap<String, byte[]>());
 
     private static final String CREATED_PROP_NAME = "jcr:created";
+
+    /**
+     * List of namespace prefixes that should not be returned in the XML response as a) they cannot appear in the actual elements
+     * and b) there are certain clients which can misbehave if they see them in the response (e.g. the Windows Client and the
+     * XML prefix)
+     */
+    private static final Set<String> EXCLUDED_NAMESPACE_PREFIXES = org.modeshape.common.collection.Collections.unmodifiableSet(
+                                                                   NamespaceRegistry.PREFIX_XML, "xs", "xsi", "xmlns");
 
     private final RequestResolver requestResolver;
     private final ContentMapper contentMapper;
@@ -568,7 +577,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             while (propertyIterator.hasNext()) {
                 Property property = propertyIterator.nextProperty();
                 if (property.isMultiple()) {
-                    logger().warn(WebdavI18n.warnMultiValuedProperty, property.getPath());
+                    logger().debug(WebdavI18n.warnMultiValuedProperty.text(property.getPath()));
                     continue;
                 }
                 String webDavPropertyName = webdavPropertyName(property.getName());
@@ -751,11 +760,11 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             Session session = session(request);
             Map<String, String> namespaces = new HashMap<String, String>();
             for (String namespacePrefix : session.getNamespacePrefixes()) {
-                String namespaceURI = session.getNamespaceURI(namespacePrefix);
-                if (!StringUtil.isBlank(namespacePrefix) && !StringUtil.isBlank(namespaceURI)
-                    && !namespacePrefix.equalsIgnoreCase("xmlns")) {
-                    namespaces.put(namespaceURI, namespacePrefix);
+                if (StringUtil.isBlank(namespacePrefix)|| EXCLUDED_NAMESPACE_PREFIXES.contains(namespacePrefix.toLowerCase())) {
+                    continue;
                 }
+                String namespaceURI = session.getNamespaceURI(namespacePrefix);
+                namespaces.put(namespaceURI, namespacePrefix);
             }
             return namespaces;
         }

@@ -60,4 +60,9 @@ public class ModeShapeWebdavStoreIntegrationTest extends ModeShapeWebdavStoreCli
     @Ignore ("Doesn't apply to the EAP kit")
     public void shouldIgnoreMultiValuedProperties() throws Exception {
     }
+
+    @Override
+    @Ignore ("Doesn't apply to the EAP kit")
+    public void shouldEscapeIllegalCharsInXMLValues() throws Exception {
+    }
 }
