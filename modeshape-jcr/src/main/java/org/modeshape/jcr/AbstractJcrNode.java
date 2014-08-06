@@ -69,6 +69,8 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
+import org.modeshape.jcr.NodeTypes.NodeDefinitionSet;
+import org.modeshape.jcr.NodeTypes.SiblingCounter;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
@@ -134,7 +136,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         /**
          * Determine the type given the supplied primary type.
-         * 
+         *
          * @param primaryType the primary type
          * @return the type, or null if the node type could not be determined by the supplied primary type
          */
@@ -173,7 +175,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Check that this type of node can be modified
-     * 
+     *
      * @throws RepositoryException
      */
     protected void checkNodeTypeCanBeModified() throws RepositoryException {
@@ -189,7 +191,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the cached node.
-     * 
+     *
      * @return the cached node
      * @throws InvalidItemStateException if the node has been removed in this session's transient state
      * @throws ItemNotFoundException if the node does not exist
@@ -225,7 +227,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Obtain a string identifying this node, usually for error or logging purposes. This method never throws an exception.
-     * 
+     *
      * @return the location string; never null
      */
     protected final String location() {
@@ -246,7 +248,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Checks if this node is foreign for its current owning session
-     * 
+     *
      * @return boolean if this node is considered "foreign" to this session, or false otherwise
      * @see JcrSession#isForeignKey(org.modeshape.jcr.cache.NodeKey)
      */
@@ -256,7 +258,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Checks if this node belongs to an external source.
-     * 
+     *
      * @return true if the node is not repository-local
      */
     protected final boolean isExternal() {
@@ -274,7 +276,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the absolute and normalized identifier path for this node, regardless of whether this node is referenceable.
-     * 
+     *
      * @return the node's identifier path; never null
      * @throws RepositoryException if there is an error accessing the identifier of this node
      */
@@ -338,7 +340,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the {@link AbstractJcrProperty JCR Property} object for the existing property with the supplied name.
-     * 
+     *
      * @param propertyName the property name; may not be null
      * @return the JCR Property object, or null if there is no property with the specified name
      * @throws RepositoryException if there is a problem accessing the repository
@@ -377,7 +379,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Create a new JCR Property instance given the supplied information. Note that this does not alter the node in any way, since
      * it does not store a reference to this property (the caller must do that if needed).
-     * 
+     *
      * @param property the cached node property; may not be null
      * @param primaryTypeName the name of the node's primary type; may not be null
      * @param mixinTypeNames the names of the node's mixin types; may be null or empty
@@ -436,7 +438,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Find the property definition for the property, given this node's primary type and mixin types.
-     * 
+     *
      * @param property the property owned by this node; may not be null
      * @param primaryType the name of the node's primary type; may not be null
      * @param mixinTypes the names of the node's mixin types; may be null or empty
@@ -473,7 +475,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Find the best property definition in this node's primary type and mixin types.
-     * 
+     *
      * @param primaryTypeNameOfParent the name of the primary type for the parent node; may not be null
      * @param mixinTypeNamesOfParent the names of the mixin types for the parent node; may be null or empty if there are no mixins
      *        to include in the search
@@ -603,7 +605,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     final JcrValue[] valuesFrom( int propertyType,
                                  Object[] values ) {
         /*
-         * Null values in the array are "compacted" (read: ignored) as per section 7.1.6 in the JCR 1.0.1 specification. 
+         * Null values in the array are "compacted" (read: ignored) as per section 7.1.6 in the JCR 1.0.1 specification.
          */
         int len = values.length;
         ValueFactories factories = context().getValueFactories();
@@ -622,7 +624,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * Checks that this node is not already locked by another session. If the node is not locked or the node is locked but the
      * lock is owned by this {@code Session}, this method completes silently. If the node is locked (either directly or as part of
      * a deep lock from an ancestor), this method throws a {@code LockException}.
-     * 
+     *
      * @throws LockException if this node is locked (that is, if {@code isLocked() == true && getLock().getLockToken() == null}).
      * @throws RepositoryException if any other error occurs
      * @see Node#isLocked()
@@ -637,7 +639,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Verifies that this node is either not versionable or that it is versionable but checked out.
-     * 
+     *
      * @throws VersionException if the node is versionable but is checked in and cannot be modified
      * @throws RepositoryException if there is an error accessing the repository
      */
@@ -649,7 +651,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the total number of children.
-     * 
+     *
      * @return the total number of children
      * @throws RepositoryException
      */
@@ -659,7 +661,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the number of children that have the supplied name.
-     * 
+     *
      * @param name the child name
      * @return the number of children with names that match the supplied name
      * @throws RepositoryException
@@ -670,7 +672,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the JCR node for the named child.
-     * 
+     *
      * @param name the child name; may not be null
      * @param expectedType the expected implementation type for the node, or null if it is not known
      * @return the JCR node; never null
@@ -691,7 +693,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the JCR node for the named child.
-     * 
+     *
      * @param segment the child name and SNS index; may not be null
      * @param expectedType the expected implementation type for the node, or null if it is not known
      * @return the JCR node; never null
@@ -982,7 +984,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Adds the a new node with the given primary type (if specified) at the given relative path with the given UUID (if
      * specified).
-     * 
+     *
      * @param relPath the at which the new node should be created
      * @param primaryNodeTypeName the desired primary type for the new node; null value indicates that the default primary type
      *        from the appropriate definition for this node should be used
@@ -1065,7 +1067,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Adds the a new node with the given primary type (if specified) at the given relative path with the given UUID (if
      * specified).
-     * 
+     *
      * @param childName the name for the new node; may not be null
      * @param childPrimaryNodeTypeName the desired primary type for the new node; null value indicates that the default primary
      *        type from the appropriate definition for this node should be used
@@ -1098,16 +1100,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
         }
 
+        // Find the best child node definition to use for this new child ...
+        NodeTypes nodeTypes = session.nodeTypes();
+
         // Determine the node type based upon this node's type information ...
         SessionCache cache = sessionCache();
         CachedNode node = node();
-        int numExistingSns = node.getChildReferences(cache).getChildCount(childName);
-
-        // Determine the name for the primary node type
-        NodeTypes nodeTypes = session.nodeTypes();
 
         // validate there is an appropriate child node definition
-        JcrNodeDefinition childDefn = validateChildNodeDefinition(childName, numExistingSns, childPrimaryNodeTypeName, !aclScope);
+        JcrNodeDefinition childDefn = validateChildNodeDefinition(childName, childPrimaryNodeTypeName, !aclScope);
         if (childPrimaryNodeTypeName == null) {
             childPrimaryNodeTypeName = childDefn.getDefaultPrimaryType().getInternalName();
         }
@@ -1118,6 +1119,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // The OPV is not 'ignore', so we can't create the new node ...
             Path parentPath = path();
             String parentPathStr = readable(parentPath);
+            int numExistingSns = node.getChildReferences(cache).getChildCount(childName);
             int sns = numExistingSns + 1;
             String segment = readable(session.pathFactory().createSegment(childName, sns));
             String opv = OnParentVersionAction.nameFromValue(childDefn.getOnParentVersion());
@@ -1158,8 +1160,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         // Auto-create the properties ...
         NodeTypes capabilities = session.repository().nodeTypeManager().getNodeTypes();
-        int sns = numExistingSns + 1;
-        LinkedList<Property> props = autoCreatePropertiesFor(childName, sns, childPrimaryNodeTypeName, propFactory, capabilities);
+        LinkedList<Property> props = autoCreatePropertiesFor(childName, childPrimaryNodeTypeName, propFactory, capabilities);
 
         // Then create the node ...
         MutableCachedNode newChild = null;
@@ -1190,7 +1191,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Validates that there is a child node definition on the current node (as parent) which allows a child with the given name
      * and type.
-     * 
+     *
      * @param childName the name of the child
      * @param childPrimaryNodeTypeName the name of the child's primary type
      * @param skipProtected true if validation should skip protected definitions
@@ -1202,20 +1203,29 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws NoSuchNodeTypeException if the named primary type does not exist
      */
     JcrNodeDefinition validateChildNodeDefinition( Name childName,
-                                                   int numExistingSns,
                                                    Name childPrimaryNodeTypeName,
                                                    boolean skipProtected )
         throws ItemNotFoundException, InvalidItemStateException, ItemExistsException, ConstraintViolationException,
         NoSuchNodeTypeException {
 
-        SessionCache cache = sessionCache();
-        CachedNode node = node();
+        final SessionCache cache = sessionCache();
+        final CachedNode node = node();
         Name primaryTypeName = node.getPrimaryType(cache);
         Set<Name> mixins = node.getMixinTypes(cache);
         NodeTypes nodeTypes = session().nodeTypes();
+        final SiblingCounter siblingCounter = new SiblingCounter() {
+            private int count = -1;
+
+            @Override
+            public int countSiblingsNamed( Name childName ) {
+                if (count == -1) count = node.getChildReferences(cache).getChildCount(childName);
+                return count;
+            }
+        };
 
         if (childPrimaryNodeTypeName != null) {
             if (INTERNAL_NODE_TYPE_NAMES.contains(childPrimaryNodeTypeName)) {
+                int numExistingSns = siblingCounter.countSiblingsNamed(childName);
                 String workspaceName = workspaceName();
                 String childPath = readable(session.pathFactory().create(path(), childName, numExistingSns + 1));
                 String msg = JcrI18n.unableToCreateNodeWithInternalPrimaryType.text(childPrimaryNodeTypeName, childPath,
@@ -1224,6 +1234,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
             JcrNodeType primaryType = nodeTypes.getNodeType(childPrimaryNodeTypeName);
             if (primaryType == null) {
+                int numExistingSns = siblingCounter.countSiblingsNamed(childName);
                 Path pathForChild = session.pathFactory().create(path(), childName, numExistingSns + 1);
                 I18n msg = JcrI18n.unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
                 throw new NoSuchNodeTypeException(msg.text(childPrimaryNodeTypeName, pathForChild, workspaceName()));
@@ -1240,59 +1251,39 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
         }
 
-        int sns = numExistingSns + 1;
-        JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName, mixins, childName,
-                                                                        childPrimaryNodeTypeName, sns, skipProtected);
+        NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(primaryTypeName, mixins);
+        JcrNodeDefinition childDefn = childDefns.findBestDefinitionForChild(childName, childPrimaryNodeTypeName, skipProtected,
+                                                                            siblingCounter);
         if (childDefn == null) {
-            // Failed to find an appropriate child node definition. But we need more information to throw the correct error.
-            String childPath = readable(session.pathFactory().create(path(), childName, sns));
-            if (numExistingSns > 0) {
-                // There was already at least one existing node with the same name, so see if there is a child node definition
-                // that does not allow same-name-siblings ...
-                childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName, mixins, childName, childPrimaryNodeTypeName, 0,
-                                                              skipProtected);
-
-                // This failed, so start getting the info required to throw an exception ...
-                String workspaceName = workspaceName();
-
-                if (childDefn != null) {
-                    // So this failed only because the child definition did not allow same-name-siblings,
-                    // so throw ItemExistsException per the JavaDoc of Node.addNode(String) and
-                    // per the JCR 1.0.1 specification, section 7.1.4. (The JCR 2.0 specification is less
-                    // clear about the exact signatures and exception, relying upon the JavaDoc for these.)
-                    // Only failed because there was no SNS definition - throw ItemExistsException per 7.1.4 of 1.0.1 spec
-                    String msg = JcrI18n.noSnsDefinitionForNode.text(childPath, workspaceName);
-                    throw new ItemExistsException(msg);
-                }
-            }
-            // Didn't work for other reasons - throw ConstraintViolationException
+            // Failed to find an appropriate child node definition. Throw an exception with the appropriate message...
             String repoName = session.repository().repositoryName();
-            String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(childPath, workspaceName(), repoName);
-            throw new ConstraintViolationException(msg);
+            String workspaceName = workspaceName();
+            childDefns.determineReasonForMismatch(childName, childPrimaryNodeTypeName, skipProtected, siblingCounter,
+                                                  primaryTypeName, mixins, path(), workspaceName, repoName, context());
         }
+        assert childDefn != null;
 
         if (childPrimaryNodeTypeName == null && childDefn.getDefaultPrimaryType() == null) {
             // There is no default primary type ...
-            String childPath = readable(session.pathFactory().create(path(), childName, sns));
+            int numExistingSns = siblingCounter.countSiblingsNamed(childName);
+            String childPath = readable(session.pathFactory().create(path(), childName, numExistingSns + 1));
             I18n msg = JcrI18n.unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
             String nodeTypeName = childDefn.getDeclaringNodeType().getName();
-            throw new NoSuchNodeTypeException(msg.text(childDefn.getName(), nodeTypeName, childPath, workspaceName()));
+            throw new ConstraintViolationException(msg.text(childDefn.getName(), nodeTypeName, childPath, workspaceName()));
         }
         return childDefn;
     }
 
     /**
      * If there are any auto-created properties, create them and return them in a list.
-     * 
+     *
      * @param nodeName the name of the node; may not be null
-     * @param snsIndex the same-name-sibling index for this node
      * @param primaryType the name of the primary type; may not be null
      * @param propertyFactory the factory for properties; may not be null
      * @param capabilities the node type capabilities cache; may not be null
      * @return the list of auto-created properties, or null if there are none
      */
     protected LinkedList<Property> autoCreatePropertiesFor( Name nodeName,
-                                                            int snsIndex,
                                                             Name primaryType,
                                                             PropertyFactory propertyFactory,
                                                             NodeTypes capabilities ) {
@@ -1321,7 +1312,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Create in this node any auto-created child nodes.
-     * 
+     *
      * @param primaryType the desired primary type for the new node; null value indicates that the default primary type from the
      *        appropriate definition for this node should be used
      * @param capabilities the node type capabilities cache; may not be null
@@ -1639,7 +1630,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Removes an existing property with the supplied name. Note that if a property with the given name does not exist, then this
      * method returns null and does not throw an exception.
-     * 
+     *
      * @param name the name of the property; may not be null
      * @return the property that was removed
      * @throws VersionException if the node is checked out
@@ -1804,7 +1795,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Sets a multi valued property, skipping over protected ones.
-     * 
+     *
      * @param name the name of the property; may not be null
      * @param values the values of the property; may not be null
      * @param jcrPropertyType the expected property type; may be {@link PropertyType#UNDEFINED} if the values should not be
@@ -2009,7 +2000,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Compacts the given array of input values, by removing all those which are <code>null</code>
-     * 
+     *
      * @param inputValues the input values
      * @return an array without null elements.
      */
@@ -2165,7 +2156,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Find the properties on other nodes that are REFERENCE or WEAKREFERENCE properties (as dictated by the
      * <code>referenceType</code> parameter) to this node.
-     * 
+     *
      * @param propertyName the name of the referring REFERENCE or WEAKREFERENCE properties on the other nodes, or null if all
      *        referring REFERENCE or WEAKREFERENCE properties should be returned
      * @param referenceType either {@link PropertyType#REFERENCE} or {@link PropertyType#WEAKREFERENCE}
@@ -2221,7 +2212,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Obtain an iterator over the nodes that reference this node.
-     * 
+     *
      * @param referenceType specification of the type of references to include; may not be null
      * @return the iterator over the referencing nodes; never null
      * @throws RepositoryException if an error occurs while obtaining the information
@@ -2275,7 +2266,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the name of this node's primary type.
-     * 
+     *
      * @return the primary type name
      * @throws ItemNotFoundException if this node no longer exists in the repository
      * @throws InvalidItemStateException if the node has been removed in this session's transient state
@@ -2298,7 +2289,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the names of this node's mixin types.
-     * 
+     *
      * @return the mixin type names; never null but possibly empty
      * @throws ItemNotFoundException if this node no longer exists in the repository
      * @throws InvalidItemStateException if the node has been removed in this session's transient state
@@ -2316,7 +2307,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * Determine whether this node's primary type or any of the mixins are or extend the node type with the supplied name. This
      * method is semantically equivalent to but slightly more efficient than the {@link #isNodeType(String) equivalent in the JCR
      * API}, especially when the node type name is already a {@link Name} object.
-     * 
+     *
      * @param nodeTypeName the name of the node type
      * @return true if this node is of the node type given by the supplied name, or false otherwise
      * @throws RepositoryException if there is an exception
@@ -2771,7 +2762,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the property definition ID.
-     * 
+     *
      * @return the cached property definition ID; never null
      * @throws ItemNotFoundException if the node that contains this property doesn't exist anymore
      * @throws ConstraintViolationException if no valid property definition could be found
@@ -2807,7 +2798,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Get the definition for this property.
-     * 
+     *
      * @return the cached property definition ID; never null
      * @throws ItemNotFoundException if the node that contains this property doesn't exist anymore
      * @throws ConstraintViolationException if no valid property definition could be found
@@ -2843,7 +2834,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Throw a {@link ConstraintViolationException} if this node is protected (based on the its node definition).
-     * 
+     *
      * @throws ConstraintViolationException if this node's definition indicates that the node is protected
      * @throws RepositoryException if an error occurs retrieving the definition for this node
      */
@@ -2982,7 +2973,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Find all of the {@link javax.jcr.Node}s that make up the shared set.
-     * 
+     *
      * @return the iterator over the nodes in the node set; never null, but possibly empty if this is not shareable, or of size 1
      *         if the node is shareable but hasn't been shared
      */
@@ -3002,10 +2993,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Determine the node type based upon this node's type information ...
         SessionCache cache = sessionCache();
         MutableCachedNode node = mutable();
-        int numExistingSns = node.getChildReferences(cache).getChildCount(newNodeName);
 
         // validate there is an appropriate child node definition
-        JcrNodeDefinition childDefn = validateChildNodeDefinition(newNodeName, numExistingSns, shareableNode.getPrimaryTypeName(), true);
+        JcrNodeDefinition childDefn = validateChildNodeDefinition(newNodeName, shareableNode.getPrimaryTypeName(), true);
 
         // See if this node is checked in. If so, then we can only create children if the child
         // node definition has an OPV of 'ignore'. See Section 15.2.2 of the JSR-283 spec for details ...
@@ -3013,6 +3003,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // The OPV is not 'ignore', so we can't create the new node ...
             Path parentPath = path();
             String parentPathStr = readable(parentPath);
+            int numExistingSns = node.getChildReferences(cache).getChildCount(newNodeName);
             int sns = numExistingSns + 1;
             String segment = readable(session.pathFactory().createSegment(newNodeName, sns));
             String opv = OnParentVersionAction.nameFromValue(childDefn.getOnParentVersion());
@@ -3120,7 +3111,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Perform a real remove of this node.
-     * 
+     *
      * @throws VersionException
      * @throws LockException
      * @throws ConstraintViolationException
@@ -3346,7 +3337,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * ModeShape implements {@link Item#remove()} of a shared node as simply removing this node from the shared set. In other
      * words, this method is equivalent to calling {@link #removeShare()}.
      * </p>
-     * 
+     *
      * @see javax.jcr.Item#remove()
      */
     @Override
@@ -3365,7 +3356,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * the same arguments will succeed, but a result of {@code false} guarantees that it would fail (assuming that the current
      * repository state does not change).
      * </p>
-     * 
+     *
      * @param relPath the relative path at which the node would be added; may not be null
      * @param primaryNodeTypeName the primary type that would be used for the node; null indicates that a default primary type
      *        should be used if possible
@@ -3446,7 +3437,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Determines whether this node, or any nodes below it, contain changes that depend on nodes that are outside of this node's
      * hierarchy.
-     * 
+     *
      * @param affectedNodeKeys the reference that should be assigned to the set of node keys that are at or below this node; may
      *        be null if not needed
      * @return true if this node's hierarchy has nodes with changes dependent on nodes from outside the hierarchy
@@ -3466,7 +3457,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Removes all the keys from the first set which represent referrer node keys to any of the nodes in the second set.
-     * 
+     *
      * @param allChanges the set of keys to the referrer nodes
      * @param changesAtOrBelowThis the set of referrers that were changed at or below this node
      * @throws RepositoryException if there is a problem
