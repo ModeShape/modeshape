@@ -27,9 +27,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.nodetype.NodeDefinition;
-import javax.jcr.nodetype.NodeType;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.ValueFactory;
@@ -118,7 +117,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
 
     /**
      * Get the durable identifier for this node definition.
-     * 
+     *
      * @return the node definition ID; never null
      */
     public NodeDefinitionId getId() {
@@ -132,7 +131,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
 
     /**
      * Get whether this child node definition has restrictions on the primary type of the children.
-     * 
+     *
      * @return true if there is 1 or more required primary types, or false if there are none
      */
     public boolean hasRequiredPrimaryTypes() {
@@ -157,16 +156,16 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     }
 
     @Override
-    public NodeType[] getRequiredPrimaryTypes() {
+    public JcrNodeType[] getRequiredPrimaryTypes() {
         if (requiredPrimaryTypeNames.length == 0) {
             // Per the JavaDoc, this method should never return null or an empty array; if there are no constraints,
             // then this method should include an array with 'nt:base' as the required primary type.
-            NodeType[] result = new NodeType[1];
+            JcrNodeType[] result = new JcrNodeType[1];
             result[0] = nodeTypeManager.getNodeTypes().getNodeType(JcrNtLexicon.BASE);
             return result;
         }
         // Make a copy so that the caller can't modify our content ...
-        NodeType[] result = new NodeType[requiredPrimaryTypeNames.length];
+        JcrNodeType[] result = new JcrNodeType[requiredPrimaryTypeNames.length];
         int i = 0;
         final NodeTypes nodeTypes = nodeTypeManager.getNodeTypes();
         for (Name name : requiredPrimaryTypeNames) {
@@ -178,7 +177,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     /**
      * Returns the required primary type names for this object as specified in the constructor. This method is useful for callers
      * that wish to access this information while this node definition's parent node is being registered.
-     * 
+     *
      * @return the required primary type names
      */
     Name[] requiredPrimaryTypeNames() {
@@ -187,7 +186,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
 
     /**
      * Get the set of names of the primary types.
-     * 
+     *
      * @return the required primary type names
      */
     Set<Name> requiredPrimaryTypeNameSet() {
@@ -214,7 +213,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      * Determine if this node definition will allow a child with the supplied primary type. This method checks this definition's
      * {@link #getRequiredPrimaryTypes()} against the supplied primary type and its supertypes. The supplied primary type for the
      * child must be or extend all of the types defined by the {@link #getRequiredPrimaryTypes() required primary types}.
-     * 
+     *
      * @param childPrimaryType the primary type of the child
      * @return true if the primary type of the child (or one of its supertypes) is one of the types required by this definition,
      *         or false otherwise
@@ -237,7 +236,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     /**
      * Creates a new <code>JcrNodeDefinition</code> that is identical to the current object, but with the given
      * <code>declaringNodeType</code>. Provided to support immutable pattern for this class.
-     * 
+     *
      * @param declaringNodeType the declaring node type for the new <code>JcrNodeDefinition</code>
      * @return a new <code>JcrNodeDefinition</code> that is identical to the current object, but with the given
      *         <code>declaringNodeType</code>.

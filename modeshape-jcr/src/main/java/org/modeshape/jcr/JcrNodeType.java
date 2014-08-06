@@ -40,7 +40,7 @@ import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.Namespaced;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
