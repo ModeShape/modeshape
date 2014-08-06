@@ -15,37 +15,18 @@
  */
 package org.modeshape.test.performance;
 
-import java.io.File;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.persistence.jdbc.configuration.JdbcStringBasedStoreConfigurationBuilder;
+import org.junit.Test;
+import org.modeshape.common.util.FileUtil;
 
 public class JdbcStringCacheStorePerformanceTest extends InMemoryPerformanceTest {
-
-    private final File dbDir = new File("target/database");
-
     @Override
-    protected void cleanUpFileSystem() throws Exception {
-        // The database has a 1 second close delay, so sleep for a bit more than 1 second to allow it to close ...
-        Thread.sleep(1200);
+    protected void cleanUpFileSystem() {
+        FileUtil.delete("target/db");
     }
 
     @Override
-    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        JdbcStringBasedStoreConfigurationBuilder builder = new JdbcStringBasedStoreConfigurationBuilder(configurationBuilder.persistence());
-        builder.purgeOnStartup(true);
-        builder.table()
-               .createOnStart(true)
-               .dropOnExit(false)
-               .idColumnName("ID_COLUMN")
-               .idColumnType("VARCHAR(255)")
-               .timestampColumnName("TIMESTAMP_COLUMN")
-               .timestampColumnType("BIGINT")
-               .dataColumnName("DATA_COLUMN")
-               .dataColumnType("BINARY")
-               .connectionPool()
-               .connectionUrl("jdbc:h2:file:" + dbDir.getAbsolutePath() + "/string_based_db;DB_CLOSE_DELAY=1")
-               .driverClass("org.h2.Driver")
-               .username("sa");
-        configurationBuilder.persistence().addStore(builder);
+    @Test
+    public void shouldGetNodePathsInFlatLargeHierarchyWithSns() throws Exception {
+        super.shouldGetNodePathsInFlatLargeHierarchyWithSns();
     }
 }

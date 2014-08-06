@@ -16,9 +16,6 @@
 package org.modeshape.test.performance;
 
 import javax.jcr.Node;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfiguration;
-import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfigurationBuilder;
 import org.junit.Test;
 import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
@@ -26,22 +23,15 @@ import org.modeshape.common.util.FileUtil;
 
 public class LevelDbCacheStorePerformanceTest extends InMemoryPerformanceTest {
 
-
     @Override
     protected void cleanUpFileSystem() {
         FileUtil.delete("target/leveldb");
-        FileUtil.delete("target/leveldbdocuments");
     }
 
     @Override
-    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-
-        LevelDBStoreConfigurationBuilder builder = new LevelDBStoreConfigurationBuilder(configurationBuilder.persistence());
-        builder.location("target/leveldb/content");
-        builder.expiredLocation("target/leveldb/expired");
-        builder.implementationType(LevelDBStoreConfiguration.ImplementationType.JAVA);
-        builder.purgeOnStartup(true);
-        configurationBuilder.persistence().addStore(builder);
+    @Test
+    public void shouldGetNodePathsInFlatLargeHierarchyWithSns() throws Exception {
+        super.shouldGetNodePathsInFlatLargeHierarchyWithSns();
     }
 
     @Performance

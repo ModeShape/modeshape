@@ -555,8 +555,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         int expectedEventCount = 8;
         CountDownLatch latch = new CountDownLatch(expectedEventCount);
         FSListener listener = new FSListener(latch);
-        observationManager.addEventListener(listener, org.modeshape.jcr.api.observation.Event.ALL_EVENTS, "/testRoot/monitoring",
-                                            true, null, null, false);
+        int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED | org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
+        observationManager.addEventListener(listener, eventTypes, "/testRoot/monitoring", true, null, null, false);
         addFile(rootFolder, "images.cnd", "sequencer/cnd/images.cnd");
         Thread.sleep(300);
 
@@ -571,6 +571,9 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertFalse("Expected PROPERTY_ADDED events", propertyAddedPaths.isEmpty());
 
         assertEventsFiredOnCreate("/testRoot/monitoring/images.cnd", true, nodeAddedPaths, propertyAddedPaths);
+        List<String> nodeSequencedPaths = receivedEvents.get(org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED);
+        assertFalse("Expected NODE_SEQUENCED events", nodeSequencedPaths.isEmpty());
+
         // verify that the CND sequencer has fired
         Node sequencedRoot = session.getNode("/testRoot/sequenced/images.cnd"); // configured as such
         assertTrue(sequencedRoot.getNodes().hasNext());
