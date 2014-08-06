@@ -17,7 +17,6 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.EmptyIterator;
@@ -49,18 +46,10 @@ public class ImmutableChildReferences {
     protected static final Iterator<ChildReference> EMPTY_ITERATOR = new EmptyIterator<ChildReference>();
     protected static final Iterator<NodeKey> EMPTY_KEY_ITERATOR = new EmptyIterator<NodeKey>();
 
-    public static ChildReferences createLazy(DocumentTranslator documentTranslator,
-                                             Document document,
-                                             String childrenFieldName) {
-        return new LazyMedium(documentTranslator, document, childrenFieldName);
-    }
-
-    public static ChildReferences create( List<ChildReference> references ) {
-        int size = references.size();
-        if (size == 0) {
-            return EMPTY_CHILD_REFERENCES;
-        }
-        return new Medium(references);
+    public static ChildReferences create( DocumentTranslator documentTranslator,
+                                          Document document,
+                                          String childrenFieldName ) {
+        return new Medium(documentTranslator, document, childrenFieldName);
     }
 
     public static ChildReferences union( ChildReferences first, ChildReferences second ) {
@@ -205,10 +194,23 @@ public class ImmutableChildReferences {
         private final ListMultimap<Name, ChildReference> childReferences;
         private final Map<NodeKey, ChildReference> childReferencesByKey;
 
-        protected Medium( Iterable<ChildReference> children ) {
+        protected Medium( DocumentTranslator documentTranslator, Document document, String childrenFieldName ) {
             this.childReferences = LinkedListMultimap.create();
             this.childReferencesByKey = new HashMap<NodeKey, ChildReference>();
-            for (ChildReference ref : children) {
+
+            final List<?> documentArray = document.getArray(childrenFieldName);
+            if (documentArray == null)  {
+                return;
+            }
+            int size = documentArray.size();
+            List<ChildReference> childrenReferences = new ArrayList<ChildReference>(size);
+            for (Object value : documentArray) {
+                ChildReference childReference = documentTranslator.childReferenceFrom(value);
+                if (childReference != null) {
+                    childrenReferences.add(childReference);
+                }
+            }
+            for (ChildReference ref : childrenReferences) {
                 Name refName = ref.getName();
                 ChildReference old = this.childReferencesByKey.get(ref.getKey());
                 if (old != null && old.getName().equals(ref.getName())) {
@@ -300,8 +302,10 @@ public class ImmutableChildReferences {
                 for (ChildReference childWithSameName : childrenWithSameName) {
                     if (changes.isRemoved(childWithSameName)) { continue; }
                     if (changes.isRenamed(childWithSameName)) { continue; }
-                    int index = context.consume(childWithSameName.getName(), childWithSameName.getKey());
-                    if (index == snsIndex) { return childWithSameName.with(index); }
+                    //we've already precomputed the SNS index
+                    if (snsIndex == childWithSameName.getSnsIndex()) {
+                        return childWithSameName;
+                    }
                 }
                 return null;
             }
@@ -399,9 +403,8 @@ public class ImmutableChildReferences {
             if (context != null && context.changes() != null) {
                 //we only want the context-sensitive behavior if there are changes. Otherwise we've already precomputed the SNS index
                 return super.iterator(name, context);
-            } else {
-                return iterator(name);
             }
+            return iterator(name);
         }
 
         @Override
@@ -409,9 +412,8 @@ public class ImmutableChildReferences {
             if (context != null && context.changes() != null) {
                 //we only want the context-sensitive behavior if there are changes. Otherwise we've already precomputed the SNS index
                 return super.iterator(context);
-            } else {
-                return iterator();
             }
+            return iterator();
         }
 
         @Override
@@ -819,98 +821,6 @@ public class ImmutableChildReferences {
                 }
             }
             return sb;
-        }
-    }
-
-    @Immutable
-    protected static class LazyMedium extends AbstractChildReferences {
-        private final DocumentTranslator documentTranslator;
-        private final long childrenCount;
-        private final Lock cachedReferencesLock;
-
-        private Medium cachedReferences;
-        private List<?> childrenArray;
-
-        protected LazyMedium( DocumentTranslator documentTranslator, Document document, String childrenFieldName ) {
-            this.documentTranslator = documentTranslator;
-            this.cachedReferencesLock = new ReentrantLock();
-            final List<?> documentArray = document.getArray(childrenFieldName);
-            this.childrenArray = documentArray != null ? documentArray : Collections.emptyList();
-            this.childrenCount = childrenArray.size();
-        }
-
-        private Medium cachedReferences() {
-            if (cachedReferences == null) {
-                cachedReferencesLock.lock();
-                try {
-                    if (cachedReferences == null) {
-                        List<ChildReference> childrenReferences = new ArrayList<ChildReference>((int)childrenCount);
-                        for (int i = 0; i < childrenCount; i++) {
-                            Object value = childrenArray.get(i);
-                            ChildReference childReference = documentTranslator.childReferenceFrom(value);
-                            if (childReference != null) {
-                                childrenReferences.add(childReference);
-                            }
-                        }
-                        cachedReferences = new Medium(childrenReferences);
-                        childrenArray = null;
-                    }
-                } finally {
-                    cachedReferencesLock.unlock();
-                }
-            }
-            return cachedReferences;
-        }
-
-        @Override
-        public StringBuilder toString( StringBuilder sb ) {
-            sb.append("Lazy[").append(cachedReferences().toString(sb)).append("]");
-            return sb;
-        }
-
-        @Override
-        public long size() {
-            return childrenCount;
-        }
-
-        @Override
-        public int getChildCount(final Name name ) {
-            return cachedReferences().getChildCount(name);
-        }
-
-        @Override
-        public ChildReference getChild( Name name, int snsIndex, Context context ) {
-            return cachedReferences().getChild(name, snsIndex, context);
-        }
-
-        @Override
-        public boolean hasChild(final NodeKey key ) {
-            return cachedReferences().hasChild(key);
-        }
-
-        @Override
-        public ChildReference getChild(final NodeKey key ) {
-            return cachedReferences().getChild(key);
-        }
-
-        @Override
-        public ChildReference getChild( NodeKey key, Context context ) {
-            return cachedReferences().getChild(key, context);
-        }
-
-        @Override
-        public Iterator<NodeKey> getAllKeys() {
-            return cachedReferences().getAllKeys();
-        }
-
-        @Override
-        public Iterator<ChildReference> iterator( final Name name ) {
-            return cachedReferences().iterator(name);
-        }
-
-        @Override
-        public Iterator<ChildReference> iterator() {
-            return cachedReferences().iterator();
         }
     }
 }
