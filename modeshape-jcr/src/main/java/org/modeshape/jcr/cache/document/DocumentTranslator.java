@@ -28,7 +28,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -883,10 +882,10 @@ public class DocumentTranslator implements DocumentConstants {
             return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         }
         ChildReferences internalChildRefs = hasChildren ?
-                                            ImmutableChildReferences.createLazy(this, document, CHILDREN) :
+                                            ImmutableChildReferences.create(this, document, CHILDREN) :
                                             ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         ChildReferences externalChildRefs = hasFederatedSegments ?
-                                            ImmutableChildReferences.createLazy(this, document, FEDERATED_SEGMENTS) :
+                                            ImmutableChildReferences.create(this, document, FEDERATED_SEGMENTS) :
                                             ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
 
         // Now look at the 'childrenInfo' document for info about the next block of children ...
@@ -907,38 +906,10 @@ public class DocumentTranslator implements DocumentConstants {
      * @return a {@code non-null} child references instance
      */
     public ChildReferences getChildReferencesFromBlock( Document block ) {
-        List<?> children = block.getArray(CHILDREN);
-
-        if (children == null) {
+        if (!block.containsField(CHILDREN)) {
             return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         }
-
-        return ImmutableChildReferences.create(childReferencesListFromArray(children));
-    }
-
-    private List<ChildReference> childReferencesListFromArray( List<?> children ) {
-        if (children == null) {
-            return new ArrayList<ChildReference>();
-        }
-
-        do {
-            int count = 0;
-            try {
-                // Try getting the child references. If the document is being edited at the same time we
-                // iterate, then we might get a CME. Should that happen, simply retry a few times (max of 10) ...
-                List<ChildReference> childRefsList = new ArrayList<ChildReference>(children.size());
-                for (Object value : children) {
-                    ChildReference ref = childReferenceFrom(value);
-                    if (ref != null) {
-                        childRefsList.add(ref);
-                    }
-                }
-                return childRefsList;
-            } catch (ConcurrentModificationException e) {
-                if (count >= 10) throw e;
-                ++count;
-            }
-        } while (true);
+        return ImmutableChildReferences.create(this, block, CHILDREN);
     }
 
     public ChildReferencesInfo getChildReferencesInfo( Document document ) {
