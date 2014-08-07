@@ -71,6 +71,7 @@ import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
+import org.modeshape.jcr.NodeTypes.NodeDefinitionSet;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.monitor.DurationMetric;
@@ -90,6 +91,7 @@ import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCache.SaveContext;
 import org.modeshape.jcr.cache.SessionCacheWrapper;
+import org.modeshape.jcr.cache.SiblingCounter;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -2354,7 +2356,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // look at the information that was already persisted to determine whether some other thread has already
                 // created a child with the same name
                 CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
-                ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
+                final ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
+                final SiblingCounter siblingCounter = SiblingCounter.create(persistedChildReferences);
 
                 // process appended/renamed children
                 for (Name childName : appendedOrRenamedChildrenByName.keySet()) {
@@ -2376,12 +2379,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                     // or renaming an existing child to this name. Therefore, we have to find a child node definition
                     // that allows SNS. Look for one ignoring the child node type (this is faster than finding the
                     // child node primary types) ...
-                    JcrNodeDefinition childNodeDefinition = nodeTypeCapabilities.findChildNodeDefinition(primaryType,
-                                                                                                         mixinTypes,
-                                                                                                         childName,
-                                                                                                         null,
-                                                                                                         existingChildrenWithSameName + 1,
-                                                                                                         true);
+                    NodeDefinitionSet childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
+                    JcrNodeDefinition childNodeDefinition = childDefns.findBestDefinitionForChild(childName, null, true,
+                                                                                                  siblingCounter);
                     if (childNodeDefinition != null) {
                         // found the one child node definition that applies, so it's okay ...
                         continue;
@@ -2404,9 +2404,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         MutableCachedNode appendedOrRenamedChild = session.mutable(appendedOrRenamedKey);
                         if (appendedOrRenamedChild == null) continue;
                         Name childPrimaryType = appendedOrRenamedChild.getPrimaryType(session);
-                        childNodeDefinition = nodeTypeCapabilities.findChildNodeDefinition(primaryType, mixinTypes, childName,
-                                                                                           childPrimaryType,
-                                                                                           existingChildrenWithSameName + 1, true);
+                        childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
+                        childNodeDefinition = childDefns.findBestDefinitionForChild(childName, childPrimaryType, true,
+                                                                                    siblingCounter);
                         if (childNodeDefinition == null) {
                             // Could not find a valid child node definition that allows SNS given the child's primary type and
                             // name plus the parent's primary type and mixin types.
