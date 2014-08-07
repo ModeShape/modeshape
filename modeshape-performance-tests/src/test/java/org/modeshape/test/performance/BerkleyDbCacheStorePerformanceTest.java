@@ -23,10 +23,7 @@
  */
 package org.modeshape.test.performance;
 
-import java.io.File;
 import javax.jcr.Node;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.loaders.bdbje.configuration.BdbjeCacheStoreConfigurationBuilder;
 import org.junit.Test;
 import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
@@ -34,19 +31,15 @@ import org.modeshape.common.util.FileUtil;
 
 public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest {
 
-    private final File dbDir = new File("target/database");
-
     @Override
     protected void cleanUpFileSystem() {
-        FileUtil.delete(dbDir);
+        FileUtil.delete("target/bdb");
     }
 
     @Override
-    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        BdbjeCacheStoreConfigurationBuilder builder = new BdbjeCacheStoreConfigurationBuilder(configurationBuilder.loaders());
-        builder.location(dbDir.getAbsolutePath());
-        builder.purgeOnStartup(true);
-        configurationBuilder.loaders().addStore(builder);
+    @Test
+    public void shouldGetNodePathsInFlatLargeHierarchyWithSns() throws Exception {
+        super.shouldGetNodePathsInFlatLargeHierarchyWithSns();
     }
 
     @Performance

@@ -41,7 +41,7 @@ import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
 
 /**
- * Tests that operate against a {@link WritableSessionCache}. Each test method starts with a clean slate of content, which is
+ * Tests that operate against a {@link WritableSessionCache}. Each test method starts with a clean slate of content
  */
 public class WritableSessionCacheTest extends AbstractSessionCacheTest {
 

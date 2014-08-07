@@ -1,5 +1,20 @@
 {
-    "name" : "Test_Repository",
+    "name" : "DB Repository",
+    "storage" : {
+        "cacheName" : "db_repository",
+        "cacheConfiguration" : "config/infinispan-jdbc.xml",
+        "binaryStorage" : {
+            "type"  : "database",
+            "driverClass" : "${dataSource.driverClassName}",
+            "url" : "${dataSource.url}",
+            "username" : "${dataSource.username}",
+            "password" : "${dataSource.password}"
+        }
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
     "query" : {
         "indexStorage" : {
             "type" : "ram"
