@@ -40,7 +40,6 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -50,6 +49,7 @@ import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.SiblingCounter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
@@ -1594,7 +1594,7 @@ public class NodeTypes {
     }
 
     private Set<Name> mixinsWithChildNodeDefinitions( Set<Name> mixinTypes ) {
-        if (mixinTypes.isEmpty()) return NONE;
+        if (mixinTypes == null || mixinTypes.isEmpty()) return NONE;
         if (nodeTypeNamesWithNoChildNodeDefns.containsAll(mixinTypes)) {
             // None of the mixins has a child node definition. This is usually true of all mixins, so this will happen a lot ...
             return NONE;
@@ -1614,75 +1614,6 @@ public class NodeTypes {
     private NodeDefinitionSet use( ReusableNodeDefinitionSet defnSet ) {
         nodeDefinitionSet.set(defnSet);
         return defnSet;
-    }
-
-    /**
-     * Searches the supplied primary node type and the mixin node types of a parent node for a child node definition that is the
-     * best match for a new child with the given name, primary node type name, and whether there are existing children with the
-     * same name.
-     *
-     * @param primaryTypeNameOfParent the name of the primary type for the parent node; may not be null
-     * @param mixinTypeNamesOfParent the names of the mixin types for the parent node; may be null or empty if there are no mixins
-     *        to include in the search
-     * @param childName the name of the child to be added to the parent; may not be null
-     * @param childPrimaryNodeType the name of the primary node type for the child node, or null if the primary type is not known
-     *        and the {@link NodeDefinition#getDefaultPrimaryType() definition's default primary type} will be used
-     * @param numberOfExistingChildrenWithSameName the number of existing children with the same name as the child to be added, or
-     *        0 if this new child will be the first child with this name (or if the number of children is not known)
-     * @param skipProtected true if this operation is being done from within the public JCR node and property API, or false if
-     *        this operation is being done from within internal implementations
-     * @return the best child node definition, or <code>null</code> if no node definition allows a new child with the supplied
-     *         name, primary type, and whether there are already children with the same name
-     */
-    JcrNodeDefinition findChildNodeDefinition( Name primaryTypeNameOfParent,
-                                               Collection<Name> mixinTypeNamesOfParent,
-                                               Name childName,
-                                               Name childPrimaryNodeType,
-                                               int numberOfExistingChildrenWithSameName,
-                                               boolean skipProtected ) {
-        JcrNodeType childType = childPrimaryNodeType != null ? getNodeType(childPrimaryNodeType) : null;
-        boolean requireSns = numberOfExistingChildrenWithSameName > 1;
-
-        // Check for a very common case first ...
-        if ((mixinTypeNamesOfParent == null || mixinTypeNamesOfParent.isEmpty())
-            && JcrNtLexicon.UNSTRUCTURED.equals(primaryTypeNameOfParent)) {
-            // This is a very common case of an 'nt:unstructured' node with no mixins ...
-            return findChildNodeDefinitionForUnstructured();
-        }
-
-        // First look in the primary type ...
-        JcrNodeType primaryType = getNodeType(primaryTypeNameOfParent);
-        if (primaryType != null) {
-            for (JcrNodeDefinition definition : primaryType.allChildNodeDefinitions(childName, requireSns)) {
-                // Skip protected definitions ...
-                if (skipProtected && definition.isProtected()) continue;
-                // See if the definition allows a child with the supplied primary type ...
-                if (definition.allowsChildWithType(childType)) return definition;
-            }
-        }
-
-        // Then, look in the mixin types ...
-        if (mixinTypeNamesOfParent != null) {
-            for (Name mixinTypeName : mixinTypeNamesOfParent) {
-                JcrNodeType mixinType = getNodeType(mixinTypeName);
-                if (mixinType == null) continue;
-                for (JcrNodeDefinition definition : mixinType.allChildNodeDefinitions(childName, requireSns)) {
-                    // Skip protected definitions ...
-                    if (skipProtected && definition.isProtected()) continue;
-                    // See if the definition allows a child with the supplied primary type ...
-                    if (definition.allowsChildWithType(childType)) return definition;
-                }
-            }
-        }
-
-        // Nothing was found, so look for residual node definitions ...
-        if (!childName.equals(JcrNodeType.RESIDUAL_NAME)) return findChildNodeDefinition(primaryTypeNameOfParent,
-                                                                                         mixinTypeNamesOfParent,
-                                                                                         JcrNodeType.RESIDUAL_NAME,
-                                                                                         childPrimaryNodeType,
-                                                                                         numberOfExistingChildrenWithSameName,
-                                                                                         skipProtected);
-        return null;
     }
 
     /**
@@ -2299,20 +2230,6 @@ public class NodeTypes {
 
         // There is a primary type and at least one mixin with child node definitions ...
         return use(new MultipleNodeDefinitionSet(primaryTypeNameOfParent, mixinsWithChildDefns));
-    }
-
-    /**
-     * Information about where the child is being added.
-     */
-    public static interface SiblingCounter {
-        /**
-         * Get the number of existing siblings that all have the supplied name. If the implementation is expensive, it should
-         * cache the result so subsequent calls with the same parameter are fast.
-         *
-         * @param childName the name for the siblings; may not be null
-         * @return the number of existing siblings with the new child's name
-         */
-        int countSiblingsNamed( Name childName );
     }
 
     /**

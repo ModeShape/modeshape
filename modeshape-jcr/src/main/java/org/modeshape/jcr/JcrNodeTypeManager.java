@@ -77,7 +77,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * on the namespace registry from the session's execution context in order to support transient namespace remappings. All
  * {@link NodeType}s returned by this implementation are wrapped with the execution context of the session to allow proper ongoing
  * handling of names. This implies that reference equality is not a safe test for node type equivalence.
- * 
+ *
  * @see RepositoryNodeTypeManager
  */
 @Immutable
@@ -147,7 +147,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     /**
      * Returns the node type with the given name (if one exists)
-     * 
+     *
      * @param nodeTypeName the name of the node type to be returned
      * @return the node type with the given name (if one exists)
      * @see NodeTypes#getNodeType(Name)
@@ -166,7 +166,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * Returns true if and only if the node type with the given name exists.
      * <p>
      * This is equivalent to the following code:
-     * 
+     *
      * <pre>
      * try {
      *     getNodeType(nodeTypeName);
@@ -175,10 +175,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      *     return false;
      * }
      * </pre>
-     * 
+     *
      * However, the implementation is more efficient that the approach listed above and does not rely upon exceptions.
      * </p>
-     * 
+     *
      * @param nodeTypeName the name of the node type
      * @return true if the named node type does exist, or false otherwise
      * @see NodeTypes#hasNodeType(Name)
@@ -205,7 +205,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     /**
      * Get the {@link NodeDefinition} for the root node.
-     * 
+     *
      * @return the definition; never null
      * @throws RepositoryException
      * @throws NoSuchNodeTypeException
@@ -222,7 +222,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     /**
      * Get the node definition given the supplied identifier.
-     * 
+     *
      * @param definitionId the identifier of the node definition
      * @return the node definition, or null if there is no such definition (or if the ID was null)
      */
@@ -233,7 +233,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     /**
      * Get the property definition given the supplied identifier.
-     * 
+     *
      * @param definitionId the identifier of the node definition
      * @return the property definition, or null if there is no such definition (or if the ID was null)
      */
@@ -273,7 +273,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * Finally, if no satisfactory property definition could be found, this method returns null.
      * </p>
-     * 
+     *
      * @param primaryTypeName the name of the primary type; may not be null
      * @param mixinTypeNames the names of the mixin types; may be null or empty if there are no mixins to include in the search
      * @param propertyName the name of the property for which the definition should be retrieved. This method will automatically
@@ -293,13 +293,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                         Value value,
                                                         boolean checkMultiValuedDefinitions,
                                                         boolean skipProtected ) {
-        return nodeTypes().findPropertyDefinition(session,
-                                                  primaryTypeName,
-                                                  mixinTypeNames,
-                                                  propertyName,
-                                                  value,
-                                                  checkMultiValuedDefinitions,
-                                                  skipProtected);
+        return nodeTypes().findPropertyDefinition(session, primaryTypeName, mixinTypeNames, propertyName, value,
+                                                  checkMultiValuedDefinitions, skipProtected);
     }
 
     final JcrPropertyDefinition findPropertyDefinition( Name primaryTypeName,
@@ -309,14 +304,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                         boolean checkMultiValuedDefinitions,
                                                         boolean skipProtected,
                                                         boolean checkTypesAndConstraints ) {
-        return nodeTypes().findPropertyDefinition(session,
-                                                  primaryTypeName,
-                                                  mixinTypeNames,
-                                                  propertyName,
-                                                  value,
-                                                  checkMultiValuedDefinitions,
-                                                  skipProtected,
-                                                  checkTypesAndConstraints);
+        return nodeTypes().findPropertyDefinition(session, primaryTypeName, mixinTypeNames, propertyName, value,
+                                                  checkMultiValuedDefinitions, skipProtected, checkTypesAndConstraints);
     }
 
     /**
@@ -350,7 +339,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * Finally, if no satisfactory property definition could be found, this method returns null.
      * </p>
-     * 
+     *
      * @param primaryTypeName the name of the primary type; may not be null
      * @param mixinTypeNames the names of the mixin types; may be null or empty if there are no mixins to include in the search
      * @param propertyName the name of the property for which the definition should be retrieved. This method will automatically
@@ -376,19 +365,14 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                         Value[] values,
                                                         boolean skipProtected,
                                                         boolean checkTypeAndConstraints ) {
-        return nodeTypes().findPropertyDefinition(session,
-                                                  primaryTypeName,
-                                                  mixinTypeNames,
-                                                  propertyName,
-                                                  values,
-                                                  skipProtected,
+        return nodeTypes().findPropertyDefinition(session, primaryTypeName, mixinTypeNames, propertyName, values, skipProtected,
                                                   checkTypeAndConstraints);
     }
 
     /**
      * Determine if the property definitions of the supplied primary type and mixin types allow the property with the supplied
      * name to be removed.
-     * 
+     *
      * @param primaryTypeNameOfParent the name of the primary type for the parent node; may not be null
      * @param mixinTypeNamesOfParent the names of the mixin types for the parent node; may be null or empty if there are no mixins
      *        to include in the search
@@ -406,41 +390,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     /**
-     * Searches the supplied primary node type and the mixin node types of a parent node for a child node definition that is the
-     * best match for a new child with the given name, primary node type name, and whether there are existing children with the
-     * same name.
-     * 
-     * @param primaryTypeNameOfParent the name of the primary type for the parent node; may not be null
-     * @param mixinTypeNamesOfParent the names of the mixin types for the parent node; may be null or empty if there are no mixins
-     *        to include in the search
-     * @param childName the name of the child to be added to the parent; may not be null
-     * @param childPrimaryNodeType the name of the primary node type for the child node, or null if the primary type is not known
-     *        and the {@link NodeDefinition#getDefaultPrimaryType() definition's default primary type} will be used
-     * @param numberOfExistingChildrenWithSameName the number of existing children with the same name as the child to be added, or
-     *        0 if this new child will be the first child with this name (or if the number of children is not known)
-     * @param skipProtected true if this operation is being done from within the public JCR node and property API, or false if
-     *        this operation is being done from within internal implementations
-     * @return the best child node definition, or <code>null</code> if no node definition allows a new child with the supplied
-     *         name, primary type, and whether there are already children with the same name
-     */
-    final JcrNodeDefinition findChildNodeDefinition( Name primaryTypeNameOfParent,
-                                                     Collection<Name> mixinTypeNamesOfParent,
-                                                     Name childName,
-                                                     Name childPrimaryNodeType,
-                                                     int numberOfExistingChildrenWithSameName,
-                                                     boolean skipProtected ) {
-        return nodeTypes().findChildNodeDefinition(primaryTypeNameOfParent,
-                                                   mixinTypeNamesOfParent,
-                                                   childName,
-                                                   childPrimaryNodeType,
-                                                   numberOfExistingChildrenWithSameName,
-                                                   skipProtected);
-    }
-
-    /**
      * Determine if the child node definitions of the supplied primary type and mixin types of a parent node allow all of the
      * children with the supplied name to be removed.
-     * 
+     *
      * @param primaryTypeNameOfParent the name of the primary type for the parent node; may not be null
      * @param mixinTypeNamesOfParent the names of the mixin types for the parent node; may be null or empty if there are no mixins
      *        to include in the search
@@ -464,7 +416,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * Typically, the object passed to this method will be a {@link NodeTypeTemplate} (a subclass of {@link NodeTypeDefinition})
      * acquired from {@link JcrNodeTypeManager#createNodeTypeTemplate()} and then filled-in with definition information.
      * </p>
-     * 
+     *
      * @param template the new node type to register
      * @param allowUpdate this flag is not used
      * @return the {@code newly created node type}
@@ -495,7 +447,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * The effect of the method is "all or nothing"; if an error occurs, no node types are registered or updated.
      * </p>
-     * 
+     *
      * @param templates the new node types to register
      * @param allowUpdates this flag is not used
      * @return the {@code newly created node types}
@@ -525,7 +477,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * The effect of the method is "all or nothing"; if an error occurs, no node types are registered or updated.
      * </p>
-     * 
+     *
      * @param nodeTypes the iterable object containing the new node types to register
      * @return the {@code newly created node types}
      * @throws InvalidNodeTypeDefinitionException if a {@code NodeTypeDefinition} within the collection is invalid
@@ -553,7 +505,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * <p>
      * The effect of the method is "all or nothing"; if an error occurs, no node types are registered or updated.
      * </p>
-     * 
+     *
      * @param ntds the new node types to register
      * @param allowUpdate must be {@code false}; ModeShape does not allow updating node types at this time
      * @return the {@code newly created node types}
@@ -575,16 +527,14 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
 
-        return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds),
-                                                                                    !allowUpdate,
-                                                                                    false,
+        return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds), !allowUpdate, false,
                                                                                     true));
     }
 
     /**
      * Unregisters the named node type if it is not referenced by other node types as a supertype, a default primary type of a
      * child node (or nodes), or a required primary type of a child node (or nodes).
-     * 
+     *
      * @param nodeTypeName
      * @throws NoSuchNodeTypeException if node type name does not correspond to a registered node type
      * @throws InvalidNodeTypeDefinitionException if the node type with the given name cannot be unregistered because it is the
@@ -602,7 +552,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     /**
      * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
      * default primary types of child nodes, or required primary types of child nodes.
-     * 
+     *
      * @param nodeTypeNames the names of the node types to be unregistered
      * @throws NoSuchNodeTypeException if any of the node type names do not correspond to a registered node type
      * @throws InvalidNodeTypeDefinitionException if any of the node types with the given names cannot be unregistered because
@@ -636,7 +586,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     /**
      * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
      * default primary types of child nodes, or required primary types of child nodes.
-     * 
+     *
      * @param names the names of the node types to be unregistered
      * @throws NoSuchNodeTypeException if any of the node type names do not correspond to a registered node type
      * @throws InvalidNodeTypeDefinitionException if any of the node types with the given names cannot be unregistered because
@@ -654,7 +604,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     /**
      * Returns an empty {@code NodeTypeTemplate} which can then be used to define a node type and passed to
      * {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}
-     * 
+     *
      * @return an empty {@code NodeTypeTemplate} which can then be used to define a node type and passed to
      *         {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}.
      * @throws RepositoryException if another error occurs
@@ -667,7 +617,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     /**
      * Returns a {@code NodeTypeTemplate} based on the definition given in {@code ntd}. This template can then be used to define a
      * node type and passed to {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}
-     * 
+     *
      * @param ntd an existing node type definition; null values will be ignored
      * @return an empty {@code NodeTypeTemplate} which can then be used to define a node type and passed to
      *         {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}.
@@ -733,7 +683,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     /**
      * Returns an empty {@code PropertyDefinitionTemplate} which can then be used to create a property definition and attached to
      * a {@code NodeTypeTemplate}.
-     * 
+     *
      * @return an empty {@code PropertyDefinitionTemplate} which can then be used to create a property definition and attached to
      *         a {@code NodeTypeTemplate}.
      * @throws RepositoryException if another error occurs
@@ -746,7 +696,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     /**
      * Returns an empty {@code PropertyDefinitionTemplate} which can then be used to create a property definition and attached to
      * a {@code NodeTypeTemplate}.
-     * 
+     *
      * @return an empty {@code PropertyDefinitionTemplate} which can then be used to create a property definition and attached to
      *         a {@code NodeTypeTemplate}.
      * @throws RepositoryException if another error occurs
@@ -758,7 +708,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     /**
      * Determine if any of the test type names are equal to or have been derived from the primary type or any of the mixins.
-     * 
+     *
      * @param testTypeNames the names of the types or mixins being tested against (never <code>null</code>)
      * @param primaryTypeName the primary type name (never <code>null</code>)
      * @param mixinNames the mixin names (may be <code>null</code>)

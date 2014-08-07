@@ -80,7 +80,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.NodeTypes.NodeDefinitionSet;
-import org.modeshape.jcr.NodeTypes.SiblingCounter;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
@@ -92,6 +91,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SiblingCounter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
@@ -683,17 +683,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
-     * Get the number of children that have the supplied name.
-     *
-     * @param name the child name
-     * @return the number of children with names that match the supplied name
-     * @throws RepositoryException
-     */
-    protected final long childCount( Name name ) throws RepositoryException {
-        return node().getChildReferences(sessionCache()).getChildCount(name);
-    }
-
-    /**
      * Get the JCR node for the named child.
      *
      * @param name the child name; may not be null
@@ -1262,15 +1251,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Name primaryTypeName = node.getPrimaryType(cache);
         Set<Name> mixins = node.getMixinTypes(cache);
         NodeTypes nodeTypes = session().nodeTypes();
-        final SiblingCounter siblingCounter = new SiblingCounter() {
-            private int count = -1;
-
-            @Override
-            public int countSiblingsNamed( Name childName ) {
-                if (count == -1) count = node.getChildReferences(cache).getChildCount(childName);
-                return count;
-            }
-        };
+        final SiblingCounter siblingCounter = SiblingCounter.create(node, cache);
 
         if (childPrimaryNodeTypeName != null) {
             if (INTERNAL_NODE_TYPE_NAMES.contains(childPrimaryNodeTypeName)) {
@@ -2504,14 +2485,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CachedNode parent = getParent().node();
         Name primaryType = parent.getPrimaryType(cache);
         Set<Name> mixins = parent.getMixinTypes(cache);
-        int numExistingSns = parent.getChildReferences(cache).getChildCount(nodeName);
+        // The node is already a child, so create a counter that returns the count as if it were not a child ...
+        SiblingCounter siblingCounter = SiblingCounter.alter(SiblingCounter.create(parent, cache), -1);
         boolean skipProtected = true;
-        JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(primaryType,
-                                                                        mixins,
-                                                                        nodeName,
-                                                                        newPrimaryTypeName,
-                                                                        numExistingSns,
-                                                                        skipProtected);
+        NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(primaryType, mixins);
+        JcrNodeDefinition childDefn = childDefns.findBestDefinitionForChild(nodeName, newPrimaryTypeName, skipProtected,
+                                                                            siblingCounter);
         if (childDefn == null) {
             String ptype = readable(primaryType);
             String mtypes = readable(parent.getMixinTypes(cache));
@@ -2716,9 +2695,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Check that any remaining child nodes that use the mixin type to be removed
         // match the residual definition for the node.
         // ------------------------------------------------------------------------------
+        SiblingCounter siblingCounter = SiblingCounter.create(node(), cache());
         for (NodeIterator iter = getNodesInternal(); iter.hasNext();) {
             AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
-            int snsCount = (int)childCount(child.name());
             NodeDefinition childDefinition = child.getDefinition();
             String childDeclaredNodeType = childDefinition.getDeclaringNodeType().getName();
 
@@ -2732,13 +2711,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             if (mixinType.isNodeType(childDeclaredNodeType)) {
                 // Only the residual definition would work - if there were any other definition for this name,
                 // the mixin type would not have been added due to the conflict
-                JcrNodeDefinition match = nodeTypes.findChildNodeDefinition(primaryTypeName,
-                                                                            newMixinNames,
-                                                                            JcrNodeType.RESIDUAL_NAME,
-                                                                            child.getPrimaryNodeType().getInternalName(),
-                                                                            snsCount,
-                                                                            true);
-
+                boolean skipProtected = true;
+                NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(primaryTypeName, newMixinNames);
+                JcrNodeDefinition match = childDefns.findBestDefinitionForChild(JcrNodeType.RESIDUAL_NAME,
+                                                                                child.getPrimaryNodeType().getInternalName(),
+                                                                                skipProtected, siblingCounter);
                 if (match == null) {
                     throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(child.getName(),
                                                                                               location(),
@@ -2824,8 +2801,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         NodeTypes nodeTypes = session.nodeTypes();
         // Need to figure out if the child node requires an SNS definition
         ChildReferences refs = node.getChildReferences(cache());
+        // Create a sibling counter that reduces the count by 1, since we're always dealing with existing children
+        // but the 'findBestDefinitionForChild' logic is looking to *add* a child ...
+        SiblingCounter siblingCounter = SiblingCounter.alter(SiblingCounter.create(refs), -1);
         for (Name nodeName : mixinChildNodeNames) {
-            int snsCount = refs.getChildCount(nodeName);
+            int snsCount = siblingCounter.countSiblingsNamed(nodeName);
             if (snsCount == 0) continue;
 
             // TODO: Incorrect logic????
@@ -2835,12 +2815,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 CachedNode child = cache.getNode(ref);
                 Name childPrimaryType = child.getPrimaryType(cache);
                 boolean skipProtected = true;
-                JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(mixinType.getInternalName(),
-                                                                                null,
-                                                                                nodeName,
-                                                                                childPrimaryType,
-                                                                                snsCount,
-                                                                                skipProtected);
+                NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(mixinType.getInternalName(), null);
+                JcrNodeDefinition childDefn = childDefns.findBestDefinitionForChild(nodeName, childPrimaryType, skipProtected,
+                                                                                    siblingCounter);
                 if (childDefn == null) {
                     return false;
                 }
@@ -2890,14 +2867,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             Name primaryType = node().getPrimaryType(cache);
             Name parentPrimaryType = parent.getPrimaryType(cache);
             Set<Name> parentMixins = parent.getMixinTypes(cache);
-            int numExistingSnsInParent = parent.getChildReferences(cache).getChildCount(nodeName);
+            SiblingCounter siblingCounter = SiblingCounter.create(parent, cache);
             boolean skipProtected = true;
-            JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(parentPrimaryType,
-                                                                            parentMixins,
-                                                                            nodeName,
-                                                                            primaryType,
-                                                                            numExistingSnsInParent,
-                                                                            skipProtected);
+            NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(parentPrimaryType, parentMixins);
+            JcrNodeDefinition childDefn = childDefns.findBestDefinitionForChild(nodeName, primaryType, skipProtected,
+                                                                                siblingCounter);
             if (childDefn == null) {
                 throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(nodeName,
                                                                                           getParent().location(),
@@ -2931,14 +2905,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             Name primaryType = node().getPrimaryType(cache);
             Name parentPrimaryType = parent.getPrimaryType(cache);
             Set<Name> parentMixins = parent.getMixinTypes(cache);
-            int numExistingSnsInParent = parent.getChildReferences(cache).getChildCount(nodeName);
+            // The node is already a child, so create a counter that returns the count as if it were not a child ...
+            SiblingCounter siblingCounter = SiblingCounter.alter(SiblingCounter.create(parent, cache), -1);
             boolean skipProtected = false;
-            JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(parentPrimaryType,
-                                                                            parentMixins,
-                                                                            nodeName,
-                                                                            primaryType,
-                                                                            numExistingSnsInParent,
-                                                                            skipProtected);
+            NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(parentPrimaryType, parentMixins);
+            JcrNodeDefinition childDefn = childDefns.findBestDefinitionForChild(nodeName, primaryType, skipProtected,
+                                                                                siblingCounter);
             if (childDefn == null) {
                 throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(nodeName,
                                                                                           getParent().location(),

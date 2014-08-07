@@ -50,7 +50,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Get the total number of child references for the node, including all subsequent blocks of ChildReferences.
-     * 
+     *
      * @return the total number of children, or {@link #UNKNOWN_SIZE}
      */
     long size();
@@ -58,7 +58,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
     /**
      * Determine if there are no references in this container. This is equivalent to calling {@code size() == 0} but may be
      * faster.
-     * 
+     *
      * @return true if there are no references in this container, or false if there are.
      */
     boolean isEmpty();
@@ -66,7 +66,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
     /**
      * Return the number of nodes that have the supplied name. If there are no siblings with the same supplied name, this method
      * will return 1; otherwise it will return the number of same-name-siblings.
-     * 
+     *
      * @param name the name
      * @return the number of siblings with the supplied name; never negative
      */
@@ -74,7 +74,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Look for the child reference that has the given name and a SNS index of '1'.
-     * 
+     *
      * @param name the name for the node
      * @return the child reference, or null if there is no such child
      */
@@ -82,7 +82,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Look for the child reference that has the given name and SNS index.
-     * 
+     *
      * @param name the name for the node
      * @param snsIndex the same-name-sibling index; must be positive
      * @return the child reference, or null if there is no such child
@@ -92,7 +92,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Look for the child reference that has the given name and SNS index.
-     * 
+     *
      * @param name the name for the node
      * @param snsIndex the same-name-sibling index; must be positive
      * @param context the context in which the child should be evaluated; may be null if there is no context
@@ -104,7 +104,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Look for the child reference that has the given name and SNS index.
-     * 
+     *
      * @param segment the path segment, which defines the name and SNS index
      * @return the child reference, or null if there is no such child
      */
@@ -112,7 +112,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Determine if this contains a reference to the specified child.
-     * 
+     *
      * @param key the node key of the child
      * @return true if there is a child reference, or false if there is none
      */
@@ -120,7 +120,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Look for the child reference that has the node key.
-     * 
+     *
      * @param key the node key of the child
      * @return the child reference, or null if there is no such child
      */
@@ -128,7 +128,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Look for the child reference that has the node key.
-     * 
+     *
      * @param key the node key of the child
      * @param context the context in which the child should be evaluated; may be null if there is no context
      * @return the child reference, or null if there is no such child
@@ -141,7 +141,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
      * only its NodeKey. Implementations that have very large numbers of children may provide an alternative way to
      * {@link WorkspaceCache#getChildReference(NodeKey,NodeKey) lookup} a child reference directly. In such cases, this method may
      * return false.
-     * 
+     *
      * @return true if {@link #getChild(NodeKey)} and {@link #getChild(NodeKey, Context)} should be used to find the
      *         ChildReference, or false if doing so is not recommended.
      */
@@ -150,7 +150,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
     /**
      * Get an iterator over all of the children that have same name matching the supplied value. This essentially returns an
      * iterator over all of the same-name-siblings.
-     * 
+     *
      * @param name the name of the same-name-sibling nodes; may not be null
      * @return the iterator; never null
      */
@@ -159,7 +159,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
     /**
      * Get an iterator over all of the children that have same name matching the supplied value. This essentially returns an
      * iterator over all of the same-name-siblings.
-     * 
+     *
      * @param name the name of the same-name-sibling nodes; may not be null
      * @param context the context in which the child should be evaluated; may be null if there is no context
      * @return the iterator; never null
@@ -169,7 +169,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Get an iterator over all of the children.
-     * 
+     *
      * @return the iterator; never null
      */
     @Override
@@ -178,7 +178,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
     /**
      * Get an iterator over all of the children that have {@link Segment#getName() names} (excluding same-name-sibling indexes)
      * matching at least one of the supplied patterns.
-     * 
+     *
      * @param namePatterns the list of string literals or regex patterns describing the names
      * @param registry the namespace registry, used to convert names to a form compatible with the name patterns
      * @return the iterator; never null
@@ -188,7 +188,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
      * Get an iterator over all child references in this collection, using the supplied context.
-     * 
+     *
      * @param context the context in which the child should be evaluated; may be null if there is no context
      * @return the iterator over all references; never null
      */
@@ -198,7 +198,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
      * Get an iterator over all of the children that have {@link Segment#getName() names} (excluding same-name-sibling indexes)
      * matching at least one of the supplied patterns, using the supplied context. The resulting iterator is lazy where possible,
      * but it may be an expensive call if there are large numbers of children.
-     * 
+     *
      * @param context the context in which the child should be evaluated; may be null if there is no context
      * @param namePatterns the list of string literals or regex patterns describing the names
      * @param registry the namespace registry, used to convert names to a form compatible with the name patterns
@@ -211,7 +211,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
     /**
      * Get the keys for all of the children. The resulting iterator is lazy where possible, but it may be an expensive call if
      * there are large numbers of children.
-     * 
+     *
      * @return the iterator over the keys; never null
      */
     Iterator<NodeKey> getAllKeys();
@@ -223,7 +223,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Consume the next child with the supplied name and key.
-         * 
+         *
          * @param name the name of the node; may not be null
          * @param key the key for the node; may not be null
          * @return the same-name-sibling index for this node; always positive
@@ -233,7 +233,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Get the set of changes for this context.
-         * 
+         *
          * @return the changes; never null
          */
         Changes changes();
@@ -246,7 +246,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Get the references to the children with the supplied name that were inserted.
-         * 
+         *
          * @param name the name; may not be null
          * @return the iterator over the insertions; never null but possibly empty
          */
@@ -254,7 +254,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Get the child reference for the inserted node with the supplied key.
-         * 
+         *
          * @param key the node key for the inserted node; may not be null
          * @return the child reference, or null if no node was inserted with the supplied key
          */
@@ -262,7 +262,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Get the set of child references that were inserted before the node with the supplied key.
-         * 
+         *
          * @param key the node key for the node before which the inserted nodes are to be returned; may not be null
          * @return the nodes that were inserted before the node with the supplied key
          */
@@ -270,7 +270,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Determine whether the supplied child reference was removed.
-         * 
+         *
          * @param ref the reference; may not be null
          * @return true if the child reference was removed, or false otherwise
          */
@@ -278,7 +278,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Determine whether the supplied child reference was renamed.
-         * 
+         *
          * @param ref the reference; may not be null
          * @return true if the child reference was renamed, or false otherwise
          */
@@ -286,7 +286,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Determine whether any of the child references were renamed to the supplied name.
-         * 
+         *
          * @param newName the new name; may not be null
          * @return true if at least one child reference was renamed to the supplied name, or false otherwise
          */
@@ -294,7 +294,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Return the new name for the child node with the supplied key.
-         * 
+         *
          * @param key the child node's key; may not be null
          * @return the new name, or null if the node is not a child or was not renamed
          */
@@ -302,28 +302,28 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Determine if this set of changes is empty.
-         * 
+         *
          * @return true if there are no effective changes, or false if there is at least one effective change
          */
         boolean isEmpty();
 
         /**
          * Get the number of child references that were removed.
-         * 
+         *
          * @return the number of removed child references; never negative
          */
         int removalCount();
 
         /**
          * Get the number of child references that were inserted.
-         * 
+         *
          * @return the number of inserted child references; never negative
          */
         int insertionCount();
 
         /**
          * Get the number of child references that were inserted with the given name.
-         * 
+         *
          * @param name the {@link Name} of a child, never {@code null}
          * @return the number of inserted child references which have the given name; never negative
          */
@@ -331,7 +331,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * Get the number of child references that were renamed.
-         * 
+         *
          * @return the number of renamed child references; never negative
          */
         int renameCount();
@@ -344,14 +344,14 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         /**
          * The nodes that were inserted.
-         * 
+         *
          * @return the iterator over the child references that were inserted; never null
          */
         Iterable<ChildReference> inserted();
 
         /**
          * The reference to the child before which the nodes are to be inserted.
-         * 
+         *
          * @return the child reference before which the nodes are to be inserted; never null
          */
         ChildReference insertedBefore();

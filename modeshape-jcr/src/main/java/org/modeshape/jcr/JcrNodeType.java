@@ -41,8 +41,10 @@ import javax.jcr.nodetype.PropertyDefinition;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.NodeTypes.NodeDefinitionSet;
 import org.modeshape.jcr.api.Namespaced;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.SiblingCounter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.basic.BasicName;
 
@@ -199,7 +201,7 @@ class JcrNodeType implements NodeType, Namespaced {
 
     /**
      * Get the child definitions defined on this node type (excluding inherited definitions).
-     * 
+     *
      * @return this node's child node definitions; never null
      */
     List<JcrNodeDefinition> childNodeDefinitions() {
@@ -208,7 +210,7 @@ class JcrNodeType implements NodeType, Namespaced {
 
     /**
      * Get the property definitions defined on this node type (excluding inherited definitions).
-     * 
+     *
      * @return this node's property definitions; never null
      */
     List<JcrPropertyDefinition> propertyDefinitions() {
@@ -217,7 +219,7 @@ class JcrNodeType implements NodeType, Namespaced {
 
     /**
      * Get all of the property definitions defined on this node type and its supertypes.
-     * 
+     *
      * @return this node's explicit and inherited property definitions; never null
      */
     Collection<JcrPropertyDefinition> allPropertyDefinitions() {
@@ -238,7 +240,7 @@ class JcrNodeType implements NodeType, Namespaced {
 
     /**
      * Get all of the child node definitions defined on this node type and its supertypes.
-     * 
+     *
      * @return this node's explicit and inherited child node definitions; never null
      */
     Collection<JcrNodeDefinition> allChildNodeDefinitions() {
@@ -269,7 +271,12 @@ class JcrNodeType implements NodeType, Namespaced {
     public boolean canAddChildNode( String childNodeName ) {
         CheckArg.isNotNull(childNodeName, "childNodeName");
         Name childName = context.getValueFactories().getNameFactory().create(childNodeName);
-        return nodeTypes().findChildNodeDefinition(this.name, null, childName, null, 0, true) != null;
+        boolean skipProtected = true;
+        NodeDefinitionSet childDefns = nodeTypes().findChildNodeDefinitions(this.name, null);
+        JcrNodeDefinition childNodeDefinition = childDefns.findBestDefinitionForChild(childName, null, skipProtected,
+                                                                                      SiblingCounter.constant(0));
+        // No primary node type was given, which means the child node definition (if found) must have a default type ...
+        return childNodeDefinition != null && childNodeDefinition.getDefaultPrimaryType() != null;
     }
 
     @Override
@@ -282,23 +289,27 @@ class JcrNodeType implements NodeType, Namespaced {
         Name childPrimaryTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
 
         NodeTypes nodeTypes = nodeTypes();
-        JcrNodeDefinition childNodeDefinition = nodeTypes.findChildNodeDefinition(this.name,
-                                                                                  null,
-                                                                                  childName,
-                                                                                  childPrimaryTypeName,
-                                                                                  0,
-                                                                                  true);
-
-        if (childNodeDefinition != null && RESIDUAL_ITEM_NAME.equals(childNodeDefinition.getName())) {
+        boolean skipProtected = true;
+        NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(this.name, null);
+        JcrNodeDefinition childNodeDefinition = childDefns.findBestDefinitionForChild(childName, childPrimaryTypeName,
+                                                                                      skipProtected, SiblingCounter.constant(0));
+        if (childNodeDefinition == null) {
+            // We found no valid child node definition ...
+            return false;
+        }
+        if (RESIDUAL_ITEM_NAME.equals(childNodeDefinition.getName())) {
             // the TCK expects that for residual children definitions, this returns true
             return true;
         }
-
-        if (primaryNodeTypeName != null) {
+        if (childPrimaryTypeName != null) {
+            // The child's primary node type name was given, so make sure that it is not abstract or a mixin.
+            // If it were not for the residual item check (previous `if`), then we could do this at the top of the method.
+            // But it has to go here.
             JcrNodeType childType = nodeTypes.getNodeType(childPrimaryTypeName);
             if (childType.isAbstract() || childType.isMixin()) return false;
         }
-        return childNodeDefinition != null;
+
+        return true;
     }
 
     @Override
@@ -314,7 +325,7 @@ class JcrNodeType implements NodeType, Namespaced {
      * In JCR 1.0, this method applied to all children. However, this was changed in the JSR-283 specification to apply only to
      * nodes, and it is also deprecated.
      * </p>
-     * 
+     *
      * @see javax.jcr.nodetype.NodeType#canRemoveItem(java.lang.String)
      */
     @Override
@@ -330,7 +341,7 @@ class JcrNodeType implements NodeType, Namespaced {
      * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
      * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
      * type specified in <code>value.getType()</code>.
-     * 
+     *
      * @param session the session in which the constraints are to be checked; may not be null
      * @param propertyDefinition the property definition to validate against
      * @param value the value to be validated
@@ -358,7 +369,7 @@ class JcrNodeType implements NodeType, Namespaced {
      * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
      * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
      * type specified in <code>value.getType()</code>.
-     * 
+     *
      * @param session the session in which the constraints are to be checked; may not be null
      * @param propertyDefinition the property definition to validate against
      * @param values the values to be validated
@@ -448,7 +459,7 @@ class JcrNodeType implements NodeType, Namespaced {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @return the array of names of supertypes declared for this node; possibly empty, never null
      */
     @Override
@@ -482,7 +493,7 @@ class JcrNodeType implements NodeType, Namespaced {
     /**
      * Returns the internal {@link Name} object for the node type. This method exists outside the JCR API and should not be
      * exposed outside of the package.
-     * 
+     *
      * @return the internal {@link Name} object for the node type.
      */
     final Name getInternalName() {
@@ -492,7 +503,7 @@ class JcrNodeType implements NodeType, Namespaced {
     /**
      * Returns the internal {@link Name} object for the primary item of this node type. This method exists outside the JCR API and
      * should not be exposed outside of the package.
-     * 
+     *
      * @return the internal {@link Name} object for the primary item of this node type.
      */
     Name getInternalPrimaryItemName() {
@@ -597,7 +608,7 @@ class JcrNodeType implements NodeType, Namespaced {
      * Returns a {@link JcrNodeType} that is equivalent to this {@link JcrNodeType}, except with a different repository node type
      * manager. This method should only be called during the initialization of the repository node type manager, unless some kind
      * of cross-repository type shipping is implemented.
-     * 
+     *
      * @param nodeTypeManager the new repository node type manager
      * @return a new {@link JcrNodeType} that has the same state as this node type, but with the given node type manager.
      */
@@ -609,7 +620,7 @@ class JcrNodeType implements NodeType, Namespaced {
 
     /**
      * Returns a {@link JcrNodeType} that is equivalent to this {@link JcrNodeType}, except with a different execution context.
-     * 
+     *
      * @param context the new execution context
      * @param session an active user session, in the context of which the node type is created. May be null, during system
      *        initialization.
@@ -644,7 +655,7 @@ class JcrNodeType implements NodeType, Namespaced {
      * definition from the same ancestor node type</li>
      * </ol>
      * </p>
-     * 
+     *
      * @param primaryNodeType the primary node type to check
      * @param mixinNodeTypes the mixin node types to check
      * @return true if this node type conflicts with the provided primary or mixin node types as defined below
