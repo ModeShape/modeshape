@@ -8,6 +8,8 @@
         <globalJmxStatistics allowDuplicateDomains="true"/>
     </global>
     <namedCache name="db_repository">
+        <eviction maxEntries="50000" strategy="LIRS"/>
+
         <transaction
                 transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
                 transactionMode="TRANSACTIONAL"
