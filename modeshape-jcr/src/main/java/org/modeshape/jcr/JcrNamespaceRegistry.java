@@ -350,7 +350,7 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
     }
 
     private void checkURINotInUse( String uri ) throws RepositoryException {
-        RepositoryNodeTypeManager.NodeTypes nodeTypes = session.nodeTypes();
+        NodeTypes nodeTypes = session.nodeTypes();
         for (Name nodeTypeName : nodeTypes.getAllNodeTypeNames()) {
             if (nodeTypeName.getNamespaceUri().equals(uri)) {
                 throw new NamespaceException(JcrI18n.unableToUnregisterPrefixForNamespaceUsedByNodeType.text(uri, nodeTypeName));

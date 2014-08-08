@@ -24,8 +24,8 @@
 package org.modeshape.jcr;
 
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -35,6 +35,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.cache.SiblingCounter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.basic.BasicName;
@@ -105,19 +106,18 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
         NamespaceRegistry registry = context.getNamespaceRegistry();
 
         // There's no definition for this node or for a * child node that does not allow SNS
-        JcrNodeDefinition def = repoTypeManager.getNodeTypes().findChildNodeDefinition(JcrNtLexicon.NODE_TYPE,
-                                                                                       null,
-                                                                                       JcrLexicon.PROPERTY_DEFINITION,
-                                                                                       JcrNtLexicon.PROPERTY_DEFINITION,
-                                                                                       1,
-                                                                                       false);
+        JcrNodeDefinition def = repoTypeManager.getNodeTypes()
+                                               .findChildNodeDefinitions(JcrNtLexicon.NODE_TYPE, null)
+                                               .findBestDefinitionForChild(JcrLexicon.PROPERTY_DEFINITION,
+                                                                           JcrNtLexicon.PROPERTY_DEFINITION, false,
+                                                                           SiblingCounter.oneSibling());
 
         assertThat(def, is(notNullValue()));
         assertThat(def.getName(), is(JcrLexicon.PROPERTY_DEFINITION.getString(registry)));
     }
 
     @Test
-    @FixFor("MODE-1807")
+    @FixFor( "MODE-1807" )
     public void shouldAllowOverridingChildDefinitionWithSubtypeOfOriginalDefinition() throws Exception {
         InputStream cndStream = getClass().getResourceAsStream("/cnd/orc.cnd");
         assertThat(cndStream, is(notNullValue()));
@@ -125,7 +125,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
     }
 
     @Test
-    @FixFor("MODE-1857")
+    @FixFor( "MODE-1857" )
     public void shouldAllowOverridingOfPropertyDefinitions() throws Exception {
         InputStream cnd = getClass().getClassLoader().getResourceAsStream("cnd/overridingPropertyDefinition.cnd");
         assertThat(cnd, is(notNullValue()));
@@ -152,7 +152,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
     }
 
     @Test
-    @FixFor("MODE-1857")
+    @FixFor( "MODE-1857" )
     public void shouldAllowOverridingOfPropertyDefinitionsWithResidualDefinitions() throws Exception {
         InputStream cnd = getClass().getClassLoader().getResourceAsStream("cnd/overridingPropertyDefinitionWithResidual.cnd");
         assertThat(cnd, is(notNullValue()));
@@ -187,23 +187,15 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
 
         Name parking = new BasicName(null, "parking");
         Name level = new BasicName(null, "level");
-        Collection<Name> garage = Arrays.<Name>asList(new BasicName(null, "garage"));
+        Set<Name> garage = Collections.<Name>singleton(new BasicName(null, "garage"));
 
-        JcrNodeDefinition def = repoTypeManager.getNodeTypes().findChildNodeDefinition(parking,
-                                                                                       garage,
-                                                                                       level,
-                                                                                       level,
-                                                                                       0,
-                                                                                       true);
+        JcrNodeDefinition def = repoTypeManager.getNodeTypes().findChildNodeDefinitions(parking, garage)
+                                               .findBestDefinitionForChild(level, level, true, SiblingCounter.noSiblings());
 
         assertNotNull(def);
         Name car = new BasicName(null, "car");
-        def = repoTypeManager.getNodeTypes().findChildNodeDefinition(parking,
-                                                                     garage,
-                                                                     car,
-                                                                     car,
-                                                                     0,
-                                                                     true);
+        def = repoTypeManager.getNodeTypes().findChildNodeDefinitions(parking, garage)
+                             .findBestDefinitionForChild(car, car, true, SiblingCounter.noSiblings());
         assertNotNull(def);
     }
 

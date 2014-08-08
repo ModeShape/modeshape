@@ -47,7 +47,7 @@ import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;

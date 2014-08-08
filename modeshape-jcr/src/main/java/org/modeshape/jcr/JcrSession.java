@@ -79,7 +79,8 @@ import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
-import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.NodeTypes.NodeDefinitionSet;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.monitor.DurationMetric;
@@ -99,6 +100,7 @@ import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCache.SaveContext;
 import org.modeshape.jcr.cache.SessionCacheWrapper;
+import org.modeshape.jcr.cache.SiblingCounter;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -127,7 +129,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- * 
+ *
  */
 public class JcrSession implements org.modeshape.jcr.api.Session {
 
@@ -262,7 +264,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     /**
      * This method is called by {@link #logout()} and by {@link JcrRepository#shutdown()}. It should not be called from anywhere
      * else.
-     * 
+     *
      * @param removeFromActiveSession true if the session should be removed from the active session list
      */
     void terminate( boolean removeFromActiveSession ) {
@@ -310,7 +312,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Method that verifies that this session is still {@link #isLive() live}.
-     * 
+     *
      * @throws RepositoryException if session has been closed and is no longer usable.
      */
     final void checkLive() throws RepositoryException {
@@ -469,7 +471,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Obtain the {@link Node JCR Node} object for the node with the supplied key.
-     * 
+     *
      * @param nodeKey the node's key
      * @param expectedType the expected implementation type for the node, or null if it is not known
      * @return the JCR node; never null
@@ -482,7 +484,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Obtain the {@link Node JCR Node} object for the node with the supplied key.
-     * 
+     *
      * @param nodeKey the node's key
      * @param expectedType the expected implementation type for the node, or null if it is not known
      * @param parentKey the node key for the parent node, or null if the parent is not known
@@ -511,7 +513,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Obtain the {@link Node JCR Node} object for the node with the supplied key.
-     * 
+     *
      * @param cachedNode the cached node; may not be null
      * @param expectedType the expected implementation type for the node, or null if it is not known
      * @return the JCR node; never null
@@ -524,7 +526,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Obtain the {@link Node JCR Node} object for the node with the supplied key.
-     * 
+     *
      * @param cachedNode the cached node; may not be null
      * @param expectedType the expected implementation type for the node, or null if it is not known
      * @param parentKey the node key for the parent node, or null if the parent is not known
@@ -682,7 +684,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Parse the supplied string into an absolute {@link Path} representation.
-     * 
+     *
      * @param absPath the string containing an absolute path
      * @return the absolute path object; never null
      * @throws RepositoryException if the supplied string is not a valid absolute path
@@ -797,7 +799,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     /**
      * A variant of the standard {@link #getNodeByIdentifier(String)} method that does <i>not</i> find nodes within the system
      * area. This is often needed by the {@link JcrVersionManager} functionality.
-     * 
+     *
      * @param id the string identifier
      * @return the node; never null
      * @throws ItemNotFoundException if a node cannot be found in the non-system content of the repository
@@ -937,7 +939,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Utility method to determine if the node with the specified key still exists within the transient & persisted state.
-     * 
+     *
      * @param key the key of the node; may not be null
      * @return true if the node exists, or false if it does not
      */
@@ -1039,9 +1041,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         // check whether the parent definition allows children which match the source
         final Name newChildName = destPath.getLastSegment().getName();
-        ChildReferences childReferences = destParentNode.node().getChildReferences(cache());
-        int numExistingSns = childReferences.getChildCount(newChildName);
-        destParentNode.validateChildNodeDefinition(newChildName, numExistingSns, srcNode.getPrimaryTypeName(), true);
+        destParentNode.validateChildNodeDefinition(newChildName, srcNode.getPrimaryTypeName(), true);
 
         // We already checked whether the supplied destination path is below the supplied source path, but this isn't
         // sufficient if any of the ancestors are shared nodes. Therefore, check whether the destination node
@@ -1180,7 +1180,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Save a subset of the changes made within this session.
-     * 
+     *
      * @param node the node at or below which the changes are to be saved; may not be null
      * @throws RepositoryException if there is a problem saving the changes
      * @see AbstractJcrNode#save()
@@ -1275,7 +1275,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private static interface PathSupplier {
         /**
          * Get the absolute path
-         * 
+         *
          * @return the absolute path
          * @throws ItemNotFoundException if the node was deleted
          */
@@ -1324,7 +1324,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     /**
      * Determine if the current user does not have permission for all of the named actions in the named workspace in the given
      * context, otherwise returns silently.
-     * 
+     *
      * @param workspaceName the name of the workspace in which the path exists
      * @param pathSupplier the supplier for the path on which the actions are occurring; may be null if the permission is on the
      *        whole workspace
@@ -1435,7 +1435,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Returns whether the authenticated user has the given role.
-     * 
+     *
      * @param context the security context
      * @param roleName the name of the role to check
      * @param repositoryName the name of the repository
@@ -1478,7 +1478,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * <p>
      * The {@code path} parameter is included for future use and is currently ignored
      * </p>
-     * 
+     *
      * @param path the absolute path on which the actions are occurring
      * @param actions a comma-delimited list of actions to check
      * @throws AccessDeniedException if the actions cannot be performed on the node at the specified path
@@ -1499,7 +1499,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * <p>
      * The {@code path} parameter is included for future use and is currently ignored
      * </p>
-     * 
+     *
      * @param item the property or node on which the actions are occurring
      * @param actions a comma-delimited list of actions to check
      * @throws AccessDeniedException if the actions cannot be performed on the node at the specified path
@@ -1521,7 +1521,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * <p>
      * The {@code path} parameter is included for future use and is currently ignored
      * </p>
-     * 
+     *
      * @param workspaceName the name of the workspace in which the path exists
      * @param path the absolute path on which the actions are occurring
      * @param actions a comma-delimited list of actions to check
@@ -1572,7 +1572,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * Makes a "best effort" determination of whether the given method can be successfully called on the given target with the
      * given arguments. A return value of {@code false} indicates that the method would not succeed. A return value of
      * {@code true} indicates that the method <i>might</i> succeed.
-     * 
+     *
      * @param methodName the method to invoke; may not be null
      * @param target the object on which to invoke it; may not be null
      * @param arguments the arguments to pass to the method; varies depending on the method
@@ -1813,7 +1813,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * qualified by the requirement that referencable nodes only correspond with other referencables and non-referenceables with
      * other non-referenceables.
      * </p>
-     * 
+     *
      * @param workspaceName the name of the workspace; may not be null
      * @param key the key for the node; may not be null
      * @param relativePath the relative path from the referenceable node, or null if the supplied UUID identifies the
@@ -1865,7 +1865,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * Determine if the supplied string represents just the {@link Node#getIdentifier() node's identifier} or whether it is a
      * string representation of a NodeKey. If it is just the node's identifier, then the NodeKey is created by using the same
      * {@link NodeKey#getSourceKey() source key} and {@link NodeKey#getWorkspaceKey() workspace key} from the supplied root node.
-     * 
+     *
      * @param identifier the identifier string; may not be null
      * @param rootKey the node of the root in the workspace; may not be null
      * @return the node key re-created from the supplied identifier; never null
@@ -1882,7 +1882,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     /**
      * Checks if the node given key is foreign by comparing the source key & workspace key against the same keys from this
      * session's root. This method is used for reference resolving.
-     * 
+     *
      * @param key the node key; may be null
      * @param rootKey the key of the root node in the workspace; may not be null
      * @return true if the node key is considered foreign, false otherwise.
@@ -1901,7 +1901,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Returns a string representing a node's identifier, based on whether the node is foreign or not.
-     * 
+     *
      * @param key the node key; may be null
      * @param rootKey the key of the root node in the workspace; may not be null
      * @return the identifier for the node; never null
@@ -1915,7 +1915,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     /**
      * Checks if the node given key is foreign by comparing the source key & workspace key against the same keys from this
      * session's root. This method is used for reference resolving.
-     * 
+     *
      * @param key the node key; may be null
      * @return true if the node key is considered foreign, false otherwise.
      */
@@ -1925,7 +1925,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     /**
      * Returns a string representing a node's identifier, based on whether the node is foreign or not.
-     * 
+     *
      * @param key the node key; may be null
      * @return the identifier for the node; never null
      * @see javax.jcr.Node#getIdentifier()
@@ -2360,7 +2360,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // look at the information that was already persisted to determine whether some other thread has already
                 // created a child with the same name
                 CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
-                ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
+                final ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
+                final SiblingCounter siblingCounter = SiblingCounter.create(persistedChildReferences);
 
                 // process appended/renamed children
                 for (Name childName : appendedOrRenamedChildrenByName.keySet()) {
@@ -2382,12 +2383,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                     // or renaming an existing child to this name. Therefore, we have to find a child node definition
                     // that allows SNS. Look for one ignoring the child node type (this is faster than finding the
                     // child node primary types) ...
-                    JcrNodeDefinition childNodeDefinition = nodeTypeCapabilities.findChildNodeDefinition(primaryType,
-                                                                                                         mixinTypes,
-                                                                                                         childName,
-                                                                                                         null,
-                                                                                                         existingChildrenWithSameName + 1,
-                                                                                                         true);
+                    NodeDefinitionSet childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
+                    JcrNodeDefinition childNodeDefinition = childDefns.findBestDefinitionForChild(childName, null, true,
+                                                                                                  siblingCounter);
                     if (childNodeDefinition != null) {
                         // found the one child node definition that applies, so it's okay ...
                         continue;
@@ -2410,12 +2408,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         MutableCachedNode appendedOrRenamedChild = session.mutable(appendedOrRenamedKey);
                         if (appendedOrRenamedChild == null) continue;
                         Name childPrimaryType = appendedOrRenamedChild.getPrimaryType(session);
-                        childNodeDefinition = nodeTypeCapabilities.findChildNodeDefinition(primaryType,
-                                                                                           mixinTypes,
-                                                                                           childName,
-                                                                                           childPrimaryType,
-                                                                                           existingChildrenWithSameName + 1,
-                                                                                           true);
+                        childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
+                        childNodeDefinition = childDefns.findBestDefinitionForChild(childName, childPrimaryType, true,
+                                                                                    siblingCounter);
                         if (childNodeDefinition == null) {
                             // Could not find a valid child node definition that allows SNS given the child's primary type and
                             // name plus the parent's primary type and mixin types.

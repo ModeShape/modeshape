@@ -160,6 +160,11 @@ public final class JcrI18n {
     public static I18n childNotFoundUnderNode;
     public static I18n errorWhileFindingNodeWithUuid;
     public static I18n errorWhileFindingNodeWithPath;
+    public static I18n unableToAddChildUnderParent;
+    public static I18n childNameDoesNotSatisfyParentChildNodeDefinition;
+    public static I18n childPrimaryTypeDoesNotSatisfyParentChildNodeDefinition;
+    public static I18n parentChildNodeDefinitionDoesNotAllowSameNameSiblings;
+    public static I18n parentChildNodeDefinitionIsProtected;
     public static I18n nodeDefinitionCouldNotBeDeterminedForNode;
     public static I18n noSnsDefinitionForNode;
     public static I18n missingNodeTypeForExistingNode;
@@ -302,6 +307,7 @@ public final class JcrI18n {
     public static I18n cannotRemoveItemWithProtectedDefinition;
     public static I18n errorCheckingNodeTypeUsage;
 
+    public static I18n noChildNodeDefinitions;
     public static I18n noChildNodeDefinition;
     public static I18n noPropertyDefinition;
     public static I18n noSnsDefinition;
