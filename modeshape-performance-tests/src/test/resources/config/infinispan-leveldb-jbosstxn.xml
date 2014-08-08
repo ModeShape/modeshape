@@ -5,6 +5,8 @@
                             urn:infinispan:config:store:leveldb:6.0 http://www.infinispan.org/schemas/infinispan-cachestore-leveldb-config-6.0.xsd"
         xmlns="urn:infinispan:config:6.0">
     <namedCache name="levelDBRepository">
+        <eviction maxEntries="50000" strategy="LIRS"/>
+
         <persistence passivation="false">
             <leveldbStore xmlns="urn:infinispan:config:store:leveldb:6.0"
                           fetchPersistentState="false"
