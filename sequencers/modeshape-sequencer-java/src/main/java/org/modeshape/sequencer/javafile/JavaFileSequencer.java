@@ -35,12 +35,6 @@ import org.modeshape.sequencer.classfile.ClassFileSequencer;
  */
 public class JavaFileSequencer extends Sequencer {
 
-    @SuppressWarnings( "unused" )
-    private static final SourceFileRecorder OLD_SOURCE_FILE_RECORDER = new ClassSourceFileRecorder();
-    private static final SourceFileRecorder DEFAULT_SOURCE_FILE_RECORDER = new JdtRecorder();
-
-    private SourceFileRecorder sourceFileRecorder = DEFAULT_SOURCE_FILE_RECORDER;
-
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
@@ -58,7 +52,7 @@ public class JavaFileSequencer extends Sequencer {
         InputStream stream = binaryValue.getStream();
 
         try {
-            sourceFileRecorder.record(context, stream, binaryValue.getSize(), null, outputNode);
+            new JdtRecorder().record(context, stream, binaryValue.getSize(), null, outputNode);
             return true;
         } catch (Exception ex) {
             getLogger().error(ex, "Error sequencing file");
@@ -68,29 +62,4 @@ public class JavaFileSequencer extends Sequencer {
         }
     }
 
-    /**
-     * Sets the custom {@link SourceFileRecorder} by specifying a class name. This method attempts to instantiate an instance of
-     * the custom {@link SourceFileRecorder} class prior to ensure that the new value represents a valid implementation.
-     *
-     * @param sourceFileRecorderClassName the fully-qualified class name of the new custom class file recorder implementation;
-     *        null indicates that {@link org.modeshape.sequencer.javafile.ClassSourceFileRecorder the class file recorder} should
-     *        be used.
-     * @throws ClassNotFoundException if the the class for the {@code SourceFileRecorder} implementation cannot be located
-     * @throws IllegalAccessException if the row factory class or its nullary constructor is not accessible.
-     * @throws InstantiationException if the row factory represents an abstract class, an interface, an array class, a primitive
-     *         type, or void; or if the class has no nullary constructor; or if the instantiation fails for some other reason.
-     * @throws ClassCastException if the instantiated class file recorder does not implement the {@link SourceFileRecorder}
-     *         interface
-     */
-    public void setSourceFileRecorderClassName( String sourceFileRecorderClassName )
-        throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-
-        if (sourceFileRecorderClassName == null) {
-            this.sourceFileRecorder = DEFAULT_SOURCE_FILE_RECORDER;
-            return;
-        }
-
-        Class<?> sourceFileRecorderClass = Class.forName(sourceFileRecorderClassName);
-        this.sourceFileRecorder = (SourceFileRecorder)sourceFileRecorderClass.newInstance();
-    }
 }
