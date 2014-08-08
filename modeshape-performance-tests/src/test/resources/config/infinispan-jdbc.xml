@@ -33,6 +33,7 @@
                 </properties>
             </loader>
         </loaders>
+        <eviction maxEntries="50000" strategy="LIRS"/>
 
         <transaction
                 transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
