@@ -209,12 +209,30 @@ class JcrNodeType implements NodeType, Namespaced {
     }
 
     /**
+     * Determine if there is at least one child node definition.
+     * 
+     * @return true if there is at least one child node definitions, or false if there are none
+     */
+    boolean hasChildNodeDefinitions() {
+        return allDefinitions.anyChildNodeDefinitions();
+    }
+
+    /**
      * Get the property definitions defined on this node type (excluding inherited definitions).
      *
      * @return this node's property definitions; never null
      */
     List<JcrPropertyDefinition> propertyDefinitions() {
         return propertyDefinitions;
+    }
+
+    /**
+     * Determine if there is at least one property definition.
+     * 
+     * @return true if there is at least one child node definitions, or false if there are none
+     */
+    boolean hasPropertyDefinitions() {
+        return allDefinitions.anyPropertyDefinitions();
     }
 
     /**

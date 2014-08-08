@@ -561,6 +561,16 @@ public class NodeTypes {
     }
 
     /**
+     * Determine if the named node type is or subtypes the 'mix:versionable' mixin type.
+     *
+     * @param nodeTypeName the node type name; may be null
+     * @return true if any of the named node type is versionable, or false otherwise
+     */
+    public boolean isVersionable( Name nodeTypeName ) {
+        return nodeTypeName != null && versionableNodeTypeNames.contains(nodeTypeName);
+    }
+
+    /**
      * Determine if at least one of the named primary node type or mixin types is or subtypes the 'mix:versionable' mixin type.
      *
      * @param primaryType the primary type name; may be null

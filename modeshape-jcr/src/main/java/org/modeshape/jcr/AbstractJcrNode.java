@@ -2397,36 +2397,41 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         MutableCachedNode node = mutable();
         SessionCache cache = sessionCache();
-        for (JcrPropertyDefinition propDefn : nodeType.allPropertyDefinitions()) {
-            if (propDefn.isAutoCreated() && !propDefn.isProtected()) {
-                Name propName = propDefn.getInternalName();
-                Property autoCreatedProp = node.getProperty(propName, cache);
-                if (autoCreatedProp == null) {
-                    // We have to 'auto-create' the property ...
-                    JcrValue[] defaultValues = propDefn.getDefaultValues();
-                    if (defaultValues != null) { // may be empty
-                        if (propDefn.isMultiple()) {
-                            setProperty(propDefn.getInternalName(), defaultValues, propDefn.getRequiredType(), true);
-                        } else {
-                            assert propDefn.getDefaultValues().length == 1;
-                            // don't skip constraint checks or protected checks
-                            setProperty(propDefn.getInternalName(), defaultValues[0], false, false, false, false);
+        if (nodeType.hasPropertyDefinitions()) {
+            for (JcrPropertyDefinition propDefn : nodeType.allPropertyDefinitions()) {
+                if (propDefn.isAutoCreated() && !propDefn.isProtected()) {
+                    Name propName = propDefn.getInternalName();
+                    Property autoCreatedProp = node.getProperty(propName, cache);
+                    if (autoCreatedProp == null) {
+                        // We have to 'auto-create' the property ...
+                        JcrValue[] defaultValues = propDefn.getDefaultValues();
+                        if (defaultValues != null) { // may be empty
+                            if (propDefn.isMultiple()) {
+                                setProperty(propDefn.getInternalName(), defaultValues, propDefn.getRequiredType(), true);
+                            } else {
+                                assert propDefn.getDefaultValues().length == 1;
+                                // don't skip constraint checks or protected checks
+                                setProperty(propDefn.getInternalName(), defaultValues[0], false, false, false, false);
+                            }
                         }
+                        // otherwise, we don't care
                     }
-                    // otherwise, we don't care
                 }
             }
         }
 
-        ChildReferences refs = node.getChildReferences(cache);
-        for (JcrNodeDefinition nodeDefn : nodeType.allChildNodeDefinitions()) {
-            if (nodeDefn.isAutoCreated() && !nodeDefn.isProtected()) {
-                Name nodeName = nodeDefn.getInternalName();
-                if (refs.getChildCount(nodeName) == 0) {
-                    JcrNodeType defaultPrimaryType = nodeDefn.getDefaultPrimaryType();
-                    assert defaultPrimaryType != null;
-                    Name primaryType = defaultPrimaryType.getInternalName();
-                    addChildNode(nodeName, primaryType, null, false, false);
+        if (nodeType.hasChildNodeDefinitions()) {
+            ChildReferences refs = null;
+            for (JcrNodeDefinition nodeDefn : nodeType.allChildNodeDefinitions()) {
+                if (nodeDefn.isAutoCreated() && !nodeDefn.isProtected()) {
+                    Name nodeName = nodeDefn.getInternalName();
+                    if (refs == null) refs = node.getChildReferences(cache);
+                    if (refs.getChildCount(nodeName) == 0) {
+                        JcrNodeType defaultPrimaryType = nodeDefn.getDefaultPrimaryType();
+                        assert defaultPrimaryType != null;
+                        Name primaryType = defaultPrimaryType.getInternalName();
+                        addChildNode(nodeName, primaryType, null, false, false);
+                    }
                 }
             }
         }
@@ -2562,9 +2567,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // And auto-create any properties that are defined by the new primary type ...
         autoCreateItemsFor(mixinType);
 
-        // Since we've changed the mixins, release the cached property definition IDs for the node's properties ...
-        for (AbstractJcrProperty prop : this.jcrProperties.values()) {
-            prop.releasePropertyDefinitionId();
+        if (mixinType.hasPropertyDefinitions()) {
+            // Since we've changed the mixins, release the cached property definition IDs for the node's properties ...
+            for (AbstractJcrProperty prop : this.jcrProperties.values()) {
+                prop.releasePropertyDefinitionId();
+            }
         }
 
         // per JCR 2.0 10.10.3.1, the change should be reflected immediately in the property
@@ -2640,87 +2647,79 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         JcrNodeType mixinType = nodeTypes.getNodeType(removedMixinName);
+        List<Name> protectedPropertiesToRemove = null;
+        List<AbstractJcrNode> protectedChildrenToRemove = null;
+        if (mixinType.hasPropertyDefinitions()) {
+            protectedPropertiesToRemove = new ArrayList<Name>();
+            // ------------------------------------------------------------------------------
+            // Check that any remaining properties that use the mixin type to be removed
+            // match the residual definition for the node.
+            // ------------------------------------------------------------------------------
+            for (PropertyIterator iter = getProperties(); iter.hasNext();) {
+                javax.jcr.Property property = iter.nextProperty();
+                PropertyDefinition propertyDefinition = property.getDefinition();
+                String propertyDeclaredNodeTypeName = propertyDefinition.getDeclaringNodeType().getName();
 
-        List<Name> protectedPropertiesToRemove = new ArrayList<Name>();
-        // ------------------------------------------------------------------------------
-        // Check that any remaining properties that use the mixin type to be removed
-        // match the residual definition for the node.
-        // ------------------------------------------------------------------------------
-        for (PropertyIterator iter = getProperties(); iter.hasNext();) {
-            javax.jcr.Property property = iter.nextProperty();
-            PropertyDefinition propertyDefinition = property.getDefinition();
-            String propertyDeclaredNodeTypeName = propertyDefinition.getDeclaringNodeType().getName();
-
-            // if we have a protected property, check if it belongs to the mixin itself or any ancestor of the mixin.
-            // if yes, mark it for removal
-            if (propertyDefinition.isProtected() && mixinType.isNodeType(propertyDeclaredNodeTypeName)) {
-                protectedPropertiesToRemove.add(((AbstractJcrProperty)property).name());
-                continue;
-            }
-
-            if (mixinType.isNodeType(propertyDeclaredNodeTypeName)) {
-
-                JcrPropertyDefinition match;
-
-                // Only the residual definition would work - if there were any other definition for this name,
-                // the mixin type would not have been added due to the conflict
-                if (propertyDefinition.isMultiple()) {
-                    match = nodeTypes.findPropertyDefinition(session,
-                                                             primaryTypeName,
-                                                             newMixinNames,
-                                                             JcrNodeType.RESIDUAL_NAME,
-                                                             property.getValues(),
-                                                             true);
-                } else {
-                    match = nodeTypes.findPropertyDefinition(session,
-                                                             primaryTypeName,
-                                                             newMixinNames,
-                                                             JcrNodeType.RESIDUAL_NAME,
-                                                             property.getValue(),
-                                                             true,
-                                                             true);
+                // if we have a protected property, check if it belongs to the mixin itself or any ancestor of the mixin.
+                // if yes, mark it for removal
+                if (propertyDefinition.isProtected() && mixinType.isNodeType(propertyDeclaredNodeTypeName)) {
+                    protectedPropertiesToRemove.add(((AbstractJcrProperty)property).name());
+                    continue;
                 }
 
-                if (match == null) {
-                    throw new ConstraintViolationException(JcrI18n.noPropertyDefinition.text(property.getName(),
-                                                                                             location(),
-                                                                                             readable(primaryTypeName),
-                                                                                             readable(newMixinNames)));
+                if (mixinType.isNodeType(propertyDeclaredNodeTypeName)) {
+                    JcrPropertyDefinition match;
+                    // Only the residual definition would work - if there were any other definition for this name,
+                    // the mixin type would not have been added due to the conflict
+                    if (propertyDefinition.isMultiple()) {
+                        match = nodeTypes.findPropertyDefinition(session, primaryTypeName, newMixinNames,
+                                                                 JcrNodeType.RESIDUAL_NAME, property.getValues(), true);
+                    } else {
+                        match = nodeTypes.findPropertyDefinition(session, primaryTypeName, newMixinNames,
+                                                                 JcrNodeType.RESIDUAL_NAME, property.getValue(), true, true);
+                    }
+
+                    if (match == null) {
+                        throw new ConstraintViolationException(JcrI18n.noPropertyDefinition.text(property.getName(), location(),
+                                                                                                 readable(primaryTypeName),
+                                                                                                 readable(newMixinNames)));
+                    }
                 }
             }
         }
 
-        List<AbstractJcrNode> protectedChildrenToRemove = new ArrayList<AbstractJcrNode>();
-        // ------------------------------------------------------------------------------
-        // Check that any remaining child nodes that use the mixin type to be removed
-        // match the residual definition for the node.
-        // ------------------------------------------------------------------------------
-        SiblingCounter siblingCounter = SiblingCounter.create(node(), cache());
-        for (NodeIterator iter = getNodesInternal(); iter.hasNext();) {
-            AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
-            NodeDefinition childDefinition = child.getDefinition();
-            String childDeclaredNodeType = childDefinition.getDeclaringNodeType().getName();
+        if (mixinType.hasChildNodeDefinitions()) {
+            protectedChildrenToRemove = new ArrayList<AbstractJcrNode>();
+            // ------------------------------------------------------------------------------
+            // Check that any remaining child nodes that use the mixin type to be removed
+            // match the residual definition for the node.
+            // ------------------------------------------------------------------------------
+            SiblingCounter siblingCounter = SiblingCounter.create(node(), cache());
+            for (NodeIterator iter = getNodesInternal(); iter.hasNext();) {
+                AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
+                NodeDefinition childDefinition = child.getDefinition();
+                String childDeclaredNodeType = childDefinition.getDeclaringNodeType().getName();
 
-            // if we have a protected child, check if it belongs to the mixin itself or any ancestor of the mixin
-            // if yes, mark it for removal
-            if (childDefinition.isProtected() && mixinType.isNodeType(childDeclaredNodeType)) {
-                protectedChildrenToRemove.add(child);
-                continue;
-            }
+                // if we have a protected child, check if it belongs to the mixin itself or any ancestor of the mixin
+                // if yes, mark it for removal
+                if (childDefinition.isProtected() && mixinType.isNodeType(childDeclaredNodeType)) {
+                    protectedChildrenToRemove.add(child);
+                    continue;
+                }
 
-            if (mixinType.isNodeType(childDeclaredNodeType)) {
-                // Only the residual definition would work - if there were any other definition for this name,
-                // the mixin type would not have been added due to the conflict
-                boolean skipProtected = true;
-                NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(primaryTypeName, newMixinNames);
-                JcrNodeDefinition match = childDefns.findBestDefinitionForChild(JcrNodeType.RESIDUAL_NAME,
-                                                                                child.getPrimaryNodeType().getInternalName(),
-                                                                                skipProtected, siblingCounter);
-                if (match == null) {
-                    throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(child.getName(),
-                                                                                              location(),
-                                                                                              readable(primaryTypeName),
-                                                                                              readable(newMixinNames)));
+                if (mixinType.isNodeType(childDeclaredNodeType)) {
+                    // Only the residual definition would work - if there were any other definition for this name,
+                    // the mixin type would not have been added due to the conflict
+                    boolean skipProtected = true;
+                    NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(primaryTypeName, newMixinNames);
+                    JcrNodeDefinition match = childDefns.findBestDefinitionForChild(JcrNodeType.RESIDUAL_NAME,
+                                                                                    child.getPrimaryNodeType().getInternalName(),
+                                                                                    skipProtected, siblingCounter);
+                    if (match == null) {
+                        throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(child.getName(), location(),
+                                                                                                  readable(primaryTypeName),
+                                                                                                  readable(newMixinNames)));
+                    }
                 }
             }
         }
@@ -2732,11 +2731,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         mutable.removeMixin(cache, removedMixinName);
 
         // If there were protected properties or children, remove them
-        for (Name protectedPropertyName : protectedPropertiesToRemove) {
-            mutable.removeProperty(cache, protectedPropertyName);
+        if (protectedPropertiesToRemove != null) {
+            for (Name protectedPropertyName : protectedPropertiesToRemove) {
+                mutable.removeProperty(cache, protectedPropertyName);
+            }
         }
-        for (AbstractJcrNode protectedChild : protectedChildrenToRemove) {
-            protectedChild.remove();
+        if (protectedChildrenToRemove != null) {
+            for (AbstractJcrNode protectedChild : protectedChildrenToRemove) {
+                protectedChild.remove();
+            }
         }
 
         if (wasReferenceable && !isReferenceable()) {
@@ -2767,23 +2770,30 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (!isCheckedOut()) return false;
         if (getDefinition().isProtected()) return false;
         if (mixinType.isAbstract()) return false;
-        if (!mixinType.isMixin()) return false;
-        if (isNodeType(mixinType.getInternalName())) return true;
+        final Name mixinNameObj = mixinType.getInternalName();
+        if (isNodeType(mixinNameObj)) return true;
+
+        // do not allow versionable mixin on external nodes
+        if (isExternal() && session().nodeTypes().isVersionable(mixinNameObj)) {
+            return false;
+        }
 
         // ------------------------------------------------------------------------------
         // Check for any existing properties based on residual definitions that conflict
         // ------------------------------------------------------------------------------
-        for (JcrPropertyDefinition propDefn : mixinType.propertyDefinitions()) {
-            Name propName = propDefn.getInternalName();
-            AbstractJcrProperty existingProp = getProperty(propName);
-            if (existingProp == null) continue;
-            if (propDefn.isMultiple()) {
-                if (!propDefn.canCastToTypeAndSatisfyConstraints(existingProp.getValues(), session())) {
-                    return false;
-                }
-            } else {
-                if (!propDefn.canCastToTypeAndSatisfyConstraints(existingProp.getValue(), session())) {
-                    return false;
+        if (mixinType.hasPropertyDefinitions()) {
+            for (JcrPropertyDefinition propDefn : mixinType.allPropertyDefinitions()) {
+                Name propName = propDefn.getInternalName();
+                AbstractJcrProperty existingProp = getProperty(propName);
+                if (existingProp == null) continue;
+                if (propDefn.isMultiple()) {
+                    if (!propDefn.canCastToTypeAndSatisfyConstraints(existingProp.getValues(), session())) {
+                        return false;
+                    }
+                } else {
+                    if (!propDefn.canCastToTypeAndSatisfyConstraints(existingProp.getValue(), session())) {
+                        return false;
+                    }
                 }
             }
         }
@@ -2791,42 +2801,38 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // ------------------------------------------------------------------------------
         // Check for any existing child nodes based on residual definitions that conflict
         // ------------------------------------------------------------------------------
-        Set<Name> mixinChildNodeNames = new HashSet<Name>();
-        for (JcrNodeDefinition nodeDefinition : mixinType.childNodeDefinitions()) {
-            mixinChildNodeNames.add(nodeDefinition.getInternalName());
-        }
+        if (mixinType.hasChildNodeDefinitions()) {
+            // There is at least one child node definition (unusual for mixins!) ....
+            Set<Name> mixinChildNodeNames = new HashSet<Name>();
+            for (JcrNodeDefinition nodeDefinition : mixinType.allChildNodeDefinitions()) {
+                mixinChildNodeNames.add(nodeDefinition.getInternalName());
+            }
 
-        CachedNode node = node();
-        NodeCache cache = cache();
-        NodeTypes nodeTypes = session.nodeTypes();
-        // Need to figure out if the child node requires an SNS definition
-        ChildReferences refs = node.getChildReferences(cache());
-        // Create a sibling counter that reduces the count by 1, since we're always dealing with existing children
-        // but the 'findBestDefinitionForChild' logic is looking to *add* a child ...
-        SiblingCounter siblingCounter = SiblingCounter.alter(SiblingCounter.create(refs), -1);
-        for (Name nodeName : mixinChildNodeNames) {
-            int snsCount = siblingCounter.countSiblingsNamed(nodeName);
-            if (snsCount == 0) continue;
-
-            // TODO: Incorrect logic????
-            Iterator<ChildReference> iter = refs.iterator(nodeName);
-            while (iter.hasNext()) {
-                ChildReference ref = iter.next();
-                CachedNode child = cache.getNode(ref);
-                Name childPrimaryType = child.getPrimaryType(cache);
-                boolean skipProtected = true;
-                NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(mixinType.getInternalName(), null);
-                JcrNodeDefinition childDefn = childDefns.findBestDefinitionForChild(nodeName, childPrimaryType, skipProtected,
-                                                                                    siblingCounter);
-                if (childDefn == null) {
-                    return false;
+            CachedNode node = node();
+            NodeCache cache = cache();
+            NodeTypes nodeTypes = session.nodeTypes();
+            // Need to figure out if the child node requires an SNS definition
+            ChildReferences refs = node.getChildReferences(cache());
+            // Create a sibling counter that reduces the count by 1, since we're always dealing with existing children
+            // but the 'findBestDefinitionForChild' logic is looking to *add* a child ...
+            SiblingCounter siblingCounter = SiblingCounter.alter(SiblingCounter.create(refs), -1);
+            for (Name nodeName : mixinChildNodeNames) {
+                int snsCount = siblingCounter.countSiblingsNamed(nodeName);
+                if (snsCount == 0) continue;
+                Iterator<ChildReference> iter = refs.iterator(nodeName);
+                while (iter.hasNext()) {
+                    ChildReference ref = iter.next();
+                    CachedNode child = cache.getNode(ref);
+                    Name childPrimaryType = child.getPrimaryType(cache);
+                    boolean skipProtected = true;
+                    NodeDefinitionSet childDefns = nodeTypes.findChildNodeDefinitions(mixinType.getInternalName(), null);
+                    JcrNodeDefinition childDefn = childDefns.findBestDefinitionForChild(nodeName, childPrimaryType,
+                                                                                        skipProtected, siblingCounter);
+                    if (childDefn == null) {
+                        return false;
+                    }
                 }
             }
-        }
-
-        //do not allow versionable mixin on external nodes
-        if (isExternal() && mixinName.equalsIgnoreCase(JcrMixLexicon.VERSIONABLE.getString())) {
-            return false;
         }
 
         return true;
