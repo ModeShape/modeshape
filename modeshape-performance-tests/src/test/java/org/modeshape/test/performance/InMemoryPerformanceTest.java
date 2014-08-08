@@ -27,6 +27,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -39,6 +41,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.ModeShapeEngine;
@@ -276,7 +279,7 @@ public class InMemoryPerformanceTest {
         for (int i = 0; i < insertBatches; i++) {
             //reload the parent in the session after it was saved
             parent = session.getNode("/testRoot");
-            createSubgraph(session, parent, 1, insertBatchSize,  propertiesPerChild, true, 1);
+            createSubgraph(session, parent, 1, insertBatchSize, propertiesPerChild, true, 1);
         }
         globalSw.stop();
         if (print) {
@@ -324,7 +327,7 @@ public class InMemoryPerformanceTest {
 
             //iterate through all the children of the parent and read the path
             NodeIterator nodeIterator = session.getNode("/testRoot").getNodes();
-            while ( nodeIterator.hasNext()) {
+            while (nodeIterator.hasNext()) {
                 final Node child = nodeIterator.nextNode();
                 child.getPath();
                 child.getName();
@@ -346,17 +349,217 @@ public class InMemoryPerformanceTest {
         }
     }
 
+    @Test
+    @Performance
+    @FixFor( "MODE-2266" )
+    public void insertNodesInFlatHierarchyWithParentThatAllowsSNS() throws Exception {
+        int totalNodeCount = 100000;
+        int childrenPerNode = 1000;
+        int propertiesPerNode = 0;
+        String nodeType = "nt:unstructured";
+
+        session.getRootNode().addNode("testRoot", nodeType);
+        session.save();
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+        int totalNumberOfNodes = createSubgraphBreadthFirst(1, nodeType, "/testRoot", totalNodeCount, childrenPerNode,
+                                                            propertiesPerNode,
+                                                            true);
+        sw.stop();
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": " + sw
+                .getSimpleStatistics());
+    }
+
+    @Test
+    @Performance
+    @FixFor( "MODE-2266" )
+    public void insertNodesInFlatHierarchyWithParentThatDisallowsSNS() throws Exception {
+        int totalNodeCount = 1000000;
+        int childrenPerNode = 1000;
+        int propertiesPerNode = 0;
+        String nodeType = "nt:folder";
+
+        session.getRootNode().addNode("testRoot", nodeType);
+        session.save();
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+        int totalNumberOfNodes = createSubgraphBreadthFirst(1, nodeType, "/testRoot", totalNodeCount, childrenPerNode,
+                                                            propertiesPerNode,
+                                                            false);
+        sw.stop();
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": " + sw
+                .getSimpleStatistics());
+    }
+
+    @Test
+    @Performance
+    @FixFor( "MODE-2266" )
+    public void insertNodesInDeepHierarchyWithParentThatAllowsSNS() throws Exception {
+        int totalNodeCount = 1000000;
+        int childrenPerNode = 1000;
+        int propertiesPerNode = 0;
+        String nodeType = "nt:unstructured";
+
+        session.getRootNode().addNode("testRoot", nodeType);
+        session.save();
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+        int totalNumberOfNodes = createSubgraphDepthFirst(nodeType, "/testRoot", totalNodeCount, childrenPerNode,
+                                                          propertiesPerNode,
+                                                          true);
+        sw.stop();
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": " + sw
+                .getSimpleStatistics());
+    }
+
+    @Test
+    @Performance
+    @FixFor( "MODE-2266" )
+    public void insertNodesInDeepHierarchyWithParentThatDisallowsSNS() throws Exception {
+        int totalNodeCount = 100000;
+        int childrenPerNode = 1000;
+        int propertiesPerNode = 0;
+        String nodeType = "nt:folder";
+
+        session.getRootNode().addNode("testRoot", nodeType);
+        session.save();
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+        int totalNumberOfNodes = createSubgraphDepthFirst(nodeType, "/testRoot", totalNodeCount, childrenPerNode,
+                                                          propertiesPerNode,
+                                                          false);
+        sw.stop();
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": " + sw
+                .getSimpleStatistics());
+    }
+
+
+    /**
+     * Creates a balanced subgraph of {@code totalNumberOfNodes} nodes, where each parent will have as close as possible
+     * to {@code numberOfChildrenPerNode} children.
+     * The code will save the session after each set of children has been inserted under a parent.
+     */
+    protected int createSubgraphBreadthFirst( int level,
+                                              String nodeType,
+                                              String parentAbsPath,
+                                              int totalNumberOfNodes,
+                                              int numberOfChildrenPerNode,
+                                              int numberOfPropertiesPerNode,
+                                              boolean useSns ) throws RepositoryException {
+        int numberCreated = 0;
+        if (totalNumberOfNodes < numberOfChildrenPerNode) {
+            numberOfChildrenPerNode = totalNumberOfNodes;
+        }
+
+        List<String> childPaths = new ArrayList<String>();
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+
+        Node parentNode = session.getNode(parentAbsPath);
+        for (int i = 0; i != numberOfChildrenPerNode; ++i) {
+            Node child = parentNode.addNode(useSns ? "childNode" : ("childNode" + i), nodeType);
+            for (int j = 0; j != numberOfPropertiesPerNode; ++j) {
+                String value = (i % 5 == 0) ? LARGE_STRING_VALUE : SMALL_STRING_VALUE;
+                child.setProperty("property" + j, value);
+            }
+            numberCreated++;
+            childPaths.add(child.getPath());
+        }
+        session.save();
+        sw.stop();
+        System.out.println("Time to insert " + numberCreated + " nodes on level " + level + ": " + sw.getSimpleStatistics());
+
+        if (numberCreated == totalNumberOfNodes) {
+            return numberCreated;
+        }
+        int remainingNodes = totalNumberOfNodes - numberCreated;
+        if (remainingNodes <= 0) {
+            return numberCreated;
+        }
+        int totalNodesForChild = remainingNodes / numberOfChildrenPerNode;
+        int overflow = remainingNodes % numberOfChildrenPerNode;
+
+        if (totalNodesForChild > 0) {
+            for (String childPath : childPaths) {
+                numberCreated += createSubgraphBreadthFirst(level + 1, nodeType,
+                                                            childPath, totalNodesForChild, numberOfChildrenPerNode,
+                                                            numberOfPropertiesPerNode, useSns);
+            }
+        }
+
+        if (overflow > 0) {
+            //add some extra children to the last child from the list
+            numberCreated += createSubgraphBreadthFirst(level + 1,
+                                                        nodeType,
+                                                        childPaths.get(childPaths.size() - 1),
+                                                        overflow,
+                                                        overflow,
+                                                        numberOfPropertiesPerNode,
+                                                        useSns);
+        }
+        return numberCreated;
+    }
+
+    /**
+     * Creates an "extremely" left-unbalanced  subgraph of {@code totalNumberOfNodes} nodes, where each level will have
+     * {@code numberOfChildrenPerNode} nodes under the left-most node.
+     * The code will save the session after each set of children has been inserted under a parent.
+     */
+    protected int createSubgraphDepthFirst(
+                                            String nodeType,
+                                            String parentAbsPath,
+                                            int totalNumberOfNodes,
+                                            int numberOfChildrenPerNode,
+                                            int numberOfPropertiesPerNode,
+                                            boolean useSns ) throws RepositoryException {
+        if (totalNumberOfNodes < numberOfChildrenPerNode) {
+            numberOfChildrenPerNode = totalNumberOfNodes;
+        }
+
+        String firstChildPath;
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+        int level = 1;
+        do {
+            sw.reset();
+            sw.start();
+            firstChildPath = null;
+            Node parentNode = session.getNode(parentAbsPath);
+
+            for (int i = 0; i != numberOfChildrenPerNode; ++i) {
+                Node child = parentNode.addNode(useSns ? "childNode" : ("childNode" + i), nodeType);
+                for (int j = 0; j != numberOfPropertiesPerNode; ++j) {
+                    String value = (i % 5 == 0) ? LARGE_STRING_VALUE : SMALL_STRING_VALUE;
+                    child.setProperty("property" + j, value);
+                }
+                if (firstChildPath == null) {
+                    firstChildPath = child.getPath();
+                }
+            }
+            session.save();
+            sw.stop();
+            System.out.println(
+                    "Time to insert " + numberOfChildrenPerNode + " nodes on level " + level++ + ": " + sw
+                            .getSimpleStatistics());
+            totalNumberOfNodes -= numberOfChildrenPerNode;
+            parentAbsPath = firstChildPath;
+
+        } while (totalNumberOfNodes > 0);
+        return totalNumberOfNodes;
+    }
+
+
     /**
      * Create a structured subgraph by generating nodes with the supplied number of properties and children, to the supplied
      * maximum subgraph depth.
-     * 
+     *
      * @param session the session that should be used; may not be null
      * @param parentNode the parent node under which the subgraph is to be created
      * @param depthRemaining the depth of the subgraph; must be a positive number
      * @param numberOfChildrenPerNode the number of child nodes to create under each node
      * @param numberOfPropertiesPerNode the number of properties to create on each node; must be 0 or more
      * @param useSns true if the child nodes under a parent should be same-name-siblings, or false if they should each have their
-     *        own unique name
+     * own unique name
      * @param depthToSave
      * @return the number of nodes created in the subgraph
      * @throws RepositoryException if there is a problem
@@ -416,5 +619,4 @@ public class InMemoryPerformanceTest {
         }
         return "total = " + stopwatch.getTotalDuration() + "; avg = " + avgDuration + units;
     }
-
 }
