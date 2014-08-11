@@ -63,6 +63,7 @@
             <testResource>
                 <directory>${project.basedir}/src/test/java</directory>
                 <includes>
+                    <include>DefaultPackageClass.java</include>
                     <include>org/modeshape/sequencer/testdata/*.*</include>
                 </includes>
             </testResource>

@@ -30,6 +30,14 @@ import org.modeshape.sequencer.testdata.ClassType;
 public final class ClassTypeSequencerTest extends AbstractSequencerTest {
 
     @Test
+    public void shouldSequenceClassInDefaultPackage() throws Exception {
+        createNodeWithContentFromFile("defaultpackageclass.java", "DefaultPackageClass.java");
+        final String expectedOutputPath = "java/defaultpackageclass.java";
+        final Node compilationUnitNode = getOutputNode(rootNode, expectedOutputPath);
+        assertThat(compilationUnitNode, is(notNullValue()));
+    }
+
+    @Test
     public void shouldSequenceClassTypeFile() throws Exception {
         final String packagePath = ClassType.class.getName().replaceAll("\\.", "/");
         createNodeWithContentFromFile("classtype.java", packagePath + ".java");
