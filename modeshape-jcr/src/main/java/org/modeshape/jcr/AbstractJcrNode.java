@@ -3130,6 +3130,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public boolean isCheckedOut() throws RepositoryException {
+        if (!session().repository().versioningUsed()) {
+            //we can bypass this altogether is versioning is not being used....
+            return true;
+        }
         AbstractJcrNode node = this;
         SessionCache cache = sessionCache();
         ValueFactory<Boolean> booleanFactory = session.context().getValueFactories().getBooleanFactory();

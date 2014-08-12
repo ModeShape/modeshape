@@ -123,6 +123,7 @@ public class RepositoryCache {
     private int lastUpgradeId;
     private final ClusteringService clusteringService;
     private volatile boolean isHoldingClusterLock = false;
+    private final RepositoryFeaturesDetector repositoryFeaturesDetector;
 
     public RepositoryCache( ExecutionContext context,
                             DocumentStore documentStore,
@@ -307,6 +308,9 @@ public class RepositoryCache {
 
         // set the local source key in the document store
         this.documentStore.setLocalSourceKey(this.sourceKey);
+
+        //init the features detector (must be done only after the system area has been fully initialized)
+        this.repositoryFeaturesDetector = new RepositoryFeaturesDetector(systemSession, systemRef.getKey());
     }
 
     protected boolean waitUntil( Callable<Boolean> condition,
@@ -364,6 +368,14 @@ public class RepositoryCache {
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after failing to start up ", name);
             }
         }
+    }
+
+    public final boolean versioningUsed() {
+        return repositoryFeaturesDetector.versioningUsed();
+    }
+
+    public final boolean lockingUsed() {
+        return repositoryFeaturesDetector.lockingUsed();
     }
 
     public final ChangeBus changeBus() {
@@ -652,6 +664,58 @@ public class RepositoryCache {
         CachedNode systemRoot = systemSession.getNode(systemRootKey);
         ChildReference systemRef = systemRoot.getChildReferences(systemSession).getChild(JcrLexicon.SYSTEM);
         return systemSession.mutable(systemRef.getKey());
+    }
+
+    protected class RepositoryFeaturesDetector implements ChangeSetListener {
+        private final AtomicBoolean versioningUsed;
+        private final NodeKey versionStorageKey;
+        private final AtomicBoolean lockingUsed;
+        private final NodeKey locksContainerKey;
+
+
+        protected RepositoryFeaturesDetector(SessionCache systemSession, NodeKey systemNodeKey) {
+            CachedNode systemNode = systemSession.getNode(systemNodeKey);
+
+            this.versionStorageKey = systemNode.getChildReferences(systemSession).getChild(JcrLexicon.VERSION_STORAGE).getKey();
+            CachedNode versionStorage = systemSession.getNode(versionStorageKey);
+            boolean versioningUsed = !versionStorage.getChildReferences(systemSession).isEmpty();
+            this.versioningUsed = new AtomicBoolean(versioningUsed);
+
+            this.locksContainerKey = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.LOCKS).getKey();
+            CachedNode locksContainer = systemSession.getNode(locksContainerKey);
+            boolean lockingUsed = !locksContainer.getChildReferences(systemSession).isEmpty();
+            this.lockingUsed = new AtomicBoolean(lockingUsed);
+
+            if (!versioningUsed || !lockingUsed) {
+                //register with the change bus to be able to detect the changes in the usage of the various features
+                RepositoryCache.this.changeBus.registerInThread(this);
+            }
+        }
+
+        protected boolean lockingUsed() {
+            return lockingUsed.get();
+        }
+
+        protected boolean versioningUsed() {
+            return versioningUsed.get();
+        }
+
+        @Override
+        public void notify( ChangeSet changeSet ) {
+            if (!systemWorkspaceName.equals(changeSet.getWorkspaceName())) {
+                return;
+            }
+            Set<NodeKey> nodeKeys = changeSet.changedNodes();
+            if (!versioningUsed() && nodeKeys.contains(this.versionStorageKey)) {
+                this.versioningUsed.set(true);
+            }
+            if (!lockingUsed() && nodeKeys.contains(this.locksContainerKey)) {
+                this.lockingUsed.set(true);
+            }
+            if (versioningUsed() && lockingUsed()) {
+                RepositoryCache.this.changeBus.unregister(this);
+            }
+        }
     }
 
     protected class ChangesToWorkspacesListener implements ChangeSetListener {
