@@ -73,7 +73,9 @@ If you have *any* trouble building (or don't like the '-s settings.xml' usage), 
 
 ## Contribute fixes and features
 
-ModeShape is open source, and we welcome anybody that wants to participate and contribute!
+ModeShape is licensed under the Apache License 2.0 (see the file LICENSE.txt or [http://www.apache.org/licenses/LICENSE-2.0.html]() for details).
+
+Contributions to ModeShape are welcome. They must be completely authored by you, and you must have the right to contribute them (for example, if you are employed, you must have received the necessary permissions from your employer to make the contribution). All contributions to ModeShape must be licensed under the Apache License 2.0, just like the project itself.
 
 Before committing anything, PLEASE make sure you have set up all of the development tools
 (see http://community.jboss.org/wiki/ModeShapeDevelopmentTools), are following the project's
