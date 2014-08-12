@@ -78,7 +78,6 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
-import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.NodeTypes.NodeDefinitionSet;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
@@ -3220,6 +3219,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public boolean isCheckedOut() throws RepositoryException {
+        if (!session().repository().versioningUsed()) {
+            //we can bypass this altogether is versioning is not being used....
+            return true;
+        }
         AbstractJcrNode node = this;
         SessionCache cache = sessionCache();
         ValueFactory<Boolean> booleanFactory = session.context().getValueFactories().getBooleanFactory();
