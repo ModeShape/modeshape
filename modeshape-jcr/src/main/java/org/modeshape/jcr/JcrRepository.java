@@ -525,6 +525,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return runningState().journal();
     }
 
+    protected final boolean versioningUsed() {
+        return runningState().repositoryCache().versioningUsed();
+    }
+
+    protected final boolean lockingUsed() {
+        return runningState().repositoryCache().lockingUsed();
+    }
+
     protected final void completeRestore() throws ExecutionException, Exception {
         if (getState() == State.RESTORING) {
             logger.debug("Shutting down '{0}' after content has been restored", getName());

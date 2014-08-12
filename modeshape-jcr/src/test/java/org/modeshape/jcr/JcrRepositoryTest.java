@@ -1492,6 +1492,34 @@ public class JcrRepositoryTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2277" )
+    public void shouldUpdateVersioningUsageFlag() throws Exception {
+        assertFalse(repository.repositoryCache().versioningUsed());
+        session = createSession();
+        session.getRootNode().addNode("node");
+        session.save();
+
+        Node nod2 = session.getRootNode().addNode("versionableNode");
+        nod2.addMixin("mix:versionable");
+        session.save();
+        //pre-save should already have initialized the version history
+        assertTrue(repository.repositoryCache().versioningUsed());
+    }
+
+    @Test
+    @FixFor( "MODE-2277" )
+    public void shouldUpdateLockingUsageFlag() throws Exception {
+        assertFalse(repository.repositoryCache().lockingUsed());
+        session = createSession();
+        Node node1 = session.getRootNode().addNode("node");
+        node1.addMixin("mix:lockable");
+        session.save();
+        assertFalse(repository.repositoryCache().lockingUsed());
+        session.lockManager().lock("/node", false, true, -1, null);
+        assertTrue(repository.repositoryCache().lockingUsed());
+    }
+
     protected void nodeExists( Session session,
                                String parentPath,
                                String childName,
