@@ -15,6 +15,7 @@
  */
 package org.modeshape.sequencer.javafile;
 
+import static org.junit.Assert.assertNotNull;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -28,6 +29,34 @@ import org.modeshape.sequencer.classfile.metadata.Visibility;
 import org.modeshape.sequencer.testdata.ClassType;
 
 public final class ClassTypeSequencerTest extends AbstractSequencerTest {
+
+    @Ignore
+    @Test
+    public void shouldTestFixForMode2272() throws Exception {
+        final int count = 10;
+        jcrSession().getRootNode().addNode("java"); // prevent SNS
+        jcrSession().save();
+
+        for (int i = 0; i < count; ++i) {
+            createNodeWithContentFromFile("myclassannotation" + i + ".java", "org/acme/annotation/MyClassAnnotation.java");
+            createNodeWithContentFromFile("mypackageannotation" + i + ".java", "org/acme/annotation/MyPackageAnnotation.java");
+            createNodeWithContentFromFile("mysource" + i + ".java", "org/acme/MySource.java");
+        }
+
+        for (int i = 0; i < count; ++i) {
+            String relativePath = "java/" + "myclassannotation" + i + ".java";
+            Node outputNode = getOutputNode(rootNode, relativePath);
+            assertNotNull("Failed to get " + relativePath, outputNode);
+
+            relativePath = "java/" + "mypackageannotation" + i + ".java";
+            outputNode = getOutputNode(rootNode, relativePath);
+            assertNotNull("Failed to get " + relativePath, outputNode);
+
+            relativePath = "java/" + "mysource" + i + ".java";
+            outputNode = getOutputNode(rootNode, relativePath);
+            assertNotNull("Failed to get " + relativePath, outputNode);
+        }
+    }
 
     @Test
     public void shouldSequenceClassTypeFile() throws Exception {
