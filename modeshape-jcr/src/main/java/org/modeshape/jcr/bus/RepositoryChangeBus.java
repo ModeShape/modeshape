@@ -24,19 +24,17 @@
 
 package org.modeshape.jcr.bus;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.HashCode;
@@ -57,9 +55,8 @@ public final class RepositoryChangeBus implements ChangeBus {
     protected volatile boolean shutdown;
 
     private final ExecutorService executor;
-    private final List<ChangeSetDispatcher> dispatchers;
+    private final Set<ChangeSetDispatcher> dispatchers;
     private final Map<Integer, Future<?>> workers;
-    private final ReadWriteLock listenersLock;
 
     private final String systemWorkspaceName;
 
@@ -75,8 +72,7 @@ public final class RepositoryChangeBus implements ChangeBus {
                                 String systemWorkspaceName ) {
         this.systemWorkspaceName = systemWorkspaceName;
         this.workers = new HashMap<Integer, Future<?>>();
-        this.dispatchers = new ArrayList<ChangeSetDispatcher>();
-        this.listenersLock = new ReentrantReadWriteLock(true);
+        this.dispatchers = Collections.newSetFromMap(new ConcurrentHashMap<ChangeSetDispatcher, Boolean>());
         this.executor = executor;
         this.shutdown = false;
     }
@@ -102,46 +98,28 @@ public final class RepositoryChangeBus implements ChangeBus {
         workers.clear();
     }
 
-    @GuardedBy( "listenersLock" )
     @Override
     public boolean register( ChangeSetListener listener ) {
         if (listener == null) {
             return false;
         }
         int hashCode = HashCode.compute(listener);
-        if (workers.containsKey(hashCode)) {
-            return false;
+        if (!workers.containsKey(hashCode)) {
+            ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener);
+            dispatchers.add(dispatcher);
+            workers.put(hashCode, executor.submit(dispatcher));
+            return true;
         }
-        try {
-            listenersLock.writeLock().lock();
-
-            if (!workers.containsKey(hashCode)) {
-                ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener);
-                dispatchers.add(dispatcher);
-                workers.put(hashCode, executor.submit(dispatcher));
-                return true;
-            }
-            return false;
-        } finally {
-            listenersLock.writeLock().unlock();
-        }
+        return false;
     }
 
-    @GuardedBy( "listenersLock" )
     @Override
     public boolean unregister( ChangeSetListener listener ) {
         if (listener == null) {
             return false;
         }
         int hashCode = HashCode.compute(listener);
-        if (!workers.containsKey(hashCode)) {
-            return false;
-        }
-        try {
-            listenersLock.writeLock().lock();
-            if (!workers.containsKey(hashCode)) {
-                return false;
-            }
+        if (workers.containsKey(hashCode)) {
             for (Iterator<ChangeSetDispatcher> dispatcherIterator = dispatchers.iterator(); dispatcherIterator.hasNext();) {
                 ChangeSetDispatcher dispatcher = dispatcherIterator.next();
                 if (dispatcher.listenerHashCode() == hashCode) {
@@ -152,13 +130,10 @@ public final class RepositoryChangeBus implements ChangeBus {
                     return true;
                 }
             }
-        } finally {
-            listenersLock.writeLock().unlock();
         }
         return false;
     }
 
-    @GuardedBy( "listenersLock" )
     @Override
     public void notify( ChangeSet changeSet ) {
         if (changeSet == null || !hasObservers()) {
@@ -180,30 +155,19 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     private boolean submitChanges( ChangeSet changeSet,
                                    boolean inThread ) {
-        try {
-            listenersLock.readLock().lock();
-            for (ChangeSetDispatcher dispatcher : dispatchers) {
-                if (inThread) {
-                    dispatcher.listener().notify(changeSet);
-                } else {
-                    dispatcher.submit(changeSet);
-                }
+        for (ChangeSetDispatcher dispatcher : dispatchers) {
+            if (inThread) {
+                dispatcher.listener().notify(changeSet);
+            } else {
+                dispatcher.submit(changeSet);
             }
-            return true;
-        } finally {
-            listenersLock.readLock().unlock();
         }
+        return true;
     }
 
-    @GuardedBy( "listenersLock" )
     @Override
     public boolean hasObservers() {
-        try {
-            listenersLock.readLock().lock();
-            return !dispatchers.isEmpty();
-        } finally {
-            listenersLock.readLock().unlock();
-        }
+        return !dispatchers.isEmpty();
     }
 
     private class ChangeSetDispatcher implements Callable<Void> {
