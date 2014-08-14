@@ -56,7 +56,7 @@
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
         <jcr.version>2.0</jcr.version>
-        <version.org.jboss.eap.bom>6.3.0.Beta1</version.org.jboss.eap.bom>
+        <version.org.jboss.eap.bom>6.3.0.GA</version.org.jboss.eap.bom>
     </properties>
 
     <!--
