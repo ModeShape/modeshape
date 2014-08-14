@@ -31,6 +31,7 @@ import com.smartgwt.client.widgets.layout.VLayout;
 public class RepositoryNameView extends VLayout {
 
     private Label label = new Label();
+    private String repositoryName;
     
     public RepositoryNameView(final Console console) {
         super();
@@ -119,6 +120,17 @@ public class RepositoryNameView extends VLayout {
             }
         });
 
+        Label admin = new Label("<b>Admin</b>");
+        admin.setAlign(Alignment.RIGHT);
+        admin.setAutoFit(true);
+        admin.setStyleName("tab-label");
+        admin.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                console.showAdmin();
+            }
+        });
+        
         panel.addMember(logo);
         panel.addMember(label);
 
@@ -129,6 +141,8 @@ public class RepositoryNameView extends VLayout {
         panel1.addMember(descriptor);
         panel1.addMember(new Spacer(10));
         panel1.addMember(query);
+        panel1.addMember(new Spacer(10));
+        panel1.addMember(admin);
         panel1.setHeight(55);
         
         panel0.setWidth("70%");
@@ -143,7 +157,12 @@ public class RepositoryNameView extends VLayout {
         setVisible(false);
     }
 
+    public String repository() {
+        return this.repositoryName;
+    }
+    
     public void show(String name) {
+        this.repositoryName = name;
         label.setContents("Repository: " + name);
         show();
     }

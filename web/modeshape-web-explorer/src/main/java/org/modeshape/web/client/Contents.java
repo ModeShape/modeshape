@@ -15,12 +15,9 @@
  */
 package org.modeshape.web.client;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.smartgwt.client.types.FormMethod;
 import com.smartgwt.client.types.VerticalAlignment;
 import com.smartgwt.client.util.SC;
-import com.smartgwt.client.widgets.Button;
 import com.smartgwt.client.widgets.Canvas;
 import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
@@ -71,8 +68,7 @@ public class Contents extends View {
     private RemoveMixinDialog removeMixinDialog = new RemoveMixinDialog(this);
     private AddPropertyDialog setPropertyDialog = new AddPropertyDialog(this);
     private AddPrincipalDialog addAccessListDialog = new AddPrincipalDialog(this);
-    private BackupDialog backupDialog = new BackupDialog(this);
-    private RestoreDialog restoreDialog = new RestoreDialog(this);
+    
     private ExportDialog exportDialog = new ExportDialog(this);
     private ImportDialog importDialog = new ImportDialog(this);
     
@@ -117,53 +113,7 @@ public class Contents extends View {
         HLayout buttonPanel = new HLayout();
         buttonPanel.setWidth100();
         
-        Button backup = new Button("Backup");
-        backup.setValign(VerticalAlignment.CENTER);
-        backup.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                backupDialog.showModal();
-            }
-        });
-        
-        Button restore = new Button("Restore");
-        restore.setValign(VerticalAlignment.CENTER);
-        restore.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                restoreDialog.showModal();
-            }
-        });
-
-        Button importButton = new Button("Download");
-        importButton.setTooltip("Backup repository and download");
-        importButton.setValign(VerticalAlignment.CENTER);
-        importButton.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                jcrService.backup(repository(), workspace(), "zzz", new AsyncCallback<Object>() {
-                    @Override
-                    public void onFailure(Throwable caught) {
-                        SC.say(caught.getMessage());
-                    }
-
-                    @Override
-                    public void onSuccess(Object result) {
-                       form.setAction(GWT.getModuleBaseForStaticFiles() + "backup/do?file=zzz");
-                       form.setMethod(FormMethod.GET);
-                       form.submitForm();
-                    }
-                });
-            }
-        });
-
-        panel.addMember(buttonPanel);
-        panel.addMember(backup);
-        panel.addMember(new Strut(5));
-        panel.addMember(restore);
-        panel.addMember(new Strut(5));
-        panel.addMember(importButton);
-        
+        panel.addMember(buttonPanel);        
         addMember(panel);
 
         VLayout strut = new VLayout();
@@ -172,12 +122,6 @@ public class Contents extends View {
         addMember(strut);
         addMember(pathLabel);
         addMember(mainGrid);
-/*        addMember(children);
-        addMember(new Spacer(20));
-        addMember(properties);
-        addMember(new Spacer(20));
-        addMember(accessList);
-        */ 
     }
 
     public void show(String repository) {
@@ -246,39 +190,11 @@ public class Contents extends View {
         });
     }
     
-    public void backup(String name) {
-        jcrService.backup(repository, workspace(), name, new AsyncCallback<Object>() {
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess(Object result) {
-                SC.say("Complete");
-            }
-        });
-    }
-
-    public void restore(String name) {
-        jcrService.restore(repository, workspace(), name, new AsyncCallback<Object>() {
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess(Object result) {
-                SC.say("Complete");
-            }
-        });
-    }
-    
     
     public void export() {
         exportDialog.showModal();
     }
-
+    
     public void importXML() {
         importDialog.showModal();
     }
@@ -618,10 +534,4 @@ public class Contents extends View {
         }
     }
     
-    private class Strut extends HLayout {
-        public Strut(int size) {
-            super();
-            setWidth(size);                    
-        }
-    }
 }

@@ -27,11 +27,11 @@ import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 public class BackupDialog extends ModalDialog {
     
     private TextItem name = new TextItem("Backup name");
-    private Contents contents;
+    private AdminView admin;
     
-    public BackupDialog(Contents contents) {
+    public BackupDialog(AdminView admin) {
         super("Backup", 400, 200);
-        this.contents = contents;
+        this.admin = admin;
         
         StaticTextItem description = new StaticTextItem("");
         description.setValue("Specify backup name");
@@ -41,7 +41,7 @@ public class BackupDialog extends ModalDialog {
     
     @Override
     public void onConfirm(ClickEvent event) {
-        contents.backup(name.getValueAsString());
+        admin.backup(name.getValueAsString());
     }
     
 }

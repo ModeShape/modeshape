@@ -252,8 +252,8 @@ public interface JcrService extends RemoteService {
      */
     public void save(String repository, String workspace) throws RemoteException;
     
-    public void backup(String repository, String workspace, String name) throws RemoteException;
-    public void restore(String repository, String workspace, String name) throws RemoteException;
+    public void backup(String repository, String name) throws RemoteException;
+    public void restore(String repository, String name) throws RemoteException;
     
     public void export(String repository, String workspace, String path, String location, boolean skipBinary, boolean noRecurse) 
             throws RemoteException;
