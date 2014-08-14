@@ -93,38 +93,33 @@ public class LRepositoryImpl implements LRepository {
         }
     }
 
+    private Session session() throws RemoteException {
+        return sessions.values().iterator().next();
+    }
+    
     @Override
     public Repository repository() {
         return repository;
     }
 
     @Override
-    public void backup(String workspace, String name) throws RemoteException {
+    public void backup(String name) throws RemoteException {
         try {
-/*            Properties conf = new Properties();
-            InputStream in = getClass().getResourceAsStream("/config/connector.properties");
-            if (in == null) {
-                System.out.println("------- Input is null");
-            }
-            conf.load(in);
-            */ 
             File backupDir = new File(name);            
-            RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session(workspace)).getWorkspace().getRepositoryManager();
+            RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session()).getWorkspace().getRepositoryManager();
             mgr.backupRepository(backupDir);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RemoteException(e.getMessage());
         }
     }
 
     @Override
-    public void restore(String workspace, String name) throws RemoteException {
+    public void restore(String name) throws RemoteException {
         try {
             File backupDir = new File(name);            
-            RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session(workspace)).getWorkspace().getRepositoryManager();
+            RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session()).getWorkspace().getRepositoryManager();
             mgr.restoreRepository(backupDir);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RemoteException(e.getMessage());
         }
     }
@@ -134,7 +129,6 @@ public class LRepositoryImpl implements LRepository {
             Workspace ws = ((org.modeshape.jcr.api.Session)session(workspace)).getWorkspace();
             ws.importXML(workspace, null, 0);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RemoteException(e.getMessage());
         }
     }

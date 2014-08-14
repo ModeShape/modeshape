@@ -52,6 +52,7 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
     private RepositoryInfo repositoryInfo = new RepositoryInfo(this, viewPort, null);    
     private NodeTypeView nodeTypes;  
     private QueryPanel queryView;
+    private AdminView adminView;
     
     private static Img loadingImg = new Img("loading.gif");    
     public static HLayout disabledHLayout = new HLayout();
@@ -111,6 +112,15 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
         toolBar.setUserName(userName);
     }
     
+    /**
+     * Gets selected repository name.
+     * 
+     * @return repository name;
+     */
+    public String repository() {
+        return this.repositoryNamePanel.repository();
+    }
+    
     public void showMainForm(String userName) {
         mainForm.setLayoutMargin(5);
         mainForm.setWidth100();
@@ -125,6 +135,7 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
         contents = new Contents(this, jcrService, viewPort);
         nodeTypes = new NodeTypeView(jcrService, viewPort);
         queryView = new QueryPanel(this, jcrService, viewPort);
+        adminView = new AdminView(this, jcrService, viewPort);
         
         toolBar = new ToolBar(this);
         toolBar.setUserName(userName);
@@ -265,6 +276,10 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
      
     public void showQuery() {
         queryView.init();
+    }
+
+    public void showAdmin() {
+        viewPort.display(adminView);
     }
     
     protected void showContent(String repository, String workspace, String path,

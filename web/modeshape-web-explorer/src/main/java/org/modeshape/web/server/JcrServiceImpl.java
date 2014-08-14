@@ -791,16 +791,14 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public void backup( String repository,
-                        String workspace,
                         String name ) throws RemoteException {
-        connector().find(repository).backup(workspace, name);
+        connector().find(repository).backup(name);
     }
 
     @Override
     public void restore( String repository,
-                         String workspace,
                          String name ) throws RemoteException {
-        connector().find(repository).restore(workspace, name);
+        connector().find(repository).restore(name);
     }
 
     @Override

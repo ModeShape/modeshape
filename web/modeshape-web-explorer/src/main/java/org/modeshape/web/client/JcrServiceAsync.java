@@ -77,8 +77,8 @@ public interface JcrServiceAsync {
 
     public void save(String repository, String workspace, AsyncCallback<?> cb);
     
-    public void backup(String repositoy, String workspace, String name, AsyncCallback<?> cb);
-    public void restore(String repositoy, String workspace, String name, AsyncCallback<?> cb);
+    public void backup(String repositoy, String name, AsyncCallback<?> cb);
+    public void restore(String repositoy, String name, AsyncCallback<?> cb);
     
     public void export(String repository, String workspace, String path, String location, 
             boolean skipBinary, boolean noRecurse, AsyncCallback<?> cb) ;

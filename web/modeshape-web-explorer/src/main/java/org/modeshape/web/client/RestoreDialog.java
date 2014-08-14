@@ -28,11 +28,11 @@ import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 public class RestoreDialog extends ModalDialog {
 
     private TextItem name = new TextItem("Backup name");
-    private Contents contents;
+    private AdminView admin;
 
-    public RestoreDialog(Contents contents) {
+    public RestoreDialog(AdminView admin) {
         super("Restore repository", 400, 200);
-        this.contents = contents;
+        this.admin = admin;
 
         StaticTextItem description = new StaticTextItem();
         description.setValue("Specify backup name");
@@ -42,7 +42,7 @@ public class RestoreDialog extends ModalDialog {
 
     @Override
     public void onConfirm(ClickEvent event) {
-        contents.restore(name.getValueAsString());
+        admin.restore(name.getValueAsString());
     }
 
     public void uploadComplete(String fileName) {

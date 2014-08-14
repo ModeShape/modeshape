@@ -53,10 +53,8 @@ public interface LRepository {
      */
     public Session session( String workspace ) throws RemoteException;
 
-    public void backup( String workspace,
-                        String name ) throws RemoteException;
+    public void backup( String name ) throws RemoteException;
 
-    public void restore( String workspace,
-                         String name ) throws RemoteException;
+    public void restore( String name ) throws RemoteException;
 
 }
