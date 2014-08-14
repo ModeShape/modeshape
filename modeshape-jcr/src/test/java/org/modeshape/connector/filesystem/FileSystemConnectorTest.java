@@ -52,6 +52,8 @@ import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -698,6 +700,77 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertThat(file.getProperty("date").getDate(), is(now));
 
         assertJsonSidecarFile(jsonProjection, "dir3/simple.json");
+    }
+
+    @Test
+    @FixFor( "MODE-2255" )
+    public void shouldQueryRepositoryManagedContent() throws Exception {
+        Node file = session.getNode("/testRoot/store/dir3/simple.json");
+        assertNotNull(file);
+        //query for a file created during startup via a projection
+        QueryManager queryManager = jcrSession().getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(
+                "SELECT file.[jcr:path] FROM [nt:file] as file where file.[jcr:path] = '/testRoot/store/dir3/simple.json'",
+                Query.JCR_SQL2);
+        NodeIterator nodesIterator = query.execute().getNodes();
+        assertEquals(1, nodesIterator.getSize());
+        assertEquals("/testRoot/store/dir3/simple.json", nodesIterator.nextNode().getPath());
+
+        //update the file with a custom property and search again
+        file.addMixin("flex:anyProperties");
+        file.setProperty("customProp", "customValue");
+        session.save();
+
+        query = queryManager.createQuery(
+                "SELECT node.[jcr:path] FROM [flex:anyProperties] as node where node.customProp = 'customValue'",
+                Query.JCR_SQL2);
+        nodesIterator = query.execute().getNodes();
+        assertEquals(1, nodesIterator.getSize());
+        assertEquals("/testRoot/store/dir3/simple.json", nodesIterator.nextNode().getPath());
+
+        //add a new folder and search for it
+        Node folder =  session.getNode("/testRoot/store/dir3");
+        folder.addNode("sub_dir_3", "nt:folder");
+        session.save();
+        query = queryManager.createQuery(
+                "SELECT folder.[jcr:path] FROM [nt:folder] as folder where folder.[jcr:path] = '/testRoot/store/dir3/sub_dir_3'",
+                Query.JCR_SQL2);
+        nodesIterator = query.execute().getNodes();
+        assertEquals(1, nodesIterator.getSize());
+        assertEquals("/testRoot/store/dir3/sub_dir_3", nodesIterator.nextNode().getPath());
+    }
+
+    @Test
+    @FixFor( "MODE-2255" )
+    public void shouldQueryExternallyManagedContent() throws Exception {
+        //we need to use a projection which has monitoring enabled...
+        File rootFolder = new File("target/federation/monitoring");
+        assertTrue(rootFolder.exists() && rootFolder.isDirectory());
+
+        //register a repo listener
+        ObservationManager observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
+        int expectedEventCount = 1;
+        CountDownLatch latch = new CountDownLatch(expectedEventCount);
+        FSListener listener = new FSListener(latch);
+        observationManager.addEventListener(listener, Event.NODE_ADDED, "/testRoot/monitoring", true,
+                                            null, null, false);
+        //add a file externally
+        addFile(rootFolder, "some_file", "data/simple.json");
+        //sleep to make sure events are fired
+        Thread.sleep(300);
+
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            fail("Events not received from connector");
+        }
+
+        //query for the newly added file
+        QueryManager queryManager = jcrSession().getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(
+                "SELECT file.[jcr:path] FROM [nt:file] as file where file.[jcr:path] = '/testRoot/monitoring/some_file'",
+                Query.JCR_SQL2);
+        NodeIterator nodesIterator = query.execute().getNodes();
+        assertEquals(1, nodesIterator.getSize());
+        assertEquals("/testRoot/monitoring/some_file", nodesIterator.nextNode().getPath());
     }
 
     protected void assertNoSidecarFile( Projection projection,
