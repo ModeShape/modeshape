@@ -427,7 +427,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
-        return this.repositoryTypeManager.registerNodeType(template, !allowUpdate);
+        JcrNodeType jcrNodeType = this.repositoryTypeManager.registerNodeType(template, !allowUpdate);
+        this.schemata = null; //clear the cached schemata to make sure it is reloaded
+        return jcrNodeType;
     }
 
     /**
@@ -457,7 +459,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
-        return new JcrNodeTypeIterator(repositoryTypeManager.registerNodeTypes(templates, !allowUpdates, false, true));
+        List<JcrNodeType> jcrNodeTypes = repositoryTypeManager.registerNodeTypes(templates, !allowUpdates, false, true);
+        this.schemata = null; //clear the cached schemata to make sure it is reloaded
+        return new JcrNodeTypeIterator(jcrNodeTypes);
     }
 
     /**
@@ -485,7 +489,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
 
-        return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(nodeTypes));
+        List<JcrNodeType> jcrNodeTypes = this.repositoryTypeManager.registerNodeTypes(nodeTypes);
+        this.schemata = null; //clear the cached schemata to make sure it is reloaded
+        return new JcrNodeTypeIterator(jcrNodeTypes);
     }
 
     /**
@@ -516,8 +522,11 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
 
-        return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds), !allowUpdate, false,
-                                                                                    true));
+        List<JcrNodeType> jcrNodeTypes = this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds), !allowUpdate, false,
+                                                                                      true);
+        this.schemata = null; //clear the cached schemata to make sure it is reloaded
+
+        return new JcrNodeTypeIterator(jcrNodeTypes);
     }
 
     /**
@@ -570,6 +579,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         // Unregistering a node type that is being used will likely cause the system to become unstable.
         boolean failIfNodeTypesAreUsed = true;
         repositoryTypeManager.unregisterNodeType(names, failIfNodeTypesAreUsed);
+        this.schemata = null; //clear the cached schemata to make sure it is reloaded
     }
 
     /**
