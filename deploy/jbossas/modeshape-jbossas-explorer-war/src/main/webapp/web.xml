@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee                http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+    <listener>
+        <listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
+    </listener>
+    <!-- Servlets -->
+    <servlet>
+        <servlet-name>jcrServlet</servlet-name>
+        <servlet-class>org.modeshape.web.server.JcrServiceImpl</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>InitialServlet</servlet-name>
+        <servlet-class>org.modeshape.web.InitialServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>BackupExportServlet</servlet-name>
+        <servlet-class>org.modeshape.web.BackupExportServlet</servlet-class>
+    </servlet>
+    
+    <filter> 
+        <filter-name>ConnectFilter</filter-name>
+        <filter-class>org.modeshape.web.AuthFilter</filter-class>
+    </filter>
+    
+    <servlet-mapping>
+        <servlet-name>jcrServlet</servlet-name>
+        <url-pattern>/console/jcr</url-pattern>
+    </servlet-mapping>
+    <!-- Default page to serve -->
+    <servlet-mapping>
+        <servlet-name>InitialServlet</servlet-name>
+        <url-pattern>/tree/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>BackupExportServlet</servlet-name>
+        <url-pattern>/console/backup/*</url-pattern>
+    </servlet-mapping>
+    
+    <filter-mapping>
+        <filter-name>ConnectFilter</filter-name>
+        <servlet-name>jcrServlet</servlet-name>        
+    </filter-mapping>
+    
+    <welcome-file-list>
+        <welcome-file>Console.html</welcome-file>
+    </welcome-file-list>
+    
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Wildcard means whole app requires authentication</web-resource-name>
+            <url-pattern>/*</url-pattern>
+            <http-method>GET</http-method>
+            <http-method>POST</http-method>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>connect</role-name>
+        </auth-constraint>
+
+        <user-data-constraint>
+            <!-- transport-guarantee can be CONFIDENTIAL, INTEGRAL, or NONE -->
+            <transport-guarantee>NONE</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>    
+    <!--
+       Any auth-method will work for ModeShape.  BASIC is used this example for simplicity.
+    -->
+    <login-config>
+        <auth-method>BASIC</auth-method>
+    </login-config>
+
+    <!--
+       This must match the role-name in the auth-constraint above.
+    -->
+    <security-role>
+        <role-name>connect</role-name>
+    </security-role>
+</web-app>

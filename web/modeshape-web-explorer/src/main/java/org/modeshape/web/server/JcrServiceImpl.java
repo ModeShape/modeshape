@@ -24,7 +24,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import javax.jcr.Credentials;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -104,6 +103,11 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public String getUserName() throws RemoteException {
+        String uname = (String)getThreadLocalRequest().getSession().getAttribute("uname");
+        String passwd = (String)getThreadLocalRequest().getSession().getAttribute("password");
+        if (uname != null) {
+            connector().login(uname, passwd);
+        }
         String res = connector().userName();
         return res;
     }
@@ -126,8 +130,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     @Override
     public void login( String userName,
                        String password ) throws RemoteException {
-        Credentials credentials = credentials(userName, password);
-        connector().login(credentials);
+        connector().login(userName, password);
     }
 
     /**
