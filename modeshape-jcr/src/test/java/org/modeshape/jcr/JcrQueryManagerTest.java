@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
@@ -62,6 +63,8 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
@@ -3744,7 +3747,65 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    private String idList(Node...nodes) throws RepositoryException {
+    @Test
+    @FixFor( "MODE-2275" )
+    public void shouldAllowQueryingForRuntimeRegisteredNodeTypes() throws Exception {
+        NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
+        namespaceRegistry.registerNamespace("foo", "http://www.modeshape.org/foo/1.0");
+        Node node1 = null;
+        Node node2 = null;
+
+        try {
+            registerNodeType("foo:nodeType1");
+            node1 = session.getRootNode().addNode("foo1", "foo:nodeType1");
+            session.save();
+            String sql = "SELECT node.[jcr:name] FROM [foo:nodeType1] AS node";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("foo1", nodes.nextNode().getName());
+
+            registerNodeType("foo:nodeType2");
+            node2 = session.getRootNode().addNode("foo2", "foo:nodeType2");
+            session.save();
+            sql = "SELECT node.[jcr:name] FROM [foo:nodeType2] AS node";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("foo2", nodes.nextNode().getName());
+        } finally {
+            //remove the nodes to avoid influencing the other tests
+            if (node1 != null) {
+                node1.remove();
+            }
+            if (node2 != null) {
+                node2.remove();
+            }
+            session.save();
+
+            //remove the custom types and namespaces to avoid influencing the other tests
+            JcrNodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+            nodeTypeManager.unregisterNodeType("foo:nodeType1");
+            nodeTypeManager.unregisterNodeType("foo:nodeType2");
+            namespaceRegistry.unregisterNamespace("foo");
+        }
+    }
+
+    private void registerNodeType( String typeName ) throws RepositoryException {
+        NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+
+        // Create a template for the node type ...
+        NodeTypeTemplate type = nodeTypeManager.createNodeTypeTemplate();
+        type.setName(typeName);
+        type.setDeclaredSuperTypeNames(new String[] { "nt:unstructured" });
+        type.setAbstract(false);
+        type.setOrderableChildNodes(true);
+        type.setMixin(false);
+        type.setQueryable(true);
+        nodeTypeManager.registerNodeType(type, true);
+    }
+
+    private String idList( Node... nodes ) throws RepositoryException {
         StringBuilder builder = new StringBuilder("(");
         for (int i = 0; i < nodes.length - 1; i++) {
             builder.append("'").append(nodes[i].getIdentifier()).append("'").append(",");
