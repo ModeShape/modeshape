@@ -117,43 +117,8 @@ public class ToolBar extends HLayout {
         userName.setContents("okulikov");
         userName.setIcon("icons/bullet_blue.png");
         
-        ToolStripButton backupButton = new ToolStripButton();
-        backupButton.setTitle("Backup repository");
-        backupButton.addClickHandler(new ClickHandler() {
-
-            @Override
-            public void onClick(ClickEvent event) {
-                console.showRepositoryInfo();
-            }
-        });
-
-        ToolStripButton restoreButton = new ToolStripButton();
-        restoreButton.setTitle("Restore from backup");
-        restoreButton.addClickHandler(new ClickHandler() {
-
-            @Override
-            public void onClick(ClickEvent event) {
-                console.showContent();
-            }
-        });
-        
-        ToolStripButton downloadButton = new ToolStripButton();
-        downloadButton.setTitle("Download back");
-        downloadButton.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-//                notebook.show(2);
-            }
-        });
-        
         strip.addSpacer(140);
         strip.addSeparator();
-        
-//        strip.addSpacer(70);
-//        strip.addButton(backupButton);
-//        strip.addButton(restoreButton);
-//        strip.addButton(downloadButton);
-//        strip.addSpacer(70);
         
         strip.addMember(userName);
         strip.addSeparator();
@@ -186,19 +151,8 @@ public class ToolBar extends HLayout {
             }
         });
         
-        ToolStripButton save = new ToolStripButton();
-        save.setTitle("Save");
-        save.addClickHandler(new ClickHandler() {
-
-            @Override
-            public void onClick(ClickEvent event) {
-                console.save();
-            }
-        });
-        
         strip.addButton(loging);
         strip.addButton(logout);
-        strip.addButton(save);
         
         addMember(strip);
         setBackgroundColor("#d3d3d3");

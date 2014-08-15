@@ -18,6 +18,7 @@ package org.modeshape.web.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.VerticalAlignment;
 import com.smartgwt.client.util.SC;
+import com.smartgwt.client.widgets.Button;
 import com.smartgwt.client.widgets.Canvas;
 import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
@@ -72,7 +73,7 @@ public class Contents extends View {
     private ExportDialog exportDialog = new ExportDialog(this);
     private ImportDialog importDialog = new ImportDialog(this);
     
-    public Contents(Console console, final JcrServiceAsync jcrService, ViewPort viewPort) {
+    public Contents(final Console console, final JcrServiceAsync jcrService, ViewPort viewPort) {
         super(viewPort, null);
         this.console = console;
         this.jcrService = jcrService;
@@ -113,9 +114,27 @@ public class Contents extends View {
         HLayout buttonPanel = new HLayout();
         buttonPanel.setWidth100();
         
+        Button save = new Button();
+        save.setTitle("Save");
+        save.setIcon("icons/save.png");
+        save.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                console.save();
+            }
+        });
+        
+        
         panel.addMember(buttonPanel);        
         addMember(panel);
 
+        panel.addMember(save);
+        
+        HLayout spacer = new HLayout();
+        spacer.setWidth(5);
+        
+        panel.addMember(spacer);
+        
         VLayout strut = new VLayout();
         strut.setHeight(20);
 
