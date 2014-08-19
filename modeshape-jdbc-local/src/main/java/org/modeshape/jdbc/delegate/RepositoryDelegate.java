@@ -18,7 +18,7 @@ package org.modeshape.jdbc.delegate;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
@@ -66,7 +66,7 @@ public interface RepositoryDelegate {
      * @return List of all the node types.
      * @throws RepositoryException
      */
-    List<NodeType> nodeTypes() throws RepositoryException;
+    Collection<NodeType> nodeTypes() throws RepositoryException;
 
     /**
      * Call to execute the <code>query</code> based on the specified JCR language.
@@ -139,7 +139,7 @@ public interface RepositoryDelegate {
 
     /**
      * Called to get all the repository names currently available in the ModeShapeEngine.
-     * 
+     *
      * @return Set<String> of repository names
      * @throws RepositoryException
      */

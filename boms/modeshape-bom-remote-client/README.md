@@ -32,10 +32,6 @@ For example, if your module _explicitly_ uses ModeShape's REST client library, t
         ...
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-jcr-rest-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc</artifactId>
         </dependency>
         ...

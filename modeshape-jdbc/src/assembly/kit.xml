@@ -21,8 +21,6 @@
                 <include>javax.jcr:jcr</include>
 
                 <!-- Needed for the driver's HTTP communication -->
-                <include>org.modeshape:modeshape-web-jcr-rest-client</include>
-                <include>org.jboss.resteasy:*</include>
                 <include>org.apache.httpcomponents:httpclient</include>
                 <include>org.apache.httpcomponents:httpcore</include>
                 <include>org.modeshape:modeshape-common</include>

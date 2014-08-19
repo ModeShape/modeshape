@@ -30,41 +30,32 @@ import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.jcr.api.query.QueryResult;
 import org.modeshape.jdbc.JdbcJcrValueFactory;
-import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 
 /**
- * A simple implementation of the {@link QueryResult} interface used to iterate over list of {@link QueryRow rows}
+ * A simple implementation of the {@link QueryResult} interface.
  * 
  * @author Horia Chiorean
  */
 public final class HttpQueryResult implements QueryResult {
 
-    protected final List<HttpRow> rows = new ArrayList<HttpRow>();
+    protected final List<HttpRow> rows = new ArrayList<>();
+    protected final Map<String, String> columnTypesByName = new LinkedHashMap<>();
 
-    /**
-     * [columnName, columnType] mappings
-     */
-    protected final Map<String, String> columns = new LinkedHashMap<String, String>();
+    protected HttpQueryResult( org.modeshape.jdbc.rest.QueryResult queryResult ) {
+        assert queryResult != null;
 
-    HttpQueryResult( List<QueryRow> queryRows ) {
-        assert queryRows != null;
+        if (!queryResult.isEmpty()) {
+            this.columnTypesByName.putAll(queryResult.getColumns());
 
-        if (!queryRows.isEmpty()) {
-            QueryRow firstQueryRow = queryRows.get(0);
-            Collection<String> queryColumnNames = firstQueryRow.getColumnNames();
-            for (String queryColumnName : queryColumnNames) {
-                columns.put(queryColumnName, firstQueryRow.getColumnType(queryColumnName));
+            for (org.modeshape.jdbc.rest.QueryResult.Row queryRow : queryResult) {
+                rows.add(new HttpRow(queryRow));
             }
-        }
-
-        for (QueryRow queryRow : queryRows) {
-            rows.add(new HttpRow(queryRow));
         }
     }
 
     @Override
     public String getPlan() {
-        return null;
+        throw new UnsupportedOperationException("Method getPlan() not supported");
     }
 
     @Override
@@ -74,7 +65,7 @@ public final class HttpQueryResult implements QueryResult {
 
     @Override
     public String[] getColumnNames() {
-        return columns.keySet().toArray(new String[columns.size()]);
+        return columnTypesByName.keySet().toArray(new String[columnTypesByName.size()]);
     }
 
     @Override
@@ -104,7 +95,7 @@ public final class HttpQueryResult implements QueryResult {
 
     @Override
     public String[] getColumnTypes() {
-        return columns.values().toArray(new String[columns.size()]);
+        return columnTypesByName.values().toArray(new String[columnTypesByName.size()]);
     }
 
     private class HttpRowIterator implements RowIterator {
@@ -162,11 +153,11 @@ public final class HttpQueryResult implements QueryResult {
     }
 
     private class HttpRow implements Row {
-        private final Map<String, Value> valuesMap = new LinkedHashMap<String, Value>();
+        private final Map<String, Value> valuesMap = new LinkedHashMap<>();
 
-        protected HttpRow( QueryRow row ) {
+        protected HttpRow( org.modeshape.jdbc.rest.QueryResult.Row row ) {
             assert row != null;
-            for (String columnName : columns.keySet()) {
+            for (String columnName : columnTypesByName.keySet()) {
                 Object queryRowValue = row.getValue(columnName);
                 valuesMap.put(columnName, JdbcJcrValueFactory.createValue(queryRowValue));
             }

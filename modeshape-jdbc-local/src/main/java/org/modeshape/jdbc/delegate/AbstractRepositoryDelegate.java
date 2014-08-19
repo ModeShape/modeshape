@@ -19,7 +19,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Set;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jdbc.DriverInfo;
@@ -33,7 +32,6 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
 
     protected final Logger logger = Logger.getLogger(getClass());
 
-    private Repository repository = null;
     private Set<String> repositoryNames = null;
     private ConnectionInfo connInfo = null;
     private String url;
@@ -57,11 +55,12 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
                                                   final Properties info );
 
     /**
-     * Implementor is responsible for creating the repository.
+     * The implementing class is responsible for creating the repository in an optimal way, since this will be called each time a
+     * connection is created.
      * 
      * @throws SQLException
      */
-    abstract void retrieveRepository() throws SQLException;
+    abstract void initRepository() throws SQLException;
 
     @Override
     public synchronized ConnectionInfo getConnectionInfo() {
@@ -92,19 +91,9 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
 
     @Override
     public Connection createConnection( DriverInfo info ) throws SQLException {
-        logger.debug("Creating connection for RepositoryDelegte");
-        if (this.repository == null) {
-            retrieveRepository();
-        }
+        logger.debug("Creating connection for RepositoryDelegate");
+        initRepository();
         return new JcrConnection(this, info);
-    }
-
-    public Repository getRepository() {
-        return this.repository;
-    }
-
-    protected void setRepository( Repository repository ) {
-        this.repository = repository;
     }
 
     public String getRepositoryName() {

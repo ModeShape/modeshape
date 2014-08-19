@@ -51,6 +51,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     protected static final Set<LocalSession> TRANSACTION_IDS = java.util.Collections.synchronizedSet(new HashSet<LocalSession>());
 
     private JcrContextFactory jcrContext = null;
+    private Repository repository = null;
 
     public LocalRepositoryDelegate( String url,
                                     Properties info,
@@ -80,7 +81,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     }
 
     private LocalSession getLocalSession() throws LoginException, NoSuchWorkspaceException, RepositoryException {
-        return LocalSession.getLocalSessionInstance().getLocalSession(getRepository(), getConnectionInfo());
+        return LocalSession.getLocalSessionInstance().getLocalSession(repository, getConnectionInfo());
     }
 
     private LocalSession getCurrentLocalSession() {
@@ -89,7 +90,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
 
     @Override
     public String getDescriptor( String descriptorKey ) {
-        return getRepository().getDescriptor(descriptorKey);
+        return repository.getDescriptor(descriptorKey);
     }
 
     @Override
@@ -140,10 +141,12 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     }
 
     @Override
-    protected void retrieveRepository() throws SQLException {
-        logger.debug("Creating repository for LocalRepositoryDelegte");
+    protected void initRepository() throws SQLException {
+        if (repository != null) {
+            return;
+        }
+        logger.debug("Creating repository for LocalRepositoryDelegate");
 
-        Repository repository = null;
         Set<String> repositoryNames = null;
         ConnectionInfo connInfo = this.getConnectionInfo();
         assert connInfo != null;
@@ -212,7 +215,6 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         } catch (NamingException e) {
             throw new SQLException(JdbcLocalI18n.unableToFindObjectInJndi.text(jndiName), e);
         }
-        this.setRepository(repository);
         this.setRepositoryName(repositoryName);
         this.setRepositoryNames(repositoryNames);
     }
@@ -246,6 +248,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         for (LocalSession id : TRANSACTION_IDS) {
             id.remove();
         }
+        this.repository = null;
     }
 
     @SuppressWarnings( "unused" )

@@ -66,11 +66,6 @@
         <dependencies>
             <dependency>
                 <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-web-jcr-rest-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jdbc</artifactId>
                 <version>${project.version}</version>
             </dependency>
