@@ -27,7 +27,6 @@ import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.layout.VLayout;
 
 /**
- *
  * @author kulikov
  */
 public class AdminView extends View {
@@ -37,8 +36,10 @@ public class AdminView extends View {
     private RestoreDialog restoreDialog = new RestoreDialog(this);
 
     private DynamicForm form = new DynamicForm();
-    
-    public AdminView(Console console, final JcrServiceAsync jcrService, ViewPort viewPort) {
+
+    public AdminView( Console console,
+                      final JcrServiceAsync jcrService,
+                      ViewPort viewPort ) {
         super(viewPort, null);
         this.console = console;
 
@@ -48,29 +49,29 @@ public class AdminView extends View {
         addMember(form);
     }
 
-    public void backup(String name) {
+    public void backup( String name ) {
         console.jcrService.backup(console.repository(), name, new AsyncCallback<Object>() {
             @Override
-            public void onFailure(Throwable caught) {
+            public void onFailure( Throwable caught ) {
                 SC.say(caught.getMessage());
             }
 
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess( Object result ) {
                 SC.say("Complete");
             }
         });
     }
 
-    public void restore(String name) {
+    public void restore( String name ) {
         console.jcrService.restore(console.repository(), name, new AsyncCallback<Object>() {
             @Override
-            public void onFailure(Throwable caught) {
+            public void onFailure( Throwable caught ) {
                 SC.say(caught.getMessage());
             }
 
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess( Object result ) {
                 SC.say("Complete");
             }
         });
@@ -79,12 +80,13 @@ public class AdminView extends View {
     private void backupAndDownload() {
         console.jcrService.backup(console.contents().repository(), "zzz", new AsyncCallback<Object>() {
             @Override
-            public void onFailure(Throwable caught) {
+            public void onFailure( Throwable caught ) {
                 SC.say(caught.getMessage());
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess( Object result ) {
                 form.setAction(GWT.getModuleBaseForStaticFiles() + "backup/do?file=zzz");
                 form.setMethod(FormMethod.GET);
                 form.submitForm();
@@ -92,6 +94,7 @@ public class AdminView extends View {
         });
     }
 
+    @SuppressWarnings( "synthetic-access" )
     private class BackupControl extends VLayout {
 
         public BackupControl() {
@@ -104,23 +107,22 @@ public class AdminView extends View {
             label.setHeight(25);
             label.addClickHandler(new ClickHandler() {
                 @Override
-                public void onClick(ClickEvent event) {
+                public void onClick( ClickEvent event ) {
                     backupDialog.showModal();
                 }
             });
 
             Canvas text = new Canvas();
             text.setAutoHeight();
-            text.setContents("Create backups of an entire repository (even when "
-                    + "the repository is in use)"
-                    + "This works regardless of where the repository content "
-                    + "is persisted.");
+            text.setContents("Create backups of an entire repository (even when " + "the repository is in use)"
+                             + "This works regardless of where the repository content " + "is persisted.");
 
             addMember(label);
             addMember(text);
         }
     }
 
+    @SuppressWarnings( "synthetic-access" )
     private class RestoreControl extends VLayout {
 
         public RestoreControl() {
@@ -133,7 +135,7 @@ public class AdminView extends View {
             label.setHeight(25);
             label.addClickHandler(new ClickHandler() {
                 @Override
-                public void onClick(ClickEvent event) {
+                public void onClick( ClickEvent event ) {
                     restoreDialog.showModal();
                 }
             });
@@ -141,18 +143,18 @@ public class AdminView extends View {
             Canvas text = new Canvas();
             text.setAutoHeight();
             text.setContents("Once you have a complete backup on disk, you can "
-                    + "then restore a repository back to the state captured "
-                    + "within the backup. To do that, simply start a repository "
-                    + "(or perhaps a new instance of a repository with a "
-                    + "different configuration) and, before it’s used by "
-                    + "any applications, load into the new repository all of "
-                    + "the content in the backup. ");
+                             + "then restore a repository back to the state captured "
+                             + "within the backup. To do that, simply start a repository "
+                             + "(or perhaps a new instance of a repository with a "
+                             + "different configuration) and, before it’s used by "
+                             + "any applications, load into the new repository all of " + "the content in the backup. ");
 
             addMember(label);
             addMember(text);
         }
     }
 
+    @SuppressWarnings( "synthetic-access" )
     private class DownloadControl extends VLayout {
 
         public DownloadControl() {
@@ -165,7 +167,7 @@ public class AdminView extends View {
             label.setIcon("icons/data.png");
             label.addClickHandler(new ClickHandler() {
                 @Override
-                public void onClick(ClickEvent event) {
+                public void onClick( ClickEvent event ) {
                     backupAndDownload();
                 }
             });
@@ -173,10 +175,8 @@ public class AdminView extends View {
             Canvas text = new Canvas();
             text.setAutoHeight();
             text.setContents("Create backups of an entire repository (even when "
-                    + "the repository is in use) and download zip archive "
-                    + "This works regardless of where the repository content "
-                    + "is persisted.");
-
+                             + "the repository is in use) and download zip archive "
+                             + "This works regardless of where the repository content " + "is persisted.");
 
             addMember(label);
             addMember(text);

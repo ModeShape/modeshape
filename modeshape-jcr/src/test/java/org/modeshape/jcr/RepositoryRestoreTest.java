@@ -31,10 +31,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import org.junit.Before;
@@ -201,9 +198,7 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         txnMgr.begin();
     }
 
-    private void rollbackTransaction()
-            throws SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException,
-                   HeuristicRollbackException {
+    private void rollbackTransaction() throws SystemException, SecurityException, IllegalStateException {
         TransactionManager txnMgr = session.repository.transactionManager();
         txnMgr.rollback();
     }

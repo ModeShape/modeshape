@@ -283,7 +283,7 @@ public class ModelAttributes {
                                                                                                     ModelType.STRING).setXmlName(Attribute.INDEX_KIND.getLocalName())
                                                                                                                      .setAllowExpression(true)
                                                                                                                      .setAllowNull(true)
-                                                                                                                     .setDefaultValue(new ModelNode().set(IndexKind.DUPLICATES.toString()))
+                                                                                                                     .setDefaultValue(new ModelNode().set(IndexKind.VALUE.toString()))
                                                                                                                      .setValidator(INDEX_KIND_VALIDATOR)
                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                      .build();
