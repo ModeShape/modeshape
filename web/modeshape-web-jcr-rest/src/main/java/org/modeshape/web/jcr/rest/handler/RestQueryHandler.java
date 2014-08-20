@@ -16,7 +16,10 @@
 
 package org.modeshape.web.jcr.rest.handler;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -25,7 +28,9 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.ValueFactory;
 import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
@@ -37,16 +42,16 @@ import org.modeshape.web.jcr.rest.model.RestQueryPlanResult;
 import org.modeshape.web.jcr.rest.model.RestQueryResult;
 
 /**
- * An extension of the {@link QueryHandler} which allows executing queries against a repository and returns rest representations
- * of the query results.
+ * A REST handler used for executing queries against a repository and returning REST representations of the query results.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @SuppressWarnings( "deprecation" )
-public final class RestQueryHandler extends QueryHandler {
+public final class RestQueryHandler extends AbstractHandler {
 
     private static final String MODE_URI = "mode:uri";
     private static final String UNKNOWN_TYPE = "unknown-type";
+    private static final List<String> SKIP_QUERY_PARAMETERS = Arrays.asList("offset", "limit");
 
     /**
      * Executes a the given query string (based on the language information) against a JCR repository, returning a rest model
@@ -252,6 +257,41 @@ public final class RestQueryHandler extends QueryHandler {
             for (String columnName : columnNames) {
                 restQueryResult.addColumn(columnName, UNKNOWN_TYPE);
             }
+        }
+    }
+
+    private org.modeshape.jcr.api.query.Query createQuery( String language,
+                                                             String statement,
+                                                             Session session ) throws RepositoryException {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        return (org.modeshape.jcr.api.query.Query)queryManager.createQuery(statement, language);
+    }
+
+    private void bindExtraVariables( UriInfo uriInfo,
+                                       ValueFactory valueFactory,
+                                       Query query ) throws RepositoryException {
+        if (uriInfo == null) {
+            return;
+        }
+        // Extract the query parameters and bind as variables ...
+        for (Map.Entry<String, List<String>> entry : uriInfo.getQueryParameters().entrySet()) {
+            String variableName = entry.getKey();
+            List<String> variableValues = entry.getValue();
+            if (variableValues == null || variableValues.isEmpty() || SKIP_QUERY_PARAMETERS.contains(variableName)) {
+                continue;
+            }
+
+            // Grab the first non-null value ...
+            Iterator<String> valuesIterator = variableValues.iterator();
+            String variableValue = null;
+            while (valuesIterator.hasNext() && variableValue == null) {
+                variableValue = valuesIterator.next();
+            }
+            if (variableValue == null) {
+                continue;
+            }
+            // Bind the variable value to the variable name ...
+            query.bindValue(variableName, valueFactory.createValue(variableValue));
         }
     }
 }

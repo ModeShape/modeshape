@@ -35,8 +35,7 @@ public final class JcrApplication extends Application {
     @SuppressWarnings( "deprecation" )
     @Override
     public Set<Class<?>> getClasses() {
-        return new HashSet<>(Arrays.asList(new Class<?>[] { JcrResources.class,
-                                                            ModeShapeRestService.class,
+        return new HashSet<>(Arrays.asList(new Class<?>[] { ModeShapeRestService.class,
                                                             HtmlBodyWriter.class,
                                                             JSONBodyWriter.class,
                                                             TextBodyWriter.class,

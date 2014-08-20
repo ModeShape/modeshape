@@ -1,6 +1,0 @@
-{
-    "properties":{
-        "jcr:primaryType":"nt:folder",
-        "jcr:mixinTypes":["mix:referenceable"]
-    }
-}

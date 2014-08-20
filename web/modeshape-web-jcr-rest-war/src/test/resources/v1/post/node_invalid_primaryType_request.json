@@ -1,7 +1,0 @@
-{
-    "properties":{
-        "jcr:primaryType":"invalidType",
-        "testProperty":"testValue",
-        "multiValuedProperty":["value1", "value2"]
-    }
-}

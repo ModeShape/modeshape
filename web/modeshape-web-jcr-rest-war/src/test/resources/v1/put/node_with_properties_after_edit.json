@@ -1,7 +1,0 @@
-{
-    "properties":{
-        "jcr:primaryType":"nt:unstructured",
-        "testProperty":"some_new_value",
-        "multiValuedProperty":["value1", "value2"]
-    }
-}

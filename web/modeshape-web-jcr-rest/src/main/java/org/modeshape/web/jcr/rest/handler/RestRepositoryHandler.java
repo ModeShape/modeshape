@@ -23,7 +23,7 @@ import org.modeshape.web.jcr.rest.RestHelper;
 import org.modeshape.web.jcr.rest.model.RestWorkspaces;
 
 /**
- * An extension of the {@link RepositoryHandler} which returns POJO-based rest model instances.
+ * An handler which returns POJO-based rest model instances.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
