@@ -18,14 +18,14 @@ package org.modeshape.jcr.api.index;
 
 /**
  * An immutable definition of a column used in an {@link IndexDefinition}.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public interface IndexColumnDefinitionTemplate extends IndexColumnDefinition {
 
     /**
      * Get the name of the property for which this index column applies.
-     * 
+     *
      * @return the property name; null if the value has not yet been set on this template
      */
     @Override
@@ -33,17 +33,18 @@ public interface IndexColumnDefinitionTemplate extends IndexColumnDefinition {
 
     /**
      * Set the name of the property for which this index column applies.
-     * 
+     *
      * @param name the name of the property; may not be null
      * @return this instance for method chaining; never null
      */
-    IndexColumnDefinitionTemplate setPropertyTypeName( String name );
+    IndexColumnDefinitionTemplate setPropertyName( String name );
 
     /**
      * Set the type of value for this index column applies.
-     * 
-     * @param propertyType the {@link javax.jcr.PropertyType property type}
+     *
+     * @param propertyType the {@link javax.jcr.PropertyType property type} for this column
      * @return this instance for method chaining; never null
+     * @throws IllegalArgumentException if the supplied property type is not one of the {@link javax.jcr.PropertyType} constants.
      */
-    IndexColumnDefinitionTemplate getColumnType( int propertyType );
+    IndexColumnDefinitionTemplate setColumnType( int propertyType );
 }

@@ -19,11 +19,12 @@ package org.modeshape.jcr;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.index.IndexColumnDefinitionTemplate;
+import org.modeshape.jcr.value.PropertyType;
 
 @Immutable
 class RepositoryIndexColumnDefinitionTemplate implements IndexColumnDefinitionTemplate {
 
-    private String propertyTypeName;
+    private String propertyName;
     private int columnType = javax.jcr.PropertyType.STRING;
 
     RepositoryIndexColumnDefinitionTemplate() {
@@ -31,7 +32,7 @@ class RepositoryIndexColumnDefinitionTemplate implements IndexColumnDefinitionTe
 
     @Override
     public String getPropertyName() {
-        return propertyTypeName;
+        return propertyName;
     }
 
     @Override
@@ -40,15 +41,18 @@ class RepositoryIndexColumnDefinitionTemplate implements IndexColumnDefinitionTe
     }
 
     @Override
-    public IndexColumnDefinitionTemplate setPropertyTypeName( String propertyTypeName ) {
-        CheckArg.isNotNull(propertyTypeName, "propertyTypeName");
-        this.propertyTypeName = propertyTypeName;
+    public IndexColumnDefinitionTemplate setPropertyName( String propertyName ) {
+        CheckArg.isNotNull(propertyName, "propertyName");
+        this.propertyName = propertyName;
         return this;
     }
 
     @Override
-    public IndexColumnDefinitionTemplate getColumnType( int type ) {
+    public IndexColumnDefinitionTemplate setColumnType( int type ) {
         CheckArg.isNotNull(type, "type");
+        if (PropertyType.OBJECT == PropertyType.valueFor(type)) {
+            throw new IllegalArgumentException(JcrI18n.invalidPropertyType.text(type));
+        }
         this.columnType = type;
         return this;
     }

@@ -13,28 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.api.query.qom;
+
+package org.modeshape.jcr.spi.index.provider;
 
 import javax.jcr.query.qom.Constraint;
-import javax.jcr.query.qom.PropertyValue;
-import javax.jcr.query.qom.StaticOperand;
 
 /**
- * Tests whether the property value contains a regular expression that matches the supplied operand.
+ * A simple interface that provides a method to compute the cost of applying indexes.
+ *
+ * @author Randall Hauch (rhauch@redhat.com)
  */
-public interface Relike extends Constraint {
-
+public interface Costable {
     /**
-     * Get the static operand that identifies the value to match.
+     * Compute the cost applying the given constraint.
      *
-     * @return the static operand; never null
+     * @param constraint the constraint; never null
+     * @return the approximate number of records that will be returned
      */
-    StaticOperand getOperand1();
+    long estimateCardinality( Constraint constraint );
 
-    /**
-     * Get the specification of the property.
-     *
-     * @return the property value; never null
-     */
-    PropertyValue getOperand2();
 }

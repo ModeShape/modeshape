@@ -21,16 +21,23 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 /**
  * The top-level interface for an index owned by a provider, with common methods needed by indexes regardless of number of
  * columns.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public interface ManagedIndex extends Filter {
+public interface ManagedIndex extends Filter, Costable {
+
+    /**
+     * Get the estimated number of entries within this index.
+     *
+     * @return the number of entries, or -1 if not known
+     */
+    long estimateTotalCount();
 
     /**
      * Get the ChangeSetAdapter implementation through which changes to content are sent to the index. Each local index has an
      * {@link ChangeSetListener} that is registered on the event bus and kept throughout the lifetime of the index (even if there
      * are changes), and that listener delegates to this adapter.
-     * 
+     *
      * @return the adapter; never null
      */
     IndexChangeAdapter getIndexChangeAdapter();
@@ -45,7 +52,7 @@ public interface ManagedIndex extends Filter {
      * removed from the repository and will not be reused; thus all persistent resources should also be released. If
      * {@code destroyed} is {@code false}, then this repository is merely shutting down and the index's persistent resources
      * should be kept so that they are available when the repository is restarted.
-     * 
+     *
      * @param destroyed true if this index is being permanently removed from the repository and all runtime and persistent
      *        resources can/should be released and cleaned up, or false if the repository is being shutdown and this index will be
      *        needed the next time the repository is started

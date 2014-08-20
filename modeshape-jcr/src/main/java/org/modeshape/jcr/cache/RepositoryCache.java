@@ -108,11 +108,11 @@ public class RepositoryCache {
     private final String repoKey;
     private final String sourceKey;
     private final String rootNodeId;
-    private final ChangeBus changeBus;
+    protected final ChangeBus changeBus;
     protected final NodeKey systemMetadataKey;
     private final NodeKey systemKey;
     protected final Set<String> workspaceNames;
-    private final String systemWorkspaceName;
+    protected final String systemWorkspaceName;
     protected final Logger logger;
     private final SessionEnvironment sessionContext;
     private final String processKey;
@@ -309,7 +309,7 @@ public class RepositoryCache {
         // set the local source key in the document store
         this.documentStore.setLocalSourceKey(this.sourceKey);
 
-        //init the features detector (must be done only after the system area has been fully initialized)
+        // init the features detector (must be done only after the system area has been fully initialized)
         this.repositoryFeaturesDetector = new RepositoryFeaturesDetector(systemSession, systemRef.getKey());
     }
 
@@ -410,8 +410,8 @@ public class RepositoryCache {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(),
-                    context.getProcessId(), this.getKey(), null, sessionContext.journalId());
+            RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
+                                                            sessionContext.journalId());
             changes.repositoryMetadataChanged();
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -537,7 +537,7 @@ public class RepositoryCache {
 
     /**
      * Get the identifier of the repository's metadata document.
-     * 
+     *
      * @return the cache key for the repository's metadata document; never null
      */
     public NodeKey getRepositoryMetadataDocumentKey() {
@@ -632,7 +632,7 @@ public class RepositoryCache {
     /**
      * Executes the given operation only once, when the repository is created for the first time, using child node under
      * jcr:system as a global "lock". In a cluster, this should only be run by the node which performs the initialization.
-     * 
+     *
      * @param initOperation a {@code non-null} {@link Callable} instance
      * @throws Exception if anything unexpected occurs, clients are expected to handle this
      */
@@ -672,8 +672,8 @@ public class RepositoryCache {
         private final AtomicBoolean lockingUsed;
         private final NodeKey locksContainerKey;
 
-
-        protected RepositoryFeaturesDetector(SessionCache systemSession, NodeKey systemNodeKey) {
+        protected RepositoryFeaturesDetector( SessionCache systemSession,
+                                              NodeKey systemNodeKey ) {
             CachedNode systemNode = systemSession.getNode(systemNodeKey);
 
             this.versionStorageKey = systemNode.getChildReferences(systemSession).getChild(JcrLexicon.VERSION_STORAGE).getKey();
@@ -687,7 +687,7 @@ public class RepositoryCache {
             this.lockingUsed = new AtomicBoolean(lockingUsed);
 
             if (!versioningUsed || !lockingUsed) {
-                //register with the change bus to be able to detect the changes in the usage of the various features
+                // register with the change bus to be able to detect the changes in the usage of the various features
                 RepositoryCache.this.changeBus.registerInThread(this);
             }
         }
@@ -761,7 +761,7 @@ public class RepositoryCache {
 
     /**
      * Get the key for this repository.
-     * 
+     *
      * @return the repository's key; never null
      */
     public final String getKey() {
@@ -782,7 +782,7 @@ public class RepositoryCache {
 
     /**
      * Get the name for this repository.
-     * 
+     *
      * @return the repository's name; never null
      */
     public final String getName() {
@@ -792,7 +792,7 @@ public class RepositoryCache {
     /**
      * Get the names of all available workspaces in this repository. Not all workspaces may be loaded. This set does not contain
      * the system workspace name, as that workspace is not accessible/visible to JCR clients.
-     * 
+     *
      * @return the names of all available workspaces; never null and immutable
      */
     public final Set<String> getWorkspaceNames() {
@@ -906,7 +906,7 @@ public class RepositoryCache {
      * <p>
      * This method does nothing if a cache for the workspace with the supplied name hasn't yet been created.
      * </p>
-     * 
+     *
      * @param name the name of the workspace
      */
     void refreshWorkspace( String name ) {
@@ -922,7 +922,7 @@ public class RepositoryCache {
      * Create a new workspace in this repository, if the repository is appropriately configured. If the repository already
      * contains a workspace with the supplied name, then this method simply returns that workspace. Otherwise, this method
      * attempts to create the named workspace and will return a cache for this newly-created workspace.
-     * 
+     *
      * @param name the workspace name
      * @return the workspace cache for the new (or existing) workspace; never null
      * @throws UnsupportedOperationException if this repository was not configured to allow
@@ -950,8 +950,8 @@ public class RepositoryCache {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(),
-                    context.getProcessId(), this.getKey(), null, sessionContext.journalId());
+            RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
+                                                            sessionContext.journalId());
             changes.workspaceAdded(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -963,7 +963,7 @@ public class RepositoryCache {
      * Permanently destroys the workspace with the supplied name, if the repository is appropriately configured, also unlinking
      * the jcr:system node from the root node . If no such workspace exists in this repository, this method simply returns.
      * Otherwise, this method attempts to destroy the named workspace.
-     * 
+     *
      * @param name the workspace name
      * @param removeSession an outside session which will be used to unlink the jcr:system node and which is needed to guarantee
      *        atomicity.
@@ -1007,8 +1007,8 @@ public class RepositoryCache {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(),
-                    context.getProcessId(), this.getKey(), null, sessionContext.journalId());
+            RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
+                                                            sessionContext.journalId());
             changes.workspaceRemoved(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -1026,7 +1026,7 @@ public class RepositoryCache {
      * Notice that at times the changes persisted by other sessions may cause some of this session's transient state to become
      * invalid. (For example, this session's newly-created child of some node, A, may become invalid or inaccessible if some other
      * session saved a deletion of node A.)
-     * 
+     *
      * @param workspaceName the name of the workspace; may not be null
      * @return the node cache; never null
      * @throws WorkspaceNotFoundException if no such workspace exists
@@ -1037,7 +1037,7 @@ public class RepositoryCache {
 
     /**
      * Create a session for the workspace with the given name, using the supplied ExecutionContext for the session.
-     * 
+     *
      * @param context the context for the new session; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param readOnly true if the session is to be read-only
@@ -1060,7 +1060,7 @@ public class RepositoryCache {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     * 
+     *
      * @param targetCountPerBlock the target number of children per block
      * @param tolerance the allowed tolerance between the target and actual number of children per block
      * @return the results of the optimization; never null

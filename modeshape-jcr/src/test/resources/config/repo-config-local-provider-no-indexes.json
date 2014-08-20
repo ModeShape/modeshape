@@ -1,0 +1,11 @@
+{
+    "name" : "QueryableRepo",
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/local_index_test_repository"
+        },
+    },
+    "indexes" : {
+    }
+}

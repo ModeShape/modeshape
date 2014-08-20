@@ -17,12 +17,8 @@
 package org.modeshape.jcr.query.engine;
 
 import static java.util.Collections.singletonList;
-import java.util.List;
 import java.util.Map;
-import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.RepositoryIndexes;
-import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.query.qom.NodePath;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.query.QueryContext;
@@ -34,9 +30,8 @@ import org.modeshape.jcr.query.model.DynamicOperand;
 import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.NodeId;
 import org.modeshape.jcr.query.model.SameNode;
-import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.StaticOperand;
-import org.modeshape.jcr.spi.index.IndexCollector;
+import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 
 /**
@@ -46,37 +41,27 @@ public abstract class IndexPlanners {
 
     /**
      * Examine the supplied constraints applied to the given selector in a query, and record in the supplied
-     * {@link IndexCollector} any and all indexes in this provider that can be used in this query.
-     * 
+     * {@link IndexCostCalculator} any and all indexes in this provider that can be used in this query.
+     *
      * @param context the context in which the query is being executed, provided by ModeShape; never null
-     * @param selector the name of the selector against which all of the {@code andedConstraints} are to be applied; never null
-     * @param andedConstraints the immutable list of {@link Constraint} instances that are all AND-ed and applied against the
-     *        {@code selector}; never null but possibly empty
-     * @param indexDefinitions the available index definitions that apply to the node type identified by the named selector; may
-     *        be null if there are no indexes defined
-     * @param indexes the list provided by the caller into which this method should add the index(es), if any, that the query
-     *        engine might use to satisfy the relevant portion of the query; never null
+     * @param calculator the cost calculator that this method can use to find information about the query and to record
+     *        information about the index(es), if any, that the query engine might use to satisfy the relevant portion of the
+     *        query; never null
      */
     public abstract void applyIndexes( QueryContext context,
-                                       SelectorName selector,
-                                       List<Constraint> andedConstraints,
-                                       RepositoryIndexes indexDefinitions,
-                                       IndexCollector indexes );
+                                       IndexCostCalculator calculator );
 
     private static final IndexPlanners IMPLICIT = new IndexPlanners() {
         @Override
         public void applyIndexes( QueryContext context,
-                                  SelectorName selector,
-                                  List<Constraint> andedConstraints,
-                                  RepositoryIndexes indexDefinitions,
-                                  IndexCollector indexes ) {
-            StandardIndexPlanner.INSTANCE.applyIndexes(context, selector, andedConstraints, null, indexes);
+                                  IndexCostCalculator calculator ) {
+            StandardIndexPlanner.INSTANCE.applyIndexes(context, calculator);
         }
     };
 
     /**
      * Get the IndexPlanners instance that looks only for the implicit (built-in) indexes.
-     * 
+     *
      * @return the instance; never null
      */
     public static IndexPlanners implicit() {
@@ -86,7 +71,7 @@ public abstract class IndexPlanners {
     /**
      * Get an IndexPlanners instance that looks for the implicit (built-in) indexes and that calls the appropriate
      * {@link IndexPlanner} instances given the available indexes for this selector.
-     * 
+     *
      * @param plannersByProviderName the map of query index planners keyed by the provider's name
      * @return the instance; never null
      */
@@ -94,22 +79,14 @@ public abstract class IndexPlanners {
         return new IndexPlanners() {
             @Override
             public void applyIndexes( QueryContext context,
-                                      SelectorName selector,
-                                      List<Constraint> andedConstraints,
-                                      RepositoryIndexes indexDefinitions,
-                                      IndexCollector indexes ) {
+                                      IndexCostCalculator calculator ) {
                 // Call the standard index planner ...
-                StandardIndexPlanner.INSTANCE.applyIndexes(context, selector, andedConstraints, null, indexes);
+                StandardIndexPlanner.INSTANCE.applyIndexes(context, calculator);
 
-                if (indexDefinitions != null) {
-                    // Only call the planners for providers that own at least one of the indexes ...
-                    for (Map.Entry<String, IndexPlanner> entry : plannersByProviderName.entrySet()) {
-                        String providerName = entry.getKey();
-                        Iterable<IndexDefinition> indexDefns = indexDefinitions.indexesFor(selector.name(), providerName);
-                        if (indexDefns != null) {
-                            IndexPlanner planner = entry.getValue();
-                            planner.applyIndexes(context, selector, andedConstraints, indexDefns, indexes);
-                        }
+                if (context.getIndexDefinitions().hasIndexDefinitions()) {
+                    // Call the index planners ...
+                    for (IndexPlanner planner : plannersByProviderName.values()) {
+                        planner.applyIndexes(context, calculator);
                     }
                 }
             }
@@ -130,25 +107,23 @@ public abstract class IndexPlanners {
 
         @Override
         public void applyIndexes( QueryContext context,
-                                  SelectorName selector,
-                                  List<javax.jcr.query.qom.Constraint> andedConstraints,
-                                  Iterable<IndexDefinition> indexesOnSelector,
-                                  IndexCollector indexes ) {
-            for (javax.jcr.query.qom.Constraint constraint : andedConstraints) {
+                                  IndexCostCalculator calculator ) {
+            for (javax.jcr.query.qom.Constraint constraint : calculator.andedConstraints()) {
                 if (constraint instanceof SameNode) {
                     SameNode sameNode = (SameNode)constraint;
                     String path = sameNode.getPath();
-                    indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, PATH_PARAMETER, path);
+                    calculator.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, -1.0f,
+                                        PATH_PARAMETER, path);
                 } else if (constraint instanceof ChildNode) {
                     ChildNode childNode = (ChildNode)constraint;
                     String path = childNode.getParentPath();
-                    indexes.addIndex(CHILDREN_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 10, 100L,
-                                     PATH_PARAMETER, path);
+                    calculator.addIndex(CHILDREN_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 10, 100L, -1.0f,
+                                        PATH_PARAMETER, path);
                 } else if (constraint instanceof DescendantNode) {
                     DescendantNode descendantNode = (DescendantNode)constraint;
                     String path = descendantNode.getAncestorPath();
-                    indexes.addIndex(DESCENDANTS_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1000, 10000L,
-                                     PATH_PARAMETER, path);
+                    calculator.addIndex(DESCENDANTS_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1000, 10000L,
+                                        -1.0f, PATH_PARAMETER, path);
                 } else if (constraint instanceof Comparison) {
                     Comparison comparison = (Comparison)constraint;
                     if (comparison.operator() != Operator.EQUAL_TO) return;
@@ -169,8 +144,8 @@ public abstract class IndexPlanners {
                             path = (String)value;
                         }
                         if (path != null) {
-                            indexes.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L,
-                                             PATH_PARAMETER, path);
+                            calculator.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, -1.0f,
+                                                PATH_PARAMETER, path);
                         }
                     }
                     if (leftSide instanceof NodeId) {
@@ -189,8 +164,8 @@ public abstract class IndexPlanners {
                             id = (String)value;
                         }
                         if (id != null) {
-                            indexes.addIndex(NODE_BY_ID_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, ID_PARAMETER,
-                                             id);
+                            calculator.addIndex(NODE_BY_ID_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, -1.0f,
+                                                ID_PARAMETER, id);
                         }
                     }
                 }

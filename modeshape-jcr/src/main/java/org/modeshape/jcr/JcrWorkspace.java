@@ -46,6 +46,7 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
@@ -584,6 +585,12 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             }
         }
         return workspaceRegistry;
+    }
+
+    @Override
+    public IndexManager getIndexManager() throws RepositoryException {
+        session.checkLive();
+        return repository().queryManager().getIndexManager();
     }
 
     @Override

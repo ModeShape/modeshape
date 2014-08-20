@@ -27,6 +27,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import org.mapdb.BTreeKeySerializer;
+import org.mapdb.DataInput2;
+import org.mapdb.DataOutput2;
+import org.mapdb.Fun;
+import org.mapdb.Fun.Tuple2;
 import org.mapdb.Serializer;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.api.value.DateTime;
@@ -51,7 +55,7 @@ public class MapDB {
     public static interface Serializers {
         /**
          * Obtain a serializer for the given value type.
-         * 
+         *
          * @param type the type; may not be null
          * @return the serializer
          */
@@ -59,7 +63,7 @@ public class MapDB {
 
         /**
          * Obtain a serializer for the given key type.
-         * 
+         *
          * @param type the type; may not be null
          * @param comparator the comparator; may not be null
          * @param pack true if the serializer can/should pack keys together when possible, or false otherwise
@@ -74,6 +78,7 @@ public class MapDB {
     public static Serializers serializers( ValueFactories factories ) {
         return new SerializerSupplier(factories);
     }
+
     public final static Serializer<NodeKey> NODE_KEY_SERIALIZER = new NodeKeySerializer();
 
     protected final static Serializer<?> DEFAULT_SERIALIZER = Serializer.BASIC;
@@ -165,6 +170,9 @@ public class MapDB {
     private static class NodeKeySerializer implements Serializer<NodeKey>, Serializable {
         private static final long serialVersionUID = 1L;
 
+        protected NodeKeySerializer() {
+        }
+
         @Override
         public void serialize( DataOutput out,
                                NodeKey value ) throws IOException {
@@ -217,8 +225,13 @@ public class MapDB {
         }
     }
 
-    public static <T> BTreeKeySerializer<UniqueKey<T>> uniqueKeySerializer( Serializer<T> serializer,
-                                                                            Comparator<T> comparator ) {
+    public static <T> BTreeKeySerializer<UniqueKey<T>> uniqueKeyBTreeSerializer( Serializer<T> serializer,
+                                                                                 Comparator<T> comparator ) {
+        return new UniqueKeyBTreeSerializer<T>(serializer, uniqueKeyComparator(comparator));
+    }
+
+    public static <T> Serializer<UniqueKey<T>> uniqueKeySerializer( Serializer<T> serializer,
+                                                                    Comparator<T> comparator ) {
         return new UniqueKeySerializer<T>(serializer, uniqueKeyComparator(comparator));
     }
 
@@ -226,7 +239,21 @@ public class MapDB {
         return new UniqueKeyComparator<T>(comparator);
     }
 
-    public static final class UniqueKey<K> {
+    public static <A, B> Comparator<Fun.Tuple2<A, B>> tupleComparator( Comparator<A> aComparator,
+                                                                       Comparator<B> bComparator ) {
+        return new TupleComparator<A, B>(aComparator, bComparator);
+    }
+
+    public static <A, B> BTreeKeySerializer<Fun.Tuple2<A, B>> tupleBTreeSerializer( Comparator<A> aComparator,
+                                                                                    Serializer<A> aSerializer,
+                                                                                    Serializer<B> bSerializer,
+                                                                                    Comparator<Fun.Tuple2<A, B>> tupleComparator ) {
+        return new FunKeySerializer<>(aComparator, aSerializer, bSerializer, tupleComparator);
+    }
+
+    public static final class UniqueKey<K> implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         protected final K actualKey;
         protected final long id;
         private final int hc;
@@ -295,13 +322,51 @@ public class MapDB {
         }
     }
 
-    public static final class UniqueKeySerializer<K> extends BTreeKeySerializer<UniqueKey<K>> implements Serializable {
+    public static final class UniqueKeySerializer<K> implements Serializer<UniqueKey<K>>, Serializable {
         private static final long serialVersionUID = 1L;
         protected final transient Serializer<K> keySerializer;
         protected final transient Comparator<UniqueKey<K>> comparator;
 
         public UniqueKeySerializer( Serializer<K> keySerializer,
                                     Comparator<UniqueKey<K>> comparator ) {
+            this.keySerializer = keySerializer;
+            this.comparator = comparator;
+        }
+
+        @Override
+        public UniqueKey<K> deserialize( DataInput in,
+                                         int available ) throws IOException {
+            K actualKey = keySerializer.deserialize(in, available);
+            long id = in.readLong();
+            return new UniqueKey<K>(actualKey, id);
+        }
+
+        @Override
+        public void serialize( DataOutput out,
+                               UniqueKey<K> value ) throws IOException {
+            keySerializer.serialize(out, value.actualKey);
+            out.writeLong(value.id);
+        }
+
+        @Override
+        public int fixedSize() {
+            return -1;
+        }
+
+        @Override
+        public String toString() {
+            return "UniqueKeySerializer<" + keySerializer + ">";
+        }
+
+    }
+
+    public static final class UniqueKeyBTreeSerializer<K> extends BTreeKeySerializer<UniqueKey<K>> implements Serializable {
+        private static final long serialVersionUID = 1L;
+        protected final transient Serializer<K> keySerializer;
+        protected final transient Comparator<UniqueKey<K>> comparator;
+
+        public UniqueKeyBTreeSerializer( Serializer<K> keySerializer,
+                                         Comparator<UniqueKey<K>> comparator ) {
             this.keySerializer = keySerializer;
             this.comparator = comparator;
         }
@@ -340,7 +405,7 @@ public class MapDB {
 
         @Override
         public String toString() {
-            return "UniqueKeySerializer<" + keySerializer + ">";
+            return "UniqueKeyBTreeSerializer<" + keySerializer + ">";
         }
 
     }
@@ -357,7 +422,7 @@ public class MapDB {
 
     /**
      * A key serializer that just writes data without applying any compression.
-     * 
+     *
      * @param <K> the type to be serialized
      */
     public static final class DelegatingKeySerializer<K extends Comparable<K>> extends BTreeKeySerializer<K>
@@ -424,7 +489,7 @@ public class MapDB {
     /**
      * Applies delta packing on {@code java.lang.String}. This serializer splits consequent strings to two parts: shared prefix
      * and different suffix. Only suffix is than stored.
-     * 
+     *
      * @param <K> the type to be serialized
      */
     public static class PackedStringKeySerializer<K extends Comparable<K>> extends BTreeKeySerializer<K>
@@ -559,6 +624,142 @@ public class MapDB {
         @Override
         public String toString() {
             return "ValueSerializer<" + valueFactory.getPropertyType() + ">";
+        }
+    }
+
+    /**
+     * Applies delta compression on array of tuple. First tuple value may be shared between consequentive tuples, so only first
+     * occurrence is serialized. An example:
+     *
+     * <pre>
+     *     Value            Serialized as
+     *     -------------------------
+     *     Tuple(1, 1)       1, 1
+     *     Tuple(1, 2)          2
+     *     Tuple(1, 3)          3
+     *     Tuple(1, 4)          4
+     * </pre>
+     *
+     * @param <A> first tuple value
+     * @param <B> second tuple value
+     */
+    @SuppressWarnings( "unchecked" )
+    protected final static class FunKeySerializer<A, B> extends BTreeKeySerializer<Fun.Tuple2<A, B>> implements Serializable {
+
+        private static final long serialVersionUID = 0L;
+        protected final Comparator<A> aComparator;
+        protected final Serializer<A> aSerializer;
+        protected final Serializer<B> bSerializer;
+        protected final Comparator<Fun.Tuple2<A, B>> comparator;
+
+        /**
+         * Construct new Tuple2 Key Serializer. You may pass null for some value, In that case 'default' value will be used,
+         * Comparable comparator and Default Serializer from DB.
+         *
+         * @param aComparator comparator used for first tuple value
+         * @param aSerializer serializer used for first tuple value
+         * @param bSerializer serializer used for second tuple value
+         * @param comparator the comparator for the tuple
+         */
+        public FunKeySerializer( Comparator<A> aComparator,
+                                 Serializer<A> aSerializer,
+                                 Serializer<B> bSerializer,
+                                 Comparator<Fun.Tuple2<A, B>> comparator ) {
+            this.aComparator = aComparator;
+            this.aSerializer = aSerializer;
+            this.bSerializer = bSerializer;
+            this.comparator = comparator;
+        }
+
+        @Override
+        public void serialize( DataOutput out,
+                               int start,
+                               int end,
+                               Object[] keys ) throws IOException {
+            int acount = 0;
+            for (int i = start; i < end; i++) {
+                Fun.Tuple2<A, B> t = (Fun.Tuple2<A, B>)keys[i];
+                if (acount == 0) {
+                    // write new A
+                    aSerializer.serialize(out, t.a);
+                    // count how many A are following
+                    acount = 1;
+                    while (i + acount < end && aComparator.compare(t.a, ((Fun.Tuple2<A, B>)keys[i + acount]).a) == 0) {
+                        acount++;
+                    }
+                    DataOutput2.packInt(out, acount);
+                }
+                bSerializer.serialize(out, t.b);
+
+                acount--;
+            }
+        }
+
+        @Override
+        public Object[] deserialize( DataInput in,
+                                     int start,
+                                     int end,
+                                     int size ) throws IOException {
+            Object[] ret = new Object[size];
+            A a = null;
+            int acount = 0;
+
+            for (int i = start; i < end; i++) {
+                if (acount == 0) {
+                    // read new A
+                    a = aSerializer.deserialize(in, -1);
+                    acount = DataInput2.unpackInt(in);
+                }
+                B b = bSerializer.deserialize(in, -1);
+                ret[i] = Fun.t2(a, b);
+                acount--;
+            }
+            assert (acount == 0);
+
+            return ret;
+        }
+
+        @Override
+        public Comparator<Fun.Tuple2<A, B>> getComparator() {
+            return comparator;
+        }
+
+        @Override
+        public boolean equals( Object o ) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            FunKeySerializer<A, B> t = (FunKeySerializer<A, B>)o;
+            return Fun.eq(aComparator, t.aComparator) && Fun.eq(aSerializer, t.aSerializer) && Fun.eq(bSerializer, t.bSerializer);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = aComparator != null ? aComparator.hashCode() : 0;
+            result = 31 * result + (aSerializer != null ? aSerializer.hashCode() : 0);
+            result = 31 * result + (bSerializer != null ? bSerializer.hashCode() : 0);
+            return result;
+        }
+    }
+
+    protected final static class TupleComparator<A, B> implements Comparator<Fun.Tuple2<A, B>>, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final Comparator<A> aComparator;
+        private final Comparator<B> bComparator;
+
+        protected TupleComparator( Comparator<A> aComparator,
+                                   Comparator<B> bComparator ) {
+            this.aComparator = aComparator;
+            this.bComparator = bComparator;
+        }
+
+        @Override
+        public int compare( Tuple2<A, B> o1,
+                            Tuple2<A, B> o2 ) {
+            int i = aComparator.compare(o1.a, o2.a);
+            if (i != 0) return i;
+            i = bComparator.compare(o1.b, o2.b);
+            return i;
         }
     }
 

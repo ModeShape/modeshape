@@ -33,7 +33,7 @@ import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.PlanNode.Operation;
 import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
-import org.modeshape.jcr.spi.index.IndexCollector;
+import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 
 /**
@@ -41,7 +41,7 @@ import org.modeshape.jcr.spi.index.provider.IndexPlanner;
  * AND-ed constraints for the source (that is, the constraints in the {@link Type#SELECT} above the {@link Type#SOURCE} node but
  * below an {@link Type#ACCESS} node) and produce 0 or more indexes. These indexes are then added as {@link Type#INDEX} nodes
  * below the {@link Type#SOURCE} node.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 @Immutable
@@ -52,7 +52,7 @@ public class AddIndexes implements OptimizerRule {
     /**
      * The instance of the rule that uses the implicit indexes, like those for finding nodes (or children or descendants) based
      * upon a path.
-     * 
+     *
      * @return the rule; never null
      */
     public static AddIndexes implicitIndexes() {
@@ -61,7 +61,7 @@ public class AddIndexes implements OptimizerRule {
 
     /**
      * The instance of the rule that uses the supplied index planner.
-     * 
+     *
      * @param planners the index planners; should not be null
      * @return the new rule; never null
      */
@@ -97,7 +97,24 @@ public class AddIndexes implements OptimizerRule {
             });
             if (constraints.get() != null) {
                 // There were some constraints, so prepare to collect indexes ...
-                IndexCollector collector = new IndexCollector() {
+                assert source.getSelectors().size() == 1;
+                final SelectorName selectorName = source.getSelectors().iterator().next();
+                IndexCostCalculator calculator = new IndexCostCalculator() {
+                    @Override
+                    public String selectedNodeType() {
+                        return selectorName.getString();
+                    }
+
+                    @Override
+                    public Collection<Constraint> andedConstraints() {
+                        return constraints.get();
+                    }
+
+                    @Override
+                    public Map<String, Object> getVariables() {
+                        return context.getVariables();
+                    }
+
                     @Override
                     public void addIndex( String name,
                                           String workspaceName,
@@ -105,11 +122,12 @@ public class AddIndexes implements OptimizerRule {
                                           Collection<Constraint> constraints,
                                           int costEstimate,
                                           long cardinalityEstimate,
+                                          Float selectivityEstimate,
                                           Map<String, Object> parameters ) {
                         // Add a plan node for this index ...
                         PlanNode indexNode = new PlanNode(Type.INDEX, source.getSelectors());
                         IndexPlan indexPlan = new IndexPlan(name, workspaceName, providerName, constraints, costEstimate,
-                                                            cardinalityEstimate, parameters);
+                                                            cardinalityEstimate, selectivityEstimate, parameters);
                         indexNode.setProperty(Property.INDEX_SPECIFICATION, indexPlan);
                         // and add it under the SOURCE node ...
                         source.addLastChild(indexNode);
@@ -121,8 +139,10 @@ public class AddIndexes implements OptimizerRule {
                                           String providerName,
                                           Collection<Constraint> constraints,
                                           int costEstimate,
-                                          long cardinalityEstimate ) {
-                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate, null);
+                                          long cardinalityEstimate,
+                                          Float selectivityEstimate ) {
+                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate,
+                                 selectivityEstimate, null);
                     }
 
                     @Override
@@ -132,10 +152,12 @@ public class AddIndexes implements OptimizerRule {
                                           Collection<Constraint> constraints,
                                           int costEstimate,
                                           long cardinalityEstimate,
+                                          Float selectivityEstimate,
                                           String parameterName,
                                           Object parameterValue ) {
                         Map<String, Object> params = Collections.singletonMap(parameterName, parameterValue);
-                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate, params);
+                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate,
+                                 selectivityEstimate, params);
                     }
 
                     @Override
@@ -145,6 +167,7 @@ public class AddIndexes implements OptimizerRule {
                                           Collection<Constraint> constraints,
                                           int costEstimate,
                                           long cardinalityEstimate,
+                                          Float selectivityEstimate,
                                           String parameterName1,
                                           Object parameterValue1,
                                           String parameterName2,
@@ -152,13 +175,12 @@ public class AddIndexes implements OptimizerRule {
                         Map<String, Object> params = new HashMap<>();
                         params.put(parameterName1, parameterValue1);
                         params.put(parameterName2, parameterValue2);
-                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate, params);
+                        addIndex(name, workspaceName, providerName, constraints, costEstimate, cardinalityEstimate,
+                                 selectivityEstimate, params);
                     }
                 };
                 // And collect the indexes from the index planner ...
-                assert source.getSelectors().size() == 1;
-                SelectorName selectorName = source.getSelectors().iterator().next();
-                planners.applyIndexes(context, selectorName, constraints.get(), context.getIndexDefinitions(), collector);
+                planners.applyIndexes(context, calculator);
             }
         }
         return plan;

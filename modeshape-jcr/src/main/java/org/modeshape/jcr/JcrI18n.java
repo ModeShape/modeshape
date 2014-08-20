@@ -551,6 +551,11 @@ public final class JcrI18n {
     public static I18n cannotStopJournal;
     public static I18n journalHasNotCompletedReconciliation;
 
+    public static I18n localIndexProviderMustHaveDirectory;
+    public static I18n localIndexProviderDirectoryMustBeReadable;
+    public static I18n localIndexProviderDirectoryMustBeWritable;
+    public static I18n localIndexMustHaveOneColumnOfSpecificType;
+
     private JcrI18n() {
     }
 

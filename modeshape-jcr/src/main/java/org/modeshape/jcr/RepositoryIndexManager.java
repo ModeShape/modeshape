@@ -120,7 +120,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * Initialize this manager by calling {@link IndexProvider#initialize()} on each of the currently-registered providers.
-     * 
+     *
      * @return the information about the portions of the repository that need to be scanned to (re)build indexes; null if no
      *         scanning is required
      */
@@ -182,7 +182,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * Initialize the supplied provider.
-     * 
+     *
      * @param provider the provider; may not be null
      * @throws RepositoryException if there is a problem initializing the provider
      */
@@ -216,7 +216,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * Get the query index writer that will delegate to all registered providers.
-     * 
+     *
      * @return the query index writer instance; never null
      */
     IndexWriter getIndexWriter() {
@@ -225,7 +225,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * Get the query index writer that will delegate to only those registered providers with the given names.
-     * 
+     *
      * @param providerNames the names of the providers that require indexing
      * @return a query index writer instance; never null
      */
@@ -348,22 +348,28 @@ class RepositoryIndexManager implements IndexManager {
             // Write the definition to the system area ...
             system.store(defn, allowUpdate);
         }
+        // Save the changes ...
+        systemCache.save();
 
         // Refresh the immutable snapshot ...
         this.indexes = readIndexDefinitions();
     }
 
     @Override
-    public void unregisterIndex( String indexName ) throws NoSuchIndexException, RepositoryException {
-        IndexDefinition defn = indexes.getIndexDefinitions().get(indexName);
-        if (defn == null) {
-            throw new NoSuchIndexException(JcrI18n.indexDoesNotExist.text(indexName, repository.name()));
-        }
+    public void unregisterIndexes( String... indexNames ) throws NoSuchIndexException, RepositoryException {
+        if (indexNames == null || indexNames.length == 0) return;
 
         // Remove the definition from the system area ...
         SessionCache systemCache = repository.createSystemSession(context, false);
         SystemContent system = new SystemContent(systemCache);
-        system.remove(defn);
+        for (String indexName : indexNames) {
+            IndexDefinition defn = indexes.getIndexDefinitions().get(indexName);
+            if (defn == null) {
+                throw new NoSuchIndexException(JcrI18n.indexDoesNotExist.text(indexName, repository.name()));
+            }
+            system.remove(defn);
+        }
+        system.save();
 
         // Refresh the immutable snapshot ...
         this.indexes = readIndexDefinitions();
@@ -380,7 +386,7 @@ class RepositoryIndexManager implements IndexManager {
     /**
      * Get an immutable snapshot of the index definitions. This can be used by the query engine to determine which indexes might
      * be usable when quering a specific selector (node type).
-     * 
+     *
      * @return a snapshot of the index definitions at this moment; never null
      */
     public RepositoryIndexes getIndexes() {
@@ -463,9 +469,9 @@ class RepositoryIndexManager implements IndexManager {
                     if (removedPath.size() > 4) {
                         // It's a column definition being removed, so the index is changed ...
                         Name indexName = removedPath.getSegment(3).getName();
-                        changeInfoForProvider(changesByProviderName, providerName).changed(indexName);
+                        changeInfoForProvider(changesByProviderName, providerName).removed(indexName);
                     } else if (removedPath.size() > 3) {
-                        // Adding an index (or column definition), but all we care about is the name of the index
+                        // Removing an index (or column definition), but all we care about is the name of the index
                         Name indexName = removedPath.getSegment(3).getName();
                         changeInfoForProvider(changesByProviderName, providerName).removed(indexName);
                     } else if (removedPath.size() == 3) {
@@ -639,7 +645,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * An immutable view of the indexes defined for the repository.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     @Immutable
@@ -692,6 +698,11 @@ class RepositoryIndexManager implements IndexManager {
         }
 
         @Override
+        public boolean hasIndexDefinitions() {
+            return !indexByName.isEmpty();
+        }
+
+        @Override
         public Map<String, IndexDefinition> getIndexDefinitions() {
             return java.util.Collections.unmodifiableMap(indexByName);
         }
@@ -707,7 +718,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * An immutable set of provider names and non-overlapping workspace-path pairs.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     @Immutable
@@ -733,7 +744,7 @@ class RepositoryIndexManager implements IndexManager {
 
         /**
          * Determine if this has no providers or workspace-path pairs.
-         * 
+         *
          * @return true if this request is empty, or false otherwise
          */
         public boolean isEmpty() {
@@ -747,7 +758,7 @@ class RepositoryIndexManager implements IndexManager {
 
         /**
          * Get the set of provider names that are to be included in the scanning.
-         * 
+         *
          * @return the provider names; never null but possibly empty if {@link #isEmpty()} returns true
          */
         public Set<String> providerNames() {
@@ -760,7 +771,7 @@ class RepositoryIndexManager implements IndexManager {
      * can be safely combined using {@link #add(ScanningTasks)}, and immutable snapshots of the information can be obtained via
      * {@link #drain()} (which atomically empties the providers and workspace-path pairs into the immutable
      * {@link ScanningRequest}).
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     @ThreadSafe
@@ -770,7 +781,7 @@ class RepositoryIndexManager implements IndexManager {
 
         /**
          * Add all of the provider names and workspace-path pairs from the supplied scanning task.
-         * 
+         *
          * @param other the other scanning task; may be null
          * @return true if there is at least one workspace-path pair and provider, or false if there are none
          */
@@ -787,7 +798,7 @@ class RepositoryIndexManager implements IndexManager {
         /**
          * Atomically drain all of the provider names and workspace-path pairs from this object and return them in an immutable
          * {@link ScanningRequest}.
-         * 
+         *
          * @return the immutable set of provider names and workspace-path pairs; never null
          */
         public synchronized ScanningRequest drain() {
@@ -838,7 +849,7 @@ class RepositoryIndexManager implements IndexManager {
 
         /**
          * Obtain an {@link IndexFeedback} instance that can be used to gather feedback from the named provider.
-         * 
+         *
          * @param providerName the name of the index provider; may not be null
          * @return the custom IndexFeedback instance; never null
          */

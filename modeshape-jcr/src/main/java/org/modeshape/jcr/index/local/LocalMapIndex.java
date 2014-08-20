@@ -16,59 +16,79 @@
 
 package org.modeshape.jcr.index.local;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentMap;
+import javax.jcr.query.qom.Constraint;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.BTreeMap;
 import org.mapdb.Bind;
 import org.mapdb.DB;
-import org.mapdb.DB.BTreeMapMaker;
 import org.mapdb.Fun;
+import org.mapdb.Serializer;
 import org.modeshape.jcr.index.local.IndexValues.Converter;
 import org.modeshape.jcr.spi.index.IndexConstraints;
+import org.modeshape.jcr.value.ValueComparators;
 
 /**
+ * Abstract map-based index.
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  * @param <T> the type of value to be indexed
  * @param <V> the raw type of value to be added
  */
 abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
 
-    private final String name;
-    private final String workspace;
-    private final String providerName;
+    protected final String name;
+    protected final String workspace;
     protected final BTreeMap<T, String> keysByValue;
     protected final NavigableSet<Fun.Tuple2<String, T>> valuesByKey;
     protected final ConcurrentMap<String, Object> options;
     private final Converter<T> converter;
+    private final DB db;
+    protected final Comparator<T> comparator;
 
     LocalMapIndex( String name,
                    String workspaceName,
-                   String providerName,
                    DB db,
                    Converter<T> converter,
-                   BTreeKeySerializer<T> valueSerializer ) {
+                   BTreeKeySerializer<T> valueSerializer,
+                   Serializer<T> valueRawSerializer ) {
+        assert name != null;
+        assert workspaceName != null;
+        assert db != null;
+        assert converter != null;
+        assert valueSerializer != null;
         this.name = name;
         this.workspace = workspaceName;
-        this.providerName = providerName;
         this.converter = converter;
+        this.db = db;
         if (db.exists(name)) {
+            this.options = db.getHashMap(name + "/options");
             this.keysByValue = db.getTreeMap(name);
             this.valuesByKey = db.getTreeSet(name + "/inverse");
-            this.options = db.getHashMap(name + "/options");
         } else {
-            BTreeMapMaker maker = db.createTreeMap(name).counterEnable();
-            if (valueSerializer != null) maker.keySerializer(valueSerializer);
-            this.keysByValue = maker.make();
-            this.valuesByKey = db.createTreeSet(name + "/inverse").make();
             this.options = db.createHashMap(name + "/options").make();
+            this.keysByValue = db.createTreeMap(name).counterEnable().keySerializer(valueSerializer).make();
+            // Create the TreeSet used in the reverse mapping, but we have to set a comparator that works in terms of the
+            // Fun.Tuple2<String,T> ...
+            final Comparator<String> strComparator = ValueComparators.STRING_COMPARATOR;
+            final Serializer<String> strSerializer = Serializer.STRING;
+            final Comparator<T> valueComparator = valueSerializer.getComparator();
+            final Comparator<Fun.Tuple2<String, T>> revComparator = MapDB.tupleComparator(strComparator, valueComparator);
+            final BTreeKeySerializer<Fun.Tuple2<String, T>> revSerializer = MapDB.tupleBTreeSerializer(strComparator,
+                                                                                                       strSerializer,
+                                                                                                       valueRawSerializer,
+                                                                                                       revComparator);
+            this.valuesByKey = db.createTreeSet(name + "/inverse").comparator(revComparator).serializer(revSerializer).make();
         }
+        this.comparator = valueSerializer.getComparator();
 
         // Bind the map and the set together so the set is auto-updated as the map is changed ...
         Bind.mapInverse(this.keysByValue, this.valuesByKey);
     }
 
-    @Override
     public String getName() {
         return name;
     }
@@ -78,13 +98,8 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
     }
 
     @Override
-    public String getProviderName() {
-        return providerName;
-    }
-
-    @Override
-    public boolean supportsFullTextConstraints() {
-        return false;
+    public long estimateTotalCount() {
+        return keysByValue.sizeLong();
     }
 
     protected final Converter<T> converter() {
@@ -93,20 +108,33 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
 
     @Override
     public Results filter( IndexConstraints filter ) {
-        return Operations.createOperation(keysByValue, converter, filter.getConstraints());
+        return Operations.createFilter(keysByValue, converter, filter.getConstraints()).getResults();
+    }
+
+    @Override
+    public long estimateCardinality( Constraint constraint ) {
+        return Operations.createFilter(keysByValue, converter, Collections.singleton(constraint)).estimateCount();
     }
 
     @Override
     public void remove( String nodeKey ) {
-        // Final all of the T values (entry keys) for the given node key (entry values) ...
+        // Find all of the T values (entry keys) for the given node key (entry values) ...
         for (T key : Fun.filter(valuesByKey, nodeKey)) {
             keysByValue.remove(key);
         }
     }
 
     @Override
-    public void close() {
-        // do nothing by default ...
+    public void removeAll() {
+        keysByValue.clear();
+    }
+
+    @Override
+    public void shutdown( boolean destroyed ) {
+        if (destroyed) {
+            // Remove the database since the index was destroyed ...
+            db.delete(name);
+        }
     }
 
 }

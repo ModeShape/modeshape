@@ -222,7 +222,7 @@ public enum PropertyType {
      * <p>
      * Note that this method does <i>not</i> cast from one property type to another.
      * </p>
-     * 
+     *
      * @param value the property value
      * @return the value in canonical form
      */
@@ -265,7 +265,7 @@ public enum PropertyType {
 
     /**
      * Returns the JCR numeric constant which represents the current type.
-     * 
+     *
      * @return an {@code int} value
      * @see javax.jcr.PropertyType
      */
@@ -301,7 +301,7 @@ public enum PropertyType {
      * Discover the most appropriate {@link PropertyType} whose values can be assigned to variables or parameters of the supplied
      * type. This method does check whether the supplied {@link Class} is an array, in which case it just evalutes the
      * {@link Class#getComponentType() component type} of the array.
-     * 
+     *
      * @param clazz the class representing the type of a value or parameter; may not be null
      * @return the PropertyType that best represents the type whose values can be used as a value in the supplied class, or null
      *         if no matching PropertyType could be found
@@ -336,7 +336,7 @@ public enum PropertyType {
 
     /**
      * Return an iterator over all the property type enumeration literals.
-     * 
+     *
      * @return an immutable iterator
      */
     public static Iterator<PropertyType> iterator() {
@@ -344,7 +344,7 @@ public enum PropertyType {
     }
 
     public static PropertyType valueFor( String typeNameInAnyCase ) {
-        PropertyType type = PROPERTY_TYPE_BY_LOWERCASE_NAME.get(typeNameInAnyCase);
+        PropertyType type = PROPERTY_TYPE_BY_LOWERCASE_NAME.get(typeNameInAnyCase.toLowerCase());
         return type != null ? type : PropertyType.STRING;
     }
 

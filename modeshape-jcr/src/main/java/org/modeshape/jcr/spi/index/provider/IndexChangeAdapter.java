@@ -45,7 +45,7 @@ public class IndexChangeAdapter extends ChangeSetAdapter {
 
     /**
      * Index the specific node. This is called only by the reindexing operations.
-     * 
+     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param path the path of the node; may not be null

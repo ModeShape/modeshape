@@ -19,6 +19,7 @@ import java.util.concurrent.Future;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.query.QueryManager;
 
@@ -47,9 +48,18 @@ public interface Workspace extends javax.jcr.Workspace {
     public QueryManager getQueryManager() throws RepositoryException;
 
     /**
+     * Returns the <code>IndexManager</code> object that can be used to programmatically register and unregister index
+     * definitions.
+     *
+     * @return the <code>IndexManager</code> object.
+     * @throws RepositoryException if an error occurs.
+     */
+    public IndexManager getIndexManager() throws RepositoryException;
+
+    /**
      * Return a {@link RepositoryManager} that can be used to administer the Repository instance through which this workspace's
      * session was acquired.
-     * 
+     *
      * @return the {@link RepositoryManager} instance.
      * @throws AccessDeniedException if the caller does not have authorization to obtain the manager.
      * @throws RepositoryException if another error occurred.
@@ -59,7 +69,7 @@ public interface Workspace extends javax.jcr.Workspace {
 
     /**
      * Crawl and re-index the content in this workspace. This method blocks until the indexing is completed.
-     * 
+     *
      * @throws AccessDeniedException if the session does not have the privileges to reindex the workspace
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindexAsync()
@@ -70,7 +80,7 @@ public interface Workspace extends javax.jcr.Workspace {
 
     /**
      * Crawl and index the content starting at the supplied path in this workspace, to the designated depth.
-     * 
+     *
      * @param path the path of the content to be indexed
      * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
      * @throws AccessDeniedException if the session does not have the privileges to reindex this part of the workspace
@@ -83,7 +93,7 @@ public interface Workspace extends javax.jcr.Workspace {
 
     /**
      * Asynchronously crawl and re-index the content in this workspace.
-     * 
+     *
      * @return a future representing the asynchronous operation; never null
      * @throws AccessDeniedException if the session does not have the privileges to reindex the workspace
      * @throws RepositoryException if there is a problem with this session or workspace
@@ -95,7 +105,7 @@ public interface Workspace extends javax.jcr.Workspace {
 
     /**
      * Asynchronously crawl and index the content starting at the supplied path in this workspace, to the designated depth.
-     * 
+     *
      * @param path the path of the content to be indexed
      * @return a future representing the asynchronous operation; never null
      * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
