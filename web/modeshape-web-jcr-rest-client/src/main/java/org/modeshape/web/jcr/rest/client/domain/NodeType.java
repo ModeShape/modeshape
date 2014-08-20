@@ -40,8 +40,11 @@ import org.modeshape.web.jcr.rest.client.RestClientI18n;
 
 /**
  * The NodeType class is the business object for a ModeShape supported node type.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
 @Immutable
+@Deprecated
 public class NodeType implements IModeShapeObject, javax.jcr.nodetype.NodeType {
 
     /**

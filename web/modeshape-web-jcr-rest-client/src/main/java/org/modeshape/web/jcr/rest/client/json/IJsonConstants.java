@@ -26,7 +26,10 @@ package org.modeshape.web.jcr.rest.client.json;
 /**
  * The <code>IJsonConstants</code> interface provides JSON-specific constants used when JSON as a transport mechanism between the
  * REST client and the REST server.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public interface IJsonConstants {
 
     /**

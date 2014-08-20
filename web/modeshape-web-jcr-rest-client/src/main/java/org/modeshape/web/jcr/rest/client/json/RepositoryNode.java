@@ -35,7 +35,10 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
 /**
  * The <code>RepositoryNode</code> class is responsible for knowing how to create a URL for a repository and to parse a JSON
  * response into {@link Workspace workspace} objects.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public final class RepositoryNode extends JsonNode {
 
     private static final long serialVersionUID = 1L;

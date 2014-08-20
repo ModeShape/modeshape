@@ -29,7 +29,10 @@ import org.modeshape.common.annotation.Immutable;
 
 /**
  * An immutable representation of an abstract JCR ItemDefinition.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 @Immutable
 public abstract class ItemDefinition implements javax.jcr.nodetype.ItemDefinition {
 

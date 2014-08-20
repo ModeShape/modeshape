@@ -32,8 +32,11 @@ import org.modeshape.common.util.MimeTypeUtil;
 
 /**
  * The <code>Utils</code> class contains common utilities used by this project.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
 @SuppressWarnings( "deprecation" )
+@Deprecated
 public final class Utils {
 
     // ===========================================================================================================================

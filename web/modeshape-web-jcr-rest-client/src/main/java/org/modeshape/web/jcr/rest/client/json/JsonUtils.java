@@ -30,7 +30,10 @@ import java.net.URLEncoder;
 
 /**
  * The <code>JsonUtils</code> class provides utilities needed to work with the ModeShape REST server JSON API.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public final class JsonUtils {
 
     // ===========================================================================================================================

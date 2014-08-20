@@ -36,7 +36,10 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
 
 /**
  * The <code>IRestClient</code> interface is the API for all REST clients used by the Eclipse ModeShape plugin.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public interface IRestClient {
 
     /**

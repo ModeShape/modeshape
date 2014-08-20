@@ -25,7 +25,8 @@
  * The ModeShape REST Client is a lightweight, non-UI Maven project that interacts with the ModeShape REST server. An {@link org.modeshape.web.jcr.rest.client.IRestClient}
  * is used to publish and unpublish files to/from ModeShape {@link org.modeshape.web.jcr.rest.client.domain.Repository repository}
  * {@link org.modeshape.web.jcr.rest.client.domain.Workspace workspaces}.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
-
 package org.modeshape.web.jcr.rest.client;
 

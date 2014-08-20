@@ -5,6 +5,10 @@ import java.util.Collections;
 import java.util.Map;
 import org.modeshape.common.annotation.Immutable;
 
+/**
+ * @deprecated as of 3.8.1 this is no longer supported
+ */
+@Deprecated
 @Immutable
 public class QueryRow {
 

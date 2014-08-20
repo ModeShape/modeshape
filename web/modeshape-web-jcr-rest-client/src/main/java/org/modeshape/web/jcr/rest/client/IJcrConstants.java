@@ -28,7 +28,10 @@ import java.util.List;
 
 /**
  * The <code>IJcrContants</code> class provides constants for the commonly used JCR types and property identifiers.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public interface IJcrConstants {
 
     /**

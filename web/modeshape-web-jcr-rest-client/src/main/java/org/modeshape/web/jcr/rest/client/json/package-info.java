@@ -25,5 +25,7 @@
  * The ModeShape REST Client JSON package defines an implementation of an
  * {@link org.modeshape.web.jcr.rest.client.IRestClient ModeShape REST client}. Classes in this package are responsible for creating 
  * JSON requests and parsing JSON responses from the server into domain objects.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
 package org.modeshape.web.jcr.rest.client.json;

@@ -39,7 +39,10 @@ import org.modeshape.web.jcr.rest.client.domain.Server;
 /**
  * The <code>ServerNode</code> class is responsible for knowing how to create a URL for a server, create a URL to obtain a
  * server's repositories, and parse a JSON response into {@link Repository repository} objects.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public final class ServerNode extends JsonNode {
 
     private static final long serialVersionUID = 1L;

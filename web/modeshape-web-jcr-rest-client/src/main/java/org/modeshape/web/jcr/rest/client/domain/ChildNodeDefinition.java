@@ -30,8 +30,11 @@ import org.modeshape.common.annotation.Immutable;
 
 /**
  * An immutable representation of a JCR PropertyDefinition.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
 @Immutable
+@Deprecated
 public class ChildNodeDefinition extends ItemDefinition implements javax.jcr.nodetype.NodeDefinition {
 
     private final Id id;

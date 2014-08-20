@@ -32,7 +32,10 @@ import org.modeshape.web.jcr.rest.client.RestClientI18n;
 
 /**
  * The Repository class is the business object for a ModeShape repository.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 @Immutable
 public class Repository implements IModeShapeObject {
 

@@ -40,7 +40,10 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
 /**
  * The <code>FileNode</code> class is responsible for knowing how to create a URL for a file, create a JSON representation of a
  * file, and to create the appropriate JCR nodes for a file.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 @Immutable
 public final class FileNode extends JsonNode {
 
