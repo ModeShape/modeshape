@@ -31,8 +31,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
+import org.apache.http.HttpHost;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.Ignore;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.IoUtil;
@@ -44,319 +46,354 @@ import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
  *
  * @author Horia Chiorean
  */
-public class ModeShapeRestServiceTest extends JcrResourcesTest {
+public class ModeShapeRestServiceTest extends AbstractRestTest {
+
+    private static final HttpHost HOST = new HttpHost("localhost", 8090, "http");
+    private static final String SERVER_CONTEXT = "/resources";
+    private static final String USERNAME = "dnauser";
+    private static final String PASSWORD = "password";
+
+    /**
+     * The name of the repository is dictated by the "repository-config.json" configuration file loaded by the
+     * "org.modeshape.jcr.JCR_URL" parameter in the "web.xml" file.
+     */
+    private static final String REPOSITORY_NAME = "repo";
+    private static final String TEST_NODE = "testNode";
+    private static final String CHILDREN_KEY = "children";
+    private static final String ID_KEY = "id";
+
+    @Before
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        setAuthCredentials(USERNAME, PASSWORD);
+    }
+
+    @After
+    public void afterEach() throws Exception {
+        doDelete(itemsUrl(TEST_NODE));
+        super.afterEach();
+    }
+
+    @Override
+    protected HttpHost getHost() {
+        return HOST;
+    }
 
     @Override
     protected String getServerContext() {
-        return "/resources";
+        return SERVER_CONTEXT;
     }
 
-    @Override
-    protected String contentRoot() {
-        return "v2/get/root.json";
+    protected String itemsUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.ITEMS_METHOD_NAME, additionalPathSegments);
     }
 
-    @Override
-    protected String workspaces() {
-        return "v2/get/workspaces.json";
+    protected String nodesUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.NODES_METHOD_NAME, additionalPathSegments);
     }
 
-    @Override
-    protected String rootNode() {
-        return "v2/get/root_node.json";
+    protected String queryUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.QUERY_METHOD_NAME, additionalPathSegments);
     }
 
-    @Override
-    protected String rootNodeDepthOne() {
-        return "v2/get/root_node_depth1.json";
+    protected String uploadUrl(String...additionalPathSegments) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.UPLOAD_METHOD_NAME, additionalPathSegments);
     }
 
-    @Override
-    protected String systemNodeDepthOne() {
-        return "v2/get/system_node_depth1.json";
+    @Test
+    public void shouldNotServeContentToUnauthorizedUser() throws Exception {
+        setAuthCredentials("dnauser", "invalidpassword");
+        doGet().isUnauthorized();
     }
 
-    @Override
-    protected String ntBaseNodeType() {
-        return "v2/get/nt_base.json";
+    @Test
+    public void shouldNotServeContentToUserWithoutConnectRole() throws Exception {
+        setAuthCredentials("unauthorizeduser", "password");
+        doGet().isUnauthorized();
     }
 
-    @Override
-    protected String ntBaseDepthFour() {
-        return "v2/get/nt_base_depth4.json";
+    @Test
+    public void shouldServeContentAtRoot() throws Exception {
+        doGet().isOk().isJSONObjectLikeFile("get/root.json");
     }
 
-    @Override
-    protected String systemPrimaryTypeProperty() throws Exception {
-        return "v2/get/system_primaryType_property.json";
+    @Test
+    public void shouldServeListOfWorkspacesForValidRepository() throws Exception {
+        doGet(REPOSITORY_NAME).isOk().isJSONObjectLikeFile("get/workspaces.json");
     }
 
-    @Override
-    protected String nodeWithoutPrimaryTypeRequest() {
-        return "v2/post/node_without_primaryType_request.json";
+    @Test
+    public void shouldReturnErrorForInvalidRepository() throws Exception {
+        doGet("XXX").isNotFound().isJSON();
     }
 
-    @Override
-    protected String nodeWithoutPrimaryTypeResponse() {
-        return "v2/post/node_without_primaryType_response.json";
+    @Test
+    public void shouldRetrieveRootNodeForValidRepository() throws Exception {
+        doGet(itemsUrl()).isOk().isJSONObjectLikeFile("get/root_node.json");
     }
 
-    @Override
-    protected String differentPropertyTypesRequest() {
-        return "v2/post/node_different_property_types_request.json";
+    @Test
+    public void shouldRetrieveRootNodeWhenDepthSet() throws Exception {
+        doGet(itemsUrl() + "?depth=1").isOk().isJSONObjectLikeFile("get/root_node_depth1.json");
     }
 
-    @Override
-    protected String differentPropertyTypesResponse() {
-        return "v2/post/node_different_property_types_response.json";
+    @Test
+    public void shouldRetrieveSystemNodeWithDepthOne() throws Exception {
+        doGet(itemsUrl("jcr:system") + "?depth=1").isOk().isJSONObjectLikeFile("get/system_node_depth1.json");
     }
 
-    @Override
-    protected String nodeWithPrimaryTypeRequest() {
-        return "v2/post/node_without_primaryType_request.json";
+    @Test
+    public void shouldRetrieveNtBaseItems() throws Exception {
+        doGet(itemsUrl("jcr:system/jcr:nodeTypes/nt:base")).isOk().isJSONObjectLikeFile("get/nt_base.json");
     }
 
-    @Override
-    protected String nodeWithPrimaryTypeResponse() {
-        return "v2/post/node_without_primaryType_response.json";
+    @Test
+    public void shouldRetrieveNtBaseDepthFour() throws Exception {
+        doGet(itemsUrl("jcr:system/jcr:nodeTypes/nt:base") + "?depth=4").isOk().isJSONObjectLikeFile("get/nt_base_depth4.json");
     }
 
-    @Override
-    protected String nodeWithMixinRequest() {
-        return "v2/post/node_with_mixin_request.json";
+    @Test
+    public void shouldNotRetrieveNonExistentNode() throws Exception {
+        doGet(itemsUrl("foo")).isNotFound().isJSON();
     }
 
-    @Override
-    protected String nodeWithMixinResponse() {
-        return "v2/post/node_with_mixin_response.json";
+    @Test
+    public void shouldNotRetrieveNonExistentProperty() throws Exception {
+        doGet(itemsUrl("jcr:system/foobar")).isNotFound().isJSON();
     }
 
-    @Override
-    protected String nodeInvalidPrimaryTypeRequest() {
-        return "v2/post/node_invalid_primaryType_request.json";
+    @Test
+    public void shouldRetrieveProperty() throws Exception {
+        doGet(itemsUrl("jcr:system/jcr:primaryType")).isOk().isJSONObjectLikeFile("get/system_primaryType_property.json");
     }
 
-    @Override
-    protected String nodeHierarchyRequest() {
-        return "v2/post/node_hierarchy_request.json";
+    @Test
+    public void shouldPostNodeToValidPathWithPrimaryType() throws Exception {
+        doPost("post/node_without_primaryType_request.json", itemsUrl(TEST_NODE))
+                .isCreated()
+                .isJSONObjectLikeFile("post/node_without_primaryType_response.json");
     }
 
-    @Override
-    protected String nodeHierarchyResponse() {
-        return "v2/post/node_hierarchy_response.json";
+    @Test
+    public void shouldPostNodeToValidPathWithoutPrimaryType() throws Exception {
+        doPost("post/node_without_primaryType_request.json", itemsUrl(TEST_NODE))
+                .isCreated()
+                .isJSONObjectLikeFile("post/node_without_primaryType_response.json");
     }
 
-    @Override
-    protected String nodeHierarchyInvalidTypeRequest() {
-        return "v2/post/node_hierarchy_invalidType_request.json";
+    @Test
+    @FixFor( "MODE-1950" )
+    public void shouldConvertValueTypesFromJSONPrimitives() throws Exception {
+        doPost("post/node_different_property_types_request.json", itemsUrl(TEST_NODE))
+                .isCreated()
+                .isJSONObjectLikeFile("post/node_different_property_types_response.json");
     }
 
-    @Override
-    protected String addMixin() {
-        return "v2/put/add_mixin.json";
+    @Test
+    public void shouldPostNodeToValidPathWithMixinTypes() throws Exception {
+        doPost("post/node_with_mixin_request.json", itemsUrl(TEST_NODE))
+                .isCreated()
+                .isJSONObjectLikeFile("post/node_with_mixin_response.json");
+        doGet(itemsUrl(TEST_NODE))
+                .isOk()
+                .isJSONObjectLikeFile("post/node_with_mixin_response.json");
     }
 
-    @Override
-    protected String removeMixins() {
-        return "v2/put/remove_mixins.json";
+    @Test
+    public void shouldNotPostNodeWithInvalidParentPath() throws Exception {
+        doPost("post/node_without_primaryType_request.json", itemsUrl("foo/bar")).isNotFound();
     }
 
-    @Override
-    protected String nodeWithMixin() {
-        return "v2/put/node_with_mixin.json";
+    @Test
+    public void shouldNotPostNodeWithInvalidPrimaryType() throws Exception {
+        doPost("post/node_invalid_primaryType_request.json", itemsUrl(TEST_NODE)).isNotFound();
+        doGet(itemsUrl(TEST_NODE)).isNotFound();
+    }
+    @Test
+    public void shouldPostNodeHierarchy() throws Exception {
+        doPost("post/node_hierarchy_request.json", itemsUrl(TEST_NODE)).isCreated();
+
+        // Make sure that we can retrieve the node with a GET
+        doGet(itemsUrl(TEST_NODE) + "?depth=1")
+                .isOk()
+                .isJSONObjectLikeFile("post/node_hierarchy_response.json");
     }
 
-    @Override
-    protected String nodeWithoutMixins() {
-        return "v2/put/node_without_mixins.json";
+    @Test
+    public void shouldFailWholeTransactionIfOneNodeIsBad() throws Exception {
+        doPost("post/node_hierarchy_invalidType_request.json", itemsUrl(TEST_NODE)).isNotFound();
+        doGet(itemsUrl(TEST_NODE) + "?depth=1").isNotFound();
     }
 
-    @Override
-    protected String binaryPropertyEdit() {
-        return "v2/put/binary_property_edit.json";
+    @Test
+    public void shouldNotDeleteNonExistentItem() throws Exception {
+        doDelete(itemsUrl("invalidItemForDelete")).isNotFound();
     }
 
-    @Override
-    protected String nodeWithBinaryProperty() {
-        return "v2/put/node_with_binary_property.json";
+    @Test
+    public void shouldDeleteExistingNode() throws Exception {
+        doPost("post/node_without_primaryType_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doGet(itemsUrl(TEST_NODE)).isOk();
+        doDelete(itemsUrl(TEST_NODE)).isDeleted();
+        doGet(itemsUrl(TEST_NODE)).isNotFound();
     }
 
-    @Override
-    protected String binaryPropertyName() {
-        return "testProperty";
+    @Test
+    public void shouldDeleteExistingProperty() throws Exception {
+        doPost("put/node_with_property.json", itemsUrl(TEST_NODE)).isCreated();
+        doGet(itemsUrl(TEST_NODE, "testProperty")).isOk();
+        doDelete(itemsUrl(TEST_NODE, "testProperty")).isDeleted();
+        doGet(itemsUrl(TEST_NODE, "testProperty")).isNotFound();
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile("put/node_without_property.json");
     }
 
-    @Override
-    protected String nodeBinaryPropertyAfterEdit() {
-        return "v2/put/node_with_binary_property_after_edit.json";
+    @Test
+    public void shouldNotBeAbleToPutAtInvalidPath() throws Exception {
+        doPut("put/property_edit.json", itemsUrl("nonexistantNode")).isNotFound();
     }
 
-    @Override
-    protected String nodeWithProperty() {
-        return "v2/put/node_with_property.json";
+    @Test
+    public void shouldBeAbleToPutValueToProperty() throws Exception {
+        doPost("put/node_with_property.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("put/property_edit.json", itemsUrl(TEST_NODE, "testProperty"))
+                .isOk()
+                .isJSONObjectLikeFile("put/property_after_edit.json");
+    }
+    @Test
+    public void shouldBeAbleToPutBinaryValueToProperty() throws Exception {
+        doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("put/binary_property_edit.json", itemsUrl(TEST_NODE, "testProperty")).isOk();
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile("put/node_with_binary_property_after_edit.json");
     }
 
-    @Override
-    protected String nodeWithoutProperty() {
-        return "v2/put/node_without_property.json";
+    @Test
+    public void shouldBeAbleToPutPropertiesToNode() throws Exception {
+        doPost("put/node_with_properties.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("put/properties_edit.json", itemsUrl(TEST_NODE)).isOk();
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile("put/node_with_properties_after_edit.json");
     }
 
-    @Override
-    protected String propertyEdit() {
-        return "v2/put/property_edit.json";
+    @Test
+    public void shouldBeAbleToAddAndRemoveMixinTypes() throws Exception {
+        doPost("put/node_with_properties.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("put/add_mixin.json", itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile("put/node_with_mixin.json");
+        doPut("put/remove_mixins.json", itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile("put/node_without_mixins.json");
     }
 
-    @Override
-    protected String nodeWithPropertyAfterEdit() {
-        return "v2/put/property_after_edit.json";
+    @Test
+    @FixFor( "MODE-1950" )
+    public void shouldBeAbleToRemoveMixinByRemovingProperties() throws Exception {
+        doPost("put/publish_area.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("put/publish_area_invalid_update.json", itemsUrl(TEST_NODE)).isBadRequest();
+        doPut("put/publish_area_valid_update.json", itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile("put/publish_area_response.json");
     }
 
-    @Override
-    protected String nodeWithProperties() {
-        return "v2/put/node_with_properties.json";
+
+    @Test
+    public void shouldRetrieveDataFromXPathQuery() throws Exception {
+        doPost("query/query_node.json", itemsUrl(TEST_NODE)).isCreated();
+        xpathQuery("//" + TEST_NODE, queryUrl()).isOk().isJSON().isJSONObjectLikeFile("query/single_node_xpath.json");
     }
 
-    @Override
-    protected String nodeWithPropertiesAfterEdit() {
-        return "v2/put/node_with_properties_after_edit.json";
+    @Test
+    public void shouldRespectQueryOffsetAndLimit() throws Exception {
+        String queryNodeFile = "query/query_node.json";
+
+        doPost(queryNodeFile, itemsUrl(TEST_NODE)).isCreated();
+        doPost(queryNodeFile, itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNodeFile, itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNodeFile, itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNodeFile, itemsUrl(TEST_NODE, "child")).isCreated();
+
+        String query = "//element(child) order by @foo, @jcr:path";
+        xpathQuery(query, queryUrl() + "?offset=1&limit=2").isOk().isJSON().isJSONObjectLikeFile("query/query_result_offset_and_limit.json");
     }
 
-    @Override
-    protected String propertiesEdit() {
-        return "v2/put/properties_edit.json";
-    }
+    @Test
+    public void shouldAllowJcrSql2Query() throws Exception {
+        String queryNodeFile = "query/query_node.json";
 
-    @Override
-    protected String publishArea() {
-        return "v2/put/publish_area.json";
-    }
+        doPost(queryNodeFile, itemsUrl(TEST_NODE)).isCreated();
+        doPost(queryNodeFile, itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNodeFile, itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNodeFile, itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNodeFile, itemsUrl(TEST_NODE, "child")).isCreated();
 
-    @Override
-    protected String publishAreaInvalidUpdate() {
-        return "v2/put/publish_area_invalid_update.json";
-    }
-
-    @Override
-    protected String publishAreaResponse() {
-        return "v2/put/publish_area_response.json";
-    }
-
-    @Override
-    protected String publishAreaValidUpdate() {
-        return "v2/put/publish_area_valid_update.json";
-    }
-
-    @Override
-    protected String queryNode() {
-        return "v2/query/query_node.json";
-    }
-
-    @Override
-    protected String singleNodeXPath() {
-        return "v2/query/single_node_xpath.json";
-    }
-
-    @Override
-    protected String queryResultOffsetAndLimit() {
-        return "v2/query/query_result_offset_and_limit.json";
-    }
-
-    @Override
-    protected String jcrSQL2Result() {
-        return "v2/query/query_result_jcrSql2.json";
-    }
-
-    protected String nodeWithMixinAfterPropsRequest() {
-        return "v2/post/node_with_mixin_after_props_request.json";
-    }
-
-    protected String nodeWithMixinAfterPropsResponse() {
-        return "v2/post/node_with_mixin_after_props_response.json";
-    }
-
-    @Override
-    @Ignore( "Ignored because the deprecated parameter isn't supported anymore" )
-    public void shouldRetrieveRootNodeWhenDeprecatedDepthSet() throws Exception {
+        String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "') ORDER BY [jcr:path]";
+        jcrSQL2Query(query, queryUrl()).isOk().isJSON().isJSONObjectLikeFile("query/query_result_jcrSql2.json");
     }
 
     @Test
     public void shouldRetrieveBinaryPropertyValue() throws Exception {
-        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
-        Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk()
-                                                                             .hasMimeType(MediaType.TEXT_PLAIN)
-                                                                             .hasContentDisposition(
-                                                                                     RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX
-                                                                                     + TEST_NODE
-                                                                                                   );
-
+        doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
+        Response response = doGet(binaryUrl(TEST_NODE, "testProperty"))
+                .isOk()
+                .hasMimeType(MediaType.TEXT_PLAIN)
+                .hasContentDisposition(RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX + TEST_NODE);
         assertEquals("testValue", response.contentAsString());
-    }
-
-    private String newBinaryProperty() {
-        return "v2/post/new_binary_property_response.json";
     }
 
     @Test
     public void shouldRetrieveBinaryPropertyValueWithMimeTypeAndContentDisposition() throws Exception {
-        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
         String mimeType = MediaType.TEXT_XML;
         String contentDisposition = "inline;filename=TestFile.txt";
         String urlParams = "?mimeType=" + RestHelper.URL_ENCODER.encode(mimeType) + "&contentDisposition="
                            + RestHelper.URL_ENCODER.encode(contentDisposition);
-        doGet(binaryUrl(TEST_NODE, binaryPropertyName()) + urlParams).isOk()
+        doGet(binaryUrl(TEST_NODE, "testProperty") + urlParams).isOk()
                                                                      .hasMimeType(mimeType)
                                                                      .hasContentDisposition(contentDisposition);
     }
 
     @Test
     public void shouldReturnNotFoundForInvalidBinaryProperty() throws Exception {
-        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
         doGet(binaryUrl(TEST_NODE, "invalid")).isNotFound();
     }
 
     @Test
     public void shouldReturnNotFoundForNonBinaryProperty() throws Exception {
-        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
         doGet(binaryUrl(TEST_NODE, "jcr:primaryType")).isNotFound();
     }
 
     @Test
     public void shouldCreateBinaryProperty() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPost(fileStream("v2/post/binary.pdf"), binaryUrl(TEST_NODE, binaryPropertyName())).isCreated()
-                                                                                            .isJSONObjectLikeFile(
-                                                                                                    newBinaryProperty());
-        Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+        doPost(fileStream("post/binary.pdf"), binaryUrl(TEST_NODE, "testProperty"))
+                .isCreated()
+                .isJSONObjectLikeFile("post/new_binary_property_response.json");
+        Response response = doGet(binaryUrl(TEST_NODE, "testProperty")).isOk();
 
-        byte[] expectedBinaryContent = IoUtil.readBytes(fileStream("v2/post/binary.pdf"));
+        byte[] expectedBinaryContent = IoUtil.readBytes(fileStream("post/binary.pdf"));
         assertArrayEquals(expectedBinaryContent, response.contentAsBytes());
     }
 
     @Test
     public void shouldUpdateBinaryPropertyViaPost() throws Exception {
-        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
 
         String otherBinaryValue = String.valueOf(System.currentTimeMillis());
-        doPost(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+        doPost(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, "testProperty")).isOk();
 
-        Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+        Response response = doGet(binaryUrl(TEST_NODE, "testProperty")).isOk();
         assertEquals(otherBinaryValue, response.contentAsString());
     }
 
     @Test
     public void shouldUpdateBinaryPropertyViaPut() throws Exception {
-        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
 
         String otherBinaryValue = String.valueOf(System.currentTimeMillis());
-        doPut(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+        doPut(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, "testProperty")).isOk();
 
-        Response response = doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+        Response response = doGet(binaryUrl(TEST_NODE, "testProperty")).isOk();
         assertEquals(otherBinaryValue, response.contentAsString());
     }
 
     @Test
     public void shouldNotUpdateNonExistingBinaryPropertyViaPut() throws Exception {
-        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
 
         String otherBinaryValue = String.valueOf(System.currentTimeMillis());
         doPut(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, "invalidProp")).isNotFound();
@@ -365,15 +402,15 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     public void shouldCreateBinaryValueViaMultiPartRequest() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPostMultiPart("v2/post/binary.pdf",
+        doPostMultiPart("post/binary.pdf",
                         FileUploadForm.PARAM_NAME,
-                        binaryUrl(TEST_NODE, binaryPropertyName()),
-                        MediaType.APPLICATION_OCTET_STREAM).isCreated().isJSONObjectLikeFile(newBinaryProperty());
+                        binaryUrl(TEST_NODE, "testProperty"),
+                        MediaType.APPLICATION_OCTET_STREAM).isCreated().isJSONObjectLikeFile("post/new_binary_property_response.json");
     }
 
     @Test
     public void shouldRetrieveNtBaseNodeType() throws Exception {
-        doGet(nodeTypesUrl("nt:base")).isOk().isJSONObjectLikeFile("v2/get/nt_base_nodeType_response.json");
+        doGet(nodeTypesUrl("nt:base")).isOk().isJSONObjectLikeFile("get/nt_base_nodeType_response.json");
     }
 
     @Test
@@ -383,52 +420,44 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
 
     @Test
     public void shouldImportCNDFile() throws Exception {
-        doPost(fileStream(nodeTypesCND()), nodeTypesUrl()).isOk().isJSONArrayLikeFile(cndImportResponse());
-    }
-
-    private String cndImportResponse() {
-        return "v2/post/cnd_import_response.json";
-    }
-
-    private String nodeTypesCND() {
-        return "v2/post/node_types.cnd";
+        doPost(fileStream("post/node_types.cnd"), nodeTypesUrl()).isOk().isJSONArrayLikeFile("post/cnd_import_response.json");
     }
 
     @Test
     public void shouldImportCNDFileViaMultiPartRequest() throws Exception {
-        doPostMultiPart(nodeTypesCND(), FileUploadForm.PARAM_NAME, nodeTypesUrl(), MediaType.TEXT_PLAIN)
+        doPostMultiPart("post/node_types.cnd", FileUploadForm.PARAM_NAME, nodeTypesUrl(), MediaType.TEXT_PLAIN)
                 .isOk()
-                .isJSONArrayLikeFile(cndImportResponse());
+                .isJSONArrayLikeFile("post/cnd_import_response.json");
     }
 
     @Test
     public void importingCNDViaWrongHTMLElementNameShouldFail() throws Exception {
-        doPostMultiPart(nodeTypesCND(), "invalidHTML", nodeTypesUrl(), MediaType.TEXT_PLAIN).isBadRequest();
+        doPostMultiPart("post/node_types.cnd", "invalidHTML", nodeTypesUrl(), MediaType.TEXT_PLAIN).isBadRequest();
     }
 
     @Test
     public void shouldCreateMultipleNodes() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk()
-                                                                 .isJSONArrayLikeFile("v2/post/multiple_nodes_response.json");
-        doGet(itemsUrl(TEST_NODE + "/child[2]")).isJSONObjectLikeFile("v2/get/node_with_sns_children.json");
+        doPost("post/multiple_nodes_request.json", itemsUrl()).isOk()
+                                                                 .isJSONArrayLikeFile("post/multiple_nodes_response.json");
+        doGet(itemsUrl(TEST_NODE + "/child[2]")).isJSONObjectLikeFile("get/node_with_sns_children.json");
     }
 
     @Test
     public void shouldEditMultipleNodes() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
-        doPut("v2/put/multiple_nodes_edit_request.json", itemsUrl()).isOk()
-                                                                    .isJSONArrayLikeFile(
-                                                                            "v2/put/multiple_nodes_edit_response.json");
+        doPost("post/multiple_nodes_request.json", itemsUrl()).isOk();
+        doPut("put/multiple_nodes_edit_request.json", itemsUrl())
+                .isOk()
+                .isJSONArrayLikeFile("put/multiple_nodes_edit_response.json");
         // System.out.println("*****  GET: \n" + doGet(itemsUrl(TEST_NODE)));
     }
 
     @Test
     public void shouldDeleteMultipleNodes() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
-        doDelete("v2/delete/multiple_nodes_delete.json", itemsUrl()).isOk();
+        doPost("post/multiple_nodes_request.json", itemsUrl()).isOk();
+        doDelete("delete/multiple_nodes_delete.json", itemsUrl()).isOk();
     }
 
     private String binaryUrl( String... additionalPathSegments ) {
@@ -449,7 +478,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         // System.out.println("**** GET-BY-ID: \n" + response);
 
         // Update by ID ...
-        response = doPut(nodeWithBinaryProperty(), nodesUrl(id)).isOk().isJSONObjectLikeFile(nodeBinaryPropertyAfterEdit());
+        response = doPut("put/node_with_binary_property.json", nodesUrl(id)).isOk().isJSONObjectLikeFile("put/node_with_binary_property_after_edit.json");
         // System.out.println("**** GET-BY-ID: \n" + response);
 
         // Delete by ID ...
@@ -460,9 +489,10 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     @FixFor("MODE-1816")
     public void shouldAllowPostingNodeWithMixinAndPrimaryTypesPropertiesAfterProperties() throws Exception {
-        doPost(nodeWithMixinAfterPropsRequest(), itemsUrl(TEST_NODE)).isCreated()
-                                                                     .isJSONObjectLikeFile(nodeWithMixinAfterPropsResponse());
-        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeWithMixinAfterPropsResponse());
+        doPost("post/node_with_mixin_after_props_request.json", itemsUrl(TEST_NODE))
+                .isCreated()
+                .isJSONObjectLikeFile("post/node_with_mixin_after_props_response.json");
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile("post/node_with_mixin_after_props_response.json");
     }
 
     @Test
@@ -502,10 +532,10 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
          *   - child2 [prop="child2"]
          *   - child3 [prop="child3"]
          */
-        JSONObject nodeWithHierarchyRequest = readJson("v2/post/node_multiple_children_request.json");
+        JSONObject nodeWithHierarchyRequest = readJson("post/node_multiple_children_request.json");
 
         //replace in the original request node paths with IDs
-        JSONObject children = doPost(nodeWithHierarchyRequest, itemsUrl(TEST_NODE)).isCreated().children();
+        JSONObject children = doPost(nodeWithHierarchyRequest, itemsUrl(TEST_NODE)).isCreated().json().getJSONObject(CHILDREN_KEY);
         String child1Id = children.getJSONObject("child1").getString(ID_KEY);
         String child2Id = children.getJSONObject("child2").getString(ID_KEY);
         String child3Id = children.getJSONObject("child3").getString(ID_KEY);
@@ -541,7 +571,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
          *   - child2
          *   - child3
          */
-        doPost("v2/post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPost("post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isCreated();
 
         /**
          * testNode
@@ -549,7 +579,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
          *   - child2
          *   - child1
          */
-        JSONObject children = doPut("v2/put/node_multiple_children_reorder1.json", itemsUrl(TEST_NODE)).isOk().children();
+        JSONObject children = doPut("put/node_multiple_children_reorder1.json", itemsUrl(TEST_NODE)).isOk().json().getJSONObject(CHILDREN_KEY);
 
         List<String> actualOrder = new ArrayList<String>();
         for (Iterator<?> iterator = children.keys(); iterator.hasNext(); ) {
@@ -563,7 +593,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
          *   - child3
          *   - child1
          */
-        children = doPut("v2/put/node_multiple_children_reorder2.json", itemsUrl(TEST_NODE)).isOk().children();
+        children = doPut("put/node_multiple_children_reorder2.json", itemsUrl(TEST_NODE)).isOk().json().getJSONObject(CHILDREN_KEY);
         actualOrder = new ArrayList<String>();
         for (Iterator<?> iterator = children.keys(); iterator.hasNext(); ) {
             actualOrder.add(iterator.next().toString());
@@ -581,15 +611,17 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
          *   - child3
          */
         try {
-            JSONObject children = doPost("v2/post/node_multiple_children_request.json", itemsUrl("node1")).isCreated()
-                                                                                                          .children();
+            JSONObject children = doPost("post/node_multiple_children_request.json", itemsUrl("node1"))
+                    .isCreated()
+                    .json()
+                    .getJSONObject(CHILDREN_KEY);
             String child2Id = children.getJSONObject("child2").getString(ID_KEY);
 
             /**
              * node2
              *   - childNode
              */
-            JSONObject request = readJson("v2/post/node_hierarchy_request.json");
+            JSONObject request = readJson("post/node_hierarchy_request.json");
             doPost(request, itemsUrl("node2")).isCreated();
 
             JSONObject requestChildren = request.getJSONObject(CHILDREN_KEY);
@@ -598,8 +630,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
 
             //move node1/child2 to node2
             doPut(request, itemsUrl("node2")).isOk();
-            assertTrue(doGet(itemsUrl("node2")).children().has("child2"));
-            assertFalse(doGet(itemsUrl("node1")).children().has("child2"));
+            assertTrue(doGet(itemsUrl("node2")).json().getJSONObject(CHILDREN_KEY).has("child2"));
+            assertFalse(doGet(itemsUrl("node1")).json().getJSONObject(CHILDREN_KEY).has("child2"));
         } finally {
             doDelete(itemsUrl("node1")).isDeleted();
             doDelete(itemsUrl("node2")).isDeleted();
@@ -610,8 +642,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @FixFor("MODE-2056")
     public void shouldCloseActiveSessions() throws Exception {
         //execute 3 requests
-        doPost("v2/post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isCreated();
-        doPut("v2/post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isOk();
+        doPost("post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("post/node_multiple_children_request.json", itemsUrl(TEST_NODE)).isOk();
         doGet(itemsUrl(TEST_NODE));
 
         JSONObject repositories = doGet("/").isOk().json();
@@ -624,17 +656,17 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     @FixFor("MODE-2170")
     public void shouldAllowUpdatingMultivaluedProperty() throws Exception {
-        doPost("v2/post/node_multivalue_prop_request.json", itemsUrl(TEST_NODE)).isCreated();
-        doPut("v2/put/node_multivalue_prop_request.json", itemsUrl(TEST_NODE))
+        doPost("post/node_multivalue_prop_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("put/node_multivalue_prop_request.json", itemsUrl(TEST_NODE))
                 .isOk()
-                .isJSONObjectLikeFile("v2/put/node_multivalue_prop_response.json");
+                .isJSONObjectLikeFile("put/node_multivalue_prop_response.json");
 
     }
 
     @Test
     @FixFor("MODE-2181")
     public void shouldAllowCreatingSNS() throws Exception {
-        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPost("post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
         doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[2]")).isOk();
@@ -644,8 +676,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     @FixFor("MODE-2181")
     public void shouldAllowUpdatingSNSViaArray() throws Exception {
-        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
-        doPut("v2/put/node_with_sns_edit_request.json", itemsUrl(TEST_NODE)).isOk();
+        doPost("post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("put/node_with_sns_edit_request.json", itemsUrl(TEST_NODE)).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]/editedName")).isOk();
@@ -657,8 +689,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     @FixFor("MODE-2181")
     public void shouldAllowUpdatingSNSViaObject() throws Exception {
-        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
-        doPut("v2/put/node_with_sns_edit_alt_request.json", itemsUrl(TEST_NODE)).isOk();
+        doPost("post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPut("put/node_with_sns_edit_alt_request.json", itemsUrl(TEST_NODE)).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]")).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]/name")).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]/editedName")).isOk();
@@ -670,8 +702,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     @FixFor("MODE-2181")
     public void shouldAllowDeletingSNS() throws Exception {
-        doPost("v2/post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
-        doDelete("v2/delete/sns_nodes_delete.json", itemsUrl()).isOk();
+        doPost("post/node_with_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doDelete("delete/sns_nodes_delete.json", itemsUrl()).isOk();
         doGet(itemsUrl(TEST_NODE, "foo[1]")).isNotFound();
         doGet(itemsUrl(TEST_NODE, "foo[2]")).isNotFound();
     }
@@ -713,8 +745,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @FixFor( "MODE-2182" )
     public void shouldUploadFileAndCreatePartialHierarchy() throws Exception {
         try {
-            doPost("v2/post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
-            doPost("v2/post/folder.json", itemsUrl("node1/node2")).isCreated().hasPrimaryType("nt:folder");
+            doPost("post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
+            doPost("post/folder.json", itemsUrl("node1/node2")).isCreated().hasPrimaryType("nt:folder");
             assertUpload("node1/node2/file", true, false);
             doGet(itemsUrl("node1/node2/file")).isOk().hasPrimaryType("nt:file");
         } finally {
@@ -726,9 +758,9 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @FixFor( "MODE-2182" )
     public void shouldModifyExistingFileViaUpload() throws Exception {
         try {
-            doPost("v2/post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
-            doPost("v2/post/folder.json", itemsUrl("node1/node2")).isCreated().hasPrimaryType("nt:folder");
-            doPost("v2/post/file.json", itemsUrl("node1/node2/file")).isCreated().hasPrimaryType("nt:file");
+            doPost("post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
+            doPost("post/folder.json", itemsUrl("node1/node2")).isCreated().hasPrimaryType("nt:folder");
+            doPost("post/file.json", itemsUrl("node1/node2/file")).isCreated().hasPrimaryType("nt:file");
             assertUpload("node1/node2/file", false, false);
         } finally {
             doDelete(itemsUrl("node1"));
@@ -739,8 +771,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @FixFor( "MODE-2182" )
     public void shouldNotAllowUploadIfTypeInvalid() throws Exception {
         try {
-            doPost("v2/post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
-            doPost(fileStream("v2/post/binary.pdf"), uploadUrl("node1")).isBadRequest();
+            doPost("post/folder.json", itemsUrl("node1")).isCreated().hasPrimaryType("nt:folder");
+            doPost(fileStream("post/binary.pdf"), uploadUrl("node1")).isBadRequest();
         } finally {
             doDelete(itemsUrl("node1"));
         }
@@ -749,8 +781,8 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     @FixFor( "MODE-2250" )
     public void shouldReturnAllSNSForNegativeDepth() throws Exception {
-        doPost("v2/post/node_with_nested_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
-        JSONObject children = doGet(itemsUrl(TEST_NODE) + "?depth=-1").isOk().children();
+        doPost("post/node_with_nested_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        JSONObject children = doGet(itemsUrl(TEST_NODE) + "?depth=-1").isOk().json().getJSONObject(CHILDREN_KEY);
         JSONObject foo1 = children.getJSONObject("foo");
         assertNotNull(foo1);
         JSONObject foo1Children = foo1.getJSONObject("children");
@@ -769,7 +801,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     @FixFor( "MODE-2261" )
     public void shouldRunQueryWithMultipleSelectors() throws Exception {
-        doPost("v2/post/node_with_nested_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
+        doPost("post/node_with_nested_sns_request.json", itemsUrl(TEST_NODE)).isCreated();
         String query = "SELECT parent.[jcr:path], child.* FROM [nt:unstructured] as parent INNER JOIN [nt:unstructured] as child " +
                        "ON ISCHILDNODE(parent, child) WHERE parent.[jcr:path] LIKE '/" + TEST_NODE +"/%'";
         jcrSQL2Query(query, queryUrl()).isOk();
@@ -777,9 +809,9 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
 
     private void assertUpload( String url, boolean expectCreated, boolean useMultiPart ) throws Exception {
         Response response = useMultiPart ?
-                            doPostMultiPart("v2/post/binary.pdf", FileUploadForm.PARAM_NAME, uploadUrl(url),
+                            doPostMultiPart("post/binary.pdf", FileUploadForm.PARAM_NAME, uploadUrl(url),
                                             MediaType.APPLICATION_OCTET_STREAM) :
-                            doPost(fileStream("v2/post/binary.pdf"), uploadUrl(url));
+                            doPost(fileStream("post/binary.pdf"), uploadUrl(url));
         if (expectCreated) {
             response.isCreated();
         } else {
@@ -789,6 +821,6 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         binaryPropertyRequest = binaryPropertyRequest.substring(binaryPropertyRequest.indexOf(
                 getServerContext()) + getServerContext().length());
         byte[] uploaded = doGet(binaryPropertyRequest).isOk().contentAsBytes();
-        assertArrayEquals(IoUtil.readBytes(fileStream("v2/post/binary.pdf")), uploaded);
+        assertArrayEquals(IoUtil.readBytes(fileStream("post/binary.pdf")), uploaded);
     }
 }
