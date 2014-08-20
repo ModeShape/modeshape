@@ -45,7 +45,10 @@ import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
 
 /**
  * <code>HttpClientConnection</code> uses the <code>Apache HttpClient</code>.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public final class HttpClientConnection {
 
     // ===========================================================================================================================

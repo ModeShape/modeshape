@@ -30,8 +30,11 @@ import org.modeshape.web.jcr.rest.client.RestClientI18n;
 
 /**
  * The <code>Workspace</code> class is the business object for a ModeShape repository workspace.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
 @Immutable
+@Deprecated
 public class Workspace implements IModeShapeObject {
 
     // ===========================================================================================================================

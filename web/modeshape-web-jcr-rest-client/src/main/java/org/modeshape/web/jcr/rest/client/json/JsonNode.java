@@ -34,7 +34,10 @@ import static org.modeshape.web.jcr.rest.client.json.IJsonConstants.PROPERTIES_K
 /**
  * The <code>JsonNode</code> class defines the API for interacting with JSON objects. Every <code>JsonNode</code> knows how to
  * create their URL and create their JCR content.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public abstract class JsonNode extends JSONObject {
 
     private static final long serialVersionUID = 1L;

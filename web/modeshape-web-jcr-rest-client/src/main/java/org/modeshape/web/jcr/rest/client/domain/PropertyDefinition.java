@@ -44,7 +44,10 @@ import org.modeshape.web.jcr.rest.client.RestClientI18n;
 
 /**
  * An immutable representation of a JCR PropertyDefinition.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 @Immutable
 public class PropertyDefinition extends ItemDefinition implements javax.jcr.nodetype.PropertyDefinition {
 

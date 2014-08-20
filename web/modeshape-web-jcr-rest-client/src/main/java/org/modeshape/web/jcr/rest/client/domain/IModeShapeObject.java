@@ -25,7 +25,10 @@ package org.modeshape.web.jcr.rest.client.domain;
 
 /**
  * The IModeShapeObject class defines a ModeShape business object.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public interface IModeShapeObject {
 
     /**

@@ -27,8 +27,11 @@ import org.modeshape.common.annotation.Immutable;
 
 /**
  * The <code>Status</code> class is an outcome that provides an outcome or result of an operation.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
 @Immutable
+@Deprecated
 public final class Status {
 
     // ===========================================================================================================================

@@ -50,7 +50,10 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
  * And an example url to obtain a specific node type would look like: <br>
  * <i>{context root}/{repository name}/{workspace name}/items/jcr:system/jcr:nodeTypes/{node type name}</i> <br>
  * A Node Type will not be created if: <li>jcr:isMixin is true</li> <li>jcr:multiple is true</li>
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 @Immutable
 public final class NodeTypeNode extends JsonNode {
 

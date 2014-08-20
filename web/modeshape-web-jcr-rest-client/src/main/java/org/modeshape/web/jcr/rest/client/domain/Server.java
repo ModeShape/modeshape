@@ -39,7 +39,10 @@ import org.modeshape.web.jcr.rest.client.Utils;
  * <p>
  * The deployed war context root is based on what the deployed war file is called. If the ModeShape deployed war is called
  * resources.war (which is the default build name), then the context root would be <i>resources</i>.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 @Immutable
 public class Server implements IModeShapeObject {
 

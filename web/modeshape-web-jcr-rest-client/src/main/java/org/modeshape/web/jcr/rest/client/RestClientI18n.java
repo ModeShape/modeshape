@@ -27,7 +27,10 @@ import org.modeshape.common.i18n.I18n;
 
 /**
  * The <code>RestClientI18n</code> class provides localized messages.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 public final class RestClientI18n {
 
     public static I18n nullArgumentMsg;

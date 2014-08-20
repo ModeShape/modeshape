@@ -24,6 +24,8 @@
 /**
  * The ModeShape REST Client domain package defines the ModeShape and JCR business objects. These include objects for 
  * {@link org.modeshape.web.jcr.rest.client.domain.Server servers}, {@link org.modeshape.web.jcr.rest.client.domain.Repository repositories}, and {@link org.modeshape.web.jcr.rest.client.domain.Workspace workspaces}.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
 
 package org.modeshape.web.jcr.rest.client.domain;

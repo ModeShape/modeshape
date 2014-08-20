@@ -37,7 +37,10 @@ import static org.modeshape.web.jcr.rest.client.IJcrConstants.PUBLISH_AREA_TYPE;
 /**
  * The <code>FolderNode</code> class is responsible for knowing how to create a URL for a folder, create a JSON representation of
  * a folder, and create the appropriate JCR nodes for a folder.
+ *
+ * @deprecated as of 3.8.1 this is no longer supported
  */
+@Deprecated
 @Immutable
 public final class FolderNode extends JsonNode {
 
