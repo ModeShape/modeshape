@@ -93,10 +93,11 @@ public final class Connectors {
 
     protected Connectors( JcrRepository.RunningState repository,
                           Collection<Component> components,
+                          Set<String> externalSources,
                           Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
         this.repository = repository;
         this.logger = Logger.getLogger(getClass());
-        this.snapshot.set(new Snapshot(components, preconfiguredProjections));
+        this.snapshot.set(new Snapshot(components, externalSources, preconfiguredProjections));
     }
 
     @GuardedBy( "this" )
@@ -108,6 +109,9 @@ public final class Connectors {
 
         // initialize the configured connectors
         initializeConnectors();
+        
+        createExternalWorkspaces();        
+        
         // load the projection -> node mappings from the system area, without validating them
         loadStoredProjections(false);
         // creates any preconfigured projections
@@ -117,6 +121,14 @@ public final class Connectors {
         initialized = true;
     }
 
+    private void createExternalWorkspaces() {
+        Snapshot current = this.snapshot.get();
+        Collection<String> workspaces = current.externalSources();
+        for (String workspaceName : workspaces) {
+            repository.repositoryCache().createExternalWorkspace(workspaceName, this);
+        }
+    }
+    
     private void createPreconfiguredProjections() throws RepositoryException {
         assert !initialized;
         Snapshot current = this.snapshot.get();
@@ -671,9 +683,15 @@ public final class Connectors {
          * A flag which is used to track the presence of any readonly connectors
          */
         private boolean hasReadonlyConnectors;
+        
+        /**
+         * A set of external source names.
+         */
+        private final Set<String> externalSources;
 
-        protected Snapshot( Collection<Component> components,
+        protected Snapshot( Collection<Component> components, Set<String> externalSources,
                             Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
+            this.externalSources = externalSources;            
             this.preconfiguredProjections = preconfiguredProjections;
             this.projections = new HashMap<>();
             this.sourceKeyToConnectorMap = new HashMap<>();
@@ -682,6 +700,7 @@ public final class Connectors {
         }
 
         protected Snapshot( Snapshot original ) {
+            this.externalSources = original.externalSources;
             this.projections = new HashMap<>(original.projections);
             this.sourceKeyToConnectorMap = new HashMap<>(original.sourceKeyToConnectorMap);
             this.preconfiguredProjections = new HashMap<>(original.preconfiguredProjections);
@@ -689,6 +708,10 @@ public final class Connectors {
             this.hasReadonlyConnectors = original.hasReadonlyConnectors;
         }
 
+        private Set<String> externalSources() {
+            return externalSources;
+        }        
+        
         protected synchronized void shutdownUnusedConnectors() {
             for (Connector connector : unusedConnectors) {
                 connector.shutdown();
@@ -972,7 +995,7 @@ public final class Connectors {
          * @return the new snapshot
          */
         protected Snapshot withOnlyProjectionConfigurations() {
-            return new Snapshot(Collections.<Component>emptyList(), this.preconfiguredProjections);
+            return new Snapshot(Collections.<Component>emptyList(), this.externalSources, this.preconfiguredProjections);        
         }
 
         /**

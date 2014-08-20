@@ -595,6 +595,12 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="exposeAsWorkspace" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the workspace exposing this external source.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>        
         <xs:attribute name="queryable" type="xs:boolean" use="optional" default="true">
             <xs:annotation>
                 <xs:documentation>Flag which indicates whether the entire external content provided by this source should be

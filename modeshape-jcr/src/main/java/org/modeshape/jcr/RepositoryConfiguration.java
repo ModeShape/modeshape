@@ -443,6 +443,7 @@ public class RepositoryConfiguration {
         public static final String SEQUENCING = "sequencing";
         public static final String SEQUENCERS = "sequencers";
         public static final String EXTERNAL_SOURCES = "externalSources";
+        public static final String EXPOSE_AS_WORKSPACE = "exposeAsWorkspace";
         public static final String PROJECTIONS = "projections";
         public static final String PATH_EXPRESSION = "pathExpression";
         public static final String PATH_EXPRESSIONS = "pathExpressions";
@@ -632,6 +633,8 @@ public class RepositoryConfiguration {
         skipProps.add(FieldName.CLASSLOADER);
         skipProps.add(FieldName.CLASSNAME);
         skipProps.add(FieldName.PROJECTIONS);
+        skipProps.add(FieldName.EXPOSE_AS_WORKSPACE);
+        
         COMPONENT_SKIP_PROPERTIES = Collections.unmodifiableSet(skipProps);
 
         String jaasProvider = "org.modeshape.jcr.security.JaasProvider";
@@ -2179,7 +2182,7 @@ public class RepositoryConfiguration {
             readComponents(sequencing, FieldName.SEQUENCERS, FieldName.CLASSNAME, SEQUENCER_ALIASES, problems);
         }
     }
-
+    
     /**
      * The federation-related configuration information.
      */
@@ -2197,11 +2200,59 @@ public class RepositoryConfiguration {
          * @param problems the container with which should be recorded any problems during component initialization
          * @return the immutable list of connectors; never null but possibly empty
          */
-        public List<Component> getConnectors( Problems problems ) {
+        public List<Component> getConnectors(Problems problems) {
             List<Component> components = readComponents(federation, FieldName.EXTERNAL_SOURCES, FieldName.CLASSNAME,
-                                                        CONNECTOR_ALIASES, problems);
+                    CONNECTOR_ALIASES, problems);
             assert !problems.hasErrors();
             return components;
+        }
+
+        /**
+         * Returns converged names of all configured external sources.
+         * 
+         * Converged name is in following format:
+         * 'connector-name':'expsed-workspace-name'
+         *
+         * @return a {@link Set} instance or null if there is not any external
+         * source.
+         */
+        public Set<String> getExternalSources() {
+            Document externalSources = federation.getDocument(FieldName.EXTERNAL_SOURCES);
+            Set<String> list = new HashSet();
+            
+            //no external sources? nothing to do
+            if (externalSources == null) {
+                return null;
+            }
+            
+            //checking each external source definition
+            Set<String> names = externalSources.keySet();
+            for (String name : names) {
+                //take ext source definition and see exposeAsWorkspace filed
+                Document extSource = externalSources.getDocument(name);
+                String extWsName = extSource.getString(FieldName.EXPOSE_AS_WORKSPACE);
+                
+                //ext source is not going to expose content as workspace
+                //ignore it
+                if (extWsName == null) {
+                    continue;
+                }
+                
+                //ext source saying do not expose me as workspace
+                if (extWsName.equalsIgnoreCase("false")) {
+                    continue;
+                }
+                
+                //ext source exposes content as workspace and the same name
+                if (extWsName.equalsIgnoreCase("true")) {
+                    list.add(name + ":" + name);
+                }
+                
+                //ext source saying the name of the workspace
+                list.add(name + ":" + extWsName);
+            }
+            
+            return list;
         }
 
         /**

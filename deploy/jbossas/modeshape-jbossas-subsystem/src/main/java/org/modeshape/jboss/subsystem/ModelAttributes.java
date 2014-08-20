@@ -450,6 +450,15 @@ public class ModelAttributes {
                                                                                                                                                    false))
                                                                                                                     .build();
 
+    public static final SimpleAttributeDefinition EXPOSE_AS_WORKSPACE = new MappedAttributeDefinitionBuilder(ModelKeys.EXPOSE_AS_WORKSPACE,
+                                                                                                  ModelType.STRING).setXmlName(Attribute.EXPOSE_AS_WORKSPACE.getLocalName())
+                                                                                                                    .setAllowExpression(false)
+                                                                                                                    .setAllowNull(true)
+                                                                                                                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                    .setDefaultValue(new ModelNode(
+                                                                                                                                                   false))
+                                                                                                                    .build();
+
     public static final ListAttributeDefinition PREDEFINED_WORKSPACE_NAMES = MappedListAttributeDefinition.Builder.of(ModelKeys.PREDEFINED_WORKSPACE_NAMES,
                                                                                                                       new MappedAttributeDefinitionBuilder(
                                                                                                                                                            ModelKeys.PREDEFINED_WORKSPACE_NAME,
@@ -693,7 +702,7 @@ public class ModelAttributes {
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] SOURCE_ATTRIBUTES = {PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHE_TTL_SECONDS,
-        QUERYABLE, MODULE, PROPERTIES};
+        QUERYABLE, MODULE, PROPERTIES, EXPOSE_AS_WORKSPACE};
     public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] AUTHENTICATOR_ATTRIBUTES = {AUTHENTICATOR_CLASSNAME, MODULE, PROPERTIES};
 }

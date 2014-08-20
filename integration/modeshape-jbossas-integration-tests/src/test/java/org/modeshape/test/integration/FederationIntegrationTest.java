@@ -61,6 +61,11 @@ public class FederationIntegrationTest {
     }
 
     @Test
+    public void shouldAccessExternalSourceAsWorkspace() throws Exception {
+        Session defaultSession = repository.login("filesystem");
+    }
+    
+    @Test
     public void shouldHaveFileSystemSourceConfigured() throws Exception {
         Session defaultSession = repository.login();
         // predefined
