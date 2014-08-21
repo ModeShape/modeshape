@@ -203,7 +203,7 @@ final class RepositoryIndexDefinition implements IndexDefinition {
         return MATCH_ALL_WORKSPACES_RULE;
     }
 
-    protected static WorkspaceMatchRule workspaceMatchRule( String rule ) {
+    public static WorkspaceMatchRule workspaceMatchRule( String rule ) {
         if (rule == null) return MATCH_ALL_WORKSPACES_RULE;
         rule = rule.trim();
         if (rule.length() == 0 || MATCH_ALL_WORKSPACES.equals(rule)) return MATCH_ALL_WORKSPACES_RULE;

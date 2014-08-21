@@ -739,33 +739,43 @@
         },
         "indexes" : {
             "type" : "object",
-            "additionalProperties" : false,
             "description" : "The specification of the indexes used in the repository.",
-            "additionalProperties" : true,
-            "properties" : {
-                "description" : {
-                    "type" : "string",
-                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                },
-                "providerName" : {
-                    "type" : "string",
-                    "description" : "The name of the index provider that is responsible for this index. If the name does not match that of an index provider, the index will be disabled."
-                },
-                "kind" : {
-                    "type" : "string",
-                    "enum" : ["unique","duplicates","enumerated","fulltext","nodetype"],
-                    "default" : "duplicates",
-                    "description" : "The kind of the index."
-                },
-                "nodeType" : {
-                    "type" : "string",
-                    "default" : "nt:base",
-                    "description" : "The name of the node type for which this index is define. This index will include data only from nodes that are of this type (implicitly or explicitly)."
-                },
-                "columns" : {
-                    "type" : "string",
-                    "description" : "A comma-separated list of column definitions, where each column definition consists of a property name and in parentheses the property type. For example, 'jcr:mixin(STRING)' is a column definition that specifies the 'jcr:mixin' property and 'STRING' type."
-                },
+            "required" : false,
+            "additionalProperties" : {
+                "type" : "object",
+                "additionalProperties" : true,
+                "description" : "Specification of a sequencer configuration.",
+                "properties" : {
+                    "description" : {
+                        "type" : "string",
+                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                    },
+                    "provider" : {
+                        "type" : "string",
+                        "description" : "The name of the index provider that is responsible for this index. If the name does not match that of an index provider, the index will be disabled."
+                    },
+                    "workspaces" : {
+                        "type" : "string",
+                        "default" : "*",
+                        "description" : "The regular expression pattern that stipulates which workspaces this index is to be used for. By default, the pattern is '*', which means all workspaces. A literal string will match the exact workspace name. Any workspaces that do not match this pattern will not use this index."
+                    },
+                    "kind" : {
+                        "type" : "string",
+                        "enum" : ["unique","value","enumerated","text","nodetype"],
+                        "default" : "value",
+                        "description" : "The kind of the index."
+                    },
+                    "nodeType" : {
+                        "type" : "string",
+                        "default" : "nt:base",
+                        "description" : "The name of the node type for which this index is define. This index will include data only from nodes that are of this type (implicitly or explicitly)."
+                    },
+                    "columns" : {
+                        "type" : "string",
+                        "pattern" : "([^(,]+)[(]([^),]+)[)](,([^(,]+)[(]([^),]+)[)])*",
+                        "description" : "A comma-separated list of column definitions, where each column definition consists of a property name and in parentheses the property type. For example, 'jcr:mixin(STRING)' is a column definition that specifies the 'jcr:mixin' property and 'STRING' type."
+                    },
+                }
             }
         },
         "textExtraction" : {

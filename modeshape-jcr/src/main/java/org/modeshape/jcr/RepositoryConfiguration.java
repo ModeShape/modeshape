@@ -27,9 +27,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -64,9 +66,13 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.connector.filesystem.FileSystemConnector;
+import org.modeshape.jcr.api.index.IndexColumnDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.index.local.LocalIndexProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
+import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
@@ -417,7 +423,7 @@ public class RepositoryConfiguration {
 
         public static final String INDEX_PROVIDERS = "indexProviders";
         public static final String PROVIDERS = "providers";
-        public static final String PROVIDER_NAME = "providerName";
+        public static final String PROVIDER_NAME = "provider";
         public static final String KIND = "kind";
         public static final String NODE_TYPE = "nodeType";
         public static final String COLUMNS = "columns";
@@ -591,6 +597,10 @@ public class RepositoryConfiguration {
         // by default journal entries are kept indefinitely
         public static final int MAX_DAYS_TO_KEEP_RECORDS = -1;
         public static final boolean ASYNC_WRITES_ENABLED = false;
+
+        public static final String KIND = IndexKind.VALUE.name();
+        public static final String NODE_TYPE = "nt:base";
+        public static final String WORKSPACES = "*";
     }
 
     public static final class FieldValue {
@@ -599,7 +609,6 @@ public class RepositoryConfiguration {
         public static final String BINARY_STORAGE_TYPE_DATABASE = "database";
         public static final String BINARY_STORAGE_TYPE_COMPOSITE = "composite";
         public static final String BINARY_STORAGE_TYPE_CUSTOM = "custom";
-
     }
 
     protected static final Set<List<String>> DEPRECATED_FIELDS;
@@ -733,6 +742,19 @@ public class RepositoryConfiguration {
             FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP})));
         DEPRECATED_FIELDS = Collections.unmodifiableSet(deprecatedFieldNames);
     }
+
+    /**
+     * The regular expression used to capture the index column definition property name and type. The expression is "
+     * <code>([^(,]+)[(]([^),]+)[)]</code>".
+     */
+    protected static final String COLUMN_DEFN_PATTERN_STRING = "([^(,]+)[(]([^),]+)[)]";
+    protected static final Pattern COLUMN_DEFN_PATTERN = Pattern.compile(COLUMN_DEFN_PATTERN_STRING);
+    protected static final Set<String> INDEX_PROVIDER_FIELDS = org.modeshape.common.collection.Collections.unmodifiableSet(FieldName.PROVIDER_NAME,
+                                                                                                                           FieldName.DESCRIPTION,
+                                                                                                                           FieldName.NODE_TYPE,
+                                                                                                                           FieldName.KIND,
+                                                                                                                           FieldName.COLUMNS,
+                                                                                                                           FieldName.WORKSPACES);
 
     /**
      * Utility method to replace all system property variables found within the specified document.
@@ -1662,6 +1684,10 @@ public class RepositoryConfiguration {
         return components;
     }
 
+    protected void validateIndexProviders( Problems problems ) {
+        readComponents(doc, FieldName.INDEX_PROVIDERS, FieldName.CLASSNAME, PROVIDER_ALIASES, problems);
+    }
+
     /**
      * Get the configuration for the indexes used by this repository.
      *
@@ -1688,7 +1714,7 @@ public class RepositoryConfiguration {
          * @return true if there are no indexes, or false otherwise
          */
         public boolean isEmpty() {
-            return indexes.isEmpty();
+            return indexes == null ? true : indexes.isEmpty();
         }
 
         /**
@@ -1696,8 +1722,10 @@ public class RepositoryConfiguration {
          *
          * @return the index names; never null but possibly empty
          * @see #getIndex(String)
+         * @see #getRawIndex(String)
          */
         public Set<String> getIndexNames() {
+            if (indexes == null) return Collections.emptySet();
             return indexes.keySet();
         }
 
@@ -1708,9 +1736,151 @@ public class RepositoryConfiguration {
          * @return the representation of the index definition; or null if there is no index definition with the supplied name
          * @see #getIndexNames()
          */
-        public Document getIndex( String name ) {
-            return indexes.getDocument(name);
+        public Document getRawIndex( String name ) {
+            return indexes == null ? null : indexes.getDocument(name);
         }
+
+        public IndexDefinition getIndex( final String name ) {
+            if (name == null) return null;
+            final Document doc = getRawIndex(name);
+            if (doc == null) return null;
+            return new IndexDefinition() {
+                private List<IndexColumnDefinition> columns;
+                private Map<String, Object> properties;
+
+                @Override
+                public String getName() {
+                    return name;
+                }
+
+                @Override
+                public String getProviderName() {
+                    return doc.getString(FieldName.PROVIDER_NAME);
+                }
+
+                @Override
+                public String getDescription() {
+                    return doc.getString(FieldName.DESCRIPTION);
+                }
+
+                @Override
+                public IndexKind getKind() {
+                    IndexKind kind = IndexKind.valueOf(doc.getString(FieldName.KIND, Default.KIND));
+                    return kind != null ? kind : IndexKind.VALUE;
+                }
+
+                @Override
+                public String getNodeTypeName() {
+                    return doc.getString(FieldName.NODE_TYPE, Default.NODE_TYPE);
+                }
+
+                @Override
+                public WorkspaceMatchRule getWorkspaceMatchRule() {
+                    String rule = doc.getString(FieldName.WORKSPACES, Default.WORKSPACES);
+                    return RepositoryIndexDefinition.workspaceMatchRule(rule);
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    return false;
+                }
+
+                @Override
+                public int size() {
+                    return columns().size();
+                }
+
+                @Override
+                public boolean appliesToProperty( String propertyName ) {
+                    for (IndexColumnDefinition defn : columns()) {
+                        if (defn.getPropertyName().equals(propertyName)) return true;
+                    }
+                    return false;
+                }
+
+                @Override
+                public IndexColumnDefinition getColumnDefinition( int position ) throws NoSuchElementException {
+                    return columns().get(position);
+                }
+
+                @Override
+                public boolean hasSingleColumn() {
+                    return size() == 1;
+                }
+
+                @Override
+                public Iterator<IndexColumnDefinition> iterator() {
+                    return columns.iterator();
+                }
+
+                @Override
+                public Object getIndexProperty( String propertyName ) {
+                    return doc.get(name);
+                }
+
+                @Override
+                public Map<String, Object> getIndexProperties() {
+                    if (properties == null) {
+                        // Read in the properties ...
+                        properties = new HashMap<>();
+                        for (Field field : doc.fields()) {
+                            if (INDEX_PROVIDER_FIELDS.contains(field.getName())) continue;
+                            properties.put(field.getName(), field.getValue());
+                        }
+                    }
+                    return properties;
+                }
+
+                protected List<IndexColumnDefinition> columns() {
+                    if (columns == null) {
+                        String columnDefnsStr = doc.getString(FieldName.COLUMNS);
+                        if (columnDefnsStr != null) {
+                            for (String columnDefn : columnDefnsStr.split(",")) {
+                                if (columnDefn.trim().length() == 0) continue;
+                                try {
+                                    Matcher matcher = COLUMN_DEFN_PATTERN.matcher(columnDefn);
+                                    final String propertyName = matcher.group(1).trim();
+                                    String typeStr = matcher.group(2).trim();
+                                    final PropertyType type = PropertyType.valueFor(typeStr);
+                                    columns.add(new IndexColumnDefinition() {
+
+                                        @Override
+                                        public String getPropertyName() {
+                                            return propertyName;
+                                        }
+
+                                        @Override
+                                        public int getColumnType() {
+                                            return type.jcrType();
+                                        }
+                                    });
+                                } catch (RuntimeException e) {
+                                }
+                            }
+                        }
+                        if (columns == null) columns = Collections.emptyList();
+                    }
+                    return columns;
+                }
+            };
+        }
+
+        protected void validateIndexDefinitions( Problems problems ) {
+            for (String indexName : getIndexNames()) {
+                IndexDefinition defn = getIndex(indexName);
+                // Make sure the index has a valid provider ...
+                if (!hasIndexProvider(defn.getProviderName())) {
+                    problems.addError(JcrI18n.indexProviderNameMustMatchProvider, indexName, defn.getProviderName());
+                }
+            }
+        }
+    }
+
+    protected boolean hasIndexProvider( String name ) {
+        for (Component component : getIndexProviders()) {
+            if (component.getName().equals(name)) return true;
+        }
+        return false;
     }
 
     /**
@@ -2345,6 +2515,8 @@ public class RepositoryConfiguration {
             getSecurity().validateCustomProviders(problems);
             getSequencing().validateSequencers(problems);
             getTextExtraction().validateTextExtractors(problems);
+            validateIndexProviders(problems);
+            getIndexes().validateIndexDefinitions(problems);
             this.problems = problems;
         }
         return problems;

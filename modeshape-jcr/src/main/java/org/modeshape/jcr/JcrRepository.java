@@ -86,6 +86,7 @@ import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.DocumentOptimization;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.GarbageCollection;
+import org.modeshape.jcr.RepositoryConfiguration.Indexes;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
@@ -93,6 +94,7 @@ import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.RepositoryManager;
 import org.modeshape.jcr.api.Workspace;
+import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.api.value.DateTime;
@@ -139,13 +141,13 @@ import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
 import org.modeshape.jmx.RepositoryStatisticsBean;
 
 /**
- * 
+ *
  */
 public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * The set of supported query language string constants.
-     * 
+     *
      * @see javax.jcr.query.QueryManager#getSupportedQueryLanguages()
      * @see javax.jcr.query.QueryManager#createQuery(String, String)
      */
@@ -198,7 +200,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * Create a Repository instance given the {@link RepositoryConfiguration configuration}.
-     * 
+     *
      * @param configuration the repository configuration; may not be null
      * @throws ConfigurationException if there is a problem with the configuration
      */
@@ -235,7 +237,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * Get the state of this JCR repository instance.
-     * 
+     *
      * @return the state; never null
      */
     public State getState() {
@@ -244,7 +246,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * Get the name of this JCR repository instance.
-     * 
+     *
      * @return the name; never null
      */
     @Override
@@ -264,7 +266,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * Note that this provides un-checked access to the statistics, unlike {@link RepositoryManager#getRepositoryMonitor()} in the
      * public API which only exposes the statistics if the session's user has administrative privileges.
      * </p>
-     * 
+     *
      * @return the statistics component; never null
      * @throws IllegalStateException if the repository is not {@link #getState() running}
      * @see Workspace#getRepositoryManager()
@@ -285,7 +287,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * starting up, but could mean they are only partly intialized.</li>
      * </ul>
      * </p>
-     * 
+     *
      * @return a {@link Problems} instance which may contains errors and warnings raised by various components; may be empty if
      *         nothing unusual happened during start but never {@code null}
      * @throws FileNotFoundException if the Infinispan configuration file is specified but could not be found
@@ -302,7 +304,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * Start this repository instance.
-     * 
+     *
      * @throws FileNotFoundException if the Infinispan configuration file is specified but could not be found
      * @throws IOException if there is a problem with the specified Infinispan configuration file
      * @throws Exception if there is a problem with underlying resource setup
@@ -313,7 +315,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * Terminate all active sessions.
-     * 
+     *
      * @return a future representing the asynchronous session termination process.
      */
     Future<Boolean> shutdown() {
@@ -338,7 +340,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * Apply the supplied changes to this repository's configuration, and if running change the services to reflect the updated
      * configuration. Note that this method assumes the proposed changes have already been validated; see
      * {@link RepositoryConfiguration#validate(Changes)}.
-     * 
+     *
      * @param changes the changes for the configuration
      * @throws FileNotFoundException if the Infinispan configuration file is changed but could not be found
      * @throws IOException if there is a problem with the specified Infinispan configuration file
@@ -427,12 +429,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return true;
     }
 
-    /**
-     * Get the manager for the index definitions and index providers.
-     * 
-     * @return the index manager; never null
-     */
-    public IndexManager getIndexManager() {
+    protected final IndexManager getIndexManager() {
         return runningState().queryManager().getIndexManager();
     }
 
@@ -553,7 +550,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * Get the immutable configuration for this repository.
-     * 
+     *
      * @return the configuration; never null
      */
     public RepositoryConfiguration getConfiguration() {
@@ -1086,11 +1083,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     SchematicDb database = Schematic.get(container, cacheName);
 
                     Channel cacheChannel = checkClustering(database);
-                    //the name of the fork stack is based on the name of the cache; this will allow multiple caches to share the same JG stack
+                    // the name of the fork stack is based on the name of the cache; this will allow multiple caches to share the
+                    // same JG stack
                     String forkStackId = "modeshape-" + cacheName + "-fork-stack";
                     this.clusteringService = cacheChannel != null ? ClusteringService.startForked(forkStackId, cacheChannel) : null;
 
-                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(database);
+                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
+                                                                                                                                                database);
                     this.txnMgr = this.documentStore.transactionManager();
                     this.transactions = createTransactions(cacheName, config.getTransactionMode(), this.txnMgr);
 
@@ -1211,6 +1210,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, config);
                 this.changeBus.register(this.repositoryQueryManager);
 
+                loadIndexDefinitions();
+
                 // Check that we have parsers for all the required languages ...
                 assert this.queryParsers.getParserFor(Query.XPATH) != null;
                 assert this.queryParsers.getParserFor(Query.SQL) != null;
@@ -1290,7 +1291,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         /**
          * Performs the steps required after the running state has been created and before a repository is considered
          * "initialized"
-         * 
+         *
          * @throws Exception if anything goes wrong in this phase. If it does, the transaction used for startup should be rolled
          *         back
          */
@@ -1346,7 +1347,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         /**
          * Perform any initialization code that requires the repository to be in a running state. The repository has been
          * considered started up.
-         * 
+         *
          * @throws Exception if there is a problem during this phase.
          */
         protected final void postInitialize() throws Exception {
@@ -1556,6 +1557,20 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         final InitialContentImporter initialContentImporter() {
             return initialContentImporter;
+        }
+
+        private void loadIndexDefinitions() throws RepositoryException {
+            Indexes indexes = config.getIndexes();
+            if (indexes.isEmpty()) return;
+            List<IndexDefinition> defns = new ArrayList<>();
+            for (String indexName : indexes.getIndexNames()) {
+                IndexDefinition defn = indexes.getIndex(indexName);
+                if (defn != null) defns.add(defn);
+            }
+            if (!defns.isEmpty()) {
+                IndexDefinition[] array = defns.toArray(new IndexDefinition[defns.size()]);
+                queryManager().getIndexManager().registerIndexes(array, true);
+            }
         }
 
         private AuthenticationProviders createAuthenticationProviders( AtomicBoolean useAnonymouOnFailedLogins ) {
@@ -1940,7 +1955,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * Determine the initial delay before the garbage collection process(es) should be run, based upon the supplied initial
      * expression. Note that the initial expression specifies the hours and minutes in local time, whereas this method should
      * return the delay in milliseconds after the current time.
-     * 
+     *
      * @param initialTimeExpression the expression of the form "<code>hh:mm</code>"; never null
      * @return the number of milliseconds after now that the process(es) should be started
      */
@@ -1988,7 +2003,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         /**
          * Perform the garbage collection task.
-         * 
+         *
          * @param repository the non-null and {@link State#RUNNING running} repository instance
          */
         protected abstract void doRun( JcrRepository repository );

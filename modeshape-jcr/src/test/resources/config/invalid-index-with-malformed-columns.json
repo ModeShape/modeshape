@@ -1,0 +1,20 @@
+{
+    "name" : "RepositoryWithoutTransactions",
+    "indexProviders" : {
+        "local1" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/local_index_test_repository/1"
+        },
+        "local2" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/local_index_test_repository/2"
+        },
+    },
+    "indexes" : {
+        "index1" : {
+            "kind" : "value",
+            "provider" : "local1",
+            "columns" : "this,is,not,a,valid,format"
+        }
+    }
+}

@@ -115,11 +115,6 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
-    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageInRam() {
-        assertValid("config/index-providers.json");
-    }
-
-    @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfiguration() {
         assertHasWarnings(0, "config/thorough-repo-config.json");
     }
@@ -247,16 +242,60 @@ public class RepositoryConfigurationTest {
         assertThat(jaas.getPolicyName(), is("mypolicy"));
     }
 
+    @FixFor( "MODE-2160" )
     @Test
-    public void shouldAlwaysReturnNonNullIndexesComponent() {
+    public void shouldAlwaysReturnNonNullIndexesComponentForNoIndexes() {
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         assertThat(config.getIndexes(), is(notNullValue()));
     }
 
+    @FixFor( "MODE-2160" )
     @Test
     public void shouldAlwaysReturnNonNullIndexProvidersList() {
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         assertThat(config.getIndexProviders(), is(notNullValue()));
+    }
+
+    @FixFor( "MODE-2160" )
+    @Test
+    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageInRam() {
+        assertValid("config/repo-config-valid-index-providers.json");
+    }
+
+    @FixFor( "MODE-2160" )
+    @Test
+    public void shouldAllowValidRepositoryConfigurationWithIndexProvidersAndNoIndexes() {
+        assertValid("config/repo-config-local-provider-no-indexes.json");
+    }
+
+    @FixFor( "MODE-2160" )
+    @Test
+    public void shouldAllowValidRepositoryConfigurationWithIndexProvidersAndIndexes() {
+        assertValid("config/repo-config-local-provider-and-indexes.json");
+    }
+
+    @FixFor( "MODE-2160" )
+    @Test
+    public void shouldNotAllowRepositoryConfigurationWithIndexThatRefersToNonExistantIndexProvider() {
+        assertNotValid(1, "config/invalid-index-with-unmatched-provider.json");
+    }
+
+    @FixFor( "MODE-2160" )
+    @Test
+    public void shouldNotAllowRepositoryConfigurationWithIndexThatHasNoProvider() {
+        assertNotValid(1, "config/invalid-index-with-missing-provider.json");
+    }
+
+    @FixFor( "MODE-2160" )
+    @Test
+    public void shouldNotAllowRepositoryConfigurationWithIndexThatHasMalformedKind() {
+        assertNotValid(1, "config/invalid-index-with-malformed-kind.json");
+    }
+
+    @FixFor( "MODE-2160" )
+    @Test
+    public void shouldNotAllowRepositoryConfigurationWithIndexThatHasMalformedColumns() {
+        assertNotValid(1, "config/invalid-index-with-malformed-columns.json");
     }
 
     @Test

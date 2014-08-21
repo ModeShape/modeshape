@@ -8,15 +8,15 @@
     },
     "indexes": {
         "primaryTypes" : {
-            "providerName" : "providerA",
-            "kind" : "ENUMERATED",
-            "nodeTypeName" : "nt:base",
+            "provider" : "providerA",
+            "kind" : "enumerated",
+            "nodeType" : "nt:base",
             "description" : "Index for quickly identifying nodes by node type",
             "columns" : "jcr:primaryType(STRING)"
         },
         "fileMimeTypes" : {
-            "providerName" : "providerA",
-            "nodeTypeName" : "nt:resource",
+            "provider" : "providerA",
+            "nodeType" : "nt:resource",
             "columns" : "jcr:mimeType(STRING)"
         }
     },
