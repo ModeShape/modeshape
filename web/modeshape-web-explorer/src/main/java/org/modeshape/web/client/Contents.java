@@ -73,6 +73,8 @@ public class Contents extends View {
     private ExportDialog exportDialog = new ExportDialog(this);
     private ImportDialog importDialog = new ImportDialog(this);
     
+    private Button saveButton;
+    
     public Contents(final Console console, final JcrServiceAsync jcrService, ViewPort viewPort) {
         super(viewPort, null);
         this.console = console;
@@ -114,13 +116,15 @@ public class Contents extends View {
         HLayout buttonPanel = new HLayout();
         buttonPanel.setWidth100();
         
-        Button save = new Button();
-        save.setTitle("Save");
-        save.setIcon("icons/save.png");
-        save.addClickHandler(new ClickHandler() {
+        saveButton = new Button();
+        saveButton.disable();
+        saveButton.setTitle("Save");
+        saveButton.setIcon("icons/save.png");
+        saveButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
                 console.save();
+                saveButton.disable();
             }
         });
         
@@ -128,7 +132,7 @@ public class Contents extends View {
         panel.addMember(buttonPanel);        
         addMember(panel);
 
-        panel.addMember(save);
+        panel.addMember(saveButton);
         
         HLayout spacer = new HLayout();
         spacer.setWidth(5);
@@ -259,6 +263,7 @@ public class Contents extends View {
 
             @Override
             public void onSuccess(Object result) {
+                saveButton.enable();
                 select(path, true);
             }
         });
@@ -283,6 +288,7 @@ public class Contents extends View {
             public void onSuccess(String[] result) {
                 addMixinDialog.updateMixinTypes(result);
                 removeMixinDialog.updateMixinTypes(result);
+                saveButton.enable();
             }
         });
     }
@@ -301,6 +307,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -319,6 +326,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -342,6 +350,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -355,6 +364,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -369,6 +379,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -383,6 +394,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(String[] result) {
                 newNodeDialog.updatePrimaryTypes(result);
+                saveButton.enable();
             }
         });
     }
@@ -404,6 +416,7 @@ public class Contents extends View {
         
         acl.addPolicy(policy);
         accessList.show(node);
+        saveButton.enable();
     }
 
     public void updateAccessList(String principal, JcrPermission permission, boolean enabled) {
@@ -417,6 +430,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -436,6 +450,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
