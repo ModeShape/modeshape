@@ -18,6 +18,7 @@ package org.modeshape.web.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.VerticalAlignment;
 import com.smartgwt.client.util.SC;
+import com.smartgwt.client.widgets.Button;
 import com.smartgwt.client.widgets.Canvas;
 import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
@@ -72,7 +73,9 @@ public class Contents extends View {
     private ExportDialog exportDialog = new ExportDialog(this);
     private ImportDialog importDialog = new ImportDialog(this);
     
-    public Contents(Console console, final JcrServiceAsync jcrService, ViewPort viewPort) {
+    private Button saveButton;
+    
+    public Contents(final Console console, final JcrServiceAsync jcrService, ViewPort viewPort) {
         super(viewPort, null);
         this.console = console;
         this.jcrService = jcrService;
@@ -113,9 +116,29 @@ public class Contents extends View {
         HLayout buttonPanel = new HLayout();
         buttonPanel.setWidth100();
         
+        saveButton = new Button();
+        saveButton.disable();
+        saveButton.setTitle("Save");
+        saveButton.setIcon("icons/save.png");
+        saveButton.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                console.save();
+                saveButton.disable();
+            }
+        });
+        
+        
         panel.addMember(buttonPanel);        
         addMember(panel);
 
+        panel.addMember(saveButton);
+        
+        HLayout spacer = new HLayout();
+        spacer.setWidth(5);
+        
+        panel.addMember(spacer);
+        
         VLayout strut = new VLayout();
         strut.setHeight(20);
 
@@ -240,6 +263,7 @@ public class Contents extends View {
 
             @Override
             public void onSuccess(Object result) {
+                saveButton.enable();
                 select(path, true);
             }
         });
@@ -264,6 +288,7 @@ public class Contents extends View {
             public void onSuccess(String[] result) {
                 addMixinDialog.updateMixinTypes(result);
                 removeMixinDialog.updateMixinTypes(result);
+                saveButton.enable();
             }
         });
     }
@@ -282,6 +307,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -300,6 +326,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -323,6 +350,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -336,6 +364,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -350,6 +379,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -364,6 +394,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(String[] result) {
                 newNodeDialog.updatePrimaryTypes(result);
+                saveButton.enable();
             }
         });
     }
@@ -385,6 +416,7 @@ public class Contents extends View {
         
         acl.addPolicy(policy);
         accessList.show(node);
+        saveButton.enable();
     }
 
     public void updateAccessList(String principal, JcrPermission permission, boolean enabled) {
@@ -398,6 +430,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
@@ -417,6 +450,7 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
             }
         });
     }
