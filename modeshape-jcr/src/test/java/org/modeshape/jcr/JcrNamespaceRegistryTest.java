@@ -377,4 +377,12 @@ public class JcrNamespaceRegistryTest extends MultiUseAbstractTest {
         assertThatNamespacePrefixIsNotRegistered(prefix);
         assertThatNamespaceIsRegistered("newPrefix", uri);
     }
+
+    @FixFor("MODE-2278")
+    @Test(expected = NamespaceException.class)
+    public void shouldNotAllowColonInPrefix() throws Exception {
+        registry.registerNamespace("invalid", "http://invalid");
+        //as per http://www.w3.org/TR/REC-xml-names, the prefix has to be a valid NCName
+        registry.registerNamespace("invalid:prefix", "http://invalid/prefix");
+    }
 }
