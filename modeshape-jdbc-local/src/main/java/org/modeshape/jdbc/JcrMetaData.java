@@ -1966,7 +1966,7 @@ public class JcrMetaData implements DatabaseMetaData {
 
         if (tableNamePattern.trim().equals(WILDCARD)) {
 
-            nodetypes = this.connection.getRepositoryDelegate().nodeTypes();
+            nodetypes = new ArrayList<>(this.connection.getRepositoryDelegate().nodeTypes());
 
         } else if (tableNamePattern.contains(WILDCARD)) {
             nodetypes = new ArrayList<NodeType>();
@@ -1984,7 +1984,7 @@ public class JcrMetaData implements DatabaseMetaData {
                 isTrailing = true;
             }
 
-            List<NodeType> nts = this.connection.getRepositoryDelegate().nodeTypes();
+            List<NodeType> nts = new ArrayList<>(this.connection.getRepositoryDelegate().nodeTypes());
             // build the list of records from server's Results object.
             for (NodeType type : nts) {
                 if (isLeading) {

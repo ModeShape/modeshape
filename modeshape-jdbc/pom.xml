@@ -30,8 +30,16 @@
             <artifactId>modeshape-jdbc-local</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-jcr-rest-client</artifactId>
+            <groupId>org.codehaus.jettison</groupId>
+            <artifactId>jettison</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
         </dependency>
         <!--
         Testing (note the scope)
@@ -138,6 +146,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/*Http*Test.java</exclude>
+                                <exclude>**/rest/*.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -151,6 +160,7 @@
                         <configuration>
                             <includes>
                                 <include>**/*Http*Test.java</include>
+                                <include>**/rest/*.java</include>
                             </includes>
                         </configuration>
                     </execution>

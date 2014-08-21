@@ -55,6 +55,6 @@ public class JdbcDriverIntegrationTest extends JcrHttpDriverIntegrationTest {
     @Override
     protected String getContextPathUrl() {
         //this should be the context of the web application deployed inside AS7
-        return"localhost:8080/modeshape-rest/v1";
+        return"localhost:8080/modeshape-rest";
     }
 }

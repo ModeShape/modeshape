@@ -146,8 +146,9 @@ public class JcrHttpDriverIntegrationTest {
         Connection connection = connectToRemoteRepository();
         String query = "SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] WHERE [jcr:path] LIKE '/%' AND [jcr:path] NOT LIKE '/%/%'ORDER BY [jcr:path]";
         String[] expectedResults = new String[] {
-            "jcr:path[STRING]    jcr:name[STRING]    mode:depth[LONG]    mode:localName[STRING]    jcr:mixinTypes[STRING]    jcr:primaryType[STRING]",
-            "/        0        null    mode:root", "/jcr:system    jcr:system    1    system    null    mode:system"};
+            "jcr:primaryType[STRING]    jcr:mixinTypes[STRING]    jcr:path[STRING]    jcr:name[STRING]    mode:localName[STRING]    mode:depth[LONG]",
+            "mode:root    null    /    null    null    0",
+            "mode:system    null    /jcr:system    jcr:system    system    1"};
         ConnectionResultsComparator.executeTest(connection, query, expectedResults, 3);
     }
 
@@ -177,7 +178,7 @@ public class JcrHttpDriverIntegrationTest {
 
     protected String getContextPathUrl() {
         // must match Cargo's configuration
-        return "localhost:8090/modeshape/v1";
+        return "localhost:8090/modeshape";
     }
 
     protected String getRepositoryName() {

@@ -31,6 +31,8 @@ public final class JdbcI18n {
      * HTTP connection option related text info
      */
     public static I18n driverErrorRegistering;
+    public static I18n unableToConvertValue;
+    public static I18n invalidServerResponse;
 
     private JdbcI18n() {
     }

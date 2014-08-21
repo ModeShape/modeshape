@@ -124,8 +124,6 @@
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <unzip src="${project.build.directory}/tempjars/modeshape-jcr-api-${project.version}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
-                                        <unzip src="${project.build.directory}/tempjars/modeshape-web-jcr-rest-client-${project.version}.jar"
-                                               dest="${ant.jdbc.parseDirectory}"/>
 
                                         <move file="${project.build.directory}/tempjars/META-INF/services/java.sql.Driver"
                                               tofile="${project.build.directory}/tempdrivers/jdbc_drivers"/>
