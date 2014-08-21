@@ -221,7 +221,7 @@ class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
         }
 
         // The prefix must be a valid XML Namespace prefix (i.e., a valid NCName) ...
-        if (!XmlCharacters.isValidName(prefix)) {
+        if (!XmlCharacters.isValidNcName(prefix)) {
             throw new NamespaceException(JcrI18n.unableToRegisterNamespaceWithInvalidPrefix.text(prefix, uri));
         }
 
