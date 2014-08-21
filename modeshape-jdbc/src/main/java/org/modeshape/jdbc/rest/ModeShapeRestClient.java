@@ -20,10 +20,9 @@ import javax.jcr.query.Query;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jdbc.JdbcI18n;
 
-
 /**
- * A simple java client which communicates via a {@link JSONRestClient} to an existing ModeShape
- * REST service and unmarshals the JSON objects into a custom POJO model.
+ * A simple java client which communicates via a {@link JSONRestClient} to an existing ModeShape REST service and unmarshals the
+ * JSON objects into a custom POJO model.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -40,18 +39,21 @@ public final class ModeShapeRestClient {
      * Creates a new REST client instance which will always use the given URL as the server connection
      *
      * @param repoUrl a {@code String} representing a connection to a ModeShape REST service in the format:
-     * [protocol]://[host]:[port]/[context]/[repository]/[workspace]. May not be {@code null}
-     * @param username a {@code String} representing the name of the user to use when authenticating with the above server.
-     * May be {@code null}, in which case no authentication will be performed.
+     *        [protocol]://[host]:[port]/[context]/[repository]/[workspace]. May not be {@code null}
+     * @param username a {@code String} representing the name of the user to use when authenticating with the above server. May be
+     *        {@code null}, in which case no authentication will be performed.
      * @param password a {@code String} the password of the above user, if used. May be {@code null}
      */
-    public ModeShapeRestClient( String repoUrl, String username, String password ) {
+    public ModeShapeRestClient( String repoUrl,
+                                String username,
+                                String password ) {
         CheckArg.isNotNull(repoUrl, "repoUrl");
         this.jsonRestClient = new JSONRestClient(repoUrl, username, password);
     }
 
     /**
      * Returns the URL this client uses to connect to the server.
+     * 
      * @return a {@code String}, never {@code null}
      */
     public String serverUrl() {
@@ -120,14 +122,13 @@ public final class ModeShapeRestClient {
      * @param query a {@code String}, never {@code null}
      * @param queryLanguage the language of the query, never {@code null}
      * @return a {@link QueryResult} instance, never {@code null}
-     * @see {@link javax.jcr.query.Query}
+     * @see javax.jcr.query.Query
      */
-    public QueryResult query( String query, String queryLanguage ) {
+    public QueryResult query( String query,
+                              String queryLanguage ) {
         String url = jsonRestClient.appendToURL(QUERY_METHOD);
         String contentType = contentTypeForQueryLanguage(queryLanguage);
-        JSONRestClient.Response response = jsonRestClient.postStream(new ByteArrayInputStream(query.getBytes()),
-                                                                     url,
-                                                                     contentType);
+        JSONRestClient.Response response = jsonRestClient.postStream(new ByteArrayInputStream(query.getBytes()), url, contentType);
         if (!response.isOK()) {
             throw new RuntimeException(JdbcI18n.invalidServerResponse.text(url, response.asString()));
         }
@@ -136,15 +137,16 @@ public final class ModeShapeRestClient {
 
     /**
      * Returns a string representation of a query plan in a given language.
+     * 
      * @param query a {@code String}, never {@code null}
      * @param queryLanguage the language of the query, never {@code null}
      * @return a {@code String} description of the plan, never {@code null}
      */
-    public String queryPlan( String query, String queryLanguage ) {
+    public String queryPlan( String query,
+                             String queryLanguage ) {
         String url = jsonRestClient.appendToURL(QUERY_PLAN_METHOD);
         String contentType = contentTypeForQueryLanguage(queryLanguage);
-        JSONRestClient.Response response = jsonRestClient.postStreamTextPlain(new ByteArrayInputStream(query.getBytes()),
-                                                                              url,
+        JSONRestClient.Response response = jsonRestClient.postStreamTextPlain(new ByteArrayInputStream(query.getBytes()), url,
                                                                               contentType);
         if (!response.isOK()) {
             throw new RuntimeException(JdbcI18n.invalidServerResponse.text(url, response.asString()));
@@ -152,6 +154,7 @@ public final class ModeShapeRestClient {
         return response.asString();
     }
 
+    @SuppressWarnings( "deprecation" )
     private String contentTypeForQueryLanguage( String queryLanguage ) {
         switch (queryLanguage) {
             case Query.XPATH: {

@@ -32,7 +32,6 @@ import org.modeshape.web.jcr.rest.output.TextBodyWriter;
  */
 public final class JcrApplication extends Application {
 
-    @SuppressWarnings( "deprecation" )
     @Override
     public Set<Class<?>> getClasses() {
         return new HashSet<>(Arrays.asList(new Class<?>[] { ModeShapeRestService.class,

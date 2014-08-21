@@ -125,7 +125,7 @@ import org.modeshape.web.jcr.rest.model.RestWorkspaces;
  * When returning information involving binary values (either nodes with binary properties or binary properties directly), the
  * response will contain an URL which can be then called to retrieve the actual content of the binary value.
  * </p>
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Immutable
@@ -142,7 +142,7 @@ public final class ModeShapeRestService {
 
     /**
      * Returns the list of JCR repositories available on this server
-     * 
+     *
      * @param request the servlet request; may not be null
      * @return the list of JCR repositories available on this server, as a {@link RestRepositories} instance.
      */
@@ -155,7 +155,7 @@ public final class ModeShapeRestService {
 
     /**
      * Returns the list of workspaces available to this user within the named repository.
-     * 
+     *
      * @param rawRepositoryName the name of the repository; may not be null
      * @param request the servlet request; may not be null
      * @return the list of workspaces available to this user within the named repository, as a {@link RestWorkspaces} instance.
@@ -172,7 +172,7 @@ public final class ModeShapeRestService {
     /**
      * Retrieves the binary content of the binary property at the given path, allowing 2 extra (optional) parameters: the
      * mime-type and the content-disposition of the binary value.
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest} request
      * @param repositoryName a non-null {@link String} representing the name of a repository.
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
@@ -197,8 +197,7 @@ public final class ModeShapeRestService {
         Property binaryProperty = binaryHandler.getBinaryProperty(request, repositoryName, workspaceName, path);
         if (binaryProperty.getType() != PropertyType.BINARY) {
             return Response.status(Response.Status.NOT_FOUND)
-                           .entity(new RestException("The property " + binaryProperty.getPath() + " is not a binary"))
-                           .build();
+                           .entity(new RestException("The property " + binaryProperty.getPath() + " is not a binary")).build();
         }
         Binary binary = binaryProperty.getBinary();
         if (StringUtil.isBlank(mimeType)) {
@@ -213,7 +212,7 @@ public final class ModeShapeRestService {
 
     /**
      * Retrieves the node type definition with the given name from the repository.
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest} request
      * @param repositoryName a non-null {@link String} representing the name of a repository.
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
@@ -233,7 +232,7 @@ public final class ModeShapeRestService {
 
     /**
      * Imports a single CND file into the repository. The CND file should be submitted as the body of the request.
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest} request
      * @param repositoryName a non-null {@link String} representing the name of a repository.
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
@@ -256,7 +255,7 @@ public final class ModeShapeRestService {
     /**
      * Imports a single CND file into the repository, using a {@link MediaType#MULTIPART_FORM_DATA} request. The CND file is
      * expected to be submitted from an HTML element with the name <i>file</i>
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest} request
      * @param repositoryName a non-null {@link String} representing the name of a repository.
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
@@ -281,7 +280,7 @@ public final class ModeShapeRestService {
 
     /**
      * Retrieves an item from a workspace
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -310,7 +309,7 @@ public final class ModeShapeRestService {
      * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
      * {@code jcr:mixinTypes} properties as request attributes.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -342,7 +341,7 @@ public final class ModeShapeRestService {
      * </ul>
      * where each body (either of a property or of a node) is expected to be a JSON object which has the same format as the one
      * used when creating a single item.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -365,7 +364,7 @@ public final class ModeShapeRestService {
 
     /**
      * Deletes the item at {@code path}.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -373,7 +372,6 @@ public final class ModeShapeRestService {
      * @return a {@code non-null} {@link Response} instance.
      * @throws RepositoryException if any other error occurs
      */
-    @SuppressWarnings( "deprecation" )
     @DELETE
     @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.+}" )
     public Response deleteItem( @Context HttpServletRequest request,
@@ -392,7 +390,7 @@ public final class ModeShapeRestService {
      * <li>["property1_path", "property2_path",...]</li>
      * <li>["property1_path", "node1_path",...]</li>
      * </ul>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -420,7 +418,7 @@ public final class ModeShapeRestService {
      * content to be a JSON object. The keys of the objects correspond to property names that will be set and the values for the
      * keys correspond to the values that will be set on the properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -452,7 +450,7 @@ public final class ModeShapeRestService {
      * </ul>
      * where each body (either of a property or of a node) is expected to be a JSON object which has the same format as the one
      * used when updating a single item.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -476,7 +474,7 @@ public final class ModeShapeRestService {
     /**
      * Creates or updates a binary property in the repository, at the given path. The binary content is expected to be written
      * directly to the request body.
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest} request
      * @param repositoryName a non-null {@link String} representing the name of a repository.
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
@@ -500,7 +498,7 @@ public final class ModeShapeRestService {
     /**
      * Updates a binary property in the repository, at the given path. If the binary property does not exist, the NOT_FOUND http
      * response code is returned. The binary content is expected to be written directly to the request body.
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest} request
      * @param repositoryName a non-null {@link String} representing the name of a repository.
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
@@ -524,7 +522,7 @@ public final class ModeShapeRestService {
     /**
      * Creates/updates a binary file into the repository, using a {@link MediaType#MULTIPART_FORM_DATA} request, at {@code path}.
      * The binary file is expected to be submitted from an HTML element with the name <i>file</i>
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest} request
      * @param repositoryName a non-null {@link String} representing the name of a repository.
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
@@ -553,16 +551,15 @@ public final class ModeShapeRestService {
      * <p>
      * Depending on the whether any node exists or not at {@code path}, this method behaves in different ways:
      * <ul>
-     *     <li>
-     *         If {@code path} exists on the server, it is expected to point to an existing [nt:file] node, for which the [jcr:content]/[jcr:data] property will be updated/set
-     *     </li>
-     *     <li>
-     *         If {@code path} doesn't exist or only a <b>subpath</b> exists on the server, then for each missing segment but the last an [nt:folder] node will be created.
-     *         The last segment of the path will always represent the name of the [nt:file] node which will be created together with its content: [jcr:content]/[jcr:data].
-     *     </li>
+     * <li>If {@code path} exists on the server, it is expected to point to an existing [nt:file] node, for which the
+     * [jcr:content]/[jcr:data] property will be updated/set</li>
+     * <li>If {@code path} doesn't exist or only a <b>subpath</b> exists on the server, then for each missing segment but the last
+     * an [nt:folder] node will be created. The last segment of the path will always represent the name of the [nt:file] node
+     * which will be created together with its content: [jcr:content]/[jcr:data].</li>
      * </ul>
      * For example: issuing a POST request via this method to a path at which no node exists - {@code node1/node2/node3} - will
-     * trigger the creation of the corresponding nodes with the types - {@code [nt:folder]/[nt:folder]/[nt:file]/[jcr:content]/[jcr:data]}
+     * trigger the creation of the corresponding nodes with the types -
+     * {@code [nt:folder]/[nt:folder]/[nt:file]/[jcr:content]/[jcr:data]}
      * </p>
      *
      * @param request a non-null {@link HttpServletRequest} request
@@ -574,7 +571,7 @@ public final class ModeShapeRestService {
      * @throws RepositoryException if any JCR related operation fails.
      */
     @POST
-    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.UPLOAD_METHOD_NAME + "{path:.+}")
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.UPLOAD_METHOD_NAME + "{path:.+}" )
     @Produces( {MediaType.TEXT_HTML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN} )
     @Consumes( MediaType.MULTIPART_FORM_DATA )
     public Response uploadBinaryViaForm( @Context HttpServletRequest request,
@@ -587,21 +584,20 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * Creates/updates a binary file into the repository, <b>using the body of the request as the contents of the binary file</b>, at {@code path}.
-     *
+     * Creates/updates a binary file into the repository, <b>using the body of the request as the contents of the binary file</b>,
+     * at {@code path}.
      * <p>
      * Depending on the whether any node exists or not at {@code path}, this method behaves in different ways:
      * <ul>
-     *     <li>
-     *         If {@code path} exists on the server, it is expected to point to an existing [nt:file] node, for which the [jcr:content]/[jcr:data] property will be updated/set
-     *     </li>
-     *     <li>
-     *         If {@code path} doesn't exist or only a <b>subpath</b> exists on the server, then for each missing segment but the last an [nt:folder] node will be created.
-     *         The last segment of the path will always represent the name of the [nt:file] node which will be created together with its content: [jcr:content]/[jcr:data].
-     *     </li>
+     * <li>If {@code path} exists on the server, it is expected to point to an existing [nt:file] node, for which the
+     * [jcr:content]/[jcr:data] property will be updated/set</li>
+     * <li>If {@code path} doesn't exist or only a <b>subpath</b> exists on the server, then for each missing segment but the last
+     * an [nt:folder] node will be created. The last segment of the path will always represent the name of the [nt:file] node
+     * which will be created together with its content: [jcr:content]/[jcr:data].</li>
      * </ul>
      * For example: issuing a POST request via this method to a path at which no node exists - {@code node1/node2/node3} - will
-     * trigger the creation of the corresponding nodes with the types - {@code [nt:folder]/[nt:folder]/[nt:file]/[jcr:content]/[jcr:data]}
+     * trigger the creation of the corresponding nodes with the types -
+     * {@code [nt:folder]/[nt:folder]/[nt:file]/[jcr:content]/[jcr:data]}
      * </p>
      *
      * @param request a non-null {@link HttpServletRequest} request
@@ -609,24 +605,24 @@ public final class ModeShapeRestService {
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
      * @param filePath the path to the binary property
      * @param requestBodyInputStream a non-null {@link InputStream} stream which represents the body of the request, where the
-     * binary content is expected.
+     *        binary content is expected.
      * @return a {@code non-null} {@link Response}
      * @throws RepositoryException if any JCR related operation fails.
      */
     @POST
-    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.UPLOAD_METHOD_NAME + "{path:.+}")
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.UPLOAD_METHOD_NAME + "{path:.+}" )
     @Produces( {MediaType.TEXT_HTML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN} )
     public Response uploadBinary( @Context HttpServletRequest request,
-                                  @PathParam("repositoryName") String repositoryName,
-                                  @PathParam("workspaceName") String workspaceName,
-                                  @PathParam("path") String filePath,
+                                  @PathParam( "repositoryName" ) String repositoryName,
+                                  @PathParam( "workspaceName" ) String workspaceName,
+                                  @PathParam( "path" ) String filePath,
                                   InputStream requestBodyInputStream ) throws RepositoryException {
         return binaryHandler.uploadBinary(request, repositoryName, workspaceName, filePath, requestBodyInputStream);
     }
 
     /**
      * Executes the XPath query contained in the body of the request against the give repository and workspace.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -653,14 +649,8 @@ public final class ModeShapeRestService {
                                            @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                            @Context UriInfo uriInfo,
                                            String requestContent ) throws RepositoryException {
-        return queryHandler.executeQuery(request,
-                                         rawRepositoryName,
-                                         rawWorkspaceName,
-                                         Query.XPATH,
-                                         requestContent,
-                                         offset,
-                                         limit,
-                                         uriInfo);
+        return queryHandler.executeQuery(request, rawRepositoryName, rawWorkspaceName, Query.XPATH, requestContent, offset,
+                                         limit, uriInfo);
     }
 
     /**
@@ -668,7 +658,7 @@ public final class ModeShapeRestService {
      * <p>
      * The query results will be JSON-encoded in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -695,13 +685,7 @@ public final class ModeShapeRestService {
                                             @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                             @Context UriInfo uriInfo,
                                             String requestContent ) throws RepositoryException {
-        return queryHandler.executeQuery(request,
-                                         rawRepositoryName,
-                                         rawWorkspaceName,
-                                         Query.SQL,
-                                         requestContent,
-                                         offset,
-                                         limit,
+        return queryHandler.executeQuery(request, rawRepositoryName, rawWorkspaceName, Query.SQL, requestContent, offset, limit,
                                          uriInfo);
     }
 
@@ -710,7 +694,7 @@ public final class ModeShapeRestService {
      * <p>
      * The query results will be JSON-encoded in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -736,14 +720,8 @@ public final class ModeShapeRestService {
                                              @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                              @Context UriInfo uriInfo,
                                              String requestContent ) throws RepositoryException {
-        return queryHandler.executeQuery(request,
-                                         rawRepositoryName,
-                                         rawWorkspaceName,
-                                         Query.JCR_SQL2,
-                                         requestContent,
-                                         offset,
-                                         limit,
-                                         uriInfo);
+        return queryHandler.executeQuery(request, rawRepositoryName, rawWorkspaceName, Query.JCR_SQL2, requestContent, offset,
+                                         limit, uriInfo);
     }
 
     /**
@@ -751,7 +729,7 @@ public final class ModeShapeRestService {
      * <p>
      * The query results will be JSON-encoded in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -777,13 +755,8 @@ public final class ModeShapeRestService {
                                                @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                                @Context UriInfo uriInfo,
                                                String requestContent ) throws RepositoryException {
-        return queryHandler.executeQuery(request,
-                                         rawRepositoryName,
-                                         rawWorkspaceName,
-                                         org.modeshape.jcr.api.query.Query.FULL_TEXT_SEARCH,
-                                         requestContent,
-                                         offset,
-                                         limit,
+        return queryHandler.executeQuery(request, rawRepositoryName, rawWorkspaceName,
+                                         org.modeshape.jcr.api.query.Query.FULL_TEXT_SEARCH, requestContent, offset, limit,
                                          uriInfo);
     }
 
@@ -792,7 +765,7 @@ public final class ModeShapeRestService {
      * <p>
      * The string representation of the query plan will be returned in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -819,13 +792,7 @@ public final class ModeShapeRestService {
                                                    @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                                    @Context UriInfo uriInfo,
                                                    String requestContent ) throws RepositoryException {
-        return queryHandler.planQuery(request,
-                                      rawRepositoryName,
-                                      rawWorkspaceName,
-                                      Query.XPATH,
-                                      requestContent,
-                                      offset,
-                                      limit,
+        return queryHandler.planQuery(request, rawRepositoryName, rawWorkspaceName, Query.XPATH, requestContent, offset, limit,
                                       uriInfo);
     }
 
@@ -834,7 +801,7 @@ public final class ModeShapeRestService {
      * <p>
      * The string representation of the query plan will be returned in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -861,13 +828,7 @@ public final class ModeShapeRestService {
                                                     @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                                     @Context UriInfo uriInfo,
                                                     String requestContent ) throws RepositoryException {
-        return queryHandler.planQuery(request,
-                                      rawRepositoryName,
-                                      rawWorkspaceName,
-                                      Query.SQL,
-                                      requestContent,
-                                      offset,
-                                      limit,
+        return queryHandler.planQuery(request, rawRepositoryName, rawWorkspaceName, Query.SQL, requestContent, offset, limit,
                                       uriInfo);
     }
 
@@ -876,7 +837,7 @@ public final class ModeShapeRestService {
      * <p>
      * The string representation of the query plan will be returned in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -902,14 +863,8 @@ public final class ModeShapeRestService {
                                                      @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                                      @Context UriInfo uriInfo,
                                                      String requestContent ) throws RepositoryException {
-        return queryHandler.planQuery(request,
-                                      rawRepositoryName,
-                                      rawWorkspaceName,
-                                      Query.JCR_SQL2,
-                                      requestContent,
-                                      offset,
-                                      limit,
-                                      uriInfo);
+        return queryHandler.planQuery(request, rawRepositoryName, rawWorkspaceName, Query.JCR_SQL2, requestContent, offset,
+                                      limit, uriInfo);
     }
 
     /**
@@ -917,7 +872,7 @@ public final class ModeShapeRestService {
      * <p>
      * The string representation of the query plan will be returned in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -943,19 +898,13 @@ public final class ModeShapeRestService {
                                                        @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                                        @Context UriInfo uriInfo,
                                                        String requestContent ) throws RepositoryException {
-        return queryHandler.planQuery(request,
-                                      rawRepositoryName,
-                                      rawWorkspaceName,
-                                      org.modeshape.jcr.api.query.Query.FULL_TEXT_SEARCH,
-                                      requestContent,
-                                      offset,
-                                      limit,
-                                      uriInfo);
+        return queryHandler.planQuery(request, rawRepositoryName, rawWorkspaceName,
+                                      org.modeshape.jcr.api.query.Query.FULL_TEXT_SEARCH, requestContent, offset, limit, uriInfo);
     }
 
     /**
      * Retrieves from a workspace the node with the specified identifier.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -984,7 +933,7 @@ public final class ModeShapeRestService {
      * This method expects the request content to be a JSON object. The keys of the objects correspond to property names that will
      * be set and the values for the keys correspond to the values that will be set on the properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -1008,7 +957,7 @@ public final class ModeShapeRestService {
 
     /**
      * Deletes the subgraph at the node with the given identifier.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name

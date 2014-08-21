@@ -64,7 +64,7 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         registerType(PropertyType.LONG, types);
         registerType(PropertyType.NAME, types);
         registerType(PropertyType.PATH, types);
-        registerType(PropertyType.REFERENCE,types);
+        registerType(PropertyType.REFERENCE, types);
         registerType(PropertyType.STRING, types);
         registerType(PropertyType.UNDEFINED, types);
         registerType(PropertyType.URI, types);
@@ -72,12 +72,15 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         PROPERTY_TYPES_BY_LOWERCASE_NAME = Collections.unmodifiableMap(types);
     }
 
-    private static void registerType( int propertyType, Map<String, Integer> types ) {
+    private static void registerType( int propertyType,
+                                      Map<String, Integer> types ) {
         String name = PropertyType.nameFromValue(propertyType);
         types.put(name.toLowerCase(), propertyType);
     }
 
-    protected PropertyDefinition(String declaringNodeTypeName, JSONObject json, NodeTypes nodeTypes) {
+    protected PropertyDefinition( String declaringNodeTypeName,
+                                  JSONObject json,
+                                  NodeTypes nodeTypes ) {
         super(declaringNodeTypeName, json, nodeTypes);
         String name = valueFrom(json, "jcr:name", "*");
         boolean isMultiple = valueFrom(json, "jcr:multiple", false);
@@ -90,7 +93,7 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         this.valueConstraints = valuesFrom(json, "jcr:valueConstraints");
     }
 
-    private static Calendar parseDate( String dateString ) throws IllegalArgumentException {
+    protected static Calendar parseDate( String dateString ) throws IllegalArgumentException {
         DateTime result = new DateTime(dateString);
         return result.toCalendar(null);
     }
@@ -174,7 +177,6 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         }
     }
 
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -225,9 +227,9 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         return sb.toString();
     }
 
-    protected class StringValue implements Value {
+    protected final class StringValue implements Value {
 
-        private final String value;
+        protected final String value;
 
         protected StringValue( String value ) {
             this.value = value;
@@ -235,7 +237,7 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         }
 
         @Override
-        public boolean getBoolean() throws ValueFormatException {
+        public boolean getBoolean() {
             return Boolean.parseBoolean(value.trim());
         }
 
@@ -386,7 +388,6 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         public int hashCode() {
             return HashCode.compute(isMultiple, requiredType, name);
         }
-
 
         @Override
         public boolean equals( Object obj ) {

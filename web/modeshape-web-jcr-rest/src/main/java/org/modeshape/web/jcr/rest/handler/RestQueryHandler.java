@@ -43,10 +43,9 @@ import org.modeshape.web.jcr.rest.model.RestQueryResult;
 
 /**
  * A REST handler used for executing queries against a repository and returning REST representations of the query results.
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-@SuppressWarnings( "deprecation" )
 public final class RestQueryHandler extends AbstractHandler {
 
     private static final String MODE_URI = "mode:uri";
@@ -56,7 +55,7 @@ public final class RestQueryHandler extends AbstractHandler {
     /**
      * Executes a the given query string (based on the language information) against a JCR repository, returning a rest model
      * based result.
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest}
      * @param repositoryName a non-null, URL encoded {@link String} representing the name of a repository
      * @param workspaceName a non-null, URL encoded {@link String} representing the name of a workspace
@@ -103,7 +102,7 @@ public final class RestQueryHandler extends AbstractHandler {
     /**
      * Executes a the given query string (based on the language information) against a JCR repository, returning a rest model
      * based result.
-     * 
+     *
      * @param request a non-null {@link HttpServletRequest}
      * @param repositoryName a non-null, URL encoded {@link String} representing the name of a repository
      * @param workspaceName a non-null, URL encoded {@link String} representing the name of a workspace
@@ -261,15 +260,15 @@ public final class RestQueryHandler extends AbstractHandler {
     }
 
     private org.modeshape.jcr.api.query.Query createQuery( String language,
-                                                             String statement,
-                                                             Session session ) throws RepositoryException {
+                                                           String statement,
+                                                           Session session ) throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         return (org.modeshape.jcr.api.query.Query)queryManager.createQuery(statement, language);
     }
 
     private void bindExtraVariables( UriInfo uriInfo,
-                                       ValueFactory valueFactory,
-                                       Query query ) throws RepositoryException {
+                                     ValueFactory valueFactory,
+                                     Query query ) throws RepositoryException {
         if (uriInfo == null) {
             return;
         }

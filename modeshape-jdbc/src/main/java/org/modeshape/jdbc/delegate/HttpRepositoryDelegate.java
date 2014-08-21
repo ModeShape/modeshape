@@ -29,9 +29,9 @@ import javax.jcr.query.QueryResult;
 import org.modeshape.jdbc.JcrDriver;
 import org.modeshape.jdbc.JdbcLocalI18n;
 import org.modeshape.jdbc.LocalJcrDriver.JcrContextFactory;
+import org.modeshape.jdbc.rest.ModeShapeRestClient;
 import org.modeshape.jdbc.rest.NodeTypes;
 import org.modeshape.jdbc.rest.Repositories;
-import org.modeshape.jdbc.rest.ModeShapeRestClient;
 
 /**
  * The HTTPRepositoryDelegate provides remote Repository implementation to access the Jcr layer via HTTP lookup.
@@ -68,7 +68,8 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     private AtomicReference<Repositories.Repository> repository = new AtomicReference<>();
     private ModeShapeRestClient restClient;
 
-    protected HttpRepositoryDelegate( String url, Properties info ) {
+    protected HttpRepositoryDelegate( String url,
+                                      Properties info ) {
         super(url, info);
     }
 
@@ -77,6 +78,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
                                                    Properties info ) {
         return new HttpConnectionInfo(url, info);
     }
+
     protected Repositories.Repository repository() {
         return this.repository.get();
     }
@@ -112,7 +114,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     @Override
     public NodeType nodeType( String name ) throws RepositoryException {
         if (nodeTypes.get() == null) {
-            //load the node types
+            // load the node types
             nodeTypes();
         }
 
@@ -173,13 +175,13 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
 
         String workspaceName = info.getWorkspaceName();
         if (workspaceName == null) {
-            //there is no WS info, so try to figure out a default one...
+            // there is no WS info, so try to figure out a default one...
             ModeShapeRestClient client = new ModeShapeRestClient(serverUrl, username, String.valueOf(password));
             List<String> allWorkspaces = client.getWorkspaces(repositoryName).getWorkspaces();
             if (allWorkspaces.isEmpty()) {
                 throw new SQLException("No workspaces found for the " + repositoryName + " repository");
             }
-            //TODO author=Horia Chiorean date=19-Aug-14 description=There is no way to get the "default" ws so we'll choose one
+            // TODO author=Horia Chiorean date=19-Aug-14 description=There is no way to get the "default" ws so we'll choose one
             workspaceName = allWorkspaces.get(0);
         }
 
@@ -193,9 +195,8 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
             Repositories.Repository repository = repositories.getRepository(repositoryName);
             if (repository == null) {
                 throw new SQLException(JdbcLocalI18n.unableToFindNamedRepository.text(path, repositoryName));
-            } else {
-                this.repository.compareAndSet(null, repository);
             }
+            this.repository.compareAndSet(null, repository);
         } catch (Exception e) {
             throw new SQLException(JdbcLocalI18n.noRepositoryNamesFound.text(), e);
         }
