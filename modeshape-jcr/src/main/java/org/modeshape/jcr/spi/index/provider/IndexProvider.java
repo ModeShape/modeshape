@@ -26,6 +26,7 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.DelegateIterable;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.common.function.Function;
 import org.modeshape.common.function.Predicate;
 import org.modeshape.jcr.ExecutionContext;
@@ -314,6 +315,21 @@ public abstract class IndexProvider {
     protected void postShutdown() throws RepositoryException {
         // Do nothing by default
     }
+
+    /**
+     * Validate the proposed index definition, and use the supplied problems to report any issues that will prevent this provider
+     * from creating and using an index with the given definition.
+     *
+     * @param context the execution context in which to perform the validation; never null
+     * @param defn the proposed index definition; never null
+     * @param nodeTypesSupplier the supplier for the NodeTypes object that contains information about the currently-registered
+     *        node types; never null
+     * @param problems the problems that should be used to report any issues with the index definition; never null
+     */
+    public abstract void validateProposedIndex( ExecutionContext context,
+                                                IndexDefinition defn,
+                                                NodeTypes.Supplier nodeTypesSupplier,
+                                                Problems problems );
 
     /**
      * Get the writer that ModeShape can use to regenerate the indexes when a portion of the repository is to be re-indexed.

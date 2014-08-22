@@ -13,53 +13,82 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.modeshape.jcr.api.index;
 
-import javax.jcr.RepositoryException;
+import org.modeshape.jcr.api.Problems;
 
 /**
- * Exception used when an index definition is invalid.
- * 
- * @author Randall Hauch (rhauch@redhat.com)
+ * Exception used when one or more index definitions is invalid.
  */
-public class InvalidIndexDefinitionException extends RepositoryException {
+public class InvalidIndexDefinitionException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
+    private final Problems problems;
+
     /**
-     * Constructs a new instance of this class with <code>null</code> as its detail message.
+     * Constructs a new instance of this class.
+     * 
+     * @param problems the validation problems for the index definitions(s)
      */
-    public InvalidIndexDefinitionException() {
+    public InvalidIndexDefinitionException( Problems problems ) {
+        super(problems.toString());
+        assert problems != null;
+        this.problems = problems;
     }
 
     /**
-     * Constructs a new instance of this class with the specified detail message.
+     * Constructs a new instance of this class.
      * 
-     * @param message the detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
+     * @param problems the validation problems for the index definitions(s)
+     * @param message the message
      */
-    public InvalidIndexDefinitionException( String message ) {
+    public InvalidIndexDefinitionException( Problems problems,
+                                             String message ) {
         super(message);
+        assert problems != null;
+        this.problems = problems;
     }
 
     /**
-     * Constructs a new instance of this class with the specified root cause.
+     * Constructs a new instance of this class.
      * 
-     * @param rootCause root failure cause
+     * @param problems the validation problems for the index definitions(s)
+     * @param cause the cause of this exception
      */
-    public InvalidIndexDefinitionException( Throwable rootCause ) {
-        super(rootCause);
+    public InvalidIndexDefinitionException( Problems problems,
+                                             Throwable cause ) {
+        super(problems.toString(), cause);
+        assert problems != null;
+        this.problems = problems;
     }
 
     /**
-     * Constructs a new instance of this class with the specified detail message and root cause.
+     * Constructs a new instance of this class.
      * 
-     * @param message the detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
-     * @param rootCause root failure cause
+     * @param problems the validation problems for the index definitions(s)
+     * @param message the message
+     * @param cause the cause of this exception
      */
-    public InvalidIndexDefinitionException( String message,
-                                            Throwable rootCause ) {
-        super(message, rootCause);
+    public InvalidIndexDefinitionException( Problems problems,
+                                             String message,
+                                             Throwable cause ) {
+        super(message, cause);
+        assert problems != null;
+        this.problems = problems;
     }
 
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+
+    /**
+     * Get the problems associated with the index definition(s).
+     * 
+     * @return the problems; never null
+     */
+    public Problems getProblems() {
+        return problems;
+    }
 }

@@ -20,6 +20,7 @@ import java.util.Comparator;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.DB;
 import org.mapdb.Serializer;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -114,6 +115,13 @@ public abstract class ManagedLocalIndexBuilder<T> {
      */
     public abstract ManagedLocalIndex build( String workspaceName,
                                              DB localDatabase ) throws LocalIndexException;
+
+    /**
+     * Validate whether the index definition is acceptable for this provider.
+     *
+     * @param problems the component to record any problems, errors, or warnings; may not be null
+     */
+    public abstract void validate( Problems problems );
 
     protected final Supplier getNodeTypesSupplier() {
         return nodeTypesSupplier;
@@ -266,74 +274,62 @@ public abstract class ManagedLocalIndexBuilder<T> {
 
         @Override
         protected boolean isPrimaryTypeIndex() {
-            if (!matches(columnDefn, JcrLexicon.PRIMARY_TYPE)) return false;
-            if (!isType(getColumnType(), PropertyType.NAME)) {
-                String msg = JcrI18n.localIndexMustHaveOneColumnOfSpecificType.text(defn.getProviderName(), defn.getName(),
-                                                                                    columnDefn.getPropertyName(), type,
-                                                                                    PropertyType.NAME);
-                throw new LocalIndexException(msg);
-            }
-            return true;
+            return matches(columnDefn, JcrLexicon.PRIMARY_TYPE) && isType(getColumnType(), PropertyType.NAME);
         }
 
         @Override
         protected boolean isMixinTypesIndex() {
-            if (!matches(columnDefn, JcrLexicon.MIXIN_TYPES)) return false;
-            if (!isType(getColumnType(), PropertyType.NAME)) {
-                String msg = JcrI18n.localIndexMustHaveOneColumnOfSpecificType.text(defn.getProviderName(), defn.getName(),
-                                                                                    columnDefn.getPropertyName(), type,
-                                                                                    PropertyType.NAME);
-                throw new LocalIndexException(msg);
-            }
-            return true;
+            return matches(columnDefn, JcrLexicon.MIXIN_TYPES) && isType(getColumnType(), PropertyType.NAME);
         }
 
         @Override
         protected boolean isNodeNameIndex() {
-            if (!matches(columnDefn, JcrLexicon.NAME)) return false;
-            if (!isType(getColumnType(), PropertyType.NAME)) {
-                String msg = JcrI18n.localIndexMustHaveOneColumnOfSpecificType.text(defn.getProviderName(), defn.getName(),
-                                                                                    columnDefn.getPropertyName(), type,
-                                                                                    PropertyType.NAME);
-                throw new LocalIndexException(msg);
-            }
-            return true;
+            return matches(columnDefn, JcrLexicon.NAME) && isType(getColumnType(), PropertyType.NAME);
         }
 
         @Override
         protected boolean isNodeLocalNameIndex() {
-            if (!matches(columnDefn, ModeShapeLexicon.LOCALNAME)) return false;
-            if (!isType(getColumnType(), PropertyType.STRING)) {
-                String msg = JcrI18n.localIndexMustHaveOneColumnOfSpecificType.text(defn.getProviderName(), defn.getName(),
-                                                                                    columnDefn.getPropertyName(), type,
-                                                                                    PropertyType.STRING);
-                throw new LocalIndexException(msg);
-            }
-            return true;
+            return matches(columnDefn, ModeShapeLexicon.LOCALNAME) && isType(getColumnType(), PropertyType.STRING);
         }
 
         @Override
         protected boolean isNodeDepthIndex() {
-            if (!matches(columnDefn, ModeShapeLexicon.DEPTH)) return false;
-            if (!isType(getColumnType(), PropertyType.LONG)) {
-                String msg = JcrI18n.localIndexMustHaveOneColumnOfSpecificType.text(defn.getProviderName(), defn.getName(),
-                                                                                    columnDefn.getPropertyName(), type,
-                                                                                    PropertyType.LONG);
-                throw new LocalIndexException(msg);
-            }
-            return true;
+            return matches(columnDefn, ModeShapeLexicon.DEPTH) && isType(getColumnType(), PropertyType.LONG);
         }
 
         @Override
         protected boolean isNodePathIndex() {
-            if (!matches(columnDefn, JcrLexicon.PATH)) return false;
-            if (!isType(getColumnType(), PropertyType.PATH)) {
-                String msg = JcrI18n.localIndexMustHaveOneColumnOfSpecificType.text(defn.getProviderName(), defn.getName(),
-                                                                                    columnDefn.getPropertyName(), type,
-                                                                                    PropertyType.PATH);
-                throw new LocalIndexException(msg);
+            return matches(columnDefn, JcrLexicon.PATH) && isType(getColumnType(), PropertyType.PATH);
+        }
+
+        @Override
+        public void validate( Problems problems ) {
+            switch (defn.getKind()) {
+                case VALUE:
+                    if ((matches(columnDefn, JcrLexicon.PRIMARY_TYPE) && !isType(getColumnType(), PropertyType.NAME))
+                        || (matches(columnDefn, JcrLexicon.MIXIN_TYPES) && !isType(getColumnType(), PropertyType.NAME))
+                        || (matches(columnDefn, JcrLexicon.NAME) && !isType(getColumnType(), PropertyType.NAME))
+                        || (matches(columnDefn, JcrLexicon.PATH) && !isType(getColumnType(), PropertyType.PATH))
+                        || (matches(columnDefn, ModeShapeLexicon.LOCALNAME) && !isType(getColumnType(), PropertyType.STRING))
+                        || (matches(columnDefn, ModeShapeLexicon.DEPTH) && !isType(getColumnType(), PropertyType.LONG))) {
+                        problems.addError(JcrI18n.localIndexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
+                                          defn.getName(), columnDefn.getPropertyName(), type, PropertyType.NAME);
+                    }
+                    break;
+                case UNIQUE_VALUE:
+                    break;
+                case ENUMERATED_VALUE:
+                    break;
+                case NODE_TYPE:
+                    if (columnDefn.getColumnType() != PropertyType.STRING.jcrType()) {
+                        problems.addError(JcrI18n.localIndexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
+                                          defn.getName(), columnDefn.getPropertyName(), type, PropertyType.STRING);
+                    }
+                    break;
+                case TEXT:
+                    // This is not valid ...
+                    problems.addError(JcrI18n.localIndexProviderDoesNotSupportTextIndexes, defn.getProviderName(), defn.getName());
             }
-            return true;
         }
 
         @SuppressWarnings( "unchecked" )
@@ -378,12 +374,10 @@ public abstract class ManagedLocalIndexBuilder<T> {
                     }
                     return new ManagedLocalIndex(dupIndex, changeAdapter);
                 case UNIQUE_VALUE:
+                    // Already validated ...
                     assert !isNodeTypesIndex();
-                    if (isPrimaryTypeIndex()) {
-                        throw new LocalIndexException("Unable to create UNIQUE index '{0}'with 'jcr:primaryType' column");
-                    } else if (isMixinTypesIndex()) {
-                        throw new LocalIndexException("Unable to create UNIQUE index '{0}' with 'jcr:mixinTypes' column");
-                    }
+                    assert !isPrimaryTypeIndex();
+                    assert !isMixinTypesIndex();
                     LocalUniqueIndex<T> uidx = LocalUniqueIndex.create(indexName(), workspaceName, db, getConverter(),
                                                                        getBTreeKeySerializer(), getSerializer());
                     // This is a single type ...
@@ -392,12 +386,10 @@ public abstract class ManagedLocalIndexBuilder<T> {
                                                                                 uidx);
                     return new ManagedLocalIndex(uidx, changeAdapter);
                 case ENUMERATED_VALUE:
+                    // Already validated ...
                     assert !isNodeTypesIndex();
-                    if (isPrimaryTypeIndex()) {
-                        throw new LocalIndexException("Unable to create ENUMERATED index '{0}' with 'jcr:primaryType' column");
-                    } else if (isMixinTypesIndex()) {
-                        throw new LocalIndexException("Unable to create ENUMERATED index '{0}' with 'jcr:mixinTypes' column");
-                    }
+                    assert !isPrimaryTypeIndex();
+                    assert !isMixinTypesIndex();
 
                     // We know that the value type must be a string if this is an enumerated ...
                     propertyName = name(firstColumn().getPropertyName());
@@ -412,8 +404,7 @@ public abstract class ManagedLocalIndexBuilder<T> {
                     changeAdapter = IndexChangeAdapters.forNodeTypes(context, workspaceName, idx);
                     return new ManagedLocalIndex(idx, changeAdapter);
                 case TEXT:
-                    // This is not valid ...
-                    throw new LocalIndexException("Unable to create TEXT index '{0}'");
+                    assert false : "should not ever see this because validation should prevent such indexes from being used";
             }
             assert false : "Should never get here";
             return null;

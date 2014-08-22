@@ -19,7 +19,7 @@ package org.modeshape.jcr.spi.index.provider;
 import javax.jcr.query.qom.Constraint;
 
 /**
- * A simple interface that provides a method to compute the cost of applying indexes.
+ * A simple interface that provides metrics needed to compute the cost of applying indexes.
  *
  * @author Randall Hauch (rhauch@redhat.com)
  */
@@ -32,4 +32,10 @@ public interface Costable {
      */
     long estimateCardinality( Constraint constraint );
 
+    /**
+     * Get the estimated number of entries within this index.
+     *
+     * @return the number of entries, or -1 if not known
+     */
+    long estimateTotalCount();
 }

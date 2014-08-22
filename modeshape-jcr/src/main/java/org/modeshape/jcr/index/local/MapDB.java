@@ -248,7 +248,7 @@ public class MapDB {
                                                                                     Serializer<A> aSerializer,
                                                                                     Serializer<B> bSerializer,
                                                                                     Comparator<Fun.Tuple2<A, B>> tupleComparator ) {
-        return new FunKeySerializer<>(aComparator, aSerializer, bSerializer, tupleComparator);
+        return new LocalTuple2KeySerializer<>(aComparator, aSerializer, bSerializer, tupleComparator);
     }
 
     public static final class UniqueKey<K> implements Serializable {
@@ -644,7 +644,8 @@ public class MapDB {
      * @param <B> second tuple value
      */
     @SuppressWarnings( "unchecked" )
-    protected final static class FunKeySerializer<A, B> extends BTreeKeySerializer<Fun.Tuple2<A, B>> implements Serializable {
+    protected final static class LocalTuple2KeySerializer<A, B> extends BTreeKeySerializer<Fun.Tuple2<A, B>>
+        implements Serializable {
 
         private static final long serialVersionUID = 0L;
         protected final Comparator<A> aComparator;
@@ -661,10 +662,10 @@ public class MapDB {
          * @param bSerializer serializer used for second tuple value
          * @param comparator the comparator for the tuple
          */
-        public FunKeySerializer( Comparator<A> aComparator,
-                                 Serializer<A> aSerializer,
-                                 Serializer<B> bSerializer,
-                                 Comparator<Fun.Tuple2<A, B>> comparator ) {
+        public LocalTuple2KeySerializer( Comparator<A> aComparator,
+                                         Serializer<A> aSerializer,
+                                         Serializer<B> bSerializer,
+                                         Comparator<Fun.Tuple2<A, B>> comparator ) {
             this.aComparator = aComparator;
             this.aSerializer = aSerializer;
             this.bSerializer = bSerializer;
@@ -728,7 +729,7 @@ public class MapDB {
         public boolean equals( Object o ) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            FunKeySerializer<A, B> t = (FunKeySerializer<A, B>)o;
+            LocalTuple2KeySerializer<A, B> t = (LocalTuple2KeySerializer<A, B>)o;
             return Fun.eq(aComparator, t.aComparator) && Fun.eq(aSerializer, t.aSerializer) && Fun.eq(bSerializer, t.bSerializer);
         }
 

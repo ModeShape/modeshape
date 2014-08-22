@@ -26,13 +26,6 @@ import org.modeshape.jcr.spi.index.provider.Filter;
 public interface LocalIndex<T> extends Filter, Costable {
 
     /**
-     * Get the estimated number of entries within this index.
-     *
-     * @return the number of entries, or -1 if not known
-     */
-    long estimateTotalCount();
-
-    /**
      * Remove all of the index entries from the index. This is typically called prior to reindexing.
      */
     void removeAll();

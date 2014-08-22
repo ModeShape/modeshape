@@ -23,7 +23,10 @@ import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.FullTextSearch;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.NodeTypes.Supplier;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
@@ -110,6 +113,14 @@ public class LocalIndexProvider extends IndexProvider {
                 db = null;
             }
         }
+    }
+
+    @Override
+    public void validateProposedIndex( ExecutionContext context,
+                                       IndexDefinition defn,
+                                       NodeTypes.Supplier nodeTypeSupplier,
+                                       Problems problems ) {
+        ManagedLocalIndexBuilder.create(context, defn, nodeTypeSupplier).validate(problems);
     }
 
     @Override

@@ -119,6 +119,10 @@ public final class JcrI18n {
     public static I18n indexDoesNotExist;
     public static I18n indexMustHaveName;
     public static I18n indexMustHaveProviderName;
+    public static I18n invalidIndexDefinitions;
+    public static I18n unableToCreateUniqueIndexForColumn;
+    public static I18n unableToCreateEnumeratedIndexForColumn;
+    public static I18n nodeTypeIndexMustHaveOneColumn;
     public static I18n errorRefreshingIndexDefinitions;
     public static I18n errorNotifyingProviderOfInitialIndexDefinitions;
     public static I18n errorNotifyingProviderOfIndexChanges;
@@ -552,10 +556,12 @@ public final class JcrI18n {
     public static I18n journalHasNotCompletedReconciliation;
 
     public static I18n indexProviderNameMustMatchProvider;
+    public static I18n indexDefinitionIsInvalid;
     public static I18n localIndexProviderMustHaveDirectory;
     public static I18n localIndexProviderDirectoryMustBeReadable;
     public static I18n localIndexProviderDirectoryMustBeWritable;
     public static I18n localIndexMustHaveOneColumnOfSpecificType;
+    public static I18n localIndexProviderDoesNotSupportTextIndexes;
 
     private JcrI18n() {
     }

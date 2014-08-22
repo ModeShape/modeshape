@@ -27,13 +27,6 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 public interface ManagedIndex extends Filter, Costable {
 
     /**
-     * Get the estimated number of entries within this index.
-     *
-     * @return the number of entries, or -1 if not known
-     */
-    long estimateTotalCount();
-
-    /**
      * Get the ChangeSetAdapter implementation through which changes to content are sent to the index. Each local index has an
      * {@link ChangeSetListener} that is registered on the event bus and kept throughout the lifetime of the index (even if there
      * are changes), and that listener delegates to this adapter.
