@@ -26,6 +26,8 @@ import org.modeshape.jcr.query.model.LiteralValue;
 import org.modeshape.jcr.value.ValueFactory;
 
 /**
+ * Utilities for working with individual values.
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public class IndexValues {
@@ -33,17 +35,17 @@ public class IndexValues {
     /**
      * Converts between {@link StaticOperand} and an index's key type.
      * <p>
-     * Note that {@link IndexKind#DUPLICATES} indexes may have multiple node keys for a given value, which means that any given
+     * Note that {@link IndexKind#VALUE} indexes may have multiple node keys for a given value, which means that any given
      * value might have a range of keys. Some MapDB-based indexes store such entries using an index key that consists of the
      * actual property value plus a counter. In this way, there are multiple index keys for a given {@link StaticOperand}, and the
      * {@link #toLowerValue(StaticOperand)} will return the lowest-possible index key given the {@link StaticOperand}, while the
      * {@link #toUpperValue(StaticOperand)} will return the highest-possible index key for the given {@link StaticOperand}
      * </p>
      * <p>
-     * {@link IndexKind#UNIQUE} indexes will use the actual property value as the index key, and thus the
+     * {@link IndexKind#UNIQUE_VALUE} indexes will use the actual property value as the index key, and thus the
      * {@link #toLowerValue(StaticOperand)} and {@link #toUpperValue(StaticOperand)} methods will both return the same index key
      * for the same {@link StaticOperand}.
-     * 
+     *
      * @param <T> the index's key type
      * @author Randall Hauch (rhauch@redhat.com)
      */
@@ -51,7 +53,7 @@ public class IndexValues {
 
         /**
          * Create the lowest possible index key for the supplied {@link StaticOperand}.
-         * 
+         *
          * @param operand the static operand; may be null
          * @return the lowest/smallest possible index key; or null if the operand is null
          */
@@ -59,7 +61,7 @@ public class IndexValues {
 
         /**
          * Create the highest possible index key for the supplied {@link StaticOperand}.
-         * 
+         *
          * @param operand the static operand; may be null
          * @return the highest/largest possible index key; or null if the operand is null
          */

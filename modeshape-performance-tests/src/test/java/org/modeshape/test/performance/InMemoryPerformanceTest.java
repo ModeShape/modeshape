@@ -36,7 +36,6 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 
@@ -51,7 +50,6 @@ public class InMemoryPerformanceTest {
 
     private static final int MANY_NODES_COUNT = 10000;
 
-    private Environment environment;
     private RepositoryConfiguration config;
     protected ModeShapeEngine engine;
     protected Repository repository;
@@ -255,13 +253,13 @@ public class InMemoryPerformanceTest {
     public void shouldGetNodePathsInFlatLargeHierarchyWithSns() throws Exception {
         boolean print = true;
 
-        //insert 100k nodes with 10 props each under the same parent in batches of 500
+        // insert 100k nodes with 10 props each under the same parent in batches of 500
         int initialNodeCount = 100000;
         int insertBatchSize = 500;
         int insertBatches = initialNodeCount / insertBatchSize;
         int propertiesPerChild = 10;
 
-        //create a parent with a number of nodes initially
+        // create a parent with a number of nodes initially
         Node parent = session.getRootNode().addNode("testRoot");
         session.save();
 
@@ -271,7 +269,7 @@ public class InMemoryPerformanceTest {
             System.out.println("Starting to insert batches...");
         }
         for (int i = 0; i < insertBatches; i++) {
-            //reload the parent in the session after it was saved
+            // reload the parent in the session after it was saved
             parent = session.getNode("/testRoot");
             createSubgraph(session, parent, 1, insertBatchSize, propertiesPerChild, true, 1);
         }
@@ -282,16 +280,16 @@ public class InMemoryPerformanceTest {
         globalSw.reset();
         globalSw.start();
         Stopwatch readSW = new Stopwatch();
-        //add additional batches of nodes while reading the paths after each batch of children was added
+        // add additional batches of nodes while reading the paths after each batch of children was added
         int batchCount = 36;
         int batchSize = 1000;
         for (int i = 0; i < batchCount; i++) {
-            //creates batchSize
+            // creates batchSize
             long childCountAtBatchStart = session.getNode("/testRoot").getNodes().getSize();
             int newChildrenCount = createSubgraph(session, parent, 1, batchSize, propertiesPerChild, true, 1);
             readSW.start();
 
-            //load each of the newly added children into the session and get their paths
+            // load each of the newly added children into the session and get their paths
             final long newChildCount = childCountAtBatchStart + newChildrenCount;
 
             for (long j = childCountAtBatchStart; j < newChildCount; j++) {
@@ -302,11 +300,11 @@ public class InMemoryPerformanceTest {
             }
             readSW.lap();
 
-            //change the parent & save so that it's flushed from the cache
+            // change the parent & save so that it's flushed from the cache
             session.getNode("/testRoot").setProperty("test", "test");
             session.save();
 
-            //now get the paths of each child via parent relative path navigation
+            // now get the paths of each child via parent relative path navigation
             for (long j = childCountAtBatchStart; j <= newChildCount; j++) {
                 final String childName = "childNode[" + j + "]";
                 final Node child = session.getNode("/testRoot").getNode(childName);
@@ -315,11 +313,11 @@ public class InMemoryPerformanceTest {
             }
             readSW.lap();
 
-            //change the parent & save so that it's flushed from the cache
+            // change the parent & save so that it's flushed from the cache
             session.getNode("/testRoot").setProperty("test", "test1");
             session.save();
 
-            //iterate through all the children of the parent and read the path
+            // iterate through all the children of the parent and read the path
             NodeIterator nodeIterator = session.getNode("/testRoot").getNodes();
             while (nodeIterator.hasNext()) {
                 final Node child = nodeIterator.nextNode();
@@ -332,7 +330,7 @@ public class InMemoryPerformanceTest {
             }
             readSW.reset();
 
-            //change the parent & save so that it's flushed from the cache
+            // change the parent & save so that it's flushed from the cache
             session.getNode("/testRoot").setProperty("test", "test2");
             session.save();
 
@@ -357,11 +355,10 @@ public class InMemoryPerformanceTest {
         Stopwatch sw = new Stopwatch();
         sw.start();
         int totalNumberOfNodes = createSubgraphBreadthFirst(1, nodeType, "/testRoot", totalNodeCount, childrenPerNode,
-                                                            propertiesPerNode,
-                                                            true);
+                                                            propertiesPerNode, true);
         sw.stop();
-        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": " + sw
-                .getSimpleStatistics());
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": "
+                           + sw.getSimpleStatistics());
     }
 
     @Test
@@ -378,11 +375,10 @@ public class InMemoryPerformanceTest {
         Stopwatch sw = new Stopwatch();
         sw.start();
         int totalNumberOfNodes = createSubgraphBreadthFirst(1, nodeType, "/testRoot", totalNodeCount, childrenPerNode,
-                                                            propertiesPerNode,
-                                                            false);
+                                                            propertiesPerNode, false);
         sw.stop();
-        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": " + sw
-                .getSimpleStatistics());
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": "
+                           + sw.getSimpleStatistics());
     }
 
     @Test
@@ -399,11 +395,10 @@ public class InMemoryPerformanceTest {
         Stopwatch sw = new Stopwatch();
         sw.start();
         int totalNumberOfNodes = createSubgraphDepthFirst(nodeType, "/testRoot", totalNodeCount, childrenPerNode,
-                                                          propertiesPerNode,
-                                                          true);
+                                                          propertiesPerNode, true);
         sw.stop();
-        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": " + sw
-                .getSimpleStatistics());
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": "
+                           + sw.getSimpleStatistics());
     }
 
     @Test
@@ -420,18 +415,27 @@ public class InMemoryPerformanceTest {
         Stopwatch sw = new Stopwatch();
         sw.start();
         int totalNumberOfNodes = createSubgraphDepthFirst(nodeType, "/testRoot", totalNodeCount, childrenPerNode,
-                                                          propertiesPerNode,
-                                                          false);
+                                                          propertiesPerNode, false);
         sw.stop();
-        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": " + sw
-                .getSimpleStatistics());
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": "
+                           + sw.getSimpleStatistics());
     }
 
-
     /**
-     * Creates a balanced subgraph of {@code totalNumberOfNodes} nodes, where each parent will have as close as possible
-     * to {@code numberOfChildrenPerNode} children.
-     * The code will save the session after each set of children has been inserted under a parent.
+     * Creates a balanced subgraph of {@code totalNumberOfNodes} nodes, where each parent will have as close as possible to
+     * {@code numberOfChildrenPerNode} children. The code will save the session after each set of children has been inserted under
+     * a parent.
+     * 
+     * @param level
+     * @param nodeType
+     * @param parentAbsPath
+     * @param totalNumberOfNodes
+     * @param numberOfChildrenPerNode
+     * @param numberOfPropertiesPerNode
+     * @param useSns
+     * @return the total number of nodes created
+     * @throws RepositoryException
+     * @throws RepositoryException
      */
     protected int createSubgraphBreadthFirst( int level,
                                               String nodeType,
@@ -475,32 +479,34 @@ public class InMemoryPerformanceTest {
 
         if (totalNodesForChild > 0) {
             for (String childPath : childPaths) {
-                numberCreated += createSubgraphBreadthFirst(level + 1, nodeType,
-                                                            childPath, totalNodesForChild, numberOfChildrenPerNode,
-                                                            numberOfPropertiesPerNode, useSns);
+                numberCreated += createSubgraphBreadthFirst(level + 1, nodeType, childPath, totalNodesForChild,
+                                                            numberOfChildrenPerNode, numberOfPropertiesPerNode, useSns);
             }
         }
 
         if (overflow > 0) {
-            //add some extra children to the last child from the list
-            numberCreated += createSubgraphBreadthFirst(level + 1,
-                                                        nodeType,
-                                                        childPaths.get(childPaths.size() - 1),
-                                                        overflow,
-                                                        overflow,
-                                                        numberOfPropertiesPerNode,
-                                                        useSns);
+            // add some extra children to the last child from the list
+            numberCreated += createSubgraphBreadthFirst(level + 1, nodeType, childPaths.get(childPaths.size() - 1), overflow,
+                                                        overflow, numberOfPropertiesPerNode, useSns);
         }
         return numberCreated;
     }
 
     /**
-     * Creates an "extremely" left-unbalanced  subgraph of {@code totalNumberOfNodes} nodes, where each level will have
-     * {@code numberOfChildrenPerNode} nodes under the left-most node.
-     * The code will save the session after each set of children has been inserted under a parent.
+     * Creates an "extremely" left-unbalanced subgraph of {@code totalNumberOfNodes} nodes, where each level will have
+     * {@code numberOfChildrenPerNode} nodes under the left-most node. The code will save the session after each set of children
+     * has been inserted under a parent.
+     *
+     * @param nodeType
+     * @param parentAbsPath
+     * @param totalNumberOfNodes
+     * @param numberOfChildrenPerNode
+     * @param numberOfPropertiesPerNode
+     * @param useSns
+     * @return the total number of nodes created
+     * @throws RepositoryException
      */
-    protected int createSubgraphDepthFirst(
-                                            String nodeType,
+    protected int createSubgraphDepthFirst( String nodeType,
                                             String parentAbsPath,
                                             int totalNumberOfNodes,
                                             int numberOfChildrenPerNode,
@@ -532,16 +538,14 @@ public class InMemoryPerformanceTest {
             }
             session.save();
             sw.stop();
-            System.out.println(
-                    "Time to insert " + numberOfChildrenPerNode + " nodes on level " + level++ + ": " + sw
-                            .getSimpleStatistics());
+            System.out.println("Time to insert " + numberOfChildrenPerNode + " nodes on level " + level++ + ": "
+                               + sw.getSimpleStatistics());
             totalNumberOfNodes -= numberOfChildrenPerNode;
             parentAbsPath = firstChildPath;
 
         } while (totalNumberOfNodes > 0);
         return totalNumberOfNodes;
     }
-
 
     /**
      * Create a structured subgraph by generating nodes with the supplied number of properties and children, to the supplied
@@ -553,7 +557,7 @@ public class InMemoryPerformanceTest {
      * @param numberOfChildrenPerNode the number of child nodes to create under each node
      * @param numberOfPropertiesPerNode the number of properties to create on each node; must be 0 or more
      * @param useSns true if the child nodes under a parent should be same-name-siblings, or false if they should each have their
-     * own unique name
+     *        own unique name
      * @param depthToSave
      * @return the number of nodes created in the subgraph
      * @throws RepositoryException if there is a problem
@@ -574,13 +578,8 @@ public class InMemoryPerformanceTest {
             }
             numberCreated += 1;
             if (depthRemaining > 1) {
-                numberCreated += createSubgraph(session,
-                                                child,
-                                                depthRemaining - 1,
-                                                numberOfChildrenPerNode,
-                                                numberOfPropertiesPerNode,
-                                                useSns,
-                                                depthToSave);
+                numberCreated += createSubgraph(session, child, depthRemaining - 1, numberOfChildrenPerNode,
+                                                numberOfPropertiesPerNode, useSns, depthToSave);
             }
         }
         if (depthRemaining == depthToSave) {

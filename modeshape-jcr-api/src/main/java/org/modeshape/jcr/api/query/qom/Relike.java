@@ -19,9 +19,22 @@ import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.PropertyValue;
 import javax.jcr.query.qom.StaticOperand;
 
+/**
+ * Tests whether the property value contains a regular expression that matches the supplied operand.
+ */
 public interface Relike extends Constraint {
 
+    /**
+     * Get the static operand that identifies the value to match.
+     *
+     * @return the static operand; never null
+     */
     StaticOperand getOperand1();
 
+    /**
+     * Get the specification of the property.
+     *
+     * @return the property value; never null
+     */
     PropertyValue getOperand2();
 }

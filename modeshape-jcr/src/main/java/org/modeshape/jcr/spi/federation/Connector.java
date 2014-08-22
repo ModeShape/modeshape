@@ -55,21 +55,21 @@ import org.modeshape.jcr.value.binary.UrlBinaryValue;
  * expected that the documents are well formed (structure-wise), the {@link FederatedDocumentWriter} class should be used. This is
  * the base class for {@link WritableConnector} and {@link ReadOnlyConnector} which is what connector implementations are expected
  * to implement.
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public abstract class Connector {
 
     /**
      * The logger instance, set via reflection
-     * 
+     *
      * @see #simpleLogger
      */
     private Logger logger;
 
     /**
      * The simpler API logger instance, set via reflection
-     * 
+     *
      * @see #logger
      */
     private org.modeshape.jcr.api.Logger simpleLogger;
@@ -154,8 +154,8 @@ public abstract class Connector {
     private ConnectorChangeSetFactory connectorChangedSetFactory;
 
     /**
-     * The {@link Environment} instance in which the repository operates. This should be used by connectors which need
-     * to perform class-path related operations.
+     * The {@link Environment} instance in which the repository operates. This should be used by connectors which need to perform
+     * class-path related operations.
      * <p>
      * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
      * </p>
@@ -171,7 +171,7 @@ public abstract class Connector {
 
     /**
      * Returns the name of the source which this connector interfaces with.
-     * 
+     *
      * @return a {@code non-null} string.
      */
     public String getSourceName() {
@@ -180,7 +180,7 @@ public abstract class Connector {
 
     /**
      * Get the name of the repository.
-     * 
+     *
      * @return the repository name; never null
      */
     public final String getRepositoryName() {
@@ -197,7 +197,7 @@ public abstract class Connector {
      * implementation. But since it is more complicated, it may not be for every developer. Subclasses can use this logger or the
      * simpler logger; you can even mix and match (though we'd recommend that you just pick one and only use it).
      * <p>
-     * 
+     *
      * @return the logger that requires using ModeShape I18n framework; never null
      * @see #log()
      */
@@ -214,7 +214,7 @@ public abstract class Connector {
      * more formal, I18n-compatible logger; you can even mix and match (though we'd recommend that you just pick one and only use
      * it).
      * <p>
-     * 
+     *
      * @return the simple logger that requires String messages; never null
      * @see #getLogger()
      */
@@ -225,7 +225,7 @@ public abstract class Connector {
     /**
      * Get the execution context for this connector instance. This is available for use in or after the
      * {@link #initialize(NamespaceRegistry, NodeTypeManager)} method.
-     * 
+     *
      * @return the context; never null
      */
     public ExecutionContext getContext() {
@@ -235,7 +235,7 @@ public abstract class Connector {
     /**
      * Get the MIME type detector for this connector instance. This is available for use in or after the
      * {@link #initialize(NamespaceRegistry, NodeTypeManager)} method.
-     * 
+     *
      * @return the MIME type detector; never null
      */
     public MimeTypeDetector getMimeTypeDetector() {
@@ -245,7 +245,7 @@ public abstract class Connector {
     /**
      * Returns the default value, for this connector, of the maximum number of seconds an external document should be stored in
      * the workspace cache.
-     * 
+     *
      * @return an {@link Integer} value. If {@code null}, it means that no special value is configured and the default workspace
      *         cache configuration will be used. If negative, it means an entry will be cached forever.
      */
@@ -255,7 +255,7 @@ public abstract class Connector {
 
     /**
      * Indicates if content exposed by this connector should be indexed by the repository or not.
-     * 
+     *
      * @return {@code true} if the content should be indexed, {@code false} otherwise.
      */
     public Boolean isQueryable() {
@@ -272,7 +272,7 @@ public abstract class Connector {
      * {@link #extraPropertiesFor(String,boolean) create} an {@link ExtraProperties} object for each node and use it to
      * {@link ExtraProperties#add(Property) add}, {@link ExtraProperties#remove(Name) remove} and then
      * {@link ExtraProperties#save() store or update} the extra properties in the extra properties store.
-     * 
+     *
      * @return the storage for extra properties; never null
      */
     protected ExtraPropertiesStore extraPropertiesStore() {
@@ -282,7 +282,7 @@ public abstract class Connector {
     /**
      * Method that can be called by a connector during {@link #initialize(NamespaceRegistry, NodeTypeManager) initialization} if
      * it wants to provide its own implementation of an "extra" properties store.
-     * 
+     *
      * @param customExtraPropertiesStore the custom implementation of the ExtraPropertiesStore; may not be null
      */
     protected void setExtraPropertiesStore( ExtraPropertiesStore customExtraPropertiesStore ) {
@@ -296,7 +296,8 @@ public abstract class Connector {
      * @param oldNodeId the old identifier for the node; may not be null
      * @param newNodeId the new identifier for the node; may not be null
      */
-    protected void moveExtraProperties( String oldNodeId, String newNodeId ) {
+    protected void moveExtraProperties( String oldNodeId,
+                                        String newNodeId ) {
         ExtraPropertiesStore extraPropertiesStore = extraPropertiesStore();
         if (extraPropertiesStore == null || !extraPropertiesStore.contains(oldNodeId)) {
             return;
@@ -308,7 +309,7 @@ public abstract class Connector {
 
     /**
      * Returns the transaction manager instance that was set on the connector during initialization.
-     * 
+     *
      * @return a {@code non-null} {@link TransactionManager} instance
      */
     protected TransactionManager getTransactionManager() {
@@ -338,7 +339,7 @@ public abstract class Connector {
      * This is an excellent place for connector to validate the connector-specific fields set by ModeShape via reflection during
      * instantiation.
      * </p>
-     * 
+     *
      * @param registry the namespace registry that can be used to register custom namespaces; never null
      * @param nodeTypeManager the node type manager that can be used to register custom node types; never null
      * @throws RepositoryException if operations on the {@link NamespaceRegistry} or {@link NodeTypeManager} fail
@@ -352,7 +353,7 @@ public abstract class Connector {
 
     /**
      * Method called by the code calling {@link #initialize} (typically via reflection) to signal that the initialize method is
-     * completed. See Sequencers.initialize() for details, and no this method is indeed used.
+     * completed. See initialize() for details, and no this method is indeed used.
      */
     @SuppressWarnings( "unused" )
     private void postInitialize() {
@@ -376,7 +377,7 @@ public abstract class Connector {
     /**
      * Returns a {@link Document} instance representing the document with a given id. The document should have a "proper"
      * structure for it to be usable by ModeShape.
-     * 
+     *
      * @param id a {@code non-null} string
      * @return either an {@link Document} instance or {@code null}
      */
@@ -384,7 +385,7 @@ public abstract class Connector {
 
     /**
      * Returns the id of an external node located at the given external path within the connector's exposed tree of content.
-     * 
+     *
      * @param externalPath a {@code non-null} string representing an external path, or "/" for the top-level node exposed by the
      *        connector
      * @return either the id of the document or {@code null}
@@ -394,7 +395,7 @@ public abstract class Connector {
     /**
      * Return the path(s) of the external node with the given identifier. The resulting paths are from the point of view of the
      * connector. For example, the "root" node exposed by the connector wil have a path of "/".
-     * 
+     *
      * @param id a {@code non-null} string
      * @return the connector-specific path(s) of the node, or an empty document if there is no such document; never null
      */
@@ -402,7 +403,7 @@ public abstract class Connector {
 
     /**
      * Indicates if the connector instance has been configured in read-only mode.
-     * 
+     *
      * @return {@code true} if the connector has been configured in read-only mode, false otherwise.
      */
     public abstract boolean isReadonly();
@@ -415,7 +416,7 @@ public abstract class Connector {
      * an {@link PageWriter#UNKNOWN_TOTAL_SIZE unknown number of children} in the
      * {@link PageWriter#addPage(String, int, long, long)} or {@link PageWriter#addPage(String, String, long, long)} methods.
      * </p>
-     * 
+     *
      * @param parentKey the key for the parent
      * @param childKey the key for the child
      * @return the document representation of a child reference, of null if the parent does not contain a child with the given key
@@ -434,7 +435,7 @@ public abstract class Connector {
      * should create the same ExternalBinaryValue subclass that is returned by this method. The
      * {@link ExternalBinaryValue#getId()} value from that instance will be passed into this method.
      * </p>
-     * 
+     *
      * @param id a {@code String} representing the identifier of the external binary which should have connector-specific meaning.
      *        This identifier need not be the SHA-1 hash of the content.
      * @return either a binary value implementation or {@code null} if there is no such value with the given id.
@@ -445,7 +446,7 @@ public abstract class Connector {
 
     /**
      * Removes the document with the given id.
-     * 
+     *
      * @param id a {@code non-null} string.
      * @return true if the document was removed, or false if there was no document with the given id
      */
@@ -453,7 +454,7 @@ public abstract class Connector {
 
     /**
      * Checks if a document with the given id exists in the end-source.
-     * 
+     *
      * @param id a {@code non-null} string.
      * @return {@code true} if such a document exists, {@code false} otherwise.
      */
@@ -461,7 +462,7 @@ public abstract class Connector {
 
     /**
      * Stores the given document.
-     * 
+     *
      * @param document a {@code non-null} {@link org.infinispan.schematic.document.Document} instance.
      * @throws DocumentAlreadyExistsException if there is already a new document with the same identifier
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
@@ -470,16 +471,16 @@ public abstract class Connector {
 
     /**
      * Updates a document using the provided changes.
-     * 
-     * @param documentChanges a {@code non-null} {@link DocumentChanges} object which contains
-     *        granular information about all the changes.
+     *
+     * @param documentChanges a {@code non-null} {@link DocumentChanges} object which contains granular information about all the
+     *        changes.
      */
     public abstract void updateDocument( DocumentChanges documentChanges );
 
     /**
      * Generates an identifier which will be assigned when a new document (aka. child) is created under an existing document
      * (aka.parent). This method should be implemented only by connectors which support writing.
-     * 
+     *
      * @param parentId a {@code non-null} {@link String} which represents the identifier of the parent under which the new
      *        document will be created.
      * @param newDocumentName a {@code non-null} {@link org.modeshape.jcr.value.Name} which represents the name that will be given
@@ -496,7 +497,7 @@ public abstract class Connector {
 
     /**
      * Utility method that checks whether the field with the supplied name is set.
-     * 
+     *
      * @param fieldValue the value of the field
      * @param fieldName the name of the field
      * @throws RepositoryException if the field value is null
@@ -515,7 +516,7 @@ public abstract class Connector {
     /**
      * Obtain a new {@link DocumentReader} that can be used to read an existing document, typically used within the
      * {@link #storeDocument(Document)} and {@link #updateDocument(DocumentChanges)} methods.
-     * 
+     *
      * @param document the document that should be read; may not be null
      * @return the document reader; never null
      */
@@ -526,7 +527,7 @@ public abstract class Connector {
     /**
      * Obtain a new {@link DocumentWriter} that can be used to construct a document, typically within the
      * {@link #getDocumentById(String)} method.
-     * 
+     *
      * @param id the identifier of the document; may not be null
      * @return the document writer; never null
      */
@@ -536,7 +537,7 @@ public abstract class Connector {
 
     /**
      * Obtain a new {@link DocumentWriter} that can be used to update a document.
-     * 
+     *
      * @param document the document that should be updated; may not be null
      * @return the document writer; never null
      */
@@ -547,7 +548,7 @@ public abstract class Connector {
     /**
      * Obtain a new {@link PageWriter} that can be used to construct a page of children, typically within the
      * {@link Pageable#getChildren(PageKey)} method.
-     * 
+     *
      * @param pageKey the key for the page; may not be null
      * @return the page writer; never null
      */
@@ -557,7 +558,7 @@ public abstract class Connector {
 
     /**
      * Obtain a new child reference document that is useful in the {@link #getChildReference(String, String)} method.
-     * 
+     *
      * @param childId the ID of the child node; may not be null
      * @param childName the name of the child node; may not be null
      * @return the child reference document; never null
@@ -569,7 +570,7 @@ public abstract class Connector {
 
     /**
      * Get the set of value factory objects that the connector can use to create property value objects.
-     * 
+     *
      * @return the collection of factories; never null
      */
     protected final ValueFactories factories() {
@@ -587,7 +588,7 @@ public abstract class Connector {
     /**
      * Helper method that creates a {@link Path} object from a string. This is equivalent to calling "
      * <code>pathFactory().create(path)</code>", and is simply provided for convenience.
-     * 
+     *
      * @param path the string from which the path is to be created
      * @return the value, or null if the supplied string is null
      * @throws ValueFormatException if the conversion from a string could not be performed
@@ -601,7 +602,7 @@ public abstract class Connector {
     /**
      * Helper method that creates a {@link Path} object from a parent path and a child path string. This is equivalent to calling
      * " <code>pathFactory().create(parentPath,childPath)</code>", and is simply provided for convenience.
-     * 
+     *
      * @param parentPath the parent path
      * @param childPath the child path as a string
      * @return the value, or null if the supplied string is null
@@ -618,7 +619,7 @@ public abstract class Connector {
     /**
      * Helper method that creates a {@link Name} object from a string, using no decoding. This is equivalent to calling "
      * <code>factories().getNameFactory().create(nameString)</code>", and is simply provided for convenience.
-     * 
+     *
      * @param nameString the string from which the name is to be created
      * @return the value, or null if the supplied string is null
      * @throws ValueFormatException if the conversion from a string could not be performed
@@ -635,7 +636,7 @@ public abstract class Connector {
     /**
      * Create a name from the given namespace URI and local name. This is equivalent to calling "
      * <code>factories().getNameFactory().create(namespaceUri,localName)</code>", and is simply provided for convenience.
-     * 
+     *
      * @param namespaceUri the namespace URI
      * @param localName the local name
      * @return the new name
@@ -654,7 +655,7 @@ public abstract class Connector {
     /**
      * Create a name from the given namespace URI and local name. This is equivalent to calling "
      * <code>factories().getNameFactory().create(namespaceUri,localName,decoder)</code>", and is simply provided for convenience.
-     * 
+     *
      * @param namespaceUri the namespace URI
      * @param localName the local name
      * @param decoder the decoder that should be used to decode the qualified name

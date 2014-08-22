@@ -37,12 +37,16 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.ArrayListMultimap;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.collection.Multimap;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.ReadOnlyIterator;
+import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
+import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexColumnDefinitionTemplate;
 import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
 import org.modeshape.jcr.api.index.IndexExistsException;
 import org.modeshape.jcr.api.index.InvalidIndexDefinitionException;
@@ -79,6 +83,23 @@ import org.modeshape.jcr.value.WorkspaceAndPath;
  */
 @ThreadSafe
 class RepositoryIndexManager implements IndexManager {
+
+    /**
+     * Names of properties that are known to have non-unique values when used in a single-valued index.
+     */
+    private static final Set<Name> NON_UNIQUE_PROPERTY_NAMES = Collections.unmodifiableSet(JcrLexicon.PRIMARY_TYPE,
+                                                                                           JcrLexicon.MIXIN_TYPES,
+                                                                                           JcrLexicon.PATH,
+                                                                                           ModeShapeLexicon.DEPTH,
+                                                                                           ModeShapeLexicon.LOCALNAME);
+    /**
+     * Names of properties that are known to have non-enumerated values when used in a single-valued index.
+     */
+    private static final Set<Name> NON_ENUMERATED_PROPERTY_NAMES = Collections.unmodifiableSet(JcrLexicon.PRIMARY_TYPE,
+                                                                                               JcrLexicon.MIXIN_TYPES,
+                                                                                               JcrLexicon.PATH,
+                                                                                               ModeShapeLexicon.DEPTH,
+                                                                                               ModeShapeLexicon.LOCALNAME);
 
     private final JcrRepository.RunningState repository;
     private final RepositoryConfiguration config;
@@ -120,7 +141,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * Initialize this manager by calling {@link IndexProvider#initialize()} on each of the currently-registered providers.
-     * 
+     *
      * @return the information about the portions of the repository that need to be scanned to (re)build indexes; null if no
      *         scanning is required
      */
@@ -182,7 +203,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * Initialize the supplied provider.
-     * 
+     *
      * @param provider the provider; may not be null
      * @throws RepositoryException if there is a problem initializing the provider
      */
@@ -216,7 +237,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * Get the query index writer that will delegate to all registered providers.
-     * 
+     *
      * @return the query index writer instance; never null
      */
     IndexWriter getIndexWriter() {
@@ -225,7 +246,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * Get the query index writer that will delegate to only those registered providers with the given names.
-     * 
+     *
      * @param providerNames the names of the providers that require indexing
      * @return a query index writer instance; never null
      */
@@ -324,23 +345,80 @@ class RepositoryIndexManager implements IndexManager {
 
     @Override
     public void registerIndexes( IndexDefinition[] indexDefinitions,
-                                 boolean allowUpdate )
-        throws InvalidIndexDefinitionException, IndexExistsException, RepositoryException {
+                                 boolean allowUpdate ) throws InvalidIndexDefinitionException, IndexExistsException {
         CheckArg.isNotNull(indexDefinitions, "indexDefinitions");
-        SessionCache systemCache = repository.createSystemSession(context, false);
-        SystemContent system = new SystemContent(systemCache);
+
+        // Before we do anything, validate each of the index definitions and throw an exception ...
+        RepositoryNodeTypeManager nodeTypeManager = repository.nodeTypeManager();
+        List<IndexDefinition> validated = new ArrayList<>(indexDefinitions.length);
+        Problems problems = new SimpleProblems();
         for (IndexDefinition defn : indexDefinitions) {
             String name = defn.getName();
             String providerName = defn.getProviderName();
-            if (indexes.getIndexDefinitions().containsKey(name)) {
-                throw new IndexExistsException(JcrI18n.indexAlreadyExists.text(name, repository.name()));
-            }
+
             if (name == null) {
-                throw new InvalidIndexDefinitionException(JcrI18n.indexMustHaveName.text(defn, repository.name()));
+                problems.addError(JcrI18n.indexMustHaveName, defn, repository.name());
+                continue;
+            }
+            if (indexes.getIndexDefinitions().containsKey(name) && !allowUpdate) {
+                // Throw this one immediately ...
+                String msg = JcrI18n.indexAlreadyExists.text(defn.getName(), repository.name());
+                throw new IndexExistsException(msg);
             }
             if (providerName == null) {
-                throw new InvalidIndexDefinitionException(JcrI18n.indexMustHaveProviderName.text(name, repository.name()));
+                problems.addError(JcrI18n.indexMustHaveProviderName, defn.getName(), repository.name());
+                continue;
             }
+            if (defn.hasSingleColumn()) {
+                IndexColumnDefinition columnDefn = defn.getColumnDefinition(0);
+                Name propName = context.getValueFactories().getNameFactory().create(columnDefn.getPropertyName());
+                switch (defn.getKind()) {
+                    case UNIQUE_VALUE:
+                        if (NON_UNIQUE_PROPERTY_NAMES.contains(propName)) {
+                            problems.addError(JcrI18n.unableToCreateUniqueIndexForColumn, defn.getName(),
+                                              columnDefn.getPropertyName());
+                        }
+                        break;
+                    case ENUMERATED_VALUE:
+                        if (NON_ENUMERATED_PROPERTY_NAMES.contains(propName)) {
+                            problems.addError(JcrI18n.unableToCreateEnumeratedIndexForColumn, defn.getName(),
+                                              columnDefn.getPropertyName());
+                        }
+                        break;
+                    case VALUE:
+                    case NODE_TYPE:
+                    case TEXT:
+                        break;
+                }
+            } else {
+                // Mulitple columns ...
+                if (defn.getKind() == IndexKind.NODE_TYPE) {
+                    // must be single-column indexes
+                    problems.addError(JcrI18n.nodeTypeIndexMustHaveOneColumn, defn.getName());
+                }
+            }
+            IndexProvider provider = providers.get(providerName);
+            if (provider == null) {
+                problems.addError(JcrI18n.indexProviderDoesNotExist, defn, repository.name());
+            } else {
+                // Have the provider validate the index
+                provider.validateProposedIndex(context, defn, nodeTypeManager, problems);
+
+                // Determine if the index should be enabled ...
+                if (!defn.isEnabled()) defn = RepositoryIndexDefinition.createFrom(defn, true);
+
+                validated.add(defn);
+            }
+        }
+        if (problems.hasErrors()) {
+            String msg = JcrI18n.invalidIndexDefinitions.text(repository.name(), problems);
+            throw new InvalidIndexDefinitionException(new JcrProblems(problems), msg);
+        }
+
+        SessionCache systemCache = repository.createSystemSession(context, false);
+        SystemContent system = new SystemContent(systemCache);
+        for (IndexDefinition defn : validated) {
+            String providerName = defn.getProviderName();
 
             // Determine if the index should be enabled ...
             defn = RepositoryIndexDefinition.createFrom(defn, providers.containsKey(providerName));
@@ -348,22 +426,28 @@ class RepositoryIndexManager implements IndexManager {
             // Write the definition to the system area ...
             system.store(defn, allowUpdate);
         }
+        // Save the changes ...
+        systemCache.save();
 
         // Refresh the immutable snapshot ...
         this.indexes = readIndexDefinitions();
     }
 
     @Override
-    public void unregisterIndex( String indexName ) throws NoSuchIndexException, RepositoryException {
-        IndexDefinition defn = indexes.getIndexDefinitions().get(indexName);
-        if (defn == null) {
-            throw new NoSuchIndexException(JcrI18n.indexDoesNotExist.text(indexName, repository.name()));
-        }
+    public void unregisterIndexes( String... indexNames ) throws NoSuchIndexException, RepositoryException {
+        if (indexNames == null || indexNames.length == 0) return;
 
         // Remove the definition from the system area ...
         SessionCache systemCache = repository.createSystemSession(context, false);
         SystemContent system = new SystemContent(systemCache);
-        system.remove(defn);
+        for (String indexName : indexNames) {
+            IndexDefinition defn = indexes.getIndexDefinitions().get(indexName);
+            if (defn == null) {
+                throw new NoSuchIndexException(JcrI18n.indexDoesNotExist.text(indexName, repository.name()));
+            }
+            system.remove(defn);
+        }
+        system.save();
 
         // Refresh the immutable snapshot ...
         this.indexes = readIndexDefinitions();
@@ -380,7 +464,7 @@ class RepositoryIndexManager implements IndexManager {
     /**
      * Get an immutable snapshot of the index definitions. This can be used by the query engine to determine which indexes might
      * be usable when quering a specific selector (node type).
-     * 
+     *
      * @return a snapshot of the index definitions at this moment; never null
      */
     public RepositoryIndexes getIndexes() {
@@ -463,9 +547,9 @@ class RepositoryIndexManager implements IndexManager {
                     if (removedPath.size() > 4) {
                         // It's a column definition being removed, so the index is changed ...
                         Name indexName = removedPath.getSegment(3).getName();
-                        changeInfoForProvider(changesByProviderName, providerName).changed(indexName);
+                        changeInfoForProvider(changesByProviderName, providerName).removed(indexName);
                     } else if (removedPath.size() > 3) {
-                        // Adding an index (or column definition), but all we care about is the name of the index
+                        // Removing an index (or column definition), but all we care about is the name of the index
                         Name indexName = removedPath.getSegment(3).getName();
                         changeInfoForProvider(changesByProviderName, providerName).removed(indexName);
                     } else if (removedPath.size() == 3) {
@@ -639,7 +723,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * An immutable view of the indexes defined for the repository.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     @Immutable
@@ -692,6 +776,11 @@ class RepositoryIndexManager implements IndexManager {
         }
 
         @Override
+        public boolean hasIndexDefinitions() {
+            return !indexByName.isEmpty();
+        }
+
+        @Override
         public Map<String, IndexDefinition> getIndexDefinitions() {
             return java.util.Collections.unmodifiableMap(indexByName);
         }
@@ -707,7 +796,7 @@ class RepositoryIndexManager implements IndexManager {
 
     /**
      * An immutable set of provider names and non-overlapping workspace-path pairs.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     @Immutable
@@ -733,7 +822,7 @@ class RepositoryIndexManager implements IndexManager {
 
         /**
          * Determine if this has no providers or workspace-path pairs.
-         * 
+         *
          * @return true if this request is empty, or false otherwise
          */
         public boolean isEmpty() {
@@ -747,7 +836,7 @@ class RepositoryIndexManager implements IndexManager {
 
         /**
          * Get the set of provider names that are to be included in the scanning.
-         * 
+         *
          * @return the provider names; never null but possibly empty if {@link #isEmpty()} returns true
          */
         public Set<String> providerNames() {
@@ -760,7 +849,7 @@ class RepositoryIndexManager implements IndexManager {
      * can be safely combined using {@link #add(ScanningTasks)}, and immutable snapshots of the information can be obtained via
      * {@link #drain()} (which atomically empties the providers and workspace-path pairs into the immutable
      * {@link ScanningRequest}).
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     @ThreadSafe
@@ -770,7 +859,7 @@ class RepositoryIndexManager implements IndexManager {
 
         /**
          * Add all of the provider names and workspace-path pairs from the supplied scanning task.
-         * 
+         *
          * @param other the other scanning task; may be null
          * @return true if there is at least one workspace-path pair and provider, or false if there are none
          */
@@ -787,7 +876,7 @@ class RepositoryIndexManager implements IndexManager {
         /**
          * Atomically drain all of the provider names and workspace-path pairs from this object and return them in an immutable
          * {@link ScanningRequest}.
-         * 
+         *
          * @return the immutable set of provider names and workspace-path pairs; never null
          */
         public synchronized ScanningRequest drain() {
@@ -838,7 +927,7 @@ class RepositoryIndexManager implements IndexManager {
 
         /**
          * Obtain an {@link IndexFeedback} instance that can be used to gather feedback from the named provider.
-         * 
+         *
          * @param providerName the name of the index provider; may not be null
          * @return the custom IndexFeedback instance; never null
          */

@@ -33,7 +33,7 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
 
     private String name;
     private String providerName;
-    private IndexKind kind = IndexKind.DUPLICATES;
+    private IndexKind kind = IndexKind.VALUE;
     private String nodeTypeName = DEFAULT_NODE_TYPE_NAME;
     private String description = "";
     private boolean enabled = true;
@@ -110,6 +110,14 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
     }
 
     @Override
+    public boolean appliesToProperty( String propertyName ) {
+        for (IndexColumnDefinition columnDefn : this) {
+            if (columnDefn.getPropertyName().equals(propertyName)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public IndexDefinitionTemplate setName( String name ) {
         CheckArg.isNotNull(name, "name");
         this.name = name;
@@ -146,6 +154,24 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
     public IndexDefinitionTemplate setColumnDefinitions( Iterable<? extends IndexColumnDefinition> columnDefinitions ) {
         this.columnDefns.clear();
         for (IndexColumnDefinition defn : columnDefinitions) {
+            this.columnDefns.add(RepositoryIndexColumnDefinition.createFrom(defn));
+        }
+        return this;
+    }
+
+    @Override
+    public IndexDefinitionTemplate setColumnDefinitions( IndexColumnDefinition columnDefinition ) {
+        this.columnDefns.clear();
+        this.columnDefns.add(RepositoryIndexColumnDefinition.createFrom(columnDefinition));
+        return this;
+    }
+
+    @Override
+    public IndexDefinitionTemplate setColumnDefinitions( IndexColumnDefinition firstColumnDefinition,
+                                                         IndexColumnDefinition... additionalColumnDefinitions ) {
+        this.columnDefns.clear();
+        this.columnDefns.add(RepositoryIndexColumnDefinition.createFrom(firstColumnDefinition));
+        for (IndexColumnDefinition defn : additionalColumnDefinitions) {
             this.columnDefns.add(RepositoryIndexColumnDefinition.createFrom(defn));
         }
         return this;

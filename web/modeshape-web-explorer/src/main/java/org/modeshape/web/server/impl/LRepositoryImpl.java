@@ -29,7 +29,6 @@ import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.server.LRepository;
 
 /**
- *
  * @author kulikov
  */
 public class LRepositoryImpl implements LRepository {
@@ -38,24 +37,24 @@ public class LRepositoryImpl implements LRepository {
     private HashMap<String, Session> sessions = new HashMap<>();
     private String[] workspaces;
     private final static Logger logger = Logger.getLogger(LRepositoryImpl.class);
-    
-    public LRepositoryImpl(JcrRepository repository, Credentials creds) throws RepositoryException {
+
+    public LRepositoryImpl( JcrRepository repository,
+                            Credentials creds ) throws RepositoryException {
         this.creds = creds;
         assert repository != null;
         this.repository = repository;
         logger.debug("Logging to repository " + repository + " as " + creds);
-        Session session = creds != null ? 
-                repository.login(creds) : repository.login();
+        Session session = creds != null ? repository.login(creds) : repository.login();
         sessions.put(session.getWorkspace().getName(), session);
         workspaces = session.getWorkspace().getAccessibleWorkspaceNames();
         logger.debug("[" + this.repository.getName() + "] available workspaces " + wsnames());
     }
-    
+
     @Override
     public String name() {
         return repository.getName();
     }
-    
+
     @Override
     public String[] getWorkspaces() {
         logger.debug("[" + this.repository.getName() + "] Requested workspaces " + wsnames());
@@ -73,19 +72,17 @@ public class LRepositoryImpl implements LRepository {
         builder.append("}");
         return builder.toString();
     }
-    
+
     @Override
-    public Session session(String workspace) throws RemoteException {
+    public Session session( String workspace ) throws RemoteException {
         if (sessions.containsKey(workspace)) {
             logger.debug("[" + this.repository.getName() + "] has already session to " + workspace);
             return sessions.get(workspace);
         }
-        
+
         try {
             logger.debug("[" + this.repository.getName() + "] has not yet session to " + workspace);
-            Session session = creds != null ? 
-                    repository.login(creds, workspace) : 
-                    repository.login(workspace);
+            Session session = creds != null ? repository.login(creds, workspace) : repository.login(workspace);
             sessions.put(workspace, session);
             return session;
         } catch (RepositoryException e) {
@@ -93,19 +90,19 @@ public class LRepositoryImpl implements LRepository {
         }
     }
 
-    private Session session() throws RemoteException {
+    private Session session() {
         return sessions.values().iterator().next();
     }
-    
+
     @Override
     public Repository repository() {
         return repository;
     }
 
     @Override
-    public void backup(String name) throws RemoteException {
+    public void backup( String name ) throws RemoteException {
         try {
-            File backupDir = new File(name);            
+            File backupDir = new File(name);
             RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session()).getWorkspace().getRepositoryManager();
             mgr.backupRepository(backupDir);
         } catch (Exception e) {
@@ -114,9 +111,9 @@ public class LRepositoryImpl implements LRepository {
     }
 
     @Override
-    public void restore(String name) throws RemoteException {
+    public void restore( String name ) throws RemoteException {
         try {
-            File backupDir = new File(name);            
+            File backupDir = new File(name);
             RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session()).getWorkspace().getRepositoryManager();
             mgr.restoreRepository(backupDir);
         } catch (Exception e) {
@@ -124,7 +121,7 @@ public class LRepositoryImpl implements LRepository {
         }
     }
 
-    public void importXML(String workspace) throws RemoteException {
+    public void importXML( String workspace ) throws RemoteException {
         try {
             Workspace ws = ((org.modeshape.jcr.api.Session)session(workspace)).getWorkspace();
             ws.importXML(workspace, null, 0);
@@ -132,5 +129,5 @@ public class LRepositoryImpl implements LRepository {
             throw new RemoteException(e.getMessage());
         }
     }
-    
+
 }

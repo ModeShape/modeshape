@@ -22,17 +22,47 @@ import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * An iterator implementation that wraps multiple other iterators.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  * @param <E> the value type
  */
 @NotThreadSafe
-public class MultiIterator<E> implements Iterator<E> {
+public final class MultiIterator<E> implements Iterator<E> {
+
+    public static <E> MultiIterator<E> fromIterators( Iterable<Iterator<E>> iterators ) {
+        return new MultiIterator<>(iterators);
+    }
+
+    public static <E> MultiIterator<E> fromIterables( final Iterable<? extends Iterable<E>> iterables ) {
+        final Iterator<? extends Iterable<E>> iterator = iterables.iterator();
+        Iterable<Iterator<E>> iterators = new Iterable<Iterator<E>>() {
+            @Override
+            public Iterator<Iterator<E>> iterator() {
+                return new Iterator<Iterator<E>>() {
+                    @Override
+                    public boolean hasNext() {
+                        return iterator.hasNext();
+                    }
+
+                    @Override
+                    public Iterator<E> next() {
+                        return iterator.next().iterator();
+                    }
+
+                    @Override
+                    public void remove() {
+                        iterator.remove();
+                    }
+                };
+            }
+        };
+        return new MultiIterator<>(iterators);
+    }
 
     private final Iterator<Iterator<E>> iterators;
     private Iterator<E> current;
 
-    public MultiIterator( Iterable<Iterator<E>> iterators ) {
+    protected MultiIterator( Iterable<Iterator<E>> iterators ) {
         this.iterators = iterators.iterator();
     }
 

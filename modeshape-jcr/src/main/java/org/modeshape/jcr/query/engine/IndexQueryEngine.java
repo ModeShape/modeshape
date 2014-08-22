@@ -16,23 +16,17 @@
 package org.modeshape.jcr.query.engine;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
-import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryEngine;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.model.QueryCommand;
-import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.optimize.AddIndexes;
 import org.modeshape.jcr.query.optimize.Optimizer;
 import org.modeshape.jcr.query.optimize.OptimizerRule;
@@ -41,7 +35,7 @@ import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.Planner;
 import org.modeshape.jcr.spi.index.Index;
-import org.modeshape.jcr.spi.index.IndexCollector;
+import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.spi.index.IndexManager;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
@@ -106,7 +100,6 @@ public class IndexQueryEngine extends ScanningQueryEngine {
                     @Override
                     protected void populateIndexingRules( LinkedList<OptimizerRule> ruleStack,
                                                           PlanHints hints ) {
-                        super.populateIndexingRules(ruleStack, hints);
                         ruleStack.addLast(indexingRule);
                     }
                 };
@@ -123,7 +116,7 @@ public class IndexQueryEngine extends ScanningQueryEngine {
 
     /**
      * A {@link IndexPlanner} implementation that passes through only those indexes that are owned by the named provider.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     protected static class ProviderIndexPlanner extends IndexPlanner {
@@ -138,48 +131,9 @@ public class IndexQueryEngine extends ScanningQueryEngine {
 
         @Override
         public void applyIndexes( QueryContext context,
-                                  SelectorName selector,
-                                  List<Constraint> andedConstraints,
-                                  Iterable<IndexDefinition> indexesOnSelector,
-                                  IndexCollector indexes ) {
-            if (indexesOnSelector == null) return;
-            final Iterator<IndexDefinition> iterator = indexesOnSelector.iterator();
-            if (!iterator.hasNext()) return;
-            Iterable<IndexDefinition> filtered = new Iterable<IndexDefinition>() {
-                @Override
-                public Iterator<IndexDefinition> iterator() {
-                    return new Iterator<IndexDefinition>() {
-                        private IndexDefinition next;
-
-                        @Override
-                        public boolean hasNext() {
-                            return moveToNext();
-                        }
-
-                        @Override
-                        public IndexDefinition next() {
-                            if (!moveToNext()) throw new NoSuchElementException();
-                            return next;
-                        }
-
-                        @Override
-                        public void remove() {
-                            throw new UnsupportedOperationException();
-                        }
-
-                        protected boolean moveToNext() {
-                            if (next != null) return true;
-                            while (iterator.hasNext()) {
-                                next = iterator.next();
-                                if (providerName.equals(next.getProviderName())) return true;
-                            }
-                            next = null;
-                            return false;
-                        }
-                    };
-                }
-            };
-            providerPlanner.applyIndexes(context, selector, andedConstraints, filtered, indexes);
+                                  IndexCostCalculator calculator ) {
+            if (!context.getIndexDefinitions().hasIndexDefinitions()) return;
+            providerPlanner.applyIndexes(context, calculator);
         }
 
         @Override
@@ -190,7 +144,7 @@ public class IndexQueryEngine extends ScanningQueryEngine {
 
     /**
      * Obtain a builder that can be used to create new query engine instances.
-     * 
+     *
      * @return the builder; never null
      */
     public static Builder builder() {

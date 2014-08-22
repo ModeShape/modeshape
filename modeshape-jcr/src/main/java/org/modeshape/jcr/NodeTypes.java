@@ -403,6 +403,10 @@ public class NodeTypes {
      */
     public boolean isTypeOrSubtype( Name nodeTypeName,
                                     Name candidateSupertypeName ) {
+        if (JcrNtLexicon.BASE.equals(candidateSupertypeName)) {
+            // If the candidate is 'nt:base', then every node type is a subtype ...
+            return true;
+        }
         if (nodeTypeName.equals(candidateSupertypeName)) return true;
         JcrNodeType primaryType = getNodeType(nodeTypeName);
         if (primaryType.isNodeType(candidateSupertypeName)) {
@@ -580,6 +584,29 @@ public class NodeTypes {
     }
 
     /**
+     * Determine if the named property on the node type is a reference property.
+     *
+     * @param nodeTypeName the name of the node type; may not be null
+     * @param propertyName the name of the property definition; may not be null
+     * @return true if the property is a {@link PropertyType#REFERENCE}, {@link PropertyType#WEAKREFERENCE}, or
+     *         {@link org.modeshape.jcr.api.PropertyType#SIMPLE_REFERENCE}, or false otherwise
+     */
+    public boolean isReferenceProperty( Name nodeTypeName,
+                                        Name propertyName ) {
+        JcrNodeType type = getNodeType(nodeTypeName);
+        if (type != null) {
+            for (JcrPropertyDefinition propDefn : type.allPropertyDefinitions(propertyName)) {
+                int requiredType = propDefn.getRequiredType();
+                if (requiredType == PropertyType.REFERENCE || requiredType == PropertyType.WEAKREFERENCE
+                    || requiredType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Determine if the named primary node type or mixin types has at least one mandatory property definitions declared on it or
      * any of its supertypes.
      *
@@ -743,6 +770,10 @@ public class NodeTypes {
     }
 
     JcrNodeType getNodeType( Name nodeTypeName ) {
+        return nodeTypes.get(nodeTypeName);
+    }
+
+    public NodeType getJcrNodeType( Name nodeTypeName ) {
         return nodeTypes.get(nodeTypeName);
     }
 

@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.index.local;
+package org.modeshape.common.function;
 
 /**
+ * Represents a function that accepts one argument and produces a result.
+ * 
  * @author Randall Hauch (rhauch@redhat.com)
+ * @param <T> - the type of the input to the function
+ * @param <R> - the type of the result of the function
  */
-public class LocalIndexInfo {
+public abstract class Function<T, R> {
 
-    protected final LocalIndex<?> index;
-
-    public LocalIndexInfo( LocalIndex<?> index ) {
-        this.index = index;
-    }
-
+    public abstract R apply( T input );
 }

@@ -42,6 +42,7 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.version.OnParentVersionAction;
 import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.RepositoryLockManager.ModeShapeLock;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
@@ -73,13 +74,19 @@ import org.modeshape.jcr.value.basic.BasicNamespace;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
- * 
+ *
  */
 public class SystemContent {
 
     public static final String GENERATED_PREFIX = "ns";
     private static final Name GENERATED_NAMESPACE_NODE_NAME = new BasicName("", GENERATED_PREFIX);
     protected static final Pattern GENERATED_PREFIX_PATTERN = Pattern.compile("ns(\\d{3})");
+
+    private static final Set<Name> NON_EXTENDED_PROPERTIES = Collections.unmodifiableSet(JcrLexicon.PRIMARY_TYPE,
+                                                                                         JcrLexicon.MIXIN_TYPES,
+                                                                                         ModeShapeLexicon.KIND,
+                                                                                         ModeShapeLexicon.WORKSPACES,
+                                                                                         JcrLexicon.DESCRIPTION);
 
     private final SessionCache system;
     private NodeKey systemKey;
@@ -235,7 +242,7 @@ public class SystemContent {
      * guidance provided in section 6.7.22 of the JCR 1.0 specification and section 4.7.24 of the JCR 2.0 specification where
      * possible.
      * </p>
-     * 
+     *
      * @param nodeTypes the node types to write out; may not be null
      * @param updateExisting a boolean flag denoting whether the new node type definition should be overwrite an existing node
      *        type definition
@@ -266,7 +273,7 @@ public class SystemContent {
      * guidance provided in section 6.7.22 of the JCR 1.0 specification and section 4.7.24 of the JCR 2.0 specification where
      * possible.
      * </p>
-     * 
+     *
      * @param nodeType the node type to write; may not be null
      * @param updateExisting a boolean flag denoting whether the new node type definition should be overwrite an existing node
      *        type definition
@@ -280,7 +287,7 @@ public class SystemContent {
     /**
      * Projects the node types onto the provided graph under the location of <code>parentOfTypeNodes</code>. The operations needed
      * to create the node (and any child nodes or properties) will be added to the batch specified in <code>batch</code>.
-     * 
+     *
      * @param nodeType the node type to be projected
      * @param nodeTypes the parent node under which each node type should be saved; may not be null
      * @param updateExisting a boolean flag denoting whether the new node type definition should be overwrite an existing node
@@ -379,7 +386,7 @@ public class SystemContent {
      * nodes for which the JCR layer cannot determine the corresponding node definition. This WILL corrupt the graph from a JCR
      * standpoint and make it unusable through the ModeShape JCR layer.
      * </p>
-     * 
+     *
      * @param nodeTypeNode the parent node under which each property definition should be saved; may not be null
      * @param propertyDef the property definition to be projected
      */
@@ -458,7 +465,7 @@ public class SystemContent {
      * nodes for which the JCR layer cannot determine the corresponding node definition. This WILL corrupt the graph from a JCR
      * standpoint and make it unusable through the ModeShape JCR layer.
      * </p>
-     * 
+     *
      * @param nodeTypeNode the parent node under which each property definition should be saved; may not be null
      * @param childNodeDef the child node definition to be projected
      */
@@ -516,15 +523,13 @@ public class SystemContent {
         Map<String, Object> extendedProps = new HashMap<>();
         for (Iterator<Property> props = indexDefn.getProperties(system); props.hasNext();) {
             Property prop = props.next();
+            if (NON_EXTENDED_PROPERTIES.contains(prop.getName())) continue;
             if (prop.isSingle()) {
                 extendedProps.put(strings.create(prop.getName()), prop);
             } else if (prop.isMultiple()) {
                 extendedProps.put(strings.create(prop.getName()), prop);
             }
         }
-        extendedProps.remove(ModeShapeLexicon.KIND);
-        extendedProps.remove(ModeShapeLexicon.WORKSPACES);
-        extendedProps.remove(JcrLexicon.DESCRIPTION);
 
         Collection<IndexColumnDefinition> columnDefns = new LinkedList<>();
         for (ChildReference ref : indexDefn.getChildReferences(system)) {
@@ -549,7 +554,7 @@ public class SystemContent {
      * Read from system storage the index definitions. If the names of the providers are providers, then the resulting index
      * definitions will each be {@link IndexDefinition#isEnabled() enabled} only if the definition's named provider is in the
      * supplied set; otherwise, the definition will be marked as disabled.
-     * 
+     *
      * @param providerNames the names of the providers that should be used to determine which index definitions are
      *        {@link IndexDefinition#isEnabled() enabled}; may be null if not known and all index definitions will be
      *        {@link IndexDefinition#isEnabled() enabled}
@@ -564,7 +569,9 @@ public class SystemContent {
             for (ChildReference indexRef : provider.getChildReferences(system)) {
                 CachedNode indexDefn = system.getNode(indexRef);
                 IndexDefinition defn = readIndexDefinition(indexDefn, providerName);
-                if (!providerNames.contains(defn.getProviderName())) {
+                if (providerNames.contains(defn.getProviderName())) {
+                    defns.add(defn);
+                } else {
                     // There is no provider by this name, so mark it as not enabled ...
                     defn = RepositoryIndexDefinition.createFrom(defn, false);
                 }
@@ -656,7 +663,7 @@ public class SystemContent {
             }
         }
 
-        // Define the properties for this node type ...
+        // Define the properties for this index definition ...
         List<Property> properties = new ArrayList<Property>();
         // Add the extended properties first, in case the standard ones overwrite them ...
         for (Map.Entry<String, Object> entry : indexDefn.getIndexProperties().entrySet()) {
@@ -670,12 +677,12 @@ public class SystemContent {
         properties.add(propertyFactory.create(ModeShapeLexicon.KIND, indexDefn.getKind().name()));
         properties.add(propertyFactory.create(ModeShapeLexicon.NODE_TYPE_NAME, indexDefn.getNodeTypeName()));
 
-        // Now make or adjust the node for the node type ...
+        // Now make or adjust the node for the index definition ...
         if (indexNode != null) {
             // Update the properties ...
             indexNode.setProperties(system, properties);
         } else {
-            // We have to create the node type node ...
+            // We have to create the index definition node ...
             indexNode = providerNode.createChild(system, key, name, properties);
         }
 
@@ -756,7 +763,7 @@ public class SystemContent {
 
     /**
      * Read from system storage the node type definitions with the supplied names.
-     * 
+     *
      * @param nodeTypesToRefresh
      * @return the node types as read from the system storage
      */
@@ -766,7 +773,7 @@ public class SystemContent {
 
     /**
      * Read from system storage all of the node type definitions.
-     * 
+     *
      * @return the node types as read from the system storage
      */
     public List<NodeTypeDefinition> readAllNodeTypes() {
@@ -1098,7 +1105,7 @@ public class SystemContent {
      * Updates the underlying repository directly (i.e., outside the scope of the {@link Session}) to mark the token for the given
      * lock as being held (or not held) by some {@link Session}. Note that this method does not identify <i>which</i> (if any)
      * session holds the token for the lock, just that <i>some</i> session holds the token for the lock.
-     * 
+     *
      * @param lockToken the lock token for which the "held" status should be modified; may not be null
      * @param value the new value
      * @return true if the lock "held" status was successfully changed to the desired value, or false otherwise
@@ -1137,7 +1144,7 @@ public class SystemContent {
      * <p>
      * Given a NodeKey for a node that has an identifier part of "fae2b929-c5ef-4ce5-9fa1-514779ca0ae3", the SHA-1 hash of this
      * identifier part is "b46dde8905f76361779339fa3ccacc4f47664255". The path to the version history for this node is as follows:
-     * 
+     *
      * <pre>
      *  + jcr:system
      *    + jcr:versionStorage   {jcr:primaryType = mode:versionStorage}
@@ -1154,10 +1161,10 @@ public class SystemContent {
      *                  - jcr:frozenPrimaryType
      *                  - jcr:frozenMixinTypes
      * </pre>
-     * 
+     *
      * Note that the path between "/jcr:system/jcr:versionStorage" and the "nt:versionHistory" node is shown as being
      * {@link JcrVersionManager.HiearchicalPathAlgorithm hiearchical}.
-     * 
+     *
      * @param versionableNodeKey the identifier of the versionable node for which the history is to be created; may not be null
      * @param versionHistoryKey the key to the version history node; may not be null
      * @param versionKey the key to be used for the initial version; may be null if the key should be generated
@@ -1260,7 +1267,7 @@ public class SystemContent {
      * reference implementation. See
      * {@link #nextNameForVersionNode(org.modeshape.jcr.value.Property, org.modeshape.jcr.cache.ChildReferences)} for details.
      * </p>
-     * 
+     *
      * @param versionableNode the versionable node for which a new version is to be created in the node's version history; may not
      *        be null
      * @param cacheForVersionableNode the cache used to access the versionable node and any descendants; may not be null
@@ -1376,7 +1383,7 @@ public class SystemContent {
      * <li>otherwise a ".0" is added to the name until a non conflicting name is found.
      * <ul>
      * Example Graph:
-     * 
+     *
      * <pre>
      * jcr:rootVersion
      *  |     |
@@ -1396,9 +1403,9 @@ public class SystemContent {
      *  |------/
      * 1.7
      * </pre>
-     * 
+     *
      * </p>
-     * 
+     *
      * @param predecessors the 'jcr:predecessors' property; may not be null
      * @param historyChildren the child references under the version history for the node
      * @return the next name

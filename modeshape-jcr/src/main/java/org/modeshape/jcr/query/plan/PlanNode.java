@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ObjectUtil;
@@ -98,7 +99,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
         /**
          * Get the symbol representation of this node type.
-         * 
+         *
          * @return the symbol; never null and never empty
          */
         public String getSymbol() {
@@ -107,7 +108,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see java.lang.Enum#toString()
          */
         @Override
@@ -117,7 +118,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
         /**
          * Attempt to find the Type given a symbol. The matching is done independent of case.
-         * 
+         *
          * @param symbol the symbol
          * @return the Type having the supplied symbol, or null if there is no Type with the supplied symbol
          * @throws IllegalArgumentException if the symbol is null
@@ -223,7 +224,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Create a new plan node with the supplied initial type.
-     * 
+     *
      * @param type the type of the node; may not be null
      */
     public PlanNode( Type type ) {
@@ -233,7 +234,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Create a new plan node with the supplied initial type ad that is a child of the supplied parent.
-     * 
+     *
      * @param type the type of the node; may not be null
      * @param parent the parent node, or null if there is no parent
      */
@@ -249,7 +250,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Create a new plan node with the supplied initial type ad that is a child of the supplied parent.
-     * 
+     *
      * @param type the type of the node; may not be null
      * @param selectors the selectors that should be assigned to this node
      */
@@ -263,7 +264,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Create a new plan node with the supplied initial type ad that is a child of the supplied parent.
-     * 
+     *
      * @param type the type of the node; may not be null
      * @param selectors the selectors that should be assigned to this node
      */
@@ -275,7 +276,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Create a new plan node with the supplied initial type ad that is a child of the supplied parent.
-     * 
+     *
      * @param type the type of the node; may not be null
      * @param parent the parent node, or null if there is no parent
      * @param selectors the selectors that should be assigned to this node
@@ -291,7 +292,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Create a new plan node with the supplied initial type ad that is a child of the supplied parent.
-     * 
+     *
      * @param type the type of the node; may not be null
      * @param parent the parent node, or null if there is no parent
      * @param selectors the selectors that should be assigned to this node
@@ -305,7 +306,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the type for this node.
-     * 
+     *
      * @return the node type, or null if there is no node type
      */
     public Type getType() {
@@ -314,7 +315,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Set the type for this node.
-     * 
+     *
      * @param type Sets type to the specified value; may not be null
      */
     public void setType( Type type ) {
@@ -324,7 +325,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Return true if this node's type does not match the supplied type
-     * 
+     *
      * @param type the type to compare
      * @return true if this node's type is different than that supplied, or false if they are the same
      */
@@ -334,7 +335,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Return true if this node's type does not match any of the supplied types
-     * 
+     *
      * @param first the type to compare
      * @param rest the additional types to compare
      * @return true if this node's type is different than all of those supplied, or false if matches one of the supplied types
@@ -346,7 +347,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Return true if this node's type does not match any of the supplied types
-     * 
+     *
      * @param types the types to compare
      * @return true if this node's type is different than all of those supplied, or false if matches one of the supplied types
      */
@@ -356,7 +357,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Return true if this node's type does match the supplied type
-     * 
+     *
      * @param type the type to compare
      * @return true if this node's type is the same as that supplied, or false if the types are different
      */
@@ -366,7 +367,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Return true if this node's type matches one of the supplied types
-     * 
+     *
      * @param first the type to compare
      * @param rest the additional types to compare
      * @return true if this node's type is one of those supplied, or false otherwise
@@ -378,7 +379,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Return true if this node's type matches one of the supplied types
-     * 
+     *
      * @param types the types to compare
      * @return true if this node's type is one of those supplied, or false otherwise
      */
@@ -388,7 +389,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Determine if the supplied node is an ancestor of this node.
-     * 
+     *
      * @param possibleAncestor the node that is to be determined if it is an ancestor
      * @return true if the supplied node is indeed an ancestor, or false if it is not an ancestor
      */
@@ -403,7 +404,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Determine if the supplied node is a descendant of this node.
-     * 
+     *
      * @param possibleDescendant the node that is to be determined if it is a descendant
      * @return true if the supplied node is indeed an ancestor, or false if it is not an ancestor
      */
@@ -413,7 +414,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the parent of this node.
-     * 
+     *
      * @return the parent node, or null if this node has no parent
      */
     public PlanNode getParent() {
@@ -423,7 +424,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     /**
      * Set the parent for this node. If this node already has a parent, this method will remove this node from the current parent.
      * If the supplied parent is not null, then this node will be added to the supplied parent's children.
-     * 
+     *
      * @param parent the new parent, or null if this node is to have no parent
      */
     public void setParent( PlanNode parent ) {
@@ -440,16 +441,16 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
      * does nothing if the supplied new parent is null.
      * <p>
      * For example, consider a plan node tree before this method is called:
-     * 
+     *
      * <pre>
      *        A
      *      / | \
      *     /  |  \
      *    B   C   D
      * </pre>
-     * 
+     *
      * Then after this method is called with <code>c.insertAsParent(e)</code>, the resulting plan node tree will be:
-     * 
+     *
      * <pre>
      *        A
      *      / | \
@@ -459,14 +460,14 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
      *        |
      *        C
      * </pre>
-     * 
+     *
      * </p>
      * <p>
      * Also note that the node on which this method is called ('C' in the example above) will always be added as the
      * {@link #addLastChild(PlanNode) last child} to the new parent. This allows the new parent to already have children before
      * this method is called.
      * </p>
-     * 
+     *
      * @param newParent the new parent; method does nothing if this is null
      */
     public void insertAsParent( PlanNode newParent ) {
@@ -481,7 +482,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     /**
      * Remove this node from its parent, and return the node that used to be the parent of this node. Note that this method
      * removes the entire subgraph under this node.
-     * 
+     *
      * @return the node that was the parent of this node, or null if this node had no parent
      * @see #extractChild(PlanNode)
      * @see #extractFromParent()
@@ -499,7 +500,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     /**
      * Get the unmodifiable list of child nodes. This list will immediately reflect any changes made to the children (via other
      * methods), but this list cannot be used to add or remove children.
-     * 
+     *
      * @return the list of children, which immediately reflects changes but which cannot be modified directly; never null
      */
     public List<PlanNode> getChildren() {
@@ -513,7 +514,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Remove all children from this node. All nodes immediately become orphaned. The resulting list will be mutable.
-     * 
+     *
      * @return a copy of all the of the children that were removed (and which have no parent); never null
      */
     public List<PlanNode> removeAllChildren() {
@@ -532,7 +533,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     /**
      * Replace the supplied child with another node. If the replacement is already a child of this node, this method effectively
      * swaps the position of the child and replacement nodes.
-     * 
+     *
      * @param child the node that is already a child and that is to be replaced; may not be null and must be a child
      * @param replacement the node that is to replace the 'child' node; may not be null
      * @return true if the child was successfully replaced
@@ -562,7 +563,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the number of child nodes.
-     * 
+     *
      * @return the number of children; never negative
      */
     public int getChildCount() {
@@ -571,7 +572,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the first child.
-     * 
+     *
      * @return the first child, or null if there are no children
      */
     public PlanNode getFirstChild() {
@@ -580,7 +581,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the last child.
-     * 
+     *
      * @return the last child, or null if there are no children
      */
     public PlanNode getLastChild() {
@@ -589,7 +590,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the child at the supplied index.
-     * 
+     *
      * @param index the index
      * @return the child, or null if there are no children
      * @throws IndexOutOfBoundsException if the index is not valid given the number of children
@@ -600,7 +601,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Add the supplied node to the front of the list of children.
-     * 
+     *
      * @param child the node that should be added as the first child; may not be null
      */
     public void addFirstChild( PlanNode child ) {
@@ -612,7 +613,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Add the supplied node to the end of the list of children.
-     * 
+     *
      * @param child the node that should be added as the last child; may not be null
      */
     public void addLastChild( PlanNode child ) {
@@ -624,7 +625,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Add the supplied nodes at the end of the list of children.
-     * 
+     *
      * @param otherChildren the children to add; may not be null
      */
     public void addChildren( Iterable<PlanNode> otherChildren ) {
@@ -636,7 +637,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Add the supplied nodes at the end of the list of children.
-     * 
+     *
      * @param first the first child to add
      * @param second the second child to add
      */
@@ -648,7 +649,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Add the supplied nodes at the end of the list of children.
-     * 
+     *
      * @param first the first child to add
      * @param second the second child to add
      * @param third the third child to add
@@ -663,7 +664,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Remove the node from this node.
-     * 
+     *
      * @param child the child node; may not be null
      * @return true if the child was removed from this node, or false if the supplied node was not a child of this node
      */
@@ -677,7 +678,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Remove the child node from this node, and replace that child with its first child (if there is one).
-     * 
+     *
      * @param child the child to be extracted; may not be null and must have at most 1 child
      * @see #extractFromParent()
      */
@@ -692,7 +693,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Extract this node from its parent, but replace this node with its child (if there is one).
-     * 
+     *
      * @see #extractChild(PlanNode)
      */
     public void extractFromParent() {
@@ -701,7 +702,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the keys for the property values that are set on this node.
-     * 
+     *
      * @return the property keys; never null but possibly empty
      */
     public Set<Property> getPropertyKeys() {
@@ -710,7 +711,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the node's value for this supplied property.
-     * 
+     *
      * @param propertyId the property identifier
      * @return the value, or null if there is no property on this node
      */
@@ -720,7 +721,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the node's value for this supplied property, casting the result to the supplied type.
-     * 
+     *
      * @param <ValueType> the type of the value expected
      * @param propertyId the property identifier
      * @param type the class denoting the type of value expected; may not be null
@@ -733,7 +734,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the node's value for this supplied property, casting the result to a {@link Collection} of the supplied type.
-     * 
+     *
      * @param <ValueType> the type of the value expected
      * @param propertyId the property identifier
      * @param type the class denoting the type of value expected; may not be null
@@ -748,7 +749,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the node's value for this supplied property, casting the result to a {@link List} of the supplied type.
-     * 
+     *
      * @param <ValueType> the type of the value expected
      * @param propertyId the property identifier
      * @param type the class denoting the type of value expected; may not be null
@@ -770,7 +771,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Set the node's value for the supplied property.
-     * 
+     *
      * @param propertyId the property identifier
      * @param value the value, or null if the property is to be removed
      * @return the previous value that was overwritten by this call, or null if there was prior value
@@ -782,13 +783,13 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
             return nodeProperties != null ? nodeProperties.remove(propertyId) : null;
         }
         // Otherwise, we're adding the property
-        if (nodeProperties == null) nodeProperties = new HashMap<Property, Object>();
+        if (nodeProperties == null) nodeProperties = new TreeMap<Property, Object>();
         return nodeProperties.put(propertyId, value);
     }
 
     /**
      * Remove the node's value for this supplied property.
-     * 
+     *
      * @param propertyId the property identifier
      * @return the value that was removed, or null if there was no property on this node
      */
@@ -798,7 +799,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Indicates if there is a non-null value for the property.
-     * 
+     *
      * @param propertyId the property identifier
      * @return true if this node has a non-null value for that property, or false if the value is null or there is no property
      */
@@ -808,7 +809,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Indicates if there is a non-null and non-empty Collection value for the property.
-     * 
+     *
      * @param propertyId the property identifier
      * @return true if this node has value for the supplied property and that value is a non-empty Collection
      */
@@ -819,7 +820,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Indicates if there is a non-null property value that equates to a <code>true</code> boolean value.
-     * 
+     *
      * @param propertyId the property identifier
      * @return true if this node has value for the supplied property and that value is a boolean value of <code>true</code>
      */
@@ -830,7 +831,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Add a selector to this plan node. This method does nothing if the supplied selector is null.
-     * 
+     *
      * @param symbol the symbol of the selector
      */
     public void addSelector( SelectorName symbol ) {
@@ -839,7 +840,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Add the selectors to this plan node. This method does nothing for any supplied selector that is null.
-     * 
+     *
      * @param first the first symbol to be added
      * @param second the second symbol to be added
      */
@@ -851,7 +852,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Add the selectors to this plan node. This method does nothing for any supplied selector that is null.
-     * 
+     *
      * @param names the symbols to be added
      */
     public void addSelectors( Iterable<SelectorName> names ) {
@@ -862,7 +863,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the selectors that are referenced by this plan node.
-     * 
+     *
      * @return the names of the selectors; never null but possibly empty
      */
     public Set<SelectorName> getSelectors() {
@@ -871,7 +872,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Get the path from this node (inclusive) to the supplied descendant node (inclusive)
-     * 
+     *
      * @param descendant the descendant; may not be null, and must be a descendant of this node
      * @return the path from this node to the supplied descendant node; never null
      */
@@ -890,7 +891,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Determine whether this node has an ancestor with the supplied type.
-     * 
+     *
      * @param type the type; may not be null
      * @return true if there is at least one ancestor of the supplied type, or false otherwise
      */
@@ -900,7 +901,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Determine whether this node has an ancestor with any of the supplied types.
-     * 
+     *
      * @param firstType the first type; may not be null
      * @param additionalTypes the additional types; may not be null
      * @return true if there is at least one ancestor that has any of the supplied types, or false otherwise
@@ -912,7 +913,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Determine whether this node has an ancestor with any of the supplied types.
-     * 
+     *
      * @param types the types; may not be null
      * @return true if there is at least one ancestor that has any of the supplied types, or false otherwise
      */
@@ -948,7 +949,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
      * This class returns a new clone of the plan tree rooted at this node. However, the top node of the resulting plan tree (that
      * is, the node returned from this method) has no parent.
      * </p>
-     * 
+     *
      * @see java.lang.Object#clone()
      */
     @Override
@@ -959,7 +960,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     protected PlanNode cloneWithoutNewParent() {
         PlanNode result = new PlanNode(this.type, null, this.selectors);
         if (this.nodeProperties != null && !this.nodeProperties.isEmpty()) {
-            result.nodeProperties = new HashMap<Property, Object>(this.nodeProperties);
+            result.nodeProperties = new TreeMap<Property, Object>(this.nodeProperties);
         }
         // Clone the children ...
         for (PlanNode child : children) {
@@ -972,7 +973,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Determine whether the supplied plan is equivalent to this plan.
-     * 
+     *
      * @param other the other plan to compare with this instance
      * @return true if the two plans are equivalent, or false otherwise
      */
@@ -1048,14 +1049,24 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
                 } else if (value instanceof IndexPlan) {
                     IndexPlan index = (IndexPlan)value;
                     str.append(index.getName());
-                    if (index.getWorkspaceName() != null) {
-                        str.append(", workspace=").append(index.getWorkspaceName());
-                    }
+                    // if (index.getWorkspaceName() != null) {
+                    // str.append(", workspace=").append(index.getWorkspaceName());
+                    // } else {
+                    // str.append(", workspace=*");
+                    // }
                     if (index.getProviderName() != null) {
                         str.append(", provider=").append(index.getProviderName());
+                    } else {
+                        str.append(", provider=<implicit>");
                     }
-                    str.append(", cost=").append(index.getCostEstimate());
-                    str.append(", cardinality=").append(index.getCardinalityEstimate());
+                    str.append(", cost~=").append(index.getCostEstimate());
+                    str.append(", cardinality~=").append(index.getCardinalityEstimate());
+                    Float selectivity = index.getSelectivityEstimate();
+                    if (selectivity != null) {
+                        str.append(", selectivity~=").append(selectivity.floatValue());
+                    } else {
+                        str.append(", selectivity~=?");
+                    }
                     if (!index.getConstraints().isEmpty()) {
                         str.append(", constraints=").append(index.getConstraints());
                     }
@@ -1073,7 +1084,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Starting at the parent of this node, find the lowest (also closest) ancestor that has the specified type.
-     * 
+     *
      * @param typeToFind the type of the node to find; may not be null
      * @return the node with the specified type, or null if there is no such ancestor
      */
@@ -1083,7 +1094,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Starting at the parent of this node, find the lowest (also closest) ancestor that has one of the specified types.
-     * 
+     *
      * @param firstTypeToFind the first type to find; may not be null
      * @param additionalTypesToFind additional types to find; may not be null
      * @return the node with the specified type, or null if there is no such ancestor
@@ -1095,7 +1106,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Starting at the parent of this node, find the lowest (also closest) ancestor that has one of the specified types.
-     * 
+     *
      * @param typesToFind the set of types to find; may not be null
      * @return the node with one of the specified types, or null if there is no such ancestor
      */
@@ -1112,7 +1123,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     /**
      * Look at nodes below this node, searching for nodes that have the supplied type. As soon as a node with a matching type is
      * found, then no other nodes below it are searched.
-     * 
+     *
      * @param typeToFind the type of node to find; may not be null
      * @return the collection of nodes that are at or below this node that all have the supplied type; never null but possibly
      *         empty
@@ -1150,7 +1161,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     /**
      * Walk the plan tree starting in the specified traversal order, and apply the supplied operation to every plan node with a
      * type that matches the given type.
-     * 
+     *
      * @param order the order in which the subtree should be traversed; may not be null
      * @param operation the operation that should be applied; may not be null
      * @param type the type of node to which the operation should be applied; may not be null
@@ -1169,7 +1180,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     /**
      * Walk the plan tree starting in the specified traversal order, and apply the supplied operation to every plan node that is
      * one of the supplied types.
-     * 
+     *
      * @param order the order in which the subtree should be traversed; may not be null
      * @param operation the operation that should be applied; may not be null
      * @param firstType the first type of node to which the operation should be applied; may not be null
@@ -1185,7 +1196,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     /**
      * Walk the plan tree starting in the specified traversal order, and apply the supplied operation to every plan node that is
      * one of the supplied types.
-     * 
+     *
      * @param order the order in which the subtree should be traversed; may not be null
      * @param operation the operation that should be applied; may not be null
      * @param types the types of nodes to which the operation should be applied; may not be null
@@ -1203,7 +1214,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Walk the plan tree starting in the specified traversal order, and apply the supplied operation to every plan node.
-     * 
+     *
      * @param order the order in which the subtree should be traversed; may not be null
      * @param operation the operation that should be applied; may not be null
      */
@@ -1242,7 +1253,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Apply the operation to all ancestor nodes below a node of the given type.
-     * 
+     *
      * @param stopType the type of node that should not be included in the results; may not be null
      * @param operation the operation to apply to each of the ancestor nodes below the given type; may not be null
      */
@@ -1258,7 +1269,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find all of the nodes that are at or below this node.
-     * 
+     *
      * @return the collection of nodes that are at or below this node; never null and never empty
      */
     public List<PlanNode> findAllAtOrBelow() {
@@ -1267,7 +1278,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find all of the nodes that are at or below this node.
-     * 
+     *
      * @param order the order to traverse; may not be null
      * @return the collection of nodes that are at or below this node; never null and never empty
      */
@@ -1298,7 +1309,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find all of the nodes of the specified type that are at or below this node, using pre-order traversal.
-     * 
+     *
      * @param typeToFind the type of node to find; may not be null
      * @return the collection of nodes that are at or below this node that all have the supplied type; never null but possibly
      *         empty
@@ -1309,7 +1320,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find all of the nodes with one of the specified types that are at or below this node.
-     * 
+     *
      * @param firstTypeToFind the first type of node to find; may not be null
      * @param additionalTypesToFind the additional types of node to find; may not be null
      * @return the collection of nodes that are at or below this node that all have one of the supplied types; never null but
@@ -1322,7 +1333,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find all of the nodes with one of the specified types that are at or below this node.
-     * 
+     *
      * @param typesToFind the types of node to find; may not be null
      * @return the collection of nodes that are at or below this node that all have one of the supplied types; never null but
      *         possibly empty
@@ -1333,7 +1344,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find all of the nodes of the specified type that are at or below this node.
-     * 
+     *
      * @param order the order to traverse; may not be null
      * @param typeToFind the type of node to find; may not be null
      * @return the collection of nodes that are at or below this node that all have the supplied type; never null but possibly
@@ -1346,7 +1357,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find all of the nodes with one of the specified types that are at or below this node.
-     * 
+     *
      * @param order the order to traverse; may not be null
      * @param firstTypeToFind the first type of node to find; may not be null
      * @param additionalTypesToFind the additional types of node to find; may not be null
@@ -1361,7 +1372,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find all of the nodes with one of the specified types that are at or below this node.
-     * 
+     *
      * @param order the order to traverse; may not be null
      * @param typesToFind the types of node to find; may not be null
      * @return the collection of nodes that are at or below this node that all have one of the supplied types; never null but
@@ -1401,7 +1412,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find the first node with the specified type that are at or below this node.
-     * 
+     *
      * @param typeToFind the type of node to find; may not be null
      * @return the first node that is at or below this node that has the supplied type; or null if there is no such node
      */
@@ -1411,7 +1422,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find the first node with one of the specified types that are at or below this node.
-     * 
+     *
      * @param firstTypeToFind the first type of node to find; may not be null
      * @param additionalTypesToFind the additional types of node to find; may not be null
      * @return the first node that is at or below this node that has one of the supplied types; or null if there is no such node
@@ -1423,7 +1434,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find the first node with one of the specified types that are at or below this node.
-     * 
+     *
      * @param typesToFind the types of node to find; may not be null
      * @return the first node that is at or below this node that has one of the supplied types; or null if there is no such node
      */
@@ -1433,7 +1444,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find the first node with the specified type that are at or below this node.
-     * 
+     *
      * @param order the order to traverse; may not be null
      * @param typeToFind the type of node to find; may not be null
      * @return the first node that is at or below this node that has the supplied type; or null if there is no such node
@@ -1445,7 +1456,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find the first node with one of the specified types that are at or below this node.
-     * 
+     *
      * @param order the order to traverse; may not be null
      * @param firstTypeToFind the first type of node to find; may not be null
      * @param additionalTypesToFind the additional types of node to find; may not be null
@@ -1459,7 +1470,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
     /**
      * Find the first node with one of the specified types that are at or below this node.
-     * 
+     *
      * @param order the order to traverse; may not be null
      * @param typesToFind the types of node to find; may not be null
      * @return the first node that is at or below this node that has one of the supplied types; or null if there is no such node

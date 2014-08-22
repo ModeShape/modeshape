@@ -42,7 +42,7 @@ import org.modeshape.jcr.index.local.MapDB.ComparableUniqueKeyComparator;
 import org.modeshape.jcr.index.local.MapDB.Serializers;
 import org.modeshape.jcr.index.local.MapDB.UniqueKey;
 import org.modeshape.jcr.index.local.MapDB.UniqueKeyComparator;
-import org.modeshape.jcr.index.local.MapDB.UniqueKeySerializer;
+import org.modeshape.jcr.index.local.MapDB.UniqueKeyBTreeSerializer;
 import org.modeshape.jcr.query.Tuples.TupleFactory;
 import org.modeshape.jcr.query.model.TypeSystem.TypeFactory;
 import org.modeshape.jcr.value.ValueFactories;
@@ -921,7 +921,7 @@ public class BufferManager implements Serializers, AutoCloseable {
         @Override
         public SortingBuffer<K, V> make() {
             Comparator<UniqueKey<K>> comparator = this.keyComparator != null ? new UniqueKeyComparator<K>(keyComparator) : new ComparableUniqueKeyComparator<K>();
-            BTreeKeySerializer<UniqueKey<K>> uniqueKeySerializer = new UniqueKeySerializer<K>(keySerializer, comparator);
+            BTreeKeySerializer<UniqueKey<K>> uniqueKeySerializer = new UniqueKeyBTreeSerializer<K>(keySerializer, comparator);
             BTreeMapMaker maker = db(useHeap).createTreeMap(name).keySerializer(uniqueKeySerializer)
                                              .valueSerializer(valueSerializer);
             if (keepsize) maker = maker.counterEnable();

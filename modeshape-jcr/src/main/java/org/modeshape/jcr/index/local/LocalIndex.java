@@ -16,20 +16,37 @@
 
 package org.modeshape.jcr.index.local;
 
-import java.io.Closeable;
-import org.modeshape.jcr.spi.index.Index;
+import org.modeshape.jcr.spi.index.provider.Costable;
+import org.modeshape.jcr.spi.index.provider.Filter;
 
 /**
  * @param <T> the type of value that is added to the index
  * @author Randall Hauch (rhauch@redhat.com)
  */
-public interface LocalIndex<T> extends Index, Closeable {
+public interface LocalIndex<T> extends Filter, Costable {
+
+    /**
+     * Remove all of the index entries from the index. This is typically called prior to reindexing.
+     */
+    void removeAll();
+
+    /**
+     * Shut down this index and release all runtime resources. If {@code destroyed} is {@code true}, then this index has been
+     * removed from the repository and will not be reused; thus all persistent resources should also be released. If
+     * {@code destroyed} is {@code false}, then this repository is merely shutting down and the index's persistent resources
+     * should be kept so that they are available when the repository is restarted.
+     *
+     * @param destroyed true if this index is being permanently removed from the repository and all runtime and persistent
+     *        resources can/should be released and cleaned up, or false if the repository is being shutdown and this index will be
+     *        needed the next time the repository is started
+     */
+    void shutdown( boolean destroyed );
 
     void add( String nodeKey,
               T value );
 
     void remove( String nodeKey );
 
-    @Override
-    void close();
+    void remove( String nodeKey,
+                 T value );
 }

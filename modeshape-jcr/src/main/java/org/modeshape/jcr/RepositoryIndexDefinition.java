@@ -18,6 +18,7 @@ package org.modeshape.jcr;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -57,6 +58,7 @@ final class RepositoryIndexDefinition implements IndexDefinition {
     private final String description;
     private final boolean enabled;
     private final List<IndexColumnDefinition> columnDefns;
+    private final Map<String, IndexColumnDefinition> columnDefnsByName;
     private final Map<String, Object> extendedProperties;
     private final WorkspaceMatchRule workspaceRule;
 
@@ -83,9 +85,11 @@ final class RepositoryIndexDefinition implements IndexDefinition {
         this.description = description != null ? description : "";
         this.enabled = enabled;
         this.workspaceRule = workspaceRule;
+        this.columnDefnsByName = new HashMap<>();
         for (IndexColumnDefinition columnDefn : columnDefns) {
             assert columnDefn != null;
             this.columnDefns.add(columnDefn);
+            this.columnDefnsByName.put(columnDefn.getPropertyName(), columnDefn);
         }
         assert !this.columnDefns.isEmpty();
     }
@@ -155,6 +159,32 @@ final class RepositoryIndexDefinition implements IndexDefinition {
         return ReadOnlyIterator.around(columnDefns.iterator());
     }
 
+    @Override
+    public boolean appliesToProperty( String propertyName ) {
+        return columnDefnsByName.containsKey(propertyName);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getName()).append('@').append(getProviderName());
+        sb.append(" nodeType=").append(nodeTypeName);
+        if (columnDefns.size() == 1) {
+            sb.append(" column=");
+        } else {
+            sb.append(" columns=");
+        }
+        boolean first = true;
+        for (IndexColumnDefinition col : columnDefns) {
+            if (first) first = false;
+            else sb.append(",");
+            sb.append(col);
+        }
+        sb.append(" kind=").append(getKind());
+        sb.append(" workspaces=").append(workspaceRule);
+        return sb.toString();
+    }
+
     protected static WorkspaceMatchRule workspaceMatchRule( String... workspaceNames ) {
         if (workspaceNames == null || workspaceNames.length == 0) return MATCH_ALL_WORKSPACES_RULE;
         Set<String> names = new HashSet<>();
@@ -173,7 +203,7 @@ final class RepositoryIndexDefinition implements IndexDefinition {
         return MATCH_ALL_WORKSPACES_RULE;
     }
 
-    protected static WorkspaceMatchRule workspaceMatchRule( String rule ) {
+    public static WorkspaceMatchRule workspaceMatchRule( String rule ) {
         if (rule == null) return MATCH_ALL_WORKSPACES_RULE;
         rule = rule.trim();
         if (rule.length() == 0 || MATCH_ALL_WORKSPACES.equals(rule)) return MATCH_ALL_WORKSPACES_RULE;

@@ -36,7 +36,7 @@ import org.modeshape.jcr.query.model.TypeSystem.TypeFactory;
  * A {@link NodeSequence} implementation that performs an equijoin of two delegate sequences. The hash-join algorithm loads all
  * values on the right side into a buffer that hashes the right join condition value of each row. Then, it iterates through all
  * tuples on the left side and finds which of the values on the right have a matching join condition value.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 @NotThreadSafe
@@ -168,7 +168,7 @@ public class HashJoinSequence extends JoinSequence {
 
     /**
      * A batch that contains rows that will have a left value and a right value.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     protected class HashJoinBatch implements Batch {
@@ -245,7 +245,7 @@ public class HashJoinSequence extends JoinSequence {
                 }
                 if (iterators.isEmpty()) return null;
                 if (iterators.size() == 1) return iterators.get(0);
-                return new MultiIterator<BufferedRow>(iterators);
+                return MultiIterator.fromIterators(iterators);
             }
             // This is just a single value or even null
             return getRightRowsFor(leftValue);
@@ -269,7 +269,7 @@ public class HashJoinSequence extends JoinSequence {
             // was no match (e.g., left outer join) or that it is non-null and has at least one value ...
             if (rightMatchingRows != null) {
                 currentRight = rightMatchingRows.next();
-                //since there might be multiple rows on the right, we need to make sure we record each one
+                // since there might be multiple rows on the right, we need to make sure we record each one
                 recordRightRowsMatched(extractor.getValueInRow(currentRight));
             } else {
                 currentRight = null;
@@ -314,7 +314,7 @@ public class HashJoinSequence extends JoinSequence {
 
     /**
      * A batch that contains rows that will have a left value and a right value.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     protected class HashJoinRangeBatch extends HashJoinBatch {
@@ -339,7 +339,7 @@ public class HashJoinSequence extends JoinSequence {
     /**
      * A batch that contains rows that will have no left value and a right value. Every value on the left matches all values on
      * the right, since this is a cross-join.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     protected class HashCrossJoinBatch extends HashJoinBatch {
@@ -368,7 +368,7 @@ public class HashJoinSequence extends JoinSequence {
 
     /**
      * A batch that contains rows that will have no left value and a right value.
-     * 
+     *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     protected class RightRowsBatch implements Batch {

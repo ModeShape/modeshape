@@ -17,10 +17,12 @@
 package org.modeshape.jcr.index.local;
 
 import java.util.Comparator;
+import java.util.NavigableMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.query.qom.StaticOperand;
 import org.mapdb.DB;
 import org.mapdb.Serializer;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.index.local.IndexValues.Converter;
 import org.modeshape.jcr.index.local.MapDB.UniqueKey;
@@ -29,18 +31,19 @@ import org.modeshape.jcr.spi.index.Index;
 /**
  * An {@link Index} that associates a single value with multiple {@link NodeKey}s. All values are stored in natural sort order,
  * allowing finding all the node keys for a range of values.
- * 
+ *
  * @param <T> the type of values
  * @author Randall Hauch (rhauch@redhat.com)
  */
 final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
 
+    private static final Logger LOGGER = Logger.getLogger(LocalDuplicateIndex.class);
+
     /**
      * Create a new index that allows duplicate values across all keys.
-     * 
+     *
      * @param name the name of the index; may not be null or empty
      * @param workspaceName the name of the workspace; may not be null
-     * @param providerName the name of the provider; may not be null
      * @param db the database in which the index information is to be stored; may not be null
      * @param converter the converter from {@link StaticOperand} to values being indexed; may not be null
      * @param valueSerializer the serializer for the type of value being indexed
@@ -49,12 +52,11 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
      */
     static <T> LocalDuplicateIndex<T> create( String name,
                                               String workspaceName,
-                                              String providerName,
                                               DB db,
                                               Converter<T> converter,
                                               Serializer<T> valueSerializer,
                                               Comparator<T> comparator ) {
-        return new LocalDuplicateIndex<>(name, workspaceName, providerName, db, converter, valueSerializer, comparator);
+        return new LocalDuplicateIndex<>(name, workspaceName, db, converter, valueSerializer, comparator);
     }
 
     private static final String NEXT_COUNTER = "next-counter";
@@ -63,28 +65,41 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
 
     protected LocalDuplicateIndex( String name,
                                    String workspaceName,
-                                   String providerName,
                                    DB db,
                                    Converter<T> converter,
                                    Serializer<T> valueSerializer,
                                    Comparator<T> comparator ) {
-        super(name, workspaceName, providerName, db, IndexValues.uniqueKeyConverter(converter),
+        super(name, workspaceName, db, IndexValues.uniqueKeyConverter(converter), MapDB.uniqueKeyBTreeSerializer(valueSerializer,
+                                                                                                                 comparator),
               MapDB.uniqueKeySerializer(valueSerializer, comparator));
         Long nextCounter = (Long)options.get(NEXT_COUNTER);
         this.counter = new AtomicLong(nextCounter != null ? nextCounter.longValue() : 0L);
     }
 
     @Override
-    public void close() {
+    public void shutdown( boolean destroyed ) {
         // Store the value of the next counter in the options map ...
         options.put(NEXT_COUNTER, counter.get());
-        super.close();
+        super.shutdown(destroyed);
     }
 
     @Override
     public void add( String nodeKey,
                      T value ) {
+        LOGGER.trace("Adding node '{0}' to '{1}' index with value '{2}'", nodeKey, name, value);
         keysByValue.put(new UniqueKey<T>(value, counter.getAndIncrement()), nodeKey);
     }
 
+    @Override
+    public void remove( String nodeKey,
+                        T value ) {
+        // Find all of the actual unique values for the given value ...
+        UniqueKey<T> fromKey = new UniqueKey<T>(value, 0);
+        UniqueKey<T> toKey = new UniqueKey<T>(value, Long.MAX_VALUE);
+        NavigableMap<UniqueKey<T>, String> matching = keysByValue.subMap(fromKey, true, toKey, true);
+        for (UniqueKey<T> actualValue : matching.keySet()) {
+            LOGGER.trace("Removing node '{0}' from '{1}' index with value '{2}'", nodeKey, name, actualValue.actualKey);
+            keysByValue.remove(actualValue);
+        }
+    }
 }

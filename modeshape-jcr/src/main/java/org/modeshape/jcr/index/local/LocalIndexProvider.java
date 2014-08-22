@@ -17,26 +17,38 @@
 package org.modeshape.jcr.index.local;
 
 import java.io.File;
+import java.util.Collections;
 import javax.jcr.RepositoryException;
+import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.FullTextSearch;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.NodeTypes.Supplier;
+import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.query.QueryContext;
+import org.modeshape.jcr.spi.index.IndexCostCalculator;
+import org.modeshape.jcr.spi.index.IndexCostCalculator.Costs;
 import org.modeshape.jcr.spi.index.IndexFeedback;
-import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
+import org.modeshape.jcr.spi.index.provider.IndexUsage;
 import org.modeshape.jcr.spi.index.provider.ManagedIndex;
 
 /**
  * An {@link IndexProvider} implementation that maintains indexes on the local file system using MapDB.
  * <p>
  * This provider maintains a separate
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public class LocalIndexProvider extends IndexProvider {
 
-    private static final String DB_FILENAME = "indexes.db";
+    private static final Float MAX_SELECTIVITY = new Float(1.0f);
+    private static final String DB_FILENAME = "local-indexes.db";
 
     private String directory;
     private DB db;
@@ -46,7 +58,7 @@ public class LocalIndexProvider extends IndexProvider {
 
     /**
      * Get the absolute or relative path to the directory where this provider should store the indexes.
-     * 
+     *
      * @return the path to the directory
      */
     public String getDirectory() {
@@ -55,7 +67,11 @@ public class LocalIndexProvider extends IndexProvider {
 
     @Override
     protected void doInitialize() throws RepositoryException {
-        assert directory != null;
+        if (directory == null) {
+            throw new RepositoryException(JcrI18n.localIndexProviderMustHaveDirectory.text(getRepositoryName()));
+        }
+        logger().debug("Initializing the local index provider '{0}' in repository '{1}' at: {2}", getName(), getRepositoryName(),
+                       directory);
 
         // Find the directory and make sure it exists and we have read and write permission ...
         File dir = new File(directory);
@@ -63,24 +79,33 @@ public class LocalIndexProvider extends IndexProvider {
             // Try to make it ...
             logger().debug("Attempting to create directory for local indexes in repository '{1}' at: {0}", dir.getAbsolutePath(),
                            getRepositoryName());
-            dir.mkdirs();
+            if (dir.mkdirs()) {
+                logger().debug("Created directory for local indexes in repository '{1}' at: {0}", dir.getAbsolutePath(),
+                               getRepositoryName());
+            } else {
+                logger().debug("Unable to create directory for local indexes in repository '{1}' at: {0}", dir.getAbsolutePath(),
+                               getRepositoryName());
+            }
         }
         if (!dir.canRead()) {
-            throw new RepositoryException("The directory for local indexes at '{0}' in repository '{1}' must be readable.");
+            throw new RepositoryException(JcrI18n.localIndexProviderDirectoryMustBeReadable.text(dir, getRepositoryName()));
         }
         if (!dir.canWrite()) {
-            throw new RepositoryException("The directory for local indexes at '{0}' in repository '{1}' must be writable.");
+            throw new RepositoryException(JcrI18n.localIndexProviderDirectoryMustBeWritable.text(dir, getRepositoryName()));
         }
 
         // Find the file for the indexes ...
         File file = new File(dir, DB_FILENAME);
 
         // Create the database ...
+        logger().debug("Creating or opening the local index provider database for repository '{1}' at: {0}",
+                       file.getAbsolutePath(), getRepositoryName());
         this.db = DBMaker.newFileDB(file).make();
     }
 
     @Override
     protected void postShutdown() {
+        logger().debug("Shutting down the local index provider '{0}' in repository '{1}'", getName(), getRepositoryName());
         if (db != null) {
             try {
                 db.close();
@@ -91,8 +116,11 @@ public class LocalIndexProvider extends IndexProvider {
     }
 
     @Override
-    public IndexPlanner getIndexPlanner() {
-        return null;
+    public void validateProposedIndex( ExecutionContext context,
+                                       IndexDefinition defn,
+                                       NodeTypes.Supplier nodeTypeSupplier,
+                                       Problems problems ) {
+        ManagedLocalIndexBuilder.create(context, defn, nodeTypeSupplier).validate(problems);
     }
 
     @Override
@@ -100,28 +128,11 @@ public class LocalIndexProvider extends IndexProvider {
                                         String workspaceName,
                                         Supplier nodeTypesSupplier,
                                         IndexFeedback feedback ) {
-        // Filter filter = null;
-        // ChangeSetListener listener = createListener(defn, nodeTypesSupplier);
-        // LocalIndex<?> index = null;
-        // IndexSpec spec = IndexSpec.create(context(), defn);
-        // switch (defn.getKind()) {
-        // case DUPLICATES:
-        // // index = LocalDuplicateIndex.create(defn.getName(), workspaceName, getName(), db, spec);
-        // index = LocalDuplicateIndex.create(defn.getName(), workspaceName, getName(), db, spec.getConverter(),
-        // spec.getSerializer(), spec.getComparator());
-        // break;
-        // case UNIQUE:
-        // index = LocalUniqueIndex.create(defn.getName(), workspaceName, getName(), db, converter, treeSerializer);
-        // break;
-        // case ENUMERATED:
-        // case NODETYPE:
-        // case FULLTEXTSEARCH:
-        // break;
-        // }
-        //
-        // LocalIndexInfo info = new LocalIndexInfo(index);
-        // return operations(filter, listener, info);
-        return null;
+        ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), defn, nodeTypesSupplier);
+        logger().debug("Index provider '{0}' is creating index in workspace '{1}': {2}", getName(), workspaceName, defn);
+        ManagedIndex index = builder.build(workspaceName, db);
+        feedback.scan(workspaceName);
+        return index;
     }
 
     @Override
@@ -131,12 +142,79 @@ public class LocalIndexProvider extends IndexProvider {
                                         String workspaceName,
                                         Supplier nodeTypesSupplier,
                                         IndexFeedback feedback ) {
-        return null;
+        if (!isChanged(oldDefn, updatedDefn)) {
+            // Nothing about the index definition that we care about really changed, so don't do anything ...
+            logger().debug("Index provider '{0}' is not updating index in workspace '{1}' because there were no changes: {2}",
+                           getName(), workspaceName, updatedDefn);
+            return existingIndex;
+        }
+        // This is very crude, but we'll just destroy the old index and rebuild the new one ...
+        existingIndex.shutdown(true);
+        ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), updatedDefn, nodeTypesSupplier);
+        logger().debug("Index provider '{0}' is updating index in workspace '{1}': {2}", getName(), workspaceName, updatedDefn);
+        ManagedIndex index = builder.build(workspaceName, db);
+        feedback.scan(workspaceName);
+        return index;
     }
 
     @Override
     protected void removeIndex( IndexDefinition oldDefn,
                                 ManagedIndex existingIndex,
                                 String workspaceName ) {
+        logger().debug("Index provider '{0}' is removing index in workspace '{1}': {2}", getName(), workspaceName, oldDefn);
+        existingIndex.shutdown(true);
+    }
+
+    private boolean isChanged( IndexDefinition defn1,
+                               IndexDefinition defn2 ) {
+        if (defn1.getKind() != defn2.getKind()) return true;
+        if (defn1.size() != defn2.size()) return true;
+        for (int i = 0; i != defn1.size(); ++i) {
+            IndexColumnDefinition col1 = defn1.getColumnDefinition(i);
+            IndexColumnDefinition col2 = defn2.getColumnDefinition(i);
+            if (isChanged(col1, col2)) return true;
+        }
+        // We don't care about any properties ...
+        return false;
+    }
+
+    private boolean isChanged( IndexColumnDefinition defn1,
+                               IndexColumnDefinition defn2 ) {
+        if (defn1.getColumnType() != defn2.getColumnType()) return true;
+        if (!defn1.getPropertyName().equals(defn2.getPropertyName())) return true;
+        return false;
+    }
+
+    @Override
+    protected void planUseOfIndex( QueryContext context,
+                                   IndexCostCalculator calculator,
+                                   String workspaceName,
+                                   ManagedIndex index,
+                                   IndexDefinition defn ) {
+        ManagedLocalIndex localIndex = (ManagedLocalIndex)index;
+        IndexUsage planner = new IndexUsage(context, calculator, defn) {
+            @Override
+            protected boolean applies( FullTextSearch search ) {
+                // We don't support full text search criteria ...
+                return false;
+            }
+        };
+        // Does this index apply to any of the ANDed constraints?
+        for (Constraint constraint : calculator.andedConstraints()) {
+            if (planner.indexAppliesTo(constraint)) {
+                logger().trace("Index '{0}' in '{1}' provider applies to query in workspace '{2}' with constraint: {3}",
+                               defn.getName(), getName(), workspaceName, constraint);
+                // The index does apply to this constraint ...
+                long cardinality = localIndex.estimateCardinality(constraint);
+                long total = localIndex.estimateTotalCount();
+                Float selectivity = null;
+                if (total >= 0L) {
+                    double ratio = (double)cardinality / (double)total;
+                    selectivity = cardinality <= total ? new Float(ratio) : MAX_SELECTIVITY;
+                }
+                calculator.addIndex(defn.getName(), workspaceName, getName(), Collections.singleton(constraint), Costs.LOCAL,
+                                    cardinality, selectivity);
+            }
+        }
     }
 }

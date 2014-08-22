@@ -19,6 +19,7 @@ package org.modeshape.jcr.index.local;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -28,6 +29,8 @@ import javax.jcr.query.qom.Not;
 import javax.jcr.query.qom.Or;
 import javax.jcr.query.qom.PropertyExistence;
 import javax.jcr.query.qom.StaticOperand;
+import org.modeshape.common.collection.EmptyIterator;
+import org.modeshape.common.collection.MultiIterator;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.api.query.qom.Between;
 import org.modeshape.jcr.api.query.qom.Operator;
@@ -42,49 +45,135 @@ import org.modeshape.jcr.spi.index.provider.Filter.Results;
 /**
  * Utility for building {@link Results index Operation} instances that will use an index to return those {@link NodeKey}s that
  * satisfy a set of criteria.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 class Operations {
 
     protected static final Logger LOGGER = Logger.getLogger(Operations.class);
 
+    protected static final Results EMPTY_RESULTS = new Results() {
+
+        @Override
+        public boolean getNextBatch( ResultWriter writer,
+                                     int batchSize ) {
+            return false;
+        }
+
+        @Override
+        public void close() {
+        }
+    };
+
+    protected static final FilterOperation EMPTY_FILTER_OPERATION = new FilterOperation() {
+        @Override
+        public Results getResults() {
+            return EMPTY_RESULTS;
+        }
+
+        @Override
+        public long estimateCount() {
+            return 0;
+        }
+    };
+
     /**
      * Create an {@link Results index operation} instance that will use the supplied {@link NavigableMap} (provided by an index)
      * and the {@link Converter} to return all of the {@link NodeKey}s that satisfy the given constraints.
-     * 
+     *
      * @param keysByValue the index's map of values-to-NodeKey; may not be null
      * @param converter the converter; may not be null
      * @param constraints the constraints; may not be null but may be empty if there are no constraints
      * @return the index operation; never null
      */
-    public static <T> Results createOperation( NavigableMap<T, String> keysByValue,
-                                               Converter<T> converter,
-                                               Collection<Constraint> constraints ) {
-        OperationBuilder<T> builder = new BasicOperationBuilder<>(keysByValue, converter);
+    public static <T> FilterOperation createFilter( NavigableMap<T, String> keysByValue,
+                                                    Converter<T> converter,
+                                                    Collection<Constraint> constraints ) {
+        if (keysByValue.isEmpty()) return EMPTY_FILTER_OPERATION;
+        NodeKeysAccessor<T, String> nodeKeysAccessor = new NodeKeysAccessor<T, String>() {
+            @Override
+            public Iterator<String> getNodeKeys( NavigableMap<T, String> keysByValue ) {
+                return keysByValue.values().iterator();
+            }
+
+            @Override
+            public void addAllTo( NavigableMap<T, String> keysByValue,
+                                  Set<String> matchedKeys ) {
+                matchedKeys.addAll(keysByValue.values());
+            }
+        };
+        OperationBuilder<T> builder = new BasicOperationBuilder<>(keysByValue, converter, nodeKeysAccessor);
         for (Constraint constraint : constraints) {
             OperationBuilder<T> newBuilder = builder.apply(constraint, false);
             if (newBuilder != null) builder = newBuilder;
         }
-        return builder.build();
+        return builder;
+    }
+
+    /**
+     * Create an {@link Results index operation} instance that will use the supplied {@link NavigableMap} (provided by an
+     * enumerated index) and the {@link Converter} to return all of the {@link NodeKey}s that satisfy the given constraints.
+     *
+     * @param keySetByEnumeratedValue the index's map of NodeKey sets; may not be null
+     * @param converter the converter; may not be null
+     * @param constraints the constraints; may not be null but may be empty if there are no constraints
+     * @return the index operation; never null
+     */
+    public static <T> FilterOperation createEnumeratedFilter( NavigableMap<T, Set<String>> keySetByEnumeratedValue,
+                                                              Converter<T> converter,
+                                                              Collection<Constraint> constraints ) {
+        if (keySetByEnumeratedValue.isEmpty()) return EMPTY_FILTER_OPERATION;
+        NodeKeysAccessor<T, Set<String>> nodeKeysAccessor = new NodeKeysAccessor<T, Set<String>>() {
+            @Override
+            public Iterator<String> getNodeKeys( NavigableMap<T, Set<String>> keysByValue ) {
+                if (keysByValue.isEmpty()) return new EmptyIterator<String>();
+                if (keysByValue.size() == 1) return keysByValue.values().iterator().next().iterator();
+                return MultiIterator.fromIterables(keysByValue.values());
+            }
+
+            @Override
+            public void addAllTo( NavigableMap<T, Set<String>> keysByValue,
+                                  Set<String> matchedKeys ) {
+                for (Map.Entry<T, Set<String>> entry : keysByValue.entrySet()) {
+                    matchedKeys.addAll(entry.getValue());
+                }
+            }
+        };
+        OperationBuilder<T> builder = new BasicOperationBuilder<>(keySetByEnumeratedValue, converter, nodeKeysAccessor);
+        for (Constraint constraint : constraints) {
+            OperationBuilder<T> newBuilder = builder.apply(constraint, false);
+            if (newBuilder != null) builder = newBuilder;
+        }
+        return builder;
+    }
+
+    public static interface FilterOperation {
+        Index.Results getResults();
+
+        /**
+         * Obtain an estimate of the number of results.
+         *
+         * @return the estimated number of results; either 0 or a positive number
+         */
+        long estimateCount();
     }
 
     /**
      * A builder of {@link Results} instances. Builders are used to apply multiple {@link Constraint}s to an index and to
-     * ultimiately {@link #build() build} an {@link Results} instance that can be used to obtain the values that satisfy the
+     * ultimiately {@link #getResults() get} a {@link Results} instance that can be used to obtain the values that satisfy the
      * constraints.
-     * 
+     *
      * @param <T> the type of index key
      * @author Randall Hauch (rhauch@redhat.com)
      */
-    protected abstract static class OperationBuilder<T> {
+    protected abstract static class OperationBuilder<T> implements FilterOperation {
 
         protected OperationBuilder() {
         }
 
         /**
          * Return a new operation builder that will apply the given constraint to the index, possibly negating the constraint.
-         * 
+         *
          * @param constraint the constraint; may not be null
          * @param negated true if the constraint should be negated, or false if it should be applied as-is
          * @return the builder; never null
@@ -129,29 +218,38 @@ class Operations {
 
         protected abstract OperationBuilder<T> apply( SetCriteria setCriteria,
                                                       boolean negated );
+    }
 
-        protected abstract Index.Results build();
+    protected static interface NodeKeysAccessor<T, V> {
+        public Iterator<String> getNodeKeys( NavigableMap<T, V> keysByValue );
+
+        public void addAllTo( NavigableMap<T, V> keysByValue,
+                              Set<String> matchedKeys );
     }
 
     /**
      * This builder operates against the supplied {@link NavigableMap} and for each constraint will find the
      * {@link NavigableMap#subMap(Object, boolean, Object, boolean) submap} that satisfies the constraints.
-     * 
+     *
      * @param <T> the type of index key
+     * @param <V> the type of value to be iterated over
      * @author Randall Hauch (rhauch@redhat.com)
      */
-    protected static class BasicOperationBuilder<T> extends OperationBuilder<T> {
-        protected final NavigableMap<T, String> keysByValue;
+    protected static class BasicOperationBuilder<T, V> extends OperationBuilder<T> {
+        protected final NavigableMap<T, V> keysByValue;
         protected final Converter<T> converter;
+        protected final NodeKeysAccessor<T, V> nodeKeysAccessor;
 
-        protected BasicOperationBuilder( NavigableMap<T, String> keysByValue,
-                                         Converter<T> converter ) {
+        protected BasicOperationBuilder( NavigableMap<T, V> keysByValue,
+                                         Converter<T> converter,
+                                         NodeKeysAccessor<T, V> nodeKeysAccessor ) {
             this.keysByValue = keysByValue;
             this.converter = converter;
+            this.nodeKeysAccessor = nodeKeysAccessor;
         }
 
-        protected OperationBuilder<T> create( NavigableMap<T, String> keysByValue ) {
-            return new BasicOperationBuilder<>(keysByValue, converter);
+        protected OperationBuilder<T> create( NavigableMap<T, V> keysByValue ) {
+            return new BasicOperationBuilder<>(keysByValue, converter, nodeKeysAccessor);
         }
 
         @Override
@@ -162,8 +260,8 @@ class Operations {
             boolean isLowerIncluded = between.isLowerBoundIncluded();
             boolean isUpperIncluded = between.isUpperBoundIncluded();
             if (negated) {
-                OperationBuilder<T> lowerOp = create(keysByValue.headMap(lower, isLowerIncluded));
-                OperationBuilder<T> upperOp = create(keysByValue.tailMap(upper, isUpperIncluded));
+                OperationBuilder<T> lowerOp = create(keysByValue.headMap(lower, !isLowerIncluded));
+                OperationBuilder<T> upperOp = create(keysByValue.tailMap(upper, !isUpperIncluded));
                 return new DualOperationBuilder<>(lowerOp, upperOp);
             }
             return create(keysByValue.subMap(lower, isLowerIncluded, upper, isUpperIncluded));
@@ -182,26 +280,27 @@ class Operations {
                     T upperValue = converter.toUpperValue(operand);
                     return create(keysByValue.subMap(lowerValue, true, upperValue, true));
                 case GREATER_THAN:
-                    T value = converter.toUpperValue(operand);
+                    T value = converter.toLowerValue(operand);
                     return create(keysByValue.tailMap(value, false));
                 case GREATER_THAN_OR_EQUAL_TO:
-                    value = converter.toUpperValue(operand);
+                    value = converter.toLowerValue(operand);
                     return create(keysByValue.tailMap(value, true));
                 case LESS_THAN:
-                    value = converter.toLowerValue(operand);
+                    value = converter.toUpperValue(operand);
                     return create(keysByValue.headMap(value, false));
                 case LESS_THAN_OR_EQUAL_TO:
-                    value = converter.toLowerValue(operand);
+                    value = converter.toUpperValue(operand);
                     return create(keysByValue.headMap(value, true));
                 case NOT_EQUAL_TO:
                     OperationBuilder<T> lowerOp = create(keysByValue.headMap(converter.toLowerValue(operand), false));
                     OperationBuilder<T> upperOp = create(keysByValue.tailMap(converter.toUpperValue(operand), false));
                     return new DualOperationBuilder<>(lowerOp, upperOp);
                 case LIKE:
-                    // We can't handle LIKE with this kind of index. If we throw an exception, we'd have to remove any LIKE
-                    // criteria from the list of criteria sent to this operation. Instead, we simply ignore it.
-                    // Regardless, ModeShape should only pass the criteria that our IndexPlanner accepts for this part of the
-                    // query, and our IndexPlanner won't accept LIKE criteria.
+                    // We can't handle LIKE with this kind of index, but we can return the complete list of node keys
+                    // that have properties matching this index, and the LIKE can be done higher up. This might not very useful,
+                    // but more than likely we're going to know the subset of nodes with this property better than any other
+                    // index except somethiing that can actually handle LIKE. So we won't filter, and we'll just return this
+                    // builder...
                     break;
             }
             return this;
@@ -210,15 +309,15 @@ class Operations {
         @Override
         protected OperationBuilder<T> apply( SetCriteria setCriteria,
                                              boolean negated ) {
-            return new SetOperationBuilder<>(keysByValue, converter, setCriteria, negated);
+            return new SetOperationBuilder<>(keysByValue, converter, nodeKeysAccessor, setCriteria, negated);
         }
 
         protected Iterator<String> keys() {
-            return keysByValue.values().iterator();
+            return nodeKeysAccessor.getNodeKeys(keysByValue);
         }
 
         @Override
-        protected Results build() {
+        public Results getResults() {
             final Iterator<String> filteredKeys = keys();
             final float score = 1.0f;
             return new Results() {
@@ -239,31 +338,38 @@ class Operations {
                 }
             };
         }
+
+        @Override
+        public long estimateCount() {
+            return keysByValue.size();
+        }
     }
 
     /**
      * This builder results in an operation that performs a positive or negative match against a set criteria containing known
      * values.
-     * 
+     *
      * @param <T> the type of index key
+     * @param <V> the type of value to be iterated over
      * @author Randall Hauch (rhauch@redhat.com)
      */
-    protected static class SetOperationBuilder<T> extends BasicOperationBuilder<T> {
+    protected static class SetOperationBuilder<T, V> extends BasicOperationBuilder<T, V> {
         private final SetCriteria criteria;
         private final boolean negated;
 
-        protected SetOperationBuilder( NavigableMap<T, String> keysByValue,
+        protected SetOperationBuilder( NavigableMap<T, V> keysByValue,
                                        IndexValues.Converter<T> converter,
+                                       NodeKeysAccessor<T, V> nodeKeysAccessor,
                                        SetCriteria criteria,
                                        boolean negated ) {
-            super(keysByValue, converter);
+            super(keysByValue, converter, nodeKeysAccessor);
             this.criteria = criteria;
             this.negated = negated;
         }
 
         @Override
-        protected OperationBuilder<T> create( NavigableMap<T, String> keysByValue ) {
-            return new SetOperationBuilder<>(keysByValue, converter, criteria, negated);
+        protected OperationBuilder<T> create( NavigableMap<T, V> keysByValue ) {
+            return new SetOperationBuilder<>(keysByValue, converter, nodeKeysAccessor, criteria, negated);
         }
 
         @Override
@@ -280,7 +386,7 @@ class Operations {
                 // Find the range of all keys that have this value ...
                 T lowValue = converter.toLowerValue(valueOperand);
                 T highValue = converter.toUpperValue(valueOperand);
-                NavigableMap<T, String> submap = null;
+                NavigableMap<T, V> submap = null;
                 if (lowValue == null) {
                     if (highValue == null) continue;
                     // High but not low ...
@@ -295,7 +401,7 @@ class Operations {
                     }
                 }
                 if (submap.isEmpty()) continue; // no values for these keys
-                matchedKeys.addAll(submap.values());
+                nodeKeysAccessor.addAllTo(submap, matchedKeys);
             }
 
             if (!negated) {
@@ -347,11 +453,43 @@ class Operations {
                 }
             };
         }
+
+        @Override
+        public long estimateCount() {
+            long count = 0L;
+            // Determine the set of keys that have a value in our set ...
+            for (StaticOperand valueOperand : criteria.getValues()) {
+                // Find the range of all keys that have this value ...
+                T lowValue = converter.toLowerValue(valueOperand);
+                T highValue = converter.toUpperValue(valueOperand);
+                NavigableMap<T, V> submap = null;
+                if (lowValue == null) {
+                    if (highValue == null) continue;
+                    // High but not low ...
+                    submap = keysByValue.headMap(highValue, true);
+                } else {
+                    if (highValue == null) {
+                        // Low but not high ...
+                        submap = keysByValue.tailMap(lowValue, true);
+                    } else {
+                        // Both high and low ...
+                        submap = keysByValue.subMap(lowValue, true, highValue, true);
+                    }
+                }
+                count += submap.size();
+            }
+
+            if (!negated) {
+                // We've already found all of the keys for the given value, so just return them ...
+                count = keysByValue.size() - count;
+            }
+            return Math.max(count, 0L);
+        }
     }
 
     /**
      * This builder delegates to both sides, and is used for {@link Or} constraints.
-     * 
+     *
      * @param <T> the type of index key
      * @author Randall Hauch (rhauch@redhat.com)
      */
@@ -390,8 +528,8 @@ class Operations {
         }
 
         @Override
-        protected Results build() {
-            final Results first = left.build();
+        public Results getResults() {
+            final Results first = left.getResults();
             return new Results() {
                 Results second = null;
 
@@ -403,7 +541,7 @@ class Operations {
                     }
                     // Otherwise, the first one is done so we have to get the second one ...
                     if (second == null) {
-                        second = right.build();
+                        second = right.getResults();
                     }
                     return second.getNextBatch(writer, batchSize);
                 }
@@ -413,6 +551,11 @@ class Operations {
                     // Nothing to do ...
                 }
             };
+        }
+
+        @Override
+        public long estimateCount() {
+            return left.estimateCount() + right.estimateCount();
         }
     }
 

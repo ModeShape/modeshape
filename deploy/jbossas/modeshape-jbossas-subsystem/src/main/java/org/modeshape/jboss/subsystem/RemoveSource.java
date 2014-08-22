@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -38,7 +37,7 @@ class RemoveSource extends AbstractModeShapeRemoveStepHandler {
     @Override
     List<ServiceName> servicesToRemove( OperationContext context,
                                         ModelNode operation,
-                                        ModelNode model ) throws OperationFailedException {
+                                        ModelNode model ) {
         AddressContext addressContext = AddressContext.forOperation(operation);
         // Get the service addresses ...
         final String sourceName = addressContext.lastPathElementValue();

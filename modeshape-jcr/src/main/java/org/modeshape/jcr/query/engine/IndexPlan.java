@@ -34,6 +34,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
     private final String providerName;
     private final int costEstimate;
     private final long cardinalityEstimate;
+    private final Float selectivityEstimate;
     private final Collection<Constraint> constraints;
     private final Map<String, Object> parameters;
 
@@ -43,6 +44,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
                       Collection<Constraint> constraints,
                       int costEstimate,
                       long cardinalityEstimate,
+                      float selectivityEstimate,
                       Map<String, Object> parameters ) {
         CheckArg.isNotEmpty(name, "name");
         CheckArg.isNonNegative(costEstimate, "costEstimate");
@@ -53,6 +55,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
         this.constraints = constraints;
         this.costEstimate = costEstimate;
         this.cardinalityEstimate = cardinalityEstimate;
+        this.selectivityEstimate = selectivityEstimate < 0 ? null : selectivityEstimate;
         this.parameters = parameters == null ? NO_PARAMETERS : parameters;
     }
 
@@ -66,7 +69,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
      * <p>
      * Indexes with lower costs and lower {@link #getCardinalityEstimate() cardinalities} will be favored over other indexes.
      * </p>
-     * 
+     *
      * @return the cardinality estimate; never negative
      */
     public long getCardinalityEstimate() {
@@ -81,7 +84,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
      * <p>
      * Indexes with lower costs and lower {@link #getCardinalityEstimate() cardinalities} will be favored over other indexes.
      * </p>
-     * 
+     *
      * @return the cost estimate; never negative
      */
     public int getCostEstimate() {
@@ -89,8 +92,39 @@ public final class IndexPlan implements Comparable<IndexPlan> {
     }
 
     /**
-     * Get the name of this index.
+     * Determine if there is a {@link #getSelectivityEstimate() selectivity estimate}. This is equivalent to calling:
      * 
+     * <pre>
+     *   return getSelectivityEstimate() != null
+     * </pre>
+     * 
+     * @return true if there is an estimate of selectivity, or false if there is none
+     */
+    public boolean hasSelectivityEstimate() {
+        return selectivityEstimate != null;
+    }
+
+    /**
+     * Get the estimate of the selectivity of this index for the query constraints. The selectivity is the ration of the number of
+     * rows that will be returned to the total number of rows, or
+     *
+     * <pre>
+     * selectivity = cardinality / total
+     * </pre>
+     *
+     * Thus the selectivity (if known) will always be between 0 and 1.0, inclusive.
+     * <p>
+     * This method returns the estimated selectivity if it is know, or null if it is not known.
+     *
+     * @return the selectivity estimate, or null if there is none
+     */
+    public Float getSelectivityEstimate() {
+        return selectivityEstimate;
+    }
+
+    /**
+     * Get the name of this index.
+     *
      * @return the index name; never null
      */
     public String getName() {
@@ -99,7 +133,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
 
     /**
      * Get the name of the workspace to which this index applies.
-     * 
+     *
      * @return the workspace name; may be null if an implicit workspace is used
      */
     public String getWorkspaceName() {
@@ -108,7 +142,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
 
     /**
      * The name of the provider that owns the index.
-     * 
+     *
      * @return the provider name; null if the index is handled internally by ModeShape by something other than a provider
      */
     public String getProviderName() {
@@ -117,7 +151,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
 
     /**
      * Get the constraints that should be applied to this index if/when it is used.
-     * 
+     *
      * @return the constraints; may be null or empty if there are no constraints
      */
     public Collection<Constraint> getConstraints() {
@@ -126,7 +160,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
 
     /**
      * Get the provider-specific parameters for this index usage.
-     * 
+     *
      * @return the parameters; never null but possibly empty
      */
     public Map<String, Object> getParameters() {

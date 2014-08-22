@@ -47,7 +47,7 @@ import org.modeshape.jcr.value.ValueFactories;
 
 /**
  * A factory for creating {@link NodeSequence} instances.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public class QuerySources {
@@ -62,7 +62,7 @@ public class QuerySources {
 
     /**
      * Construct a new instance.
-     * 
+     *
      * @param repository the repository cache; may not be null
      * @param nodeTypes the node types cache; may not be null
      * @param workspaceName the name of the main workspace to be queried; may not be null
@@ -124,7 +124,7 @@ public class QuerySources {
     /**
      * Obtain a {@link NodeSequence} that returns all (queryable) nodes in the workspace, where each node is assigned the given
      * score.
-     * 
+     *
      * @param score the score for each node
      * @param nodeCount the number of nodes (or an estimate) that will be returned
      * @return the sequence of nodes; never null
@@ -143,7 +143,7 @@ public class QuerySources {
     /**
      * Obtain a {@link NodeSequence} that returns the (queryable) node at the given path in the workspace, where the node is
      * assigned the given score.
-     * 
+     *
      * @param path the path of the node; may not be null
      * @param score the score for the node
      * @return the sequence of node(s); never null
@@ -169,7 +169,7 @@ public class QuerySources {
     /**
      * Obtain a {@link NodeSequence} that returns the (queryable) node with the given key in the workspace, where the node is
      * assigned the given score.
-     * 
+     *
      * @param workspaceName the name of the workspace; may not be null
      * @param identifier the {@link NodeKey#getIdentifier() identifier} of the node; may not be null
      * @param score the score for the node
@@ -215,7 +215,7 @@ public class QuerySources {
     /**
      * Obtain a {@link NodeSequence} that returns the (queryable) children of the node at the given path in the workspace, where
      * each child node is assigned the given score.
-     * 
+     *
      * @param parentPath the path of the parent node; may not be null
      * @param score the score for the nodes
      * @return the sequence of nodes; never null
@@ -253,7 +253,7 @@ public class QuerySources {
     /**
      * Obtain a {@link NodeSequence} that returns the (queryable) descendants of the node at the given path in the workspace,
      * where each descendant node is assigned the given score.
-     * 
+     *
      * @param ancestorPath the path of the ancestor of all descendants; may not be null
      * @param score the score for the nodes
      * @return the sequence of nodes; never null
@@ -278,7 +278,7 @@ public class QuerySources {
 
     /**
      * Obtain a {@link NodeSequence} that uses the supplied index to find the node that satisfy the given constraints.
-     * 
+     *
      * @param index the index; may not be null
      * @param constraints the constraints that apply to the index; may not be null or empty
      * @param variables the immutable map of variable values keyed by their name; never null but possibly empty
@@ -347,13 +347,15 @@ public class QuerySources {
 
             @Override
             public Batch nextBatch() {
-                if (!more) return null;
+                if (writer == null) {
+                    if (!more) return null;
+                    readBatch();
+                }
                 if (writer != null) {
                     // Return a preloaded batch if there is one ...
                     Batch preloaded = writer.popPreloadedBatch();
                     if (preloaded != null) return preloaded;
                 }
-                readBatch();
                 try {
                     return writer.convertToBatch(!more);
                 } finally {
@@ -430,13 +432,16 @@ public class QuerySources {
         }
 
         public long rowCount() {
-            return keys.size();
+            return keys == null ? 0 : keys.size();
         }
 
         protected boolean consumeOperation( Index.Results operation ) {
-            if (!keys.isEmpty()) {
+            if (keys != null && !keys.isEmpty()) {
                 // We've already read some, but have to get ready to read more ...
-                preloadedBatches.add(convertToBatch(false));
+                Batch batch = convertToBatch(false);
+                if (batch.isEmpty()) return false;
+                if (preloadedBatches == null) preloadedBatches = new LinkedList<>();
+                preloadedBatches.add(batch);
             }
             keys = new ArrayList<NodeKey>(batchSize);
             scores = new ArrayList<Float>(batchSize);
@@ -444,7 +449,7 @@ public class QuerySources {
         }
 
         protected Batch convertToBatch( boolean isLast ) {
-            if (keys.isEmpty()) {
+            if (keys == null || keys.isEmpty()) {
                 return isLast ? null : NodeSequence.emptyBatch(workspaceName, batchSize);
             }
             try {
@@ -478,7 +483,7 @@ public class QuerySources {
     /**
      * Creates a node filter which doesn't include any of the nodes from the shared set in the query result. This is per
      * JSR-283/#14.16: if a query matches a descendant node of a shared set, it appears in query results only once.
-     * 
+     *
      * @return a new {@link org.modeshape.jcr.cache.document.NodeCacheIterator.NodeFilter} instance
      */
     protected NodeFilter sharedNodesFilter() {
@@ -504,7 +509,7 @@ public class QuerySources {
 
     /**
      * Return an iterator over all nodes at or below the specified path in the named workspace, using the supplied filter.
-     * 
+     *
      * @param workspaceName the name of the workspace
      * @param path the path of the root node of the subgraph, or null if all nodes in the workspace are to be included
      * @return the iterator, or null if this workspace will return no nodes

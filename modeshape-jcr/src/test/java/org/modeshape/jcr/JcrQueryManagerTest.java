@@ -193,11 +193,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         return new String[] {"jcr:score"};
     }
 
-    @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
         String configFileName = JcrQueryManagerTest.class.getSimpleName() + ".json";
+        beforeAll(configFileName);
+    }
 
+    @SuppressWarnings( "deprecation" )
+    protected static void beforeAll( String configFileName ) throws Exception {
         String configFilePath = "config/" + configFileName;
         InputStream configStream = JcrQueryManagerTest.class.getClassLoader().getResourceAsStream(configFilePath);
         assertThat("Unable to find configuration file '" + configFilePath, configStream, is(notNullValue()));
@@ -3202,7 +3205,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
+     *
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -3216,7 +3219,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
+     *
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -4088,7 +4091,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             assertEquals(1, nodes.getSize());
             assertEquals("foo2", nodes.nextNode().getName());
         } finally {
-            //remove the nodes to avoid influencing the other tests
+            // remove the nodes to avoid influencing the other tests
             if (node1 != null) {
                 node1.remove();
             }
@@ -4097,7 +4100,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             }
             session.save();
 
-            //remove the custom types and namespaces to avoid influencing the other tests
+            // remove the custom types and namespaces to avoid influencing the other tests
             JcrNodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
             nodeTypeManager.unregisterNodeType("foo:nodeType1");
             nodeTypeManager.unregisterNodeType("foo:nodeType2");
@@ -4111,7 +4114,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // Create a template for the node type ...
         NodeTypeTemplate type = nodeTypeManager.createNodeTypeTemplate();
         type.setName(typeName);
-        type.setDeclaredSuperTypeNames(new String[] { "nt:unstructured" });
+        type.setDeclaredSuperTypeNames(new String[] {"nt:unstructured"});
         type.setAbstract(false);
         type.setOrderableChildNodes(true);
         type.setMixin(false);

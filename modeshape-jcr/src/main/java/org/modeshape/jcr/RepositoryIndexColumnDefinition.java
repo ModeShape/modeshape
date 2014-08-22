@@ -18,6 +18,7 @@ package org.modeshape.jcr;
 
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
+import org.modeshape.jcr.value.PropertyType;
 
 @Immutable
 class RepositoryIndexColumnDefinition implements IndexColumnDefinition {
@@ -26,22 +27,27 @@ class RepositoryIndexColumnDefinition implements IndexColumnDefinition {
         return new RepositoryIndexColumnDefinition(other.getPropertyName(), other.getColumnType());
     }
 
-    private final String propertyTypeName;
+    private final String propertyName;
     private final int columnType;
 
-    RepositoryIndexColumnDefinition( String propertyTypeName,
+    RepositoryIndexColumnDefinition( String propertyName,
                                      int columnType ) {
-        this.propertyTypeName = propertyTypeName;
+        this.propertyName = propertyName;
         this.columnType = columnType;
     }
 
     @Override
     public String getPropertyName() {
-        return propertyTypeName;
+        return propertyName;
     }
 
     @Override
     public int getColumnType() {
         return columnType;
+    }
+
+    @Override
+    public String toString() {
+        return this.propertyName + '(' + PropertyType.valueFor(columnType) + ')';
     }
 }

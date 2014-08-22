@@ -38,7 +38,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
 /**
- * 
+ *
  */
 public class ImmutableChildReferences {
 
@@ -52,7 +52,8 @@ public class ImmutableChildReferences {
         return new Medium(documentTranslator, document, childrenFieldName);
     }
 
-    public static ChildReferences union( ChildReferences first, ChildReferences second ) {
+    public static ChildReferences union( ChildReferences first,
+                                         ChildReferences second ) {
         long firstSize = first.size();
         long secondSize = second.size();
         if (firstSize == 0 && secondSize == 0) {
@@ -194,12 +195,14 @@ public class ImmutableChildReferences {
         private final ListMultimap<Name, ChildReference> childReferences;
         private final Map<NodeKey, ChildReference> childReferencesByKey;
 
-        protected Medium( DocumentTranslator documentTranslator, Document document, String childrenFieldName ) {
+        protected Medium( DocumentTranslator documentTranslator,
+                          Document document,
+                          String childrenFieldName ) {
             this.childReferences = LinkedListMultimap.create();
             this.childReferencesByKey = new HashMap<NodeKey, ChildReference>();
 
             final List<?> documentArray = document.getArray(childrenFieldName);
-            if (documentArray == null)  {
+            if (documentArray == null) {
                 return;
             }
             int size = documentArray.size();
@@ -221,7 +224,7 @@ public class ImmutableChildReferences {
                 // node key more than once, since that is clearly an unexpected condition (as a child may not appear
                 // more than once in its parent's list of child nodes). See MODE-2120.
 
-                //we can precompute the SNS index up front
+                // we can precompute the SNS index up front
                 int currentSNS = this.childReferences.get(refName).size();
                 ChildReference refWithSNS = ref.with(currentSNS + 1);
                 this.childReferencesByKey.put(ref.getKey(), refWithSNS);
@@ -258,57 +261,58 @@ public class ImmutableChildReferences {
 
             List<ChildReference> childrenWithSameName = this.childReferences.get(name);
             if (changes == null) {
-                //there are no changes, so we can take advantage of the fact that we precomputed the SNS indexes up front...
+                // there are no changes, so we can take advantage of the fact that we precomputed the SNS indexes up front...
                 if (snsIndex > childrenWithSameName.size()) {
                     return null;
                 }
                 return childrenWithSameName.get(snsIndex - 1);
-            } else {
-                //there are changes, so there is some extra processing to be done...
+            }
+            // there are changes, so there is some extra processing to be done...
 
-                if (childrenWithSameName.isEmpty() && !includeRenames) {
-                    // This segment contains no nodes with the supplied name ...
-                    if (insertions == null) {
-                        // and no nodes with this name were inserted ...
-                        return null;
-                    }
-                    // But there is at least one inserted node with this name ...
-                    while (insertions.hasNext()) {
-                        ChildInsertions inserted = insertions.next();
-                        Iterator<ChildReference> iter = inserted.inserted().iterator();
-                        while (iter.hasNext()) {
-                            ChildReference result = iter.next();
-                            int index = context.consume(result.getName(), result.getKey());
-                            if (index == snsIndex)
-                                return result.with(index);
-                        }
-                    }
+            if (childrenWithSameName.isEmpty() && !includeRenames) {
+                // This segment contains no nodes with the supplied name ...
+                if (insertions == null) {
+                    // and no nodes with this name were inserted ...
                     return null;
                 }
-
-                // This collection contains at least one node with the same name ...
-                if (insertions != null || includeRenames) {
-                    // The logic for this would involve iteration to find the indexes, so we may as well just iterate ...
-                    Iterator<ChildReference> iter = iterator(context, name);
+                // But there is at least one inserted node with this name ...
+                while (insertions.hasNext()) {
+                    ChildInsertions inserted = insertions.next();
+                    Iterator<ChildReference> iter = inserted.inserted().iterator();
                     while (iter.hasNext()) {
-                        ChildReference ref = iter.next();
-                        if (ref.getSnsIndex() == snsIndex)
-                            return ref;
-                    }
-                    return null;
-                }
-
-                // We have at least one SNS in this list (and still potentially some removals) ...
-                for (ChildReference childWithSameName : childrenWithSameName) {
-                    if (changes.isRemoved(childWithSameName)) { continue; }
-                    if (changes.isRenamed(childWithSameName)) { continue; }
-                    //we've already precomputed the SNS index
-                    if (snsIndex == childWithSameName.getSnsIndex()) {
-                        return childWithSameName;
+                        ChildReference result = iter.next();
+                        int index = context.consume(result.getName(), result.getKey());
+                        if (index == snsIndex) return result.with(index);
                     }
                 }
                 return null;
             }
+
+            // This collection contains at least one node with the same name ...
+            if (insertions != null || includeRenames) {
+                // The logic for this would involve iteration to find the indexes, so we may as well just iterate ...
+                Iterator<ChildReference> iter = iterator(context, name);
+                while (iter.hasNext()) {
+                    ChildReference ref = iter.next();
+                    if (ref.getSnsIndex() == snsIndex) return ref;
+                }
+                return null;
+            }
+
+            // We have at least one SNS in this list (and still potentially some removals) ...
+            for (ChildReference childWithSameName : childrenWithSameName) {
+                if (changes.isRemoved(childWithSameName)) {
+                    continue;
+                }
+                if (changes.isRenamed(childWithSameName)) {
+                    continue;
+                }
+                // we've already precomputed the SNS index
+                if (snsIndex == childWithSameName.getSnsIndex()) {
+                    return childWithSameName;
+                }
+            }
+            return null;
         }
 
         @Override
@@ -376,7 +380,7 @@ public class ImmutableChildReferences {
 
         @Override
         public ChildReference getChild( NodeKey key ) {
-            //we should already have precomputed the correct SNS at the beginning
+            // we should already have precomputed the correct SNS at the beginning
             return childReferencesByKey.get(key);
         }
 
@@ -387,21 +391,22 @@ public class ImmutableChildReferences {
 
         @Override
         public Iterator<ChildReference> iterator( Name name ) {
-            //the child references should already have the correct SNS precomputed
+            // the child references should already have the correct SNS precomputed
             return childReferences.get(name).iterator();
         }
 
         @Override
         public Iterator<ChildReference> iterator() {
-            //the child references should already have the correct SNS precomputed
+            // the child references should already have the correct SNS precomputed
             return childReferences.values().iterator();
         }
 
-
         @Override
-        public Iterator<ChildReference> iterator( Name name, Context context ) {
+        public Iterator<ChildReference> iterator( Name name,
+                                                  Context context ) {
             if (context != null && context.changes() != null) {
-                //we only want the context-sensitive behavior if there are changes. Otherwise we've already precomputed the SNS index
+                // we only want the context-sensitive behavior if there are changes. Otherwise we've already precomputed the SNS
+                // index
                 return super.iterator(name, context);
             }
             return iterator(name);
@@ -410,7 +415,8 @@ public class ImmutableChildReferences {
         @Override
         public Iterator<ChildReference> iterator( Context context ) {
             if (context != null && context.changes() != null) {
-                //we only want the context-sensitive behavior if there are changes. Otherwise we've already precomputed the SNS index
+                // we only want the context-sensitive behavior if there are changes. Otherwise we've already precomputed the SNS
+                // index
                 return super.iterator(context);
             }
             return iterator();
@@ -691,9 +697,10 @@ public class ImmutableChildReferences {
     public static class ReferencesUnion extends AbstractChildReferences {
 
         private final ChildReferences firstReferences;
-        private final ChildReferences secondReferences;
+        protected final ChildReferences secondReferences;
 
-        ReferencesUnion( ChildReferences firstReferences, ChildReferences secondReferences ) {
+        ReferencesUnion( ChildReferences firstReferences,
+                         ChildReferences secondReferences ) {
             this.firstReferences = firstReferences;
             this.secondReferences = secondReferences;
         }
