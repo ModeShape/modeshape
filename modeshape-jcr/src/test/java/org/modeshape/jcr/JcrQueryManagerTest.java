@@ -1387,6 +1387,50 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(numResults).hasColumns(columnNames).validate(query, result);
     }
 
+    @FixFor( "MODE-2178" )
+    @Test
+    public void shouldAllowQueryForPropertyWithEmptyStringAsCriteria() throws RepositoryException {
+        // print = true;
+        String[] columnNames = {"car:engine", "car:maker", "car:model", "car:year", "car:userRating"};
+        String queryStr = "SELECT [car:engine], [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+        validateQuery().rowCount(13L).hasColumns(columnNames).validate(query, query.execute());
+
+        queryStr = "SELECT [car:engine], [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] WHERE LENGTH([car:engine]) = 0";
+        query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+        validateQuery().rowCount(8L).hasColumns(columnNames).validate(query, query.execute());
+
+        queryStr = "SELECT [car:engine], [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] WHERE [car:engine] IS NULL OR [car:engine] = ''";
+        query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+        validateQuery().rowCount(8L).hasColumns(columnNames).validate(query, query.execute());
+
+        queryStr = "SELECT * FROM [car:Car] WHERE LENGTH([car:engine]) = 0";
+        query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+        validateQuery().rowCount(8L).validate(query, query.execute());
+
+        // There are some nodes that don't have a 'car:engine' property, but none of the existing property values is
+        // an empty string, so this query should return no rows ...
+        queryStr = "SELECT [car:engine], [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] WHERE [car:engine] = ''";
+        query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+        validateQuery().rowCount(0L).hasColumns(columnNames).validate(query, query.execute());
+
+        Node car = session.getNode("/Cars/Hybrid/Toyota Prius");
+        assertThat(car.hasProperty("car:engine"), is(false));
+        try {
+            // Change a node to have an empty 'car:engine' property value ...
+            car.setProperty("car:engine", "");
+            session.save();
+
+            // Now issue the same query again, and this time we should have 1 row that has an empty 'car:engine' prop value ...
+            query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+            validateQuery().rowCount(1L).hasColumns(columnNames).validate(query, query.execute());
+        } finally {
+            // Remove the property again ...
+            car.getProperty("car:engine").remove();
+            session.save();
+        }
+    }
+
     @FixFor( "MODE-1824" )
     @Test
     public void shouldBeAbleToExecuteQueryWithTwoColumns() throws RepositoryException {

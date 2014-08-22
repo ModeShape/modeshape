@@ -53,12 +53,14 @@ import org.modeshape.common.util.StringUtil;
 public final class JSONRestClient {
 
     private static final UrlEncoder URL_ENCODER = new UrlEncoder().setSlashEncoded(false);
-    private final DefaultHttpClient httpClient;
+    protected final DefaultHttpClient httpClient;
     private final HttpHost host;
     private final String url;
     private final String baseUrl;
 
-    protected JSONRestClient( String url, String username, String password ) {
+    protected JSONRestClient( String url,
+                              String username,
+                              String password ) {
         CheckArg.isNotNull(url, "url");
         try {
             this.url = url;
@@ -158,7 +160,8 @@ public final class JSONRestClient {
         }
     }
 
-    protected static String append( String url, String... segments ) {
+    protected static String append( String url,
+                                    String... segments ) {
         for (String segment : segments) {
             if (url.endsWith(segment)) {
                 continue;
@@ -212,6 +215,7 @@ public final class JSONRestClient {
                 request.releaseConnection();
             }
         }
+
         public boolean isOK() {
             return hasCode(HttpURLConnection.HTTP_OK);
         }

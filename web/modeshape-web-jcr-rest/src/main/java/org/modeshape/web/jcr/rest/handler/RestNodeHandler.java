@@ -32,15 +32,14 @@ import org.modeshape.web.jcr.rest.model.RestItem;
 /**
  * An extension to the {@link ItemHandler} which is used by {@link org.modeshape.web.jcr.rest.ModeShapeRestService} to interact
  * with properties and nodes.
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-@SuppressWarnings( "deprecation" )
 public final class RestNodeHandler extends ItemHandler {
 
     /**
      * Retrieves the JCR {@link Item} at the given path, returning its rest representation.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param repositoryName the URL-encoded repository name
      * @param workspaceName the URL-encoded workspace name
@@ -69,7 +68,7 @@ public final class RestNodeHandler extends ItemHandler {
      * content to be a JSON object. The keys of the objects correspond to property names that will be set and the values for the
      * keys correspond to the values that will be set on the properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -98,7 +97,7 @@ public final class RestNodeHandler extends ItemHandler {
 
     /**
      * Deletes the subgraph at the node with the specified id, including all descendants.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name

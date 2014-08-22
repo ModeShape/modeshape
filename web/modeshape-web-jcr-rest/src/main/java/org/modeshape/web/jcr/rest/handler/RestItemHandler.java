@@ -39,15 +39,14 @@ import org.modeshape.web.jcr.rest.model.RestItem;
 /**
  * An extension to the {@link ItemHandler} which is used by {@link org.modeshape.web.jcr.rest.ModeShapeRestService} to interact
  * with properties and nodes.
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-@SuppressWarnings( "deprecation" )
 public final class RestItemHandler extends ItemHandler {
 
     /**
      * Retrieves the JCR {@link Item} at the given path, returning its rest representation.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param repositoryName the URL-encoded repository name
      * @param workspaceName the URL-encoded workspace name
@@ -74,7 +73,7 @@ public final class RestItemHandler extends ItemHandler {
      * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
      * {@code jcr:mixinTypes} properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param repositoryName the URL-encoded repository name
      * @param workspaceName the URL-encoded workspace name
@@ -133,7 +132,7 @@ public final class RestItemHandler extends ItemHandler {
      * content to be a JSON object. The keys of the objects correspond to property names that will be set and the values for the
      * keys correspond to the values that will be set on the properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -167,7 +166,7 @@ public final class RestItemHandler extends ItemHandler {
     /**
      * Performs a bulk creation of items, using a single {@link Session}. If any of the items cannot be created for whatever
      * reason, the entire operation fails.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param repositoryName the URL-encoded repository name
      * @param workspaceName the URL-encoded workspace name
@@ -193,7 +192,7 @@ public final class RestItemHandler extends ItemHandler {
     /**
      * Performs a bulk updating of items, using a single {@link Session}. If any of the items cannot be updated for whatever
      * reason, the entire operation fails.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param repositoryName the URL-encoded repository name
      * @param workspaceName the URL-encoded workspace name
@@ -220,7 +219,7 @@ public final class RestItemHandler extends ItemHandler {
     /**
      * Performs a bulk deletion of items, using a single {@link Session}. If any of the items cannot be deleted for whatever
      * reason, the entire operation fails.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param repositoryName the URL-encoded repository name
      * @param workspaceName the URL-encoded workspace name

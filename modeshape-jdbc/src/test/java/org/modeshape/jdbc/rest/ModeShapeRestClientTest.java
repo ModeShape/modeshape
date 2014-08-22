@@ -37,7 +37,7 @@ public class ModeShapeRestClientTest {
 
     @BeforeClass
     public static void beforeClass() {
-        //the values are coming from the modeshape-rest-war test webapp
+        // the values are coming from the modeshape-rest-war test webapp
         REST_CLIENT = new ModeShapeRestClient("http://localhost:8090/modeshape/repo/default", "dnauser", "password");
     }
 
@@ -79,6 +79,7 @@ public class ModeShapeRestClientTest {
         assertNull(nodeTypes.getNodeType("foobar"));
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldQueryRepository() throws Exception {
         QueryResult queryResult = REST_CLIENT.query("SELECT node.[jcr:path] FROM [mode:root] AS node", Query.JCR_SQL2);
