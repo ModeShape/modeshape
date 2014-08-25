@@ -54,7 +54,6 @@ import org.modeshape.jcr.query.engine.IndexQueryEngine;
 import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.validate.Schemata;
-import org.modeshape.jcr.spi.index.IndexManager;
 import org.modeshape.jcr.spi.index.IndexWriter;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
@@ -188,21 +187,21 @@ class RepositoryQueryManager implements ChangeSetListener {
      * time this method is called. Therefore, the writer should be used and discarded relatively quickly, since query index
      * providers may be {@link RepositoryIndexManager#register(org.modeshape.jcr.spi.index.provider.IndexProvider) added} or
      * {@link RepositoryIndexManager#unregister(String) removed} at any time.
-     * 
+     *
      * @return the index writer; never null
      */
     public IndexWriter getIndexWriter() {
         return indexManager.getIndexWriter();
     }
 
-    protected IndexManager getIndexManager() {
+    protected RepositoryIndexManager getIndexManager() {
         return indexManager;
     }
 
     /**
      * Get an immutable snapshot of the index definitions. This can be used by the query engine to determine which indexes might
      * be usable when quering a specific selector (node type).
-     * 
+     *
      * @return a snapshot of the index definitions at this moment; never null
      */
     RepositoryIndexes getIndexes() {
@@ -211,7 +210,7 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     /**
      * Obtain the query engine, which is created lazily and in a thread-safe manner.
-     * 
+     *
      * @return the query engine; never null
      */
     protected final QueryEngine queryEngine() {
@@ -286,7 +285,7 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     /**
      * Clean all indexes and reindex all content.
-     * 
+     *
      * @param async true if the reindexing should be done in the background, or false if it should be done using this thread
      */
     protected void cleanAndReindex( boolean async ) {
@@ -322,7 +321,7 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     /**
      * Crawl and index all of the repository content.
-     * 
+     *
      * @param includeSystemContent true if the system content should also be indexed
      * @param indexes the index writer that should be use; may not be null
      */
@@ -355,7 +354,7 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     /**
      * Crawl and index the content in the named workspace.
-     * 
+     *
      * @param workspace the workspace
      * @throws IllegalArgumentException if the workspace is null
      */
@@ -365,7 +364,7 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     /**
      * Crawl and index the content starting at the supplied path in the named workspace, to the designated depth.
-     * 
+     *
      * @param workspace the workspace
      * @param path the path of the content to be indexed
      * @param depth the depth of the content to be indexed
@@ -490,7 +489,7 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     /**
      * Asynchronously crawl and index the content in the named workspace.
-     * 
+     *
      * @param workspace the workspace
      * @return the future for the asynchronous operation; never null
      * @throws IllegalArgumentException if the workspace is null
@@ -507,7 +506,7 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     /**
      * Asynchronously crawl and index the content starting at the supplied path in the named workspace, to the designated depth.
-     * 
+     *
      * @param workspace the workspace
      * @param path the path of the content to be indexed
      * @param depth the depth of the content to be indexed

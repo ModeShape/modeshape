@@ -1803,7 +1803,7 @@ public class RepositoryConfiguration {
 
                 @Override
                 public boolean isEnabled() {
-                    return false;
+                    return true;
                 }
 
                 @Override
@@ -1854,28 +1854,32 @@ public class RepositoryConfiguration {
 
                 protected List<IndexColumnDefinition> columns() {
                     if (columns == null) {
+                        columns = new ArrayList<>();
                         String columnDefnsStr = doc.getString(FieldName.COLUMNS);
                         if (columnDefnsStr != null) {
                             for (String columnDefn : columnDefnsStr.split(",")) {
                                 if (columnDefn.trim().length() == 0) continue;
                                 try {
                                     Matcher matcher = COLUMN_DEFN_PATTERN.matcher(columnDefn);
-                                    final String propertyName = matcher.group(1).trim();
-                                    String typeStr = matcher.group(2).trim();
-                                    final PropertyType type = PropertyType.valueFor(typeStr);
-                                    columns.add(new IndexColumnDefinition() {
+                                    if (matcher.find()) {
+                                        final String propertyName = matcher.group(1).trim();
+                                        String typeStr = matcher.group(2).trim();
+                                        final PropertyType type = PropertyType.valueFor(typeStr);
+                                        columns.add(new IndexColumnDefinition() {
 
-                                        @Override
-                                        public String getPropertyName() {
-                                            return propertyName;
-                                        }
+                                            @Override
+                                            public String getPropertyName() {
+                                                return propertyName;
+                                            }
 
-                                        @Override
-                                        public int getColumnType() {
-                                            return type.jcrType();
-                                        }
-                                    });
+                                            @Override
+                                            public int getColumnType() {
+                                                return type.jcrType();
+                                            }
+                                        });
+                                    }
                                 } catch (RuntimeException e) {
+                                    e.printStackTrace();
                                 }
                             }
                         }

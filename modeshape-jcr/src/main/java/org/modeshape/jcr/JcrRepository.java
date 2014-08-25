@@ -86,7 +86,6 @@ import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.DocumentOptimization;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.GarbageCollection;
-import org.modeshape.jcr.RepositoryConfiguration.Indexes;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
@@ -94,7 +93,6 @@ import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.RepositoryManager;
 import org.modeshape.jcr.api.Workspace;
-import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.api.value.DateTime;
@@ -1210,8 +1208,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, config);
                 this.changeBus.register(this.repositoryQueryManager);
 
-                loadIndexDefinitions();
-
                 // Check that we have parsers for all the required languages ...
                 assert this.queryParsers.getParserFor(Query.XPATH) != null;
                 assert this.queryParsers.getParserFor(Query.SQL) != null;
@@ -1239,8 +1235,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the initial content importer
                 this.initialContentImporter = new InitialContentImporter(config.getInitialContent(), this);
 
-                // Set up the node types importer
+                // Set up the node types importer (but don't import them yet)
                 this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
+
             } catch (Throwable t) {
                 // remove the document that was written as part of the initialization procedure
                 if (cache != null) {
@@ -1304,6 +1301,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 // import the preconfigured node types before the initial content, in case the latter use custom types
                 this.nodeTypesImporter.importNodeTypes();
+
+                // Load the index definitions AFTER the node types were imported ...
+                this.queryManager().getIndexManager().importIndexDefinitions();
 
                 if (repositoryCache().isInitializingRepository()) {
                     // import initial content for each of the workspaces; this has to be done after the running state has started
@@ -1557,20 +1557,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         final InitialContentImporter initialContentImporter() {
             return initialContentImporter;
-        }
-
-        private void loadIndexDefinitions() throws RepositoryException {
-            Indexes indexes = config.getIndexes();
-            if (indexes.isEmpty()) return;
-            List<IndexDefinition> defns = new ArrayList<>();
-            for (String indexName : indexes.getIndexNames()) {
-                IndexDefinition defn = indexes.getIndex(indexName);
-                if (defn != null) defns.add(defn);
-            }
-            if (!defns.isEmpty()) {
-                IndexDefinition[] array = defns.toArray(new IndexDefinition[defns.size()]);
-                queryManager().getIndexManager().registerIndexes(array, true);
-            }
         }
 
         private AuthenticationProviders createAuthenticationProviders( AtomicBoolean useAnonymouOnFailedLogins ) {

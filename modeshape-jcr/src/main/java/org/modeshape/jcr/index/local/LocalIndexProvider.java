@@ -18,7 +18,9 @@ package org.modeshape.jcr.index.local;
 
 import java.io.File;
 import java.util.Collections;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.query.qom.Comparison;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.FullTextSearch;
 import org.mapdb.DB;
@@ -30,6 +32,8 @@ import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.NodeTypes.Supplier;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
+import org.modeshape.jcr.api.query.qom.Relike;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.spi.index.IndexCostCalculator.Costs;
@@ -190,7 +194,7 @@ public class LocalIndexProvider extends IndexProvider {
                                    IndexCostCalculator calculator,
                                    String workspaceName,
                                    ManagedIndex index,
-                                   IndexDefinition defn ) {
+                                   final IndexDefinition defn ) {
         ManagedLocalIndex localIndex = (ManagedLocalIndex)index;
         IndexUsage planner = new IndexUsage(context, calculator, defn) {
             @Override
@@ -198,6 +202,25 @@ public class LocalIndexProvider extends IndexProvider {
                 // We don't support full text search criteria ...
                 return false;
             }
+
+            @Override
+            protected boolean indexAppliesTo( Relike constraint ) {
+                // Relike can only work if the column types are all strings ...
+                for (IndexColumnDefinition columnDefn : defn) {
+                    if (columnDefn.getColumnType() != PropertyType.STRING) return false;
+                }
+                return super.indexAppliesTo(constraint);
+            }
+
+            @Override
+            protected boolean indexAppliesTo( Comparison constraint ) {
+                if (QueryObjectModelConstants.JCR_OPERATOR_LIKE.equals(constraint.getOperator())) {
+                    // Our indexes don't handle LIKE operations ...
+                    return false;
+                }
+                return super.indexAppliesTo(constraint);
+            }
+
         };
         // Does this index apply to any of the ANDed constraints?
         for (Constraint constraint : calculator.andedConstraints()) {

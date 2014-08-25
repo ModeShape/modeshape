@@ -408,11 +408,8 @@ public class NodeTypes {
             return true;
         }
         if (nodeTypeName.equals(candidateSupertypeName)) return true;
-        JcrNodeType primaryType = getNodeType(nodeTypeName);
-        if (primaryType.isNodeType(candidateSupertypeName)) {
-            return true;
-        }
-        return false;
+        JcrNodeType nodeType = getNodeType(nodeTypeName);
+        return nodeType != null && nodeType.isNodeType(candidateSupertypeName);
     }
 
     /**
