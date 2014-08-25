@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
+import javax.jcr.SimpleCredentials;
 import javax.naming.InitialContext;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine;
@@ -74,9 +75,18 @@ public class ConnectorImpl implements Connector {
     }
     
     @Override
-    public void login(Credentials creds) {
-        this.credentials = creds;
-        this.userName = creds == null ? null : creds.toString();
+    public void login( String username, String password ) {        
+        if (username == null) {
+            credentials = null;
+        }
+        
+        if (password == null) {
+            credentials = new SimpleCredentials(username, null);
+        }
+        
+        
+        credentials = new SimpleCredentials(username, password.toCharArray());
+        this.userName = username;
     }
 
     @Override

@@ -16,7 +16,6 @@
 package org.modeshape.web.server;
 
 import java.util.Collection;
-import javax.jcr.Credentials;
 import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.shared.RepositoryName;
 
@@ -27,9 +26,10 @@ public interface Connector {
     /**
      * Logs in with given credentials.
      * 
-     * @param creds
+     * @param username the user name
+     * @param password user's password.
      */
-    public void login( Credentials creds );
+    public void login( String username, String password );
 
     /**
      * Gets name of user currently logged in.
