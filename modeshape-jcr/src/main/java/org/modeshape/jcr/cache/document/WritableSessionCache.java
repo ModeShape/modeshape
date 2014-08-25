@@ -932,8 +932,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                         boolean isSameWorkspace = persistedCache.getWorkspaceKey().equalsIgnoreCase(workspaceKey);
                         if (isSameWorkspace) {
                             changes.nodeMoved(key, primaryType, mixinTypes, newParent, oldParentKey, newPath, oldPath, queryable);
-                            // Record moves for all of the descendants ...
-                            recordMovesForAllChildren(node, workspacePaths, newPath, oldPath, changes);
                         }
                     } else if (additionalParents != null) {
                         // The node in another workspace has been linked to this workspace ...
@@ -1252,26 +1250,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         changes.setChangedNodes(changedNodes.keySet()); // don't need to make a copy
         changes.freeze(userId, userData, timestamp);
         return changes;
-    }
-
-    private void recordMovesForAllChildren( CachedNode parentNode,
-                                            PathCache sessionPaths,
-                                            Path newParentPath,
-                                            Path oldParentPath,
-                                            RecordingChanges changes ) {
-        // for (ChildReference childReference : parentNode.getChildReferences(this)) {
-        // Path oldChildPath = pathFactory().create(oldParentPath, childReference.getSegment());
-        // Path newChildPath = pathFactory().create(newParentPath, childReference.getSegment());
-        // NodeKey childKey = childReference.getKey();
-        // CachedNode child = getNode(childKey);
-        // if (child == null) {
-        // // it has been removed
-        // continue;
-        // }
-        // changes.nodeMoved(childKey, child.getPrimaryType(this), child.getMixinTypes(this), parentNode.getKey(),
-        // parentNode.getKey(), newChildPath, oldChildPath, child.isQueryable(this));
-        // recordMovesForAllChildren(child, sessionPaths, newChildPath, oldChildPath, changes);
-        // }
     }
 
     private WorkspaceCache lockNodes( Iterable<NodeKey> changedNodesInOrder ) {
