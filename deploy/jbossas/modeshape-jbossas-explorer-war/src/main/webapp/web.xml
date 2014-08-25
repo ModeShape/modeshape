@@ -36,6 +36,11 @@
         <url-pattern>/console/backup/*</url-pattern>
     </servlet-mapping>
     
+    <!--
+        The ModeShape Web-Explorer implementation allowes the HTTP credentials to for 
+        authentication and authorization within the JCR repository. 
+        This should generally not be modified.
+    -->    
     <filter-mapping>
         <filter-name>ConnectFilter</filter-name>
         <servlet-name>jcrServlet</servlet-name>        
@@ -45,13 +50,25 @@
         <welcome-file>Console.html</welcome-file>
     </welcome-file-list>
     
+    <!--
+        This section is used to define the access privileges to a collection of 
+        resources using their URL mapping.
+    
+        By default the entire web application  requires authentication
+    -->    
     <security-constraint>
         <web-resource-collection>
-            <web-resource-name>Wildcard means whole app requires authentication</web-resource-name>
+            <web-resource-name>Web-Explorer</web-resource-name>
             <url-pattern>/*</url-pattern>
             <http-method>GET</http-method>
             <http-method>POST</http-method>
         </web-resource-collection>
+        <!--
+            A user must be assigned this role to connect to this web application, 
+            in addition to needing the READONLY, READWRITE or ADMIN roles to 
+            actually connect to the repository, read or modify the data.
+            This is not used internally, so another role could be substituted here.
+        -->        
         <auth-constraint>
             <role-name>connect</role-name>
         </auth-constraint>
@@ -60,9 +77,10 @@
             <!-- transport-guarantee can be CONFIDENTIAL, INTEGRAL, or NONE -->
             <transport-guarantee>NONE</transport-guarantee>
         </user-data-constraint>
-    </security-constraint>    
+    </security-constraint>  
+      
     <!--
-       Any auth-method will work for ModeShape.  BASIC is used this example for simplicity.
+        BASIC is only allowed method.
     -->
     <login-config>
         <auth-method>BASIC</auth-method>
