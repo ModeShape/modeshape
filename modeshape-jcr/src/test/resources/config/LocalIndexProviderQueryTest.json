@@ -1,5 +1,27 @@
 {
     "name" : "Test Repository",
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/LocalIndexProviderQueryTest"
+        },
+    },
+    "node-types" : [
+        "cnd/cars.cnd"
+    ],
     "indexes" : {
+        "carsByYear" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "car:Car",
+            "columns" : "car:year(LONG)",
+            "description" : "Index for 'car:year' property, which is defined in CND as a string, but all values must be longs"
+        },
+        "carsByMSRP" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "car:Car",
+            "columns" : "car:msrp(STRING)"
+        }
     }
 }

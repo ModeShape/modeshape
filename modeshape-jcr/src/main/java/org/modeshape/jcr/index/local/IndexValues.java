@@ -22,6 +22,7 @@ import javax.jcr.query.qom.BindVariableValue;
 import javax.jcr.query.qom.StaticOperand;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.index.local.MapDB.UniqueKey;
+import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.LiteralValue;
 import org.modeshape.jcr.value.ValueFactory;
 
@@ -35,9 +36,9 @@ public class IndexValues {
     /**
      * Converts between {@link StaticOperand} and an index's key type.
      * <p>
-     * Note that {@link IndexKind#VALUE} indexes may have multiple node keys for a given value, which means that any given
-     * value might have a range of keys. Some MapDB-based indexes store such entries using an index key that consists of the
-     * actual property value plus a counter. In this way, there are multiple index keys for a given {@link StaticOperand}, and the
+     * Note that {@link IndexKind#VALUE} indexes may have multiple node keys for a given value, which means that any given value
+     * might have a range of keys. Some MapDB-based indexes store such entries using an index key that consists of the actual
+     * property value plus a counter. In this way, there are multiple index keys for a given {@link StaticOperand}, and the
      * {@link #toLowerValue(StaticOperand)} will return the lowest-possible index key given the {@link StaticOperand}, while the
      * {@link #toUpperValue(StaticOperand)} will return the highest-possible index key for the given {@link StaticOperand}
      * </p>
@@ -115,8 +116,8 @@ public class IndexValues {
 
         @Override
         public T toLowerValue( StaticOperand operand ) {
-            if (operand instanceof LiteralValue) {
-                LiteralValue literal = (LiteralValue)operand;
+            if (operand instanceof Literal) {
+                Literal literal = (Literal)operand;
                 return factory.create(literal.value());
             }
             if (operand instanceof BindVariableValue) {

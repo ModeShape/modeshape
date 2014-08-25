@@ -759,6 +759,19 @@ public class MapDB {
                             Tuple2<A, B> o2 ) {
             int i = aComparator.compare(o1.a, o2.a);
             if (i != 0) return i;
+            // Before we check the second value in the tuples, check them against the "positive infinity" values ...
+            if (o1.b == Fun.HI) {
+                if (o2.b == Fun.HI) {
+                    // Both are positive infinity ...
+                    return 0;
+                }
+                // o1.b is positive infinity, and o2.b is not ...
+                return 1;
+            } else if (o2.b == Fun.HI) {
+                // o1.b is not positive infinity, and o1.b is ...
+                return -1;
+            }
+            // Neither is positive infinity, so use the actual comparator ...
             i = bComparator.compare(o1.b, o2.b);
             return i;
         }

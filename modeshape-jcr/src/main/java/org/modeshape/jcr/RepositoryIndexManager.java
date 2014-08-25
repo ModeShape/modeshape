@@ -197,6 +197,20 @@ class RepositoryIndexManager implements IndexManager {
         return feedback;
     }
 
+    synchronized void importIndexDefinitions() throws RepositoryException {
+        RepositoryConfiguration.Indexes indexes = config.getIndexes();
+        if (indexes.isEmpty()) return;
+        List<IndexDefinition> defns = new ArrayList<>();
+        for (String indexName : indexes.getIndexNames()) {
+            IndexDefinition defn = indexes.getIndex(indexName);
+            if (defn != null) defns.add(defn);
+        }
+        if (!defns.isEmpty()) {
+            IndexDefinition[] array = defns.toArray(new IndexDefinition[defns.size()]);
+            registerIndexes(array, true);
+        }
+    }
+
     protected void refreshIndexWriter() {
         indexWriter = CompositeIndexWriter.create(providers.values());
     }
@@ -404,8 +418,8 @@ class RepositoryIndexManager implements IndexManager {
                 // Have the provider validate the index
                 provider.validateProposedIndex(context, defn, nodeTypeManager, problems);
 
-                // Determine if the index should be enabled ...
-                if (!defn.isEnabled()) defn = RepositoryIndexDefinition.createFrom(defn, true);
+                // Create an instance of our own definition implementation ...
+                defn = RepositoryIndexDefinition.createFrom(defn, true);
 
                 validated.add(defn);
             }
