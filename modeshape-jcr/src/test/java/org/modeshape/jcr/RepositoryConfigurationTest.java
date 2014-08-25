@@ -21,6 +21,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import java.util.EnumSet;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.junit.Before;
@@ -31,9 +32,12 @@ import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Default;
 import org.modeshape.jcr.RepositoryConfiguration.DocumentOptimization;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.RepositoryConfiguration.Indexes;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
+import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 
 public class RepositoryConfigurationTest {
     private boolean print = false;
@@ -268,10 +272,30 @@ public class RepositoryConfigurationTest {
         assertValid("config/repo-config-local-provider-no-indexes.json");
     }
 
-    @FixFor( "MODE-2160" )
+    @FixFor( {"MODE-2160", "MODE-2279"} )
+    @Test
+    public void shouldAllowValidRepositoryConfigurationWithIndexProvidersAndNotionalIndexes() {
+        RepositoryConfiguration config = assertValid("config/repo-config-local-provider-and-notional-indexes.json");
+        Indexes indexes = config.getIndexes();
+        EnumSet<IndexKind> found = EnumSet.noneOf(IndexKind.class);
+        for (String indexName : indexes.getIndexNames()) {
+            IndexDefinition defn = indexes.getIndex(indexName);
+            IndexKind kind = defn.getKind();
+            found.add(kind);
+            assertThat(kind, is(notNullValue()));
+        }
+        assertThat(found, is(EnumSet.allOf(IndexKind.class)));
+    }
+
+    @FixFor( {"MODE-2160", "MODE-2279"} )
     @Test
     public void shouldAllowValidRepositoryConfigurationWithIndexProvidersAndIndexes() {
-        assertValid("config/repo-config-local-provider-and-indexes.json");
+        RepositoryConfiguration config = assertValid("config/repo-config-local-provider-and-indexes.json");
+        Indexes indexes = config.getIndexes();
+        for (String indexName : indexes.getIndexNames()) {
+            IndexDefinition defn = indexes.getIndex(indexName);
+            assertThat(defn.getKind(), is(notNullValue()));
+        }
     }
 
     @FixFor( "MODE-2160" )
@@ -421,8 +445,8 @@ public class RepositoryConfigurationTest {
         return assertHasWarnings(numberOfWarnings, assertRead(configContent));
     }
 
-    protected void assertNotValid( int numberOfErrors,
-                                   RepositoryConfiguration config ) {
+    protected RepositoryConfiguration assertNotValid( int numberOfErrors,
+                                                      RepositoryConfiguration config ) {
         Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(true));
         assertThat(results.toString(), results.hasErrors(), is(true));
@@ -430,6 +454,7 @@ public class RepositoryConfigurationTest {
         if (print) {
             System.out.println(results);
         }
+        return config;
     }
 
     protected RepositoryConfiguration assertHasWarnings( int numberOfWarnings,
@@ -449,9 +474,9 @@ public class RepositoryConfigurationTest {
         }
     }
 
-    protected void assertNotValid( int numberOfErrors,
-                                   String configContent ) {
-        assertNotValid(numberOfErrors, assertRead(configContent));
+    protected RepositoryConfiguration assertNotValid( int numberOfErrors,
+                                                      String configContent ) {
+        return assertNotValid(numberOfErrors, assertRead(configContent));
     }
 
     protected RepositoryConfiguration assertRead( String content ) {

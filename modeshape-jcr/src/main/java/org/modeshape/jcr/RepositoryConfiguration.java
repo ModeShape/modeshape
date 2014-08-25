@@ -101,11 +101,11 @@ import org.modeshape.sequencer.cnd.CndSequencer;
  *
  * <pre>
  *    variable := '${' variableNames [ ':' defaultValue ] '}'
- *
+ * 
  *    variableNames := variableName [ ',' variableNames ]
- *
+ * 
  *    variableName := /* any characters except ',' and ':' and '}'
- *
+ * 
  *    defaultValue := /* any characters except
  * </pre>
  *
@@ -609,6 +609,12 @@ public class RepositoryConfiguration {
         public static final String BINARY_STORAGE_TYPE_DATABASE = "database";
         public static final String BINARY_STORAGE_TYPE_COMPOSITE = "composite";
         public static final String BINARY_STORAGE_TYPE_CUSTOM = "custom";
+
+        public static final String KIND_VALUE = "value";
+        public static final String KIND_UNIQUE = "unique";
+        public static final String KIND_ENUMERATED = "enumerated";
+        public static final String KIND_TEXT = "text";
+        public static final String KIND_NODE_TYPE = "nodeType";
     }
 
     protected static final Set<List<String>> DEPRECATED_FIELDS;
@@ -1765,8 +1771,23 @@ public class RepositoryConfiguration {
 
                 @Override
                 public IndexKind getKind() {
-                    IndexKind kind = IndexKind.valueOf(doc.getString(FieldName.KIND, Default.KIND));
-                    return kind != null ? kind : IndexKind.VALUE;
+                    String kindStr = doc.getString(FieldName.KIND, Default.KIND);
+                    if (FieldValue.KIND_VALUE.equalsIgnoreCase(kindStr)) {
+                        return IndexKind.VALUE;
+                    }
+                    if (FieldValue.KIND_UNIQUE.equalsIgnoreCase(kindStr)) {
+                        return IndexKind.UNIQUE_VALUE;
+                    }
+                    if (FieldValue.KIND_ENUMERATED.equalsIgnoreCase(kindStr)) {
+                        return IndexKind.ENUMERATED_VALUE;
+                    }
+                    if (FieldValue.KIND_TEXT.equalsIgnoreCase(kindStr)) {
+                        return IndexKind.TEXT;
+                    }
+                    if (FieldValue.KIND_NODE_TYPE.equalsIgnoreCase(kindStr)) {
+                        return IndexKind.NODE_TYPE;
+                    }
+                    return IndexKind.VALUE;
                 }
 
                 @Override
@@ -2463,13 +2484,13 @@ public class RepositoryConfiguration {
      *   ModeShapeEngine engine = ...
      *   Repository deployed = engine.getRepository("repo");
      *   RepositoryConfiguration deployedConfig = deployed.getConfiguration();
-     *
+     * 
      *   // Create an editor ...
      *   Editor editor = deployedConfig.edit();
-     *
+     * 
      *   // Modify the copy of the configuration (we'll do something trivial here) ...
      *   editor.setNumber(FieldName.LARGE_VALUE_SIZE_IN_BYTES,8096);
-     *
+     * 
      *   // Get the changes and validate them ...
      *   Changes changes = editor.getChanges();
      *   Results validationResults = deployedConfig.validate(changes);
