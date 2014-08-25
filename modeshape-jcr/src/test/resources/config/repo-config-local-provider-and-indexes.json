@@ -17,12 +17,6 @@
             "provider" : "local",
             "nodeType" : "mix:title",
             "columns" : "jcr:title(STRING)"
-        },
-        "indexWithMultipleColumns" : {
-            "kind" : "value",
-            "provider" : "local",
-            "nodeType" : "mix:title",
-            "columns" : "jcr:title(STRING), jcr:description( STRING )"
         }
     }
 }
