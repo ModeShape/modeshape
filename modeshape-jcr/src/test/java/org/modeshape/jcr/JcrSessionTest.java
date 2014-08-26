@@ -1277,6 +1277,21 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         queryAndExpectResults("SELECT * FROM [nt:unstructured] as node WHERE ISCHILDNODE (node, '/a/b')", 0);
     }
 
+    @Test
+    @FixFor( "MODE-2281" )
+    public void shouldAllowUsingSystemNodeTypesInNonSystemArea() throws Exception {
+        try {
+            Node rootNode = session().getRootNode();
+            Node myVersionNode = rootNode.addNode("myVersion", "nt:version");
+            myVersionNode.addNode("frozen", "nt:frozenNode");
+        } catch (ConstraintViolationException e) {
+            if (!e.getMessage().contains("is protected")) {
+                // It's not the exception we expect ...
+                throw e;
+            }
+        }
+    }
+
     private List<Node> queryAndExpectResults( String queryString,
                                               int howMany ) throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
