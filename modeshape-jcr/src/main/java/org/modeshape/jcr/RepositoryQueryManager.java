@@ -487,6 +487,14 @@ class RepositoryQueryManager implements ChangeSetListener {
         reindexContent(workspaceName, systemWorkspaceCache, nodeInSystemBranch, depth, true, indexes);
     }
 
+    protected void reindexSystemContent() {
+        RepositoryCache repoCache = runningState.repositoryCache();
+        String workspaceName = repoCache.getSystemWorkspaceName();
+        NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
+        CachedNode systemNode = systemWorkspaceCache.getNode(repoCache.getSystemKey());
+        reindexContent(workspaceName, systemWorkspaceCache, systemNode, Integer.MAX_VALUE, true, getIndexWriter());
+    }
+
     /**
      * Asynchronously crawl and index the content in the named workspace.
      *

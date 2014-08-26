@@ -22,6 +22,30 @@
             "provider" : "local",
             "nodeType" : "car:Car",
             "columns" : "car:msrp(STRING)"
+        },
+        "nodesByName" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "nt:base",
+            "columns" : "jcr:name(NAME)"
+        },
+        "nodesByLocalName" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "nt:base",
+            "columns" : "mode:localName(STRING)"
+        },
+        "nodesByDepth" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "nt:base",
+            "columns" : "mode:depth(LONG)"
+        },
+        "nodesByPath" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "nt:base",
+            "columns" : "jcr:path(PATH)"
         }
     }
 }

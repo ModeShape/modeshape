@@ -260,6 +260,26 @@ public class IndexChangeAdapters {
         }
 
         @Override
+        protected void moveNode( String workspaceName,
+                                 NodeKey key,
+                                 Name primaryType,
+                                 Set<Name> mixinTypes,
+                                 NodeKey oldParent,
+                                 NodeKey newParent,
+                                 Path newPath,
+                                 Path oldPath,
+                                 boolean queryable ) {
+            String nodeKey = nodeKey(key);
+            if (includeRoot) {
+                if (oldPath.isRoot()) index.remove(nodeKey);
+                if (newPath.isRoot()) index.add(nodeKey, convertRoot(newPath));
+            } else {
+                if (!oldPath.isRoot()) index.remove(nodeKey);
+                if (!newPath.isRoot()) index.add(nodeKey, convertRoot(newPath));
+            }
+        }
+
+        @Override
         protected void removeNode( String workspaceName,
                                    NodeKey key,
                                    NodeKey parentKey,
@@ -269,24 +289,6 @@ public class IndexChangeAdapters {
                                    boolean queryable ) {
             if (includeRoot || path.isRoot()) {
                 index.remove(nodeKey(key));
-            }
-        }
-
-        @Override
-        protected void changeNode( String workspaceName,
-                                   NodeKey key,
-                                   Path path,
-                                   Name primaryType,
-                                   Set<Name> mixinTypes,
-                                   boolean queryable ) {
-            if (path.isRoot() && includeRoot) {
-                String nodeKey = nodeKey(key);
-                index.remove(nodeKey);
-                index.add(nodeKey, convertRoot(path));
-            } else {
-                String nodeKey = nodeKey(key);
-                index.remove(nodeKey);
-                index.add(nodeKey, convert(path));
             }
         }
     }
