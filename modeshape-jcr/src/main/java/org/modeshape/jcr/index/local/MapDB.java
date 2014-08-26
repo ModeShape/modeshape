@@ -301,6 +301,11 @@ public class MapDB {
         public int compare( UniqueKey<K> o1,
                             UniqueKey<K> o2 ) {
             if (o1 == o2) return 0;
+            if (o1 == null) {
+                return o2 == null ? 0 : 1;
+            } else if (o2 == null) {
+                return -1;
+            }
             int diff = valueComparator.compare(o1.actualKey, o2.actualKey);
             if (diff != 0) return diff;
             long ldiff = o1.id - o2.id;

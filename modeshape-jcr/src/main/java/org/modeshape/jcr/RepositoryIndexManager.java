@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.RepositoryException;
 import org.infinispan.commons.util.ReflectionUtil;
+import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.ArrayListMultimap;
@@ -208,6 +209,14 @@ class RepositoryIndexManager implements IndexManager {
         if (!defns.isEmpty()) {
             IndexDefinition[] array = defns.toArray(new IndexDefinition[defns.size()]);
             registerIndexes(array, true);
+            // Wait while the indexes get created ...
+            try {
+                Thread.sleep(500L + array.length * 50L);
+            } catch (Exception e) {
+                throw new SystemFailureException(e);
+            }
+            // We have to index the '/jcr:system' content, since it was created before these indexes were registered ...
+            repository.queryManager().reindexSystemContent();
         }
     }
 
