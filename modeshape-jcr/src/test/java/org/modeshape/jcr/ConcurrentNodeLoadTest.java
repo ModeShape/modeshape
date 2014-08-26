@@ -149,7 +149,7 @@ public class ConcurrentNodeLoadTest extends AbstractTransactionalTest {
 
         start = System.nanoTime();
         assertUniqueChildren((JcrSession)session, "/customers/aaa", allNames);
-        print("Total time to verify records=" + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) + " seconds");
+        print("Total time to verify records=" + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " millis");
     }
 
     private void assertUniqueChildren( JcrSession session,

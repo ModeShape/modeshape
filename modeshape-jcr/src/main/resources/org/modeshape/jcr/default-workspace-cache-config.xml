@@ -23,13 +23,6 @@
 
         <!-- Expire entries after 120 seconds or after 60 seconds of not being used (whichever comes first). -->
         <expiration lifespan="120000" maxIdle="60000"/>  
-          
-        <!-- Locking nodes in the workspace cache should block for no more than 10 seconds (the ISPN default).
-             If your application has high contenion for the same nodes, and you see TimeoutException in the log
-             then you may consider increasing this value.
-        -->
-        <locking lockAcquisitionTimeout="10000"/>
-          
     </default>
     
 </infinispan>
