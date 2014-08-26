@@ -2508,6 +2508,26 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
     }
 
+    @FixFor( "MODE-2054" )
+    @Test
+    public void shouldExecuteJoinWithOrConstraintsOnEachSide() throws Exception {
+        // Find all of the cars under 'Utility' and 'Luxury' categories ...
+        String sql = "SELECT car.[jcr:path], category.[jcr:path] from [car:Car] as car INNER JOIN [nt:unstructured] as category ON ISCHILDNODE(car, category) "
+                     + " WHERE NAME(category) LIKE '%y'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        // print = true;
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = "SELECT car.[jcr:path], category.[jcr:path] from [car:Car] as car INNER JOIN [nt:unstructured] as category ON ISCHILDNODE(car, category) ";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(13).validate(query, query.execute());
+
+        sql = "SELECT car.[jcr:path], category.[jcr:path] from [car:Car] as car INNER JOIN [nt:unstructured] as category ON ISCHILDNODE(car, category) "
+              + " WHERE NAME(category) LIKE '%y' OR NAME(car) LIKE 'Toyota %'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(10).validate(query, query.execute());
+    }
+
     @FixFor( "MODE-1418" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
