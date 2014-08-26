@@ -554,6 +554,15 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                     assert expectedType != null;
                 }
             }
+            // Check if the new node is in the system area ...
+            if (expectedType == Type.SYSTEM || expectedType == Type.VERSION || expectedType == Type.VERSION_HISTORY) {
+                Path path = cachedNode.getPath(cache);
+                assert path.size() > 0;
+                if (!path.getSegment(0).getName().equals(JcrLexicon.SYSTEM)) {
+                    // It is NOT below "/jcr:system"; someone must be using a node type normally used in the system area ...
+                    expectedType = Type.NODE;
+                }
+            }
             switch (expectedType) {
                 case NODE:
                     node = new JcrNode(this, nodeKey);
