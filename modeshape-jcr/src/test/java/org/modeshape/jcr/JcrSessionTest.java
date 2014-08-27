@@ -51,12 +51,14 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinitionTemplate;
@@ -99,6 +101,31 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         c.setProperty("stringProperty", "value");
         c.setProperty("multiLineProperty", MULTI_LINE_VALUE);
         session.save();
+    }
+
+    @FixFor( "MODE-2283" )
+    @Test
+    public void shouldAllowRemovingAndRestoringPersistedReference() throws Exception {
+        Node referenceableNode = session.getRootNode().addNode("referenceable");
+        referenceableNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+        Value strongRefValue = session.getValueFactory().createValue(referenceableNode, false);
+
+        Node node1 = session.getRootNode().addNode("node1");
+        node1.setProperty("prop1", strongRefValue);
+
+        session.save();
+
+        // First remove the property ...
+        node1.setProperty("prop1", (Value)null);
+        // And then set the property to the same value that's persisted. Essentially, this session is trying to restore
+        // the reference that we just removed (transitively). The result should be no net changes in this session.
+        node1.setProperty("prop1", strongRefValue);
+
+        // Now save the changes (even though there should be none) ...
+        session.save();
+
+        PropertyIterator propertyIterator = referenceableNode.getReferences();
+        assertEquals(1, propertyIterator.getSize());
     }
 
     @Test
