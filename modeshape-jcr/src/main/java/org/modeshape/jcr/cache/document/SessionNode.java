@@ -818,7 +818,29 @@ public class SessionNode implements MutableCachedNode {
                 if (referencesToRemove.contains(updatedReference)) {
                     // the reference is already present on a property with the same name, so this is a no-op for that reference
                     // therefore we remove it from the list of references that will be removed
-                    referencesToRemove.remove(updatedReference);
+                    if (referencesToRemove.remove(updatedReference)) {
+
+                        // Make sure that the referenced node is not modified to remove the back-reference to this node.
+                        // See MODE-2283 for an example ...
+                        NodeKey referredKey = nodeKeyFromReference(updatedReference);
+                        CachedNode referredNode = cache.getNode(referredKey);
+                        if (referredNode instanceof SessionNode) {
+                            // The node was modified during this session and has unsaved changes ...
+                            SessionNode changedReferrerNode = (SessionNode)referredNode;
+                            ReferrerChanges changes = changedReferrerNode.getReferrerChanges();
+                            if (changes != null) {
+                                // There are changes to that node's referrers ...
+                                ReferenceType type = updatedReference.isWeak() ? ReferenceType.WEAK : ReferenceType.STRONG;
+                                if (changes.isRemovedReferrer(key, type)) {
+                                    // The referenced node had a back reference to this node, but we're no longer removing
+                                    // this node's reference to the referenced node, and that means we should no longer remove
+                                    // the referenced node's backreference to this node ...
+                                    if (updatedReference.isWeak()) changes.addWeakReferrer(propertyWhichWasRemoved, key);
+                                    else changes.addStrongReferrer(propertyWhichWasRemoved, key);
+                                }
+                            }
+                        }
+                    }
                 } else {
                     // this is a new reference (either via key or type)
                     referencesToAdd.add(updatedReference);
@@ -2212,6 +2234,19 @@ public class SessionNode implements MutableCachedNode {
             return null;
         }
 
+        public boolean isRemovedReferrer( NodeKey key,
+                                          ReferenceType type ) {
+            switch (type) {
+                case STRONG:
+                    return containsKey(key, removedStrong);
+                case WEAK:
+                    return containsKey(key, removedWeak);
+                case BOTH:
+                    return containsKey(key, removedStrong) || containsKey(key, removedWeak);
+            }
+            return false;
+        }
+
         public List<NodeKey> getRemovedReferrers( ReferenceType type ) {
             switch (type) {
                 case STRONG:
@@ -2225,6 +2260,15 @@ public class SessionNode implements MutableCachedNode {
             return null;
         }
 
+        private final boolean containsKey( NodeKey key,
+                                           Map<String, Set<NodeKey>> source ) {
+            for (Set<NodeKey> sourceKeys : source.values()) {
+                if (sourceKeys.contains(key)) return true;
+            }
+            return false;
+        }
+
+        @SafeVarargs
         private final List<NodeKey> collectKeys( Map<String, Set<NodeKey>>... sources ) {
             List<NodeKey> keys = new ArrayList<NodeKey>();
             for (Map<String, Set<NodeKey>> source : sources) {
