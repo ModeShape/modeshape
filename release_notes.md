@@ -14,10 +14,14 @@ by ModeShape's service.
 
 As of 4.0.0.Alpha1, ModeShape is licensed under the Apache Software License, 2.0.
 
-This is the fourth alpha release of the 4.0 stream, and it includes quite a few fixes
-and new features. There is a newly redesigned Repository Explorer web application that
-can be deployed in a web server alongside ModeShape, including on Wildfly 8. The query
-system has matured, and we're still trying to solidy the index provider framework.
+This is the first beta release of the 4.0 stream, and it includes 46 bug fixes
+and several new features. There is now support for explicit single-column indexes stored
+locally on the file system. As a result, the index provider SPI first released in
+an earlier alpha has changed slightly, though we expect it to remain unchanged
+from this point forward. We've also extended the JCR-SQL2 query language with 
+a new pseudocolumn, "mode:id", that provides access to exactly the same value
+as "Node.getIndentifier()" would via the API. Like all pseudocolumns, it can be
+used in WHERE constraints and JOIN criteria.
 
 The first alpha release introduced a new query engine that allows 
 clients to explicitly define the indexes used in the query system, and the second
@@ -29,30 +33,36 @@ applications to poll for changes that occurred during time ranges. This is a use
 alternative to listeners that may be expensive or time-consuming. Alpha3 introduced
 a new event system and our new ring buffer that is substantially faster than what
 we had in 3.x; of course, there's no change in the event APIs so your listener 
-implementations will continue to work unchanged.
+implementations will continue to work unchanged. Alpha4 fixed a number of issues
+and introduced the newly redesigned Repository Explorer web application that
+can be deployed in a web server alongside ModeShape, including on Wildfly 8.
+
 
 ## What to test
 
-Since this is an alpha release, not all features targeted to 4.0 are complete, and there
-are likely bugs with some of the newer features. Therefore, please do not put &version;
+Since this is the first beta release, all features targeted to 4.0 are complete and
+are suitable for testing. It is not a stable release, so please do not put &version;
 into production.
 
-However, we would like to get as much feedback as possible, so we do ask that our
-community do limited testing with &version; to help us identify problems. Specifically,
+We would like to get as much feedback as possible, so we do ask that our
+community do testing with &version; to help us identify problems. Specifically,
 we ask that you test the following areas:
 
 * JDK - ModeShape now requires JDK 7. We've not yet begun testing with Java 8, but we'd
 be happy to hear about it if you do.
-* Queries - although there are known issues (see MODE-2178 for details), we think that most
-queries will work, albeit a bit slower, especially on medium or large repositories. We'll
-increase speed by adding indexes in a forthcoming alpha release, but in the meantime please
-check that your queries work. If not, please file an issue.
+* Queries - the new query engine passes all of our regression tests. Without explicit
+indexes, all queries are expected to work properly but may be slow (except for very tiny
+repositories). You can explicitly define indexes via the configuration files or programmatically
+via ModeShape's public API. In fact, it is recommended that you define indexes that can
+be used in each of your queries, and doing so will make those queries much faster.
+The query plan contains information about all indexes considered by the query engine 
+as well the index (if any) selected for use in each part of the query; please use the
+query plan to understand whether your indexes are being used.
 * Clustering - ModeShape no longer has a clustering section in its configuration, since
 we simply piggyback on top of Infinispan's clustering setup. We've also upgraded to 
 a newer version of JGroups.
 * Journalling - Try enabling journaling and verify it works and does not affect performance.
-You can't yet see what's in the journals, but even some modest testing with journaling
-enabled will help us.
+Then try using the JCR Event Journal feature.
 * Infinispan - We've moved to Infinispan 6.0.1.Final, which is faster and has new cache stores.
 Some older and poorly-performaing cache stores are no longer valid, so check out the new
 file-based cache stores. Also, the LevelDB cache store is supposedly very fast.
@@ -233,6 +243,7 @@ ModeShape also has features that go beyond the JCR API:
 
 ### Other ModeShape features
 - Repository-wide backup and restoration
+- Explicitly-defined indexes
 - Automatic MIME type detection of binary content
 - Asynchronous sequencing operations, within completion notified via events
 
