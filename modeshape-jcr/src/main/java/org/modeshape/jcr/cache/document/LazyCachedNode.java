@@ -39,6 +39,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PathCache;
+import org.modeshape.jcr.cache.ReferrerCounts;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -458,6 +459,15 @@ public class LazyCachedNode implements CachedNode, Serializable {
         // Get the referrers ...
         WorkspaceCache wsCache = workspaceCache(cache);
         return wsCache.translator().getReferrers(document(wsCache), type);
+    }
+
+    @Override
+    public ReferrerCounts getReferrerCounts( NodeCache cache ) {
+        // Get the referrers ...
+        WorkspaceCache wsCache = workspaceCache(cache);
+        Map<NodeKey, Integer> strongCounts = wsCache.translator().getReferrerCounts(document(wsCache), ReferenceType.STRONG);
+        Map<NodeKey, Integer> weakCounts = wsCache.translator().getReferrerCounts(document(wsCache), ReferenceType.WEAK);
+        return ReferrerCounts.create(strongCounts, weakCounts);
     }
 
     @Override
