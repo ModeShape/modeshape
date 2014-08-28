@@ -213,9 +213,17 @@ public interface CachedNode {
                                ReferenceType type );
 
     /**
+     * Get a snapshot of the referrers that have REFERENCE and/or WEAK_REFERENCE properties pointing to this node.
+     *
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @return the snapshot, or null if there is none
+     */
+    ReferrerCounts getReferrerCounts( NodeCache cache );
+
+    /**
      * Determine if this node is effectively at or below the supplied path. Note that because of
      * {@link #getAdditionalParentKeys(NodeCache) additional parents}, a node has multiple effective paths.
-     * 
+     *
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
      * @param path the path to be used for comparison; may not be null
      * @return true if this node can be considered at or below the supplied path; or false otherwise
