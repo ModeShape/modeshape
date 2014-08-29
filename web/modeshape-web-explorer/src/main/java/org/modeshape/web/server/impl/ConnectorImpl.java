@@ -82,10 +82,9 @@ public class ConnectorImpl implements Connector {
         
         if (password == null) {
             credentials = new SimpleCredentials(username, null);
+        } else {
+            credentials = new SimpleCredentials(username, password.toCharArray());
         }
-        
-        
-        credentials = new SimpleCredentials(username, password.toCharArray());
         this.userName = username;
     }
 

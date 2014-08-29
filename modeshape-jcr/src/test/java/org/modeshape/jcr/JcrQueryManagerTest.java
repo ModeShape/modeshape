@@ -749,8 +749,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @Test
     public void shouldExplainQueryWithoutExecutingQuery() throws RepositoryException {
         String sql = "SELECT * FROM [nt:file]";
-        org.modeshape.jcr.api.query.Query query = (org.modeshape.jcr.api.query.Query)session.getWorkspace().getQueryManager()
-                                                                                            .createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         org.modeshape.jcr.api.query.QueryResult result = query.explain();
         validateQuery().rowCount(0).warnings(0).onlyQueryPlan().validate(query, result);
     }
