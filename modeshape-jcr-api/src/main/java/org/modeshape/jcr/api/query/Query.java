@@ -67,4 +67,6 @@ public interface Query extends javax.jcr.query.Query {
      */
     public org.modeshape.jcr.api.query.QueryResult explain() throws InvalidQueryException, RepositoryException;
 
+    @Override
+    public org.modeshape.jcr.api.query.QueryResult execute() throws InvalidQueryException, RepositoryException;
 }

@@ -92,8 +92,8 @@ class JcrQueryManager implements QueryManager {
     }
 
     @Override
-    public Query createQuery( String statement,
-                              String language ) throws InvalidQueryException, RepositoryException {
+    public org.modeshape.jcr.api.query.Query createQuery( String statement,
+                                                          String language ) throws InvalidQueryException, RepositoryException {
         CheckArg.isNotNull(statement, "statement");
         CheckArg.isNotNull(language, "language");
         return createQuery(statement, language, null);

@@ -1292,18 +1292,19 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             final DynamicOperand dynamicOperand = comparison.getOperand1();
             final Operator operator = comparison.operator();
             final StaticOperand staticOperand = comparison.getOperand2();
+            final TypeFactory<?> actualType = determineType(dynamicOperand, context, columns);
             TypeFactory<?> expectedType = null;
             ExtractFromRow op = null;
-            if (operator != Operator.LIKE) {
-                expectedType = determineType(dynamicOperand, context, columns);
-                op = createExtractFromRow(dynamicOperand, context, columns, sources, expectedType, true, false);
-            } else {
+            if (operator == Operator.LIKE) {
                 expectedType = context.getTypeSystem().getStringFactory();
                 op = createExtractFromRow(dynamicOperand, context, columns, sources, expectedType, true, true);
                 if (op.getType() != expectedType) {
                     // Need to convert the extracted value(s) to strings because this is a LIKE operation ...
                     op = RowExtractors.convert(op, expectedType);
                 }
+            } else {
+                expectedType = actualType;
+                op = createExtractFromRow(dynamicOperand, context, columns, sources, expectedType, true, false);
             }
             final TypeFactory<?> defaultType = expectedType;
             final ExtractFromRow operation = op;
@@ -1407,6 +1408,40 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                     @Override
                                     protected boolean evaluate( Object leftHandValue ) {
                                         return leftHandValue != null;
+                                    }
+
+                                    @Override
+                                    public String toString() {
+                                        return "(filter " + Visitors.readable(constraint) + ")";
+                                    }
+                                };
+                            }
+                            if (Path.class.isAssignableFrom(actualType.getType()) && expression.contains("[")) {
+                                // This LIKE is dealing with paths and SNS wildcards, so we have to extract path values that
+                                // have SNS indexes in all segments ...
+                                final PathFactory paths = context.getExecutionContext().getValueFactories().getPathFactory();
+                                expression = QueryUtil.addSnsIndexesToLikeExpression(expression);
+                                String regex = QueryUtil.toRegularExpression(expression);
+                                final Pattern pattern = Pattern.compile(regex);
+                                return new DynamicOperandFilter(operation) {
+                                    @Override
+                                    protected boolean evaluate( Object leftHandValue ) {
+                                        if (leftHandValue == null) return false; // null values never match
+                                        // Get the value as a path and construct a string representation with SNS indexes
+                                        // in the correct spot ...
+                                        Path path = paths.create(leftHandValue);
+                                        String strValue = null;
+                                        if (path.isRoot()) {
+                                            strValue = "/";
+                                        } else {
+                                            StringBuilder sb = new StringBuilder();
+                                            for (Path.Segment segment : path) {
+                                                sb.append('/').append(types.asString(segment.getName()));
+                                                sb.append('[').append(segment.getIndex()).append(']');
+                                            }
+                                            strValue = sb.toString();
+                                        }
+                                        return pattern.matcher(strValue).matches();
                                     }
 
                                     @Override

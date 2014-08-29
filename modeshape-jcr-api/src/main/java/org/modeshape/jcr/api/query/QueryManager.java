@@ -30,5 +30,9 @@ public interface QueryManager extends javax.jcr.query.QueryManager {
     public QueryObjectModelFactory getQOMFactory();
 
     @Override
+    public Query createQuery( String statement,
+                              String language ) throws InvalidQueryException, RepositoryException;
+
+    @Override
     public Query getQuery( Node node ) throws InvalidQueryException, RepositoryException;
 }
