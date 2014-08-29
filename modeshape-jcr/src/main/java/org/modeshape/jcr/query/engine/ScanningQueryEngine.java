@@ -1416,7 +1416,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                     }
                                 };
                             }
-                            if (Path.class.isAssignableFrom(actualType.getType()) && expression.contains("[")) {
+                            if (Path.class.isAssignableFrom(actualType.getType())) {
                                 // This LIKE is dealing with paths and SNS wildcards, so we have to extract path values that
                                 // have SNS indexes in all segments ...
                                 final PathFactory paths = context.getExecutionContext().getValueFactories().getPathFactory();
@@ -1839,9 +1839,6 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                         if (path.isRoot()) {
                             return stringFactory.create(path);
                         }
-                        String[] paths = new String[2];
-                        // Add the normal path ...
-                        paths[0] = stringFactory.create(path);
                         // And the path that always has the SNS index ...
                         StringBuilder sb = new StringBuilder();
                         for (Path.Segment segment : path) {
@@ -1850,8 +1847,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                             sb.append(stringFactory.create(segment.getName()));
                             sb.append('[').append(segment.getIndex()).append(']');
                         }
-                        paths[1] = sb.toString();
-                        return paths;
+                        return sb.toString();
                     }
 
                     @Override
