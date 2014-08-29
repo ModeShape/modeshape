@@ -101,4 +101,55 @@ public class QueryUtil {
     private QueryUtil() {
     }
 
+    /**
+     * Process the supplied LIKE expression for an absolute path and return a copy that has a SNS index (wildcard or literal) for
+     * all literal segments in the expression. For example, this method will convert:
+     *
+     * <pre>
+     *  /alpha/beta[%]
+     * </pre>
+     *
+     * into
+     *
+     * <pre>
+     *  /alpha[1]/beta[%]
+     * </pre>
+     *
+     * and
+     *
+     * <pre>
+     *  /alpha/%/beta[%]
+     * </pre>
+     *
+     * into
+     *
+     * <pre>
+     *  /alpha[1]/%/beta[%]
+     * </pre>
+     *
+     * @param pathLikeExpression the LIKE expression for a path; may not be null
+     * @return the updated like expression with SNS indexes in all literal segments
+     */
+    public static String addSnsIndexesToLikeExpression( String pathLikeExpression ) {
+        if ("%".equals(pathLikeExpression)) return pathLikeExpression;
+
+        boolean altered = false;
+        StringBuilder sb = new StringBuilder();
+        for (String segment : pathLikeExpression.split("/")) {
+            if (segment.length() == 0) {
+                // This segment is empty ...
+                continue;
+            }
+            sb.append('/').append(segment);
+            if (segment.endsWith("%") || segment.endsWith("]")) {
+                // This segment already ends with a wildcard or a SNS index, so we're done ...
+                continue;
+            }
+            // Otherwise, we have to add the SNS index ...
+            sb.append("[1]");
+            altered = true;
+        }
+        return altered ? sb.toString() : pathLikeExpression;
+    }
+
 }
