@@ -19,6 +19,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import javax.jcr.Credentials;
+import javax.jcr.LoginException;
+import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.RepositoryException;
 
 /**
  * An extension of JCR 2.0's Repository interface, with a few ModeShape-specific enhancements.
@@ -94,4 +98,17 @@ public interface Repository extends NamedRepository {
      * @return the number of sessions
      */
     public int getActiveSessionsCount();
+
+    @Override
+    public Session login() throws LoginException, RepositoryException;
+
+    @Override
+    public Session login( Credentials credentials ) throws LoginException, RepositoryException;
+
+    @Override
+    public Session login( Credentials credentials,
+                          String workspaceName ) throws LoginException, NoSuchWorkspaceException, RepositoryException;
+
+    @Override
+    public Session login( String workspaceName ) throws LoginException, NoSuchWorkspaceException, RepositoryException;
 }
