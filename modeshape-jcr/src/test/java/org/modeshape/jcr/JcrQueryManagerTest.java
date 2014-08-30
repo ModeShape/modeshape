@@ -2697,7 +2697,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @FixFor( "MODE-2286" )
     @Test
     public void shouldFindSystemNodesUsingPathLikeCriteriaWithNoSnsIndexSpecified() throws Exception {
-        print = true;
         String sql = "select [jcr:path] from [nt:base] where [jcr:path] like '/Other/NodeA'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         validateQuery().rowCount(1).validate(query, query.execute());

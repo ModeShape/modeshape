@@ -888,8 +888,13 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                     case MODULE:
                         ModelAttributes.MODULE.parseAndSetParameter(attrValue, provider, reader);
                         break;
+                    case RELATIVE_TO:
+                        ModelAttributes.RELATIVE_TO.parseAndSetParameter(attrValue, provider, reader);
+                        break;
+                    case PATH:
+                        ModelAttributes.PATH.parseAndSetParameter(attrValue, provider, reader);
+                        break;
                     default:
-                        // extra attributes are allowed to set sequencer-specific properties ...
                         provider.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
                         break;
                 }
@@ -901,6 +906,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                 .add(ModelKeys.REPOSITORY, repositoryName)
                 .add(ModelKeys.INDEX_PROVIDER, name);
 
+        requireNoElements(reader);
     }
 
     private List<ModelNode> parseIndexes( final XMLExtendedStreamReader reader,
@@ -912,7 +918,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
-                case INDEXES:
+                case INDEX:
                     parseIndex(reader, repositoryName, indexes);
                     break;
                 default:
@@ -967,6 +973,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
              .add(ModelKeys.REPOSITORY, repositoryName)
              .add(ModelKeys.INDEX, name);
 
+        requireNoElements(reader);
     }
 
     private List<ModelNode> parseExternalSources( final XMLExtendedStreamReader reader,

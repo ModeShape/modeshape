@@ -488,7 +488,7 @@
                   index will be disabled.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="kind" type="index-kind-enum" default="duplicates">
+        <xs:attribute name="kind" type="index-kind-enum" default="value">
             <xs:annotation>
                 <xs:documentation>The kind of the index.</xs:documentation>
             </xs:annotation>
@@ -827,10 +827,10 @@
     </xs:simpleType>
     <xs:simpleType name="index-kind-enum">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="duplicates"/>
+            <xs:enumeration value="value"/>
             <xs:enumeration value="unique"/>
             <xs:enumeration value="enumerated"/>
-            <xs:enumeration value="fulltextsearch"/>
+            <xs:enumeration value="text"/>
             <xs:enumeration value="nodetype"/>
         </xs:restriction>
     </xs:simpleType>

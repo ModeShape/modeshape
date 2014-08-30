@@ -135,7 +135,7 @@ class RepositoryIndexManager implements IndexManager {
                 if (t.getCause() != null) {
                     t = t.getCause();
                 }
-                this.repository.error(t, JcrI18n.unableToInitializeSequencer, component, repository.name(), t.getMessage());
+                this.repository.error(t, JcrI18n.unableToInitializeIndexProvider, component, repository.name(), t.getMessage());
             }
         }
     }

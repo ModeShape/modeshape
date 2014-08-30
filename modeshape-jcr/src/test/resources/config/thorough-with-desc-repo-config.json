@@ -45,15 +45,15 @@
     },
     "indexes": {
         "primaryTypes" : {
-            "providerName" : "files",
+            "provider" : "files",
             "kind" : "ENUMERATED",
-            "nodeTypeName" : "nt:base",
+            "nodeType" : "nt:base",
             "description" : "Index for quickly identifying nodes by node type",
             "columns" : "jcr:primaryType(STRING)"
         },
         "fileMimeTypes" : {
-            "providerName" : "files",
-            "nodeTypeName" : "nt:resource",
+            "provider" : "files",
+            "nodeType" : "nt:resource",
             "columns" : "jcr:mimeType(STRING)"
         }
     },

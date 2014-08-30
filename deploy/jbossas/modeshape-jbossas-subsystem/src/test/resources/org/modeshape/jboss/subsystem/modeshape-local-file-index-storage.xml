@@ -13,13 +13,14 @@
       <workspace name="predefinedWorkspace3" />
     </workspaces>
     <index-providers>
-        <!--
-        <index-provider name="local-indexes" classname="local"
-              path="modeshape/sample/indexes/"
-              relative-to="jboss.server.data.dir"
-              />
-        -->
+      <index-provider name="local" classname="local" path="modeshape/artifacts/indexes/" relative-to="jboss.server.data.dir" />
+      <index-provider name="local2" classname="local" path="modeshape/artifacts/indexes2/" relative-to="jboss.server.data.dir" />
+      <index-provider name="local3" classname="local" path="modeshape/artifacts/indexes3/" relative-to="jboss.server.data.dir" />
     </index-providers>
+    <indexes>
+      <index name="primaryTypes" provider-name="local" index-kind="value" node-type="nt:base" columns="jcr:primaryType(NAME)" />
+      <index name="names" provider-name="local" kind="value" node-type="nt:resource" columns="jcr:name(NAME)" />
+    </indexes>
     <sequencers>
       <sequencer name="modeshape-sequencer-ddl" classname="ddl" path-expression="//a/b" />
       <sequencer name="modeshape-sequencer-java" classname="java" path-expression="//a/b" />
