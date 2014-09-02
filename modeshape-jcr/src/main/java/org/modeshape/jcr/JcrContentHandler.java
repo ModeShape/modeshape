@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.jcr.Binary;
 import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
@@ -45,14 +46,19 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.CachedNode.ReferenceType;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.ReferrerCounts;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
+import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -91,7 +97,9 @@ class JcrContentHandler extends DefaultHandler {
     protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<>();
     protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<>();
     protected final Map<String, NodeKey> uuidToNodeKeyMapping = new HashMap<>();
+    protected final Set<NodeKey> importedNodeKeys = new HashSet<>();
     protected final Map<NodeKey, String> shareIdsToUUIDMap = new HashMap<>();
+    protected final Map<NodeKey, ReferrerCounts> referrersByNodeKey = new HashMap<>();
     protected SessionCache cache;
     protected final String primaryTypeName;
     protected final String mixinTypesName;
@@ -296,6 +304,33 @@ class JcrContentHandler extends DefaultHandler {
 
                     // re-link it with the correct key - that of the shareable node
                     parent.linkChild(cache, shareableNodeKey, node.name());
+                }
+            }
+
+            // Restore the back references ...
+            if (!referrersByNodeKey.isEmpty()) {
+                for (Map.Entry<NodeKey, ReferrerCounts> entry : referrersByNodeKey.entrySet()) {
+                    PropertyFactory propFactory = context.getPropertyFactory();
+                    MutableCachedNode referred = cache.mutable(entry.getKey());
+                    ReferrerCounts counts = entry.getValue();
+                    if (referred != null && counts != null) {
+                        // Add in the strong and weak referrers (that are outside the import scope) that used to be in the node
+                        // before it was replaced ...
+                        for (NodeKey key : counts.getStrongReferrers()) {
+                            int count = counts.countStrongReferencesFrom(key);
+                            for (int i = 0; i != count; ++i) {
+                                Property prop = propFactory.create(nameFor(key.toString() + i));
+                                referred.addReferrer(cache, prop, key, ReferenceType.STRONG);
+                            }
+                        }
+                        for (NodeKey key : counts.getWeakReferrers()) {
+                            int count = counts.countWeakReferencesFrom(key);
+                            for (int i = 0; i != count; ++i) {
+                                Property prop = propFactory.create(nameFor(key.toString() + i));
+                                referred.addReferrer(cache, prop, key, ReferenceType.WEAK);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -685,6 +720,7 @@ class JcrContentHandler extends DefaultHandler {
                                 // to the workspace cache and thus to the current session !!!.
                                 // Therefore, *old properties, mixins etc* will be accessible on the new child created later on
                                 // until a session.save() is performed.
+                                preRemoveNode(existingNode);
                                 existingNode.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
@@ -702,6 +738,7 @@ class JcrContentHandler extends DefaultHandler {
                                 // to the workspace cache and thus to the current session !!!.
                                 // Therefore, *old properties, mixins etc* will be accessible on the new child created later on
                                 // until a session.save() is performed.
+                                preRemoveNode(existingNode);
                                 existingNode.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
@@ -848,6 +885,7 @@ class JcrContentHandler extends DefaultHandler {
                 }
 
                 node = child;
+                importedNodeKeys.add(node.key());
 
                 if (postProcessed) {
                     // This node needs to be post-processed ...
@@ -856,6 +894,23 @@ class JcrContentHandler extends DefaultHandler {
 
             } catch (RepositoryException re) {
                 throw new EnclosingSAXException(re);
+            }
+        }
+
+        /**
+         * Handle any operations before a node is removed or replaced by an imported node.
+         *
+         * @param removedNode the removed node
+         */
+        protected void preRemoveNode( AbstractJcrNode removedNode ) {
+            // Figure out if the node has backreferences ...
+            CachedNode node;
+            try {
+                node = removedNode.node();
+                ReferrerCounts referrers = node.getReferrerCounts(cache);
+                if (referrers != null) referrersByNodeKey.put(node.getKey(), referrers);
+            } catch (ItemNotFoundException | InvalidItemStateException err) {
+                // do nothing ...
             }
         }
     }
