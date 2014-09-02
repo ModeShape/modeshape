@@ -33,7 +33,6 @@ import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
@@ -131,29 +130,6 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     public void login( String userName,
                        String password ) throws RemoteException {
         connector().login(userName, password);
-    }
-
-    /**
-     * Creates credentials using specified user name and password.
-     * 
-     * @param userName the name of the user.
-     * @param password user's password
-     * @return credentials object.
-     */
-    private SimpleCredentials credentials( String userName,
-                                           String password ) {
-        // aninymous?
-        if (userName == null || userName.length() == 0) {
-            return null;
-        }
-
-        // password not specified? make it blank.
-        if (password == null) {
-            password = "";
-        }
-
-        // create credentials
-        return new SimpleCredentials(userName, password.toCharArray());
     }
 
     @Override

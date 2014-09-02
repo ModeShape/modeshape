@@ -120,12 +120,12 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfiguration() {
-        assertHasWarnings(0, "config/thorough-repo-config.json");
+        assertValid("config/thorough-repo-config.json");
     }
 
     @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfigurationWithDescriptions() {
-        assertHasWarnings(0, "config/thorough-with-desc-repo-config.json");
+        assertValid("config/thorough-with-desc-repo-config.json");
     }
 
     @Test
@@ -301,7 +301,7 @@ public class RepositoryConfigurationTest {
     @FixFor( "MODE-2160" )
     @Test
     public void shouldNotAllowRepositoryConfigurationWithIndexThatRefersToNonExistantIndexProvider() {
-        assertNotValid(1, "config/invalid-index-with-unmatched-provider.json");
+        assertValidWithWarnings(1, "config/invalid-index-with-unmatched-provider.json");
     }
 
     @FixFor( "MODE-2160" )
@@ -435,8 +435,22 @@ public class RepositoryConfigurationTest {
         return config;
     }
 
+    protected RepositoryConfiguration assertValidWithWarnings( int warnings,
+                                                               RepositoryConfiguration config ) {
+        Problems results = config.validate();
+        assertThat(results.toString(), results.hasErrors(), is(false));
+        assertThat(results.toString(), results.warningCount(), is(warnings));
+        return config;
+    }
+
     protected RepositoryConfiguration assertValid( String configContent ) {
         return assertValid(assertRead(configContent));
+
+    }
+
+    protected RepositoryConfiguration assertValidWithWarnings( int warnings,
+                                                               String configContent ) {
+        return assertValidWithWarnings(warnings, assertRead(configContent));
 
     }
 

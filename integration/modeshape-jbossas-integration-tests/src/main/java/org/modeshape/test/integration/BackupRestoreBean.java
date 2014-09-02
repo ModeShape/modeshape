@@ -38,7 +38,7 @@ public class BackupRestoreBean extends RepositoryProvider {
     private boolean backupRestoreSuccessful = false;
 
     @PostConstruct
-    @TransactionAttribute( TransactionAttributeType.NOT_SUPPORTED)
+    @TransactionAttribute( TransactionAttributeType.NOT_SUPPORTED )
     public void run() throws Exception {
         final String path = System.getProperty("jboss.server.base.dir");
         if (StringUtil.isBlank(path)) {
@@ -47,16 +47,16 @@ public class BackupRestoreBean extends RepositoryProvider {
         final File backupDirectory = new File(path);
 
         Repository repository = (Repository)getRepositoryFromJndi("java:/jcr/sample");
-        org.modeshape.jcr.api.Session session = (org.modeshape.jcr.api.Session)repository.login();
+        org.modeshape.jcr.api.Session session = repository.login();
         final RepositoryManager repoMgr = session.getWorkspace().getRepositoryManager();
         Problems problems = repoMgr.backupRepository(backupDirectory);
         if (problems.hasProblems()) {
-            throw new IllegalStateException("Errors while backing up repository:" +  problems.toString());
+            throw new IllegalStateException("Errors while backing up repository:" + problems.toString());
         }
 
         problems = session.getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
         if (problems.hasProblems()) {
-            throw new IllegalStateException("Errors while backing up repository:" +  problems.toString());
+            throw new IllegalStateException("Errors while backing up repository:" + problems.toString());
         }
         backupRestoreSuccessful = true;
     }

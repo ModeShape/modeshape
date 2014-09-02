@@ -17,6 +17,7 @@
 package org.modeshape.jcr.index.local;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Collections;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -45,7 +46,11 @@ import org.modeshape.jcr.spi.index.provider.ManagedIndex;
 /**
  * An {@link IndexProvider} implementation that maintains indexes on the local file system using MapDB.
  * <p>
- * This provider maintains a separate
+ * This provider is instantiated with:
+ * <ul>
+ * <li>an {@code directory} attribute, or</li>
+ * <li>an {@code path} attribute <i>and</i> an {@code relativeTo} attribute</li>
+ * </ul>
  *
  * @author Randall Hauch (rhauch@redhat.com)
  */
@@ -54,7 +59,21 @@ public class LocalIndexProvider extends IndexProvider {
     private static final Float MAX_SELECTIVITY = new Float(1.0f);
     private static final String DB_FILENAME = "local-indexes.db";
 
+    /**
+     * The directory in which the indexes are to be stored. This needs to be set, or the {@link #path} and {@link #relativeTo}
+     * need to be set.
+     */
     private String directory;
+    /**
+     * The path in which the indexes are to be stored, relative to {@link #relativeTo}. Both of these need to be set, or the
+     * {@link #directory} needs to be set.
+     */
+    private String path;
+    /**
+     * The directory relative to which the {@link #path} specifies where the indexes are to be stored. Both of these need to be
+     * set, or the {@link #directory} needs to be set.
+     */
+    private String relativeTo;
     private DB db;
 
     public LocalIndexProvider() {
@@ -71,6 +90,16 @@ public class LocalIndexProvider extends IndexProvider {
 
     @Override
     protected void doInitialize() throws RepositoryException {
+        if (directory == null && relativeTo != null && path != null) {
+            // Try to set the directory using relativeTo and path ...
+            try {
+                File rel = new File(relativeTo);
+                File dir = Paths.get(rel.toURI()).resolve(path).toFile();
+                directory = dir.getAbsolutePath();
+            } catch (RuntimeException e) {
+                throw new RepositoryException(e);
+            }
+        }
         if (directory == null) {
             throw new RepositoryException(JcrI18n.localIndexProviderMustHaveDirectory.text(getRepositoryName()));
         }

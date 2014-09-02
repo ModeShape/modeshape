@@ -433,7 +433,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
     }
 
     protected Query jcrSql2Query( String expr ) throws RepositoryException {
-        return (Query)session().getWorkspace().getQueryManager().createQuery(expr, Query.JCR_SQL2);
+        return session().getWorkspace().getQueryManager().createQuery(expr, Query.JCR_SQL2);
     }
 
     protected ValidationBuilder validateQuery() {

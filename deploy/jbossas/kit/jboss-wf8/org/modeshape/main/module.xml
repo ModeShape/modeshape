@@ -44,7 +44,12 @@
         <module name="org.joda.time" export="true"/>
         <module name="org.jgroups"/>
         <module name="org.apache.tika" slot="${tika.version}" services="import"/>
-        <module name="org.mapdb" slot="${mapdb.version}" services="import"/>
+        <!--
+          Export the MapDB so that the indexing change adapters (running in separate threads within the change bus)
+          can see the MapDB serializer classes. Not sure why this is really needed, but without this we have all
+          kinds of serialization problems in the indexing change set listeners.
+        -->
+        <module name="org.mapdb" slot="${mapdb.version}" services="import" export="true"/>
         <!-- For naming ... -->
         <module name="javax.api" export="true"/>
         <module name="org.jboss.as.naming"/>

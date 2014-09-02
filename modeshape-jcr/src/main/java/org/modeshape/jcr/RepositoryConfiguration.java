@@ -62,6 +62,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.StringUtil;
@@ -1684,7 +1685,7 @@ public class RepositoryConfiguration {
      */
     public List<Component> getIndexProviders() {
         Problems problems = new SimpleProblems();
-        List<Component> components = readComponents(doc, FieldName.INDEX_PROVIDERS, FieldName.CLASSNAME, PROVIDER_ALIASES,
+        List<Component> components = readComponents(doc, FieldName.INDEX_PROVIDERS, FieldName.CLASSNAME, INDEX_PROVIDER_ALIASES,
                                                     problems);
         assert !problems.hasErrors();
         return components;
@@ -1894,8 +1895,10 @@ public class RepositoryConfiguration {
             for (String indexName : getIndexNames()) {
                 IndexDefinition defn = getIndex(indexName);
                 // Make sure the index has a valid provider ...
-                if (!hasIndexProvider(defn.getProviderName())) {
-                    problems.addError(JcrI18n.indexProviderNameMustMatchProvider, indexName, defn.getProviderName());
+                if (defn.getProviderName() == null) {
+                    problems.addError(JcrI18n.indexProviderNameRequired, indexName);
+                } else if (!hasIndexProvider(defn.getProviderName())) {
+                    problems.addWarning(JcrI18n.indexProviderNameMustMatchProvider, indexName, defn.getProviderName());
                 }
             }
         }
@@ -2739,6 +2742,9 @@ public class RepositoryConfiguration {
             for (Field field : document.fields()) {
                 String fieldName = field.getName();
                 Object fieldValue = field.getValue();
+                // Convert the field name from dash-separated to camel case ...
+                fieldName = Inflector.getInstance().lowerCamelCase(fieldName, '-', '_');
+
                 if (COMPONENT_SKIP_PROPERTIES.contains(fieldName)) {
                     continue;
                 }

@@ -5,6 +5,11 @@
             "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
             "directory" : "target/local_index_test_repository"
         },
+        "secondary" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "path" : "local_index/test_repository",
+            "relative-to" : "target/indexes"
+        },
     },
     "indexes" : {
     }

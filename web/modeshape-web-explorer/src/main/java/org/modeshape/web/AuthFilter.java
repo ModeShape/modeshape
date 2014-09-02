@@ -37,7 +37,7 @@ public class AuthFilter implements Filter {
     private final static Logger logger = Logger.getLogger(AuthFilter.class);
     
     @Override
-    public void init(FilterConfig fc) throws ServletException {
+    public void init(FilterConfig fc) {
     }
 
     @Override

@@ -77,6 +77,9 @@ public class ModeShapeExtension implements Extension {
         // Index provider submodel
         repositorySubmodel.registerSubModel(ModeShapeIndexProviderResource.INSTANCE);
 
+        // Index definition submodel
+        repositorySubmodel.registerSubModel(ModeShapeIndexDefinitionResource.INSTANCE);
+
         // External sources submodel
         repositorySubmodel.registerSubModel(ModeShapeSourceResource.INSTANCE);
 

@@ -65,7 +65,7 @@ public class AddIndexProvider extends AbstractAddStepHandler {
                                    final ModelNode operation,
                                    final ModelNode model,
                                    final ServiceVerificationHandler verificationHandler,
-                                   final List<ServiceController<?>> newControllers ) {
+                                   final List<ServiceController<?>> newControllers ) throws OperationFailedException {
 
         ServiceTarget target = context.getServiceTarget();
 
@@ -77,6 +77,8 @@ public class AddIndexProvider extends AbstractAddStepHandler {
 
         // Record the properties ...
         props.put(FieldName.NAME, providerName);
+        String path = null;
+        String relativeTo = null;
         for (String key : operation.keys()) {
             if (key.equals(ADDRESS) || key.equals(OP) || key.equals(OPERATION_HEADERS)) {
                 // Ignore these ...
@@ -88,9 +90,23 @@ public class AddIndexProvider extends AbstractAddStepHandler {
                 props.put(FieldName.CLASSNAME, node.asString());
             } else if (key.equals(ModelKeys.MODULE) && ModelAttributes.MODULE.isMarshallable(operation)) {
                 props.put(FieldName.CLASSLOADER, node.asString());
+            } else if (key.equals(ModelKeys.RELATIVE_TO) && ModelAttributes.RELATIVE_TO.isMarshallable(operation)) {
+                // Optional field, but it is a JBoss convention that this might be a variable. Try to resolve this ...
+                relativeTo = context.resolveExpressions(node).asString();
+                if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+                    // the relative-to path should be the default jboss-data-dir.
+                    relativeTo = context.resolveExpressions(new ModelNode("${" + relativeTo + "}")).asString();
+                }
+                props.put(ModelKeys.RELATIVE_TO, relativeTo);
+            } else if (key.equals(ModelKeys.PATH) && ModelAttributes.PATH.isMarshallable(operation)) {
+                // Optional field, but it is a JBoss convention that this might be a variable. Try to resolve this ...
+                path = context.resolveExpressions(node).asString();
+                props.put(ModelKeys.PATH, path);
             } else if (key.equals(ModelKeys.PROPERTIES)) {
                 for (Property property : node.asPropertyList()) {
-                    props.put(property.getName(), property.getValue().asString());
+                    // Try resolving it in case it's an expression ...
+                    String value = context.resolveExpressions(property.getValue()).asString();
+                    props.put(property.getName(), value);
                 }
             } else {
                 props.put(key, node.asString());

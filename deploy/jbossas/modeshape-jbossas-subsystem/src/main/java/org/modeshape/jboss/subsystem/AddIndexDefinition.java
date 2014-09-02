@@ -37,7 +37,6 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 
 public class AddIndexDefinition extends AbstractAddStepHandler {
 
@@ -88,7 +87,7 @@ public class AddIndexDefinition extends AbstractAddStepHandler {
             if (key.equals(ModelKeys.PROVIDER_NAME) && ModelAttributes.PROVIDER_NAME.isMarshallable(operation)) {
                 props.put(FieldName.PROVIDER_NAME, node.asString());
             } else if (key.equals(ModelKeys.INDEX_KIND) && ModelAttributes.INDEX_KIND.isMarshallable(operation)) {
-                props.put(FieldName.KIND, IndexKind.valueOf(node.asString()));
+                props.put(FieldName.KIND, node.asString());
             } else if (key.equals(ModelKeys.NODE_TYPE_NAME) && ModelAttributes.NODE_TYPE_NAME.isMarshallable(operation)) {
                 props.put(FieldName.NODE_TYPE, node.asString());
             } else if (key.equals(ModelKeys.INDEX_COLUMNS) && ModelAttributes.INDEX_COLUMNS.isMarshallable(operation)) {
