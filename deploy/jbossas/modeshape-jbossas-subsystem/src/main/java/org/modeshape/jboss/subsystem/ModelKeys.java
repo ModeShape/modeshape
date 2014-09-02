@@ -96,7 +96,6 @@ public class ModelKeys {
     static final String INDEX_COLUMNS = "index-columns";
 
     static final String INDEX_PROVIDER = "index-provider";
-    static final String INDEX_PROVIDER_CLASSNAME = "classname";
 
     static final String CONFIGURATION = "configuration";
 

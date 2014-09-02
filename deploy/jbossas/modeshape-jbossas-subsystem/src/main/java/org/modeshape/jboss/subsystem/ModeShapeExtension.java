@@ -32,6 +32,10 @@ public class ModeShapeExtension implements Extension {
     public static final String SUBSYSTEM_NAME = "modeshape"; //$NON-NLS-1$
     public static final String JBOSS_DATA_DIR_VARIABLE = "jboss.server.data.dir"; //$NON-NLS-1$
 
+    public static final class ModuleID {
+        public static final String MAIN = "org.modeshape"; //$NON-NLS-1$
+    }
+
     private static final int MANAGEMENT_API_MAJOR_VERSION = 1;
     private static final int MANAGEMENT_API_MINOR_VERSION = 2;
 

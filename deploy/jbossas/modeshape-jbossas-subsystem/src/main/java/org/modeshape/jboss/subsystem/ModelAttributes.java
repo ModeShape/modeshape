@@ -288,15 +288,6 @@ public class ModelAttributes {
                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                      .build();
 
-    public static final SimpleAttributeDefinition INDEX_PROVIDER_CLASSNAME = new MappedAttributeDefinitionBuilder(
-                                                                                                                  ModelKeys.INDEX_PROVIDER_CLASSNAME,
-                                                                                                                  ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
-                                                                                                                                   .setAllowExpression(false)
-                                                                                                                                   .setAllowNull(true)
-                                                                                                                                   .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                                                                   .setFieldPathInRepositoryConfiguration(FieldName.INDEX_PROVIDERS,
-                                                                                                                                                                          FieldName.CLASSNAME)
-                                                                                                                                   .build();
     public static final SimpleAttributeDefinition JNDI_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.JNDI_NAME,
                                                                                                    ModelType.STRING).setXmlName(Attribute.JNDI_NAME.getLocalName())
                                                                                                                     .setAllowExpression(false)

@@ -27,22 +27,17 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jboss.service.IndexDefinitionService;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
-import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public class AddIndexDefinition extends AbstractAddStepHandler {
 
     public static final AddIndexDefinition INSTANCE = new AddIndexDefinition();
-
-    private static final Logger LOG = Logger.getLogger(AddIndexDefinition.class.getPackage().getName());
 
     private AddIndexDefinition() {
     }
@@ -100,7 +95,6 @@ public class AddIndexDefinition extends AbstractAddStepHandler {
                 props.put(key, node.asString());
             }
         }
-        ensureClassLoadingPropertyIsSet(props);
 
         IndexDefinitionService indexDefnService = new IndexDefinitionService(repositoryName, props);
 
@@ -117,28 +111,4 @@ public class AddIndexDefinition extends AbstractAddStepHandler {
         ServiceController<JcrRepository> controller = indexDefnBuilder.install();
         newControllers.add(controller);
     }
-
-    private void ensureClassLoadingPropertyIsSet( Properties providerProperties ) {
-        // could be already set if the "module" element is present in the xml (AddIndexProvider)
-        if (providerProperties.containsKey(FieldName.CLASSLOADER)) {
-            return;
-        }
-        String providerClassName = providerProperties.getProperty(FieldName.CLASSNAME);
-        if (StringUtil.isBlank(providerClassName)) {
-            LOG.warnv("Required property: {0} not found among the index provider properties: {1}",
-                      FieldName.CLASSNAME,
-                      providerProperties);
-            return;
-        }
-        // try to see if an alias is configured
-        String fqProviderClass = RepositoryConfiguration.getBuiltInIndexProviderClassName(providerClassName);
-        if (fqProviderClass == null) {
-            fqProviderClass = providerClassName;
-        }
-        // set the classloader to the package name of the sequencer class
-        int index = fqProviderClass.lastIndexOf(".");
-        String providerModuleName = index != -1 ? fqProviderClass.substring(0, index) : fqProviderClass;
-        providerProperties.setProperty(FieldName.CLASSLOADER, providerModuleName);
-    }
-
 }
