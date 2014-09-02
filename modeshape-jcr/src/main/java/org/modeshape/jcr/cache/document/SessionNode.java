@@ -59,12 +59,14 @@ import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.ChildReferences.BasicContext;
 import org.modeshape.jcr.cache.ChildReferences.ChildInsertions;
+import org.modeshape.jcr.cache.ReferrerCounts.MutableReferrerCounts;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PathCache;
+import org.modeshape.jcr.cache.ReferrerCounts;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.value.BinaryValue;
@@ -635,6 +637,21 @@ public class SessionNode implements MutableCachedNode {
             referrers.removeAll(changes.getRemovedReferrers(type));
         }
         return referrers;
+    }
+
+    @Override
+    public ReferrerCounts getReferrerCounts( NodeCache cache ) {
+        AbstractSessionCache session = session(cache);
+        ReferrerChanges changes = referrerChanges(false);
+        // Check the persisted node ...
+        CachedNode persisted = nodeInWorkspace(session);
+        if (persisted == null) {
+            if (changes == null) return null;
+            return changes.getReferrerCounts(null);
+        }
+        // Read the referrers from the workspace node ...
+        ReferrerCounts persistedCounts = persisted.getReferrerCounts(workspace(cache));
+        return changes == null ? persistedCounts : changes.getReferrerCounts(persistedCounts);
     }
 
     protected ReferrerChanges getReferrerChanges() {
@@ -2277,6 +2294,31 @@ public class SessionNode implements MutableCachedNode {
                 }
             }
             return keys;
+        }
+
+        public ReferrerCounts getReferrerCounts( ReferrerCounts persisted ) {
+            MutableReferrerCounts mutable = persisted != null ? persisted.mutable() : ReferrerCounts.createMutable();
+            for (Set<NodeKey> sourceKeys : addedStrong.values()) {
+                for (NodeKey key : sourceKeys) {
+                    mutable.addStrong(key, 1);
+                }
+            }
+            for (Set<NodeKey> sourceKeys : addedWeak.values()) {
+                for (NodeKey key : sourceKeys) {
+                    mutable.addWeak(key, 1);
+                }
+            }
+            for (Set<NodeKey> sourceKeys : removedStrong.values()) {
+                for (NodeKey key : sourceKeys) {
+                    mutable.addStrong(key, -1);
+                }
+            }
+            for (Set<NodeKey> sourceKeys : removedWeak.values()) {
+                for (NodeKey key : sourceKeys) {
+                    mutable.addWeak(key, -1);
+                }
+            }
+            return mutable.freeze();
         }
 
         public boolean isEmpty() {

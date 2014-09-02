@@ -995,6 +995,35 @@ public class DocumentTranslator implements DocumentConstants {
         return result;
     }
 
+    public Map<NodeKey, Integer> getReferrerCounts( Document document,
+                                                    ReferenceType type ) {
+        // Get the properties container ...
+        Document referrers = document.getDocument(REFERRERS);
+        if (referrers == null) {
+            return Collections.emptyMap();
+        }
+
+        // Get the NodeKeys in the respective arrays ...
+        Map<NodeKey, Integer> result = new HashMap<NodeKey, Integer>();
+        if (type == ReferenceType.STRONG || type == ReferenceType.BOTH) {
+            Document strong = referrers.getDocument(STRONG);
+            if (strong != null) {
+                for (String keyString : strong.keySet()) {
+                    result.put(new NodeKey(keyString), strong.getInteger(keyString));
+                }
+            }
+        }
+        if (type == ReferenceType.WEAK || type == ReferenceType.BOTH) {
+            Document weak = referrers.getDocument(WEAK);
+            if (weak != null) {
+                for (String keyString : weak.keySet()) {
+                    result.put(new NodeKey(keyString), weak.getInteger(keyString));
+                }
+            }
+        }
+        return result;
+    }
+
     public void changeReferrers( EditableDocument document,
                                  ReferrerChanges changes ) {
         if (changes.isEmpty()) {

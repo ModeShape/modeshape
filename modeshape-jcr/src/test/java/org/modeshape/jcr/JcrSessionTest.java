@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
 import javax.jcr.Node;
@@ -122,6 +123,32 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         node1.setProperty("prop1", strongRefValue);
 
         // Now save the changes (even though there should be none) ...
+        session.save();
+
+        PropertyIterator propertyIterator = referenceableNode.getReferences();
+        assertEquals(1, propertyIterator.getSize());
+    }
+
+    @FixFor( "MODE-2284" )
+    @Test
+    public void shouldRestoreBackreferencePropertiesAterImport() throws Exception {
+        Node referenceableNode = session.getRootNode().addNode("referenceable");
+        referenceableNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+        Value strongRefValue = session.getValueFactory().createValue(referenceableNode, false);
+
+        Node node1 = session.getRootNode().addNode("node1");
+        node1.setProperty("prop1", strongRefValue);
+
+        session.save();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        session.exportSystemView("/referenceable", outputStream, false, false);
+
+        // Import node tree. This lose backreferences for all nodes in the imported tree
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        session.importXML("/referenceable", inputStream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+
+        // Now save the changes
         session.save();
 
         PropertyIterator propertyIterator = referenceableNode.getReferences();
