@@ -16,6 +16,7 @@
 
 package org.modeshape.jcr.spi.index.provider;
 
+import java.util.Map;
 import javax.jcr.query.qom.Constraint;
 
 /**
@@ -28,9 +29,11 @@ public interface Costable {
      * Compute the cost applying the given constraint.
      *
      * @param constraint the constraint; never null
+     * @param variables the bound variables for the query that is being costed; never null
      * @return the approximate number of records that will be returned
      */
-    long estimateCardinality( Constraint constraint );
+    long estimateCardinality( Constraint constraint,
+                              Map<String, Object> variables );
 
     /**
      * Get the estimated number of entries within this index.

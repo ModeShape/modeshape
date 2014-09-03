@@ -16,6 +16,7 @@
 
 package org.modeshape.jcr.index.local;
 
+import java.util.Map;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.spi.index.provider.IndexChangeAdapter;
@@ -41,8 +42,9 @@ public class ManagedLocalIndex implements ManagedIndex {
     }
 
     @Override
-    public long estimateCardinality( Constraint constraint ) {
-        return index.estimateCardinality(constraint);
+    public long estimateCardinality( Constraint constraint,
+                                     Map<String, Object> variables ) {
+        return index.estimateCardinality(constraint, variables);
     }
 
     @Override

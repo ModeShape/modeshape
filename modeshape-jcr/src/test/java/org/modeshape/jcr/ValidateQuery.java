@@ -18,6 +18,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -26,9 +27,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -58,6 +63,14 @@ public class ValidateQuery {
         ValidationBuilder rowCount( int expectedRowCount );
 
         ValidationBuilder rowCount( long expectedRowCount );
+
+        ValidationBuilder useIndex( String indexName );
+
+        ValidationBuilder useNoIndexes();
+
+        ValidationBuilder considerIndex( String indexNames );
+
+        ValidationBuilder considerIndexes( String... indexNames );
 
         ValidationBuilder hasColumns( String... columnNames );
 
@@ -94,6 +107,8 @@ public class ValidateQuery {
         private boolean checkForQueryPlan = false;
         private String[] columnNames;
         private long numRows = -1L;
+        private String nameOfIndexToUse;
+        private String[] nameOfIndexesToConsider;
         private Validator validator;
 
         @Override
@@ -130,6 +145,36 @@ public class ValidateQuery {
         @Override
         public ValidationBuilder printDetail( boolean print ) {
             this.print = print;
+            return this;
+        }
+
+        @Override
+        public ValidationBuilder useIndex( String indexName ) {
+            this.nameOfIndexToUse = indexName;
+            checkForQueryPlan = true;
+            return this;
+        }
+
+        @Override
+        public ValidationBuilder considerIndexes( String... indexNames ) {
+            this.nameOfIndexesToConsider = indexNames;
+            checkForQueryPlan = true;
+            return this;
+        }
+
+        @Override
+        public ValidationBuilder considerIndex( String indexName ) {
+            assert indexName != null;
+            this.nameOfIndexesToConsider = new String[] {indexName};
+            checkForQueryPlan = true;
+            return this;
+        }
+
+        @Override
+        public ValidationBuilder useNoIndexes() {
+            this.nameOfIndexesToConsider = new String[0];
+            this.nameOfIndexToUse = null;
+            checkForQueryPlan = true;
             return this;
         }
 
@@ -200,9 +245,17 @@ public class ValidateQuery {
             assertThat(query, is(notNullValue()));
             assertThat(result, is(notNullValue()));
             if (print) print(query, result);
-            validateWarnings(result);
-            validateColumnNames(result);
-            validateQueryPlan(result);
+            try {
+                validateWarnings(result);
+                validateColumnNames(result);
+                validateQueryPlan(result);
+            } catch (AssertionError e) {
+                if (!print) {
+                    // print anyway since this is an error
+                    print(query, result);
+                }
+                throw e;
+            }
             if (result.getSelectorNames().length != 1) {
                 // Make sure that we cannot get the multi-selector results from this single-selector results ...
                 try {
@@ -282,6 +335,40 @@ public class ValidateQuery {
                 String plan = ((org.modeshape.jcr.api.query.QueryResult)result).getPlan();
                 assertNotNull(plan);
                 assertTrue(plan.trim().length() > 0);
+
+                // Figure out which indexes are expected ...
+                Set<String> allIndexNames = new HashSet<>();
+                if (nameOfIndexesToConsider != null) {
+                    for (String indexName : nameOfIndexesToConsider) {
+                        allIndexNames.add(indexName);
+                    }
+                }
+                if (nameOfIndexToUse != null) {
+                    allIndexNames.add(nameOfIndexToUse);
+                }
+                // Look for the indexes ...
+                boolean foundUsed = false;
+                if (!allIndexNames.isEmpty()) {
+                    for (String line : StringUtil.splitLines(plan)) {
+                        Matcher matcher = INDEX_NAME_PATTERN.matcher(line);
+                        if (matcher.find()) {
+                            String name = matcher.group(1);
+                            assertTrue("Index '" + name + "' was included in plan but not expected", allIndexNames.remove(name));
+                            boolean isUsed = INDEX_USED_PATTERN.matcher(line).find();
+                            if (isUsed) {
+                                assertEquals("Index '" + name + "' was used, but '" + nameOfIndexToUse
+                                             + "' was expected to be used", nameOfIndexToUse, name);
+                                foundUsed = true;
+                            }
+                        }
+                    }
+                }
+                if (!foundUsed && nameOfIndexToUse != null) {
+                    fail("Index '" + nameOfIndexToUse + "' was not used in query as expected");
+                }
+                if (!allIndexNames.isEmpty()) {
+                    fail("Indexes " + allIndexNames + " were found in query plan but not expected");
+                }
             }
         }
 
@@ -452,6 +539,9 @@ public class ValidateQuery {
             }
         }
     }
+
+    protected static final Pattern INDEX_NAME_PATTERN = Pattern.compile("INDEX_SPECIFICATION=([^,]*)");
+    protected static final Pattern INDEX_USED_PATTERN = Pattern.compile("INDEX_USED=true");
 
     private ValidateQuery() {
     }

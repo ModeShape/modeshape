@@ -23,11 +23,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.jcr.query.qom.Comparison;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.PropertyValue;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.engine.IndexPlan;
 import org.modeshape.jcr.query.engine.IndexPlanners;
+import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.PlanNode.Operation;
@@ -35,6 +38,7 @@ import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
 import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
+import org.modeshape.jcr.value.StringFactory;
 
 /**
  * A rule that adds indexes below {@link Type#SOURCE} nodes. The rule uses an {@link IndexPlanner} that will actually look at the
@@ -80,9 +84,13 @@ public class AddIndexes implements OptimizerRule {
                              PlanNode plan,
                              LinkedList<OptimizerRule> ruleStack ) {
         for (final PlanNode source : plan.findAllAtOrBelow(Type.SOURCE)) {
+            // There were some constraints, so prepare to collect indexes ...
+            assert source.getSelectors().size() == 1;
+            final SelectorName selectorName = source.getSelectors().iterator().next();
             // Look for any SELECT nodes above this but below an ACCESS node, because all of the SELECT define
             // criteria that are all ANDed together ...
             final AtomicReference<List<Constraint>> constraints = new AtomicReference<>();
+            final AtomicReference<String> nodeTypeName = new AtomicReference<>();
             source.applyToAncestorsUpTo(Type.ACCESS, new Operation() {
                 @Override
                 public void apply( PlanNode node ) {
@@ -91,17 +99,40 @@ public class AddIndexes implements OptimizerRule {
                         if (constraint != null) {
                             if (constraints.get() == null) constraints.set(new LinkedList<Constraint>());
                             constraints.get().add(constraint);
+                            // While we're at it, look for the constraint on the primary type. This tells us which node type
+                            // we're working with ...
+                            if (nodeTypeName.get() == null && constraint instanceof Comparison) {
+                                Comparison comparison = (Comparison)constraint;
+                                if (comparison.getOperand1() instanceof PropertyValue) {
+                                    PropertyValue propValue = (PropertyValue)comparison.getOperand1();
+                                    if (comparison.getOperand2() instanceof Literal
+                                        && "jcr:primaryType".equals(propValue.getPropertyName())
+                                        && propValue.getSelectorName().equals(selectorName.getString())) {
+                                        // The value should be a literal ...
+                                        Literal literal = (Literal)comparison.getOperand2();
+                                        StringFactory strings = context.getExecutionContext().getValueFactories()
+                                                                       .getStringFactory();
+                                        nodeTypeName.set(strings.create(literal.value()));
+                                    }
+                                }
+
+                            }
                         }
                     }
                 }
             });
             if (constraints.get() != null) {
-                // There were some constraints, so prepare to collect indexes ...
-                assert source.getSelectors().size() == 1;
-                final SelectorName selectorName = source.getSelectors().iterator().next();
+                // Get the selector name. The plan's selectors will contain an alias if one is used, so we have to find
+                // the 'selector.[jcr:primaryType] = '<nodeType>' constraint
+                final String selectedNodeTypeName = nodeTypeName.get() != null ? nodeTypeName.get() : selectorName.getString();
                 IndexCostCalculator calculator = new IndexCostCalculator() {
                     @Override
                     public String selectedNodeType() {
+                        return selectedNodeTypeName;
+                    }
+
+                    @Override
+                    public String selectorNameOrAlias() {
                         return selectorName.getString();
                     }
 

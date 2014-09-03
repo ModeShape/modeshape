@@ -60,6 +60,13 @@ public interface IndexCostCalculator {
     String selectedNodeType();
 
     /**
+     * Get the name (or alias) of the selector for which the {@link #selectedNodeType()} applies.
+     * 
+     * @return the name or alias; never null
+     */
+    String selectorNameOrAlias();
+
+    /**
      * Get the ANDed constraints that apply to the index to which this filter is submitted.
      *
      * @return the constraints; never null but maybe empty

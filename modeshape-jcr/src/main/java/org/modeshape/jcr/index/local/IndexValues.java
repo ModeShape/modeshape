@@ -16,7 +16,6 @@
 
 package org.modeshape.jcr.index.local;
 
-import java.util.Collections;
 import java.util.Map;
 import javax.jcr.query.qom.BindVariableValue;
 import javax.jcr.query.qom.StaticOperand;
@@ -39,13 +38,13 @@ public class IndexValues {
      * Note that {@link IndexKind#VALUE} indexes may have multiple node keys for a given value, which means that any given value
      * might have a range of keys. Some MapDB-based indexes store such entries using an index key that consists of the actual
      * property value plus a counter. In this way, there are multiple index keys for a given {@link StaticOperand}, and the
-     * {@link #toLowerValue(StaticOperand)} will return the lowest-possible index key given the {@link StaticOperand}, while the
-     * {@link #toUpperValue(StaticOperand)} will return the highest-possible index key for the given {@link StaticOperand}
+     * {@link #toLowerValue} will return the lowest-possible index key given the {@link StaticOperand}, while the
+     * {@link #toUpperValue} will return the highest-possible index key for the given {@link StaticOperand}
      * </p>
      * <p>
      * {@link IndexKind#UNIQUE_VALUE} indexes will use the actual property value as the index key, and thus the
-     * {@link #toLowerValue(StaticOperand)} and {@link #toUpperValue(StaticOperand)} methods will both return the same index key
-     * for the same {@link StaticOperand}.
+     * {@link #toLowerValue} and {@link #toUpperValue} methods will both return the same index key for the same
+     * {@link StaticOperand}.
      *
      * @param <T> the index's key type
      * @author Randall Hauch (rhauch@redhat.com)
@@ -56,32 +55,29 @@ public class IndexValues {
          * Create the lowest possible index key for the supplied {@link StaticOperand}.
          *
          * @param operand the static operand; may be null
+         * @param variables the bound variables; may not be null but may be empty
          * @return the lowest/smallest possible index key; or null if the operand is null
          */
-        public T toLowerValue( StaticOperand operand );
+        public T toLowerValue( StaticOperand operand,
+                               Map<String, Object> variables );
 
         /**
          * Create the highest possible index key for the supplied {@link StaticOperand}.
          *
          * @param operand the static operand; may be null
+         * @param variables the bound variables; may not be null but may be empty
          * @return the highest/largest possible index key; or null if the operand is null
          */
-        T toUpperValue( StaticOperand operand );
+        T toUpperValue( StaticOperand operand,
+                        Map<String, Object> variables );
     }
-
-    private static final Map<String, Object> NO_VARIABLES = Collections.emptyMap();
 
     public static <T> Converter<UniqueKey<T>> uniqueKeyConverter( Converter<T> converter ) {
         return new UniqueKeyConverter<T>(converter);
     }
 
-    public static <T> Converter<T> converter( ValueFactory<T> factory,
-                                              Map<String, Object> variables ) {
-        return new StandardConverter<T>(factory, variables);
-    }
-
     public static <T> Converter<T> converter( ValueFactory<T> factory ) {
-        return new StandardConverter<T>(factory, NO_VARIABLES);
+        return new StandardConverter<T>(factory);
     }
 
     static final class UniqueKeyConverter<T> implements Converter<UniqueKey<T>> {
@@ -92,30 +88,30 @@ public class IndexValues {
         }
 
         @Override
-        public UniqueKey<T> toLowerValue( StaticOperand operand ) {
-            T value = valueConverter.toLowerValue(operand);
+        public UniqueKey<T> toLowerValue( StaticOperand operand,
+                                          Map<String, Object> variables ) {
+            T value = valueConverter.toLowerValue(operand, variables);
             return value != null ? new UniqueKey<T>(value, 0L) : null;
         }
 
         @Override
-        public UniqueKey<T> toUpperValue( StaticOperand operand ) {
-            T value = valueConverter.toLowerValue(operand);
+        public UniqueKey<T> toUpperValue( StaticOperand operand,
+                                          Map<String, Object> variables ) {
+            T value = valueConverter.toLowerValue(operand, variables);
             return value != null ? new UniqueKey<T>(value, Long.MAX_VALUE) : null;
         }
     }
 
     protected static class StandardConverter<T> implements Converter<T> {
         private final ValueFactory<T> factory;
-        private final Map<String, Object> variables;
 
-        protected StandardConverter( ValueFactory<T> factory,
-                                     Map<String, Object> variables ) {
+        protected StandardConverter( ValueFactory<T> factory ) {
             this.factory = factory;
-            this.variables = variables;
         }
 
         @Override
-        public T toLowerValue( StaticOperand operand ) {
+        public T toLowerValue( StaticOperand operand,
+                               Map<String, Object> variables ) {
             if (operand instanceof Literal) {
                 Literal literal = (Literal)operand;
                 return factory.create(literal.value());
@@ -128,7 +124,8 @@ public class IndexValues {
         }
 
         @Override
-        public T toUpperValue( StaticOperand operand ) {
+        public T toUpperValue( StaticOperand operand,
+                               Map<String, Object> variables ) {
             if (operand instanceof LiteralValue) {
                 LiteralValue literal = (LiteralValue)operand;
                 return factory.create(literal.value());

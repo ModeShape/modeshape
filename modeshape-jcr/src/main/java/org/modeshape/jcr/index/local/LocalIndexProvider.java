@@ -21,9 +21,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
-import javax.jcr.query.qom.Comparison;
 import javax.jcr.query.qom.Constraint;
-import javax.jcr.query.qom.FullTextSearch;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.modeshape.common.collection.Problems;
@@ -36,6 +34,8 @@ import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 import org.modeshape.jcr.api.query.qom.Relike;
 import org.modeshape.jcr.query.QueryContext;
+import org.modeshape.jcr.query.model.Comparison;
+import org.modeshape.jcr.query.model.FullTextSearch;
 import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.spi.index.IndexCostCalculator.Costs;
 import org.modeshape.jcr.spi.index.IndexFeedback;
@@ -257,7 +257,7 @@ public class LocalIndexProvider extends IndexProvider {
                 logger().trace("Index '{0}' in '{1}' provider applies to query in workspace '{2}' with constraint: {3}",
                                defn.getName(), getName(), workspaceName, constraint);
                 // The index does apply to this constraint ...
-                long cardinality = localIndex.estimateCardinality(constraint);
+                long cardinality = localIndex.estimateCardinality(constraint, context.getVariables());
                 long total = localIndex.estimateTotalCount();
                 Float selectivity = null;
                 if (total >= 0L) {

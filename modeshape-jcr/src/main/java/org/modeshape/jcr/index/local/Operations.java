@@ -84,11 +84,13 @@ class Operations {
      * @param keysByValue the index's map of values-to-NodeKey; may not be null
      * @param converter the converter; may not be null
      * @param constraints the constraints; may not be null but may be empty if there are no constraints
+     * @param variables the bound variables for this query; may not be null but may be empty
      * @return the index operation; never null
      */
     public static <T> FilterOperation createFilter( NavigableMap<T, String> keysByValue,
                                                     Converter<T> converter,
-                                                    Collection<Constraint> constraints ) {
+                                                    Collection<Constraint> constraints,
+                                                    Map<String, Object> variables ) {
         if (keysByValue.isEmpty()) return EMPTY_FILTER_OPERATION;
         NodeKeysAccessor<T, String> nodeKeysAccessor = new NodeKeysAccessor<T, String>() {
             @Override
@@ -102,7 +104,7 @@ class Operations {
                 matchedKeys.addAll(keysByValue.values());
             }
         };
-        OperationBuilder<T> builder = new BasicOperationBuilder<>(keysByValue, converter, nodeKeysAccessor);
+        OperationBuilder<T> builder = new BasicOperationBuilder<>(keysByValue, converter, nodeKeysAccessor, variables);
         for (Constraint constraint : constraints) {
             OperationBuilder<T> newBuilder = builder.apply(constraint, false);
             if (newBuilder != null) builder = newBuilder;
@@ -117,11 +119,13 @@ class Operations {
      * @param keySetByEnumeratedValue the index's map of NodeKey sets; may not be null
      * @param converter the converter; may not be null
      * @param constraints the constraints; may not be null but may be empty if there are no constraints
+     * @param variables the bound variables for this query; may not be null but may be empty
      * @return the index operation; never null
      */
     public static <T> FilterOperation createEnumeratedFilter( NavigableMap<T, Set<String>> keySetByEnumeratedValue,
                                                               Converter<T> converter,
-                                                              Collection<Constraint> constraints ) {
+                                                              Collection<Constraint> constraints,
+                                                              Map<String, Object> variables ) {
         if (keySetByEnumeratedValue.isEmpty()) return EMPTY_FILTER_OPERATION;
         NodeKeysAccessor<T, Set<String>> nodeKeysAccessor = new NodeKeysAccessor<T, Set<String>>() {
             @Override
@@ -139,7 +143,7 @@ class Operations {
                 }
             }
         };
-        OperationBuilder<T> builder = new BasicOperationBuilder<>(keySetByEnumeratedValue, converter, nodeKeysAccessor);
+        OperationBuilder<T> builder = new BasicOperationBuilder<>(keySetByEnumeratedValue, converter, nodeKeysAccessor, variables);
         for (Constraint constraint : constraints) {
             OperationBuilder<T> newBuilder = builder.apply(constraint, false);
             if (newBuilder != null) builder = newBuilder;
@@ -239,24 +243,27 @@ class Operations {
         protected final NavigableMap<T, V> keysByValue;
         protected final Converter<T> converter;
         protected final NodeKeysAccessor<T, V> nodeKeysAccessor;
+        protected final Map<String, Object> variables;
 
         protected BasicOperationBuilder( NavigableMap<T, V> keysByValue,
                                          Converter<T> converter,
-                                         NodeKeysAccessor<T, V> nodeKeysAccessor ) {
+                                         NodeKeysAccessor<T, V> nodeKeysAccessor,
+                                         Map<String, Object> variables ) {
             this.keysByValue = keysByValue;
             this.converter = converter;
             this.nodeKeysAccessor = nodeKeysAccessor;
+            this.variables = variables;
         }
 
         protected OperationBuilder<T> create( NavigableMap<T, V> keysByValue ) {
-            return new BasicOperationBuilder<>(keysByValue, converter, nodeKeysAccessor);
+            return new BasicOperationBuilder<>(keysByValue, converter, nodeKeysAccessor, variables);
         }
 
         @Override
         protected OperationBuilder<T> apply( Between between,
                                              boolean negated ) {
-            T lower = converter.toLowerValue(between.getLowerBound());
-            T upper = converter.toUpperValue(between.getUpperBound());
+            T lower = converter.toLowerValue(between.getLowerBound(), variables);
+            T upper = converter.toUpperValue(between.getUpperBound(), variables);
             boolean isLowerIncluded = between.isLowerBoundIncluded();
             boolean isUpperIncluded = between.isUpperBoundIncluded();
             if (negated) {
@@ -276,24 +283,24 @@ class Operations {
             // Remember that T may be a composite value, and there may be multiple real values and keys for each composite ...
             switch (op) {
                 case EQUAL_TO:
-                    T lowerValue = converter.toLowerValue(operand);
-                    T upperValue = converter.toUpperValue(operand);
+                    T lowerValue = converter.toLowerValue(operand, variables);
+                    T upperValue = converter.toUpperValue(operand, variables);
                     return create(keysByValue.subMap(lowerValue, true, upperValue, true));
                 case GREATER_THAN:
-                    T value = converter.toLowerValue(operand);
+                    T value = converter.toLowerValue(operand, variables);
                     return create(keysByValue.tailMap(value, false));
                 case GREATER_THAN_OR_EQUAL_TO:
-                    value = converter.toLowerValue(operand);
+                    value = converter.toLowerValue(operand, variables);
                     return create(keysByValue.tailMap(value, true));
                 case LESS_THAN:
-                    value = converter.toUpperValue(operand);
+                    value = converter.toUpperValue(operand, variables);
                     return create(keysByValue.headMap(value, false));
                 case LESS_THAN_OR_EQUAL_TO:
-                    value = converter.toUpperValue(operand);
+                    value = converter.toUpperValue(operand, variables);
                     return create(keysByValue.headMap(value, true));
                 case NOT_EQUAL_TO:
-                    OperationBuilder<T> lowerOp = create(keysByValue.headMap(converter.toLowerValue(operand), false));
-                    OperationBuilder<T> upperOp = create(keysByValue.tailMap(converter.toUpperValue(operand), false));
+                    OperationBuilder<T> lowerOp = create(keysByValue.headMap(converter.toLowerValue(operand, variables), false));
+                    OperationBuilder<T> upperOp = create(keysByValue.tailMap(converter.toUpperValue(operand, variables), false));
                     return new DualOperationBuilder<>(lowerOp, upperOp);
                 case LIKE:
                     // We can't handle LIKE with this kind of index, but we can return the complete list of node keys
@@ -309,7 +316,7 @@ class Operations {
         @Override
         protected OperationBuilder<T> apply( SetCriteria setCriteria,
                                              boolean negated ) {
-            return new SetOperationBuilder<>(keysByValue, converter, nodeKeysAccessor, setCriteria, negated);
+            return new SetOperationBuilder<>(keysByValue, converter, nodeKeysAccessor, variables, setCriteria, negated);
         }
 
         protected Iterator<String> keys() {
@@ -360,16 +367,17 @@ class Operations {
         protected SetOperationBuilder( NavigableMap<T, V> keysByValue,
                                        IndexValues.Converter<T> converter,
                                        NodeKeysAccessor<T, V> nodeKeysAccessor,
+                                       Map<String, Object> variables,
                                        SetCriteria criteria,
                                        boolean negated ) {
-            super(keysByValue, converter, nodeKeysAccessor);
+            super(keysByValue, converter, nodeKeysAccessor, variables);
             this.criteria = criteria;
             this.negated = negated;
         }
 
         @Override
         protected OperationBuilder<T> create( NavigableMap<T, V> keysByValue ) {
-            return new SetOperationBuilder<>(keysByValue, converter, nodeKeysAccessor, criteria, negated);
+            return new SetOperationBuilder<>(keysByValue, converter, nodeKeysAccessor, variables, criteria, negated);
         }
 
         @Override
@@ -384,8 +392,8 @@ class Operations {
             final Set<String> matchedKeys = new HashSet<>();
             for (StaticOperand valueOperand : criteria.getValues()) {
                 // Find the range of all keys that have this value ...
-                T lowValue = converter.toLowerValue(valueOperand);
-                T highValue = converter.toUpperValue(valueOperand);
+                T lowValue = converter.toLowerValue(valueOperand, variables);
+                T highValue = converter.toUpperValue(valueOperand, variables);
                 NavigableMap<T, V> submap = null;
                 if (lowValue == null) {
                     if (highValue == null) continue;
@@ -460,8 +468,8 @@ class Operations {
             // Determine the set of keys that have a value in our set ...
             for (StaticOperand valueOperand : criteria.getValues()) {
                 // Find the range of all keys that have this value ...
-                T lowValue = converter.toLowerValue(valueOperand);
-                T highValue = converter.toUpperValue(valueOperand);
+                T lowValue = converter.toLowerValue(valueOperand, variables);
+                T highValue = converter.toUpperValue(valueOperand, variables);
                 NavigableMap<T, V> submap = null;
                 if (lowValue == null) {
                     if (highValue == null) continue;
