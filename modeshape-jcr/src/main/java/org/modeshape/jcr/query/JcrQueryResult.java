@@ -389,6 +389,12 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return context.createValue(PropertyType.LONG, context.getDepth(node));
         }
 
+        protected Value jcrChildCount( CachedNode node ) {
+            assert node != null;
+            // Every node has a child count ...
+            return context.createValue(PropertyType.LONG, context.getChildCount(node));
+        }
+
         protected Value jcrId( CachedNode node ) {
             assert node != null;
             // Every node has an identifier, but we need to figure out the correct version that's exposed

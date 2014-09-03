@@ -37,6 +37,7 @@ import org.modeshape.jcr.query.model.ArithmeticOperand;
 import org.modeshape.jcr.query.model.ArithmeticOperator;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
 import org.modeshape.jcr.query.model.Column;
@@ -98,7 +99,7 @@ import org.modeshape.jcr.value.ValueFormatException;
  * <li>"<code>LIMIT count [OFFSET number]</code>" clauses to control the number of results returned as well as the number of rows
  * that should be skipped</li>
  * <li>Support for additional join types, including "<code>FULL OUTER JOIN</code>" and "<code>CROSS JOIN</code>"</li>
- * <li>Additional dynamic operands "<code>DEPTH([&lt;selectorName>])</code>", "<code>PATH([&lt;selectorName>])</code>" and "<code>ID([&lt;selectorName>])</code>" that
+ * <li>Additional dynamic operands "<code>DEPTH([&lt;selectorName>])</code>", "<code>PATH([&lt;selectorName>])</code>", "<code>ID([&lt;selectorName>])</code>", and  "<code>CHILDCOUNT([&lt;selectorName>])</code>" that
  * enables placing constraints on the node depth, path, and identifier, respectively, and which can be used in a manner similar to "
  * <code>NAME([&lt;selectorName>])</code>" and "<code>LOCALNAME([&lt;selectorName>])</code>. Note in each of these cases, the
  * selector name is optional if there is only one selector in the query.</li>
@@ -402,6 +403,12 @@ import org.modeshape.jcr.value.ValueFormatException;
  * <h5>Node identifier</h5>
  * <pre>
  * NodeId ::= 'ID(' [selectorName] ')'
+ *                    /* If only one selector exists in this query, explicit specification of the selectorName
+ *                       is optional *&#47;
+ * </pre>
+ * <h5>Child count</h5>
+ * <pre>
+ * ChildCount ::= 'CHILDCOUNT(' [selectorName] ')'
  *                    /* If only one selector exists in this query, explicit specification of the selectorName
  *                       is optional *&#47;
  * </pre>
@@ -1175,6 +1182,16 @@ public class BasicSqlQueryParser implements QueryParser {
             }
             result = nodePath(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
+        } else if (tokens.canConsume("CHILDCOUNT", "(")) {
+            if (tokens.canConsume(")")) {
+                if (source instanceof Selector) {
+                    return childCount(((Selector)source).name());
+                }
+                String msg = GraphI18n.functionIsAmbiguous.text("CHILDCOUNT()", pos.getLine(), pos.getColumn());
+                throw new ParsingException(pos, msg);
+            }
+            result = childCount(parseSelectorName(tokens, typeSystem));
+            tokens.consume(")");
         } else if (tokens.canConsume("REFERENCE", "(")) {
             result = parseReferenceValue(tokens, typeSystem, source);
         } else {
@@ -1437,6 +1454,10 @@ public class BasicSqlQueryParser implements QueryParser {
 
     protected NodePath nodePath( SelectorName selector ) {
         return new NodePath(selector);
+    }
+
+    protected ChildCount childCount( SelectorName selector ) {
+        return new ChildCount(selector);
     }
 
     protected EquiJoinCondition equiJoinCondition( SelectorName selector1,

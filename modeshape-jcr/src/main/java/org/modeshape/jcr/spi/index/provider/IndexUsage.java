@@ -23,6 +23,7 @@ import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.query.qom.ArithmeticOperand;
 import org.modeshape.jcr.api.query.qom.Between;
+import org.modeshape.jcr.api.query.qom.ChildCount;
 import org.modeshape.jcr.api.query.qom.NodeDepth;
 import org.modeshape.jcr.api.query.qom.NodeId;
 import org.modeshape.jcr.api.query.qom.NodePath;
@@ -179,6 +180,9 @@ public class IndexUsage {
         if (operand instanceof NodeDepth) {
             return applies((NodeDepth)operand);
         }
+        if (operand instanceof ChildCount) {
+            return applies((ChildCount)operand);
+        }
         if (operand instanceof ReferenceValue) {
             return applies((ReferenceValue)operand);
         }
@@ -231,8 +235,13 @@ public class IndexUsage {
     }
 
     protected boolean applies( NodeDepth operand ) {
-        // This should apply to the 'jcr:id' pseudo-column on the index ...
+        // This should apply to the 'mode:depth' pseudo-column on the index ...
         return defn.appliesToProperty("mode:depth");
+    }
+
+    protected boolean applies( ChildCount operand ) {
+        // This should apply to the 'mode:childCount' pseudo-column on the index ...
+        return defn.appliesToProperty("mode:childCount");
     }
 
     protected boolean applies( ReferenceValue operand ) {

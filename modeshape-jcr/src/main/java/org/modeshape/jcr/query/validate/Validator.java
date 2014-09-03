@@ -30,6 +30,7 @@ import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.AllNodes;
 import org.modeshape.jcr.query.model.ArithmeticOperand;
+import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
 import org.modeshape.jcr.query.model.Column;
@@ -113,6 +114,8 @@ public class Validator extends AbstractVisitor {
         // The left and right operands must have LONG or DOUBLE types ...
         if (operand instanceof NodeDepth) {
             // good to go
+        } else if (operand instanceof ChildCount) {
+            // good to go
         } else if (operand instanceof Length) {
             // good to go
         } else if (operand instanceof ArithmeticOperand) {
@@ -143,6 +146,11 @@ public class Validator extends AbstractVisitor {
             I18n msg = GraphI18n.dynamicOperandCannotBeUsedInArithmeticOperation;
             problems.addError(msg, operand);
         }
+    }
+
+    @Override
+    public void visit( ChildCount obj ) {
+        verify(obj.selectorName());
     }
 
     @Override

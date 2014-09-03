@@ -35,6 +35,7 @@ import org.modeshape.jcr.query.model.ArithmeticOperand;
 import org.modeshape.jcr.query.model.ArithmeticOperator;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
 import org.modeshape.jcr.query.model.Column;
@@ -785,6 +786,15 @@ public class QueryBuilder {
         public OrderByBuilder fullTextSearchScore( String table );
 
         /**
+         * Adds to the order-by clause by using the child count of the node given by the named table.
+         *
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder childCount( String table );
+
+        /**
          * Adds to the order-by clause by using the depth of the node given by the named table.
          * 
          * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
@@ -944,6 +954,11 @@ public class QueryBuilder {
         @Override
         public OrderByBuilder fullTextSearchScore( String table ) {
             return addOrdering(new FullTextSearchScore(selector(table)));
+        }
+
+        @Override
+        public OrderByBuilder childCount( String table ) {
+            return addOrdering(new ChildCount(selector(table)));
         }
 
         @Override
@@ -1175,6 +1190,15 @@ public class QueryBuilder {
          * @return the interface for completing the value portion of the criteria specification; never null
          */
         public ComparisonBuilder fullTextSearchScore( String table );
+
+        /**
+         * Constrains the nodes in the the supplied table based upon criteria on the node's number of children.
+         *
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder childCount( String table );
 
         /**
          * Constrains the nodes in the the supplied table based upon criteria on the node's depth.
@@ -1457,6 +1481,11 @@ public class QueryBuilder {
         @Override
         public ComparisonBuilder fullTextSearchScore( String table ) {
             return comparisonBuilder(new FullTextSearchScore(selector(table)));
+        }
+
+        @Override
+        public ComparisonBuilder childCount( String table ) {
+            return comparisonBuilder(new ChildCount(selector(table)));
         }
 
         @Override
@@ -2594,6 +2623,17 @@ public class QueryBuilder {
          */
         public ComparisonBuilder depth( String table ) {
             return comparisonBuilder(new NodeDepth(selector(table)));
+        }
+
+        /**
+         * Constrains the nodes in the the supplied table based upon criteria on the node's number of children.
+         *
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder childCount( String table ) {
+            return comparisonBuilder(new ChildCount(selector(table)));
         }
 
         // /**

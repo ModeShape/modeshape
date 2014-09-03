@@ -30,6 +30,8 @@ public interface Visitor {
 
     void visit( BindVariableName obj );
 
+    void visit( ChildCount obj );
+
     void visit( ChildNode obj );
 
     void visit( ChildNodeJoinCondition obj );
