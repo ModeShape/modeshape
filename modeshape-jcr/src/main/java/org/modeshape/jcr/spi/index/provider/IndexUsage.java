@@ -16,20 +16,8 @@
 
 package org.modeshape.jcr.spi.index.provider;
 
-import javax.jcr.query.qom.And;
-import javax.jcr.query.qom.Comparison;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.DynamicOperand;
-import javax.jcr.query.qom.FullTextSearch;
-import javax.jcr.query.qom.Length;
-import javax.jcr.query.qom.LowerCase;
-import javax.jcr.query.qom.NodeLocalName;
-import javax.jcr.query.qom.NodeName;
-import javax.jcr.query.qom.Not;
-import javax.jcr.query.qom.Or;
-import javax.jcr.query.qom.PropertyExistence;
-import javax.jcr.query.qom.PropertyValue;
-import javax.jcr.query.qom.UpperCase;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
@@ -43,6 +31,18 @@ import org.modeshape.jcr.api.query.qom.ReferenceValue;
 import org.modeshape.jcr.api.query.qom.Relike;
 import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.query.QueryContext;
+import org.modeshape.jcr.query.model.And;
+import org.modeshape.jcr.query.model.Comparison;
+import org.modeshape.jcr.query.model.FullTextSearch;
+import org.modeshape.jcr.query.model.Length;
+import org.modeshape.jcr.query.model.LowerCase;
+import org.modeshape.jcr.query.model.NodeLocalName;
+import org.modeshape.jcr.query.model.NodeName;
+import org.modeshape.jcr.query.model.Not;
+import org.modeshape.jcr.query.model.Or;
+import org.modeshape.jcr.query.model.PropertyExistence;
+import org.modeshape.jcr.query.model.PropertyValue;
+import org.modeshape.jcr.query.model.UpperCase;
 import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.value.Name;
 
@@ -58,6 +58,8 @@ public class IndexUsage {
     private final IndexDefinition defn;
     private final QueryContext context;
     private final Name indexedNodeTypeName;
+    private final String selectedNameOrAlias;
+    private final boolean selectedNodeTypeMatchesIndex;
 
     public IndexUsage( QueryContext context,
                        IndexCostCalculator calculator,
@@ -65,6 +67,10 @@ public class IndexUsage {
         this.context = context;
         this.defn = defn;
         this.indexedNodeTypeName = name(defn.getNodeTypeName());
+        this.selectedNameOrAlias = calculator.selectorNameOrAlias();
+        Name selectedNodeTypeName = name(calculator.selectedNodeType());
+        this.selectedNodeTypeMatchesIndex = nodeTypes().isTypeOrSubtype(selectedNodeTypeName, indexedNodeTypeName);
+
     }
 
     /**
@@ -248,8 +254,12 @@ public class IndexUsage {
     }
 
     protected final boolean matchesSelectorName( String selectorName ) {
-        Name selectedNodeTypeName = name(selectorName);
-        return nodeTypes().isTypeOrSubtype(selectedNodeTypeName, indexedNodeTypeName);
+        if (selectedNameOrAlias.equals(selectorName)) {
+            // Now we know that the supplied selector name matches the selected node type, but return whether
+            // that selected node type matches the index's node type ...
+            return selectedNodeTypeMatchesIndex;
+        }
+        return false;
     }
 
     protected final NodeTypes nodeTypes() {

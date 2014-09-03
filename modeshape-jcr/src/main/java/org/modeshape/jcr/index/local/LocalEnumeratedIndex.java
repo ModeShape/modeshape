@@ -133,12 +133,14 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
     @Override
     public Results filter( IndexConstraints filter ) {
         // Find all sets that match the name pattern ...
-        return Operations.createEnumeratedFilter(nodeKeySetsByValue, converter, filter.getConstraints()).getResults();
+        return Operations.createEnumeratedFilter(nodeKeySetsByValue, converter, filter.getConstraints(), filter.getVariables())
+                         .getResults();
     }
 
     @Override
-    public long estimateCardinality( Constraint constraint ) {
-        return Operations.createEnumeratedFilter(nodeKeySetsByValue, converter, Collections.singleton(constraint))
+    public long estimateCardinality( Constraint constraint,
+                                     Map<String, Object> variables ) {
+        return Operations.createEnumeratedFilter(nodeKeySetsByValue, converter, Collections.singleton(constraint), variables)
                          .estimateCount();
     }
 

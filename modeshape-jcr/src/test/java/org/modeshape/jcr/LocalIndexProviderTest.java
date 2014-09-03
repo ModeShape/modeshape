@@ -23,6 +23,7 @@ import javax.jcr.RepositoryException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
@@ -372,18 +373,63 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         session.save();
         Thread.sleep(500L);
 
-        // Issues some queries that should use this index ...
+        // Issues a query that should NOT use this index because direct lookup by path is lower cost ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [jcr:path] = '/myFirstBook'");
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).useIndex("NodeByPath").considerIndex("pathIndex").validate(query, query.execute());
 
+        // Issues a query that should NOT use this index ...
         query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [jcr:path] LIKE '/my%Book'");
-        validateQuery().rowCount(2L).validate(query, query.execute());
+        validateQuery().rowCount(2L).useNoIndexes().validate(query, query.execute());
 
+        // Issues some queries that should use this index ...
         query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [jcr:path] > '/mySecondBook'");
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).useIndex("pathIndex").validate(query, query.execute());
 
         query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE PATH() > '/mySecondBook'");
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).useIndex("pathIndex").validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2290" )
+    @Test
+    public void shouldUseSingleColumnResidualPropertyIndexInQueryAgainstSameNodeType() throws Exception {
+        registerValueIndex("pathIndex", "nt:unstructured", "Node path index", "*", "someProperty", PropertyType.STRING);
+
+        // print = true;
+
+        // Add a node that uses this type ...
+        Node book1 = session().getRootNode().addNode("myFirstBook");
+        book1.addMixin("mix:title");
+        book1.setProperty("jcr:title", "The Title");
+        book1.setProperty("someProperty", "value1");
+
+        Node book2 = session().getRootNode().addNode("mySecondBook");
+        book2.addMixin("mix:title");
+        book2.setProperty("jcr:title", "A Different Title");
+        book2.setProperty("someProperty", "value2");
+
+        Node other = book2.addNode("chapter");
+        other.setProperty("propA", "a value for property A");
+        other.setProperty("jcr:title", "The Title");
+        other.setProperty("someProperty", "value1");
+
+        Thread.sleep(500L);
+        session.save();
+        Thread.sleep(500L);
+
+        // Issues some queries that should use this index ...
+        Query query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE someProperty = 'value1'");
+        validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE someProperty = $value");
+        query.bindValue("value", session().getValueFactory().createValue("value1"));
+        validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT table.* FROM [nt:unstructured] AS table WHERE table.someProperty = 'value1'");
+        validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT table.* FROM [nt:unstructured] AS table WHERE table.someProperty = $value");
+        query.bindValue("value", session().getValueFactory().createValue("value1"));
+        validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
     }
 
     protected void registerValueIndex( String indexName,
