@@ -1887,6 +1887,44 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(13).hasColumns(columnNames).validate(query, result);
     }
 
+    @FixFor( "MODE-2151" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithChildCountCriteria() throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] as car";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        String[] columnNames = carColumnNames("car");
+        // No cars have children
+        validateQuery().rowCount(13).hasColumns(columnNames).validate(query, query.execute());
+
+        sql = "SELECT * FROM [car:Car] as car WHERE CHILDCOUNT(car) = 0";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(13).hasColumns(columnNames).validate(query, query.execute());
+
+        sql = "SELECT [jcr:path], [mode:childCount] FROM [nt:unstructured] WHERE CHILDCOUNT() = 4";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(2).validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2151" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithChildNodeJoinWithChildCountCriteria() throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE CHILDCOUNT(category) > 4";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        String[] columnNames = allOf(carColumnNames("car"), allColumnNames("category"));
+        // Just the "Utility" nodes ...
+        validateQuery().rowCount(5).hasColumns(columnNames).validate(query, query.execute());
+
+        sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE CHILDCOUNT(category) > 2";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        // Just the "Utility", "Hybrid", and "Luxury" nodes ...
+        validateQuery().rowCount(11).hasColumns(columnNames).validate(query, query.execute());
+
+        sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category)";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        // All categories ...
+        validateQuery().rowCount(13).hasColumns(columnNames).validate(query, query.execute());
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoin() throws RepositoryException {
         String sql = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";

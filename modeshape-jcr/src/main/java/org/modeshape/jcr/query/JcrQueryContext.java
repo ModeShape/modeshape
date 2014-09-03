@@ -163,6 +163,14 @@ public interface JcrQueryContext {
     long getDepth( CachedNode node );
 
     /**
+     * Get the number of children of the supplied cached node.
+     *
+     * @param node the cached node; may not be null
+     * @return the child count
+     */
+    long getChildCount( CachedNode node );
+
+    /**
      * Get the UUID identifier of the supplied cached node. Note that the node must have the 'mix:referenceable' mixin for it to
      * have a UUID.
      * 

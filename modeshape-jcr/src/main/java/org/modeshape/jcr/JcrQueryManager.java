@@ -345,6 +345,12 @@ class JcrQueryManager implements QueryManager {
         }
 
         @Override
+        public long getChildCount( CachedNode node ) {
+            assert node != null;
+            return node.getChildReferences(session.cache()).size();
+        }
+
+        @Override
         public String getIdentifier( CachedNode node ) {
             // the identifier format varies depending upon the node ...
             return session.nodeIdentifier(node.getKey());

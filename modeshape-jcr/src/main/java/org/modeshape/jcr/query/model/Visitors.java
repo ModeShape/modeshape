@@ -404,6 +404,10 @@ public class Visitors {
         }
 
         @Override
+        public void visit( ChildCount obj ) {
+        }
+
+        @Override
         public void visit( ChildNode obj ) {
         }
 
@@ -635,6 +639,12 @@ public class Visitors {
         @Override
         public void visit( BindVariableName variableName ) {
             strategy.visit(variableName);
+            visitNext();
+        }
+
+        @Override
+        public void visit( ChildCount childCount ) {
+            strategy.visit(childCount);
             visitNext();
         }
 
@@ -991,6 +1001,11 @@ public class Visitors {
         @Override
         public void visit( BindVariableName variable ) {
             append('$').append(variable.getBindVariableName());
+        }
+
+        @Override
+        public void visit( ChildCount childCount ) {
+            append("CHILDCOUNT(").append(childCount.selectorName()).append(')');
         }
 
         @Override

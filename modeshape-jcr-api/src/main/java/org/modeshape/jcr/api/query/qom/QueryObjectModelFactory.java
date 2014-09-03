@@ -149,6 +149,19 @@ public interface QueryObjectModelFactory extends javax.jcr.query.qom.QueryObject
                             boolean all ) throws InvalidQueryException, RepositoryException;
 
     /**
+     * Evaluates to a <code>LONG</code> value equal to the number of children for each of the node(s) in the specified selector.
+     * <p>
+     * The query is invalid if <code>selector</code> is not the name of a selector in the query.
+     *
+     * @param selectorName the selector name; non-null
+     * @return the operand; non-null
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
+     * @throws RepositoryException if the operation otherwise fails
+     */
+    public ChildCount childCount( String selectorName ) throws InvalidQueryException, RepositoryException;
+
+    /**
      * Evaluates to a <code>LONG</code> value equal to the depth of a node in the specified selector.
      * <p>
      * The query is invalid if <code>selector</code> is not the name of a selector in the query.

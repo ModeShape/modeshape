@@ -415,6 +415,12 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
     }
 
     @Override
+    public ChildCount childCount( String selectorName ) {
+        CheckArg.isNotNull(selectorName, "selectorName");
+        return new ChildCount(selectorName(selectorName));
+    }
+
+    @Override
     public NodeDepth nodeDepth( String selectorName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         return new NodeDepth(selectorName(selectorName));

@@ -36,6 +36,7 @@ import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.Constraint;
 import org.modeshape.jcr.query.model.DescendantNode;
@@ -1471,6 +1472,47 @@ public class SqlQueryParserTest {
     @Test( expected = ParsingException.class )
     public void shouldFailToParseDynamicOperandFromStringContainingUpperWithoutOpeningParenthesis() {
         parser.parseDynamicOperand(tokens("Upper tableA.property other"), typeSystem, mock(Source.class));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // parseDynamicOperand - CHILDCOUNT
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingChildCountOfSelector() {
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("CHILDCOUNT(tableA)"), typeSystem, mock(Source.class));
+        assertThat(operand, is(instanceOf(ChildCount.class)));
+        ChildCount count = (ChildCount)operand;
+        assertThat(count.selectorName(), is(selectorName("tableA")));
+    }
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingChildCountWithNoSelectorOnlyIfThereIsOneSelectorAsSource() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("CHILDCOUNT()"), typeSystem, source);
+        assertThat(operand, is(instanceOf(ChildCount.class)));
+        ChildCount count = (ChildCount)operand;
+        assertThat(count.selectorName(), is(selectorName("tableA")));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingChildCountWithNoSelectorIfTheSourceIsNotASelector() {
+        parser.parseDynamicOperand(tokens("CHILDCOUNT()"), typeSystem, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingChildCountWithSelectorNameAndProperty() {
+        parser.parseDynamicOperand(tokens("CHILDCOUNT(tableA.property) other"), typeSystem, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingChildCountWithoutClosingParenthesis() {
+        parser.parseDynamicOperand(tokens("CHILDCOUNT(tableA other"), typeSystem, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingChildCountWithoutOpeningParenthesis() {
+        parser.parseDynamicOperand(tokens("Childcount  tableA other"), typeSystem, mock(Source.class));
     }
 
     // ----------------------------------------------------------------------------------------------------------------

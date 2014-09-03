@@ -306,12 +306,22 @@ public abstract class ManagedLocalIndexBuilder<T> {
         public void validate( Problems problems ) {
             switch (defn.getKind()) {
                 case VALUE:
+                    if ((matches(columnDefn, JcrLexicon.PATH) && !isType(getColumnType(), PropertyType.PATH))) {
+                        problems.addError(JcrI18n.localIndexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
+                                          defn.getName(), columnDefn.getPropertyName(), type, PropertyType.PATH);
+                    }
+                    if ((matches(columnDefn, ModeShapeLexicon.LOCALNAME) && !isType(getColumnType(), PropertyType.STRING))
+                        || (matches(columnDefn, ModeShapeLexicon.ID) && !isType(getColumnType(), PropertyType.STRING))) {
+                        problems.addError(JcrI18n.localIndexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
+                                          defn.getName(), columnDefn.getPropertyName(), type, PropertyType.STRING);
+                    }
+                    if ((matches(columnDefn, ModeShapeLexicon.DEPTH) && !isType(getColumnType(), PropertyType.LONG))) {
+                        problems.addError(JcrI18n.localIndexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
+                                          defn.getName(), columnDefn.getPropertyName(), type, PropertyType.LONG);
+                    }
                     if ((matches(columnDefn, JcrLexicon.PRIMARY_TYPE) && !isType(getColumnType(), PropertyType.NAME))
                         || (matches(columnDefn, JcrLexicon.MIXIN_TYPES) && !isType(getColumnType(), PropertyType.NAME))
-                        || (matches(columnDefn, JcrLexicon.NAME) && !isType(getColumnType(), PropertyType.NAME))
-                        || (matches(columnDefn, JcrLexicon.PATH) && !isType(getColumnType(), PropertyType.PATH))
-                        || (matches(columnDefn, ModeShapeLexicon.LOCALNAME) && !isType(getColumnType(), PropertyType.STRING))
-                        || (matches(columnDefn, ModeShapeLexicon.DEPTH) && !isType(getColumnType(), PropertyType.LONG))) {
+                        || (matches(columnDefn, JcrLexicon.NAME) && !isType(getColumnType(), PropertyType.NAME))) {
                         problems.addError(JcrI18n.localIndexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
                                           defn.getName(), columnDefn.getPropertyName(), type, PropertyType.NAME);
                     }

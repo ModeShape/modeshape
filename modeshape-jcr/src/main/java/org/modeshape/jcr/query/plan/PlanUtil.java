@@ -30,6 +30,7 @@ import org.modeshape.jcr.query.model.ArithmeticOperand;
 import org.modeshape.jcr.query.model.ArithmeticOperator;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
 import org.modeshape.jcr.query.model.Column;
@@ -466,6 +467,12 @@ public class PlanUtil {
             SelectorName replacement = rewrittenSelectors.get(path.selectorName());
             if (replacement == null) return operand;
             return new NodePath(replacement);
+        }
+        if (operand instanceof ChildCount) {
+            ChildCount count = (ChildCount)operand;
+            SelectorName replacement = rewrittenSelectors.get(count.selectorName());
+            if (replacement == null) return operand;
+            return new ChildCount(replacement);
         }
         return operand;
     }
@@ -936,6 +943,13 @@ public class PlanUtil {
             node.addSelector(mapping.getSingleMappedSelectorName());
             return new NodePath(mapping.getSingleMappedSelectorName());
         }
+        if (operand instanceof ChildCount) {
+            ChildCount count = (ChildCount)operand;
+            if (!mapping.getOriginalName().equals(count.selectorName())) return count;
+            if (!mapping.isMappedToSingleSelector()) return count;
+            node.addSelector(mapping.getSingleMappedSelectorName());
+            return new ChildCount(mapping.getSingleMappedSelectorName());
+        }
         return operand;
     }
 
@@ -1247,6 +1261,9 @@ public class PlanUtil {
             return operand;
         }
         if (operand instanceof NodePath) {
+            return operand;
+        }
+        if (operand instanceof ChildCount) {
             return operand;
         }
         return operand;

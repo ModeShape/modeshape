@@ -79,6 +79,7 @@ import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.ArithmeticOperand;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
 import org.modeshape.jcr.query.model.Column;
@@ -1631,6 +1632,9 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         if (operand instanceof Length) {
             return types.getLongFactory();
         }
+        if (operand instanceof ChildCount) {
+            return types.getLongFactory();
+        }
         if (operand instanceof NodeDepth) {
             return types.getLongFactory();
         }
@@ -1792,6 +1796,30 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 @Override
                 public String toString() {
                     return "(nodeDepth " + nodeDepth.getSelectorName() + ")";
+                }
+            };
+        }
+        if (operand instanceof ChildCount) {
+            final ChildCount childCount = (ChildCount)operand;
+            final int indexInRow = columns.getSelectorIndex(childCount.getSelectorName());
+            final NodeCache cache = context.getNodeCache(sources.getWorkspaceName());
+            final TypeFactory<?> longType = context.getTypeSystem().getLongFactory();
+            return new ExtractFromRow() {
+                @Override
+                public TypeFactory<?> getType() {
+                    return longType; // count is always a long type
+                }
+
+                @Override
+                public Object getValueInRow( RowAccessor row ) {
+                    CachedNode node = row.getNode(indexInRow);
+                    if (node == null) return null;
+                    return new Long(node.getChildReferences(cache).size());
+                }
+
+                @Override
+                public String toString() {
+                    return "(childCount " + childCount.getSelectorName() + ")";
                 }
             };
         }
