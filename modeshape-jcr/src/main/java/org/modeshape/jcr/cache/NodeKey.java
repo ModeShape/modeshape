@@ -41,13 +41,27 @@ import org.modeshape.jcr.JcrRepository;
 @Immutable
 public final class NodeKey implements Serializable, Comparable<NodeKey> {
 
-    public static final Comparator<NodeKey> COMPARATOR = new Comparator<NodeKey>() {
+    private static final class NodeKeyComparator implements Comparator<NodeKey>, Serializable {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public int compare( NodeKey key1,
                             NodeKey key2 ) {
             return ObjectUtil.compareWithNulls(key1, key2);
         }
-    };
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof NodeKeyComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+    }
+
+    public static final Comparator<NodeKey> COMPARATOR = new NodeKeyComparator();
 
     private static final int UUID_LENGTH = UUID.randomUUID().toString().length();
     private static final long serialVersionUID = 1L;

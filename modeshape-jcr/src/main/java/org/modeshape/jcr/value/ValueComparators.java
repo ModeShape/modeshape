@@ -136,6 +136,16 @@ public final class ValueComparators {
             if (o2 == null) return 1;
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof StringComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     protected static final class BooleanComparator implements Comparator<Boolean>, Serializable {
@@ -148,6 +158,16 @@ public final class ValueComparators {
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             return o1.compareTo(o2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof BooleanComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -162,6 +182,16 @@ public final class ValueComparators {
             if (o2 == null) return 1;
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof LongComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     protected static final class DoubleComparator implements Comparator<Double>, Serializable {
@@ -174,6 +204,16 @@ public final class ValueComparators {
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             return o1.compareTo(o2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof DoubleComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -188,6 +228,16 @@ public final class ValueComparators {
             if (o2 == null) return 1;
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof DecimalComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     protected static final class DateTimeComparator implements Comparator<DateTime>, Serializable {
@@ -200,6 +250,16 @@ public final class ValueComparators {
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             return o1.compareTo(o2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof DateTimeComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -214,6 +274,16 @@ public final class ValueComparators {
             if (o2 == null) return 1;
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof DateComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     protected static final class CalendarComparator implements Comparator<Calendar>, Serializable {
@@ -226,6 +296,16 @@ public final class ValueComparators {
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             return o1.compareTo(o2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof CalendarComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -240,6 +320,16 @@ public final class ValueComparators {
             if (o2 == null) return 1;
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof NameComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     protected static final class PathComparator implements Comparator<Path>, Serializable {
@@ -252,6 +342,16 @@ public final class ValueComparators {
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             return o1.compareTo(o2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof PathComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -266,6 +366,16 @@ public final class ValueComparators {
             if (o2 == null) return 1;
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof PathSegmentComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     protected static final class PathSegmentNameComparator implements Comparator<Path.Segment>, Serializable {
@@ -278,6 +388,16 @@ public final class ValueComparators {
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             return o1.getName().compareTo(o2.getName());
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof PathSegmentNameComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -292,6 +412,16 @@ public final class ValueComparators {
             if (o2 == null) return 1;
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof UriComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     protected static final class UuidComparator implements Comparator<UUID>, Serializable {
@@ -305,6 +435,16 @@ public final class ValueComparators {
             if (o2 == null) return 1;
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof UuidComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     protected static final class ReferenceComparator implements Comparator<Reference>, Serializable {
@@ -317,6 +457,16 @@ public final class ValueComparators {
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             return o1.compareTo(o2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof ReferenceComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -387,6 +537,16 @@ public final class ValueComparators {
             if (value1 == null) value1 = stringFactory.create(o1);
             if (value2 == null) value2 = stringFactory.create(o2);
             return value1.compareTo(value2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof ObjectComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -467,6 +627,16 @@ public final class ValueComparators {
             } finally {
                 o1.dispose();
             }
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof BinaryValueComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 

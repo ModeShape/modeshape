@@ -130,10 +130,15 @@ public class LocalIndexProvider extends IndexProvider {
         // Find the file for the indexes ...
         File file = new File(dir, DB_FILENAME);
 
-        // Create the database ...
-        logger().debug("Creating or opening the local index provider database for repository '{1}' at: {0}",
-                       file.getAbsolutePath(), getRepositoryName());
+        if (logger().isDebugEnabled()) {
+            String action = file.exists() ? "Opening" : "Creating";
+            logger().debug("{0} the local index provider database for repository '{1}' at: {2}", action, getRepositoryName(),
+                           file.getAbsolutePath());
+        }
+        // Get the database ...
         this.db = DBMaker.newFileDB(file).make();
+        logger().trace("Found the index files {0} in index database for repository '{1}' at: {2}", db.getCatalog(),
+                       getRepositoryName(), file.getAbsolutePath());
     }
 
     @Override
@@ -141,6 +146,7 @@ public class LocalIndexProvider extends IndexProvider {
         logger().debug("Shutting down the local index provider '{0}' in repository '{1}'", getName(), getRepositoryName());
         if (db != null) {
             try {
+                db.commit();
                 db.close();
             } finally {
                 db = null;

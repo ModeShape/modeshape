@@ -744,7 +744,7 @@ public class SystemContent {
             }
         }
 
-        String propTypeName = org.modeshape.jcr.api.PropertyType.nameFromValue(columnDefn.getColumnType());
+        String propTypeName = org.modeshape.jcr.api.PropertyType.nameFromValue(columnDefn.getColumnType()).toUpperCase();
         List<Property> props = new ArrayList<Property>();
         props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.INDEX_COLUMN));
         props.add(propertyFactory.create(ModeShapeLexicon.PROPERTY_NAME, columnDefn.getPropertyName()));
