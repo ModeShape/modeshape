@@ -125,7 +125,7 @@
 
 [mode:index] > mix:referenceable, mix:created, mix:lastModified
 - mode:kind (string) mandatory protected ignore
-    < 'UNIQUE', 'DUPLICATES', 'ENUMERATED', 'FULLTEXT', 'NODETYPE'
+    < 'VALUE', 'UNIQUE_VALUE', 'ENUMERATED_VALUE', 'TEXT', 'NODE_TYPE'
 - mode:nodeTypeName (name) = 'nt:base' mandatory protected ignore
 - mode:workspaces (string) = "*" mandatory protected ignore
 - jcr:description (string) protected ignore
@@ -135,7 +135,7 @@
 
 [mode:indexColumn] > mix:referenceable
 - mode:propertyName (name) mandatory protected ignore
-- mode:columnType (string) mandatory protected 
+- mode:columnTypeName (string) mandatory protected 
     < 'STRING', 'URI', 'BINARY', 'LONG', 'DOUBLE', 'DECIMAL', 'BOOLEAN', 
       'DATE', 'NAME', 'PATH', 'REFERENCE', 'WEAKREFERENCE', 'UNDEFINED'
 

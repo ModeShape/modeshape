@@ -285,16 +285,18 @@ public abstract class IndexProvider {
         preShutdown();
 
         delegateWriter = NoOpQueryIndexWriter.INSTANCE;
-        // Shutdown each of the provided indexes ...
-        for (Map<String, ProvidedIndex> byWorkspaceName : providedIndexesByWorkspaceNameByIndexName.values()) {
-            for (ProvidedIndex provided : byWorkspaceName.values()) {
-                provided.shutdown(false);
+        try {
+            // Shutdown each of the provided indexes ...
+            for (Map<String, ProvidedIndex> byWorkspaceName : providedIndexesByWorkspaceNameByIndexName.values()) {
+                for (ProvidedIndex provided : byWorkspaceName.values()) {
+                    provided.shutdown(false);
+                }
             }
+        } finally {
+            providedIndexesByWorkspaceNameByIndexName.clear();
+            providedIndexesByIndexNameByWorkspaceName.clear();
+            postShutdown();
         }
-        providedIndexesByWorkspaceNameByIndexName.clear();
-        providedIndexesByIndexNameByWorkspaceName.clear();
-
-        postShutdown();
     }
 
     /**

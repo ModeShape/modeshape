@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,17 +34,10 @@ import org.mapdb.Serializer;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
-import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Reference;
-import org.modeshape.jcr.value.ReferenceFactory;
-import org.modeshape.jcr.value.StringFactory;
-import org.modeshape.jcr.value.UriFactory;
 import org.modeshape.jcr.value.ValueFactories;
-import org.modeshape.jcr.value.ValueFactory;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -87,53 +79,29 @@ public class MapDB {
     public static final class SerializerSupplier implements Serializers {
         private final Map<Class<?>, Serializer<?>> serializersByClass;
         private final Map<Class<?>, BTreeKeySerializer<?>> bTreeKeySerializersByClass;
-        private final Map<Class<?>, BTreeKeySerializer<?>> packedBTreeKeySerializersByClass;
 
         protected SerializerSupplier( ValueFactories factories ) {
             // Create the serializers ...
-            final PathFactory pathFactory = factories.getPathFactory();
-            final NameFactory nameFactory = factories.getNameFactory();
-            final StringFactory stringFactory = factories.getStringFactory();
-            final ReferenceFactory refFactory = factories.getReferenceFactory();
-            final UriFactory uriFactory = factories.getUriFactory();
-            final DateTimeFactory dateFactory = factories.getDateFactory();
-            final ValueFactory<BigDecimal> decimalFactory = factories.getDecimalFactory();
             serializersByClass = new HashMap<Class<?>, Serializer<?>>();
             serializersByClass.put(String.class, Serializer.STRING);
             serializersByClass.put(Long.class, Serializer.LONG);
             serializersByClass.put(Boolean.class, Serializer.BOOLEAN);
             serializersByClass.put(Double.class, new DoubleSerializer());
-            serializersByClass.put(BigDecimal.class, new ValueSerializer<BigDecimal>(stringFactory, decimalFactory));
-            serializersByClass.put(URI.class, new ValueSerializer<URI>(stringFactory, uriFactory));
-            serializersByClass.put(DateTime.class, new ValueSerializer<DateTime>(stringFactory, dateFactory));
-            serializersByClass.put(Path.class, new ValueSerializer<Path>(stringFactory, pathFactory));
-            serializersByClass.put(Name.class, new ValueSerializer<Name>(stringFactory, nameFactory));
-            serializersByClass.put(Reference.class, new ValueSerializer<Reference>(stringFactory, refFactory));
+            serializersByClass.put(BigDecimal.class, Serializer.JAVA);
+            serializersByClass.put(URI.class, Serializer.JAVA);
+            serializersByClass.put(DateTime.class, Serializer.JAVA);
+            serializersByClass.put(Path.class, Serializer.JAVA);
+            serializersByClass.put(Name.class, Serializer.JAVA);
+            serializersByClass.put(Reference.class, Serializer.JAVA);
             serializersByClass.put(NodeKey.class, NODE_KEY_SERIALIZER);
 
             bTreeKeySerializersByClass = new HashMap<Class<?>, BTreeKeySerializer<?>>();
-            packedBTreeKeySerializersByClass = new HashMap<Class<?>, BTreeKeySerializer<?>>();
             for (Map.Entry<Class<?>, Serializer<?>> entry : serializersByClass.entrySet()) {
                 Serializer<?> serializer = entry.getValue();
                 @SuppressWarnings( {"rawtypes", "unchecked"} )
                 BTreeKeySerializer<?> bTreeSerializer = new DelegatingKeySerializer(serializer);
                 bTreeKeySerializersByClass.put(entry.getKey(), bTreeSerializer);
-                packedBTreeKeySerializersByClass.put(entry.getKey(), bTreeSerializer);
             }
-
-            // Override some of the types for string-based keys ...
-            packedBTreeKeySerializersByClass.put(String.class,
-                                                 new PackedStringKeySerializer<String>(stringFactory, stringFactory));
-            packedBTreeKeySerializersByClass.put(Name.class, new PackedStringKeySerializer<Name>(stringFactory, nameFactory));
-            packedBTreeKeySerializersByClass.put(Path.class, new PackedStringKeySerializer<Path>(stringFactory, pathFactory));
-            packedBTreeKeySerializersByClass.put(Name.class, new PackedStringKeySerializer<Name>(stringFactory, nameFactory));
-            packedBTreeKeySerializersByClass.put(DateTime.class, new PackedStringKeySerializer<DateTime>(stringFactory,
-                                                                                                         dateFactory));
-            packedBTreeKeySerializersByClass.put(URI.class, new PackedStringKeySerializer<URI>(stringFactory, uriFactory));
-            packedBTreeKeySerializersByClass.put(Reference.class, new PackedStringKeySerializer<Reference>(stringFactory,
-                                                                                                           refFactory));
-            packedBTreeKeySerializersByClass.put(BigDecimal.class, new PackedStringKeySerializer<BigDecimal>(stringFactory,
-                                                                                                             decimalFactory));
         }
 
         @Override
@@ -147,7 +115,7 @@ public class MapDB {
         public BTreeKeySerializer<?> bTreeKeySerializerFor( Class<?> type,
                                                             final Comparator<?> comparator,
                                                             boolean pack ) {
-            Map<Class<?>, BTreeKeySerializer<?>> byClass = pack ? packedBTreeKeySerializersByClass : bTreeKeySerializersByClass;
+            Map<Class<?>, BTreeKeySerializer<?>> byClass = bTreeKeySerializersByClass;
             final BTreeKeySerializer<?> result = byClass.containsKey(type) ? byClass.get(type) : DEFAULT_BTREE_KEY_SERIALIZER;
             // Make sure the serializer uses the type's comparator ...
             if (result instanceof KeySerializerWithComparator) {
@@ -187,6 +155,17 @@ public class MapDB {
         }
 
         @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            return obj instanceof NodeKeySerializer;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
         public int fixedSize() {
             return -1; // not fixed size
         }
@@ -222,6 +201,22 @@ public class MapDB {
                                int end,
                                Object[] keys ) throws IOException {
             original.serialize(out, start, end, keys);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof BTreeKeySerializerWitheComparator) {
+                @SuppressWarnings( "unchecked" )
+                BTreeKeySerializerWitheComparator<T> that = (BTreeKeySerializerWitheComparator<T>)obj;
+                return original.equals(that.original) && comparator.equals(comparator);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -291,7 +286,7 @@ public class MapDB {
 
     public static final class UniqueKeyComparator<K> implements Comparator<UniqueKey<K>>, Serializable {
         private static final long serialVersionUID = 1L;
-        private final transient Comparator<K> valueComparator;
+        private final Comparator<K> valueComparator;
 
         public UniqueKeyComparator( Comparator<K> valueComparator ) {
             this.valueComparator = valueComparator;
@@ -311,6 +306,22 @@ public class MapDB {
             long ldiff = o1.id - o2.id;
             return ldiff == 0L ? 0 : (ldiff <= 0L ? -1 : 1);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof UniqueKeyComparator) {
+                @SuppressWarnings( "unchecked" )
+                UniqueKeyComparator<K> that = (UniqueKeyComparator<K>)obj;
+                return valueComparator.equals(that.valueComparator);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     public static final class ComparableUniqueKeyComparator<K> implements Comparator<UniqueKey<K>>, Serializable {
@@ -325,12 +336,27 @@ public class MapDB {
             long ldiff = o1.id - o2.id;
             return ldiff == 0L ? 0 : (ldiff <= 0L ? -1 : 1);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof ComparableUniqueKeyComparator) {
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
     }
 
     public static final class UniqueKeySerializer<K> implements Serializer<UniqueKey<K>>, Serializable {
         private static final long serialVersionUID = 1L;
-        protected final transient Serializer<K> keySerializer;
-        protected final transient Comparator<UniqueKey<K>> comparator;
+        protected final Serializer<K> keySerializer;
+        protected final Comparator<UniqueKey<K>> comparator;
 
         public UniqueKeySerializer( Serializer<K> keySerializer,
                                     Comparator<UniqueKey<K>> comparator ) {
@@ -359,6 +385,22 @@ public class MapDB {
         }
 
         @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof UniqueKeySerializer) {
+                @SuppressWarnings( "unchecked" )
+                UniqueKeySerializer<K> that = (UniqueKeySerializer<K>)obj;
+                return keySerializer.equals(that.keySerializer) && comparator.equals(that.comparator);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
         public String toString() {
             return "UniqueKeySerializer<" + keySerializer + ">";
         }
@@ -367,8 +409,8 @@ public class MapDB {
 
     public static final class UniqueKeyBTreeSerializer<K> extends BTreeKeySerializer<UniqueKey<K>> implements Serializable {
         private static final long serialVersionUID = 1L;
-        protected final transient Serializer<K> keySerializer;
-        protected final transient Comparator<UniqueKey<K>> comparator;
+        protected final Serializer<K> keySerializer;
+        protected final Comparator<UniqueKey<K>> comparator;
 
         public UniqueKeyBTreeSerializer( Serializer<K> keySerializer,
                                          Comparator<UniqueKey<K>> comparator ) {
@@ -409,6 +451,22 @@ public class MapDB {
         }
 
         @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof UniqueKeyBTreeSerializer) {
+                @SuppressWarnings( "unchecked" )
+                UniqueKeyBTreeSerializer<K> that = (UniqueKeyBTreeSerializer<K>)obj;
+                return keySerializer.equals(that.keySerializer) && comparator.equals(that.comparator);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
         public String toString() {
             return "UniqueKeyBTreeSerializer<" + keySerializer + ">";
         }
@@ -423,6 +481,20 @@ public class MapDB {
                             K o2 ) {
             return o1.compareTo(o2);
         }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof NaturalComparator) {
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
     }
 
     /**
@@ -433,8 +505,8 @@ public class MapDB {
     public static final class DelegatingKeySerializer<K extends Comparable<K>> extends BTreeKeySerializer<K>
         implements Serializable, KeySerializerWithComparator<K> {
         private static final long serialVersionUID = 1L;
-        protected final transient Serializer<K> defaultSerializer;
-        protected final transient Comparator<K> comparator;
+        protected final Serializer<K> defaultSerializer;
+        protected final Comparator<K> comparator;
 
         public DelegatingKeySerializer( Serializer<K> defaultSerializer ) {
             this(defaultSerializer, null);
@@ -482,6 +554,22 @@ public class MapDB {
         }
 
         @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof DelegatingKeySerializer) {
+                @SuppressWarnings( "unchecked" )
+                DelegatingKeySerializer<K> that = (DelegatingKeySerializer<K>)obj;
+                return defaultSerializer.equals(that.defaultSerializer) && comparator.equals(that.comparator);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
         public String toString() {
             return "DelegatingBTreeSerializer<" + defaultSerializer + ">";
         }
@@ -489,89 +577,6 @@ public class MapDB {
 
     public static interface KeySerializerWithComparator<K> {
         BTreeKeySerializer<K> withComparator( Comparator<?> comparator );
-    }
-
-    /**
-     * Applies delta packing on {@code java.lang.String}. This serializer splits consequent strings to two parts: shared prefix
-     * and different suffix. Only suffix is than stored.
-     *
-     * @param <K> the type to be serialized
-     */
-    public static class PackedStringKeySerializer<K extends Comparable<K>> extends BTreeKeySerializer<K>
-        implements Serializable, KeySerializerWithComparator<K> {
-        private static final long serialVersionUID = 1L;
-        private static final Charset UTF8_CHARSET = Charset.forName("UTF8");
-
-        private final transient ValueFactory<K> valueFactory;
-        private final transient StringFactory stringFactory;
-        protected final transient Comparator<K> comparator;
-
-        public PackedStringKeySerializer( StringFactory stringFactory,
-                                          ValueFactory<K> valueFactory ) {
-            this(stringFactory, valueFactory, null);
-        }
-
-        protected PackedStringKeySerializer( StringFactory stringFactory,
-                                             ValueFactory<K> valueFactory,
-                                             Comparator<K> comparator ) {
-            this.valueFactory = valueFactory;
-            this.stringFactory = stringFactory;
-            this.comparator = comparator != null ? comparator : new Comparator<K>() {
-                @Override
-                public int compare( K o1,
-                                    K o2 ) {
-                    return o1.compareTo(o2);
-                }
-            };
-        }
-
-        @SuppressWarnings( "unchecked" )
-        @Override
-        public BTreeKeySerializer<K> withComparator( Comparator<?> comparator ) {
-            if (comparator == null) return this;
-            return new PackedStringKeySerializer<>(stringFactory, valueFactory, (Comparator<K>)comparator);
-        }
-
-        @Override
-        public Comparator<K> getComparator() {
-            return comparator;
-        }
-
-        @Override
-        public void serialize( DataOutput out,
-                               int start,
-                               int end,
-                               Object[] keys ) throws IOException {
-            byte[] previous = null;
-            for (int i = start; i < end; i++) {
-                String key = stringFactory.create(keys[i]);
-                byte[] b = key.getBytes(UTF8_CHARSET);
-                leadingValuePackWrite(out, b, previous, 0);
-                previous = b;
-            }
-        }
-
-        @Override
-        public Object[] deserialize( DataInput in,
-                                     int start,
-                                     int end,
-                                     int size ) throws IOException {
-            Object[] ret = new Object[size];
-            byte[] previous = null;
-            for (int i = start; i < end; i++) {
-                byte[] b = leadingValuePackRead(in, previous, 0);
-                if (b == null) continue;
-                String str = new String(b, UTF8_CHARSET);
-                ret[i] = valueFactory.create(str);
-                previous = b;
-            }
-            return ret;
-        }
-
-        @Override
-        public String toString() {
-            return "ValueSerializer<" + valueFactory.getPropertyType() + ">";
-        }
     }
 
     public static class DoubleSerializer implements Serializer<Double>, Serializable {
@@ -591,44 +596,22 @@ public class MapDB {
         }
 
         @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof DoubleSerializer) {
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
         public int fixedSize() {
             return -1;
-        }
-    }
-
-    public static class ValueSerializer<V> implements Serializer<V>, Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private final transient ValueFactory<V> valueFactory;
-        private final transient StringFactory stringFactory;
-
-        public ValueSerializer( StringFactory stringFactory,
-                                ValueFactory<V> valueFactory ) {
-            this.valueFactory = valueFactory;
-            this.stringFactory = stringFactory;
-        }
-
-        @Override
-        public int fixedSize() {
-            return -1; // not fixed size
-        }
-
-        @Override
-        public void serialize( DataOutput out,
-                               V value ) throws IOException {
-            out.writeUTF(stringFactory.create(value));
-        }
-
-        @Override
-        public V deserialize( DataInput in,
-                              int available ) throws IOException {
-            String pathStr = in.readUTF();
-            return valueFactory.create(pathStr);
-        }
-
-        @Override
-        public String toString() {
-            return "ValueSerializer<" + valueFactory.getPropertyType() + ">";
         }
     }
 
@@ -779,6 +762,22 @@ public class MapDB {
             // Neither is positive infinity, so use the actual comparator ...
             i = bComparator.compare(o1.b, o2.b);
             return i;
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof TupleComparator) {
+                @SuppressWarnings( "unchecked" )
+                TupleComparator<A, B> that = (TupleComparator<A, B>)obj;
+                return aComparator.equals(that.aComparator) && bComparator.equals(that.bComparator);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 

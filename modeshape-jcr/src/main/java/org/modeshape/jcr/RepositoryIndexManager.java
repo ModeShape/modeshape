@@ -167,10 +167,9 @@ class RepositoryIndexManager implements IndexManager {
             }
         }
         // Re-read the index definitions in case there were disabled index definitions that used the now-available provider ...
-        readIndexDefinitions();
+        RepositoryIndexes indexes = readIndexDefinitions();
 
         // Notify the providers of all the index definitions (which we'll treat as "new" since we're just starting up) ...
-        RepositoryIndexes indexes = this.indexes;
         ScanningTasks feedback = new ScanningTasks();
         for (Iterator<Map.Entry<String, IndexProvider>> providerIter = providers.entrySet().iterator(); providerIter.hasNext();) {
             IndexProvider provider = providerIter.next().getValue();
@@ -737,7 +736,8 @@ class RepositoryIndexManager implements IndexManager {
             SessionCache systemCache = repository.createSystemSession(context, false);
             SystemContent system = new SystemContent(systemCache);
             Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions(providers.keySet());
-            return new Indexes(context, indexDefns, nodeTypes);
+            this.indexes = new Indexes(context, indexDefns, nodeTypes);
+            return this.indexes;
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingIndexDefinitions, repository.name());
         }

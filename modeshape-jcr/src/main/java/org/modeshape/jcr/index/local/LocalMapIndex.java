@@ -28,6 +28,7 @@ import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.Fun;
 import org.mapdb.Serializer;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.index.local.IndexValues.Converter;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.value.ValueComparators;
@@ -40,6 +41,8 @@ import org.modeshape.jcr.value.ValueComparators;
  * @param <V> the raw type of value to be added
  */
 abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
+
+    private static final Logger LOGGER = Logger.getLogger(LocalMapIndex.class);
 
     protected final String name;
     protected final String workspace;
@@ -66,12 +69,15 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
         this.converter = converter;
         this.db = db;
         if (db.exists(name)) {
+            LOGGER.debug("Reopening storage for '{0}' index in workspace '{1}'", name, workspaceName);
             this.options = db.getHashMap(name + "/options");
             this.keysByValue = db.getTreeMap(name);
             this.valuesByKey = db.getTreeSet(name + "/inverse");
         } else {
+            LOGGER.debug("Creating storage for '{0}' index in workspace '{1}'", name, workspaceName);
             this.options = db.createHashMap(name + "/options").make();
-            this.keysByValue = db.createTreeMap(name).counterEnable().keySerializer(valueSerializer).make();
+            this.keysByValue = db.createTreeMap(name).counterEnable().comparator(valueSerializer.getComparator())
+                                 .keySerializer(valueSerializer).make();
             // Create the TreeSet used in the reverse mapping, but we have to set a comparator that works in terms of the
             // Fun.Tuple2<String,T> ...
             final Comparator<String> strComparator = ValueComparators.STRING_COMPARATOR;
@@ -129,6 +135,11 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
     @Override
     public void removeAll() {
         keysByValue.clear();
+    }
+
+    @Override
+    public void commit() {
+        db.commit();
     }
 
     @Override

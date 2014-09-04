@@ -581,6 +581,42 @@ public class Tuples {
         Serializer<T> getSerializer( BufferManager bufferMgr );
     }
 
+    protected static final class Tuple2Comparator<T1, T2> implements Comparator<Tuple2<T1, T2>>, Serializable {
+        private static final long serialVersionUID = 1L;
+        private final Comparator<T1> comparator1;
+        private final Comparator<T2> comparator2;
+
+        protected Tuple2Comparator( Comparator<T1> comparator1,
+                                    Comparator<T2> comparator2 ) {
+            this.comparator1 = comparator1;
+            this.comparator2 = comparator2;
+        }
+
+        @Override
+        public int compare( Tuple2<T1, T2> arg0,
+                            Tuple2<T1, T2> arg1 ) {
+            int diff = comparator1.compare(arg0.v1, arg1.v1);
+            if (diff != 0) return diff;
+            return comparator2.compare(arg0.v2, arg1.v2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof Tuple2Comparator) {
+                @SuppressWarnings( "unchecked" )
+                Tuple2Comparator<T1, T2> that = (Tuple2Comparator<T1, T2>)obj;
+                return comparator1.equals(that.comparator1) && comparator2.equals(that.comparator2);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+    }
+
     @SuppressWarnings( "unchecked" )
     protected static final class Tuple2TypeFactory<T1, T2> implements TypeFactory<Tuple2<T1, T2>>, TupleFactory<Tuple2<T1, T2>> {
 
@@ -596,17 +632,7 @@ public class Tuples {
             this.type2 = type2;
             Class<?> clazz = Tuple2.class;
             this.type = (Class<Tuple2<T1, T2>>)clazz;
-            final Comparator<T1> comparator1 = type1.getComparator();
-            final Comparator<T2> comparator2 = type2.getComparator();
-            this.comparator = new Comparator<Tuple2<T1, T2>>() {
-                @Override
-                public int compare( Tuple2<T1, T2> arg0,
-                                    Tuple2<T1, T2> arg1 ) {
-                    int diff = comparator1.compare(arg0.v1, arg1.v1);
-                    if (diff != 0) return diff;
-                    return comparator2.compare(arg0.v2, arg1.v2);
-                }
-            };
+            this.comparator = new Tuple2Comparator<T1, T2>(type1.getComparator(), type2.getComparator());
             this.typeName = "Tuple2<" + type1.getTypeName() + "," + type2.getTypeName() + ">";
         }
 

@@ -116,6 +116,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                 }
             }
         } else {
+            beginChanges();
             for (Change change : changeSet) {
                 if (change instanceof WorkspaceAdded) {
                     WorkspaceAdded added = (WorkspaceAdded)change;
@@ -130,23 +131,41 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                     binaryValueUnused(bvu.getKey());
                 }
             }
+            completeChanges();
         }
     }
 
     /**
-     * Signals the beginning of processing for the changes in a transaction described by a single {@link ChangeSet}.
-     * 
+     * Signals the beginning of processing for the workspace-related changes in a transaction described by a single
+     * {@link ChangeSet}.
+     *
      * @see #completeWorkspaceChanges()
      */
     protected void beginWorkspaceChanges() {
     }
 
     /**
-     * Signals the end of processing for the changes in a transaction described by a single {@link ChangeSet}.
-     * 
+     * Signals the end of processing for the workspace-related changes in a transaction described by a single {@link ChangeSet}.
+     *
      * @see #beginWorkspaceChanges()
      */
     protected void completeWorkspaceChanges() {
+    }
+
+    /**
+     * Signals the beginning of processing for the changes in a transaction described by a single {@link ChangeSet}.
+     *
+     * @see #completeChanges()
+     */
+    protected void beginChanges() {
+    }
+
+    /**
+     * Signals the end of processing for the changes in a transaction described by a single {@link ChangeSet}.
+     *
+     * @see #beginChanges()
+     */
+    protected void completeChanges() {
     }
 
     private void firePropertyChanges( NodeKey key,

@@ -49,4 +49,6 @@ public interface LocalIndex<T> extends Filter, Costable {
 
     void remove( String nodeKey,
                  T value );
+
+    void commit();
 }

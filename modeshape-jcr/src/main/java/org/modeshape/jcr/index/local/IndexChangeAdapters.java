@@ -291,6 +291,18 @@ public class IndexChangeAdapters {
                 index.remove(nodeKey(key));
             }
         }
+
+        @Override
+        protected void completeChanges() {
+            index.commit();
+            super.completeChanges();
+        }
+
+        @Override
+        protected void completeWorkspaceChanges() {
+            index.commit();
+            super.completeWorkspaceChanges();
+        }
     }
 
     protected static final class NodeDepthChangeAdapter extends PathBasedChangeAdapter<Long> {
@@ -461,6 +473,18 @@ public class IndexChangeAdapters {
         protected void removeValues( NodeKey key ) {
             index.remove(nodeKey(key));
         }
+
+        @Override
+        protected void completeChanges() {
+            index.commit();
+            super.completeChanges();
+        }
+
+        @Override
+        protected void completeWorkspaceChanges() {
+            index.commit();
+            super.completeWorkspaceChanges();
+        }
     }
 
     protected static final class SingleValuedPropertyChangeAdapter<T> extends PropertyChangeAdapter<T> {
@@ -559,6 +583,19 @@ public class IndexChangeAdapters {
         protected void removeValues( NodeKey key ) {
             index.remove(nodeKey(key));
         }
+
+        @Override
+        protected void completeChanges() {
+            index.commit();
+            super.completeChanges();
+        }
+
+        @Override
+        protected void completeWorkspaceChanges() {
+            index.commit();
+            super.completeWorkspaceChanges();
+        }
+
     }
 
     protected static abstract class EnumeratedPropertyChangeAdapter extends AbstractPropertyChangeAdapter<String> {
@@ -589,6 +626,18 @@ public class IndexChangeAdapters {
         @Override
         protected void removeValues( NodeKey key ) {
             index.remove(nodeKey(key));
+        }
+
+        @Override
+        protected void completeChanges() {
+            index.commit();
+            super.completeChanges();
+        }
+
+        @Override
+        protected void completeWorkspaceChanges() {
+            index.commit();
+            super.completeWorkspaceChanges();
         }
     }
 

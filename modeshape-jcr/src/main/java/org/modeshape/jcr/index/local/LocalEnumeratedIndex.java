@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.jcr.query.qom.Constraint;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.DB;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.index.local.IndexValues.Converter;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 
@@ -34,6 +35,8 @@ import org.modeshape.jcr.spi.index.IndexConstraints;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 final class LocalEnumeratedIndex implements LocalIndex<String> {
+
+    private static final Logger LOGGER = Logger.getLogger(LocalEnumeratedIndex.class);
 
     static LocalEnumeratedIndex create( String name,
                                         String workspaceName,
@@ -59,6 +62,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
     private final Converter<String> converter;
     private final DB db;
     private final Set<String> possibleValues;
+    private final String workspaceName;
 
     LocalEnumeratedIndex( String name,
                           String workspaceName,
@@ -70,6 +74,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
         this.workspace = workspaceName;
         this.converter = converter;
         this.db = db;
+        this.workspaceName = workspaceName;
         this.possibleValues = possibleValues != null ? new HashSet<String>(possibleValues) : new HashSet<String>();
         this.nodeKeySetsByValue = new ConcurrentSkipListMap<>();
         // Read all of the existing collections ...
@@ -96,8 +101,10 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
         // Try to create the set ...
         Set<String> keySet = null;
         if (db.exists(collectionName)) {
+            LOGGER.debug("Reopening enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspaceName);
             keySet = db.getHashSet(collectionName);
         } else {
+            LOGGER.debug("Creating enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspaceName);
             keySet = db.createHashSet(collectionName).make();
         }
         Set<String> previous = nodeKeySetsByValue.putIfAbsent(value, keySet);
@@ -181,6 +188,11 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
             }
         }
         nodeKeySetsByValue.clear();
+    }
+
+    @Override
+    public void commit() {
+        db.commit();
     }
 
     @Override

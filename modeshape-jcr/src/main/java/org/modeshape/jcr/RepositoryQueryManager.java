@@ -120,6 +120,7 @@ class RepositoryQueryManager implements ChangeSetListener {
                 engineInitLock.unlock();
             }
         }
+        indexManager.shutdown();
     }
 
     void stopReindexing() {

@@ -3,12 +3,12 @@
     "indexProviders" : {
         "local" : {
             "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
-            "directory" : "target/local_index_test_repository"
+            "directory" : "target/local_index_test_repository/localIndexes"
         },
         "secondary" : {
             "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
-            "path" : "local_index/test_repository",
-            "relative-to" : "target/indexes"
+            "path" : "secondary/indexes",
+            "relative-to" : "target/local_index_test_repository"
         },
     },
     "indexes" : {
