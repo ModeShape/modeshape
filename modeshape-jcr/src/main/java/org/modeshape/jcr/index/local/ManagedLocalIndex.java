@@ -32,6 +32,8 @@ public class ManagedLocalIndex implements ManagedIndex {
 
     ManagedLocalIndex( LocalIndex<?> index,
                        IndexChangeAdapter adapter ) {
+        assert adapter != null;
+        assert index != null;
         this.index = index;
         this.adapter = adapter;
     }

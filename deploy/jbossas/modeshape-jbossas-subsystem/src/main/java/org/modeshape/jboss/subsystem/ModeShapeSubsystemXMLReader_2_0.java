@@ -882,7 +882,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                         name = attrValue;
                         break;
                     case CLASSNAME:
-                        ModelAttributes.INDEX_PROVIDER_CLASSNAME.parseAndSetParameter(attrValue, provider, reader);
+                        ModelAttributes.CLASSNAME.parseAndSetParameter(attrValue, provider, reader);
                         if (name == null) name = attrValue;
                         break;
                     case MODULE:

@@ -150,6 +150,10 @@ public class AddIndexProvider extends AbstractAddStepHandler {
         // set the classloader to the package name of the sequencer class
         int index = fqProviderClass.lastIndexOf(".");
         String providerModuleName = index != -1 ? fqProviderClass.substring(0, index) : fqProviderClass;
+        if (providerModuleName.startsWith(ModeShapeExtension.ModuleID.MAIN)) {
+            // Any index provider with this package exists in the main module ...
+            providerModuleName = ModeShapeExtension.ModuleID.MAIN;
+        }
         providerProperties.setProperty(FieldName.CLASSLOADER, providerModuleName);
     }
 
