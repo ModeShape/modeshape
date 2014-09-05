@@ -719,8 +719,12 @@ public abstract class IndexProvider {
                              Name primaryType,
                              Set<Name> mixinTypes,
                              Properties properties ) {
-                for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
-                    adapter.index(workspace, key, path, primaryType, mixinTypes, properties, true);
+                Collection<IndexChangeAdapter> adapters = adaptersByWorkspaceName.get(workspace);
+                if (adapters != null) {
+                    // There are adapters for this workspace ...
+                    for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
+                        if (adapter != null) adapter.index(workspace, key, path, primaryType, mixinTypes, properties, true);
+                    }
                 }
             }
         };

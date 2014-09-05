@@ -417,7 +417,7 @@ public abstract class ManagedLocalIndexBuilder<T> {
                     assert false : "should not ever see this because validation should prevent such indexes from being used";
             }
             assert false : "Should never get here";
-            return null;
+            throw new IllegalArgumentException("Unexpected index kind on: " + defn);
         }
     }
 }

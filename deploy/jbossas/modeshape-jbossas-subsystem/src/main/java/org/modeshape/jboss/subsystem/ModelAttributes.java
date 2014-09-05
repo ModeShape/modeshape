@@ -283,7 +283,7 @@ public class ModelAttributes {
                                                                                                     ModelType.STRING).setXmlName(Attribute.INDEX_KIND.getLocalName())
                                                                                                                      .setAllowExpression(true)
                                                                                                                      .setAllowNull(true)
-                                                                                                                     .setDefaultValue(new ModelNode().set(IndexKind.VALUE.toString().toLowerCase()))
+                                                                                                                     .setDefaultValue(new ModelNode().set(IndexKind.VALUE.toString()))
                                                                                                                      .setValidator(INDEX_KIND_VALIDATOR)
                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                      .build();
@@ -681,7 +681,7 @@ public class ModelAttributes {
     public static final AttributeDefinition[] INDEX_DEFINITION_ATTRIBUTES = {INDEX_KIND, PROVIDER_NAME, NODE_TYPE_NAME,
         INDEX_COLUMNS, PROPERTIES};
 
-    public static final AttributeDefinition[] INDEX_PROVIDER_ATTRIBUTES = {CLASSNAME, MODULE, PROPERTIES};
+    public static final AttributeDefinition[] INDEX_PROVIDER_ATTRIBUTES = {CLASSNAME, MODULE, RELATIVE_TO, PATH, PROPERTIES};
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] SOURCE_ATTRIBUTES = {PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHE_TTL_SECONDS,
