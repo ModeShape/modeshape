@@ -43,9 +43,9 @@ public class AuthFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         String authHeader = ((HttpServletRequest)request).getHeader("Authorization");
-        logger.info("Filter is activated");
+        logger.debug("Filter is activated");
         if (authHeader != null) {
-            logger.info("--------------Catch authentication header");
+            logger.debug("--------------Catch authentication header");
             StringTokenizer st = new StringTokenizer(authHeader);
             if (st.hasMoreTokens()) {
                 String basic = st.nextToken();

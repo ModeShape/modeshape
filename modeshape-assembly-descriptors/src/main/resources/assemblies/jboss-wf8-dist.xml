@@ -116,6 +116,7 @@
                 <include>org.modeshape:modeshape-jcr:jar</include>
                 <include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
                 <include>org.modeshape:modeshape-schematic:jar</include>
+                <include>org.mapdb:mapdb:jar</include>
             </includes>
             <unpack>false</unpack>
         </dependencySet>
@@ -147,15 +148,6 @@
                 The following are not currently included by default; see ModeShape's parent POM
                 <include>org.bouncycastle:*:jar</include>
                 -->
-            </includes>
-        </dependencySet>
-
-        <!-- Module for MapDB (self-contained) -->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.kit.modules.location}/org/mapdb/${mapdb.version}</outputDirectory>
-            <includes>
-                <include>org.mapdb:*:jar</include>
             </includes>
         </dependencySet>
 

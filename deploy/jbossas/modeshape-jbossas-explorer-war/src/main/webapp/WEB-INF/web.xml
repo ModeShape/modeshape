@@ -60,8 +60,6 @@
         <web-resource-collection>
             <web-resource-name>Web-Explorer</web-resource-name>
             <url-pattern>/*</url-pattern>
-            <http-method>GET</http-method>
-            <http-method>POST</http-method>
         </web-resource-collection>
         <!--
             A user must be assigned this role to connect to this web application, 
@@ -72,11 +70,6 @@
         <auth-constraint>
             <role-name>connect</role-name>
         </auth-constraint>
-
-        <user-data-constraint>
-            <!-- transport-guarantee can be CONFIDENTIAL, INTEGRAL, or NONE -->
-            <transport-guarantee>NONE</transport-guarantee>
-        </user-data-constraint>
     </security-constraint>  
       
     <!--
