@@ -15,14 +15,18 @@
  */
 package org.modeshape.test.integration;
 
-import javax.jcr.Session;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.observation.EventJournal;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -34,6 +38,7 @@ import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.observation.Event;
 
 /**
  * Arquillian integration tests that checks if certain "preconfiguration features" work correctly (see standalone-modeshape.xml)
@@ -136,11 +141,21 @@ public class PreconfiguredRepositoryIntegrationTest {
     @FixFor( "MODE-1683" )
     public void shouldEnableJournaling() throws Exception {
         Session session = journalingRepository.login();
+        long now = System.currentTimeMillis();
         session.getRootNode().addNode("testNode");
         session.save();
         session.getNode("/testNode").remove();
         session.save();
+        EventJournal eventJournal = session.getWorkspace().getObservationManager().getEventJournal();
+        eventJournal.skipTo(now);
+        List<String> paths = new ArrayList<>();
+        while (eventJournal.hasNext()) {
+            paths.add(((Event)eventJournal.next()).getPath());
+        }
+        //check the node-added event is there
+        assertTrue("Entry not found in journal", paths.remove("/testNode"));
+        //check the node-removed event is there
+        assertTrue("Entry not found in journal", paths.remove("/testNode"));
         session.logout();
-        ////TODO author=Horia Chiorean date=11/21/13 description=Once JCR event journaling is in place, validate the entry was stored
     }
 }
