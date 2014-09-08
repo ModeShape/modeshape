@@ -58,7 +58,6 @@ public abstract class BufferingSequence extends DelegatingSequence {
                                  boolean useHeap,
                                  boolean allowDuplicates ) {
         super(delegate);
-        assert !delegate.isEmpty();
         assert extractor != null;
         this.workspaceName = workspaceName;
         this.width = delegate.width();

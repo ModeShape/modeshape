@@ -477,6 +477,44 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
     }
 
+    @FixFor( "MODE-2296" )
+    @Test
+    public void shouldUseIndexesEvenWhenLocalIndexDoesNotContainValueUsedInCriteria() throws Exception {
+        registerValueIndex("pathIndex", "nt:unstructured", "Node path index", "*", "someProperty", PropertyType.STRING);
+
+        // print = true;
+
+        // Add a node that uses this type ...
+        Node book1 = session().getRootNode().addNode("myFirstBook");
+        book1.addMixin("mix:title");
+        book1.setProperty("jcr:title", "The Title");
+        book1.setProperty("someProperty", "value1");
+
+        Node book2 = session().getRootNode().addNode("mySecondBook");
+        book2.addMixin("mix:title");
+        book2.setProperty("jcr:title", "A Different Title");
+        book2.setProperty("someProperty", "value2");
+
+        Node other = book2.addNode("chapter");
+        other.setProperty("propA", "a value for property A");
+        other.setProperty("jcr:title", "The Title");
+        other.setProperty("someProperty", "value1");
+
+        Thread.sleep(500L);
+        session.save();
+        Thread.sleep(500L);
+
+        // Issues some queries that should use this index ...
+        String queryStr = "SELECT * FROM [nt:unstructured] WHERE someProperty = 'non-existant'";
+        Query query = jcrSql2Query(queryStr);
+        validateQuery().rowCount(0L).useIndex("pathIndex").validate(query, query.execute());
+
+        // Try with a join ...
+        queryStr = "SELECT a.* FROM [nt:unstructured] AS a JOIN [nt:unstructured] AS b ON a.someProperty = b.someProperty WHERE b.someProperty = 'non-existant-value'";
+        query = jcrSql2Query(queryStr);
+        validateQuery().rowCount(0L).useIndex("pathIndex").validate(query, query.execute());
+    }
+
     protected void registerValueIndex( String indexName,
                                        String indexedNodeType,
                                        String desc,

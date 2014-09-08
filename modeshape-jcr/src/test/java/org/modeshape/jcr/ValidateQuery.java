@@ -358,13 +358,18 @@ public class ValidateQuery {
                     allIndexNames.add(nameOfIndexToUse);
                 }
                 // Look for the indexes ...
+                Set<String> allIndexNamesCopy = new HashSet<>(allIndexNames);
                 boolean foundUsed = false;
                 if (!allIndexNames.isEmpty()) {
                     for (String line : StringUtil.splitLines(plan)) {
                         Matcher matcher = INDEX_NAME_PATTERN.matcher(line);
                         if (matcher.find()) {
                             String name = matcher.group(1);
-                            assertTrue("Index '" + name + "' was included in plan but not expected", allIndexNames.remove(name));
+                            if (allIndexNames.contains(name)) {
+                                allIndexNamesCopy.remove(name);
+                            } else {
+                                fail("Index '" + name + "' was included in plan but not expected");
+                            }
                             boolean isUsed = INDEX_USED_PATTERN.matcher(line).find();
                             if (isUsed) {
                                 assertEquals("Index '" + name + "' was used, but '" + nameOfIndexToUse
@@ -377,7 +382,7 @@ public class ValidateQuery {
                 if (!foundUsed && nameOfIndexToUse != null) {
                     fail("Index '" + nameOfIndexToUse + "' was not used in query as expected");
                 }
-                if (!allIndexNames.isEmpty()) {
+                if (!allIndexNamesCopy.isEmpty()) {
                     fail("Indexes " + allIndexNames + " were found in query plan but not expected");
                 }
             }
