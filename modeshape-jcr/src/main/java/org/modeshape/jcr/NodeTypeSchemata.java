@@ -41,6 +41,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
+import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 
 /**
@@ -62,6 +63,7 @@ public class NodeTypeSchemata implements Schemata {
     private final NodeTypes nodeTypes;
     private final Map<JcrNodeType, Collection<JcrNodeType>> subtypesByName = new HashMap<JcrNodeType, Collection<JcrNodeType>>();
     private final List<JcrPropertyDefinition> pseudoProperties = new ArrayList<JcrPropertyDefinition>();
+    private final Name[] keyPropertyNames;
 
     NodeTypeSchemata( ExecutionContext context,
                       NodeTypes nodeTypes,
@@ -116,8 +118,10 @@ public class NodeTypeSchemata implements Schemata {
         pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.DEPTH, PropertyType.LONG));
         pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.ID, PropertyType.STRING));
 
+        keyPropertyNames = new Name[] {JcrLexicon.UUID, ModeShapeLexicon.ID};
+
         // Create the "ALLNODES" table, which will contain all possible properties ...
-        addAllNodesTable(builder, context, pseudoProperties);
+        addAllNodesTable(builder, context, pseudoProperties, keyPropertyNames);
 
         // Define a view for each node type ...
         for (JcrNodeType nodeType : nodeTypes.getAllNodeTypes()) {
@@ -151,7 +155,8 @@ public class NodeTypeSchemata implements Schemata {
 
     protected final void addAllNodesTable( ImmutableSchemata.Builder builder,
                                            ExecutionContext context,
-                                           List<JcrPropertyDefinition> additionalProperties ) {
+                                           List<JcrPropertyDefinition> additionalProperties,
+                                           Name[] keyPropertyNames ) {
         NamespaceRegistry registry = context.getNamespaceRegistry();
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
 
@@ -223,6 +228,13 @@ public class NodeTypeSchemata implements Schemata {
                 if (!includePseudoColumnsInSelectStar) {
                     builder.excludeFromSelectStar(tableName, columnName);
                 }
+            }
+        }
+        if (keyPropertyNames != null) {
+            StringFactory strings = context.getValueFactories().getStringFactory();
+            for (Name name : keyPropertyNames) {
+                // Add a key for each key property ...
+                builder.addKey(tableName, strings.create(name));
             }
         }
     }
@@ -424,7 +436,7 @@ public class NodeTypeSchemata implements Schemata {
             this.nameFactory = context.getValueFactories().getNameFactory();
             this.builder = ImmutableSchemata.createBuilder(context, session.nodeTypes());
             // Add the "AllNodes" table ...
-            addAllNodesTable(builder, context, null);
+            addAllNodesTable(builder, context, null, null);
             this.schemata = builder.build();
         }
 

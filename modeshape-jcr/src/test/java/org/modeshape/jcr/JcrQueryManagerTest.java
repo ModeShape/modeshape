@@ -25,6 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -688,6 +689,259 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         } catch (RepositoryException e) {
             // expected
         }
+    }
+
+    @FixFor( "MODE-2297" )
+    @Test
+    public void shouldExecuteQueryUsingSetOperationOfQueriesWithoutJoins() throws RepositoryException {
+        // Make sure that /Other/NodeA[3] contains references to /Other/NodeA and /Other/NodeA[2] ...
+        Node nodeA1 = session.getNode("/Other/NodeA");
+        Node nodeA2 = session.getNode("/Other/NodeA[2]");
+        Node nodeA3 = session.getNode("/Other/NodeA[3]");
+        assertThat(nodeA3.getProperty("otherNode").getNode(), is(sameInstance(nodeA1)));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[0].getString(), is(nodeA2.getIdentifier()));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[1].getString(), is(nodeA3.getIdentifier()));
+
+        // print = true;
+        String sql1 = "SELECT [jcr:path] FROM [nt:unstructured] AS other WHERE ISCHILDNODE(other,'/Other')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql2 = "SELECT [jcr:path] FROM [nt:unstructured] AS category WHERE ISCHILDNODE(category,'/Cars')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql = sql1 + " UNION " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = sql2 + " UNION " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql1 + " EXCEPT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql2 + " EXCEPT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2297" )
+    @Test
+    public void shouldExecuteQueryUsingSetOperationOfQueriesWithJoins() throws RepositoryException {
+        // Make sure that /Other/NodeA[3] contains references to /Other/NodeA and /Other/NodeA[2] ...
+        Node nodeA1 = session.getNode("/Other/NodeA");
+        Node nodeA2 = session.getNode("/Other/NodeA[2]");
+        Node nodeA3 = session.getNode("/Other/NodeA[3]");
+        assertThat(nodeA3.getProperty("otherNode").getNode(), is(sameInstance(nodeA1)));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[0].getString(), is(nodeA2.getIdentifier()));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[1].getString(), is(nodeA3.getIdentifier()));
+
+        // print = true;
+        String sql1 = "SELECT nodeA.[jcr:path] FROM [nt:unstructured] AS other JOIN [nt:unstructured] AS nodeA ON ISCHILDNODE(nodeA,other) WHERE PATH(other) = '/Other'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql2 = "SELECT category.[jcr:path] FROM [nt:unstructured] AS category JOIN [nt:unstructured] AS cars ON ISCHILDNODE(category,cars) WHERE PATH(cars) = '/Cars'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql = sql1 + " UNION " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = sql2 + " UNION " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " EXCEPT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql2 + " EXCEPT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2297" )
+    @Test
+    public void shouldExecuteQueryUsingSetOperationOfQueriesWithUnnecessaryIdentityJoinViaSameNodeJoinCriteria()
+        throws RepositoryException {
+        // Make sure that /Other/NodeA[3] contains references to /Other/NodeA and /Other/NodeA[2] ...
+        Node nodeA1 = session.getNode("/Other/NodeA");
+        Node nodeA2 = session.getNode("/Other/NodeA[2]");
+        Node nodeA3 = session.getNode("/Other/NodeA[3]");
+        assertThat(nodeA3.getProperty("otherNode").getNode(), is(sameInstance(nodeA1)));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[0].getString(), is(nodeA2.getIdentifier()));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[1].getString(), is(nodeA3.getIdentifier()));
+
+        // print = true;
+        String sql1 = "SELECT nodeA.[jcr:path] FROM [nt:unstructured] AS other "
+                      + "JOIN [nt:unstructured] AS nodeA ON ISCHILDNODE(nodeA,other) "//
+                      + "JOIN [nt:unstructured] AS unused ON ISSAMENODE(other,unused) "//
+                      + "WHERE PATH(other) = '/Other'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql2 = "SELECT category.[jcr:path] FROM [nt:unstructured] AS category "
+                      + "JOIN [nt:unstructured] AS cars ON ISCHILDNODE(category,cars) "//
+                      + "JOIN [nt:unstructured] AS unused ON ISSAMENODE(cars,unused) "//
+                      + "WHERE PATH(cars) = '/Cars'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql = sql1 + " UNION " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = sql2 + " UNION " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " EXCEPT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql2 + " EXCEPT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2297" )
+    @Test
+    public void shouldExecuteQueryUsingSetOperationOfQueriesWithOneSideReturningNoResults() throws RepositoryException {
+        // Make sure that /Other/NodeA[3] contains references to /Other/NodeA and /Other/NodeA[2] ...
+        Node nodeA1 = session.getNode("/Other/NodeA");
+        Node nodeA2 = session.getNode("/Other/NodeA[2]");
+        Node nodeA3 = session.getNode("/Other/NodeA[3]");
+        assertThat(nodeA3.getProperty("otherNode").getNode(), is(sameInstance(nodeA1)));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[0].getString(), is(nodeA2.getIdentifier()));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[1].getString(), is(nodeA3.getIdentifier()));
+
+        // print = true;
+        String sql1 = "SELECT nodeA.[jcr:path] FROM [nt:unstructured] AS other "
+                      + "JOIN [nt:unstructured] AS nodeA ON ISCHILDNODE(nodeA,other) "//
+                      + "JOIN [nt:unstructured] AS unused ON ISSAMENODE(other,unused) "//
+                      + "WHERE PATH(other) = '/Other'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql2 = "SELECT category.[jcr:path] FROM [nt:unstructured] AS category "
+                      + "JOIN [nt:unstructured] AS cars ON ISCHILDNODE(category,cars) "//
+                      + "JOIN [nt:unstructured] AS unused ON ISSAMENODE(cars,unused) "//
+                      + "WHERE PATH(cars) = '/NonExistantNode'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        String sql = sql1 + " UNION " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql2 + " UNION " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " EXCEPT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql2 + " EXCEPT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2297" )
+    @Test
+    public void shouldExecuteQueryUsingSetOperationOfQueriesWithUnnecessaryIdentityJoinViaEquiJoinCriteria()
+        throws RepositoryException {
+        // Make sure that /Other/NodeA[3] contains references to /Other/NodeA and /Other/NodeA[2] ...
+        Node nodeA1 = session.getNode("/Other/NodeA");
+        Node nodeA2 = session.getNode("/Other/NodeA[2]");
+        Node nodeA3 = session.getNode("/Other/NodeA[3]");
+        assertThat(nodeA3.getProperty("otherNode").getNode(), is(sameInstance(nodeA1)));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[0].getString(), is(nodeA2.getIdentifier()));
+        assertThat(nodeA3.getProperty("otherNodes").getValues()[1].getString(), is(nodeA3.getIdentifier()));
+
+        // print = true;
+        String sql1 = "SELECT nodeA.[jcr:path] FROM [nt:unstructured] AS other "
+                      + "JOIN [nt:unstructured] AS nodeA ON ISCHILDNODE(nodeA,other) "//
+                      + "JOIN [nt:unstructured] AS unused ON other.[jcr:uuid] = unused.[jcr:uuid] "//
+                      + "WHERE PATH(other) = '/Other'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql2 = "SELECT category.[jcr:path] FROM [nt:unstructured] AS category "
+                      + "JOIN [nt:unstructured] AS cars ON ISCHILDNODE(category,cars) "//
+                      + "JOIN [nt:unstructured] AS unused ON cars.[jcr:uuid] = unused.[jcr:uuid] "//
+                      + "WHERE PATH(cars) = '/Cars'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        String sql = sql1 + " UNION " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = sql2 + " UNION " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(8).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " EXCEPT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+
+        sql = sql2 + " EXCEPT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
     }
 
     @SuppressWarnings( "deprecation" )

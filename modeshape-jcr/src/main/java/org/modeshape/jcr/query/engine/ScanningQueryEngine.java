@@ -37,11 +37,13 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.ArrayListMultimap;
 import org.modeshape.common.collection.Multimap;
+import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.GraphI18n;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.NodeTypes;
@@ -217,7 +219,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
      */
     @Override
     public QueryResults execute( final QueryContext queryContext,
-                                 QueryCommand query ) throws QueryCancelledException, RepositoryException {
+                                 final QueryCommand query ) throws QueryCancelledException, RepositoryException {
         CheckArg.isNotNull(queryContext, "queryContext");
         CheckArg.isNotNull(query, "query");
         final ScanQueryContext context = (ScanQueryContext)queryContext;
@@ -292,9 +294,10 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                         case SET_OPERATION:
                             leftColumns = context.columnsFor(node.getFirstChild());
                             rightColumns = context.columnsFor(node.getLastChild());
-                            assert leftColumns.isUnionCompatible(rightColumns);
-                            columns = leftColumns;
-                            assert columns != null;
+                            if (checkUnionCompatible(leftColumns, rightColumns, context, query)) {
+                                columns = leftColumns;
+                                assert columns != null;
+                            }
                             break;
                         case INDEX:
                             // do nothing with indexes ...
@@ -310,6 +313,11 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     }
                 }
             });
+            if (context.getProblems().hasErrors()) {
+                Problem problem = context.getProblems().iterator().next();
+                throw new RepositoryException(problem.getMessageString(), problem.getThrowable());
+            }
+
             resultColumns = context.columnsFor(optimizedPlan);
             assert resultColumns != null;
             duration = Math.abs(System.nanoTime() - start);
@@ -347,6 +355,43 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         int width = resultColumns.getColumns().size();
         CachedNodeSupplier cachedNodes = context.getNodeCache(workspaceName);
         return new Results(resultColumns, stats, NodeSequence.emptySequence(width), cachedNodes, context.getProblems(), null);
+    }
+
+    /**
+     * Determine whether this column and the other are <i>union-compatible</i> (that is, having the same columns).
+     *
+     * @param results1 the first result set; may not be null
+     * @param results2 the second result set; may not be null
+     * @param context the query execution context; may not be null
+     * @param query the query being executed; may not be null
+     * @return true if the supplied columns definition are union-compatible, or false if they are not
+     */
+    protected boolean checkUnionCompatible( Columns results1,
+                                            Columns results2,
+                                            ScanQueryContext context,
+                                            QueryCommand query ) {
+        if (results1 == results2) return true;
+        if (results1 == null || results2 == null) return false;
+        if (results1.hasFullTextSearchScores() != results2.hasFullTextSearchScores()) return false;
+        if (results1.getColumns().size() != results2.getColumns().size()) return false;
+        // Go through the columns and make sure that the property names and types match ...
+        // (we can't just check column names, since the column names may include the selector if more than one selector)
+        int numColumns = results1.getColumns().size();
+        boolean noProblems = true;
+        for (int i = 0; i != numColumns; ++i) {
+            Column thisColumn = results1.getColumns().get(i);
+            Column thatColumn = results2.getColumns().get(i);
+            if (!thisColumn.getPropertyName().equalsIgnoreCase(thatColumn.getPropertyName())) return false;
+            String thisType = results1.getColumnTypeForProperty(thisColumn.getSelectorName(), thisColumn.getPropertyName());
+            String thatType = results2.getColumnTypeForProperty(thatColumn.getSelectorName(), thatColumn.getPropertyName());
+            if (!thisType.equalsIgnoreCase(thatType)) {
+                // The query is not compatible
+                context.getProblems().addError(JcrI18n.setQueryContainsResultSetsWithDifferentColumns, thisColumn, thatColumn,
+                                               query);
+                noProblems = false;
+            }
+        }
+        return noProblems;
     }
 
     /**
@@ -771,15 +816,23 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 pack = false;
                 switch (operation) {
                     case UNION: {
+                        // If one of them is empty, return the other ...
+                        if (first.isEmpty()) return second;
+                        if (second.isEmpty()) return first;
                         // This is really just a sequence with the two parts ...
                         rows = NodeSequence.append(first, second);
                         break;
                     }
                     case INTERSECT: {
+                        // If one of them is empty, there are no results ...
+                        if (first.isEmpty()) return first;
+                        if (second.isEmpty()) return second;
                         rows = new IntersectSequence(workspaceName, first, second, types, bufferManager, cache, pack, useHeap);
                         break;
                     }
                     case EXCEPT: {
+                        // If the second is empty, there's nothing to exclude ...
+                        if (second.isEmpty()) return first;
                         rows = new ExceptSequence(workspaceName, first, second, types, bufferManager, cache, pack, useHeap);
                         break;
                     }
@@ -2818,16 +2871,6 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         @Override
         public boolean hasFullTextSearchScores() {
             return includeFullTextSearchScores;
-        }
-
-        @Override
-        public boolean isUnionCompatible( org.modeshape.jcr.query.QueryResults.Columns other ) {
-            if (this == other) return true;
-            if (other == null) return false;
-            if (this.hasFullTextSearchScores() != other.hasFullTextSearchScores()) return false;
-            if (this.getColumns().size() != other.getColumns().size()) return false;
-            return this.getColumnNames().containsAll(other.getColumnNames())
-                   && other.getColumnNames().containsAll(this.getColumnNames());
         }
 
         @Override

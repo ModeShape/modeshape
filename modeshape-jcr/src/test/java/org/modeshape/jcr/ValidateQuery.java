@@ -35,6 +35,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.Query;
@@ -256,10 +257,11 @@ public class ValidateQuery {
                 }
                 throw e;
             }
+            NodeIterator nodes = null;
             if (result.getSelectorNames().length != 1) {
                 // Make sure that we cannot get the multi-selector results from this single-selector results ...
                 try {
-                    result.getNodes();
+                    nodes = result.getNodes();
                     if (!print) {
                         // print anyway since this is an error
                         print(query, result);
@@ -289,15 +291,24 @@ public class ValidateQuery {
             }
             if (print) printer.printFooter();
             assertRowCount(iter.getSize());
+
+            if (nodes != null) {
+                // Check the results via node iterator ...
+                while (nodes.hasNext()) {
+                    Node node = nodes.nextNode();
+                    assert node != null || node == null; // duh!
+                    // if (print) printer.printNode(node);
+                }
+            }
         }
 
         protected boolean validateRowCount( long actual ) {
-            if (numRows < 0L) return true;
+            if (actual < 0L || numRows < 0L) return true;
             return actual == numRows;
         }
 
         protected void assertRowCount( long actual ) {
-            if (numRows >= 0L) assertThat(actual, is(numRows));
+            if (actual >= 0L && numRows >= 0L) assertThat(actual, is(numRows));
         }
 
         protected void validateWarnings( QueryResult result ) {
@@ -488,6 +499,14 @@ public class ValidateQuery {
                 System.out.print(" | ");
                 System.out.print(valueAsString(row.getValue(columnName), columnIndex++));
             }
+            System.out.println(" |");
+        }
+
+        protected void printNode( Node node ) throws RepositoryException {
+            System.out.print("| ");
+            System.out.print(rowNumberStr());
+            System.out.print(" | ");
+            System.out.print(node.getPath());
             System.out.println(" |");
         }
     }
