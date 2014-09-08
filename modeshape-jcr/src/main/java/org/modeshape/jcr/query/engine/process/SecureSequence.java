@@ -58,4 +58,9 @@ public class SecureSequence extends DelegatingSequence {
         //we do not know up front how many rows there will be
         return -1;
     }
+
+    @Override
+    public String toString() {
+        return "(secure " + super.delegate + ")";
+    }
 }

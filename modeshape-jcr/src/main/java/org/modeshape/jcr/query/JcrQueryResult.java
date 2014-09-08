@@ -167,8 +167,10 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         accessed = true;
         final Columns columns = results.getColumns();
         if (columns.getSelectorNames().size() == 1) {
-            return new SingleSelectorQueryResultRowIterator(context, queryStatement, sequence, results.getColumns());
+            // Then we know that there is only one selector in the results ...
+            return new SingleSelectorQueryResultRowIterator(context, queryStatement, sequence, columns);
         }
+        // There may be 1 or more selectors in the columns, but the results definitely have more than one selector ...
         return new QueryResultRowIterator(context, queryStatement, sequence, results.getColumns());
     }
 
@@ -445,7 +447,13 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
                                                         NodeSequence sequence,
                                                         Columns columns ) {
             super(context, query, sequence, columns);
-            this.selectorIndex = columns.getSelectorIndex(columns.getSelectorNames().get(0));
+            int selectorIndex = columns.getSelectorIndex(columns.getSelectorNames().get(0));
+            if (selectorIndex >= sequence.width()) {
+                // The columns were built on top of other columns that expose multiple selectors, but this sequenc only has
+                // one selector ...
+                selectorIndex = 0;
+            }
+            this.selectorIndex = selectorIndex;
         }
 
         @Override
