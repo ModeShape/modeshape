@@ -862,6 +862,25 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     }
 
     /**
+     * Replace this plan's use of the named selector with the replacement. to this plan node. This method does nothing if either
+     * of the supplied selector names is null, or if the supplied original selector name is not found.
+     *
+     * @param original the selector name to be replaced
+     * @param replacement the selector name to replace the original
+     * @return true if the replacement was made, or false otherwise
+     */
+    public boolean replaceSelector( SelectorName original,
+                                    SelectorName replacement ) {
+        if (original != null && replacement != null) {
+            if (selectors.remove(original)) {
+                selectors.add(replacement);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Get the selectors that are referenced by this plan node.
      *
      * @return the names of the selectors; never null but possibly empty

@@ -22,7 +22,9 @@ import java.util.Map;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.query.QueryContext;
+import org.modeshape.jcr.query.model.AllNodes;
 import org.modeshape.jcr.query.model.Column;
+import org.modeshape.jcr.query.model.Constraint;
 import org.modeshape.jcr.query.model.EquiJoinCondition;
 import org.modeshape.jcr.query.model.JoinCondition;
 import org.modeshape.jcr.query.model.SameNodeJoinCondition;
@@ -155,6 +157,7 @@ public class RewriteIdentityJoins implements OptimizerRule {
             }
 
             // Now rewrite the various portions of the plan that make use of the now-removed selectors ...
+            rewrittenSelectors.remove(AllNodes.ALL_NODES_NAME); // don't replace the __ALLNODES__ source
             PlanUtil.replaceReferencesToRemovedSource(context, plan, rewrittenSelectors);
 
             assert rewrittenJoins > 0;
@@ -186,6 +189,10 @@ public class RewriteIdentityJoins implements OptimizerRule {
             if (leftProject != null) {
                 List<Column> leftColumns = leftProject.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
                 for (Column rightColumn : rightProject.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class)) {
+                    for (SelectorName leftSelector : leftProject.getSelectors()) {
+                        rightColumn = rightColumn.with(leftSelector);
+                        break;
+                    }
                     if (!leftColumns.contains(rightColumn)) leftColumns.add(rightColumn);
                 }
             } else {
@@ -194,21 +201,6 @@ public class RewriteIdentityJoins implements OptimizerRule {
                 leftProject.setProperty(Property.PROJECT_COLUMNS, rightProject.getProperty(Property.PROJECT_COLUMNS));
                 leftChild.getFirstChild().insertAsParent(leftProject);
             }
-        }
-
-        // Accumulate any SELECT nodes from the right side and add to the left ...
-        PlanNode topRightSelect = rightChild.findAtOrBelow(Type.SELECT);
-        if (topRightSelect != null) {
-            PlanNode bottomRightSelect = topRightSelect;
-            while (true) {
-                if (bottomRightSelect.getFirstChild().isNot(Type.SELECT)) break;
-                bottomRightSelect = bottomRightSelect.getFirstChild();
-            }
-            topRightSelect.setParent(null);
-            bottomRightSelect.removeAllChildren();
-            // Place just above the left source ...
-            leftSource.getParent().addLastChild(topRightSelect);
-            leftSource.setParent(bottomRightSelect);
         }
 
         // Now record that references to the right selector name should be removed ...
@@ -223,6 +215,43 @@ public class RewriteIdentityJoins implements OptimizerRule {
             assert leftTableName != null;
             if (rightTableName != null) rewrittenSelectors.put(rightTableName, leftTableName);
             if (rightTableAlias != null) rewrittenSelectors.put(rightTableAlias, leftTableName);
+        }
+
+        // Accumulate any SELECT nodes from the right side and add to the left ...
+        PlanNode topRightSelect = rightChild.findAtOrBelow(Type.SELECT);
+        if (topRightSelect != null) {
+            PlanNode bottomRightSelect = topRightSelect;
+            replaceInSelectNodeReferencesToRemovedSource(context, topRightSelect, rewrittenSelectors);
+            while (true) {
+                if (bottomRightSelect.getFirstChild().isNot(Type.SELECT)) break;
+                bottomRightSelect = bottomRightSelect.getFirstChild();
+                replaceInSelectNodeReferencesToRemovedSource(context, bottomRightSelect, rewrittenSelectors);
+            }
+            topRightSelect.setParent(null);
+            bottomRightSelect.removeAllChildren();
+
+            // Place just above the left source ...
+            leftSource.getParent().addLastChild(topRightSelect);
+            leftSource.setParent(bottomRightSelect);
+        }
+
+        // Eliminate any SELECT nodes with duplicate criteria ...
+        PlanUtil.removeDuplicateSelectNodesUnderEachAccessNode(context, leftChild);
+    }
+
+    private void replaceInSelectNodeReferencesToRemovedSource( QueryContext context,
+                                                               PlanNode selectNode,
+                                                               Map<SelectorName, SelectorName> rewrittenSelectors ) {
+        Constraint constraint = selectNode.getProperty(PlanNode.Property.SELECT_CRITERIA, Constraint.class);
+        Constraint newConstraint = PlanUtil.replaceReferencesToRemovedSource(context, constraint, rewrittenSelectors);
+        if (constraint != newConstraint) {
+            selectNode.setProperty(PlanNode.Property.SELECT_CRITERIA, newConstraint);
+        }
+        for (SelectorName selectorName : selectNode.getSelectors()) {
+            SelectorName replacement = rewrittenSelectors.get(selectorName);
+            if (replacement != null) {
+                selectNode.replaceSelector(selectorName, replacement);
+            }
         }
     }
 

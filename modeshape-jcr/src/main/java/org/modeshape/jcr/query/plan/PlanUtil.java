@@ -564,6 +564,8 @@ public class PlanUtil {
             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
             SelectorName replacement1 = rewrittenSelectors.get(condition.selector1Name());
             SelectorName replacement2 = rewrittenSelectors.get(condition.selector2Name());
+            if (replacement1 == null) replacement1 = condition.selector1Name();
+            if (replacement2 == null) replacement2 = condition.selector1Name();
             if (replacement1 == condition.selector1Name() && replacement2 == condition.selector2Name()) return condition;
             return new EquiJoinCondition(replacement1, condition.getProperty1Name(), replacement2, condition.getProperty2Name());
         }
@@ -571,6 +573,8 @@ public class PlanUtil {
             SameNodeJoinCondition condition = (SameNodeJoinCondition)joinCondition;
             SelectorName replacement1 = rewrittenSelectors.get(condition.selector1Name());
             SelectorName replacement2 = rewrittenSelectors.get(condition.selector2Name());
+            if (replacement1 == null) replacement1 = condition.selector1Name();
+            if (replacement2 == null) replacement2 = condition.selector1Name();
             if (replacement1 == condition.selector1Name() && replacement2 == condition.selector2Name()) return condition;
             return new SameNodeJoinCondition(replacement1, replacement2, condition.getSelector2Path());
         }
@@ -578,6 +582,8 @@ public class PlanUtil {
             ChildNodeJoinCondition condition = (ChildNodeJoinCondition)joinCondition;
             SelectorName childSelector = rewrittenSelectors.get(condition.childSelectorName());
             SelectorName parentSelector = rewrittenSelectors.get(condition.parentSelectorName());
+            if (childSelector == null) childSelector = condition.childSelectorName();
+            if (parentSelector == null) parentSelector = condition.parentSelectorName();
             if (childSelector == condition.childSelectorName() && parentSelector == condition.parentSelectorName()) return condition;
             return new ChildNodeJoinCondition(parentSelector, childSelector);
         }
@@ -585,6 +591,8 @@ public class PlanUtil {
             DescendantNodeJoinCondition condition = (DescendantNodeJoinCondition)joinCondition;
             SelectorName ancestor = rewrittenSelectors.get(condition.ancestorSelectorName());
             SelectorName descendant = rewrittenSelectors.get(condition.descendantSelectorName());
+            if (ancestor == null) ancestor = condition.ancestorSelectorName();
+            if (descendant == null) descendant = condition.descendantSelectorName();
             if (ancestor == condition.ancestorSelectorName() && descendant == condition.descendantSelectorName()) return condition;
             return new ChildNodeJoinCondition(ancestor, descendant);
         }
@@ -1410,6 +1418,21 @@ public class PlanUtil {
         }
 
         return node;
+    }
+
+    public static void removeDuplicateSelectNodesUnderEachAccessNode( QueryContext context,
+                                                                      PlanNode node ) {
+        // For each of the ACCESS queries ...
+        for (PlanNode access : node.findAllAtOrBelow(Type.ACCESS)) {
+            Set<Constraint> existingCriteria = new HashSet<>();
+            for (PlanNode select : access.findAllAtOrBelow(Type.SELECT)) {
+                Constraint constraint = select.getProperty(Property.SELECT_CRITERIA, Constraint.class);
+                if (!existingCriteria.add(constraint)) {
+                    // It was already found, so remove this node ...
+                    select.extractFromParent();
+                }
+            }
+        }
     }
 
     protected static class AbsentColumn extends ImmutableColumn {

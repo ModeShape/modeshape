@@ -182,14 +182,6 @@ public interface QueryResults {
         public boolean hasFullTextSearchScores();
 
         /**
-         * Determine whether this column and the other are <i>union-compatible</i> (that is, having the same columns).
-         * 
-         * @param other the other mapping; may not be null
-         * @return true if this and the supplied columns definition are union-compatible, or false if they are not
-         */
-        public boolean isUnionCompatible( Columns other );
-
-        /**
          * Return a new Columns that is a superset combination of both this Columns and the supplied Columns.
          * 
          * @param other the other columns; may not be null
