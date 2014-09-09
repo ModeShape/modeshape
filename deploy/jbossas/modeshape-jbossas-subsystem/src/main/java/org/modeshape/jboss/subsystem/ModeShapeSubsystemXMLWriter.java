@@ -487,20 +487,22 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                         writer.writeAttribute(property.getName(), property.getValue().asString());
                     }
                 }
-                List<ModelNode> pathExpressions = prop.get(ModelKeys.PATH_EXPRESSIONS).asList();
-                switch (pathExpressions.size()) {
-                    case 0:
-                        break;
-                    case 1:
-                        ModelNode pathExpression = pathExpressions.iterator().next();
-                        writer.writeAttribute(Attribute.PATH_EXPRESSION.getLocalName(), pathExpression.asString());
-                        break;
-                    default:
-                        for (ModelNode pathExpr : pathExpressions) {
-                            writer.writeStartElement(Element.PATH_EXPRESSION.getLocalName());
-                            writer.writeCharacters(pathExpr.asString());
-                            writer.writeEndElement();
-                        }
+                if (has(prop, ModelKeys.PATH_EXPRESSIONS)) {
+                    List<ModelNode> pathExpressions = prop.get(ModelKeys.PATH_EXPRESSIONS).asList();
+                    switch (pathExpressions.size()) {
+                        case 0:
+                            break;
+                        case 1:
+                            ModelNode pathExpression = pathExpressions.iterator().next();
+                            writer.writeAttribute(Attribute.PATH_EXPRESSION.getLocalName(), pathExpression.asString());
+                            break;
+                        default:
+                            for (ModelNode pathExpr : pathExpressions) {
+                                writer.writeStartElement(Element.PATH_EXPRESSION.getLocalName());
+                                writer.writeCharacters(pathExpr.asString());
+                                writer.writeEndElement();
+                            }
+                    }
                 }
                 writer.writeEndElement();
             }

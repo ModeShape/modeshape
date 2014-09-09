@@ -160,6 +160,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
+    public void testSequencingConfiguration() throws Exception {
+        standardSubsystemTest("sequencing");
+    }
+
+    @Test
     public void testSchema() throws Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
         validate(subsystemXml);
