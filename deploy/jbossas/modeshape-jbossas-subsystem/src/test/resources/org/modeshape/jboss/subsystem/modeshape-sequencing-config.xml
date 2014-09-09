@@ -1,0 +1,12 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+    <repository name="sample">
+        <sequencers>
+            <sequencer name="modeshape-sequencer-ddl1" classname="ddl"/>
+            <sequencer name="modeshape-sequencer-java" classname="java" path-expression="//a/b" extra1="value1" extra2="2"/>
+            <sequencer name="modeshape-sequencer-ddl2" classname="ddl">
+                <path-expression>//a/b/</path-expression>
+                <path-expression>//a/b2/</path-expression>
+            </sequencer>
+        </sequencers>
+    </repository>
+</subsystem>

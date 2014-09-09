@@ -548,8 +548,8 @@ public class ModelAttributes {
                                                                                                                                                                   .setValidator(PATH_EXPRESSION_VALIDATOR)
                                                                                                                                                                   .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                                                                   .build())
-                                                                                                        .setAllowNull(false)
-                                                                                                        .setMinSize(1)
+                                                                                                        .setAllowNull(true)
+                                                                                                        .setMinSize(0)
                                                                                                         .setFieldPathInRepositoryConfiguration(FieldName.SEQUENCING,
                                                                                                                                                FieldName.SEQUENCERS,
                                                                                                                                                FieldName.PATH_EXPRESSIONS)

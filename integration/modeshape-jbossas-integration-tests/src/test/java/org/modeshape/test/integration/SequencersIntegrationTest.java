@@ -24,6 +24,7 @@
 
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.EventIterator;
@@ -48,7 +50,9 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.observation.Event;
@@ -162,6 +166,25 @@ public class SequencersIntegrationTest {
         uploadFileAndAssertSequenced("/MyBooksView.xmi",
                                      "/derived/teiid/models",
                                      "org.modeshape.sequencer.teiid.model.ModelSequencer");
+    }
+
+    @Test
+    @FixFor( "MODE-2288" )
+    public void shouldManuallySequenceZip() throws Exception {
+        JcrSession session = repository.login("default");
+        ((Node) session.getRootNode()).addNode("output");
+
+        InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("sequencer/zip_file_1.zip");
+        assertNotNull(resourceAsStream);
+        jcrTools.uploadFile(session, "/testRoot/zip", resourceAsStream);
+        session.save();
+
+        Node output = session.getNode("/output");
+        Property binaryProperty = session.getProperty("/testRoot/zip/jcr:content/jcr:data");
+        session.sequence("zip-sequencer-manual", binaryProperty, output);
+        session.save();
+
+        assertEquals(1, ((Node) session.getNode("/output")).getNodes().getSize());
     }
 
     private void uploadFileAndAssertSequenced( String fileName,
