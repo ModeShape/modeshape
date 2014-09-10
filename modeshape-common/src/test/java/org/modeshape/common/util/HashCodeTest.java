@@ -36,9 +36,9 @@ public class HashCodeTest {
 
     @Test
     public void shouldComputeHashCodeForOnePrimitive() {
-        assertThat(HashCode.compute(1), is(not(0)));
+        assertThat(HashCode._compute(1), is(not(0)));
         assertThat(HashCode.compute((long)8), is(not(0)));
-        assertThat(HashCode.compute((short)3), is(not(0)));
+        assertThat(HashCode._compute((short)3), is(not(0)));
         assertThat(HashCode.compute(1.0f), is(not(0)));
         assertThat(HashCode.compute(1.0d), is(not(0)));
         assertThat(HashCode.compute(true), is(not(0)));
@@ -59,7 +59,7 @@ public class HashCodeTest {
     @Test
     public void shouldAcceptNullArguments() {
         assertThat(HashCode.compute((Object)null), is(0));
-        assertThat(HashCode.compute("abc", (Object)null), is(not(0)));
+        assertThat(HashCode.compute("abc", null), is(not(0)));
     }
 
 }
