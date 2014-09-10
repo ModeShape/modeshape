@@ -30,6 +30,7 @@ import org.modeshape.jcr.NodeTypes.Supplier;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
+import org.modeshape.jcr.cache.change.ChangeSetAdapter.NodeTypePredicate;
 import org.modeshape.jcr.index.local.IndexValues.Converter;
 import org.modeshape.jcr.index.local.MapDB.Serializers;
 import org.modeshape.jcr.spi.index.provider.IndexChangeAdapter;
@@ -53,14 +54,16 @@ public abstract class ManagedLocalIndexBuilder<T> {
      * @param context the execution context in which the index should operate; may not be null
      * @param defn the index definition; may not be null
      * @param nodeTypesSupplier the supplier of the {@link NodeTypes} instance; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @return the index builder; never null
      */
     public static <T> ManagedLocalIndexBuilder<T> create( ExecutionContext context,
                                                           IndexDefinition defn,
-                                                          Supplier nodeTypesSupplier ) {
+                                                          Supplier nodeTypesSupplier,
+                                                          NodeTypePredicate matcher ) {
         if (defn.hasSingleColumn()) {
             PropertyType actualPropertyType = determineActualPropertyType(defn.getColumnDefinition(0));
-            return new SingleColumnIndexBuilder<T>(context, defn, nodeTypesSupplier, actualPropertyType);
+            return new SingleColumnIndexBuilder<T>(context, defn, nodeTypesSupplier, matcher, actualPropertyType);
         }
         throw new LocalIndexException("The local provider does not support multi-column indexes");
     }
@@ -95,14 +98,17 @@ public abstract class ManagedLocalIndexBuilder<T> {
     protected final Serializers serializers;
     protected final Supplier nodeTypesSupplier;
     protected final IndexDefinition defn;
+    protected final NodeTypePredicate matcher;
 
     protected ManagedLocalIndexBuilder( ExecutionContext context,
                                         IndexDefinition defn,
-                                        Supplier nodeTypesSupplier ) {
+                                        Supplier nodeTypesSupplier,
+                                        NodeTypePredicate matcher ) {
         this.context = context;
         this.serializers = MapDB.serializers(this.context.getValueFactories());
         this.nodeTypesSupplier = nodeTypesSupplier;
         this.defn = defn;
+        this.matcher = matcher;
     }
 
     /**
@@ -220,8 +226,9 @@ public abstract class ManagedLocalIndexBuilder<T> {
         protected SingleColumnIndexBuilder( ExecutionContext context,
                                             IndexDefinition defn,
                                             Supplier nodeTypesSupplier,
+                                            NodeTypePredicate matcher,
                                             PropertyType actualPropertyType ) {
-            super(context, defn, nodeTypesSupplier);
+            super(context, defn, nodeTypesSupplier, matcher);
             assert defn.hasSingleColumn();
             columnDefn = defn.getColumnDefinition(0);
             type = actualPropertyType;
@@ -355,32 +362,32 @@ public abstract class ManagedLocalIndexBuilder<T> {
                     if (isPrimaryTypeIndex()) {
                         // We know that the value type must be a name ...
                         LocalDuplicateIndex<Name> strIndex = (LocalDuplicateIndex<Name>)dupIndex;
-                        changeAdapter = IndexChangeAdapters.forPrimaryType(context, workspaceName, strIndex);
+                        changeAdapter = IndexChangeAdapters.forPrimaryType(context, matcher, workspaceName, strIndex);
                     } else if (isMixinTypesIndex()) {
                         // We know that the value type must be a name ...
                         LocalDuplicateIndex<Name> strIndex = (LocalDuplicateIndex<Name>)dupIndex;
-                        changeAdapter = IndexChangeAdapters.forMixinTypes(context, workspaceName, strIndex);
+                        changeAdapter = IndexChangeAdapters.forMixinTypes(context, matcher, workspaceName, strIndex);
                     } else if (isNodeNameIndex()) {
                         // We know that the value type must be a name ...
                         LocalDuplicateIndex<Name> strIndex = (LocalDuplicateIndex<Name>)dupIndex;
-                        changeAdapter = IndexChangeAdapters.forNodeName(context, workspaceName, strIndex);
+                        changeAdapter = IndexChangeAdapters.forNodeName(context, matcher, workspaceName, strIndex);
                     } else if (isNodeLocalNameIndex()) {
                         // We know that the value type must be a string ...
                         LocalDuplicateIndex<String> strIndex = (LocalDuplicateIndex<String>)dupIndex;
-                        changeAdapter = IndexChangeAdapters.forNodeLocalName(context, workspaceName, strIndex);
+                        changeAdapter = IndexChangeAdapters.forNodeLocalName(context, matcher, workspaceName, strIndex);
                     } else if (isNodePathIndex()) {
                         // We know that the value type must be a path ...
                         LocalDuplicateIndex<Path> strIndex = (LocalDuplicateIndex<Path>)dupIndex;
-                        changeAdapter = IndexChangeAdapters.forNodePath(context, workspaceName, strIndex);
+                        changeAdapter = IndexChangeAdapters.forNodePath(context, matcher, workspaceName, strIndex);
                     } else if (isNodeDepthIndex()) {
                         // We know that the value type must be a long ...
                         LocalDuplicateIndex<Long> strIndex = (LocalDuplicateIndex<Long>)dupIndex;
-                        changeAdapter = IndexChangeAdapters.forNodeDepth(context, workspaceName, strIndex);
+                        changeAdapter = IndexChangeAdapters.forNodeDepth(context, matcher, workspaceName, strIndex);
                     } else {
                         // This is a single type ...
                         Name propertyName = name(firstColumn().getPropertyName());
-                        changeAdapter = IndexChangeAdapters.forSingleValuedProperty(context, workspaceName, propertyName,
-                                                                                    factory, dupIndex);
+                        changeAdapter = IndexChangeAdapters.forSingleValuedProperty(context, matcher, workspaceName,
+                                                                                    propertyName, factory, dupIndex);
                     }
                     return new ManagedLocalIndex(dupIndex, changeAdapter);
                 case UNIQUE_VALUE:
@@ -392,8 +399,8 @@ public abstract class ManagedLocalIndexBuilder<T> {
                                                                        getBTreeKeySerializer(), getSerializer());
                     // This is a single type ...
                     Name propertyName = name(firstColumn().getPropertyName());
-                    changeAdapter = IndexChangeAdapters.forUniqueValuedProperty(context, workspaceName, propertyName, factory,
-                                                                                uidx);
+                    changeAdapter = IndexChangeAdapters.forUniqueValuedProperty(context, matcher, workspaceName, propertyName,
+                                                                                factory, uidx);
                     return new ManagedLocalIndex(uidx, changeAdapter);
                 case ENUMERATED_VALUE:
                     // Already validated ...
@@ -405,13 +412,13 @@ public abstract class ManagedLocalIndexBuilder<T> {
                     propertyName = name(firstColumn().getPropertyName());
                     LocalEnumeratedIndex idx = LocalEnumeratedIndex.create(defn.getName(), workspaceName, db, stringConverter,
                                                                            stringBtreeSerializer);
-                    changeAdapter = IndexChangeAdapters.forSingleValuedEnumeratedProperty(context, workspaceName, propertyName,
-                                                                                          idx);
+                    changeAdapter = IndexChangeAdapters.forSingleValuedEnumeratedProperty(context, matcher, workspaceName,
+                                                                                          propertyName, idx);
                     return new ManagedLocalIndex(idx, changeAdapter);
                 case NODE_TYPE:
                     // We know that the value type must be a string ...
                     idx = LocalEnumeratedIndex.create(defn.getName(), workspaceName, db, stringConverter, stringBtreeSerializer);
-                    changeAdapter = IndexChangeAdapters.forNodeTypes(context, workspaceName, idx);
+                    changeAdapter = IndexChangeAdapters.forNodeTypes(context, matcher, workspaceName, idx);
                     return new ManagedLocalIndex(idx, changeAdapter);
                 case TEXT:
                     assert false : "should not ever see this because validation should prevent such indexes from being used";

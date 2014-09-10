@@ -65,6 +65,7 @@ import org.modeshape.jcr.value.WorkspaceAndPath;
 class RepositoryQueryManager implements ChangeSetListener {
 
     private final Logger logger = Logger.getLogger(getClass());
+    private final Logger indexLogger = Logger.getLogger(getClass().getPackage().getName() + ".index");
     private final RunningState runningState;
     private final ExecutorService indexingExecutorService;
     private final RepositoryConfiguration repoConfig;
@@ -419,6 +420,11 @@ class RepositoryQueryManager implements ChangeSetListener {
         Path nodePath = paths.getPath(node);
 
         // Index the first node ...
+        if (indexLogger.isTraceEnabled()) {
+            String path = runningState.context().getValueFactories().getStringFactory().create(nodePath);
+            indexLogger.debug("Reindexing node '{0}' in workspace '{1}' of repository '{2}': {3}", path, workspaceName,
+                              runningState.name(), node);
+        }
         indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
                     node.getPropertiesByName(cache));
 
@@ -466,6 +472,11 @@ class RepositoryQueryManager implements ChangeSetListener {
             nodePath = paths.getPath(node);
 
             // Index the node ...
+            if (indexLogger.isTraceEnabled()) {
+                String path = runningState.context().getValueFactories().getStringFactory().create(nodePath);
+                indexLogger.debug("Reindexing node '{0}' in workspace '{1}' of repository '{2}': {3}", path, workspaceName,
+                                  runningState.name(), node);
+            }
             indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
                         node.getPropertiesByName(cache));
 

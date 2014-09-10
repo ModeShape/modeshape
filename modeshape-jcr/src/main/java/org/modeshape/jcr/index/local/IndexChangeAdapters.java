@@ -23,6 +23,7 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.CachedNode.Properties;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.AbstractPropertyChange;
+import org.modeshape.jcr.cache.change.ChangeSetAdapter.NodeTypePredicate;
 import org.modeshape.jcr.cache.change.PropertyChanged;
 import org.modeshape.jcr.spi.index.provider.IndexChangeAdapter;
 import org.modeshape.jcr.value.Name;
@@ -41,90 +42,103 @@ public class IndexChangeAdapters {
      * Create an {@link IndexChangeAdapter} implementation that handles the "mode:nodeDepth" property.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forNodeDepth( ExecutionContext context,
+                                                   NodeTypePredicate matcher,
                                                    String workspaceName,
                                                    LocalDuplicateIndex<Long> index ) {
-        return new NodeDepthChangeAdapter(context, workspaceName, index);
+        return new NodeDepthChangeAdapter(context, matcher, workspaceName, index);
     }
 
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles the "jcr:name" property.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forNodeName( ExecutionContext context,
+                                                  NodeTypePredicate matcher,
                                                   String workspaceName,
                                                   LocalDuplicateIndex<Name> index ) {
-        return new NodeNameChangeAdapter(context, workspaceName, index);
+        return new NodeNameChangeAdapter(context, matcher, workspaceName, index);
     }
 
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles the "mode:localName" property.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forNodeLocalName( ExecutionContext context,
+                                                       NodeTypePredicate matcher,
                                                        String workspaceName,
                                                        LocalDuplicateIndex<String> index ) {
-        return new NodeLocalNameChangeAdapter(context, workspaceName, index);
+        return new NodeLocalNameChangeAdapter(context, matcher, workspaceName, index);
     }
 
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles the "jcr:path" property.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forNodePath( ExecutionContext context,
+                                                  NodeTypePredicate matcher,
                                                   String workspaceName,
                                                   LocalDuplicateIndex<Path> index ) {
-        return new NodePathChangeAdapter(context, workspaceName, index);
+        return new NodePathChangeAdapter(context, matcher, workspaceName, index);
     }
 
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles the "jcr:primaryType" property.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forPrimaryType( ExecutionContext context,
+                                                     NodeTypePredicate matcher,
                                                      String workspaceName,
                                                      LocalDuplicateIndex<Name> index ) {
-        return new PrimaryTypeChangeAdatper(context, workspaceName, index);
+        return new PrimaryTypeChangeAdatper(context, matcher, workspaceName, index);
     }
 
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles the "jcr:mixinTypes" property.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forMixinTypes( ExecutionContext context,
+                                                    NodeTypePredicate matcher,
                                                     String workspaceName,
                                                     LocalDuplicateIndex<Name> index ) {
-        return new PrimaryTypeChangeAdatper(context, workspaceName, index);
+        return new PrimaryTypeChangeAdatper(context, matcher, workspaceName, index);
     }
 
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles a single-valued property.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param propertyName the name of the property; may not be null
      * @param factory the value factory for the property's value type; may not be null
@@ -132,17 +146,19 @@ public class IndexChangeAdapters {
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static <T> IndexChangeAdapter forSingleValuedProperty( ExecutionContext context,
+                                                                  NodeTypePredicate matcher,
                                                                   String workspaceName,
                                                                   Name propertyName,
                                                                   ValueFactory<T> factory,
                                                                   LocalDuplicateIndex<T> index ) {
-        return new SingleValuedPropertyChangeAdapter<T>(context, workspaceName, propertyName, factory, index);
+        return new SingleValuedPropertyChangeAdapter<T>(context, matcher, workspaceName, propertyName, factory, index);
     }
 
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles a multi-valued property.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param propertyName the name of the property; may not be null
      * @param factory the value factory for the property's value type; may not be null
@@ -150,11 +166,12 @@ public class IndexChangeAdapters {
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static <T> IndexChangeAdapter forMultiValuedProperty( ExecutionContext context,
+                                                                 NodeTypePredicate matcher,
                                                                  String workspaceName,
                                                                  Name propertyName,
                                                                  ValueFactory<T> factory,
                                                                  LocalDuplicateIndex<T> index ) {
-        return new MultiValuedPropertyChangeAdapter<T>(context, workspaceName, propertyName, factory, index);
+        return new MultiValuedPropertyChangeAdapter<T>(context, matcher, workspaceName, propertyName, factory, index);
     }
 
     /**
@@ -162,6 +179,7 @@ public class IndexChangeAdapters {
      * unique across all nodes.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param propertyName the name of the property; may not be null
      * @param factory the value factory for the property's value type; may not be null
@@ -169,11 +187,12 @@ public class IndexChangeAdapters {
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static <T> IndexChangeAdapter forUniqueValuedProperty( ExecutionContext context,
+                                                                  NodeTypePredicate matcher,
                                                                   String workspaceName,
                                                                   Name propertyName,
                                                                   ValueFactory<T> factory,
                                                                   LocalUniqueIndex<T> index ) {
-        return new UniquePropertyChangeAdapter<T>(context, workspaceName, propertyName, factory, index);
+        return new UniquePropertyChangeAdapter<T>(context, matcher, workspaceName, propertyName, factory, index);
     }
 
     /**
@@ -181,16 +200,18 @@ public class IndexChangeAdapters {
      * enumerated values are distinct, they are treated as strings.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param propertyName the name of the property; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forSingleValuedEnumeratedProperty( ExecutionContext context,
+                                                                        NodeTypePredicate matcher,
                                                                         String workspaceName,
                                                                         Name propertyName,
                                                                         LocalEnumeratedIndex index ) {
-        return new SingleValuedEnumeratedPropertyChangeAdapter(context, workspaceName, propertyName, index);
+        return new SingleValuedEnumeratedPropertyChangeAdapter(context, matcher, workspaceName, propertyName, index);
     }
 
     /**
@@ -198,30 +219,34 @@ public class IndexChangeAdapters {
      * values are distinct, they are treated as strings.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param propertyName the name of the property; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forMultiValuedEnumeratedProperty( ExecutionContext context,
+                                                                       NodeTypePredicate matcher,
                                                                        String workspaceName,
                                                                        Name propertyName,
                                                                        LocalEnumeratedIndex index ) {
-        return new MultiValuedEnumeratedPropertyChangeAdapter(context, workspaceName, propertyName, index);
+        return new MultiValuedEnumeratedPropertyChangeAdapter(context, matcher, workspaceName, propertyName, index);
     }
 
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles node type information.
      *
      * @param context the execution context; may not be null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
     public static IndexChangeAdapter forNodeTypes( ExecutionContext context,
+                                                   NodeTypePredicate matcher,
                                                    String workspaceName,
                                                    LocalIndex<String> index ) {
-        return new NodeTypesChangeAdapter(context, workspaceName, index);
+        return new NodeTypesChangeAdapter(context, matcher, workspaceName, index);
     }
 
     private IndexChangeAdapters() {
@@ -232,10 +257,11 @@ public class IndexChangeAdapters {
         private final boolean includeRoot;
 
         protected PathBasedChangeAdapter( ExecutionContext context,
+                                          NodeTypePredicate matcher,
                                           String workspaceName,
                                           LocalDuplicateIndex<T> index,
                                           boolean includeRoot ) {
-            super(context, workspaceName);
+            super(context, workspaceName, matcher);
             this.index = index;
             this.includeRoot = includeRoot;
         }
@@ -303,13 +329,19 @@ public class IndexChangeAdapters {
             index.commit();
             super.completeWorkspaceChanges();
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "(\"" + index.getName() + "\")";
+        }
     }
 
     protected static final class NodeDepthChangeAdapter extends PathBasedChangeAdapter<Long> {
         public NodeDepthChangeAdapter( ExecutionContext context,
+                                       NodeTypePredicate matcher,
                                        String workspaceName,
                                        LocalDuplicateIndex<Long> index ) {
-            super(context, workspaceName, index, true);
+            super(context, matcher, workspaceName, index, true);
         }
 
         @Override
@@ -325,9 +357,10 @@ public class IndexChangeAdapters {
 
     protected static final class NodeNameChangeAdapter extends PathBasedChangeAdapter<Name> {
         public NodeNameChangeAdapter( ExecutionContext context,
+                                      NodeTypePredicate matcher,
                                       String workspaceName,
                                       LocalDuplicateIndex<Name> index ) {
-            super(context, workspaceName, index, true);
+            super(context, matcher, workspaceName, index, true);
         }
 
         @Override
@@ -343,9 +376,10 @@ public class IndexChangeAdapters {
 
     protected static final class NodeLocalNameChangeAdapter extends PathBasedChangeAdapter<String> {
         public NodeLocalNameChangeAdapter( ExecutionContext context,
+                                           NodeTypePredicate matcher,
                                            String workspaceName,
                                            LocalDuplicateIndex<String> index ) {
-            super(context, workspaceName, index, true);
+            super(context, matcher, workspaceName, index, true);
         }
 
         @Override
@@ -361,9 +395,10 @@ public class IndexChangeAdapters {
 
     protected static final class NodePathChangeAdapter extends PathBasedChangeAdapter<Path> {
         public NodePathChangeAdapter( ExecutionContext context,
+                                      NodeTypePredicate matcher,
                                       String workspaceName,
                                       LocalDuplicateIndex<Path> index ) {
-            super(context, workspaceName, index, true);
+            super(context, matcher, workspaceName, index, true);
         }
 
         @Override
@@ -386,10 +421,11 @@ public class IndexChangeAdapters {
         protected final ValueFactory<T> valueFactory;
 
         public AbstractPropertyChangeAdapter( ExecutionContext context,
+                                              NodeTypePredicate matcher,
                                               String workspaceName,
                                               Name propertyName,
                                               ValueFactory<T> valueFactory ) {
-            super(context, workspaceName);
+            super(context, workspaceName, matcher);
             this.propertyName = propertyName;
             this.valueFactory = valueFactory;
         }
@@ -447,11 +483,12 @@ public class IndexChangeAdapters {
         protected final LocalDuplicateIndex<T> index;
 
         public PropertyChangeAdapter( ExecutionContext context,
+                                      NodeTypePredicate matcher,
                                       String workspaceName,
                                       Name propertyName,
                                       ValueFactory<T> valueFactory,
                                       LocalDuplicateIndex<T> index ) {
-            super(context, workspaceName, propertyName, valueFactory);
+            super(context, matcher, workspaceName, propertyName, valueFactory);
             this.index = index;
         }
 
@@ -485,15 +522,21 @@ public class IndexChangeAdapters {
             index.commit();
             super.completeWorkspaceChanges();
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "(\"" + index.getName() + "\")";
+        }
     }
 
     protected static final class SingleValuedPropertyChangeAdapter<T> extends PropertyChangeAdapter<T> {
         public SingleValuedPropertyChangeAdapter( ExecutionContext context,
+                                                  NodeTypePredicate matcher,
                                                   String workspaceName,
                                                   Name propertyName,
                                                   ValueFactory<T> valueFactory,
                                                   LocalDuplicateIndex<T> index ) {
-            super(context, workspaceName, propertyName, valueFactory, index);
+            super(context, matcher, workspaceName, propertyName, valueFactory, index);
         }
 
         @Override
@@ -505,19 +548,21 @@ public class IndexChangeAdapters {
 
     protected static final class MultiValuedPropertyChangeAdapter<T> extends PropertyChangeAdapter<T> {
         public MultiValuedPropertyChangeAdapter( ExecutionContext context,
+                                                 NodeTypePredicate matcher,
                                                  String workspaceName,
                                                  Name propertyName,
                                                  ValueFactory<T> valueFactory,
                                                  LocalDuplicateIndex<T> index ) {
-            super(context, workspaceName, propertyName, valueFactory, index);
+            super(context, matcher, workspaceName, propertyName, valueFactory, index);
         }
     }
 
     protected static final class PrimaryTypeChangeAdatper extends PropertyChangeAdapter<Name> {
         public PrimaryTypeChangeAdatper( ExecutionContext context,
+                                         NodeTypePredicate matcher,
                                          String workspaceName,
                                          LocalDuplicateIndex<Name> index ) {
-            super(context, workspaceName, JcrLexicon.PRIMARY_TYPE, context.getValueFactories().getNameFactory(), index);
+            super(context, matcher, workspaceName, JcrLexicon.PRIMARY_TYPE, context.getValueFactories().getNameFactory(), index);
         }
 
         @Override
@@ -534,9 +579,10 @@ public class IndexChangeAdapters {
 
     protected static final class MixinTypesChangeAdatper extends PropertyChangeAdapter<Name> {
         public MixinTypesChangeAdatper( ExecutionContext context,
+                                        NodeTypePredicate matcher,
                                         String workspaceName,
                                         LocalDuplicateIndex<Name> index ) {
-            super(context, workspaceName, JcrLexicon.MIXIN_TYPES, context.getValueFactories().getNameFactory(), index);
+            super(context, matcher, workspaceName, JcrLexicon.MIXIN_TYPES, context.getValueFactories().getNameFactory(), index);
         }
 
         @Override
@@ -559,11 +605,12 @@ public class IndexChangeAdapters {
         protected final LocalUniqueIndex<T> index;
 
         public UniquePropertyChangeAdapter( ExecutionContext context,
+                                            NodeTypePredicate matcher,
                                             String workspaceName,
                                             Name propertyName,
                                             ValueFactory<T> valueFactory,
                                             LocalUniqueIndex<T> index ) {
-            super(context, workspaceName, propertyName, valueFactory);
+            super(context, matcher, workspaceName, propertyName, valueFactory);
             this.index = index;
         }
 
@@ -596,16 +643,22 @@ public class IndexChangeAdapters {
             super.completeWorkspaceChanges();
         }
 
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "(\"" + index.getName() + "\")";
+        }
+
     }
 
     protected static abstract class EnumeratedPropertyChangeAdapter extends AbstractPropertyChangeAdapter<String> {
         protected final LocalIndex<String> index;
 
         public EnumeratedPropertyChangeAdapter( ExecutionContext context,
+                                                NodeTypePredicate matcher,
                                                 String workspaceName,
                                                 Name propertyName,
                                                 LocalIndex<String> index ) {
-            super(context, workspaceName, propertyName, context.getValueFactories().getStringFactory());
+            super(context, matcher, workspaceName, propertyName, context.getValueFactories().getStringFactory());
             this.index = index;
         }
 
@@ -639,14 +692,20 @@ public class IndexChangeAdapters {
             index.commit();
             super.completeWorkspaceChanges();
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "(\"" + index.getName() + "\")";
+        }
     }
 
     protected static final class SingleValuedEnumeratedPropertyChangeAdapter extends EnumeratedPropertyChangeAdapter {
         public SingleValuedEnumeratedPropertyChangeAdapter( ExecutionContext context,
+                                                            NodeTypePredicate matcher,
                                                             String workspaceName,
                                                             Name propertyName,
                                                             LocalEnumeratedIndex index ) {
-            super(context, workspaceName, propertyName, index);
+            super(context, matcher, workspaceName, propertyName, index);
         }
 
         @Override
@@ -658,18 +717,20 @@ public class IndexChangeAdapters {
 
     protected static final class MultiValuedEnumeratedPropertyChangeAdapter extends EnumeratedPropertyChangeAdapter {
         public MultiValuedEnumeratedPropertyChangeAdapter( ExecutionContext context,
+                                                           NodeTypePredicate matcher,
                                                            String workspaceName,
                                                            Name propertyName,
                                                            LocalEnumeratedIndex index ) {
-            super(context, workspaceName, propertyName, index);
+            super(context, matcher, workspaceName, propertyName, index);
         }
     }
 
     protected static final class NodeTypesChangeAdapter extends EnumeratedPropertyChangeAdapter {
         public NodeTypesChangeAdapter( ExecutionContext context,
+                                       NodeTypePredicate matcher,
                                        String workspaceName,
                                        LocalIndex<String> index ) {
-            super(context, workspaceName, null, index);
+            super(context, matcher, workspaceName, null, index);
         }
 
         protected final void removeValues( NodeKey key,

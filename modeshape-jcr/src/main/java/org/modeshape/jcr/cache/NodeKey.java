@@ -61,6 +61,7 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
         }
     }
 
+    @SuppressWarnings( "synthetic-access" )
     public static final Comparator<NodeKey> COMPARATOR = new NodeKeyComparator();
 
     private static final int UUID_LENGTH = UUID.randomUUID().toString().length();

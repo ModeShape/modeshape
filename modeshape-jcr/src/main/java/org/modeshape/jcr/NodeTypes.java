@@ -60,6 +60,15 @@ public class NodeTypes {
         NodeTypes getNodeTypes();
     }
 
+    public static interface Listener {
+        /**
+         * Notification that the NodeTypes instance has changed.
+         *
+         * @param updatedNodeTypes the new NodeTypes instance; never null
+         */
+        void notify( NodeTypes updatedNodeTypes );
+    }
+
     /**
      * List of ways to filter the returned property definitions
      *
@@ -392,6 +401,18 @@ public class NodeTypes {
             }
         }
         return true;
+    }
+
+    public Set<Name> getAllSubtypes( Name nodeTypeName ) {
+        Set<Name> subtypes = new HashSet<>();
+        JcrNodeType type = getNodeType(nodeTypeName);
+        if (type != null) {
+            subtypes.add(nodeTypeName);
+            for (JcrNodeType subtype : subtypesFor(type)) {
+                subtypes.add(subtype.getInternalName());
+            }
+        }
+        return Collections.unmodifiableSet(subtypes);
     }
 
     /**

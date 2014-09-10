@@ -21,6 +21,7 @@ import java.util.NavigableMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.query.qom.StaticOperand;
 import org.mapdb.DB;
+import org.mapdb.Fun;
 import org.mapdb.Serializer;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.cache.NodeKey;
@@ -36,8 +37,6 @@ import org.modeshape.jcr.spi.index.Index;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
-
-    private static final Logger LOGGER = Logger.getLogger(LocalDuplicateIndex.class);
 
     /**
      * Create a new index that allows duplicate values across all keys.
@@ -61,6 +60,7 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
 
     private static final String NEXT_COUNTER = "next-counter";
 
+    private final Logger logger = Logger.getLogger(getClass());
     private final AtomicLong counter;
 
     protected LocalDuplicateIndex( String name,
@@ -86,7 +86,7 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
     @Override
     public void add( String nodeKey,
                      T value ) {
-        LOGGER.trace("Adding node '{0}' to '{1}' index with value '{2}'", nodeKey, name, value);
+        logger.trace("Adding node '{0}' to '{1}' index with value '{2}'", nodeKey, name, value);
         keysByValue.put(new UniqueKey<T>(value, counter.getAndIncrement()), nodeKey);
     }
 
@@ -97,9 +97,24 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
         UniqueKey<T> fromKey = new UniqueKey<T>(value, 0);
         UniqueKey<T> toKey = new UniqueKey<T>(value, Long.MAX_VALUE);
         NavigableMap<UniqueKey<T>, String> matching = keysByValue.subMap(fromKey, true, toKey, true);
-        for (UniqueKey<T> actualValue : matching.keySet()) {
-            LOGGER.trace("Removing node '{0}' from '{1}' index with value '{2}'", nodeKey, name, actualValue.actualKey);
-            keysByValue.remove(actualValue);
+        if (logger.isTraceEnabled()) {
+            for (UniqueKey<T> actualValue : matching.keySet()) {
+                logger.trace("Removing node '{0}' from '{1}' index with value '{2}'", nodeKey, name, actualValue.actualKey);
+                keysByValue.remove(actualValue);
+            }
+        } else {
+            for (UniqueKey<T> actualValue : matching.keySet()) {
+                keysByValue.remove(actualValue);
+            }
+        }
+    }
+
+    @Override
+    public void remove( String nodeKey ) {
+        // Find all of the T values (entry keys) for the given node key (entry values) ...
+        for (UniqueKey<T> key : Fun.filter(valuesByKey, nodeKey)) {
+            logger.trace("Removing node '{0}' from '{1}' index with value '{2}'", nodeKey, name, key.actualKey);
+            keysByValue.remove(key);
         }
     }
 }

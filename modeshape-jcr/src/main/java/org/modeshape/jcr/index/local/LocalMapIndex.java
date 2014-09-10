@@ -42,7 +42,7 @@ import org.modeshape.jcr.value.ValueComparators;
  */
 abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
 
-    private static final Logger LOGGER = Logger.getLogger(LocalMapIndex.class);
+    protected final Logger logger = Logger.getLogger(getClass());
 
     protected final String name;
     protected final String workspace;
@@ -69,12 +69,12 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
         this.converter = converter;
         this.db = db;
         if (db.exists(name)) {
-            LOGGER.debug("Reopening storage for '{0}' index in workspace '{1}'", name, workspaceName);
+            logger.debug("Reopening storage for '{0}' index in workspace '{1}'", name, workspaceName);
             this.options = db.getHashMap(name + "/options");
             this.keysByValue = db.getTreeMap(name);
             this.valuesByKey = db.getTreeSet(name + "/inverse");
         } else {
-            LOGGER.debug("Creating storage for '{0}' index in workspace '{1}'", name, workspaceName);
+            logger.debug("Creating storage for '{0}' index in workspace '{1}'", name, workspaceName);
             this.options = db.createHashMap(name + "/options").make();
             this.keysByValue = db.createTreeMap(name).counterEnable().comparator(valueSerializer.getComparator())
                                  .keySerializer(valueSerializer).make();
@@ -122,14 +122,6 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
     public long estimateCardinality( Constraint constraint,
                                      Map<String, Object> variables ) {
         return Operations.createFilter(keysByValue, converter, Collections.singleton(constraint), variables).estimateCount();
-    }
-
-    @Override
-    public void remove( String nodeKey ) {
-        // Find all of the T values (entry keys) for the given node key (entry values) ...
-        for (T key : Fun.filter(valuesByKey, nodeKey)) {
-            keysByValue.remove(key);
-        }
     }
 
     @Override

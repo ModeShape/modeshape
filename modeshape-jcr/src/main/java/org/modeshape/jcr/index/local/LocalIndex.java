@@ -26,6 +26,13 @@ import org.modeshape.jcr.spi.index.provider.Filter;
 public interface LocalIndex<T> extends Filter, Costable {
 
     /**
+     * Get the name of the index.
+     * 
+     * @return the index name; never null
+     */
+    String getName();
+
+    /**
      * Remove all of the index entries from the index. This is typically called prior to reindexing.
      */
     void removeAll();

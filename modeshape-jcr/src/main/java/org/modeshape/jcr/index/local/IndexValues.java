@@ -22,7 +22,6 @@ import javax.jcr.query.qom.StaticOperand;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.index.local.MapDB.UniqueKey;
 import org.modeshape.jcr.query.model.Literal;
-import org.modeshape.jcr.query.model.LiteralValue;
 import org.modeshape.jcr.value.ValueFactory;
 
 /**
@@ -126,8 +125,8 @@ public class IndexValues {
         @Override
         public T toUpperValue( StaticOperand operand,
                                Map<String, Object> variables ) {
-            if (operand instanceof LiteralValue) {
-                LiteralValue literal = (LiteralValue)operand;
+            if (operand instanceof Literal) {
+                Literal literal = (Literal)operand;
                 return factory.create(literal.value());
             }
             if (operand instanceof BindVariableValue) {

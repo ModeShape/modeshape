@@ -20,6 +20,8 @@ import java.util.Calendar;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -210,7 +212,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
 
         // Issue a query that does not use this index ...
         query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [notion:longProperty] > 10");
-        validateQuery().rowCount(3L).validate(query, query.execute());
+        validateQuery().rowCount(2L).validate(query, query.execute());
     }
 
     @Test
@@ -513,6 +515,75 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         queryStr = "SELECT a.* FROM [nt:unstructured] AS a JOIN [nt:unstructured] AS b ON a.someProperty = b.someProperty WHERE b.someProperty = 'non-existant-value'";
         query = jcrSql2Query(queryStr);
         validateQuery().rowCount(0L).useIndex("pathIndex").validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2295" )
+    @Test
+    public void shouldUseIndexesCreatedOnSubtypeUsingColumnsFromResidualProperty()
+        throws RepositoryException, InterruptedException {
+        String typeName = "nt:someType2";
+        registerNodeType(typeName);
+        registerValueIndex("ntsome2sysname", typeName, null, "*", "sysName", PropertyType.STRING);
+
+        Thread.sleep(500);
+
+        Node newNode = session.getRootNode().addNode("SOMENODE", typeName);
+        newNode.setProperty("sysName", "X");
+
+        // BEFORE SAVING, issue a query that will NOT use the index. The query should not see the transient node ...
+        String queryStr = "select BASE.* FROM [" + typeName + "] as BASE WHERE NAME(BASE) = 'SOMENODE'";
+        Query query = jcrSql2Query(queryStr);
+        validateQuery().rowCount(0L).useNoIndexes().validate(query, query.execute());
+
+        // Now issue a query that will use the index. The query should not see the transient node...
+        queryStr = "select BASE.* FROM [" + typeName + "] as BASE WHERE BASE.sysName='X'";
+        query = jcrSql2Query(queryStr);
+        validateQuery().rowCount(0L).useIndex("ntsome2sysname").validate(query, query.execute());
+
+        // Save the transient data ...
+        session.save();
+
+        Thread.sleep(500);
+
+        // Issue a query that will NOT use the index ...
+        queryStr = "select BASE.* FROM [" + typeName + "] as BASE WHERE NAME(BASE) = 'SOMENODE'";
+        query = jcrSql2Query(queryStr);
+        validateQuery().rowCount(1L).useNoIndexes().validate(query, query.execute());
+
+        // Now issue a query that will use the index.
+        queryStr = "select BASE.* FROM [" + typeName + "] as BASE WHERE BASE.sysName='X'";
+        query = jcrSql2Query(queryStr);
+        validateQuery().rowCount(1L).useIndex("ntsome2sysname").validate(query, query.execute());
+
+        registerValueIndex("ntusysname", "nt:unstructured", null, "*", "sysName", PropertyType.STRING);
+
+        Thread.sleep(500);
+
+        Node newNode2 = session.getRootNode().addNode("SOMENODE2", "nt:unstructured");
+        newNode2.setProperty("sysName", "X");
+        session.save();
+
+        Thread.sleep(500);
+
+        // print = true;
+
+        queryStr = "select BASE.* FROM [nt:unstructured] as BASE WHERE BASE.sysName='X'";
+        query = jcrSql2Query(queryStr);
+        validateQuery().rowCount(2L).validate(query, query.execute());
+    }
+
+    private void registerNodeType( String typeName ) throws RepositoryException {
+        NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
+
+        // Create a template for the node type ...
+        NodeTypeTemplate type = mgr.createNodeTypeTemplate();
+        type.setName(typeName);
+        type.setDeclaredSuperTypeNames(new String[] {"nt:unstructured"});
+        type.setAbstract(false);
+        type.setOrderableChildNodes(true);
+        type.setMixin(false);
+        type.setQueryable(true);
+        mgr.registerNodeType(type, true);
     }
 
     protected void registerValueIndex( String indexName,

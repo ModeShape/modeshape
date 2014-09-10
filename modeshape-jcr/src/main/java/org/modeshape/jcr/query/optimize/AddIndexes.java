@@ -19,14 +19,19 @@ package org.modeshape.jcr.query.optimize;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.query.qom.Comparison;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.DynamicOperand;
 import javax.jcr.query.qom.PropertyValue;
+import javax.jcr.query.qom.StaticOperand;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.engine.IndexPlan;
 import org.modeshape.jcr.query.engine.IndexPlanners;
@@ -90,7 +95,7 @@ public class AddIndexes implements OptimizerRule {
             // Look for any SELECT nodes above this but below an ACCESS node, because all of the SELECT define
             // criteria that are all ANDed together ...
             final AtomicReference<List<Constraint>> constraints = new AtomicReference<>();
-            final AtomicReference<String> nodeTypeName = new AtomicReference<>();
+            final Set<String> nodeTypeNames = new HashSet<>();
             source.applyToAncestorsUpTo(Type.ACCESS, new Operation() {
                 @Override
                 public void apply( PlanNode node ) {
@@ -101,39 +106,56 @@ public class AddIndexes implements OptimizerRule {
                             constraints.get().add(constraint);
                             // While we're at it, look for the constraint on the primary type. This tells us which node type
                             // we're working with ...
-                            if (nodeTypeName.get() == null && constraint instanceof Comparison) {
-                                Comparison comparison = (Comparison)constraint;
-                                if (comparison.getOperand1() instanceof PropertyValue) {
-                                    PropertyValue propValue = (PropertyValue)comparison.getOperand1();
-                                    if (comparison.getOperand2() instanceof Literal
-                                        && "jcr:primaryType".equals(propValue.getPropertyName())
-                                        && propValue.getSelectorName().equals(selectorName.getString())) {
-                                        // The value should be a literal ...
-                                        Literal literal = (Literal)comparison.getOperand2();
-                                        StringFactory strings = context.getExecutionContext().getValueFactories()
-                                                                       .getStringFactory();
-                                        nodeTypeName.set(strings.create(literal.value()));
+                            if (nodeTypeNames.isEmpty()) {
+                                if (constraint instanceof Comparison) {
+                                    Comparison comparison = (Comparison)constraint;
+                                    if (isPrimaryTypeConstraint(comparison.getOperand1())) {
+                                        addLiteral(comparison.getOperand2(), nodeTypeNames);
+                                    }
+                                } else if (constraint instanceof SetCriteria) {
+                                    SetCriteria criteria = (SetCriteria)constraint;
+                                    if (isPrimaryTypeConstraint(criteria.getOperand())) {
+                                        // Look for literal values and collect them as the node type names ...
+                                        for (StaticOperand operand : criteria.getValues()) {
+                                            addLiteral(operand, nodeTypeNames);
+                                        }
                                     }
                                 }
-
                             }
                         }
+                    }
+                }
+
+                private boolean isPrimaryTypeConstraint( DynamicOperand operand ) {
+                    if (operand instanceof PropertyValue) {
+                        PropertyValue propValue = (PropertyValue)operand;
+                        if ("jcr:primaryType".equals(propValue.getPropertyName())
+                            && propValue.getSelectorName().equals(selectorName.getString())) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                private void addLiteral( StaticOperand operand,
+                                         Set<String> collector ) {
+                    if (operand instanceof Literal) {
+                        // Get the literal value, which should be a node type ...
+                        Literal literal = (Literal)operand;
+                        StringFactory strings = context.getExecutionContext().getValueFactories().getStringFactory();
+                        nodeTypeNames.add(strings.create(literal.value()));
                     }
                 }
             });
             if (constraints.get() != null) {
                 // Get the selector name. The plan's selectors will contain an alias if one is used, so we have to find
                 // the 'selector.[jcr:primaryType] = '<nodeType>' constraint
-                final String selectedNodeTypeName = nodeTypeName.get() != null ? nodeTypeName.get() : selectorName.getString();
+                // Add the alias ...
+                nodeTypeNames.add(selectorName.getString());
                 IndexCostCalculator calculator = new IndexCostCalculator() {
                     @Override
-                    public String selectedNodeType() {
-                        return selectedNodeTypeName;
-                    }
-
-                    @Override
-                    public String selectorNameOrAlias() {
-                        return selectorName.getString();
+                    public Set<String> selectedNodeTypes() {
+                        return nodeTypeNames;
                     }
 
                     @Override

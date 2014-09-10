@@ -16,6 +16,7 @@
 
 package org.modeshape.jcr.spi.index.provider;
 
+import java.util.Set;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.DynamicOperand;
 import org.modeshape.jcr.NodeTypes;
@@ -59,7 +60,7 @@ public class IndexUsage {
     private final IndexDefinition defn;
     private final QueryContext context;
     private final Name indexedNodeTypeName;
-    private final String selectedNameOrAlias;
+    private final Set<String> selectedNamesOrAliases;
     private final boolean selectedNodeTypeMatchesIndex;
 
     public IndexUsage( QueryContext context,
@@ -68,10 +69,14 @@ public class IndexUsage {
         this.context = context;
         this.defn = defn;
         this.indexedNodeTypeName = name(defn.getNodeTypeName());
-        this.selectedNameOrAlias = calculator.selectorNameOrAlias();
-        Name selectedNodeTypeName = name(calculator.selectedNodeType());
-        this.selectedNodeTypeMatchesIndex = nodeTypes().isTypeOrSubtype(selectedNodeTypeName, indexedNodeTypeName);
-
+        boolean matchedAtLeastOneNodeType = false;
+        this.selectedNamesOrAliases = calculator.selectedNodeTypes();
+        for (String nodeTypeOrAlias : selectedNamesOrAliases) {
+            Name selectedNodeTypeName = name(nodeTypeOrAlias);
+            matchedAtLeastOneNodeType = nodeTypes().isTypeOrSubtype(selectedNodeTypeName, indexedNodeTypeName);
+            if (matchedAtLeastOneNodeType) break;
+        }
+        this.selectedNodeTypeMatchesIndex = matchedAtLeastOneNodeType;
     }
 
     /**
@@ -111,8 +116,7 @@ public class IndexUsage {
     }
 
     protected boolean indexAppliesTo( Comparison constraint ) {
-        Operator operator = Operator.forSymbol(constraint.getOperator());
-        return applies(operator) && applies(constraint.getOperand1());
+        return applies(constraint.operator()) && applies(constraint.getOperand1());
     }
 
     protected boolean indexAppliesTo( And and ) {
@@ -263,7 +267,7 @@ public class IndexUsage {
     }
 
     protected final boolean matchesSelectorName( String selectorName ) {
-        if (selectedNameOrAlias.equals(selectorName)) {
+        if (selectedNamesOrAliases.contains(selectorName)) {
             // Now we know that the supplied selector name matches the selected node type, but return whether
             // that selected node type matches the index's node type ...
             return selectedNodeTypeMatchesIndex;
