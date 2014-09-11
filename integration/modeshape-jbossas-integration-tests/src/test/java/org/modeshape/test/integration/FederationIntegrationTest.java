@@ -35,6 +35,7 @@ import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.query.Query;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -153,8 +154,6 @@ public class FederationIntegrationTest {
             assertNotNull(gitNode.getNode("branches"));
             assertNotNull(gitNode.getNode("tags"));
 
-            /**
-             * //TODO author=Horia Chiorean date=11-Sep-14 description=This should be re-enabled after MODE-2178
             // check configured queryable branches
             workspace.reindex(gitNode.getPath() + "/tree/master/.gitignore");
             Query query = workspace.getQueryManager()
@@ -165,7 +164,6 @@ public class FederationIntegrationTest {
             query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/2.x/%'",
                                                             Query.JCR_SQL2);
             assertEquals(2, query.execute().getNodes().getSize());
-             */
         } finally {
             testRoot.remove();
             session.save();
