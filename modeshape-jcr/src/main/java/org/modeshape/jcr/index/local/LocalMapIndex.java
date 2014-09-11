@@ -96,6 +96,7 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
         Bind.mapInverse(this.keysByValue, this.valuesByKey);
     }
 
+    @Override
     public String getName() {
         return name;
     }

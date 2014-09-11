@@ -322,7 +322,7 @@ public abstract class NodeSequence {
 
             @Override
             public String toString() {
-                return "(sequence-with-batch " + sequence + " )";
+                return "(sequence-with-batch width=" + width() + " " + sequence + " )";
             }
         };
     }
@@ -967,14 +967,14 @@ public abstract class NodeSequence {
 
             @Override
             public String toString() {
-                return "(filtered " + filter + " " + sequence + ")";
+                return "(filtered width=" + width() + " " + filter + " " + sequence + ")";
             }
         };
     }
 
     /**
      * Create a sequence of nodes that contains the nodes from the first sequence followed by the second sequence.
-     * 
+     *
      * @param first the first sequence; may be null
      * @param second the second sequence; may be null
      * @return the new combined sequence; never null

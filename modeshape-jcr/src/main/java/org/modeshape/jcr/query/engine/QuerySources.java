@@ -478,6 +478,11 @@ public class QuerySources {
             }
             return true;
         }
+
+        @Override
+        public String toString() {
+            return filters.isEmpty() ? "" : filters.toString();
+        }
     }
 
     /**
@@ -503,6 +508,11 @@ public class QuerySources {
                     return true;
                 }
                 return true;
+            }
+
+            @Override
+            public String toString() {
+                return "(excludes-sharables)";
             }
         };
     }

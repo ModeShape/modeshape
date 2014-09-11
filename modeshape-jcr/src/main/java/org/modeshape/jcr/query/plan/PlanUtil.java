@@ -565,7 +565,7 @@ public class PlanUtil {
             SelectorName replacement1 = rewrittenSelectors.get(condition.selector1Name());
             SelectorName replacement2 = rewrittenSelectors.get(condition.selector2Name());
             if (replacement1 == null) replacement1 = condition.selector1Name();
-            if (replacement2 == null) replacement2 = condition.selector1Name();
+            if (replacement2 == null) replacement2 = condition.selector2Name();
             if (replacement1 == condition.selector1Name() && replacement2 == condition.selector2Name()) return condition;
             return new EquiJoinCondition(replacement1, condition.getProperty1Name(), replacement2, condition.getProperty2Name());
         }
@@ -574,7 +574,7 @@ public class PlanUtil {
             SelectorName replacement1 = rewrittenSelectors.get(condition.selector1Name());
             SelectorName replacement2 = rewrittenSelectors.get(condition.selector2Name());
             if (replacement1 == null) replacement1 = condition.selector1Name();
-            if (replacement2 == null) replacement2 = condition.selector1Name();
+            if (replacement2 == null) replacement2 = condition.selector2Name();
             if (replacement1 == condition.selector1Name() && replacement2 == condition.selector2Name()) return condition;
             return new SameNodeJoinCondition(replacement1, replacement2, condition.getSelector2Path());
         }

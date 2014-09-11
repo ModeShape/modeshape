@@ -53,6 +53,6 @@ public class ExceptSequence extends AbstractNodeKeysSequence {
 
     @Override
     public String toString() {
-        return "(except left=" + leftSequence + ", right=" + delegate + ", on " + extractor + " )";
+        return "(except width=" + width() + " left=" + leftSequence + ", right=" + delegate + ", on " + extractor + " )";
     }
 }
