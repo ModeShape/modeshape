@@ -593,10 +593,14 @@
                     <workspace name="other"/>
                 </workspaces>
                 <external-sources>
-                    <source name="filesystem" classname="org.modeshape.connector.filesystem.FileSystemConnector"
+                    <source name="filesystem_readonly" classname="org.modeshape.connector.filesystem.FileSystemConnector"
                             directoryPath="${rootDirectoryPath}" cacheTtlSeconds="1" readonly="true">
                         <projection>default:/projection1 => /</projection>
                         <projection>other:/projection1 => /</projection>
+                    </source>
+                    <source name="filesystem_writable" classname="org.modeshape.connector.filesystem.FileSystemConnector"
+                            directoryPath="${rootDirectoryPath}" cacheTtlSeconds="1" readonly="false">
+                        <projection>default:/root => /</projection>
                     </source>
                     <source name="git" classname="org.modeshape.connector.git.GitConnector" module="org.modeshape.connector.git"
                             directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1"
