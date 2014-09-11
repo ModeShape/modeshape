@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -96,6 +97,8 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
     private final boolean includePseudoColumnsInSelectStar;
     private volatile NodeTypeSchemata schemata;
 
+    private final CopyOnWriteArrayList<NodeTypes.Listener> listeners = new CopyOnWriteArrayList<>();
+
     RepositoryNodeTypeManager( JcrRepository.RunningState repository,
                                boolean includeColumnsForInheritedProperties,
                                boolean includePseudoColumnsInSelectStar ) {
@@ -125,6 +128,8 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
         // Now copy the node types from this cache into the new manager's cache ...
         // (If we didn't do this, we'd have to refresh from the system storage)
         result.nodeTypesCache = result.nodeTypesCache.with(this.nodeTypesCache.getAllNodeTypes());
+
+        // Do not copy the listeners
         return result;
     }
 
@@ -138,9 +143,41 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
     }
 
     /**
+     * Add a listener that will be notified when the NodeTypes changes. Listeners will be called in a single thread, and should do
+     * almost no work.
+     *
+     * @param listener the new listener
+     * @return true if the listener was registered, or false if {@code listener} is null or if it is already registered
+     */
+    final boolean registerListener( NodeTypes.Listener listener ) {
+        return listener != null ? this.listeners.addIfAbsent(listener) : false;
+    }
+
+    /**
+     * Remove an existing listener to NodeTypes changes.
+     *
+     * @param listener the existing listener
+     * @return true if the listener was removed, or false otherwise
+     */
+    final boolean unregisterListener( NodeTypes.Listener listener ) {
+        return this.listeners.remove(listener);
+    }
+
+    private void notifiyListeners() {
+        for (NodeTypes.Listener listener : this.listeners) {
+            assert listener != null;
+            try {
+                listener.notify(nodeTypesCache);
+            } catch (RuntimeException e) {
+                logger.error(e, JcrI18n.errorNotifyingNodeTypesListener, listener);
+            }
+        }
+    }
+
+    /**
      * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
      * default primary types of child nodes, or required primary types of child nodes.
-     * 
+     *
      * @param nodeTypeNames the names of the node types to be unregistered
      * @param failIfNodeTypesAreUsed true if this method should fail to unregister the named node types if any of the node types
      *        are still in use by nodes, or false if this method should not perform such a check
@@ -240,6 +277,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
             // Now change the cache ...
             this.nodeTypesCache = newNodeTypes;
             this.schemata = null;
+            notifiyListeners();
         } finally {
             nodeTypesLock.writeLock().unlock();
         }
@@ -260,7 +298,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
 
     /**
      * Check if the named node type is in use in any workspace in the repository
-     * 
+     *
      * @param nodeTypeName the name of the node type to check
      * @return true if at least one node is using that type; false otherwise
      * @throws InvalidQueryException if there is an error searching for uses of the named node type
@@ -312,7 +350,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
      * <p>
      * For details, see {@link #registerNodeTypes(Iterable)}.
      * </p>
-     * 
+     *
      * @param ntd the {@code NodeTypeDefinition} to register
      * @return the newly registered (or updated) {@code NodeType}
      * @throws InvalidNodeTypeDefinitionException if the {@code NodeTypeDefinition} is invalid
@@ -332,7 +370,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
      * <p>
      * For details, see {@link #registerNodeTypes(Iterable)}.
      * </p>
-     * 
+     *
      * @param ntd the {@code NodeTypeDefinition} to register
      * @param failIfNodeTypeExists indicates whether the registration should proceed if there is already a type with the same
      *        name; {@code true} indicates that the registration should fail with an error if a node type with the same name
@@ -414,7 +452,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
      * </ol>
      * Note that an empty set of child nodes would meet the above criteria.</li>
      * </p>
-     * 
+     *
      * @param nodeTypeDefns the {@link NodeTypeDefinition node type definitions} to register
      * @return the newly registered (or updated) {@link NodeType NodeTypes}
      * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability
@@ -497,6 +535,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
                 // And finally update the capabilities cache ...
                 this.nodeTypesCache = newNodeTypes;
                 this.schemata = null;
+                notifiyListeners();
             }
         } finally {
             nodeTypesLock.writeLock().unlock();
@@ -693,7 +732,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
 
     /**
      * Refresh the node types from the stored representation.
-     * 
+     *
      * @return true if there was at least one node type found, or false if there were none
      */
     protected boolean refreshFromSystem() {

@@ -38,14 +38,33 @@ import org.modeshape.jcr.value.Property;
  */
 public abstract class ChangeSetAdapter implements ChangeSetListener {
 
+    public static interface NodeTypePredicate {
+        /**
+         * Determine if the given primary type and mixin types satisfies the node type requirements of an event.
+         *
+         * @param primaryType the primary type of the event
+         * @param mixinTypes
+         * @return true if the event should be processed, or false otherwise
+         */
+        boolean matchesType( Name primaryType,
+                             Set<Name> mixinTypes );
+    }
+
     protected final ExecutionContext context;
+    protected final NodeTypePredicate predicate;
 
     /**
      * @param context the execution context in which this adapter is supposed to run; may not be null
      */
     public ChangeSetAdapter( ExecutionContext context ) {
+        this(context, null);
+    }
+
+    public ChangeSetAdapter( ExecutionContext context,
+                             NodeTypePredicate predicate ) {
         assert context != null;
         this.context = context;
+        this.predicate = predicate;
     }
 
     @Override
@@ -59,6 +78,9 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                     NodeKey lastKey = null;
                     for (Change change : changeSet) {
                         if (change instanceof AbstractNodeChange) {
+                            AbstractNodeChange anc = (AbstractNodeChange)change;
+                            if (!matchesType(anc.getPrimaryType(), anc.getMixinTypes())) continue;
+
                             if (change instanceof NodeAdded) {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeAdded added = (NodeAdded)change;
@@ -133,6 +155,11 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
             }
             completeChanges();
         }
+    }
+
+    private boolean matchesType( Name primaryType,
+                                 Set<Name> mixinTypes ) {
+        return predicate == null ? true : predicate.matchesType(primaryType, mixinTypes);
     }
 
     /**

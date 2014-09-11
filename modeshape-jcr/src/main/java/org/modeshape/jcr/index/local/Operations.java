@@ -287,13 +287,13 @@ class Operations {
                     T upperValue = converter.toUpperValue(operand, variables);
                     return create(keysByValue.subMap(lowerValue, true, upperValue, true));
                 case GREATER_THAN:
-                    T value = converter.toLowerValue(operand, variables);
+                    T value = converter.toUpperValue(operand, variables);
                     return create(keysByValue.tailMap(value, false));
                 case GREATER_THAN_OR_EQUAL_TO:
                     value = converter.toLowerValue(operand, variables);
                     return create(keysByValue.tailMap(value, true));
                 case LESS_THAN:
-                    value = converter.toUpperValue(operand, variables);
+                    value = converter.toLowerValue(operand, variables);
                     return create(keysByValue.headMap(value, false));
                 case LESS_THAN_OR_EQUAL_TO:
                     value = converter.toUpperValue(operand, variables);

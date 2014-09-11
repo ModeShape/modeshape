@@ -32,8 +32,9 @@ public class IndexChangeAdapter extends ChangeSetAdapter {
     private final String workspaceName;
 
     public IndexChangeAdapter( ExecutionContext context,
-                               String workspaceName ) {
-        super(context);
+                               String workspaceName,
+                               ChangeSetAdapter.NodeTypePredicate predicate ) {
+        super(context, predicate);
         assert workspaceName != null;
         this.workspaceName = workspaceName;
     }
@@ -54,14 +55,17 @@ public class IndexChangeAdapter extends ChangeSetAdapter {
      * @param properties the properties of the node; may not be null but may be empty
      * @param queryable true if the node is queryable, false otherwise
      */
-    protected void index( String workspaceName,
-                          NodeKey key,
-                          Path path,
-                          Name primaryType,
-                          Set<Name> mixinTypes,
-                          Properties properties,
-                          boolean queryable ) {
-        super.addNode(workspaceName, key, path, primaryType, mixinTypes, properties, queryable);
+    protected final void index( String workspaceName,
+                                NodeKey key,
+                                Path path,
+                                Name primaryType,
+                                Set<Name> mixinTypes,
+                                Properties properties,
+                                boolean queryable ) {
+        if (predicate.matchesType(primaryType, mixinTypes)) {
+            removeNode(workspaceName, key, null, path, primaryType, mixinTypes, queryable);
+            addNode(workspaceName, key, path, primaryType, mixinTypes, properties, queryable);
+        }
     }
 
 }

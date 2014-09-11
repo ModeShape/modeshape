@@ -29,6 +29,7 @@ import org.modeshape.common.collection.DelegateIterable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.function.Function;
 import org.modeshape.common.function.Predicate;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.Logger;
@@ -37,6 +38,7 @@ import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.cache.CachedNode.Properties;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetAdapter.NodeTypePredicate;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.Observable;
 import org.modeshape.jcr.query.QueryContext;
@@ -319,6 +321,26 @@ public abstract class IndexProvider {
     }
 
     /**
+     * Notify the provider that the NodeTypes have changed. This method should only be called by ModeShape and never called by
+     * other code.
+     *
+     * @param updatedNodeTypes the new node types; may not be null
+     */
+    public void notify( final NodeTypes updatedNodeTypes ) {
+        CheckArg.isNotNull(updatedNodeTypes, "updatedNodeTypes");
+        // For each of the provided indexes ...
+        onEachIndex(new ProvidedIndexOperation() {
+            @Override
+            public void apply( String workspaceName,
+                               ProvidedIndex index ) {
+                @SuppressWarnings( "synthetic-access" )
+                NodeTypeMatcher matcher = nodeTypePredicate(updatedNodeTypes, index.indexDefinition());
+                index.update(index.managed(), index.indexDefinition(), matcher);
+            }
+        });
+    }
+
+    /**
      * Validate the proposed index definition, and use the supplied problems to report any issues that will prevent this provider
      * from creating and using an index with the given definition.
      *
@@ -386,6 +408,20 @@ public abstract class IndexProvider {
     }
 
     /**
+     * Perform the specified operation on each of the managed indexes.
+     *
+     * @param op the operation; may not be null
+     */
+    private final void onEachIndex( ProvidedIndexOperation op ) {
+        for (Map.Entry<String, Map<String, ProvidedIndex>> entry : providedIndexesByIndexNameByWorkspaceName.entrySet()) {
+            String workspaceName = entry.getKey();
+            for (ProvidedIndex index : entry.getValue().values()) {
+                op.apply(workspaceName, index);
+            }
+        }
+    }
+
+    /**
      * Perform the specified operation on each of the managed indexes in the named workspace.
      *
      * @param workspaceName the name of the workspace; may not be null
@@ -423,6 +459,22 @@ public abstract class IndexProvider {
     }
 
     /**
+     * An operation that performs on a provided index with the associated index definition.
+     *
+     * @author Randall Hauch (rhauch@redhat.com)
+     */
+    private static interface ProvidedIndexOperation {
+        /**
+         * Apply the operation to a provided index
+         *
+         * @param workspaceName the name of the workspace in which the index exists; may not be null
+         * @param index the managed index instance; may not be null
+         */
+        void apply( String workspaceName,
+                    ProvidedIndex index );
+    }
+
+    /**
      * An IndexPlanner that calls {@link IndexProvider#planUseOfIndex} on each applicable managed index.
      *
      * @author Randall Hauch (rhauch@redhat.com)
@@ -439,6 +491,7 @@ public abstract class IndexProvider {
                 public void apply( String workspaceName,
                                    ManagedIndex index,
                                    IndexDefinition defn ) {
+                    if (!defn.isEnabled()) return;
                     if (!defn.getWorkspaceMatchRule().usedInWorkspace(workspaceName)) return;
                     logger().trace("Considering index '{0}' in '{1}' provider for query in workspace '{2}'", defn.getName(),
                                    getName(), workspaceName);
@@ -540,10 +593,11 @@ public abstract class IndexProvider {
                 if (defn.getWorkspaceMatchRule().usedInWorkspace(workspaceName)) {
                     // Add the index ...
                     try {
-                        ManagedIndex managedIndex = createIndex(defn, workspaceName, nodeTypesSupplier, feedback);
-                        ProvidedIndex index = new ProvidedIndex(defn, managedIndex, workspaceName);
+                        NodeTypeMatcher matcher = nodeTypePredicate(nodeTypesSupplier.getNodeTypes(), defn);
+                        ManagedIndex managedIndex = createIndex(defn, workspaceName, nodeTypesSupplier, matcher, feedback);
+                        ProvidedIndex index = new ProvidedIndex(defn, managedIndex, workspaceName, matcher);
                         addProvidedIndex(index);
-                        observable.register(index);
+                        registerIndex(index, observable);
                     } catch (RuntimeException e) {
                         String msg = "Error updating index '{0}' in workspace '{1}' with definition: {2}";
                         logger().error(e, msg, defn.getName(), workspaceName, defn);
@@ -595,10 +649,11 @@ public abstract class IndexProvider {
                     if (defn.getWorkspaceMatchRule().usedInWorkspace(workspaceName)) {
                         // Add the index ...
                         try {
-                            ManagedIndex managedIndex = createIndex(defn, workspaceName, nodeTypesSupplier, feedback);
-                            ProvidedIndex index = new ProvidedIndex(defn, managedIndex, workspaceName);
+                            NodeTypeMatcher matcher = nodeTypePredicate(nodeTypesSupplier.getNodeTypes(), defn);
+                            ManagedIndex managedIndex = createIndex(defn, workspaceName, nodeTypesSupplier, matcher, feedback);
+                            ProvidedIndex index = new ProvidedIndex(defn, managedIndex, workspaceName, matcher);
                             addProvidedIndex(index);
-                            observable.register(index);
+                            registerIndex(index, observable);
                         } catch (RuntimeException e) {
                             String msg = "Error updating index '{0}' in workspace '{1}' with definition: {2}";
                             logger().error(e, msg, defn.getName(), workspaceName, defn);
@@ -615,9 +670,10 @@ public abstract class IndexProvider {
                         if (defn.getWorkspaceMatchRule().usedInWorkspace(workspaceName)) {
                             // The index is updated and still applies to this workspace, so update the operations ...
                             try {
+                                NodeTypeMatcher matcher = nodeTypePredicate(nodeTypesSupplier.getNodeTypes(), defn);
                                 ManagedIndex managedIndex = updateIndex(provided.indexDefinition(), defn, provided.managed(),
-                                                                        workspaceName, nodeTypesSupplier, feedback);
-                                provided.update(managedIndex, defn);
+                                                                        workspaceName, nodeTypesSupplier, matcher, feedback);
+                                provided.update(managedIndex, defn, matcher);
                             } catch (RuntimeException e) {
                                 String msg = "Error updating index '{0}' in workspace '{1}' with definition: {2}";
                                 logger().error(e, msg, defn.getName(), workspaceName, defn);
@@ -629,10 +685,11 @@ public abstract class IndexProvider {
                     } else {
                         // There is no managed index yet, so add one ...
                         try {
-                            ManagedIndex managedIndex = createIndex(defn, workspaceName, nodeTypesSupplier, feedback);
-                            ProvidedIndex index = new ProvidedIndex(defn, managedIndex, workspaceName);
+                            NodeTypeMatcher matcher = nodeTypePredicate(nodeTypesSupplier.getNodeTypes(), defn);
+                            ManagedIndex managedIndex = createIndex(defn, workspaceName, nodeTypesSupplier, matcher, feedback);
+                            ProvidedIndex index = new ProvidedIndex(defn, managedIndex, workspaceName, matcher);
                             addProvidedIndex(index);
-                            observable.register(index);
+                            registerIndex(index, observable);
                         } catch (RuntimeException e) {
                             String msg = "Error adding index '{0}' in workspace '{1}' with definition: {2}";
                             logger().error(e, msg, defn.getName(), workspaceName, defn);
@@ -723,7 +780,9 @@ public abstract class IndexProvider {
                 if (adapters != null) {
                     // There are adapters for this workspace ...
                     for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
-                        if (adapter != null) adapter.index(workspace, key, path, primaryType, mixinTypes, properties, true);
+                        if (adapter != null) {
+                            adapter.index(workspace, key, path, primaryType, mixinTypes, properties, true);
+                        }
                     }
                 }
             }
@@ -738,6 +797,8 @@ public abstract class IndexProvider {
      * @param defn the definition of the index; never null
      * @param workspaceName the name of the actual workspace to which the new index applies; never null
      * @param nodeTypesSupplier the supplier for the current node types cache; never null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index, and which automatically
+     *        updates when node types are changed in the repository; may not be null
      * @param feedback the feedback mechanism for this provider to signal to ModeShape that portions of the repository content
      *        must be scanned to build/populate the new index; never null
      * @return the implementation-specific {@link ManagedIndex} for the new index; may not be null
@@ -745,6 +806,7 @@ public abstract class IndexProvider {
     protected abstract ManagedIndex createIndex( IndexDefinition defn,
                                                  String workspaceName,
                                                  NodeTypes.Supplier nodeTypesSupplier,
+                                                 NodeTypePredicate matcher,
                                                  IndexFeedback feedback );
 
     /**
@@ -758,6 +820,8 @@ public abstract class IndexProvider {
      *        ; never null
      * @param workspaceName the name of the actual workspace to which the new index applies; never null
      * @param nodeTypesSupplier the supplier for the current node types cache; never null
+     * @param matcher the node type matcher used to determine which nodes should be included in the index, and which automatically
+     *        updates when node types are changed in the repository; may not be null
      * @param feedback the feedback mechanism for this provider to signal to ModeShape that portions of the repository content
      *        must be scanned to rebuild/repopulate the updated index; never null
      * @return the operations and provider-specific state for this index; never null
@@ -767,6 +831,7 @@ public abstract class IndexProvider {
                                                  ManagedIndex existingIndex,
                                                  String workspaceName,
                                                  NodeTypes.Supplier nodeTypesSupplier,
+                                                 NodeTypePredicate matcher,
                                                  IndexFeedback feedback );
 
     /**
@@ -806,15 +871,43 @@ public abstract class IndexProvider {
     }
 
     @GuardedBy( "this" )
+    private void registerIndex( ProvidedIndex index,
+                                Observable observable ) {
+        // If the index is to be updated asynchronously, then we should regiser the provider as a listener.
+        observable.register(index);
+
+        // If the index is to be updated synchronously (see MODE-2301), then this provider should track the index/listener
+        // so that it can be directly (and synchronously) called from Session.save() --> RepositoryQueryManager -->
+        // RepositoryIndexManager --> IndexProvider(s)
+    }
+
+    @GuardedBy( "this" )
     private void removeProvidedIndex( ProvidedIndex index,
                                       Observable observable ) {
         try {
-            observable.unregister(index);
+            if (!observable.unregister(index)) {
+                // It was registered and the index defn is asynchronous. If synchronous, then it should be removed from
+                // this provider's synchronous list (see MODE-2301).
+            }
             removeIndex(index.indexDefinition(), index.managed(), index.workspaceName());
         } catch (RuntimeException e) {
             String msg = "Error removing index '{0}' in workspace '{1}' with definition: {2}";
             logger().error(e, msg, index.getName(), index.workspaceName(), index.indexDefinition());
         }
+    }
+
+    private NodeTypeMatcher nodeTypePredicate( NodeTypes nodeTypes,
+                                               IndexDefinition defn ) {
+        // Get the indexed node type ...
+        String indexedNodeType = defn.getNodeTypeName();
+        Name indexedNodeTypeName = context().getValueFactories().getNameFactory().create(indexedNodeType);
+        Set<Name> allNodeTypes = nodeTypes.getAllSubtypes(indexedNodeTypeName);
+        assert allNodeTypes != null;
+        return nodeTypePredicate(allNodeTypes);
+    }
+
+    private NodeTypeMatcher nodeTypePredicate( Set<Name> allNodeTypes ) {
+        return NodeTypeMatcher.create(allNodeTypes);
     }
 
     /**
@@ -826,17 +919,20 @@ public abstract class IndexProvider {
      * @author Randall Hauch (rhauch@redhat.com)
      */
     @ThreadSafe
-    private class ProvidedIndex implements Index, ChangeSetListener {
+    private final class ProvidedIndex implements Index, ChangeSetListener {
         private final String workspaceName;
         private volatile ManagedIndex managedIndex;
         private volatile IndexDefinition defn;
+        private final NodeTypeMatcher matcher;
 
         protected ProvidedIndex( IndexDefinition defn,
                                  ManagedIndex managedIndex,
-                                 String workspaceName ) {
+                                 String workspaceName,
+                                 NodeTypeMatcher matcher ) {
             this.defn = defn;
             this.managedIndex = managedIndex;
             this.workspaceName = workspaceName;
+            this.matcher = matcher;
         }
 
         protected final IndexDefinition indexDefinition() {
@@ -884,9 +980,11 @@ public abstract class IndexProvider {
         }
 
         protected final void update( ManagedIndex managedIndex,
-                                     IndexDefinition newDefinition ) {
+                                     IndexDefinition newDefinition,
+                                     NodeTypeMatcher matcher ) {
             this.managedIndex = managedIndex;
             this.defn = defn;
+            this.matcher.use(matcher);
         }
     }
 }

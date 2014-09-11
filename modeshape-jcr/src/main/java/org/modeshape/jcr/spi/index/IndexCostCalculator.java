@@ -17,6 +17,7 @@ package org.modeshape.jcr.spi.index;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.query.model.BindVariableName;
@@ -53,18 +54,11 @@ public interface IndexCostCalculator {
     }
 
     /**
-     * Get the name of the node type that the query is selecting.
+     * Get the name of the node type that the query is selecting, including aliases.
      *
-     * @return the node type name; never null
+     * @return the node type names; never null
      */
-    String selectedNodeType();
-
-    /**
-     * Get the name (or alias) of the selector for which the {@link #selectedNodeType()} applies.
-     * 
-     * @return the name or alias; never null
-     */
-    String selectorNameOrAlias();
+    Set<String> selectedNodeTypes();
 
     /**
      * Get the ANDed constraints that apply to the index to which this filter is submitted.

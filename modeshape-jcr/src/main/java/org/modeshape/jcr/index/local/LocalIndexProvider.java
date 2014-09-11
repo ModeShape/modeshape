@@ -33,6 +33,7 @@ import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 import org.modeshape.jcr.api.query.qom.Relike;
+import org.modeshape.jcr.cache.change.ChangeSetAdapter.NodeTypePredicate;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.Comparison;
 import org.modeshape.jcr.query.model.FullTextSearch;
@@ -159,15 +160,16 @@ public class LocalIndexProvider extends IndexProvider {
                                        IndexDefinition defn,
                                        NodeTypes.Supplier nodeTypeSupplier,
                                        Problems problems ) {
-        ManagedLocalIndexBuilder.create(context, defn, nodeTypeSupplier).validate(problems);
+        ManagedLocalIndexBuilder.create(context, defn, nodeTypeSupplier, null).validate(problems);
     }
 
     @Override
     protected ManagedIndex createIndex( IndexDefinition defn,
                                         String workspaceName,
                                         Supplier nodeTypesSupplier,
+                                        NodeTypePredicate matcher,
                                         IndexFeedback feedback ) {
-        ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), defn, nodeTypesSupplier);
+        ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), defn, nodeTypesSupplier, matcher);
         logger().debug("Index provider '{0}' is creating index in workspace '{1}': {2}", getName(), workspaceName, defn);
         ManagedIndex index = builder.build(workspaceName, db);
         feedback.scan(workspaceName);
@@ -180,6 +182,7 @@ public class LocalIndexProvider extends IndexProvider {
                                         ManagedIndex existingIndex,
                                         String workspaceName,
                                         Supplier nodeTypesSupplier,
+                                        NodeTypePredicate matcher,
                                         IndexFeedback feedback ) {
         if (!isChanged(oldDefn, updatedDefn)) {
             // Nothing about the index definition that we care about really changed, so don't do anything ...
@@ -189,7 +192,7 @@ public class LocalIndexProvider extends IndexProvider {
         }
         // This is very crude, but we'll just destroy the old index and rebuild the new one ...
         existingIndex.shutdown(true);
-        ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), updatedDefn, nodeTypesSupplier);
+        ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), updatedDefn, nodeTypesSupplier, matcher);
         logger().debug("Index provider '{0}' is updating index in workspace '{1}': {2}", getName(), workspaceName, updatedDefn);
         ManagedIndex index = builder.build(workspaceName, db);
         feedback.scan(workspaceName);

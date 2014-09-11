@@ -83,7 +83,7 @@ import org.modeshape.jcr.value.WorkspaceAndPath;
  * index manager maintains an immutable view of all index definitions.
  */
 @ThreadSafe
-class RepositoryIndexManager implements IndexManager {
+class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
 
     /**
      * Names of properties that are known to have non-unique values when used in a single-valued index.
@@ -195,6 +195,14 @@ class RepositoryIndexManager implements IndexManager {
         refreshIndexWriter();
         initialized.set(true);
         return feedback;
+    }
+
+    @Override
+    public void notify( NodeTypes updatedNodeTypes ) {
+        // Notify all of the providers about the change in node types ...
+        for (IndexProvider provider : providers.values()) {
+            provider.notify(updatedNodeTypes);
+        }
     }
 
     synchronized void importIndexDefinitions() throws RepositoryException {
