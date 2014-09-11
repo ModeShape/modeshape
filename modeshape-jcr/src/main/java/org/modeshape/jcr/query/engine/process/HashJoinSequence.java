@@ -134,8 +134,8 @@ public class HashJoinSequence extends JoinSequence {
 
     @Override
     public String toString() {
-        return "(hash-join " + joinType + " left=" + left + ", right=" + delegate + ", on " + leftExtractor + "=" + extractor
-               + " )";
+        return "(hash-join width=" + width() + " " + joinType + " left=" + left + ", right=" + delegate + ", on " + leftExtractor
+               + "=" + extractor + " )";
     }
 
     protected class HashJoinBatchFactory implements BatchFactory {

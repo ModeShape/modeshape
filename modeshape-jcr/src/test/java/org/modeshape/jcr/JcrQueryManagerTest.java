@@ -746,6 +746,55 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @FixFor( "MODE-2297" )
     @Test
+    public void shouldExecuteQueryUsingSetOperationOfQueriesAccessSystemContent() throws RepositoryException {
+
+        // print = true;
+        String sql1 = "SELECT BASE.[jcr:path] from [mode:nodeTypes] as BASE " //
+                      + "JOIN  [mode:system] AS PARENT ON ISCHILDNODE(BASE,PARENT) "//
+                      + "JOIN [mode:namespaces] AS REF2 ON REF2.[jcr:uuid] = PARENT.[jcr:uuid]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        String sql2 = "SELECT BASEx.[jcr:path] from [mode:nodeTypes] as BASEx " //
+                      + "JOIN  [mode:nodeTypes] AS REFx ON REFx.[jcr:primaryType] = BASEx.[jcr:uuid]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        String sql = sql1 + " UNION " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " UNION " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " EXCEPT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " EXCEPT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2297" )
+    @Test
     public void shouldExecuteQueryUsingSetOperationOfQueriesWithJoins() throws RepositoryException {
         // Make sure that /Other/NodeA[3] contains references to /Other/NodeA and /Other/NodeA[2] ...
         Node nodeA1 = session.getNode("/Other/NodeA");

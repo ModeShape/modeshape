@@ -82,7 +82,7 @@ public class DistinctSequence extends DelegatingSequence {
 
     @Override
     public String toString() {
-        return "(distinct " + delegate + ")";
+        return "(distinct on " + filter + " " + delegate + ")";
     }
 
 }

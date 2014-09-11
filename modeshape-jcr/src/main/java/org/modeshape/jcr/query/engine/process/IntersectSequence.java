@@ -141,6 +141,6 @@ public class IntersectSequence extends AbstractNodeKeysSequence {
 
     @Override
     public String toString() {
-        return "(intersect left=" + leftSequence + ", right=" + delegate + ", on " + extractor + " )";
+        return "(intersect width=" + width() + " left=" + leftSequence + ", right=" + delegate + ", on " + extractor + " )";
     }
 }

@@ -116,6 +116,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
         return name + "/enumerated/" + value;
     }
 
+    @Override
     public String getName() {
         return name;
     }
