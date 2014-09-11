@@ -25,22 +25,27 @@
 package org.modeshape.test.integration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
-import javax.jcr.query.Query;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.connector.meta.jdbc.JdbcMetadataLexicon;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
@@ -70,8 +75,9 @@ public class FederationIntegrationTest {
         // predefined
         assertNotNull(defaultSession.getNode("/projection1"));
 
+        // create a new projection
         FederationManager federationManager = defaultSession.getWorkspace().getFederationManager();
-        federationManager.createProjection("/", "filesystem", "/", "testProjection");
+        federationManager.createProjection("/", "filesystem_readonly", "/", "testProjection");
         assertNotNull(defaultSession.getNode("/testProjection"));
 
         Session otherSession = repository.login("other");
@@ -93,6 +99,44 @@ public class FederationIntegrationTest {
     }
 
     @Test
+    public void shouldCorrectlyWriteFilesToDisk() throws Exception {
+        Session session = repository.login();
+
+        // configured via arquillian.xml
+        String rootFolderPath = System.getProperty("rootDirectoryPath");
+        assertNotNull(rootFolderPath);
+        File rootFolder = new File(rootFolderPath);
+        assertTrue(rootFolder.isDirectory());
+        File subFolder = new File(rootFolder, "sub_folder");
+        if (subFolder.exists()) {
+            FileUtil.delete(subFolder);
+        }
+        assertFalse(subFolder.exists());
+
+        // predefined
+        Node rootProjection = session.getNode("/root");
+        assertNotNull(rootProjection);
+
+        //add a sub-folder
+        rootProjection.addNode("sub_folder", "nt:folder");
+        session.save();
+
+        //check the newly added folder node was created
+        subFolder = new File(rootFolder, "sub_folder");
+        assertTrue(subFolder.exists());
+        assertTrue(subFolder.isDirectory());
+
+        //now add a file
+        ByteArrayInputStream bis = new ByteArrayInputStream("test string".getBytes());
+        new JcrTools().uploadFile(session, "/root/sub_folder/file", bis);
+        session.save();
+        File file = new File(subFolder, "file");
+        assertTrue(file.exists());
+        assertTrue(file.isFile());
+        assertEquals("test string", IoUtil.read(file));
+    }
+
+    @Test
     public void shouldHaveGitSourceConfigured() throws Exception {
         Session session = repository.login();
         Node testRoot = session.getRootNode().addNode("repos");
@@ -109,6 +153,8 @@ public class FederationIntegrationTest {
             assertNotNull(gitNode.getNode("branches"));
             assertNotNull(gitNode.getNode("tags"));
 
+            /**
+             * //TODO author=Horia Chiorean date=11-Sep-14 description=This should be re-enabled after MODE-2178
             // check configured queryable branches
             workspace.reindex(gitNode.getPath() + "/tree/master/.gitignore");
             Query query = workspace.getQueryManager()
@@ -119,6 +165,7 @@ public class FederationIntegrationTest {
             query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/2.x/%'",
                                                             Query.JCR_SQL2);
             assertEquals(2, query.execute().getNodes().getSize());
+             */
         } finally {
             testRoot.remove();
             session.save();
