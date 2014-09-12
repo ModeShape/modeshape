@@ -50,6 +50,7 @@ import org.modeshape.common.util.StringUtil;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@SuppressWarnings( "deprecation" )
 public final class JSONRestClient {
 
     private static final UrlEncoder URL_ENCODER = new UrlEncoder().setSlashEncoded(false);

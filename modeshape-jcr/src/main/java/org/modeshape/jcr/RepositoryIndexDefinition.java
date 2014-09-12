@@ -40,15 +40,15 @@ final class RepositoryIndexDefinition implements IndexDefinition {
 
     public static IndexDefinition createFrom( IndexDefinition other ) {
         return new RepositoryIndexDefinition(other.getName(), other.getProviderName(), other.getKind(), other.getNodeTypeName(),
-                                             other, other.getIndexProperties(), other.getDescription(), other.isEnabled(),
-                                             other.getWorkspaceMatchRule());
+                                             other, other.getIndexProperties(), other.getDescription(), other.isSynchronous(),
+                                             other.isEnabled(), other.getWorkspaceMatchRule());
     }
 
     public static IndexDefinition createFrom( IndexDefinition other,
                                               boolean isEnabled ) {
         return new RepositoryIndexDefinition(other.getName(), other.getProviderName(), other.getKind(), other.getNodeTypeName(),
-                                             other, other.getIndexProperties(), other.getDescription(), isEnabled,
-                                             other.getWorkspaceMatchRule());
+                                             other, other.getIndexProperties(), other.getDescription(), other.isSynchronous(),
+                                             isEnabled, other.getWorkspaceMatchRule());
     }
 
     private final String name;
@@ -56,6 +56,7 @@ final class RepositoryIndexDefinition implements IndexDefinition {
     private final IndexKind kind;
     private final String nodeTypeName;
     private final String description;
+    private final boolean synchronous;
     private final boolean enabled;
     private final List<IndexColumnDefinition> columnDefns;
     private final Map<String, IndexColumnDefinition> columnDefnsByName;
@@ -69,6 +70,7 @@ final class RepositoryIndexDefinition implements IndexDefinition {
                                Iterable<IndexColumnDefinition> columnDefns,
                                Map<String, Object> extendedProperties,
                                String description,
+                               boolean synchronous,
                                boolean enabled,
                                WorkspaceMatchRule workspaceRule ) {
         assert name != null;
@@ -84,6 +86,7 @@ final class RepositoryIndexDefinition implements IndexDefinition {
         this.extendedProperties = extendedProperties;
         this.description = description != null ? description : "";
         this.enabled = enabled;
+        this.synchronous = synchronous;
         this.workspaceRule = workspaceRule;
         this.columnDefnsByName = new HashMap<>();
         for (IndexColumnDefinition columnDefn : columnDefns) {
@@ -117,6 +120,11 @@ final class RepositoryIndexDefinition implements IndexDefinition {
     @Override
     public String getDescription() {
         return description;
+    }
+
+    @Override
+    public boolean isSynchronous() {
+        return synchronous;
     }
 
     @Override
@@ -181,6 +189,7 @@ final class RepositoryIndexDefinition implements IndexDefinition {
             sb.append(col);
         }
         sb.append(" kind=").append(getKind());
+        sb.append(" sync=").append(isSynchronous());
         sb.append(" workspaces=").append(workspaceRule);
         return sb.toString();
     }

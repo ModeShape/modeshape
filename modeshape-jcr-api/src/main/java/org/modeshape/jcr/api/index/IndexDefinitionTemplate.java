@@ -81,6 +81,15 @@ public interface IndexDefinitionTemplate extends IndexDefinition {
     IndexDefinitionTemplate setDescription( String description );
 
     /**
+     * Set the whether this index should be updated synchronously within save calls.
+     *
+     * @param synchronous true if this index should be updated synchronously before the corresponding save call returns, or false
+     *        if the index is to be updated asynchronously after the save call
+     * @return this instance for method chaining; never null
+     */
+    IndexDefinitionTemplate setSynchronous( boolean synchronous );
+
+    /**
      * Set the definitions for this index's columns
      *
      * @param columnDefinitions the definitions for the columns; may not be null or empty

@@ -527,7 +527,7 @@
                   <index-provider name="local" classname="local" path="modeshape/artifacts/indexes/" relative-to="jboss.server.data.dir" />
                 </index-providers>
                 <indexes>
-                  <index name="names" provider-name="local" kind="value" node-type="nt:base" columns="jcr:name(NAME)" />
+                  <index name="names" provider-name="local" synchronous="true" kind="value" node-type="nt:base" columns="jcr:name(NAME)" />
                 </indexes>
                 <!--
                 Define a bunch of sequencers. Carefully note the differences in the path expressions; some sequencers

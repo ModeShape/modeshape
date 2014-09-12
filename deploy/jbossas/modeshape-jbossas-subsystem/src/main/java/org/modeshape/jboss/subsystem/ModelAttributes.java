@@ -288,6 +288,14 @@ public class ModelAttributes {
                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                      .build();
 
+    public static final SimpleAttributeDefinition SYNCHRONOUS = new MappedAttributeDefinitionBuilder(ModelKeys.SYNCHRONOUS,
+                                                                                                    ModelType.BOOLEAN).setXmlName(Attribute.SYNCHRONOUS.getLocalName())
+                                                                                                                     .setAllowExpression(true)
+                                                                                                                     .setAllowNull(true)
+                                                                                                                     .setDefaultValue(new ModelNode().set(Boolean.TRUE))
+                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                     .build();
+
     public static final SimpleAttributeDefinition JNDI_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.JNDI_NAME,
                                                                                                    ModelType.STRING).setXmlName(Attribute.JNDI_NAME.getLocalName())
                                                                                                                     .setAllowExpression(false)
@@ -679,7 +687,7 @@ public class ModelAttributes {
         CLASSNAME, MODULE, STORE_NAME};
 
     public static final AttributeDefinition[] INDEX_DEFINITION_ATTRIBUTES = {INDEX_KIND, PROVIDER_NAME, NODE_TYPE_NAME,
-        INDEX_COLUMNS, PROPERTIES};
+        SYNCHRONOUS ,INDEX_COLUMNS, PROPERTIES};
 
     public static final AttributeDefinition[] INDEX_PROVIDER_ATTRIBUTES = {CLASSNAME, MODULE, RELATIVE_TO, PATH, PROPERTIES};
 

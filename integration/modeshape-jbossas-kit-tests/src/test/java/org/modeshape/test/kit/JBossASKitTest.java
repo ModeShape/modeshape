@@ -54,6 +54,7 @@ import org.modeshape.jcr.api.Repository;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@SuppressWarnings( "deprecation" )
 @RunWith( Arquillian.class )
 public class JBossASKitTest {
 

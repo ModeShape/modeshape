@@ -82,6 +82,14 @@ public interface IndexDefinition extends Iterable<IndexColumnDefinition> {
     boolean isEnabled();
 
     /**
+     * Determine whether this index is updated synchronously. If true, then its indexes are updated within the scope of the save
+     * operations. Otherwise, the indexes are updated asynchronously.
+     * 
+     * @return true if the index is synchronously updated, or false otherwise
+     */
+    boolean isSynchronous();
+
+    /**
      * Determine whether this index has a single column.
      *
      * @return true if this index has a single column, or false if it has more
@@ -129,14 +137,14 @@ public interface IndexDefinition extends Iterable<IndexColumnDefinition> {
     /**
      * Determine if this index definition has a column that applies to the named property. This is a convenience method that is
      * equivalent to:
-     * 
+     *
      * <pre>
      * for (IndexColumnDefinition columnDefn : this) {
      *     if (columnDefn.getPropertyName().equals(propertyName)) return true;
      * }
      * return false;
      * </pre>
-     * 
+     *
      * @param propertyName the name of the property
      * @return true if this definition contains a column that applies to a property with the given name
      */

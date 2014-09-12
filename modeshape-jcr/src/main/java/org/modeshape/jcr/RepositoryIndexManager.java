@@ -53,6 +53,7 @@ import org.modeshape.jcr.api.index.IndexExistsException;
 import org.modeshape.jcr.api.index.InvalidIndexDefinitionException;
 import org.modeshape.jcr.api.index.NoSuchIndexException;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.NodeAdded;
@@ -746,6 +747,8 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions(providers.keySet());
             this.indexes = new Indexes(context, indexDefns, nodeTypes);
             return this.indexes;
+        } catch (WorkspaceNotFoundException e) {
+            // This happens occasionally when shutting down ...
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingIndexDefinitions, repository.name());
         }

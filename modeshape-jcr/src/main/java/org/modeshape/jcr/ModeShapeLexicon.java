@@ -96,6 +96,7 @@ public class ModeShapeLexicon {
     public static final Name PROPERTY_NAME = new BasicName(Namespace.URI, "propertyName");
     public static final Name COLUMN_TYPE_NAME = new BasicName(Namespace.URI, "columnTypeName");
     public static final Name WORKSPACES = new BasicName(Namespace.URI, "workspaces");
+    public static final Name SYNCHRONOUS = new BasicName(Namespace.URI, "synchronous");
 
     /**
      * ACL related

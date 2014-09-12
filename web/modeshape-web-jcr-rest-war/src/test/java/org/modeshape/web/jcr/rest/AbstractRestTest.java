@@ -68,6 +68,7 @@ import junit.framework.AssertionFailedError;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@SuppressWarnings( "deprecation" )
 public abstract class AbstractRestTest {
 
     private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid", "jcr:score",

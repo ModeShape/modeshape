@@ -518,6 +518,7 @@ public class SystemContent {
         String providerNameStr = strings.create(providerName);
         String kindStr = strings.create(first(indexDefn, ModeShapeLexicon.KIND));
         String workspacesRule = strings.create(first(indexDefn, ModeShapeLexicon.WORKSPACES));
+        boolean synchronous = booleans.create(first(indexDefn, ModeShapeLexicon.SYNCHRONOUS));
         IndexKind kind = IndexKind.valueOf(kindStr);
         String nodeTypeName = strings.create(names.create(first(indexDefn, ModeShapeLexicon.NODE_TYPE_NAME)));
         Map<String, Object> extendedProps = new HashMap<>();
@@ -539,8 +540,8 @@ public class SystemContent {
         }
 
         WorkspaceMatchRule rule = RepositoryIndexDefinition.workspaceMatchRule(workspacesRule);
-        return new RepositoryIndexDefinition(name, providerNameStr, kind, nodeTypeName, columnDefns, extendedProps, desc, true,
-                                             rule);
+        return new RepositoryIndexDefinition(name, providerNameStr, kind, nodeTypeName, columnDefns, extendedProps, desc,
+                                             synchronous, true, rule);
     }
 
     public IndexColumnDefinition readIndexColumnDefinition( CachedNode indexColumnDefn ) {
@@ -676,6 +677,7 @@ public class SystemContent {
         properties.add(propertyFactory.create(JcrLexicon.DESCRIPTION, indexDefn.getDescription()));
         properties.add(propertyFactory.create(ModeShapeLexicon.KIND, indexDefn.getKind().name()));
         properties.add(propertyFactory.create(ModeShapeLexicon.NODE_TYPE_NAME, indexDefn.getNodeTypeName()));
+        properties.add(propertyFactory.create(ModeShapeLexicon.SYNCHRONOUS, indexDefn.isSynchronous()));
 
         // Now make or adjust the node for the index definition ...
         if (indexNode != null) {

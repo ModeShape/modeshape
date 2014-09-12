@@ -79,6 +79,7 @@ public enum Attribute {
     JOURNAL_RELATIVE_TO("journal-relative-to"),
 
     INDEX_KIND("kind"),
+    SYNCHRONOUS("synchronous"),
     PROVIDER_NAME("provider-name"),
     NODE_TYPE("node-type"),
     COLUMNS("columns");
@@ -91,7 +92,7 @@ public enum Attribute {
 
     /**
      * Get the local name of this element.
-     * 
+     *
      * @return the local name
      */
     public String getLocalName() {
