@@ -30,13 +30,16 @@ import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
 class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
 
     private final String DEFAULT_NODE_TYPE_NAME = JcrNtLexicon.BASE.getString();
+    private final boolean DEFAULT_SYNCHRONOUS = true;
+    private final boolean DEFAULT_ENABLED = true;
 
     private String name;
     private String providerName;
     private IndexKind kind = IndexKind.VALUE;
     private String nodeTypeName = DEFAULT_NODE_TYPE_NAME;
     private String description = "";
-    private boolean enabled = true;
+    private boolean enabled = DEFAULT_ENABLED;
+    private boolean synchronous = DEFAULT_SYNCHRONOUS;
     private List<IndexColumnDefinition> columnDefns = new ArrayList<>();
     private Map<String, Object> extendedProperties = new HashMap<>();
     private WorkspaceMatchRule workspaceRule = RepositoryIndexDefinition.MATCH_ALL_WORKSPACES_RULE;
@@ -67,6 +70,11 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
     @Override
     public String getDescription() {
         return description;
+    }
+
+    @Override
+    public boolean isSynchronous() {
+        return synchronous;
     }
 
     @Override
@@ -147,6 +155,12 @@ class RepositoryIndexDefinitionTemplate implements IndexDefinitionTemplate {
     @Override
     public IndexDefinitionTemplate setDescription( String description ) {
         this.description = description != null ? description : "";
+        return this;
+    }
+
+    @Override
+    public IndexDefinitionTemplate setSynchronous( boolean synchronous ) {
+        this.synchronous = synchronous;
         return this;
     }
 

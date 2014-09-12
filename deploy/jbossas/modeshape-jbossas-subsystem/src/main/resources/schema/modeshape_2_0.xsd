@@ -493,6 +493,11 @@
                 <xs:documentation>The kind of the index.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="synchronous" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>Whether the index is updated synchronously within the save calls.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="node-type" type="xs:string" default="nt:base">
             <xs:annotation>
                 <xs:documentation>The name of the node type to which this index applies. This index will include only those

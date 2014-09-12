@@ -102,11 +102,11 @@ import org.modeshape.sequencer.cnd.CndSequencer;
  *
  * <pre>
  *    variable := '${' variableNames [ ':' defaultValue ] '}'
- * 
+ *
  *    variableNames := variableName [ ',' variableNames ]
- * 
+ *
  *    variableName := /* any characters except ',' and ':' and '}'
- * 
+ *
  *    defaultValue := /* any characters except
  * </pre>
  *
@@ -426,6 +426,7 @@ public class RepositoryConfiguration {
         public static final String PROVIDERS = "providers";
         public static final String PROVIDER_NAME = "provider";
         public static final String KIND = "kind";
+        public static final String SYNCHRONOUS = "synchronous";
         public static final String NODE_TYPE = "nodeType";
         public static final String COLUMNS = "columns";
         public static final String TYPE = "type";
@@ -601,6 +602,7 @@ public class RepositoryConfiguration {
 
         public static final String KIND = IndexKind.VALUE.name();
         public static final String NODE_TYPE = "nt:base";
+        public static final boolean SYNCHRONOUS = true;
         public static final String WORKSPACES = "*";
     }
 
@@ -1803,6 +1805,11 @@ public class RepositoryConfiguration {
                 }
 
                 @Override
+                public boolean isSynchronous() {
+                    return doc.getBoolean(FieldName.SYNCHRONOUS, Default.SYNCHRONOUS);
+                }
+
+                @Override
                 public boolean isEnabled() {
                     return true;
                 }
@@ -2491,13 +2498,13 @@ public class RepositoryConfiguration {
      *   ModeShapeEngine engine = ...
      *   Repository deployed = engine.getRepository("repo");
      *   RepositoryConfiguration deployedConfig = deployed.getConfiguration();
-     * 
+     *
      *   // Create an editor ...
      *   Editor editor = deployedConfig.edit();
-     * 
+     *
      *   // Modify the copy of the configuration (we'll do something trivial here) ...
      *   editor.setNumber(FieldName.LARGE_VALUE_SIZE_IN_BYTES,8096);
-     * 
+     *
      *   // Get the changes and validate them ...
      *   Changes changes = editor.getChanges();
      *   Results validationResults = deployedConfig.validate(changes);

@@ -35,6 +35,7 @@ import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
+import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.cache.CachedNode.Properties;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -76,7 +77,7 @@ import org.modeshape.jcr.value.ValueFactories;
  * specialized for any implementation-specific startup behavior.</li>
  * <li>Notify this provider of all of its {@link IndexDefinition}s, whether they are defined in the configuration or persisted in
  * the repository's system area, by calling
- * {@link #notify(IndexDefinitionChanges, Observable, org.modeshape.jcr.NodeTypes.Supplier, Set, IndexFeedback)}. This method
+ * {@link #notify(IndexDefinitionChanges, ChangeBus, org.modeshape.jcr.NodeTypes.Supplier, Set, IndexFeedback)}. This method
  * processes all of the definition changes, and based upon the available workspaces, calls the {@link #createIndex},
  * {@link #updateIndex}, and {@link #removeIndex} methods for each index/workspace combination. Each of these methods can request
  * via the {@link IndexFeedback} method parameter that all or parts of the repository content be scanned and re-indexed. (The
@@ -89,10 +90,10 @@ import org.modeshape.jcr.value.ValueFactories;
  * </ol>
  * After the repository is running, calls to {@link IndexManager} will alter the {@link IndexDefinition}s index definitions. As
  * these changes are persisted, the repository will call the
- * {@link #notify(IndexDefinitionChanges, Observable, org.modeshape.jcr.NodeTypes.Supplier, Set, IndexFeedback)} again, this time
+ * {@link #notify(IndexDefinitionChanges, ChangeBus, org.modeshape.jcr.NodeTypes.Supplier, Set, IndexFeedback)} again, this time
  * with only the changes that were made to this provider's index definitions. If a new workspace is added or an existing workspace
  * is removed, ModeShape will called
- * {@link #notify(WorkspaceChanges, Observable, org.modeshape.jcr.NodeTypes.Supplier, Set, IndexFeedback)} with the relevant
+ * {@link #notify(WorkspaceChanges, ChangeBus, org.modeshape.jcr.NodeTypes.Supplier, Set, IndexFeedback)} with the relevant
  * information to allow the provider to respond.</li>
  * </p>
  * <p>
@@ -584,7 +585,7 @@ public abstract class IndexProvider {
      *        entirely or partially rebuilt via scanning; never null
      */
     public synchronized final void notify( final WorkspaceChanges changes,
-                                           Observable observable,
+                                           ChangeBus observable,
                                            NodeTypes.Supplier nodeTypesSupplier,
                                            final Set<String> workspaceNames,
                                            IndexFeedback feedback ) {
@@ -637,7 +638,7 @@ public abstract class IndexProvider {
      *        entirely or partially rebuilt via scanning; never null
      */
     public synchronized final void notify( final IndexDefinitionChanges changes,
-                                           Observable observable,
+                                           ChangeBus observable,
                                            NodeTypes.Supplier nodeTypesSupplier,
                                            final Set<String> workspaceNames,
                                            IndexFeedback feedback ) {
@@ -849,7 +850,7 @@ public abstract class IndexProvider {
                                          String workspaceName );
 
     @GuardedBy( "this" )
-    private void removeProvidedIndexes( Observable observable,
+    private void removeProvidedIndexes( ChangeBus observable,
                                         Predicate<ProvidedIndex> predicate ) {
         Iterator<Map.Entry<String, Map<String, ProvidedIndex>>> iter = providedIndexesByWorkspaceNameByIndexName.entrySet()
                                                                                                                 .iterator();
@@ -872,23 +873,23 @@ public abstract class IndexProvider {
 
     @GuardedBy( "this" )
     private void registerIndex( ProvidedIndex index,
-                                Observable observable ) {
-        // If the index is to be updated asynchronously, then we should regiser the provider as a listener.
-        observable.register(index);
-
-        // If the index is to be updated synchronously (see MODE-2301), then this provider should track the index/listener
-        // so that it can be directly (and synchronously) called from Session.save() --> RepositoryQueryManager -->
-        // RepositoryIndexManager --> IndexProvider(s)
+                                ChangeBus observable ) {
+        // Register the index as a listener will work even when clustered.
+        if (index.indexDefinition().isSynchronous()) {
+            // The index should be updated synchronously in the same thread that submits the events to the bus (before the
+            // 'notify' method returns), and the "in-thread" behavior is what does this ...
+            observable.registerInThread(index);
+        } else {
+            // The index is to be updated asynchronously, so use a normal listener ...
+            observable.register(index);
+        }
     }
 
     @GuardedBy( "this" )
     private void removeProvidedIndex( ProvidedIndex index,
-                                      Observable observable ) {
+                                      ChangeBus observable ) {
         try {
-            if (!observable.unregister(index)) {
-                // It was registered and the index defn is asynchronous. If synchronous, then it should be removed from
-                // this provider's synchronous list (see MODE-2301).
-            }
+            observable.unregister(index);
             removeIndex(index.indexDefinition(), index.managed(), index.workspaceName());
         } catch (RuntimeException e) {
             String msg = "Error removing index '{0}' in workspace '{1}' with definition: {2}";

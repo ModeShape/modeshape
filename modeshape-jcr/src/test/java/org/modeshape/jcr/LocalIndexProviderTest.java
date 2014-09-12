@@ -56,6 +56,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
     public void afterEach() throws Exception {
         super.afterEach();
         FileUtil.delete(STORAGE_DIR);
+        // Thread.sleep(100L); // wait for the repository to shut down and terminate all listeners
     }
 
     @Test
@@ -63,10 +64,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         String indexName = "descriptionIndex";
         registerValueIndex(indexName, "mix:title", "Index for the 'jcr:title' property on mix:title", "*", "jcr:title",
                            PropertyType.STRING);
-        Thread.sleep(500L);
-
+        waitForIndexes();
         indexManager().unregisterIndexes(indexName);
-        Thread.sleep(500L);
+        waitForIndexes();
     }
 
     @Test
@@ -91,9 +91,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] = 'The Title'");
@@ -134,9 +134,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Compute a query plan that will NOT use this index, since the selector doesn't match the index's node type.
         // If we would use this index, the index doesn't know about non-mix:title nodes like the 'other' node ...
@@ -175,9 +175,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("notion:longProperty", 100L);
         other.setProperty("jcr:title", "The Title");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [notion:typed] WHERE [notion:longProperty] = 1234");
@@ -233,9 +233,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         Node other = root.addNode("somethingElse");
         other.setProperty("jcr:lastModified", Calendar.getInstance());
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:lastModified] WHERE [jcr:lastModified] > CAST('2012-10-21T00:00:00.000' AS DATE)");
@@ -267,9 +267,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         Node other = root.addNode("somethingElse");
         other.setProperty("jcr:lastModified", Calendar.getInstance());
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:lastModified] WHERE [jcr:lastModified] > CAST('2012-10-21T00:00:00.000' AS DATE)");
@@ -302,9 +302,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [nt:base] WHERE [jcr:name] = 'myFirstBook'");
@@ -336,9 +336,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [mode:depth] > 0");
@@ -373,9 +373,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues a query that should NOT use this index because direct lookup by path is lower cost ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [jcr:path] = '/myFirstBook'");
@@ -416,9 +416,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("jcr:title", "The Title");
         other.setProperty("someProperty", "value1");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE someProperty = 'value1'");
@@ -459,9 +459,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("jcr:title", "The Title");
         other.setProperty("someProperty", "value1");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues some queries that should use this index ...
         final String queryStr = "SELECT * FROM [nt:unstructured] WHERE someProperty = 'value1'";
@@ -502,9 +502,9 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         other.setProperty("jcr:title", "The Title");
         other.setProperty("someProperty", "value1");
 
-        Thread.sleep(500L);
+        waitForIndexes();
         session.save();
-        Thread.sleep(500L);
+        waitForIndexes();
 
         // Issues some queries that should use this index ...
         String queryStr = "SELECT * FROM [nt:unstructured] WHERE someProperty = 'non-existant'";
@@ -525,7 +525,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         registerNodeType(typeName);
         registerValueIndex("ntsome2sysname", typeName, null, "*", "sysName", PropertyType.STRING);
 
-        Thread.sleep(500);
+        waitForIndexes();
 
         Node newNode = session.getRootNode().addNode("SOMENODE", typeName);
         newNode.setProperty("sysName", "X");
@@ -543,7 +543,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         // Save the transient data ...
         session.save();
 
-        Thread.sleep(500);
+        waitForIndexes();
 
         // Issue a query that will NOT use the index ...
         queryStr = "select BASE.* FROM [" + typeName + "] as BASE WHERE NAME(BASE) = 'SOMENODE'";
@@ -557,13 +557,13 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
 
         registerValueIndex("ntusysname", "nt:unstructured", null, "*", "sysName", PropertyType.STRING);
 
-        Thread.sleep(500);
+        waitForIndexes();
 
         Node newNode2 = session.getRootNode().addNode("SOMENODE2", "nt:unstructured");
         newNode2.setProperty("sysName", "X");
         session.save();
 
-        Thread.sleep(500);
+        waitForIndexes();
 
         // print = true;
 
@@ -610,6 +610,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         template.setKind(kind);
         template.setNodeTypeName(indexedNodeType);
         template.setProviderName(providerName);
+        template.setSynchronous(useSynchronousIndexes());
         if (workspaceNamePattern != null) {
             template.setWorkspaceNamePattern(workspaceNamePattern);
         } else {
@@ -638,6 +639,18 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
 
     protected ValidationBuilder validateQuery() {
         return ValidateQuery.validateQuery().printDetail(print);
+    }
+
+    protected boolean useSynchronousIndexes() {
+        return true;
+    }
+
+    protected void waitForIndexes() throws InterruptedException {
+        if (useSynchronousIndexes()) {
+            Thread.sleep(10L);
+        } else {
+            Thread.sleep(500L);
+        }
     }
 
 }

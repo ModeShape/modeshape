@@ -91,6 +91,7 @@ public class ModelKeys {
 
     static final String INDEX = "index";
     static final String INDEX_KIND = "index-kind";
+    static final String SYNCHRONOUS = "synchronous";
     static final String PROVIDER_NAME = "provider-name";
     static final String NODE_TYPE_NAME = "node-type-name";
     static final String INDEX_COLUMNS = "index-columns";

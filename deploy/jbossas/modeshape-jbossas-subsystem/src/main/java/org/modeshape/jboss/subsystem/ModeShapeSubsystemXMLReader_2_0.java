@@ -954,6 +954,9 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                     case INDEX_KIND:
                         ModelAttributes.INDEX_KIND.parseAndSetParameter(attrValue, index, reader);
                         break;
+                    case SYNCHRONOUS:
+                        ModelAttributes.SYNCHRONOUS.parseAndSetParameter(attrValue, index, reader);
+                        break;
                     case NODE_TYPE:
                         ModelAttributes.NODE_TYPE_NAME.parseAndSetParameter(attrValue, index, reader);
                         break;
@@ -1125,7 +1128,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
 
     /**
      * Checks that the current element has no attributes, throwing an {@link javax.xml.stream.XMLStreamException} if one is found.
-     * 
+     *
      * @param reader the reader
      * @throws javax.xml.stream.XMLStreamException if an error occurs
      */

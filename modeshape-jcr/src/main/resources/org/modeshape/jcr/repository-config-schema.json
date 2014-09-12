@@ -765,6 +765,11 @@
                         "default" : "value",
                         "description" : "The kind of the index."
                     },
+                    "synchronous" : {
+                        "type" : "boolean",
+                        "default" : "true",
+                        "description" : "Whether the index is updated synchronously before the save method returns. The default is 'true'."
+                    },
                     "nodeType" : {
                         "type" : "string",
                         "default" : "nt:base",
