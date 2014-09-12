@@ -29,6 +29,7 @@ import com.smartgwt.client.widgets.form.fields.events.ChangedEvent;
 import com.smartgwt.client.widgets.form.fields.events.ChangedHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
 import com.smartgwt.client.widgets.layout.VLayout;
+import java.util.Date;
 import org.modeshape.web.client.grid.AccessList;
 import org.modeshape.web.client.grid.Children;
 import org.modeshape.web.client.grid.Properties;
@@ -67,7 +68,6 @@ public class Contents extends View {
     private RenameNodeDialog renameNodeDialog = new RenameNodeDialog(this);
     private AddMixinDialog addMixinDialog = new AddMixinDialog(this);
     private RemoveMixinDialog removeMixinDialog = new RemoveMixinDialog(this);
-    private AddPropertyDialog setPropertyDialog = new AddPropertyDialog(this);
     private AddPrincipalDialog addAccessListDialog = new AddPrincipalDialog(this);
     
     private ExportDialog exportDialog = new ExportDialog(this);
@@ -331,16 +331,8 @@ public class Contents extends View {
         });
     }
     
-    protected void updatePropertyDefs() {
-        setPropertyDialog.updatePropertyDefs(node.getPropertyDefs());
-    }
-    
-    public void setProperty() {
-        setPropertyDialog.showModal();
-    }
-    
-    protected void setNodeProperty(String name, String value) {
-        jcrService.setProperty(repository(), workspace(), path(), name, value, new AsyncCallback<Object>() {
+    public void setNodeProperty(JcrNode node, String name, String value) {
+        jcrService.setProperty(node, name, value, new AsyncCallback<Object>() {
 
             @Override
             public void onFailure(Throwable caught) {
@@ -354,6 +346,39 @@ public class Contents extends View {
             }
         });
     }
+
+    public void setNodeProperty(JcrNode node, String name, Boolean value) {
+        jcrService.setProperty(node, name, value, new AsyncCallback<Object>() {
+
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+
+            @Override
+            public void onSuccess(Object result) {
+                show();
+                saveButton.enable();
+            }
+        });
+    }
+    
+    public void setNodeProperty(JcrNode node, String name, Date value) {
+        jcrService.setProperty(node, name, value, new AsyncCallback<Object>() {
+
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+
+            @Override
+            public void onSuccess(Object result) {
+                show();
+                saveButton.enable();
+            }
+        });
+    }
+    
     protected void addNode(String name, String primaryType) {
         jcrService.addNode(repository(), workspace(), path(), name, primaryType, new AsyncCallback<Object>() {
             @Override

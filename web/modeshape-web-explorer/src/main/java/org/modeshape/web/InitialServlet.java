@@ -20,6 +20,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.modeshape.common.logging.Logger;
 
 /**
  * @author kulikov
@@ -27,7 +28,8 @@ import javax.servlet.http.HttpServletResponse;
 public class InitialServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-
+    private Logger logger = Logger.getLogger(InitialServlet.class);
+    
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
      * 
@@ -42,7 +44,8 @@ public class InitialServlet extends HttpServlet {
         String servletPath = request.getServletPath();
 
         request.getSession(true).setAttribute("initial.uri", url);
-
+        logger.debug("Store requested uri " + url);
+        
         String dest = url.substring(0, url.indexOf(servletPath));
         response.sendRedirect(dest);
     }

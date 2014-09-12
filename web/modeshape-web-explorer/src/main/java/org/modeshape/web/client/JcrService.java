@@ -24,6 +24,7 @@ import org.modeshape.web.shared.JcrRepositoryDescriptor;
 import org.modeshape.web.shared.ResultSet;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+import java.util.Date;
 import org.modeshape.web.shared.RepositoryName;
 
 /**
@@ -188,20 +189,16 @@ public interface JcrService extends RemoteService {
     public void removeMixin(String repository, String workspace, String path,
             String mixin) throws RemoteException;
 
-    /**
-     * Set's property value.
-     *
-     * @param repository
-     * @param workspace
-     * @param path the path to the node.
-     * @param name the name of the property to add.
-     * @param value the text representation of the value
-     * @throws RemoteException if there is a problem using the repository
-     */
-    public void setProperty(String repository, String workspace, String path,
-            String name,
-            String value) throws RemoteException;
+    public void setProperty(JcrNode node, String name, String value) 
+            throws RemoteException;
 
+    public void setProperty(JcrNode node, String name, Boolean value) 
+            throws RemoteException;
+
+    public void setProperty(JcrNode node, String name, Date value) 
+            throws RemoteException;
+
+    
     public void updateAccessList(String repository, String workspace, String path,
             JcrAccessControlList acl) throws RemoteException;
 

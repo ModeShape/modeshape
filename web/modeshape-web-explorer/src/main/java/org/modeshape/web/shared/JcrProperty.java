@@ -27,6 +27,7 @@ public class JcrProperty implements Serializable {
     private String name;
     private String type;
     private String value;
+    private String displayValue;
     private boolean isProtected;
     private boolean isMultiValue;
 
@@ -42,10 +43,12 @@ public class JcrProperty implements Serializable {
      */
     public JcrProperty( String name,
                         String type,
-                        String value ) {
+                        String value,
+                        String displayValue) {
         this.name = name;
-        this.value = value;
         this.type = type;
+        this.value = value;
+        this.displayValue = displayValue;
     }
 
     /**
@@ -102,6 +105,10 @@ public class JcrProperty implements Serializable {
         this.value = value;
     }
 
+    public String getDisplayValue() {
+        return displayValue;
+    }
+    
     public boolean isMultiValue() {
         return this.isMultiValue;
     }

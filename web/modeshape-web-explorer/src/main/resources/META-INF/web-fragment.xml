@@ -29,6 +29,14 @@
         <servlet-name>BackupExportServlet</servlet-name>
         <servlet-class>org.modeshape.web.BackupExportServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>BinaryContentServlet</servlet-name>
+        <servlet-class>org.modeshape.web.BinaryContentServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>BinaryContentUploadServlet</servlet-name>
+        <servlet-class>org.modeshape.web.BinaryContentUploadServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>jcrServlet</servlet-name>
         <url-pattern>/console/jcr</url-pattern>
@@ -41,6 +49,14 @@
     <servlet-mapping>
         <servlet-name>BackupExportServlet</servlet-name>
         <url-pattern>/console/backup/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>BinaryContentServlet</servlet-name>
+        <url-pattern>/binary/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>BinaryContentUploadServlet</servlet-name>
+        <url-pattern>/console/binary-upload/*</url-pattern>
     </servlet-mapping>
     <welcome-file-list>
         <welcome-file>Console.html</welcome-file>
