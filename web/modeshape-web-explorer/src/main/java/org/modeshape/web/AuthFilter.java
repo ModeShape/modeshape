@@ -26,7 +26,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.jboss.logging.Logger;
-import sun.misc.BASE64Decoder;
+import org.modeshape.common.util.Base64;
 
 /**
  *
@@ -50,8 +50,7 @@ public class AuthFilter implements Filter {
             if (st.hasMoreTokens()) {
                 String basic = st.nextToken();
                 if (basic.equalsIgnoreCase("Basic")) {
-                    BASE64Decoder decoder = new BASE64Decoder();
-                    String userPass = new String(decoder.decodeBuffer(st.nextToken()));
+                    String userPass = new String(Base64.decode(st.nextToken()));
                     int p = userPass.indexOf(":");
                     if (p != -1) {
                         String userID = userPass.substring(0, p);
