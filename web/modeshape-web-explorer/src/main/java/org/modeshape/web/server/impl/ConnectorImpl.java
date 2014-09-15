@@ -34,14 +34,19 @@ import org.modeshape.web.shared.RepositoryName;
  * @author kulikov
  */
 public class ConnectorImpl implements Connector {
-    private HashMap<String, LRepository> repositories = new HashMap<>();
+    //this object will be serialized by user session but 
+    //we do not want to serialize any data so mark everything as transient
+    private static final long serialVersionUID = 1L;
+    
+    private transient HashMap<String, LRepository> repositories = new HashMap<>();
     
     //names of the available repositories
-    private final Collection<RepositoryName> repositoryNames;
+    private transient final Collection<RepositoryName> repositoryNames;
     
     //user's credentials
-    private Credentials credentials;
-    private String userName;
+    private transient Credentials credentials;
+    private transient String userName;
+    
     private final static Logger logger = Logger.getLogger(ConnectorImpl.class);
     
     public ConnectorImpl() throws RemoteException {
