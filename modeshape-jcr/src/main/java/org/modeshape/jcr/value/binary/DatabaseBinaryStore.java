@@ -28,6 +28,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -183,7 +184,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
                     // check unused content
                     if (database.contentExists(key, UNUSED, connection)) {
-                        database.restoreContent(key, connection);
+                        database.restoreContent(connection, Arrays.asList(key));
                     } else {
                         // store the content
                         database.insertContent(key, temp.getStream(), temp.getSize(), connection);
@@ -210,6 +211,17 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
         }
+    }
+
+    @Override
+    public void markAsUsed(final Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        dbCall(new DBCallable<Object>() {
+            @Override
+            public Object execute( Connection connection ) throws Exception {
+                database.restoreContent(connection, keys);
+                return null;
+            }
+        }) ;
     }
 
     @Override

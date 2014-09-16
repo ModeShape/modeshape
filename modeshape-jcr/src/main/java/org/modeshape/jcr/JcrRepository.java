@@ -145,7 +145,6 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
-import org.modeshape.jcr.value.binary.BinaryUsageChangeSetListener;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
 import org.modeshape.jmx.RepositoryStatisticsBean;
 
@@ -1122,9 +1121,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Set up the lock manager ...
                     this.lockManager = new RepositoryLockManager(this);
                     this.cache.register(this.lockManager);
-
-                    // Set up the unused binary value listener ...
-                    this.cache.register(new BinaryUsageChangeSetListener(binaryStore));
 
                     // Refresh several of the components information from the repository cache ...
                     this.persistentRegistry.refreshFromSystem();

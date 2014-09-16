@@ -58,6 +58,10 @@ public class CustomBinaryStoreImpl extends AbstractBinaryStore {
     }
 
     @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+    }
+
+    @Override
     public void removeValuesUnusedLongerThan( long minimumAge,
                                               TimeUnit unit ) {
     }

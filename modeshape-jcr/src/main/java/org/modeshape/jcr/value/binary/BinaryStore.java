@@ -43,12 +43,12 @@ public interface BinaryStore {
     /**
      * Initialize the store and get ready for use.
      */
-    public void start();
+    void start();
 
     /**
      * Shuts down the store.
      */
-    public void shutdown();
+    void shutdown();
 
     /**
      * Get the minimum number of bytes that a binary value must contain before it can be stored in the binary store.
@@ -119,7 +119,15 @@ public interface BinaryStore {
 	boolean hasBinary(BinaryKey key);
 
     /**
-     * Mark the supplied binary keys as unused, but key them in quarantine until needed again (at which point they're removed from
+     * Marks the binary with supplied keys as used. This method should ignore any keys which are not present in the store.
+     *
+     * @param keys a {@link org.modeshape.jcr.value.BinaryKey} {@link java.lang.Iterable}, may not be null
+     * @throws BinaryStoreException if anything unexpected fails.
+     */
+    void markAsUsed(Iterable<BinaryKey> keys) throws BinaryStoreException;
+
+    /**
+     * Mark the supplied binary keys as unused, but keep them in quarantine until needed again (at which point they're removed from
      * quarantine) or until {@link #removeValuesUnusedLongerThan(long, TimeUnit)} is called. This method ignores any keys for
      * values not stored within this store.
      * 
@@ -165,17 +173,17 @@ public interface BinaryStore {
      * If the store has never determined the mime-type of the given binary and the binary can be located in the store, it will
      * attempt to determine it via the configured {@link MimeTypeDetector detectors} and store it.
      * </p>
-     * 
+     *
      * @param binary the binary content; may not be null
      * @param name the name of the content, useful for determining the MIME type; may be null if not known
      * @return the MIME type of the content, as determined by the installed detectors or {@code null} if none of the detectors can
-     *         determine it.
+     * determine it.
      * @throws IOException if there is a problem reading the binary content
      * @throws BinaryStoreException if the binary value cannot be found in the store
      * @throws RepositoryException if any other error occurs.
      */
-    public String getMimeType( BinaryValue binary,
-                               String name ) throws IOException, RepositoryException;
+    String getMimeType( BinaryValue binary,
+                        String name ) throws IOException, RepositoryException;
 
     /**
      * Obtain an iterable implementation containing all of the store's binary keys. The resulting iterator may be lazy, in the

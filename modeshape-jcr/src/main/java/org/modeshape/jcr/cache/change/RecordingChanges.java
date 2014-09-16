@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.api.value.DateTime;
@@ -55,6 +56,8 @@ public class RecordingChanges implements Changes, ChangeSet {
     private final Queue<Change> events = new ConcurrentLinkedQueue<Change>();
     private Set<NodeKey> nodeKeys = Collections.emptySet();
     private Map<String, String> userData = Collections.emptyMap();
+    private Set<BinaryKey> unusedBinaries = Collections.newSetFromMap(new ConcurrentHashMap<BinaryKey, Boolean>());
+    private Set<BinaryKey> usedBinaries = Collections.newSetFromMap(new ConcurrentHashMap<BinaryKey, Boolean>());
     private String userId;
     private DateTime timestamp;
 
@@ -189,6 +192,13 @@ public class RecordingChanges implements Changes, ChangeSet {
     @Override
     public void binaryValueNoLongerUsed( BinaryKey key ) {
         events.add(new BinaryValueUnused(key));
+        unusedBinaries.add(key);
+    }
+
+    @Override
+    public void binaryValueUsed( BinaryKey key ) {
+        events.add(new BinaryValueUsed(key));
+        usedBinaries.add(key);
     }
 
     @Override
@@ -217,6 +227,21 @@ public class RecordingChanges implements Changes, ChangeSet {
     @Override
     public Set<NodeKey> changedNodes() {
         return nodeKeys;
+    }
+
+    @Override
+    public Set<BinaryKey> unusedBinaries() {
+        return unusedBinaries;
+    }
+
+    @Override
+    public Set<BinaryKey> usedBinaries() {
+        return usedBinaries;
+    }
+
+    @Override
+    public boolean hasBinaryChanges() {
+        return !usedBinaries.isEmpty() || !unusedBinaries.isEmpty();
     }
 
     public void setChangedNodes( Set<NodeKey> keys ) {

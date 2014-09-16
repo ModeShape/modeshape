@@ -207,9 +207,16 @@ public interface Changes {
                           Property oldProperty );
 
     /**
-     * Create an event that signals that the (stored) binary value with the supplied key is no longer used.
-     * 
-     * @param key the key for the now-unused binary value; may not be null
+     * Signal that the binary with the given key is not longer used by any properties.
+     *
+     * @param key a {@link org.modeshape.jcr.value.BinaryKey} instance; never {@code null}
      */
     void binaryValueNoLongerUsed( BinaryKey key );
+
+    /**
+     * Signal that the binary with the given key is being used by some properties.
+     *
+     * @param key a {@link org.modeshape.jcr.value.BinaryKey} instance; never {@code null}
+     */
+    void binaryValueUsed(BinaryKey key);
 }

@@ -138,4 +138,8 @@ public final class NoOpChanges implements Changes {
                                        String sequencerName,
                                        Throwable cause ) {
     }
+
+    @Override
+    public void binaryValueUsed( BinaryKey key ) {
+    }
 }

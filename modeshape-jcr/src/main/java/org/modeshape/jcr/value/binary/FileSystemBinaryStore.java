@@ -290,6 +290,27 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        for (BinaryKey key : keys) {
+            // Now that we know the SHA-1, find the File object that corresponds to the existing persisted file ...
+            File persistedFile = findFile(directory, key, false);
+            if (persistedFile.exists() && persistedFile.canRead()) {
+                continue;
+            }
+            // Try to find it in the trash ...
+            File trashedFile = findFile(trash, key, true);
+            if (!trashedFile.exists() || !trashedFile.canRead()) {
+                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, directory.getPath()));
+            }
+            // Otherwise, we found it in the trash, so move it from the trash into the regular storage ...
+            moveFileExclusively(trashedFile, persistedFile, key);
+
+            // Clean up any empty directories in the trash ...
+            pruneEmptyDirectories(trash, trashedFile);
+        }
+    }
+
+    @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         if (keys == null) {
             return;

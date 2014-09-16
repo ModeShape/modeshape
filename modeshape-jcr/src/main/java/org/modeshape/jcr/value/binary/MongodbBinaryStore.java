@@ -241,6 +241,17 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        for (BinaryKey key : keys) {
+            if (db.collectionExists(key.toString())) {
+                DBCollection content = db.getCollection(key.toString());
+                setAttribute(content, FIELD_UNUSED, false);
+                setAttribute(content, FIELD_UNUSED_SINCE, null);
+            }
+        }
+    }
+
+    @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) {
         for (BinaryKey key : keys) {
             // silently ignore if content does not exist

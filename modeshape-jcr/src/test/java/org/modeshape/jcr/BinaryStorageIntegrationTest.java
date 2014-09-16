@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
 
 /**
@@ -160,6 +162,26 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
 
         checkUnusedBinariesAreCleanedUp();
+    }
+
+    @Test
+    @FixFor( "MODE-2302" )
+    public void shouldReuseBinariesFromTrashForFilesystemStore() throws Exception {
+        FileUtil.delete("target/persistent_repository");
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
+        int repCount = 5;
+        for (int i = 0; i < repCount; i++) {
+            // upload a file which should mark the binary as used
+            tools.uploadFile(session, "/file1.txt", resourceStream("io/file1.txt"));
+            session.save();
+            BinaryValue storedValue = (BinaryValue)session.getProperty("/file1.txt/jcr:content/jcr:data").getBinary();
+            BinaryKey key = storedValue.getKey();
+            assertTrue("Binary not stored", binaryStore().hasBinary(key));
+
+            // remove the file, which should move the binary to trash
+            session.getNode("/file1.txt").remove();
+            session.save();
+        }
     }
 
     @Test

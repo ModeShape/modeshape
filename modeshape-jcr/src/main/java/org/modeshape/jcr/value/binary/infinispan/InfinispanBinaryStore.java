@@ -83,10 +83,8 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     private static final int MIN_KEY_LENGTH = BinaryKey.maxHexadecimalLength() + SUFFIX_LENGTH;
     private static final int MAX_KEY_LENGTH = MIN_KEY_LENGTH;
 
-    private static final int RETRY_COUNT = 5;
-
-    private Cache<String, Metadata> metadataCache;
-    private LockFactory lockFactory;
+    protected Cache<String, Metadata> metadataCache;
+    protected LockFactory lockFactory;
     private CacheContainer cacheContainer;
     private boolean dedicatedCacheContainer;
     private Cache<String, byte[]> blobCache;
@@ -305,27 +303,47 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        for (BinaryKey binaryKey : keys) {
+            Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
+            try {
+                final String metadataKey = metadataKeyFrom(binaryKey);
+                final Metadata metadata = metadataCache.get(metadataKey);
+                // we use the copy of the original object to avoid changes cache values in case of errors
+                if (metadata == null) {
+                    continue;
+                }
+                metadata.markAsUsed();
+                putMetadata(metadataKey, metadata);
+            } catch (IOException e) {
+                logger.debug(e, "Error during mark binary value used {0}", binaryKey);
+                throw new BinaryStoreException(JcrI18n.errorMarkingBinaryValuesUnused.text(e.getCause().getMessage()), e);
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         for (BinaryKey binaryKey : keys) {
             // Try to mark the metadata as unused. We loop here in case other processes (not other threads in this process,
             // which are handled via locks) are doing the same thing.
-            for (int i = 0; i != RETRY_COUNT; ++i) {
-                Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
-                try {
-                    final String metadataKey = metadataKeyFrom(binaryKey);
-                    final Metadata metadata = metadataCache.get(metadataKey);
-                    // we use the copy of the original object to avoid changes cache values in case of errors
-                    if (metadata == null || metadata.isUnused()) {
-                        continue;
-                    }
-                    metadata.markAsUnusedSince(System.currentTimeMillis());
-                    putMetadata(metadataKey, metadata);
-                } catch (IOException ex) {
-                    logger.debug(ex, "Error during mark binary value unused {0}", binaryKey);
-                    throw new BinaryStoreException(JcrI18n.errorMarkingBinaryValuesUnused.text(ex.getCause().getMessage()), ex);
-                } finally {
-                    lock.unlock();
+            Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
+            try {
+                final String metadataKey = metadataKeyFrom(binaryKey);
+                final Metadata metadata = metadataCache.get(metadataKey);
+                // we use the copy of the original object to avoid changes cache values in case of errors
+                if (metadata == null || metadata.isUnused()) {
+                    continue;
                 }
+                metadata.markAsUnusedSince(System.currentTimeMillis());
+                putMetadata(metadataKey, metadata);
+            } catch (IOException ex) {
+                logger.debug(ex, "Error during mark binary value unused {0}", binaryKey);
+                throw new BinaryStoreException(JcrI18n.errorMarkingBinaryValuesUnused.text(ex.getCause().getMessage()), ex);
+            } finally {
+                lock.unlock();
             }
         }
     }

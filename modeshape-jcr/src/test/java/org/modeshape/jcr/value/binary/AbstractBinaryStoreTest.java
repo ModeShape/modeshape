@@ -43,6 +43,7 @@ import javax.jcr.RepositoryException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.AbstractTransactionalTest;
@@ -104,7 +105,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         binaryStore.setMinimumBinarySizeInBytes(originalSize);
     }
 
-    @Test( expected = BinaryStoreException.class )
+    @Test(expected = BinaryStoreException.class)
     public void shouldFailWhenGettingInvalidBinary() throws BinaryStoreException {
         getBinaryStore().getInputStream(invalidBinaryKey());
     }
@@ -173,17 +174,32 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     }
 
     @Test
+    @FixFor( "MODE-2302" )
+    public void shouldMarkBinariesAsUsed() throws Exception {
+        BinaryStore binaryStore = getBinaryStore();
+
+        binaryStore.storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY));
+        binaryStore.markAsUnused(Arrays.asList(IN_MEMORY_KEY));
+        Thread.sleep(100);
+
+        binaryStore.markAsUsed(Arrays.asList(IN_MEMORY_KEY));
+        binaryStore.removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+        InputStream is = binaryStore.getInputStream(IN_MEMORY_KEY);
+        assertNotNull(is);
+    }
+
+    @Test
     public void shouldAcceptStrategyHintsForStoringValues() throws Exception {
         BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_MEDIUM_BINARY), null);
         assertTrue(getBinaryStore().hasBinary(res.getKey()));
     }
 
-    @Test( expected = BinaryStoreException.class )
+    @Test(expected = BinaryStoreException.class)
     public void shouldFailWhenGettingTheMimeTypeOfBinaryWhichIsntStored() throws IOException, RepositoryException {
         getBinaryStore().getMimeType(new StoredBinaryValue(getBinaryStore(), invalidBinaryKey(), 0), "foobar.txt");
     }
 
-    @Test( expected = BinaryStoreException.class )
+    @Test(expected = BinaryStoreException.class)
     public void shouldFailWhenGettingTheTextOfBinaryWhichIsntStored() throws RepositoryException {
         getBinaryStore().getText(new StoredBinaryValue(getBinaryStore(), invalidBinaryKey(), 0));
     }

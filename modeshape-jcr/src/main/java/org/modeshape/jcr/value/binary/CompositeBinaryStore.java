@@ -243,6 +243,24 @@ public class CompositeBinaryStore implements BinaryStore {
         }
     }
 
+    @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
+
+        while (it.hasNext()) {
+            Map.Entry<String, BinaryStore> entry = it.next();
+
+            final String binaryStoreKey = entry.getKey();
+            BinaryStore bs = entry.getValue();
+
+            try {
+                bs.markAsUsed(keys);
+            } catch (BinaryStoreException e) {
+                logger.debug(e, "The named store " + binaryStoreKey + " raised exception");
+            }
+        }
+    }
+
     @SuppressWarnings( "unused" )
     @Override
     public void removeValuesUnusedLongerThan( long minimumAge,
