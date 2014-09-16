@@ -49,7 +49,6 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     private static final boolean ALIVE = true;
     private static final boolean UNUSED = false;
 
-    private Cluster cluster;
     private Session session;
     private String address;
 
@@ -175,6 +174,17 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        try {
+            for (BinaryKey key : keys) {
+                session.execute("UPDATE modeshape.binary SET usage=1 where cid='" + key + "';");
+            }
+        } catch (RuntimeException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         try {
             for (BinaryKey key : keys) {
@@ -230,7 +240,7 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void start() {
-        cluster = Cluster.builder().addContactPoint(address).build();
+        Cluster cluster = Cluster.builder().addContactPoint(address).build();
         Metadata metadata = cluster.getMetadata();
         LOGGER.debug("Connected to cluster: {0}", metadata.getClusterName());
         for (Host host : metadata.getAllHosts()) {

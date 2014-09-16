@@ -358,12 +358,14 @@ public class Database {
         }
     }
 
-    protected void restoreContent( BinaryKey key,
-                                   Connection connection ) throws SQLException {
+    protected void restoreContent( Connection connection,
+                                   Iterable<BinaryKey> keys ) throws SQLException {
         PreparedStatement markUsedSql = prepareStatement(MARK_USED_STMT_KEY, connection);
         try {
-            markUsedSql.setString(1, key.toString());
-            execute(markUsedSql);
+            for (BinaryKey key : keys) {
+                markUsedSql.setString(1, key.toString());
+                executeUpdate(markUsedSql);
+            }
         } finally {
             tryToClose(markUsedSql);
         }
