@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.server;
 
+import java.io.Serializable;
 import java.util.Collection;
 import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.shared.RepositoryName;
@@ -22,7 +23,7 @@ import org.modeshape.web.shared.RepositoryName;
 /**
  * @author kulikov
  */
-public interface Connector {
+public interface Connector extends Serializable {
     /**
      * Logs in with given credentials.
      * 
