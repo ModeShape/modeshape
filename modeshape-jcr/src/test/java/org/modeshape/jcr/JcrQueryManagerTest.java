@@ -1042,6 +1042,50 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(20).validate(query, query.execute());
     }
 
+    @FixFor( "MODE-2297" )
+    @Test
+    public void shouldExecuteQueryUsingSetOperationOfQueriesWithConstraintsOnNonExistantProperties() throws RepositoryException {
+        // print = true;
+        String sql1 = "SELECT BASE.[jcr:path] from [nt:propertyDefinition] as BASE " //
+                      + "JOIN  [nt:nodeType] AS A ON ISCHILDNODE(BASE,A) " //
+                      + "JOIN [nt:unstructured] AS B ON B.[jcr:uuid] = A.[jcr:uuid] " //
+                      + "WHERE B.[jcr:multiple] = true";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        String sql2 = "SELECT BASE.[jcr:path] from [nt:unstructured] as BASE " //
+                      + "JOIN  [nt:nodeType] AS A ON ISCHILDNODE(BASE,A) " //
+                      + "JOIN [nt:unstructured] AS B ON B.[jcr:uuid] = A.[jcr:uuid] " //
+                      + "JOIN  [nt:unstructured] AS C ON C.x = BASE.[jcr:uuid] " //
+                      + "WHERE A.propertyThatHasntToExistsAtAll = '2'";
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        String sql = sql1 + " UNION " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " UNION " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql1 + " EXCEPT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+
+        sql = sql2 + " EXCEPT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
+    }
+
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldFindNodeByUuid() throws RepositoryException {

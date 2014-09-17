@@ -16,8 +16,10 @@
 package org.modeshape.common.collection;
 
 import java.io.Serializable;
+import java.util.EnumSet;
 import java.util.Iterator;
 import org.modeshape.common.collection.Problem.Status;
+import org.modeshape.common.function.Consumer;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 
@@ -439,15 +441,42 @@ public interface Problems extends Iterable<Problem>, Serializable {
     Iterator<Problem> iterator();
 
     /**
+     * Apply the consumer to each of the problems. This method does nothing if the consumer is null.
+     *
+     * @param consumer the consumer, which operates with side effects
+     */
+    void apply( Consumer<Problem> consumer );
+
+    /**
+     * Apply the consumer to each of the problems with the supplied status. This method does nothing if the status or consumer are
+     * null.
+     *
+     * @param status the status of the problems to be consumed
+     * @param consumer the consumer, which operates with side effects
+     */
+    void apply( Status status,
+                Consumer<Problem> consumer );
+
+    /**
+     * Apply the consumer to each of the problems with the supplied status. This method does nothing if the status or consumer are
+     * null.
+     *
+     * @param statuses the statuses of the problems to be consumed
+     * @param consumer the consumer, which operates with side effects
+     */
+    void apply( EnumSet<Status> statuses,
+                Consumer<Problem> consumer );
+
+    /**
      * Write the problems to the supplied logger.
-     * 
+     *
      * @param logger the logger
      */
     void writeTo( Logger logger );
 
     /**
      * Write the problems to the supplied logger.
-     * 
+     *
      * @param logger the logger
      * @param firstStatus the first status to be logged
      * @param additionalStatuses the additional statuses to be logged

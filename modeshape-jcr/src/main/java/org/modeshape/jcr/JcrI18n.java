@@ -293,6 +293,9 @@ public final class JcrI18n {
     public static I18n equiJoinWithOneNodeIdPseudoColumnIsInvalid;
     public static I18n noSuchVariableInQuery;
     public static I18n setQueryContainsResultSetsWithDifferentColumns;
+    public static I18n setQueryContainsResultSetsWithDifferentFullTextSearch;
+    public static I18n setQueryContainsResultSetsWithDifferentNumberOfColumns;
+    public static I18n problemsWithQuery;
 
     // Type registration messages
     public static I18n invalidNodeTypeName;
