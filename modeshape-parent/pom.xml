@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.jboss.integration-platform</groupId>
         <artifactId>jboss-integration-platform-parent</artifactId>
-        <version>6.0.0.CR10</version>
+        <version>6.0.0.CR13</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -195,7 +195,7 @@
 
     <properties>
 
-        <version.ip-bom>6.0.0.CR9</version.ip-bom>
+        <version.ip-bom>6.0.0.CR13</version.ip-bom>
 
         <!--
             Versions of COMPILE artifacts *specific* to ModeShape, which do not appear in the BOM or are in conflict
@@ -301,6 +301,7 @@
         <!--Skip long running tests by default-->
         <skipLongRunningTests>true</skipLongRunningTests>
 
+        <!-- PLUGIN BUG: Test dependencies not correctly checked  -->
         <managed-deps.checkProfiles>false</managed-deps.checkProfiles>
     </properties>
 
@@ -939,6 +940,15 @@
      -->
     <dependencyManagement>
         <dependencies>
+            <!--IP-Platform BOM-->
+            <dependency>
+                <groupId>org.jboss.integration-platform</groupId>
+                <artifactId>jboss-integration-platform-bom</artifactId>
+                <version>${version.ip-bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- ModeShape subprojects -->
             <dependency>
                 <groupId>org.modeshape</groupId>
@@ -1428,15 +1438,6 @@
                 <type>zip</type>
             </dependency>
 
-            <!--IP-Platform BOM-->
-            <dependency>
-                <groupId>org.jboss.integration-platform</groupId>
-                <artifactId>jboss-integration-platform-bom</artifactId>
-                <version>${version.ip-bom}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
             <!--Inherited from BOM, but changes the default scope to "test"-->
             <dependency>
                 <groupId>junit</groupId>
@@ -1589,7 +1590,7 @@
             <dependency>
                 <groupId>org.apache.chemistry.opencmis</groupId>
                 <artifactId>chemistry-opencmis-server-inmemory</artifactId>
-                <version>${version.org.apache.chemistry}</version>
+                <version>${version.org.apache.chemistry.opencmis}</version>
                 <type>war</type>
                 <scope>test</scope>
             </dependency>
@@ -1822,11 +1823,7 @@
                 most of them and only keep a few that are for Microsoft Office documents,
                 HTML, XML and PDF. When others are needed, they can simply be added to
                 an application's dependencies.
-
-                Note that 'modeshape-jcr' excludes even more transitive dependencies, since it
-                only uses the MIME type detector functionality, whereas the 'modeshape-extractor-tika'
-                uses everything defined here.
-                -->
+             -->
 
             <!--Defined in BOM but needs custom exclusions-->
             <dependency>
@@ -1922,7 +1919,7 @@
             <dependency>
                 <groupId>org.jboss.jbossts.jta</groupId>
                 <artifactId>narayana-jta</artifactId>
-                <version>${version.org.jboss.jbossts.jbossxts}</version>
+                <version>${version.org.jboss.jbossts.jta}</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -2163,6 +2160,14 @@
                 <artifactId>transactions-jta</artifactId>
                 <version>${version.com.atomikos.transactions}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- Mongo DB JDBC driver (changes scope from BOM) -->
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongo-java-driver</artifactId>
+                <version>${version.org.mongodb.mongo-java-driver}</version>
+                <scope>provided</scope>
             </dependency>
 
             <!-- Cassandra JDBC driver (changes scope from BOM) -->

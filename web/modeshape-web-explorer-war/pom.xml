@@ -10,7 +10,7 @@
     <artifactId>modeshape-web-explorer-war</artifactId>
     <packaging>war</packaging>
     <name>ModeShape Repository Explorer (Full)</name>
-    <description>ModeShape repository explorer that embeds ModeShape and can be deloyed standalone</description>
+    <description>ModeShape repository explorer that embeds ModeShape and can be deployed standalone</description>
     <url>http://www.modeshape.org</url>
     <dependencies>
         <dependency>

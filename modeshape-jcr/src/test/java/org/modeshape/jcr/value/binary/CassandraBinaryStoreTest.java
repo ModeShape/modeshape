@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.cassandra.service.EmbeddedCassandraService;
-import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -41,6 +40,7 @@ import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.modeshape.common.junit.SkipOnOS;
 import org.modeshape.common.junit.SkipTestRule;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -128,7 +128,7 @@ public class CassandraBinaryStoreTest {
         assertTrue(stream != null);
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        IOUtils.copy(stream, bout);
+        IoUtil.write(stream, bout);
 
         String s = new String(bout.toByteArray());
         assertEquals("Binary value", s);
