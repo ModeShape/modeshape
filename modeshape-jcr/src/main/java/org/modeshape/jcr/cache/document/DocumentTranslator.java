@@ -1276,20 +1276,27 @@ public class DocumentTranslator implements DocumentConstants {
             if (sha1 != null) {
                 // Find the document metadata and decrement the usage count ...
                 SchematicEntry entry = documentStore.get(keyForBinaryReferenceDocument(sha1));
-                EditableDocument sha1Usage = entry.editDocumentContent();
-                Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
-                assert countValue != null;
+                if (entry != null) {
+                    EditableDocument sha1Usage = entry.editDocumentContent();
+                    Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
+                    assert countValue != null;
 
-                long count = countValue - 1;
-                assert count >= 0;
+                    long count = countValue - 1;
+                    assert count >= 0;
 
-                if (count == 0) {
-                    // We're not using the binary value anymore ...
+                    if (count == 0) {
+                        // We're not using the binary value anymore ...
+                        if (unusedBinaryKeys != null) {
+                            unusedBinaryKeys.add(new BinaryKey(sha1));
+                        }
+                    }
+                    sha1Usage.setNumber(REFERENCE_COUNT, count);
+                } else {
+                    // The documentStore doesn't contain the binary ref count doc, so we're no longer using the binary value ...
                     if (unusedBinaryKeys != null) {
                         unusedBinaryKeys.add(new BinaryKey(sha1));
                     }
                 }
-                sha1Usage.setNumber(REFERENCE_COUNT, count);
             }
         }
     }
