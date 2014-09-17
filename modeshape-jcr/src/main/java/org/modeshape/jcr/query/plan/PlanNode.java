@@ -1287,6 +1287,19 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     }
 
     /**
+     * Apply the operation to all ancestor nodes.
+     *
+     * @param operation the operation to apply to each of the ancestor nodes; may not be null
+     */
+    public void applyToAncestors( Operation operation ) {
+        PlanNode ancestor = getParent();
+        while (ancestor != null) {
+            operation.apply(ancestor);
+            ancestor = ancestor.getParent();
+        }
+    }
+
+    /**
      * Find all of the nodes that are at or below this node.
      *
      * @return the collection of nodes that are at or below this node; never null and never empty

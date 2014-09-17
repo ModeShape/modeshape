@@ -24,10 +24,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.query.qom.Comparison;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.DynamicOperand;
+import javax.jcr.query.qom.JoinCondition;
 import javax.jcr.query.qom.PropertyValue;
 import javax.jcr.query.qom.StaticOperand;
 import org.modeshape.common.annotation.Immutable;
@@ -94,16 +94,16 @@ public class AddIndexes implements OptimizerRule {
             final SelectorName selectorName = source.getSelectors().iterator().next();
             // Look for any SELECT nodes above this but below an ACCESS node, because all of the SELECT define
             // criteria that are all ANDed together ...
-            final AtomicReference<List<Constraint>> constraints = new AtomicReference<>();
+            final List<Constraint> constraints = new LinkedList<>();
+            final List<JoinCondition> joinConditions = new LinkedList<>();
             final Set<String> nodeTypeNames = new HashSet<>();
-            source.applyToAncestorsUpTo(Type.ACCESS, new Operation() {
+            source.applyToAncestors(new Operation() {
                 @Override
                 public void apply( PlanNode node ) {
                     if (node.getType() == Type.SELECT) {
                         Constraint constraint = node.getProperty(Property.SELECT_CRITERIA, Constraint.class);
                         if (constraint != null) {
-                            if (constraints.get() == null) constraints.set(new LinkedList<Constraint>());
-                            constraints.get().add(constraint);
+                            constraints.add(constraint);
                             // While we're at it, look for the constraint on the primary type. This tells us which node type
                             // we're working with ...
                             if (nodeTypeNames.isEmpty()) {
@@ -121,6 +121,19 @@ public class AddIndexes implements OptimizerRule {
                                         }
                                     }
                                 }
+                            }
+                        }
+                    } else if (node.getType() == Type.JOIN) {
+                        // Also look at the join conditions ...
+                        JoinCondition joinCondition = node.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
+                        if (joinCondition != null) {
+                            joinConditions.add(joinCondition);
+                        }
+                        // Look for additional constraints pushed down to the join ...
+                        List<Constraint> joinConstraints = node.getPropertyAsList(Property.JOIN_CONSTRAINTS, Constraint.class);
+                        if (joinConstraints != null) {
+                            for (Constraint joinConstraint : joinConstraints) {
+                                constraints.add(joinConstraint);
                             }
                         }
                     }
@@ -147,7 +160,7 @@ public class AddIndexes implements OptimizerRule {
                     }
                 }
             });
-            if (constraints.get() != null) {
+            if (!constraints.isEmpty() || !joinConditions.isEmpty()) {
                 // Get the selector name. The plan's selectors will contain an alias if one is used, so we have to find
                 // the 'selector.[jcr:primaryType] = '<nodeType>' constraint
                 // Add the alias ...
@@ -160,12 +173,33 @@ public class AddIndexes implements OptimizerRule {
 
                     @Override
                     public Collection<Constraint> andedConstraints() {
-                        return constraints.get();
+                        return constraints;
+                    }
+
+                    @Override
+                    public Collection<JoinCondition> joinConditions() {
+                        return joinConditions;
                     }
 
                     @Override
                     public Map<String, Object> getVariables() {
                         return context.getVariables();
+                    }
+
+                    @Override
+                    public void addIndex( String name,
+                                          String workspaceName,
+                                          String providerName,
+                                          Collection<JoinCondition> joinConditions,
+                                          int costEstimate,
+                                          long cardinalityEstimate ) {
+                        // Add a plan node for this index ...
+                        PlanNode indexNode = new PlanNode(Type.INDEX, source.getSelectors());
+                        IndexPlan indexPlan = new IndexPlan(name, workspaceName, providerName, null, joinConditions,
+                                                            costEstimate, cardinalityEstimate, 1.0f, null);
+                        indexNode.setProperty(Property.INDEX_SPECIFICATION, indexPlan);
+                        // and add it under the SOURCE node ...
+                        source.addLastChild(indexNode);
                     }
 
                     @Override
@@ -179,7 +213,7 @@ public class AddIndexes implements OptimizerRule {
                                           Map<String, Object> parameters ) {
                         // Add a plan node for this index ...
                         PlanNode indexNode = new PlanNode(Type.INDEX, source.getSelectors());
-                        IndexPlan indexPlan = new IndexPlan(name, workspaceName, providerName, constraints, costEstimate,
+                        IndexPlan indexPlan = new IndexPlan(name, workspaceName, providerName, constraints, null, costEstimate,
                                                             cardinalityEstimate, selectivityEstimate, parameters);
                         indexNode.setProperty(Property.INDEX_SPECIFICATION, indexPlan);
                         // and add it under the SOURCE node ...

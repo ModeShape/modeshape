@@ -401,7 +401,9 @@ class Operations {
                         StaticOperand operand = new Literal(value);
                         addValues(operand, matchedKeys);
                     }
-                    return;
+                } else {
+                    StaticOperand operand = new Literal(varValue);
+                    addValues(operand, matchedKeys);
                 }
                 // Not a value we know what to do with ...
                 return;

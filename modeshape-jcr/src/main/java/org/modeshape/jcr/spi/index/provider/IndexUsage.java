@@ -17,8 +17,13 @@
 package org.modeshape.jcr.spi.index.provider;
 
 import java.util.Set;
+import javax.jcr.query.qom.ChildNodeJoinCondition;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.DescendantNodeJoinCondition;
 import javax.jcr.query.qom.DynamicOperand;
+import javax.jcr.query.qom.EquiJoinCondition;
+import javax.jcr.query.qom.JoinCondition;
+import javax.jcr.query.qom.SameNodeJoinCondition;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
@@ -77,6 +82,52 @@ public class IndexUsage {
             if (matchedAtLeastOneNodeType) break;
         }
         this.selectedNodeTypeMatchesIndex = matchedAtLeastOneNodeType;
+    }
+
+    /**
+     * Determine if this index can be used to evaluate the given join condition.
+     *
+     * @param condition the condition; may not be null
+     * @return true if it can be used to evaluate the join condition, or false otherwise
+     */
+    public boolean indexAppliesTo( JoinCondition condition ) {
+        if (condition instanceof ChildNodeJoinCondition) {
+            return indexAppliesTo((ChildNodeJoinCondition)condition);
+        }
+        if (condition instanceof DescendantNodeJoinCondition) {
+            return indexAppliesTo((DescendantNodeJoinCondition)condition);
+        }
+        if (condition instanceof EquiJoinCondition) {
+            return indexAppliesTo((EquiJoinCondition)condition);
+        }
+        if (condition instanceof SameNodeJoinCondition) {
+            return indexAppliesTo((SameNodeJoinCondition)condition);
+        }
+        return false;
+    }
+
+    protected boolean indexAppliesTo( ChildNodeJoinCondition condition ) {
+        // By default indexes can't really do anything with this ...
+        return false;
+    }
+
+    protected boolean indexAppliesTo( DescendantNodeJoinCondition condition ) {
+        // By default indexes can't really do anything with this ...
+        return false;
+    }
+
+    protected boolean indexAppliesTo( EquiJoinCondition condition ) {
+        return matchesSelectorName(condition.getSelector1Name()) && defn.appliesToProperty(condition.getProperty1Name())
+               || matchesSelectorName(condition.getSelector2Name()) && defn.appliesToProperty(condition.getProperty2Name());
+    }
+
+    protected boolean indexAppliesTo( SameNodeJoinCondition condition ) {
+        if (condition.getSelector2Path() != null) {
+            // These are relative to each other ...
+            return false;
+        }
+        // These are exact matches, so these will apply if the index uses 'jcr:uuid' or 'mode:id' properties
+        return defn.appliesToProperty("jcr:uuid") || defn.appliesToProperty("mode:id");
     }
 
     /**
