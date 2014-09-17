@@ -97,19 +97,118 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
 
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] = 'The Title'");
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).useIndex("descriptionIndex").validate(query, query.execute());
 
-        // Compute a query plan that should use this index ...
+        // Compute a query plan that should NOT use this index ...
         query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE 'The Title'");
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).useNoIndexes().validate(query, query.execute());
 
         // Compute a query plan that should use this index ...
         query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE 'The %'");
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).useNoIndexes().validate(query, query.execute());
 
         // Compute a query plan that should use this index ...
         query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE '% Title'");
-        validateQuery().rowCount(2L).validate(query, query.execute());
+        validateQuery().rowCount(2L).useNoIndexes().validate(query, query.execute());
+
+        // Compute a query plan that should use this index ...
+        query = jcrSql2Query("SELECT * FROM [mix:title]");
+        validateQuery().rowCount(2L).useNoIndexes().validate(query, query.execute());
+    }
+
+    @Test
+    public void shouldUseSingleColumnStringIndexForQueryWithNoCriteriaOtherThanPrimaryTypeViaFromClause() throws Exception {
+        registerValueIndex("unstructuredNodes", "nt:unstructured", null, "*", "jcr:primaryType", PropertyType.NAME);
+
+        // print = true;
+
+        // Add a node that uses this type ...
+        Node root = session().getRootNode();
+        Node book1 = root.addNode("myFirstBook");
+        book1.addMixin("mix:title");
+        book1.setProperty("jcr:title", "The Title");
+
+        Node book2 = root.addNode("mySecondBook");
+        book2.addMixin("mix:title");
+        book2.setProperty("jcr:title", "A Different Title");
+
+        // Create a node that is not a 'mix:title' and therefore won't be included in the SELECT clauses ...
+        Node other = root.addNode("somethingElse");
+        other.setProperty("propA", "a value for property A");
+        other.setProperty("jcr:title", "The Title");
+
+        waitForIndexes();
+        session.save();
+        waitForIndexes();
+
+        // Compute a query plan that should use this index ...
+        Query query = jcrSql2Query("SELECT * FROM [nt:unstructured]");
+        validateQuery().rowCount(3L).useIndex("unstructuredNodes").validate(query, query.execute());
+    }
+
+    @Test
+    public void shouldUseSingleColumnStringIndexForQueryWithNoCriteriaOtherThanMixinViaFromClause() throws Exception {
+        registerValueIndex("titleNodes", "mix:title", null, "*", "jcr:mixinTypes", PropertyType.NAME);
+
+        // print = true;
+
+        // Add a node that uses this type ...
+        Node root = session().getRootNode();
+        Node book1 = root.addNode("myFirstBook");
+        book1.addMixin("mix:title");
+        book1.setProperty("jcr:title", "The Title");
+
+        Node book2 = root.addNode("mySecondBook");
+        book2.addMixin("mix:title");
+        book2.setProperty("jcr:title", "A Different Title");
+
+        // Create a node that is not a 'mix:title' and therefore won't be included in the SELECT clauses ...
+        Node other = root.addNode("somethingElse");
+        other.setProperty("propA", "a value for property A");
+        other.setProperty("jcr:title", "The Title");
+
+        waitForIndexes();
+        session.save();
+        waitForIndexes();
+
+        // Compute a query plan that should use this index ...
+        Query query = jcrSql2Query("SELECT * FROM [mix:title]");
+        validateQuery().rowCount(2L).useIndex("titleNodes").validate(query, query.execute());
+    }
+
+    @Test
+    public void shouldUseSingleColumnNodeTypeIndexForQueryWithNoCriteriaOtherThanPrimaryTypeViaFromClause() throws Exception {
+        registerNodeTypeIndex("primaryTypes", "nt:base", null, "*", "jcr:primaryType", PropertyType.STRING);
+        registerNodeTypeIndex("mixinTypes", "nt:base", null, "*", "jcr:mixinTypes", PropertyType.STRING);
+
+        // print = true;
+
+        // Add a node that uses this type ...
+        Node root = session().getRootNode();
+        Node book1 = root.addNode("myFirstBook");
+        book1.addMixin("mix:title");
+        book1.setProperty("jcr:title", "The Title");
+
+        Node book2 = root.addNode("mySecondBook");
+        book2.addMixin("mix:title");
+        book2.setProperty("jcr:title", "A Different Title");
+
+        // Create a node that is not a 'mix:title' and therefore won't be included in the SELECT clauses ...
+        Node other = root.addNode("somethingElse");
+        other.setProperty("propA", "a value for property A");
+        other.setProperty("jcr:title", "The Title");
+
+        waitForIndexes();
+        session.save();
+        waitForIndexes();
+
+        // Compute a query plan that should use this index ...
+        Query query = jcrSql2Query("SELECT * FROM [mix:title]");
+        validateQuery().rowCount(2L).useIndex("mixinTypes").validate(query, query.execute());
+
+        // Compute a query plan that should use this index ...
+        query = jcrSql2Query("SELECT * FROM [nt:unstructured]");
+        validateQuery().rowCount(3L).useIndex("primaryTypes").validate(query, query.execute());
     }
 
     @Test
@@ -593,6 +692,16 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
                                        String propertyName,
                                        int propertyType ) throws RepositoryException {
         registerIndex(indexName, IndexKind.VALUE, PROVIDER_NAME, indexedNodeType, desc, workspaceNamePattern, propertyName,
+                      propertyType);
+    }
+
+    protected void registerNodeTypeIndex( String indexName,
+                                          String indexedNodeType,
+                                          String desc,
+                                          String workspaceNamePattern,
+                                          String propertyName,
+                                          int propertyType ) throws RepositoryException {
+        registerIndex(indexName, IndexKind.NODE_TYPE, PROVIDER_NAME, indexedNodeType, desc, workspaceNamePattern, propertyName,
                       propertyType);
     }
 

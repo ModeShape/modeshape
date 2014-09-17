@@ -93,7 +93,6 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
                 nodeKeySetsByValue.put(possibleValue, keysForValue);
             }
         }
-        assert nodeKeySetsByValue.keySet().equals(possibleValues);
     }
 
     private Set<String> createOrGetKeySet( String value ) {
