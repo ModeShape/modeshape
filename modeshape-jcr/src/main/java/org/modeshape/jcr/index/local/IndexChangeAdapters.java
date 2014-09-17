@@ -131,7 +131,7 @@ public class IndexChangeAdapters {
                                                     NodeTypePredicate matcher,
                                                     String workspaceName,
                                                     LocalDuplicateIndex<Name> index ) {
-        return new PrimaryTypeChangeAdatper(context, matcher, workspaceName, index);
+        return new MixinTypesChangeAdatper(context, matcher, workspaceName, index);
     }
 
     /**

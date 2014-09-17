@@ -37,7 +37,6 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.ArrayListMultimap;
 import org.modeshape.common.collection.Multimap;
-import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -313,9 +312,11 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     }
                 }
             });
-            if (context.getProblems().hasErrors()) {
-                Problem problem = context.getProblems().iterator().next();
-                throw new RepositoryException(problem.getMessageString(), problem.getThrowable());
+            Problems problems = context.getProblems();
+            if (problems.hasErrors()) {
+                throw new RepositoryException(JcrI18n.problemsWithQuery.text(query, problems.toString()));
+            } else if (LOGGER.isDebugEnabled() && problems.hasWarnings()) {
+                LOGGER.debug("There are several warnings with this query: {0}\n{1}", query, problems.toString());
             }
 
             resultColumns = context.columnsFor(optimizedPlan);
@@ -372,8 +373,17 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                                             QueryCommand query ) {
         if (results1 == results2) return true;
         if (results1 == null || results2 == null) return false;
-        if (results1.hasFullTextSearchScores() != results2.hasFullTextSearchScores()) return false;
-        if (results1.getColumns().size() != results2.getColumns().size()) return false;
+        if (results1.hasFullTextSearchScores() != results2.hasFullTextSearchScores()) {
+            // The query is not compatible
+            context.getProblems().addError(JcrI18n.setQueryContainsResultSetsWithDifferentFullTextSearch);
+            return false;
+        }
+        if (results1.getColumns().size() != results2.getColumns().size()) {
+            // The query is not compatible
+            context.getProblems().addError(JcrI18n.setQueryContainsResultSetsWithDifferentNumberOfColumns,
+                                           results1.getColumns().size(), results2.getColumns().size());
+            return false;
+        }
         // Go through the columns and make sure that the property names and types match ...
         // (we can't just check column names, since the column names may include the selector if more than one selector)
         int numColumns = results1.getColumns().size();
@@ -386,8 +396,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             String thatType = results2.getColumnTypeForProperty(thatColumn.getSelectorName(), thatColumn.getPropertyName());
             if (!thisType.equalsIgnoreCase(thatType)) {
                 // The query is not compatible
-                context.getProblems().addError(JcrI18n.setQueryContainsResultSetsWithDifferentColumns, thisColumn, thatColumn,
-                                               query);
+                context.getProblems().addError(JcrI18n.setQueryContainsResultSetsWithDifferentColumns, thisColumn, thatColumn);
                 noProblems = false;
             }
         }

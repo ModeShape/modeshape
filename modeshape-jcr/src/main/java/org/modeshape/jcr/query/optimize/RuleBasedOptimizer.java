@@ -44,6 +44,7 @@ public class RuleBasedOptimizer implements Optimizer {
             OptimizerRule nextRule = rules.poll();
             LOGGER.debug("Running query optimizer rule {0}", nextRule);
             plan = nextRule.execute(context, plan, rules);
+            LOGGER.debug("Plan after running query optimizer rule {0}: \n{1}", nextRule, plan);
         }
 
         return plan;

@@ -20,6 +20,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import org.modeshape.common.collection.Problem.Status;
+import org.modeshape.common.function.Consumer;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.logging.Logger.Level;
@@ -344,16 +345,51 @@ public abstract class AbstractProblems implements Problems {
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        Iterator<Problem> iter = getProblems().iterator();
-        if (iter.hasNext()) {
-            sb.append(iter.next());
-            while (iter.hasNext()) {
-                sb.append("\n");
-                sb.append(iter.next());
+    public void apply( Consumer<Problem> consumer ) {
+        if (consumer != null) {
+            for (Problem problem : getProblems()) {
+                if (problem != null) consumer.accept(problem);
             }
         }
+    }
+
+    @Override
+    public void apply( Status status,
+                       Consumer<Problem> consumer ) {
+        if (status != null && consumer != null) {
+            for (Problem problem : getProblems()) {
+                if (problem != null && problem.getStatus() == status) consumer.accept(problem);
+            }
+        }
+    }
+
+    @Override
+    public void apply( EnumSet<Status> statuses,
+                       Consumer<Problem> consumer ) {
+        if (statuses != null && consumer != null) {
+            for (Problem problem : getProblems()) {
+                if (problem != null && statuses.contains(problem.getStatus())) consumer.accept(problem);
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        final Consumer<Problem> consumer = new Consumer<Problem>() {
+            private boolean first = true;
+
+            @Override
+            public void accept( Problem problem ) {
+                if (first) first = false;
+                else sb.append("\n");
+                sb.append(problem);
+            }
+        };
+        // Do these in this order, not all at once ...
+        apply(Status.ERROR, consumer);
+        apply(Status.WARNING, consumer);
+        apply(Status.INFO, consumer);
         return sb.toString();
     }
 }

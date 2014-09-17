@@ -15,9 +15,11 @@
  */
 package org.modeshape.common.collection;
 
+import java.util.EnumSet;
 import java.util.Iterator;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problem.Status;
+import org.modeshape.common.function.Consumer;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -291,6 +293,23 @@ public class ImmutableProblems implements Problems {
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    @Override
+    public void apply( Consumer<Problem> consumer ) {
+        delegate.apply(consumer);
+    }
+
+    @Override
+    public void apply( EnumSet<Status> statuses,
+                       Consumer<Problem> consumer ) {
+        delegate.apply(statuses, consumer);
+    }
+
+    @Override
+    public void apply( Status status,
+                       Consumer<Problem> consumer ) {
+        delegate.apply(status, consumer);
     }
 
     @Override
