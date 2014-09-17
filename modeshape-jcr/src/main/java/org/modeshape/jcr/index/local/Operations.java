@@ -37,7 +37,9 @@ import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.index.local.IndexValues.Converter;
+import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.query.model.Comparison;
+import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.spi.index.Index;
 import org.modeshape.jcr.spi.index.ResultWriter;
 import org.modeshape.jcr.spi.index.provider.Filter.Results;
@@ -386,30 +388,52 @@ class Operations {
             throw new UnsupportedOperationException("Can't evaluate two SetCriteria that are not ANDed or ORed together");
         }
 
+        private void addValues( StaticOperand valueOperand,
+                                Set<String> matchedKeys ) {
+            if (valueOperand instanceof BindVariableName) {
+                // We have to resolve the variable ...
+                BindVariableName varName = (BindVariableName)valueOperand;
+                String varNameStr = varName.getBindVariableName();
+                Object varValue = this.variables.get(varNameStr);
+                if (varValue instanceof Collection) {
+                    Collection<?> collection = (Collection<?>)varValue;
+                    for (Object value : collection) {
+                        StaticOperand operand = new Literal(value);
+                        addValues(operand, matchedKeys);
+                    }
+                    return;
+                }
+                // Not a value we know what to do with ...
+                return;
+            }
+
+            T lowValue = converter.toLowerValue(valueOperand, variables);
+            T highValue = converter.toUpperValue(valueOperand, variables);
+            NavigableMap<T, V> submap = null;
+            if (lowValue == null) {
+                if (highValue == null) return;
+                // High but not low ...
+                submap = keysByValue.headMap(highValue, true);
+            } else {
+                if (highValue == null) {
+                    // Low but not high ...
+                    submap = keysByValue.tailMap(lowValue, true);
+                } else {
+                    // Both high and low ...
+                    submap = keysByValue.subMap(lowValue, true, highValue, true);
+                }
+            }
+            if (submap.isEmpty()) return; // no values for these keys
+            nodeKeysAccessor.addAllTo(submap, matchedKeys);
+        }
+
         @Override
         protected Iterator<String> keys() {
             // Determine the set of keys that have a value in our set ...
             final Set<String> matchedKeys = new HashSet<>();
             for (StaticOperand valueOperand : criteria.getValues()) {
                 // Find the range of all keys that have this value ...
-                T lowValue = converter.toLowerValue(valueOperand, variables);
-                T highValue = converter.toUpperValue(valueOperand, variables);
-                NavigableMap<T, V> submap = null;
-                if (lowValue == null) {
-                    if (highValue == null) continue;
-                    // High but not low ...
-                    submap = keysByValue.headMap(highValue, true);
-                } else {
-                    if (highValue == null) {
-                        // Low but not high ...
-                        submap = keysByValue.tailMap(lowValue, true);
-                    } else {
-                        // Both high and low ...
-                        submap = keysByValue.subMap(lowValue, true, highValue, true);
-                    }
-                }
-                if (submap.isEmpty()) continue; // no values for these keys
-                nodeKeysAccessor.addAllTo(submap, matchedKeys);
+                addValues(valueOperand, matchedKeys);
             }
 
             if (!negated) {

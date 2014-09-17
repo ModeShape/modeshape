@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
+import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
@@ -144,6 +145,47 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured]");
         validateQuery().rowCount(3L).useIndex("unstructuredNodes").validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2307" )
+    @Test
+    public void shouldUseSingleColumnStringIndexForQueryWithSubselect() throws Exception {
+        registerNodeType("nt:typeWithReference");
+        registerNodeType("nt:typeWithSysName");
+        registerValueIndex("refIndex", "nt:typeWithReference", null, "*", "referenceId", PropertyType.STRING);
+        registerValueIndex("sysIndex", "nt:typeWithSysName", null, "*", "sysName", PropertyType.STRING);
+
+        // print = true;
+
+        Node root = session().getRootNode();
+        Node newNode1 = root.addNode("nodeWithSysName", "nt:typeWithSysName");
+        newNode1.setProperty("sysName", "X");
+        newNode1.addMixin("mix:referenceable");
+        Node newNode2 = root.addNode("nodeWithReference", "nt:typeWithReference");
+        newNode2.setProperty("referenceId", newNode1.getIdentifier());
+        session.save();
+
+        waitForIndexes();
+        session.save();
+        waitForIndexes();
+
+        // Compute a query plan that should use this index ...
+        Query query = jcrSql2Query("SELECT A.* FROM [nt:typeWithReference] AS A WHERE A.referenceId = $sysName");
+        query.bindValue("sysName", valueFactory().createValue(newNode1.getIdentifier()));
+        // validateQuery().rowCount(1L).useIndex("refIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT A.* FROM [nt:typeWithReference] AS A WHERE A.referenceId IN ( $sysName )");
+        query.bindValue("sysName", valueFactory().createValue(newNode1.getIdentifier()));
+        // validateQuery().rowCount(1L).useIndex("refIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT B.[jcr:uuid] FROM [nt:typeWithSysName] AS B WHERE B.sysName = $sysName");
+        query.bindValue("sysName", valueFactory().createValue("X"));
+        // validateQuery().rowCount(1L).useIndex("sysIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT A.* FROM [nt:typeWithReference] AS A WHERE A.referenceId  IN ( "
+                             + "SELECT B.[jcr:uuid] FROM [nt:typeWithSysName] AS B WHERE B.sysName = $sysName )");
+        query.bindValue("sysName", valueFactory().createValue("X"));
+        validateQuery().rowCount(1L).validate(query, query.execute());
     }
 
     @Test
@@ -669,6 +711,10 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         queryStr = "select BASE.* FROM [nt:unstructured] as BASE WHERE BASE.sysName='X'";
         query = jcrSql2Query(queryStr);
         validateQuery().rowCount(2L).validate(query, query.execute());
+    }
+
+    private ValueFactory valueFactory() throws RepositoryException {
+        return session.getValueFactory();
     }
 
     private void registerNodeType( String typeName ) throws RepositoryException {
