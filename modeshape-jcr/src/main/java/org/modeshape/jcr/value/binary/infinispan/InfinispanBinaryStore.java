@@ -22,16 +22,13 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.StoreConfiguration;
@@ -51,9 +48,7 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
-import org.modeshape.jcr.InfinispanUtil;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
@@ -220,7 +215,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream inputStream ) throws BinaryStoreException, SystemFailureException {
+    public BinaryValue storeValue( InputStream inputStream, boolean markAsUnused ) throws BinaryStoreException, SystemFailureException {
         File tmpFile = null;
         try {
             // using tmp file to determine SHA1
@@ -236,7 +231,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
             if (metadata != null) {
                 logger.debug("Binary value already exist.");
                 // in case of an unused entry, this entry is from now used
-                if (metadata.isUnused()) {
+                if (metadata.isUnused() && !markAsUnused) {
                     metadata.markAsUsed();
                     putMetadata(metadataKey, metadata);
                 }
@@ -259,16 +254,14 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
             try {
                 // now store metadata
                 metadata = new Metadata(lastModified, fileLength, chunkOutputStream.chunksCount(), chunkSize);
+                if (markAsUnused) {
+                    metadata.markAsUnusedSince(System.currentTimeMillis());
+                }
                 putMetadata(metadataKey, metadata);
-                value = new StoredBinaryValue(this, binaryKey, fileLength);
+                return new StoredBinaryValue(this, binaryKey, fileLength);
             } finally {
                 lock.unlock();
             }
-            // initial text extraction
-            if (extractors() != null) {
-                extractors().extract(this, value, new TextExtractorContext(detector()));
-            }
-            return value;
         } catch (IOException e) {
             throw new BinaryStoreException(e);
         } catch (NoSuchAlgorithmException e) {
@@ -572,28 +565,49 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
 
     @Override
     public Iterable<BinaryKey> getAllBinaryKeys() throws BinaryStoreException {
-        Set<BinaryKey> allBinaryKeys = new HashSet<BinaryKey>();
+        final Set<BinaryKey> allBinaryUsedKeys = new HashSet<BinaryKey>();
 
         try {
-            final List<Cache<String, ? extends Serializable>> caches = Arrays.asList(metadataCache, blobCache);
-
-            for (Cache<String, ?> c : caches) {
-                final InfinispanUtil.Sequence<String> allKeys = InfinispanUtil.getAllKeys(c);
-
-                // some of these keys are for the same BinaryKey; de-duplicate the list
-                while (allKeys.hasNext()) {
-                    final String key = allKeys.next();
-
-                    final BinaryKey binaryKey = binaryKeyFromCacheKey(key);
-                    allBinaryKeys.add(binaryKey);
+            for (String key : metadataCache.keySet()) {
+                if (!isMetadataKey(key)) { continue; }
+                Metadata metadata = metadataCache.get(key);
+                if (!metadata.isUnused()) {
+                    allBinaryUsedKeys.add(binaryKeyFromCacheKey(key));
                 }
-
             }
-        } catch (InterruptedException | ExecutionException ex) {
+
+            PersistenceManager persistenceManager = metadataCache.getAdvancedCache().getComponentRegistry()
+                                                                 .getComponent(PersistenceManager.class);
+            if (persistenceManager != null) {
+                // process cache loader content
+                CacheLoaderTask<Object, Object> task = new CacheLoaderTask<Object, Object>() {
+                    @Override
+                    public void processEntry( MarshalledEntry<Object, Object> marshalledEntry,
+                                              AdvancedCacheLoader.TaskContext taskContext ) {
+                        Object key = marshalledEntry.getKey();
+                        if (!(key instanceof String)) {
+                            return;
+                        }
+                        String keyString = key.toString();
+                        if (!isMetadataKey(keyString)) {
+                            return;
+                        }
+                        BinaryKey binaryKey = binaryKeyFromCacheKey(keyString);
+                        if (allBinaryUsedKeys.contains(binaryKey)) {
+                            return;
+                        }
+                        Metadata metadata = metadataCache.get(key);
+                        if (!metadata.isUnused()) {
+                            allBinaryUsedKeys.add(binaryKey);
+                        }
+                    }
+                };
+                persistenceManager.processOnAllStores(AdvancedCacheLoader.KeyFilter.LOAD_ALL_FILTER, task, false, false);
+            }
+        } catch (Exception ex) {
             throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
         }
-
-        return allBinaryKeys;
+        return allBinaryUsedKeys;
     }
 
     /**
