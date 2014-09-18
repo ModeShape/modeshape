@@ -270,6 +270,8 @@ public class ValidateQuery {
                 } catch (RepositoryException e) {
                     // expected; can't call this when the query uses multiple selectors ...
                 }
+            } else {
+                nodes = result.getNodes();
             }
 
             // Check the row count ...
@@ -293,12 +295,15 @@ public class ValidateQuery {
             assertRowCount(iter.getSize());
 
             if (nodes != null) {
-                // Check the results via node iterator ...
+                // Check the single-selector results via node iterator ...
+                assertTrue(result.getSelectorNames().length == 1);
                 while (nodes.hasNext()) {
                     Node node = nodes.nextNode();
                     assert node != null || node == null; // duh!
                     // if (print) printer.printNode(node);
                 }
+            } else {
+                assertTrue(result.getSelectorNames().length != 1);
             }
         }
 

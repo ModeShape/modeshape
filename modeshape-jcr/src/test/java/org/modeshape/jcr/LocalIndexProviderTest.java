@@ -307,7 +307,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         session.save();
         waitForIndexes();
 
-        print = true;
+        // print = true;
         String sql1 = "SELECT BASE.* from [nt:formInstVersion] as BASE " //
                       + "JOIN  [nt:formInst] AS FORMINST ON ISCHILDNODE(BASE,FORMINST)";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
