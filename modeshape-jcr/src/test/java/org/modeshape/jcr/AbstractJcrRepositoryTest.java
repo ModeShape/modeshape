@@ -239,7 +239,7 @@ public abstract class AbstractJcrRepositoryTest {
 
     protected void printDetails( Node node ) throws RepositoryException {
         if (print) {
-            new JcrTools().printNode(node);
+            new JcrTools(true).printNode(node);
         }
     }
 

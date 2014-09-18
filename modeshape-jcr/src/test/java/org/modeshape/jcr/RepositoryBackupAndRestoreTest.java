@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -45,7 +46,7 @@ import org.modeshape.jcr.api.Problems;
 /**
  * Test performance writing graph subtrees of various sizes with varying number of properties
  */
-public class RepositoryRestoreTest extends SingleUseAbstractTest {
+public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
 
     private File backupDirectory;
     private File backupDirectory2;
@@ -170,6 +171,49 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         assertContentInWorkspace(repository(), "default");
         assertContentInWorkspace(repository(), "ws2");
         assertContentInWorkspace(repository(), "ws3");
+        assertContentNotInWorkspace(repository(), "default", "/node-not-in-backup");
+        queryContentInWorkspace(repository(), null);
+    }
+
+    @FixFor( "MODE-2309" )
+    @Test
+    public void shouldBackupAndRestoreRepositoryWithLineBreaksInPropertyValues() throws Exception {
+        // Load the content and verify it's there ...
+        importIntoWorkspace("default", "io/cars-system-view.xml");
+        assertWorkspaces(repository(), "default");
+        assertContentInWorkspace(repository(), "default");
+
+        print = true;
+
+        Node prius = session().getNode("/Cars/Hybrid/Toyota Prius");
+        prius.setProperty("crlfproperty", "test\r\ntest\r\ntest");
+        prius.setProperty("lfprop", "value\nvalue\nvalue");
+        session().save();
+
+        // Make the backup, and check that there are no problems ...
+        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
+        assertNoProblems(problems);
+
+        // Make some changes that will not be in the backup ...
+        session().getRootNode().addNode("node-not-in-backup");
+        session().save();
+
+        // Check the content again ...
+        assertContentInWorkspace(repository(), "default", "/node-not-in-backup");
+
+        // Restore the content from the backup into our current repository ...
+        JcrSession newSession = repository().login();
+        try {
+            Problems restoreProblems = newSession.getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
+            assertNoProblems(restoreProblems);
+        } finally {
+            newSession.logout();
+        }
+
+        assertWorkspaces(repository(), "default");
+
+        // Check the content again ...
+        assertContentInWorkspace(repository(), "default");
         assertContentNotInWorkspace(repository(), "default", "/node-not-in-backup");
         queryContentInWorkspace(repository(), null);
     }
