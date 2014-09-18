@@ -691,6 +691,13 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
+    @Test
+    public void shouldGetNodesOrderedByPath() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/Cars') ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(4).validate(query, query.execute());
+    }
+
     @FixFor( "MODE-2297" )
     @Test
     public void shouldExecuteQueryUsingSetOperationOfQueriesWithoutJoins() throws RepositoryException {

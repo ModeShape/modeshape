@@ -293,7 +293,7 @@ public abstract class AbstractRestTest {
 
             for (Iterator<?> keyIterator = expectedJSON.keys(); keyIterator.hasNext();) {
                 String key = keyIterator.next().toString();
-                assertTrue("Actual JSON object does not contain key: " + key, actualJSON.has(key));
+                assertTrue("Actual JSON object does not contain key '" + key + "': " + actualJSON, actualJSON.has(key));
 
                 Object expectedValueAtKey = expectedJSON.get(key);
                 Object actualValueAtKey = actualJSON.get(key);

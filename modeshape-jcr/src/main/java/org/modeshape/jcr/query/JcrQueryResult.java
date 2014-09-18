@@ -483,10 +483,10 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             if (propertyName == null) return null;
 
             if (PseudoColumns.contains(propertyName, true)) {
-                if (PseudoColumns.isPath(columnName)) {
+                if (PseudoColumns.isPath(propertyName)) {
                     return iterator.jcrPath(cachedNode);
                 }
-                if (PseudoColumns.isName(columnName)) {
+                if (PseudoColumns.isName(propertyName)) {
                     return iterator.jcrName(cachedNode);
                 }
                 if (PseudoColumns.isLocalName(propertyName)) {
