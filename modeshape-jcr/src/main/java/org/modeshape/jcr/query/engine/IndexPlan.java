@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
@@ -36,12 +37,14 @@ public final class IndexPlan implements Comparable<IndexPlan> {
     private final long cardinalityEstimate;
     private final Float selectivityEstimate;
     private final Collection<Constraint> constraints;
+    private final Collection<JoinCondition> joinConditions;
     private final Map<String, Object> parameters;
 
     public IndexPlan( String name,
                       String workspaceName,
                       String providerName,
                       Collection<Constraint> constraints,
+                      Collection<JoinCondition> joinConditions,
                       int costEstimate,
                       long cardinalityEstimate,
                       float selectivityEstimate,
@@ -52,7 +55,8 @@ public final class IndexPlan implements Comparable<IndexPlan> {
         this.name = name;
         this.workspaceName = workspaceName;
         this.providerName = providerName; // may be null or empty
-        this.constraints = constraints;
+        this.constraints = constraints != null ? constraints : Collections.<Constraint>emptyList();
+        this.joinConditions = joinConditions != null ? joinConditions : Collections.<JoinCondition>emptyList();
         this.costEstimate = costEstimate;
         this.cardinalityEstimate = cardinalityEstimate;
         this.selectivityEstimate = selectivityEstimate < 0 ? null : selectivityEstimate;
@@ -156,6 +160,15 @@ public final class IndexPlan implements Comparable<IndexPlan> {
      */
     public Collection<Constraint> getConstraints() {
         return constraints;
+    }
+
+    /**
+     * Get the join conditions that should be applied to this index if/when it is used.
+     *
+     * @return the join conditions; may be null or empty if there are no join conditions
+     */
+    public Collection<JoinCondition> getJoinConditions() {
+        return joinConditions;
     }
 
     /**

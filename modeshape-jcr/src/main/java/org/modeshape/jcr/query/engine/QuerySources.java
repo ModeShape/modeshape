@@ -293,7 +293,7 @@ public class QuerySources {
                                    final Map<String, Object> parameters,
                                    final ValueFactories valueFactories,
                                    final int batchSize ) {
-        final Index.Results operation = index.filter(new IndexConstraints() {
+        final IndexConstraints indexConstraints = new IndexConstraints() {
 
             @Override
             public boolean hasConstraints() {
@@ -319,9 +319,10 @@ public class QuerySources {
             public Map<String, Object> getParameters() {
                 return parameters;
             }
-        });
-
+        };
+        // Return a node sequence that will lazily get the results from the index ...
         return new NodeSequence() {
+            private Index.Results results;
             private BatchWriter writer;
             private boolean more = true;
             private long rowCount = 0L;
@@ -341,6 +342,11 @@ public class QuerySources {
             public boolean isEmpty() {
                 if (rowCount > 0) return false;
                 if (!more) return true; // rowCount was not > 0, but there are no more
+                if (results == null) {
+                    // We haven't read anything yet, so return 'false' always (even if this is not the case)
+                    // so we can delay the loading of the results until really needed ...
+                    return false;
+                }
                 readBatch();
                 return rowCount == 0;
             }
@@ -365,20 +371,29 @@ public class QuerySources {
 
             @Override
             public void close() {
-                operation.close();
+                if (results != null) {
+                    results.close();
+                }
             }
 
             protected final void readBatch() {
                 if (writer == null) {
                     writer = new BatchWriter(batchSize, workspaceName, repo);
                 }
-                more = writer.consumeOperation(operation);
+                more = writer.consumeOperation(getResults());
                 rowCount += writer.rowCount();
             }
 
             @Override
             public String toString() {
                 return "(from-index " + index.getName() + " with " + constraints + ")";
+            }
+
+            private Index.Results getResults() {
+                if (results != null) return results;
+                // Otherwise we have to initialize the results, so have the index do the filtering based upon the constraints ...
+                results = index.filter(indexConstraints);
+                return results;
             }
         };
     }

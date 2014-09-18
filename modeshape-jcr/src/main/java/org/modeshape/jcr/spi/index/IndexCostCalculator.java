@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
@@ -68,11 +69,36 @@ public interface IndexCostCalculator {
     Collection<Constraint> andedConstraints();
 
     /**
+     * Get the join conditions that might apply to the index to which this filter is submitted.
+     *
+     * @return the join constraints; never null but maybe empty
+     */
+    Collection<JoinCondition> joinConditions();
+
+    /**
      * Get the variables that are to be substituted into the {@link BindVariableName} used in the query.
      *
      * @return immutable map of variable values keyed by their name; never null but possibly empty
      */
     Map<String, Object> getVariables();
+
+    /**
+     * Add to the query plan the information necessary to signal that the supplied index can be used to answer the query.
+     *
+     * @param name the name of the index; may not be null
+     * @param workspaceName the name of the workspace for which the index is used; may be null if the index is built-in
+     * @param providerName the name of the provider; may be null if the index is built-in
+     * @param joinConditions the join conditions that should be applied to the index if/when it is used
+     * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
+     * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index, which for join
+     *        constraints is generally equal to the total number of nodes known to the index; must be non-negative
+     */
+    void addIndex( String name,
+                   String workspaceName,
+                   String providerName,
+                   Collection<JoinCondition> joinConditions,
+                   int costEstimate,
+                   long cardinalityEstimate );
 
     /**
      * Add to the query plan the information necessary to signal that the supplied index can be used to answer the query.

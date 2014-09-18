@@ -22,6 +22,7 @@ import java.util.Collections;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.JoinCondition;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.modeshape.common.collection.Problems;
@@ -276,6 +277,20 @@ public class LocalIndexProvider extends IndexProvider {
                 calculator.addIndex(defn.getName(), workspaceName, getName(), Collections.singleton(constraint), Costs.LOCAL,
                                     cardinality, selectivity);
             }
+        }
+
+        // Does this index apply to any of the join conditions ...
+        for (JoinCondition joinCondition : calculator.joinConditions()) {
+            if (planner.indexAppliesTo(joinCondition)) {
+                logger().trace("Index '{0}' in '{1}' provider applies to query in workspace '{2}' with constraint: {3}",
+                               defn.getName(), getName(), workspaceName, joinCondition);
+                // The index does apply to this constraint, but the number of values corresponds to the total number of values
+                // in the index (this is a JOIN CONDITON for which there is no literal values) ...
+                long total = localIndex.estimateTotalCount();
+                calculator.addIndex(defn.getName(), workspaceName, getName(), Collections.singleton(joinCondition), Costs.LOCAL,
+                                    total);
+            }
+
         }
     }
 }
