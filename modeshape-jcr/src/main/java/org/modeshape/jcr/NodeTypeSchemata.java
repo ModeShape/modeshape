@@ -32,6 +32,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
+import org.modeshape.jcr.query.PseudoColumns;
 import org.modeshape.jcr.query.model.AllNodes;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.TypeSystem;
@@ -111,12 +112,10 @@ public class NodeTypeSchemata implements Schemata {
         types.put(PropertyType.NAME, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.URI, typeSystem.getStringFactory().getTypeName());
 
-        pseudoProperties.add(pseudoProperty(context, JcrLexicon.PATH, PropertyType.STRING));
-        pseudoProperties.add(pseudoProperty(context, JcrLexicon.NAME, PropertyType.STRING));
-        pseudoProperties.add(pseudoProperty(context, JcrLexicon.SCORE, PropertyType.DOUBLE));
-        pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.LOCALNAME, PropertyType.STRING));
-        pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.DEPTH, PropertyType.LONG));
-        pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.ID, PropertyType.STRING));
+        // Don't include 'jcr:uuid' in all pseudocolumns, since it should only appear in 'mix:referencable' nodes ...
+        for (PseudoColumns.Info pseudoColumn : PseudoColumns.allColumnsExceptJcrUuid()) {
+            pseudoProperties.add(pseudoProperty(context, pseudoColumn.getQualifiedName(), pseudoColumn.getType()));
+        }
 
         keyPropertyNames = new Name[] {JcrLexicon.UUID, ModeShapeLexicon.ID};
 

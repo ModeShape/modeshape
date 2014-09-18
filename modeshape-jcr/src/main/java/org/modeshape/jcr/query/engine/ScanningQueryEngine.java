@@ -43,8 +43,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.RepositoryIndexes;
 import org.modeshape.jcr.api.query.QueryCancelledException;
@@ -60,6 +58,7 @@ import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.NodeSequence.Batch;
 import org.modeshape.jcr.query.NodeSequence.RowAccessor;
 import org.modeshape.jcr.query.NodeSequence.RowFilter;
+import org.modeshape.jcr.query.PseudoColumns;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryEngine;
 import org.modeshape.jcr.query.QueryEngineBuilder;
@@ -158,20 +157,6 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
     /** We don't use the standard logging convention here; we want clients to easily configure logging for the indexes */
     protected static final Logger LOGGER = Logger.getLogger("org.modeshape.jcr.query");
-
-    protected static final Set<Name> PSEUDO_COLUMN_NAMES;
-
-    static {
-        Set<Name> names = new HashSet<>();
-        names.add(JcrLexicon.NAME);
-        names.add(JcrLexicon.PATH);
-        names.add(JcrLexicon.SCORE);
-        names.add(JcrLexicon.UUID);
-        names.add(ModeShapeLexicon.LOCALNAME);
-        names.add(ModeShapeLexicon.DEPTH);
-        names.add(ModeShapeLexicon.ID);
-        PSEUDO_COLUMN_NAMES = Collections.unmodifiableSet(names);
-    }
 
     public static class Builder extends QueryEngineBuilder {
 
@@ -2277,8 +2262,8 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
         // Find the expected property type of the value ...
         assert columns != null;
         final int indexInRow = columns.getSelectorIndex(selectorName);
-        if (PSEUDO_COLUMN_NAMES.contains(propName)) {
-            if (JcrLexicon.SCORE.equals(propName)) {
+        if (PseudoColumns.contains(propName, true)) {
+            if (PseudoColumns.isScore(propName)) {
                 // This is a special case of obtaining the score from the row ...
                 final TypeFactory<?> typeFactory = context.getTypeSystem().getDoubleFactory();
                 return new PropertyValueExtractor(selectorName, propertyName, typeFactory) {
@@ -2290,7 +2275,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     }
                 };
             }
-            if (JcrLexicon.PATH.equals(propName)) {
+            if (PseudoColumns.isPath(propName)) {
                 // This is a special case of obtaining the score from the row ...
                 final TypeFactory<?> typeFactory = context.getTypeSystem().getPathFactory();
                 return new PropertyValueExtractor(selectorName, propertyName, typeFactory) {
@@ -2303,7 +2288,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     }
                 };
             }
-            if (ModeShapeLexicon.DEPTH.equals(propName)) {
+            if (PseudoColumns.isDepth(propName)) {
                 // This is a special case of obtaining the score from the row ...
                 final TypeFactory<?> typeFactory = context.getTypeSystem().getLongFactory();
                 return new PropertyValueExtractor(selectorName, propertyName, typeFactory) {
@@ -2316,7 +2301,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     }
                 };
             }
-            if (JcrLexicon.NAME.equals(propName)) {
+            if (PseudoColumns.isName(propName)) {
                 // This is a special case of obtaining the score from the row ...
                 final TypeFactory<?> typeFactory = context.getTypeSystem().getNameFactory();
                 return new PropertyValueExtractor(selectorName, propertyName, typeFactory) {
@@ -2329,7 +2314,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     }
                 };
             }
-            if (ModeShapeLexicon.LOCALNAME.equals(propName)) {
+            if (PseudoColumns.isLocalName(propName)) {
                 // This is a special case of obtaining the score from the row ...
                 final TypeFactory<?> typeFactory = context.getTypeSystem().getStringFactory();
                 return new PropertyValueExtractor(selectorName, propertyName, typeFactory) {
@@ -2342,7 +2327,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     }
                 };
             }
-            if (ModeShapeLexicon.ID.equals(propName)) {
+            if (PseudoColumns.isId(propName)) {
                 // This is a special case of obtaining the identifier from the row ...
                 final TypeFactory<?> typeFactory = context.getTypeSystem().getStringFactory();
                 return new PropertyValueExtractor(selectorName, propertyName, typeFactory) {
@@ -2355,7 +2340,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     }
                 };
             }
-            if (JcrLexicon.UUID.equals(propName)) {
+            if (PseudoColumns.isUuid(propName)) {
                 // This is a special case of obtaining the "jcr:uuid" value from the row, except that the
                 // CachedNode instances don't know about this property ...
                 final TypeFactory<?> typeFactory = context.getTypeSystem().getStringFactory();

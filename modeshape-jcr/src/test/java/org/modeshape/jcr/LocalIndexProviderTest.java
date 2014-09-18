@@ -198,7 +198,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         registerValueIndex("sysIndex", "nt:typeWithSysName", null, "*", "sysName", PropertyType.STRING);
         registerNodeTypeIndex("typesIndex", "nt:base", null, "*", "jcr:primaryType", PropertyType.STRING);
 
-        print = true;
+        // print = true;
 
         Node root = session().getRootNode();
         Node newNode1 = root.addNode("nodeWithSysName", "nt:typeWithSysName");
@@ -284,6 +284,64 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         // Compute a query plan that should use this index ...
         query = jcrSql2Query("SELECT * FROM [nt:unstructured]");
         validateQuery().rowCount(3L).useIndex("primaryTypes").validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2297" )
+    @Test
+    public void shouldExecuteQueryUsingSetOperationOfQueriesWithJoins() throws Exception {
+        registerNodeType("nt:formInstVersion");
+        registerNodeType("nt:formInst");
+
+        Node root = session().getRootNode();
+        Node baseNode = root.addNode("formInst", "nt:formInst");
+        baseNode.addMixin("mix:referenceable");
+
+        Node v1Node = baseNode.addNode("version", "nt:formInstVersion");
+        v1Node.addMixin("mix:referenceable");
+
+        Node v2Node = baseNode.addNode("version", "nt:formInstVersion");
+        v2Node.addMixin("mix:referenceable");
+        v2Node.setProperty("previous_version", v1Node.getIdentifier());
+
+        // waitForIndexes();
+        session.save();
+        waitForIndexes();
+
+        print = true;
+        String sql1 = "SELECT BASE.* from [nt:formInstVersion] as BASE " //
+                      + "JOIN  [nt:formInst] AS FORMINST ON ISCHILDNODE(BASE,FORMINST)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql1, Query.JCR_SQL2);
+        validateQuery().rowCount(2).validate(query, query.execute());
+
+        String sql2 = "SELECT BASE.* from [nt:formInstVersion] as BASE " //
+                      + "JOIN  [nt:formInst] AS FORMINST ON ISCHILDNODE(BASE,FORMINST) " //
+                      + "JOIN  [nt:formInstVersion] AS FORMINSTNEXT ON FORMINSTNEXT.previous_version = BASE.[jcr:uuid]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql2, Query.JCR_SQL2);
+        validateQuery().rowCount(1).validate(query, query.execute());
+
+        String sql = sql1 + " UNION " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(2).validate(query, query.execute());
+
+        sql = sql2 + " UNION " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(2).validate(query, query.execute());
+
+        sql = sql1 + " INTERSECT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(1).validate(query, query.execute());
+
+        sql = sql2 + " INTERSECT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(1).validate(query, query.execute());
+
+        sql = sql1 + " EXCEPT " + sql2;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(1).validate(query, query.execute());
+
+        sql = sql2 + " EXCEPT " + sql1;
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(0).validate(query, query.execute());
     }
 
     @Test

@@ -32,7 +32,6 @@ import javax.jcr.Value;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.common.collection.Collections;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.jcr.JcrI18n;
@@ -47,23 +46,12 @@ import org.modeshape.jcr.query.engine.process.SecureSequence;
 /**
  * The results of a query. This is not thread-safe because it relies upon JcrSession, which is not thread-safe. Also, although the
  * results of a query never change, the objects returned by the iterators may vary if the session information changes.
- * 
+ *
  * @see XPathQueryResult
  * @see JcrSqlQueryResult
  */
 @NotThreadSafe
 public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
-    public static final String JCR_SCORE_COLUMN_NAME = "jcr:score";
-    public static final String JCR_PATH_COLUMN_NAME = "jcr:path";
-    public static final String JCR_NAME_COLUMN_NAME = "jcr:name";
-    public static final String JCR_UUID_COLUMN_NAME = "jcr:uuid";
-    public static final String MODE_LOCALNAME_COLUMN_NAME = "mode:localName";
-    public static final String MODE_DEPTH_COLUMN_NAME = "mode:depth";
-    public static final String MODE_ID_COLUMN_NAME = "mode:id";
-    protected static final Set<String> PSEUDO_COLUMNS = Collections.unmodifiableSet(JCR_SCORE_COLUMN_NAME, JCR_PATH_COLUMN_NAME,
-                                                                                    JCR_NAME_COLUMN_NAME, JCR_UUID_COLUMN_NAME,
-                                                                                    MODE_LOCALNAME_COLUMN_NAME,
-                                                                                    MODE_DEPTH_COLUMN_NAME, MODE_ID_COLUMN_NAME);
 
     protected final JcrQueryContext context;
     protected final QueryResults results;
@@ -494,27 +482,27 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             String propertyName = iterator.getPropertyNameForColumnName(columnName);
             if (propertyName == null) return null;
 
-            if (PSEUDO_COLUMNS.contains(propertyName)) {
-                if (JCR_PATH_COLUMN_NAME.equals(propertyName)) {
+            if (PseudoColumns.contains(propertyName, true)) {
+                if (PseudoColumns.isPath(columnName)) {
                     return iterator.jcrPath(cachedNode);
                 }
-                if (JCR_NAME_COLUMN_NAME.equals(propertyName)) {
+                if (PseudoColumns.isName(columnName)) {
                     return iterator.jcrName(cachedNode);
                 }
-                if (MODE_LOCALNAME_COLUMN_NAME.equals(propertyName)) {
+                if (PseudoColumns.isLocalName(propertyName)) {
                     return iterator.jcrLocalName(cachedNode);
                 }
-                if (MODE_DEPTH_COLUMN_NAME.equals(propertyName)) {
+                if (PseudoColumns.isDepth(propertyName)) {
                     return iterator.jcrDepth(cachedNode);
                 }
-                if (MODE_ID_COLUMN_NAME.equals(propertyName)) {
+                if (PseudoColumns.isId(propertyName)) {
                     return iterator.jcrId(cachedNode);
                 }
-                if (JCR_SCORE_COLUMN_NAME.equals(propertyName)) {
+                if (PseudoColumns.isScore(propertyName)) {
                     float score = batchAtRow.getScore(nodeIndex);
                     return iterator.jcrDouble(score);
                 }
-                if (JCR_UUID_COLUMN_NAME.equals(propertyName)) {
+                if (PseudoColumns.isUuid(propertyName)) {
                     return iterator.jcrUuid(cachedNode);
                 }
             }
