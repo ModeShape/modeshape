@@ -121,10 +121,15 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
     @Override
     public NodeIterator getNodes() throws RepositoryException {
         if (accessed) {
-            if (!restartable) {
+            if (restartable) {
+                if (sequence instanceof Restartable) {
+                    ((Restartable)sequence).restart();
+                } else {
+                    assert sequence.isEmpty();
+                }
+            } else if (!sequence.isEmpty()) {
                 throw new RepositoryException(JcrI18n.multipleCallsToGetRowsOrNodesIsNotAllowed.text(queryStatement));
             }
-            ((Restartable)sequence).restart();
         }
         if (getSelectorNames().length > 1) {
             throw new RepositoryException(JcrI18n.multipleSelectorsAppearInQueryUnableToCallMethod.text(queryStatement));
@@ -138,19 +143,30 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
     protected int computeDefaultSelectorIndex() {
         Columns columns = results.getColumns();
         List<String> selectorNames = columns.getSelectorNames();
+        int selectorIndex = 0;
         if (selectorNames.size() == 1) {
-            return columns.getSelectorIndex(selectorNames.get(0));
+            selectorIndex = columns.getSelectorIndex(selectorNames.get(0));
         }
-        return 0;
+        if (selectorIndex >= sequence.width()) {
+            // The columns were built on top of other columns that expose multiple selectors, but this sequenc only has
+            // one selector ...
+            selectorIndex = 0;
+        }
+        return selectorIndex;
     }
 
     @Override
     public RowIterator getRows() throws RepositoryException {
         if (accessed) {
-            if (!restartable) {
+            if (restartable) {
+                if (sequence instanceof Restartable) {
+                    ((Restartable)sequence).restart();
+                } else {
+                    assert sequence.isEmpty();
+                }
+            } else if (!sequence.isEmpty()) {
                 throw new RepositoryException(JcrI18n.multipleCallsToGetRowsOrNodesIsNotAllowed.text(queryStatement));
             }
-            ((Restartable)sequence).restart();
         }
         accessed = true;
         final Columns columns = results.getColumns();
@@ -437,7 +453,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             super(context, query, sequence, columns);
             int selectorIndex = columns.getSelectorIndex(columns.getSelectorNames().get(0));
             if (selectorIndex >= sequence.width()) {
-                // The columns were built on top of other columns that expose multiple selectors, but this sequenc only has
+                // The columns were built on top of other columns that expose multiple selectors, but this sequence only has
                 // one selector ...
                 selectorIndex = 0;
             }
