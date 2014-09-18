@@ -27,6 +27,7 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.query.qom.Operator;
+import org.modeshape.jcr.query.PseudoColumns;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.AllNodes;
 import org.modeshape.jcr.query.model.ArithmeticOperand;
@@ -551,14 +552,13 @@ public class Validator extends AbstractVisitor {
             // Maybe the supplied property name is really an alias ...
             column = this.columnsByAlias.get(propertyName);
             boolean propertyNameIsWildcard = propertyName == null || "*".equals(propertyName);
-            if (column == null && !propertyNameIsWildcard) {
+            if (column == null && !propertyNameIsWildcard && !PseudoColumns.contains(propertyName, true)) {
                 if (!table.hasExtraColumns() && columnIsRequired) {
                     problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.name());
                     checkVariationsOfPropertyName(selectorName, propertyName, table, problems);
                 } else {
                     if (!checkVariationsOfPropertyName(selectorName, propertyName, table, problems)) {
-                        problems.addWarning(GraphI18n.columnDoesNotExistOnTableAndMayBeResidual,
-                                            propertyName,
+                        problems.addWarning(GraphI18n.columnDoesNotExistOnTableAndMayBeResidual, propertyName,
                                             selectorName.name());
                     }
                 }

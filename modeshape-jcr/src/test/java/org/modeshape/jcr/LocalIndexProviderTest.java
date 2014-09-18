@@ -198,7 +198,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         registerValueIndex("sysIndex", "nt:typeWithSysName", null, "*", "sysName", PropertyType.STRING);
         registerNodeTypeIndex("typesIndex", "nt:base", null, "*", "jcr:primaryType", PropertyType.STRING);
 
-        print = true;
+        // print = true;
 
         Node root = session().getRootNode();
         Node newNode1 = root.addNode("nodeWithSysName", "nt:typeWithSysName");

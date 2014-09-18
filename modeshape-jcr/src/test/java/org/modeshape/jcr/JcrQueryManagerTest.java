@@ -1171,10 +1171,19 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @FixFor( "MODE-1888" )
     @Test
     public void shouldCaptureWarningsAboutUsingColumnOnWrongSelector() throws RepositoryException {
+        String sql = "SELECT ref.[jcr:lastModified] FROM [nt:file] AS file JOIN [mix:referenceable] AS ref ON ISSAMENODE(file,ref)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(0).warnings(1).hasColumns("ref.jcr:lastModified").validate(query, result);
+    }
+
+    @FixFor( {"MODE-1888", "MODE-2297"} )
+    @Test
+    public void shouldNotCaptureWarningsAboutUsingJcrUuidColumnOnWrongSelector() throws RepositoryException {
         String sql = "SELECT file.[jcr:uuid] FROM [nt:file] AS file JOIN [mix:referenceable] AS ref ON ISSAMENODE(file,ref)";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
-        validateQuery().rowCount(0).warnings(1).hasColumns("file.jcr:uuid").validate(query, result);
+        validateQuery().rowCount(0).warnings(0).hasColumns("file.jcr:uuid").validate(query, result);
     }
 
     @FixFor( "MODE-1888" )
