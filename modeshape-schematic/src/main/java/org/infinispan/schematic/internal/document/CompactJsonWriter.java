@@ -175,36 +175,45 @@ public class CompactJsonWriter implements JsonWriter {
             switch (c) {
                 case '"':
                 case '\'':
-                    // Escape the (single- or double-) quote characters ..
+                    // Escape the single- or double-quote characters ..
                     writer.append('\\').append(c);
                     break;
+                case '/':
+                    // JSON allows you to escape forward slashes (more for JavaScript), but we won't ...
+                    // writer.append('\\');
+                    writer.append(c);
+                    break;
                 case '\\':
-                    // The character might be an escape sequence, which we need to esacape ...
-                    writer.append('\\');
-                    char next = iter.next();
-                    switch (next) {
-                        case CharacterIterator.DONE:
-                            // This was the last character, so it's not escaped ..
-                            writer.append(c);
-                            break;
-                        case 'b':
-                        case 'f':
-                        case 'n':
-                        case 'r':
-                        case 't':
-                        case 'u':
-                            // This IS an escape sequence, and we've already written the backslash to escape this
-                            // sequence. So next we can write the sequence.
-                            writer.append('\\').append(next);
-                            break;
-                        default:
-                            // It's not an escape sequence that we care about. We've already written the backslash,
-                            // so just write the character ...
-                            writer.append(next);
-                    }
+                    // These characters need to be escaped.
+                    writer.append('\\').append(c);
+                    break;
+                case '\b':
+                    // These characters need to be escaped.
+                    writer.append("\\b");
+                    break;
+                case '\f':
+                    // These characters need to be escaped.
+                    writer.append("\\f");
+                    break;
+                case '\n':
+                    // These characters need to be escaped.
+                    writer.append("\\n");
+                    break;
+                case '\r':
+                    // These characters need to be escaped.
+                    writer.append("\\r");
+                    break;
+                case '\t':
+                    // These characters need to be escaped.
+                    writer.append("\\t");
                     break;
                 default:
-                    writer.append(c);
+                    if (c < ' ') {
+                        String t = "000" + Integer.toHexString(c);
+                        writer.append("\\u").append(t.substring(t.length() - 4));
+                    } else {
+                        writer.append(c);
+                    }
                     break;
             }
         }

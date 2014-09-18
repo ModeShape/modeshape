@@ -39,7 +39,9 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.text.CharacterIterator;
 import java.text.ParseException;
+import java.text.StringCharacterIterator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -271,14 +273,16 @@ public class JsonReader {
             @Override
             public Document nextDocument() throws ParsingException {
                 if (tokenizer.isFinished()) return null;
-                return parser.parseDocument(false);
+                Document doc = parser.parseDocument(false);
+                // System.out.println(Json.writePretty(doc));
+                return doc;
             }
         };
     }
 
     /**
      * Parse the number represented by the supplied (unquoted) JSON field value.
-     * 
+     *
      * @param value the string representation of the value
      * @return the number, or null if the value could not be parsed
      */
@@ -935,13 +939,67 @@ public class JsonReader {
          */
         @Override
         public Object parseValue( String value ) {
-            if (value != null && value.length() > 2) {
-                Date date = parseDateFromLiteral(value);
-                if (date != null) {
-                    return date;
+            if (value != null) {
+                if (value.length() > 2) {
+                    Date date = parseDateFromLiteral(value);
+                    if (date != null) {
+                        return date;
+                    }
                 }
+                // Unescape escaped characters ...
+                value = unescapeValue(value);
             }
             return value;
+        }
+
+        protected String unescapeValue( String value ) {
+            if (value == null || value.length() == 0) return value;
+
+            StringBuilder sb = new StringBuilder(value.length());
+            CharacterIterator iter = new StringCharacterIterator(value);
+            for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+                switch (c) {
+                    case '\\':
+                        // The character might be an escape sequence, so output the backslash ...
+                        char next = iter.next();
+                        switch (next) {
+                            case CharacterIterator.DONE:
+                                // This was the last character, so we're done ...
+                                sb.append(c);
+                                break;
+                            case '\\':
+                            case '/': // optional
+                            case '\b':
+                            case '\f':
+                            case '\n':
+                            case '\r':
+                            case '\t':
+                                // This is an escaped sequence ...
+                                sb.append(next);
+                                break;
+                            case 'u':
+                                // This is an unicode escape sequence, so we already output one of them ...
+                                char first = iter.next();
+                                char second = iter.next();
+                                char third = iter.next();
+                                char fourth = iter.next();
+                                char uni = (char)Integer.parseInt("" + first + second + third + fourth, 16);
+                                sb.append(uni);
+                                break;
+                            default:
+                                // It's not an escape sequence that we care about. We've already written the backslash,
+                                // so just write the character ...
+                                sb.append(c);
+                                sb.append(next);
+                        }
+                        break;
+                    default:
+                        // Unicode escapes are handled above ...
+                        sb.append(c);
+                        break;
+                }
+            }
+            return sb.toString();
         }
 
         /**
