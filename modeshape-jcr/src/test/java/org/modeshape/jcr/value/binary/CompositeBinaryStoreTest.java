@@ -97,10 +97,10 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
     @Test
     public void shouldAggregateBinaryKeysFromAllStores() throws BinaryStoreException {
         byte[] content = randomContent();
-        defaultStore.storeValue(new ByteArrayInputStream(content));
+        defaultStore.storeValue(new ByteArrayInputStream(content), false);
 
         byte[] content1 = randomContent();
-        alternativeStore.storeValue(new ByteArrayInputStream(content1));
+        alternativeStore.storeValue(new ByteArrayInputStream(content1), false);
 
         final Iterable<BinaryKey> allBinaryKeys = store.getAllBinaryKeys();
         final List<BinaryKey> expected = new ArrayList<BinaryKey>();
@@ -122,7 +122,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
     public void shouldPersistContentIntoTheDefaultStore() throws BinaryStoreException, IOException {
         byte[] content = randomContent();
 
-        BinaryValue v = store.storeValue(new ByteArrayInputStream(content));
+        BinaryValue v = store.storeValue(new ByteArrayInputStream(content), false);
 
         InputStream is = store.getInputStream(v.getKey());
         byte[] storeContent = IoUtil.readBytes(is);
@@ -138,7 +138,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
     public void shouldLookInAllBinaryStoresForAKey() throws BinaryStoreException, IOException {
         byte[] content = randomContent();
 
-        BinaryValue v = alternativeStore.storeValue(new ByteArrayInputStream(content));
+        BinaryValue v = alternativeStore.storeValue(new ByteArrayInputStream(content), false);
 
         InputStream is = store.getInputStream(v.getKey());
         byte[] storedContent = IoUtil.readBytes(is);
@@ -149,14 +149,14 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
     @Test
     public void shouldStoreThingsInTheDefaultStoreWhenTheStrategyFails() throws BinaryStoreException {
-        BinaryValue v = store.storeValue(new ByteArrayInputStream(randomContent()), "this-hint-doesnt-reference-a-store");
+        BinaryValue v = store.storeValue(new ByteArrayInputStream(randomContent()), "this-hint-doesnt-reference-a-store", false);
         assertTrue(defaultStore.hasBinary(v.getKey()));
     }
 
     @Test
     public void shouldKnowWhatBinaryStoreAKeyIsIn() throws BinaryStoreException {
-        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()));
-        BinaryValue v1 = alternativeStore.storeValue(new ByteArrayInputStream(randomContent()));
+        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()), false);
+        BinaryValue v1 = alternativeStore.storeValue(new ByteArrayInputStream(randomContent()), false);
 
         assertEquals(defaultStore, store.findBinaryStoreContainingKey(v.getKey()));
         assertEquals(alternativeStore, store.findBinaryStoreContainingKey(v1.getKey()));
@@ -165,7 +165,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
     @Test
     public void shouldMoveBinaryKeysBetweenStores() throws BinaryStoreException {
-        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()));
+        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()), false);
         assertFalse(alternativeStore.hasBinary(v.getKey()));
 
         store.moveValue(v.getKey(), defaultHint, alternativeHint);
@@ -181,7 +181,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
     @Test(expected = BinaryStoreException.class)
     public void shouldRaiseAnExceptionWhenMovingAKeyThatDoesntExistInTheSourceStore() throws BinaryStoreException {
-        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()));
+        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()), false);
         store.moveValue(v.getKey(), alternativeHint, defaultHint);
     }
 
@@ -197,7 +197,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
         localStoreWithoutADefaultStore.start();
 
         BinaryValue v = localStoreWithoutADefaultStore.storeValue(new ByteArrayInputStream(randomContent()),
-                                                                  "this-hint-doesnt-reference-a-store");
+                                                                  "this-hint-doesnt-reference-a-store", false);
 
         assertTrue(alternativeStore.hasBinary(v.getKey()));
     }

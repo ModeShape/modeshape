@@ -125,9 +125,9 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream, boolean markAsUnused ) throws BinaryStoreException {
         // store into temporary file system store and get SHA-1
-        BinaryValue temp = cache.storeValue(stream);
+        BinaryValue temp = cache.storeValue(stream, markAsUnused);
         try {
             // prepare new binary key based on SHA-1
             BinaryKey key = new BinaryKey(temp.getKey().toString());
@@ -139,20 +139,30 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
 
             // check unused content
             if (this.contentExists(key, UNUSED)) {
-                session.execute("UPDATE modeshape.binary SET usage=1 WHERE cid='" + key + "';");
+                if (!markAsUnused) {
+                    // mark it as used
+                    session.execute("UPDATE modeshape.binary SET usage=1 WHERE cid='" + key + "';");
+                }
                 return new StoredBinaryValue(this, key, temp.getSize());
             }
 
-            // store content
-            PreparedStatement query = session.prepare("INSERT INTO modeshape.binary (cid, usage_time, payload, usage) VALUES ( ?,?,?,1 );");
-            BoundStatement statement = new BoundStatement(query);
-            session.execute(statement.bind(key.toString(), new Date(), buffer(stream)));
+            if (!markAsUnused) {
+                // store content as used
+                String stmt = "INSERT INTO modeshape.binary (cid, payload, usage) VALUES (?,?,1)";
+                PreparedStatement preparedStatement = session.prepare(stmt);
+                BoundStatement statement = new BoundStatement(preparedStatement);
+                session.execute(statement.bind(key.toString(), buffer(stream)));
+            } else {
+                // store content as un-used
+                String stmt = "INSERT INTO modeshape.binary (cid, usage_time, payload, usage) VALUES (?,?,?,0)";
+                PreparedStatement preparedStatement = session.prepare(stmt);
+                BoundStatement statement = new BoundStatement(preparedStatement);
+                session.execute(statement.bind(key.toString(), new Date(), buffer(stream)));
+            }
             return new StoredBinaryValue(this, key, temp.getSize());
         } catch (BinaryStoreException e) {
             throw e;
-        } catch (IOException e) {
-            throw new BinaryStoreException(e);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             throw new BinaryStoreException(e);
         } finally {
             // remove content from temp store
@@ -163,7 +173,7 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
         try {
-            ResultSet rs = session.execute("SELECT payload FROM modeshape.binary WHERE cid='" + key.toString() + "' and usage=1;");
+            ResultSet rs = session.execute("SELECT payload FROM modeshape.binary WHERE cid='" + key.toString() + "'");
             Row row = rs.one();
             if (row == null) {
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, session));
@@ -191,9 +201,11 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        PreparedStatement preparedStatement = session.prepare("UPDATE modeshape.binary SET usage = ?, usage_time = ? WHERE cid = ?");
         try {
             for (BinaryKey key : keys) {
-                session.execute("UPDATE modeshape.binary SET usage=0 where cid='" + key + "';");
+                BoundStatement statement = new BoundStatement(preparedStatement);
+                session.execute(statement.bind(0, new Date(), key.toString()));
             }
         } catch (RuntimeException e) {
             throw new BinaryStoreException(e);
@@ -204,7 +216,7 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     public void removeValuesUnusedLongerThan( long minimumAge,
                                               TimeUnit unit ) throws BinaryStoreException {
         try {
-            Date deadline = new Date(new Date().getTime() - unit.toMillis(minimumAge));
+            Date deadline = new Date(System.currentTimeMillis() - unit.toMillis(minimumAge));
             // When querying using 2nd indexes, Cassandra
             // (it's not CQL specific) requires that you use an '=' for at least one of
             // the indexed column in the where clause. This is a limitation of Cassandra.

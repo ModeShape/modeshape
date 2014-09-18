@@ -125,16 +125,15 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
-        return storeValue(stream, DEFAULT_STRATEGY_HINT);
+    public BinaryValue storeValue( InputStream stream, boolean markAsUnused ) throws BinaryStoreException {
+        return storeValue(stream, DEFAULT_STRATEGY_HINT, markAsUnused);
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream,
-                                   String hint ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream, String hint, boolean markAsUnused ) throws BinaryStoreException {
         BinaryStore binaryStore = selectBinaryStore(hint);
-        BinaryValue bv = binaryStore.storeValue(stream);
-        logger.debug("Stored binary " + bv.getKey() + " into binary store " + binaryStore);
+        BinaryValue bv = binaryStore.storeValue(stream, markAsUnused);
+        logger.debug("Stored binary " + bv.getKey() + " into binary store " + binaryStore + " used=" + markAsUnused);
         return bv;
     }
 
@@ -170,7 +169,7 @@ public class CompositeBinaryStore implements BinaryStore {
             return key;
         }
 
-        final BinaryValue binaryValue = storeValue(sourceStore.getInputStream(key), destination);
+        final BinaryValue binaryValue = storeValue(sourceStore.getInputStream(key), destination, false);
         sourceStore.markAsUnused(java.util.Collections.singleton(key));
 
         return binaryValue.getKey();

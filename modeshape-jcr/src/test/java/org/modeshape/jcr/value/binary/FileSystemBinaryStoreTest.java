@@ -203,8 +203,8 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
         }
 
         // Make sure there are files for all stored values ...
-        assertThat(countStoredFiles(), is(storedCount));
-        assertThat(countTrashFiles(), is(0));
+        assertThat(countStoredFiles(), is(storedCount - 1));
+        assertThat(countTrashFiles(), is(1));
     }
 
     @Test
@@ -315,7 +315,7 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
             builder.append(textBase.substring(0, rand.nextInt(textBase.length())));
         }
         final String text = builder.toString();
-        final Binary storedValue = store.storeValue(new ByteArrayInputStream(text.getBytes()));
+        final Binary storedValue = store.storeValue(new ByteArrayInputStream(text.getBytes()), false);
         ExecutorService executor = Executors.newFixedThreadPool(3);
         Callable<String> readingTask = new Callable<String>() {
             @Override
@@ -357,7 +357,7 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
 
         Stopwatch sw = new Stopwatch();
         sw.start();
-        Binary binary = store.storeValue(stream);
+        Binary binary = store.storeValue(stream, false);
         sw.stop();
         if (print) System.out.println("Time to store 18MB file: " + sw.getTotalDuration());
 
@@ -386,7 +386,7 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
 
         Stopwatch sw = new Stopwatch();
         sw.start();
-        Binary binary = store.storeValue(content);
+        Binary binary = store.storeValue(content, false);
         sw.stop();
         if (print) System.out.println("Time to store " + desc + ": " + sw.getTotalDuration());
 

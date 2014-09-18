@@ -23,12 +23,14 @@
  */
 package org.modeshape.jcr;
 
-import java.util.Map;
+import java.util.Collections;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.BinaryValueUnused;
+import org.modeshape.jcr.cache.change.BinaryValueUsed;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
@@ -43,8 +45,8 @@ import org.modeshape.jcr.value.BinaryKey;
 @ThreadSafe
 public class BackupObserver implements ChangeSetListener {
     private final Queue<NodeKey> changedNodes;
-    private final Map<BinaryKey, Object> usedBinaryKeys = new ConcurrentHashMap<BinaryKey, Object>();
-    private final Map<BinaryKey, Object> unusedBinaryKeys = new ConcurrentHashMap<BinaryKey, Object>();
+    private final Set<BinaryKey> usedBinaryKeys = Collections.newSetFromMap(new ConcurrentHashMap<BinaryKey, Boolean>());
+    private final Set<BinaryKey> unusedBinaryKeys = Collections.newSetFromMap(new ConcurrentHashMap<BinaryKey, Boolean>());
 
     protected BackupObserver( Queue<NodeKey> changedNodes ) {
         this.changedNodes = changedNodes;
@@ -65,12 +67,22 @@ public class BackupObserver implements ChangeSetListener {
             if (change instanceof BinaryValueUnused) {
                 BinaryValueUnused unused = (BinaryValueUnused)change;
                 BinaryKey key = unused.getKey();
-                if (usedBinaryKeys.containsKey(key)) {
+                if (usedBinaryKeys.contains(key)) {
                     // This change set had marked it as used, but now is unused again; removed it from the used.
                     usedBinaryKeys.remove(key);
                     break;
                 }
-                unusedBinaryKeys.put(key, null);
+                unusedBinaryKeys.add(key);
+            }
+            if (change instanceof BinaryValueUsed) {
+                BinaryValueUsed unused = (BinaryValueUsed)change;
+                BinaryKey key = unused.getKey();
+                if (unusedBinaryKeys.contains(key)) {
+                    // This change set had marked it as used, but now is unused again; removed it from the used.
+                    unusedBinaryKeys.remove(key);
+                    break;
+                }
+                usedBinaryKeys.add(key);
             }
         }
     }
@@ -81,7 +93,7 @@ public class BackupObserver implements ChangeSetListener {
      * @return the unused binary keys; never null, but possibly empty
      */
     public Iterable<BinaryKey> getUnusedBinaryKeys() {
-        return unusedBinaryKeys.keySet();
+        return unusedBinaryKeys;
     }
 
     /**
@@ -90,6 +102,6 @@ public class BackupObserver implements ChangeSetListener {
      * @return the used binary keys; never null, but possibly empty
      */
     public Iterable<BinaryKey> getUsedBinaryKeys() {
-        return usedBinaryKeys.keySet();
+        return usedBinaryKeys;
     }
 }

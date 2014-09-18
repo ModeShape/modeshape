@@ -167,9 +167,9 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream, final boolean markAsUnused ) throws BinaryStoreException {
         // store into temporary file system store and get SHA-1
-        final BinaryValue temp = cache.storeValue(stream);
+        final BinaryValue temp = cache.storeValue(stream, markAsUnused);
         try {
             return dbCall(new DBCallable<BinaryValue>() {
                 @Override
@@ -177,17 +177,21 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                     // prepare new binary key based on SHA-1
                     BinaryKey key = new BinaryKey(temp.getKey().toString());
 
-                    // check for duplicate content
                     if (database.contentExists(key, ALIVE, connection)) {
                         return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
                     }
 
                     // check unused content
                     if (database.contentExists(key, UNUSED, connection)) {
-                        database.restoreContent(connection, Arrays.asList(key));
+                        if (!markAsUnused) {
+                            database.restoreContent(connection, Arrays.asList(key));
+                        }
                     } else {
                         // store the content
                         database.insertContent(key, temp.getStream(), temp.getSize(), connection);
+                        if (markAsUnused) {
+                            database.markUnused(Arrays.asList(key), connection);
+                        }
                     }
                     return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
                 }
@@ -254,7 +258,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             @Override
             public String execute( Connection connection ) throws Exception {
                 BinaryKey key = source.getKey();
-                if (!database.contentExists(key, true, connection)) {
+                if (!database.contentExists(key, true, connection) && !database.contentExists(key, false, connection)) {
                     throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
                 }
                 return database.getMimeType(key, connection);

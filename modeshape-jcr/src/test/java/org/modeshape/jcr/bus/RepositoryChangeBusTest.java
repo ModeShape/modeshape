@@ -44,6 +44,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.basic.JodaDateTime;
 
 /**
@@ -218,6 +219,21 @@ public class RepositoryChangeBusTest {
         @Override
         public Set<NodeKey> changedNodes() {
             return Collections.emptySet();
+        }
+
+        @Override
+        public Set<BinaryKey> unusedBinaries() {
+            return null;
+        }
+
+        @Override
+        public Set<BinaryKey> usedBinaries() {
+            return null;
+        }
+
+        @Override
+        public boolean hasBinaryChanges() {
+            return false;
         }
 
         @Override

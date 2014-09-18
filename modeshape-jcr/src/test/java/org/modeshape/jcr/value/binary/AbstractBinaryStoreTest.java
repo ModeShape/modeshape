@@ -25,6 +25,7 @@ package org.modeshape.jcr.value.binary;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -143,7 +144,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
 
     private BinaryValue storeAndValidate( BinaryKey key,
                                           byte[] data ) throws BinaryStoreException, IOException {
-        BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(data));
+        BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(data), false);
         assertNotNull(res);
         assertEquals(key, res.getKey());
         assertEquals(data.length, res.getSize());
@@ -157,7 +158,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
 
     @Test
     public void shouldCleanupUnunsedValues() throws Exception {
-        getBinaryStore().storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY));
+        getBinaryStore().storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY), false);
         List<BinaryKey> keys = new ArrayList<BinaryKey>();
         keys.add(IN_MEMORY_KEY);
         getBinaryStore().markAsUnused(keys);
@@ -178,19 +179,40 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     public void shouldMarkBinariesAsUsed() throws Exception {
         BinaryStore binaryStore = getBinaryStore();
 
-        binaryStore.storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY));
+        binaryStore.storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY), false);
         binaryStore.markAsUnused(Arrays.asList(IN_MEMORY_KEY));
         Thread.sleep(100);
 
         binaryStore.markAsUsed(Arrays.asList(IN_MEMORY_KEY));
+        Thread.sleep(2);
         binaryStore.removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
         InputStream is = binaryStore.getInputStream(IN_MEMORY_KEY);
         assertNotNull(is);
     }
 
     @Test
+    @FixFor( "MODE-2302" )
+    public void shouldStoreBinariesAsUnused() throws Exception {
+        byte[] randomBinary = new byte[(int)(AbstractBinaryStore.DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES * 2)];
+        RANDOM.nextBytes(randomBinary);
+        BinaryKey binaryKey = BinaryKey.keyFor(randomBinary);
+
+        BinaryStore binaryStore = getBinaryStore();
+        binaryStore.storeValue(new ByteArrayInputStream(randomBinary), true);
+        assertTrue("Binary not stored", binaryStore.hasBinary(binaryKey));
+        for (BinaryKey storedKey : binaryStore.getAllBinaryKeys()) {
+            if (storedKey.equals(binaryKey)) {
+                fail("Binary key found as used even though it was added as unused");
+            }
+        }
+        Thread.sleep(100);
+        binaryStore.removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+        assertFalse(binaryStore.hasBinary(binaryKey));
+    }
+
+    @Test
     public void shouldAcceptStrategyHintsForStoringValues() throws Exception {
-        BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_MEDIUM_BINARY), null);
+        BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_MEDIUM_BINARY), null, false);
         assertTrue(getBinaryStore().hasBinary(res.getKey()));
     }
 
@@ -223,10 +245,11 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     @Test
     public void shouldExtractAndStoreMimeTypeWhenDetectorConfigured() throws RepositoryException, IOException {
         getBinaryStore().setMimeTypeDetector(new DummyMimeTypeDetector());
-        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY));
+        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY), false);
         // unclean stuff... a getter modifies silently data
         assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, getBinaryStore().getMimeType(binaryValue, "foobar.txt"));
     }
+
 
     @Test
     public void shouldExtractAndStoreTextWhenExtractorConfigured() throws Exception {
@@ -235,10 +258,10 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         BinaryStore binaryStore = getBinaryStore();
         binaryStore.setTextExtractors(extractors);
 
-        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_LARGE_BINARY));
+        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_LARGE_BINARY), false);
         String extractedText = binaryStore.getText(binaryValue);
         if (extractedText == null) {
-            // if nothing is found the first time, sleep and try again - Mongo on Windows seems to exibit this problem for some
+            // if nothing is found the first time, sleep and try again - Mongo on Windows seems to exhibit this problem for some
             // reason
             Thread.sleep(TimeUnit.SECONDS.toMillis(2));
             extractedText = binaryStore.getText(binaryValue);

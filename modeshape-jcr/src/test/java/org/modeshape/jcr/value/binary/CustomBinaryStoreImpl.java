@@ -44,7 +44,7 @@ public class CustomBinaryStoreImpl extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream ) {
+    public BinaryValue storeValue( InputStream stream, boolean markAsUnused ) {
         return null;
     }
 

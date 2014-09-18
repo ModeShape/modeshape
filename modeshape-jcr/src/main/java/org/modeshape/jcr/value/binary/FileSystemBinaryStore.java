@@ -47,7 +47,6 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
@@ -104,7 +103,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream, boolean markAsUnused ) throws BinaryStoreException {
         File tmpFile = null;
         BinaryValue value = null;
         try {
@@ -125,11 +124,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 value = new InMemoryBinaryValue(this, key, content);
             } else {
                 value = saveTempFileToStore(tmpFile, key, numberOfBytes);
-            }
-
-            if (extractors() != null && !(value instanceof InMemoryBinaryValue)) {
-                // We never store the text for in-memory values ...
-                extractors().extract(this, value, new TextExtractorContext(detector()));
+                if (markAsUnused) {
+                    markAsUnused(key);
+                }
             }
             return value;
         } catch (IOException e) {
@@ -267,15 +264,10 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         File persistedFile = findFile(directory, key, false);
         if (!persistedFile.exists() || !persistedFile.canRead()) {
             // Try to find it in the trash ...
-            File trashedFile = findFile(trash, key, true);
-            if (!trashedFile.exists() || !trashedFile.canRead()) {
+            persistedFile = findFile(trash, key, false);
+            if (!persistedFile.exists() || !persistedFile.canRead()) {
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, directory.getPath()));
             }
-            // Otherwise, we found it in the trash, so move it from the trash into the regular storage ...
-            moveFileExclusively(trashedFile, persistedFile, key);
-
-            // Clean up any empty directories in the trash ...
-            pruneEmptyDirectories(trash, trashedFile);
         }
 
         // We now know that the file (which does exist) is not being written by this process, but another
@@ -292,22 +284,36 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     @Override
     public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         for (BinaryKey key : keys) {
-            // Now that we know the SHA-1, find the File object that corresponds to the existing persisted file ...
-            File persistedFile = findFile(directory, key, false);
-            if (persistedFile.exists() && persistedFile.canRead()) {
-                continue;
-            }
-            // Try to find it in the trash ...
-            File trashedFile = findFile(trash, key, true);
-            if (!trashedFile.exists() || !trashedFile.canRead()) {
-                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, directory.getPath()));
-            }
-            // Otherwise, we found it in the trash, so move it from the trash into the regular storage ...
-            moveFileExclusively(trashedFile, persistedFile, key);
-
-            // Clean up any empty directories in the trash ...
-            pruneEmptyDirectories(trash, trashedFile);
+            markAsUsed(key);
         }
+    }
+
+    protected void markAsUsed(BinaryKey key) throws BinaryStoreException {
+        moveToMainStorage(key);
+        // mark the corresponding extracted text file as used
+        moveToMainStorage(createKeyFromSourceWithSuffix(key, EXTRACTED_TEXT_SUFFIX));
+        // mark the corresponding stored mime-type file as used
+        moveToMainStorage(createKeyFromSourceWithSuffix(key, MIME_TYPE_SUFFIX));
+    }
+
+    private void moveToMainStorage( BinaryKey key ) throws BinaryStoreException {
+        // Now that we know the SHA-1, find the File object that corresponds to the existing persisted file ...
+        File persistedFile = findFile(directory, key, true);
+        if (persistedFile.exists() && persistedFile.canRead()) {
+            // it's already in main storage, so return
+            return;
+        }
+        // Try to find it in the trash ...
+        File trashedFile = findFile(trash, key, false);
+        if (!trashedFile.exists() || !trashedFile.canRead()) {
+            //we didn't find it in the trash either
+            return;
+        }
+        // Otherwise, we found it in the trash, so move it from the trash into the regular storage ...
+        moveFileExclusively(trashedFile, persistedFile, key);
+
+        // Clean up any empty directories in the trash ...
+        pruneEmptyDirectories(trash, trashedFile);
     }
 
     @Override
@@ -317,14 +323,18 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         }
         for (BinaryKey key : keys) {
             markAsUnused(key);
-            // mark the corresponding extracted text file as unused
-            markAsUnused(createKeyFromSourceWithSuffix(key, EXTRACTED_TEXT_SUFFIX));
-            // mark the corresponding stored mime-type file as unused
-            markAsUnused(createKeyFromSourceWithSuffix(key, MIME_TYPE_SUFFIX));
         }
     }
 
     protected void markAsUnused( BinaryKey key ) throws BinaryStoreException {
+        moveToTrash(key);
+        // mark the corresponding extracted text file as unused
+        moveToTrash(createKeyFromSourceWithSuffix(key, EXTRACTED_TEXT_SUFFIX));
+        // mark the corresponding stored mime-type file as unused
+        moveToTrash(createKeyFromSourceWithSuffix(key, MIME_TYPE_SUFFIX));
+    }
+
+    private void moveToTrash( BinaryKey key ) throws BinaryStoreException {
         // Look for an existing file ...
         File persisted = findFile(directory, key, false);
         if (persisted == null || !persisted.exists()) {
@@ -333,7 +343,10 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
         // Find where it should live in the trash ...
         File trashed = findFile(trash, key, true);
-
+        if (trashed.exists() && trashed.canRead()) {
+            // The file is already in the trash
+            return;
+        }
         // Move the file into the trash ...
         moveFileExclusively(persisted, trashed, key);
 
@@ -480,17 +493,22 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void storeExtractedText( BinaryValue source,
-                                    String extractedText ) throws BinaryStoreException {
+                                       String extractedText ) throws BinaryStoreException {
+        // Look for an existing file ...
+        if (!binaryValueExists(source)) {
+            return;
+        }
         BinaryKey extractedTextKey = createKeyFromSourceWithSuffix(source.getKey(), EXTRACTED_TEXT_SUFFIX);
         storeStringAtKey(extractedText, extractedTextKey);
     }
 
     private void storeStringAtKey( String string,
-                                   BinaryKey key ) throws BinaryStoreException {
+                                   BinaryKey key) throws BinaryStoreException {
         File tmpFile = null;
         try {
             tmpFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX + EXTRACTED_TEXT_SUFFIX);
             IoUtil.write(string, new BufferedOutputStream(new FileOutputStream(tmpFile)));
+            // we always store these as used
             saveTempFileToStore(tmpFile, key, tmpFile.length());
         } catch (IOException e) {
             throw new BinaryStoreException(e);
@@ -513,13 +531,20 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     @Override
     protected void storeMimeType( BinaryValue binaryValue,
                                   String mimeType ) throws BinaryStoreException {
+        if (!binaryValueExists(binaryValue)) {
+            return;
+        }
         BinaryKey mimeTypeKey = createKeyFromSourceWithSuffix(binaryValue.getKey(), MIME_TYPE_SUFFIX);
         storeStringAtKey(mimeType, mimeTypeKey);
     }
 
     private boolean binaryValueExists( BinaryValue binaryValue ) throws BinaryStoreException {
-        File file = findFile(directory, binaryValue.getKey(), false);
-        return file.exists() && file.canRead();
+        File fileInMainStorage = findFile(directory, binaryValue.getKey(), false);
+        if (fileInMainStorage.exists() && fileInMainStorage.canRead()) {
+            return true;
+        }
+        File fileInTrash = findFile(trash, binaryValue.getKey(), false);
+        return fileInTrash.exists() && fileInTrash.canRead();
     }
 
     private BinaryKey createKeyFromSourceWithSuffix( BinaryKey sourceKey,

@@ -319,32 +319,39 @@ public class Database {
 
     /**
      * Attempts to return the content stream for a given binary value.
+     * 
      * @param key a {@link org.modeshape.jcr.value.BinaryKey} the key of the binary value, may not be null
      * @param connection a {@link java.sql.Connection} instance, may not be null
-     * @return either a stream that wraps the input stream of the binary value and closes the connection and the statement
-     * when it terminates or {@code null}, meaning that the binary was not found.
-     *
+     * @return either a stream that wraps the input stream of the binary value and closes the connection and the statement when it
+     *         terminates or {@code null}, meaning that the binary was not found.
      * @throws SQLException if anything unexpected fails
      */
-    protected InputStream readContent(BinaryKey key, Connection connection) throws SQLException {
-        PreparedStatement readContentStatement = prepareStatement(USED_CONTENT_STMT_KEY, connection);
+    protected InputStream readContent( BinaryKey key,
+                                       Connection connection ) throws SQLException {
+        // first search the contents which are in use
+        InputStream is = readStreamFromStatement(USED_CONTENT_STMT_KEY, key, connection);
+        if (is != null) {
+            return is;
+        }
+        // then search the contents which are in the trash
+        return readStreamFromStatement(UNUSED_CONTENT_STMT_KEY, key, connection);
+    }
+
+    private InputStream readStreamFromStatement( String statement, BinaryKey key, Connection connection ) throws SQLException {
+        PreparedStatement readContentStatement = prepareStatement(statement, connection);
         try {
             readContentStatement.setString(1, key.toString());
             ResultSet rs = executeQuery(readContentStatement);
             if (!rs.next()) {
                 tryToClose(readContentStatement);
-                tryToClose(connection);
                 return null;
-            } else {
-                return new DatabaseBinaryStream(connection, readContentStatement, rs.getBinaryStream(1));
             }
+            return new DatabaseBinaryStream(connection, readContentStatement, rs.getBinaryStream(1));
         } catch (SQLException e) {
             tryToClose(readContentStatement);
-            tryToClose(connection);
             throw e;
         } catch (Throwable t) {
             tryToClose(readContentStatement);
-            tryToClose(connection);
             throw new RuntimeException(t);
         }
     }

@@ -234,8 +234,8 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
             return new InMemoryBinaryValue(store, value);
         }
         try {
-            // Store the value in the store ...
-            return store.storeValue(new ByteArrayInputStream(value));
+            // Store the value in the store but mark it as unused, as it will become used only on tx commit
+            return store.storeValue(new ByteArrayInputStream(value), true);
         } catch (BinaryStoreException e) {
             throw new ValueFormatException(PropertyType.BINARY,
                                            GraphI18n.errorConvertingType.text(byte[].class.getSimpleName(),
@@ -248,8 +248,8 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
     public BinaryValue create( InputStream stream ) throws IoException {
         if (stream == null) return null;
         try {
-            // Store the value in the store ...
-            return store.storeValue(stream);
+            // Store the value in the store but mark it as unused, as it will become used only on tx commit
+            return store.storeValue(stream, true);
         } catch (BinaryStoreException e) {
             throw new ValueFormatException(PropertyType.BINARY,
                                            GraphI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
@@ -261,8 +261,8 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
     public BinaryValue create( InputStream stream, String hint ) throws IoException {
         if (stream == null) return null;
         try {
-            // Store the value in the store ...
-            return store.storeValue(stream, hint);
+            // Store the value in the store but mark it as unused, as it will become used only on tx commit
+            return store.storeValue(stream, hint, true);
         } catch (BinaryStoreException e) {
             throw new ValueFormatException(PropertyType.BINARY,
                     GraphI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
