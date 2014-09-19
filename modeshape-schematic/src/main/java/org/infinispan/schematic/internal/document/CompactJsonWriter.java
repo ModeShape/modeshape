@@ -50,6 +50,7 @@ import org.infinispan.schematic.document.Code;
 import org.infinispan.schematic.document.CodeWithScope;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Document.Field;
+import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.document.MaxKey;
 import org.infinispan.schematic.document.MinKey;
 import org.infinispan.schematic.document.ObjectId;
@@ -61,7 +62,7 @@ public class CompactJsonWriter implements JsonWriter {
     @Override
     public void write( Object object,
                        OutputStream stream ) throws IOException {
-        Writer writer = new OutputStreamWriter(stream);
+        Writer writer = new OutputStreamWriter(stream, Json.UTF8);
         write(object, writer);
         writer.flush();
     }

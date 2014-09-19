@@ -16,6 +16,7 @@
 package org.infinispan.schematic.internal.document;
 
 import static org.junit.Assert.assertEquals;
+import org.infinispan.schematic.FixFor;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -71,12 +72,29 @@ public class JsonWriterTest {
     }
 
     @Test
+    @FixFor( "MODE-2309" )
     public void shouldWriteDocumentWithEscapedCharacters() throws Exception {
         doc1 = Schematic.newDocument("field1", "value1", "field2", 3);
         doc1.setString("field3", "This has\nmultiple\nlines");
         doc1.setString("field4", "This has\r\nmultiple\r\n lines");
         String s = writer.write(doc1);
         // System.out.println(s);
+        doc2 = reader.read(s);
+        assertMatch(doc1, doc2);
+    }
+
+    @Test
+    @FixFor( "MODE-2309" )
+    public void shouldParseJsonWithNonAsciiCharactersInFields() throws Exception {
+        doc1 = Schematic.newDocument();
+        doc1.setString("field1", "basic ascii");
+        doc1.setString("field2", "basic ascii with some arabic: هذه هي قصة من مكتبة على الشارع الرئيسي");
+        doc1.setString("field3",
+                       "basic ascii with some german: Dies ist die Geschichte von einer Buchhandlung an der Hauptstraße");
+        doc1.setString("field4", "basic ascii with some chinese: 這是在主要街道一家書店的故事");
+        doc1.setString("Hauptstraße", "Main street");
+        String s = writer.write(doc1);
+        System.out.println(s);
         doc2 = reader.read(s);
         assertMatch(doc1, doc2);
     }

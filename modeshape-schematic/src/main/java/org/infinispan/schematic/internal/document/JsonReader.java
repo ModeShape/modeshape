@@ -177,13 +177,13 @@ public class JsonReader {
      */
     public Document read( InputStream stream,
                           boolean introspectStringValues ) throws ParsingException {
-        return read(new InputStreamReader(stream), introspectStringValues);
+        return read(stream, Json.UTF8, introspectStringValues);
     }
 
     /**
      * Read the JSON representation from supplied input stream and construct the {@link Document} representation, using the
      * supplied {@link Charset character set}.
-     * 
+     *
      * @param stream the input stream; may not be null
      * @param charset the character set that should be used; may not be null
      * @param introspectStringValues true if the string values should be examined for common patterns, or false otherwise
@@ -243,7 +243,7 @@ public class JsonReader {
      */
     public DocumentSequence readMultiple( InputStream stream,
                                           boolean introspectStringValues ) {
-        return readMultiple(new InputStreamReader(stream), introspectStringValues);
+        return readMultiple(new InputStreamReader(stream, Json.UTF8), introspectStringValues);
     }
 
     /**
