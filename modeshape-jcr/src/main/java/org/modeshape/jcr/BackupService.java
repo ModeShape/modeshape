@@ -617,7 +617,7 @@ public class BackupService {
             try {
                 InputStream stream = new FileInputStream(binaryFile);
                 try {
-                    BinaryValue stored = binaryStore.storeValue(stream);
+                    BinaryValue stored = binaryStore.storeValue(stream, false);
                     assert stored.getKey().equals(binaryKeyFor(binaryFile));
                 } finally {
                     stream.close();

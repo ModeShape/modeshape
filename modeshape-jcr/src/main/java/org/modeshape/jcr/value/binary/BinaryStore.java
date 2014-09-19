@@ -35,12 +35,12 @@ public interface BinaryStore {
     /**
      * Initialize the store and get ready for use.
      */
-    public void start();
+    void start();
 
     /**
      * Shuts down the store.
      */
-    public void shutdown();
+    void shutdown();
 
     /**
      * Get the minimum number of bytes that a binary value must contain before it can be stored in the binary store.
@@ -75,10 +75,12 @@ public interface BinaryStore {
      * persisted in the store, the store may simply return the binary value referencing the existing content.
      * 
      * @param stream the stream containing the binary content to be stored; may not be null
+     * @param markAsUnused a {@code boolean} which indicates if the binary will be stored as unused or not. Binaries used from
+     * normal sessions (via properties) will normally be stored as unused and they will be marked as used only on tx commit.
      * @return the binary value representing the stored binary value; never null
      * @throws BinaryStoreException if there any unexpected problem
      */
-    BinaryValue storeValue( InputStream stream ) throws BinaryStoreException;
+    BinaryValue storeValue( InputStream stream, boolean markAsUnused ) throws BinaryStoreException;
 
     /**
      * Store the binary value and return the JCR representation. Note that if the binary content in the supplied stream is already
@@ -86,14 +88,16 @@ public interface BinaryStore {
      * 
      * @param stream the stream containing the binary content to be stored; may not be null
      * @param hint a hint that the BinaryStore may use to make storage decisions about this input stream
+     * @param markAsUnused a {@code boolean} which indicates if the binary will be stored as unused or not. Binaries used from
+     * normal sessions (via properties) will normally be stored as unused and they will be marked as used only on tx commit.
      * @return the binary value representing the stored binary value; never null
      * @throws BinaryStoreException if there any unexpected problem
      */
-    BinaryValue storeValue( InputStream stream,
-                            String hint ) throws BinaryStoreException;
+    BinaryValue storeValue( InputStream stream, String hint, boolean markAsUnused ) throws BinaryStoreException;
 
     /**
-     * Get an {@link InputStream} to the binary content with the supplied key.
+     * Get an {@link InputStream} to the binary content with the supplied key. The input stream will be returned as long as
+     * the binary value has not been removed, so expired binary values should be included here as well.
      * 
      * @param key the key to the binary content; never null
      * @return the input stream through which the content can be read, {@code never null}
@@ -103,15 +107,24 @@ public interface BinaryStore {
     InputStream getInputStream( BinaryKey key ) throws BinaryStoreException;
 
     /**
-     * Searches for a binary which has the given key in this store.
-     * 
+     * Searches for a binary which has the given key in this store. The store should return {@code true} as long the binary
+     * is still present physically, regardless of any "trash" semantics.
+     *
      * @param key a non-null {@link BinaryKey} instance
      * @return {@code true} if a binary with this key exists in this store, {@code false} otherwise.
      */
     boolean hasBinary( BinaryKey key );
 
     /**
-     * Mark the supplied binary keys as unused, but key them in quarantine until needed again (at which point they're removed from
+     * Marks the binary with supplied keys as used. This method should ignore any keys which are not present in the store.
+     *
+     * @param keys a {@link org.modeshape.jcr.value.BinaryKey} {@link java.lang.Iterable}, may not be null
+     * @throws BinaryStoreException if anything unexpected fails.
+     */
+    void markAsUsed(Iterable<BinaryKey> keys) throws BinaryStoreException;
+
+    /**
+     * Mark the supplied binary keys as unused, but keep them in quarantine until needed again (at which point they're removed from
      * quarantine) or until {@link #removeValuesUnusedLongerThan(long, TimeUnit)} is called. This method ignores any keys for
      * values not stored within this store.
      * 
@@ -157,21 +170,21 @@ public interface BinaryStore {
      * If the store has never determined the mime-type of the given binary and the binary can be located in the store, it will
      * attempt to determine it via the configured {@link MimeTypeDetector detectors} and store it.
      * </p>
-     * 
+     *
      * @param binary the binary content; may not be null
      * @param name the name of the content, useful for determining the MIME type; may be null if not known
      * @return the MIME type of the content, as determined by the installed detectors or {@code null} if none of the detectors can
-     *         determine it.
+     * determine it.
      * @throws IOException if there is a problem reading the binary content
      * @throws BinaryStoreException if the binary value cannot be found in the store
      * @throws RepositoryException if any other error occurs.
      */
-    public String getMimeType( BinaryValue binary,
-                               String name ) throws IOException, RepositoryException;
+    String getMimeType( BinaryValue binary,
+                        String name ) throws IOException, RepositoryException;
 
     /**
-     * Obtain an iterable implementation containing all of the store's binary keys. The resulting iterator may be lazy, in the
-     * sense that it may determine additional {@link BinaryKey}s only as the iterator is used.
+     * Obtain an iterable implementation containing all of the store's binary keys of those binaries that are in use.
+     * The resulting iterator may be lazy, in the sense that it may determine additional {@link BinaryKey}s only as the iterator is used.
      * 
      * @return the iterable set of binary keys; never null
      * @throws BinaryStoreException if anything unexpected happens.

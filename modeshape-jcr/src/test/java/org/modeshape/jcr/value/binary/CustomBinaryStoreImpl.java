@@ -36,7 +36,7 @@ public class CustomBinaryStoreImpl extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream ) {
+    public BinaryValue storeValue( InputStream stream, boolean markAsUnused ) {
         return null;
     }
 
@@ -47,6 +47,10 @@ public class CustomBinaryStoreImpl extends AbstractBinaryStore {
 
     @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) {
+    }
+
+    @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
     }
 
     @Override

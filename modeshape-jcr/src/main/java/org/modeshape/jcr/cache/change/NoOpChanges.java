@@ -164,4 +164,8 @@ public final class NoOpChanges implements Changes {
     @Override
     public void binaryValueNoLongerUsed( BinaryKey key ) {
     }
+
+    @Override
+    public void binaryValueUsed( BinaryKey key ) {
+    }
 }

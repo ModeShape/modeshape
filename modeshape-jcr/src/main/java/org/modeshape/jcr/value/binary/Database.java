@@ -322,23 +322,35 @@ public class Database {
      */
     protected InputStream readContent( BinaryKey key,
                                        Connection connection ) throws SQLException {
-        PreparedStatement readContentStatement = prepareStatement(USED_CONTENT_STMT_KEY, connection);
+        try {
+            // first search the contents which are in use
+            InputStream is = readStreamFromStatement(USED_CONTENT_STMT_KEY, key, connection);
+            if (is != null) {
+                return is;
+            }
+            // then search the contents which are in the trash
+            return readStreamFromStatement(UNUSED_CONTENT_STMT_KEY, key, connection);
+        } catch (Throwable t) {
+            tryToClose(connection);
+            throw t;
+        }
+    }
+
+    private InputStream readStreamFromStatement( String statement, BinaryKey key, Connection connection ) throws SQLException {
+        PreparedStatement readContentStatement = prepareStatement(statement, connection);
         try {
             readContentStatement.setString(1, key.toString());
             ResultSet rs = executeQuery(readContentStatement);
             if (!rs.next()) {
                 tryToClose(readContentStatement);
-                tryToClose(connection);
                 return null;
             }
             return new DatabaseBinaryStream(connection, readContentStatement, rs.getBinaryStream(1));
         } catch (SQLException e) {
             tryToClose(readContentStatement);
-            tryToClose(connection);
             throw e;
         } catch (Throwable t) {
             tryToClose(readContentStatement);
-            tryToClose(connection);
             throw new RuntimeException(t);
         }
     }
@@ -358,12 +370,14 @@ public class Database {
         }
     }
 
-    protected void restoreContent( BinaryKey key,
-                                   Connection connection ) throws SQLException {
+    protected void restoreContent( Connection connection,
+                                   Iterable<BinaryKey> keys ) throws SQLException {
         PreparedStatement markUsedSql = prepareStatement(MARK_USED_STMT_KEY, connection);
         try {
-            markUsedSql.setString(1, key.toString());
-            execute(markUsedSql);
+            for (BinaryKey key : keys) {
+                markUsedSql.setString(1, key.toString());
+                executeUpdate(markUsedSql);
+            }
         } finally {
             tryToClose(markUsedSql);
         }

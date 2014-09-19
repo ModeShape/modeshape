@@ -39,6 +39,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.basic.JodaDateTime;
 
 /**
@@ -253,6 +254,21 @@ public abstract class AbstractChangeBusTest {
         @Override
         public Set<NodeKey> changedNodes() {
             return Collections.emptySet();
+        }
+
+        @Override
+        public Set<BinaryKey> unusedBinaries() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public Set<BinaryKey> usedBinaries() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public boolean hasBinaryChanges() {
+            return false;
         }
 
         @Override

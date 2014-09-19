@@ -617,8 +617,8 @@ public class RepositoryCache {
                     }
                     EditableDocument doc = entry.editDocumentContent();
                     PropertyFactory propFactory = context().getPropertyFactory();
-                    translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
-                    translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null);
+                    translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null, null);
+                    translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null, null);
 
                     return null;
                 }
@@ -837,8 +837,11 @@ public class RepositoryCache {
                         DocumentTranslator trans = new DocumentTranslator(context, documentStore, Long.MAX_VALUE);
                         trans.setProperty(rootDoc,
                                           context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT),
+                                          null,
                                           null);
-                        trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
+                        trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()),
+                                          null,
+                                          null);
 
                         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, systemWorkspaceCache,
                                                                            documentStore, translator, rootKey, nodeCache,
