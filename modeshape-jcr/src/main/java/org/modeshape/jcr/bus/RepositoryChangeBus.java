@@ -140,7 +140,15 @@ public final class RepositoryChangeBus implements ChangeBus {
 
         // And process all of the in-thread listeners ...
         for (ChangeSetListener listener : inThreadListeners) {
-            listener.notify(changeSet);
+            try {
+                listener.notify(changeSet);
+            } catch (RuntimeException e) {
+                if (shutdown.get()) {
+                    // The repository has been shutdown, so we have to ignore these changes
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
