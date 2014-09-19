@@ -19,13 +19,13 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.InputStream;
 import org.infinispan.schematic.FixFor;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.DocumentSequence;
-import org.infinispan.schematic.document.Null;
 import org.infinispan.schematic.document.ParsingException;
 import org.junit.After;
 import org.junit.Before;
@@ -123,6 +123,25 @@ public class JsonReaderTest {
     }
 
     @Test
+    @FixFor( "MODE-2309" )
+    public void shouldParseJsonWithControlCharactersInFieldValues() throws Exception {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream("json/example-with-control-characters.json");
+        doc = reader.read(stream);
+        assertNotNull(doc);
+        assertEquals(6, countFields(doc));
+        assertField("firstName", "Jane");
+        assertField("lastName", "Doe");
+        assertField("fieldWithLF", "This is a value\nwith a line feed");
+        assertField("fieldWithCRLF", "This is a value\r\nwith a line feed\r\ncarriage return");
+
+        doc = doc.getDocument("address");
+        assertEquals(3, countFields(doc));
+        assertField("street", "Main Street");
+        assertField("city", "Memphis");
+        assertField("zip", 12345);
+    }
+
+    @Test
     @FixFor( "MODE-2082" )
     public void shouldParseJsonWithComments() throws Exception {
         InputStream stream = getClass().getClassLoader().getResourceAsStream("json/example-with-comments.json");
@@ -192,9 +211,9 @@ public class JsonReaderTest {
                                 Object value ) {
         Object actual = doc.get(name);
         if (value == null) {
-            assert Null.matches(actual);
+            assertNull(actual);
         } else {
-            assert value.equals(actual);
+            assertEquals(value, actual);
         }
     }
 
