@@ -104,8 +104,8 @@ public interface BinaryStore {
     BinaryValue storeValue( InputStream stream, String hint, boolean markAsUnused ) throws BinaryStoreException;
 
     /**
-     * Get an {@link InputStream} to the binary content with the supplied key. The input stream will be returned *as long as
-     * the binary value has not been removed, so expired binary values will be included here as well*.
+     * Get an {@link InputStream} to the binary content with the supplied key. The input stream will be returned as long as
+     * the binary value has not been removed, so expired binary values should be included here as well.
      * 
      * @param key the key to the binary content; never null
      * @return the input stream through which the content can be read, {@code never null}

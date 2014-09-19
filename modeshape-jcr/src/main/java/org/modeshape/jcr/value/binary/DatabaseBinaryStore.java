@@ -284,7 +284,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             @Override
             public String execute( Connection connection ) throws Exception {
                 BinaryKey key = source.getKey();
-                if (!database.contentExists(key, true, connection)) {
+                if (!database.contentExists(key, true, connection) && !database.contentExists(key, false, connection)) {
                     throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
                 }
                 return database.getExtractedText(key, connection);

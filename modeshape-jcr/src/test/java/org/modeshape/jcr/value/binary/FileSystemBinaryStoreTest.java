@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -42,6 +43,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -142,7 +144,7 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
     }
 
     @Test
-    public void shouldMoveUnusedFilesToTrash() throws Exception {
+    public void shouldCreateTrashFilesForUnusedBinaries() throws Exception {
         Set<String> storedSha1s = new HashSet<String>();
         for (int i = 0; i != CONTENT.length; ++i) {
             Binary binary = storeAndCheck(i);
@@ -157,9 +159,13 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
         String unused = storedSha1s.iterator().next();
         store.markAsUnused(Collections.singleton(new BinaryKey(unused)));
 
-        // Make sure the file was moved to the trash ...
-        assertThat(countStoredFiles(), is(storedSha1s.size() - 1));
+        // Make sure the trash file was created
+        assertThat(countStoredFiles(), is(storedSha1s.size()));
         assertThat(countTrashFiles(), is(1));
+        // Check that the name of the trash file is the SHA1
+        File trashFile = collectFiles(trash).get(0);
+        assertNotNull(trashFile);
+        assertEquals(unused, trashFile.getName());
 
         Thread.sleep(1100L); // Sleep more than a second, since modified times may only be accurate to nearest second ...
         store.removeValuesUnusedLongerThan(1, TimeUnit.SECONDS);
@@ -173,7 +179,7 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
     }
 
     @Test
-    public void shouldMoveUnusedFilesFromTrashWhenUsed() throws Exception {
+    public void shouldCleanTrashFilesWhenFilesBecomeUsed() throws Exception {
         Set<Binary> binaries = new HashSet<Binary>();
         int storedCount = 0;
         for (int i = 0; i != CONTENT.length; ++i) {
@@ -189,13 +195,14 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
 
         // Mark one of the files as being unused ...
         String unused = binaries.iterator().next().getHexHash();
-        store.markAsUnused(Collections.singleton(new BinaryKey(unused)));
+        BinaryKey unusedKey = new BinaryKey(unused);
+        store.markAsUnused(Collections.singleton(unusedKey));
 
         // Make sure the file was moved to the trash ...
-        assertThat(countStoredFiles(), is(storedCount - 1));
+        assertThat(countStoredFiles(), is(storedCount));
         assertThat(countTrashFiles(), is(1));
 
-        // Now access all the binary files ...
+        // Now access all the binary files which will not change there used/unused state
         for (Binary binary : binaries) {
             InputStream stream = binary.getStream();
             String content = IoUtil.read(stream);
@@ -203,8 +210,12 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
         }
 
         // Make sure there are files for all stored values ...
-        assertThat(countStoredFiles(), is(storedCount - 1));
+        assertThat(countStoredFiles(), is(storedCount));
         assertThat(countTrashFiles(), is(1));
+
+        // Now mark the file explicitly as used and check that the file from the trash was removed
+        store.markAsUsed(Collections.singleton(unusedKey));
+        assertThat(countTrashFiles(), is(0));
     }
 
     @Test
@@ -450,6 +461,22 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
             }
         } else if (fileOrDir.isFile() && !fileOrDir.isHidden()) {
             result++;
+        }
+        return result;
+    }
+
+    protected List<File> collectFiles(File dir)  {
+        List<File> result = new ArrayList<File>();
+        File[] files = dir.listFiles();
+        if (files == null) {
+            return result;
+        }
+        for (File file : files) {
+            if (file.isFile() && file.canRead()) {
+                result.add(file);
+            } else if (file.isDirectory() && file.canRead()) {
+                result.addAll(collectFiles(file));
+            }
         }
         return result;
     }
