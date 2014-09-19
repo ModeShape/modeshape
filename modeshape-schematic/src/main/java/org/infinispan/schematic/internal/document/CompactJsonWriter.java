@@ -209,9 +209,12 @@ public class CompactJsonWriter implements JsonWriter {
                     break;
                 default:
                     if (c < ' ') {
+                        // Characters less than the first printable character ' ' are non-printable
+                        // and must be escaped as unicode ...
                         String t = "000" + Integer.toHexString(c);
                         writer.append("\\u").append(t.substring(t.length() - 4));
                     } else {
+                        // Otherwise it's a normal character
                         writer.append(c);
                     }
                     break;
