@@ -14,14 +14,21 @@ by ModeShape's service.
 
 As of 4.0.0.Alpha1, ModeShape is licensed under the Apache Software License, 2.0.
 
-This is the first beta release of the 4.0 stream, and it includes 46 bug fixes
-and several new features. There is now support for explicit single-column indexes stored
-locally on the file system. As a result, the index provider SPI first released in
-an earlier alpha has changed slightly, though we expect it to remain unchanged
-from this point forward. We've also extended the JCR-SQL2 query language with 
-a new pseudocolumn, "mode:id", that provides access to exactly the same value
-as "Node.getIndentifier()" would via the API. Like all pseudocolumns, it can be
-used in WHERE constraints and JOIN criteria.
+This is the second beta release of the 4.0 stream, and it fixes 19 issues (many
+around indexing) and introduces two new features. One of these is a new CHILDCOUNT 
+dynamic operand in ModeShape's extended JCR-SQL2 query language. The other feature
+is that indexes can be updated synchronously (before save returns) or asynchronously;
+synchronous is the default since it is safer, but asynchronous indexes are far more
+efficient and reduce the amount of work that has to be done during 'save' calls.
+Where possible, we recommend using asynchronous indexes. 
+
+The second beta release included 46 bug fixes and several new features. There is 
+now support for explicit single-column indexes stored locally on the file system. 
+As a result, the index provider SPI first released in an earlier alpha has changed 
+slightly, though we expect it to remain unchanged from this point forward. We've 
+also extended the JCR-SQL2 query language with a new pseudocolumn, "mode:id", that 
+provides access to exactly the same value as "Node.getIndentifier()" would via the 
+API. Like all pseudocolumns, it can be used in WHERE constraints and JOIN criteria.
 
 The first alpha release introduced a new query engine that allows 
 clients to explicitly define the indexes used in the query system, and the second
