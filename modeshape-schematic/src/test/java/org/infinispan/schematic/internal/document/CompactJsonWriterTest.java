@@ -161,7 +161,7 @@ public class CompactJsonWriterTest {
     @Test
     public void shouldCorrectlyWritePattern() {
         Pattern pattern = Pattern.compile("[CH]at\\s+in", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-        String expected = "{ \"$regex\" : \"[CH]at\\s+in\" , \"$options\" : \"im\" }";
+        String expected = "{ \"$regex\" : \"[CH]at\\\\s+in\" , \"$options\" : \"im\" }";
         String actual = writer.write(pattern);
         assertSame(expected, actual);
     }

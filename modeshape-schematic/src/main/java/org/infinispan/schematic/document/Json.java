@@ -35,6 +35,7 @@ import org.infinispan.schematic.internal.document.CompactJsonWriter;
 import org.infinispan.schematic.internal.document.JsonReader;
 import org.infinispan.schematic.internal.document.JsonWriter;
 import org.infinispan.schematic.internal.document.PrettyJsonWriter;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * A utility class for working with JSON documents. This class is able to read and write JSON documents that are in a special
@@ -129,6 +130,18 @@ import org.infinispan.schematic.internal.document.PrettyJsonWriter;
  * @since 5.1
  */
 public class Json {
+
+    public static final Charset UTF8;
+    static {
+        Charset charset = Charset.defaultCharset();
+        try {
+            charset = Charset.forName("UTF-8");
+        } catch (Throwable t) {
+            LogFactory.getLog(CompactJsonWriter.class)
+                      .error("Unable to obtain 'UTF-8' character set for JSON writing; using default charset.");
+        }
+        UTF8 = charset;
+    }
 
     private static final CompactJsonWriter SHARED_COMPACT_WRITER = new CompactJsonWriter();
 

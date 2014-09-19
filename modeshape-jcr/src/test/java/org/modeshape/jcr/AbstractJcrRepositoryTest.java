@@ -250,7 +250,7 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
 
     protected void printDetails( Node node ) throws RepositoryException {
         if (print) {
-            new JcrTools().printNode(node);
+            new JcrTools(true).printNode(node);
         }
     }
 

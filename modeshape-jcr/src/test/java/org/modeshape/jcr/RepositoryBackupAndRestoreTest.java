@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,7 +33,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.Node;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
@@ -54,7 +57,7 @@ import org.modeshape.jcr.api.Problems;
 /**
  * Test performance writing graph subtrees of various sizes with varying number of properties
  */
-public class RepositoryRestoreTest extends SingleUseAbstractTest {
+public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
 
     private File backupDirectory;
     private File backupDirectory2;
@@ -136,6 +139,49 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         }
     }
 
+    @FixFor( "MODE-2309" )
+    @Test
+    public void shouldBackupAndRestoreRepositoryWithLineBreaksInPropertyValues() throws Exception {
+        // Load the content and verify it's there ...
+        importIntoWorkspace("default", "io/cars-system-view.xml");
+        assertWorkspaces(repository(), "default");
+        assertContentInWorkspace(repository(), "default");
+
+        print = true;
+
+        Node prius = session().getNode("/Cars/Hybrid/Toyota Prius");
+        prius.setProperty("crlfproperty", "test\r\ntest\r\ntest");
+        prius.setProperty("lfprop", "value\nvalue\nvalue");
+        session().save();
+
+        // Make the backup, and check that there are no problems ...
+        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
+        assertNoProblems(problems);
+
+        // Make some changes that will not be in the backup ...
+        session().getRootNode().addNode("node-not-in-backup");
+        session().save();
+
+        // Check the content again ...
+        assertContentInWorkspace(repository(), "default", "/node-not-in-backup");
+
+        // Restore the content from the backup into our current repository ...
+        JcrSession newSession = repository().login();
+        try {
+            Problems restoreProblems = newSession.getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
+            assertNoProblems(restoreProblems);
+        } finally {
+            newSession.logout();
+        }
+
+        assertWorkspaces(repository(), "default");
+
+        // Check the content again ...
+        assertContentInWorkspace(repository(), "default");
+        assertContentNotInWorkspace(repository(), "default", "/node-not-in-backup");
+        queryContentInWorkspace(repository(), null);
+    }
+
     private void assertWorkspaces( JcrRepository newRepository,
                                    String... workspaceNames ) throws RepositoryException {
         Set<String> expectedNames = new HashSet<String>();
@@ -170,7 +216,8 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
     }
 
     private void assertContentInWorkspace( JcrRepository newRepository,
-                                           String workspaceName ) throws RepositoryException {
+                                           String workspaceName,
+                                           String... paths ) throws RepositoryException {
         JcrSession session = workspaceName != null ? newRepository.login(workspaceName) : newRepository.login();
 
         try {
@@ -190,10 +237,33 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
             session.getNode("/Cars/Utility/Hummer H3");
             session.getNode("/Cars/Utility/Ford F-150");
             session.getNode("/Cars/Utility/Toyota Land Cruiser");
+            for (String path : paths) {
+                session.getNode(path);
+            }
         } finally {
             session.logout();
         }
         queryContentInWorkspace(repository(), null);
+    }
+
+    private void assertContentNotInWorkspace( JcrRepository newRepository,
+                                              String workspaceName,
+                                              String... paths ) throws RepositoryException {
+        JcrSession session = workspaceName != null ? newRepository.login(workspaceName) : newRepository.login();
+
+        try {
+            session.getRootNode();
+            for (String path : paths) {
+                try {
+                    session.getNode(path);
+                    fail("Should not have found '" + path + "'");
+                } catch (PathNotFoundException e) {
+                    // expected
+                }
+            }
+        } finally {
+            session.logout();
+        }
     }
 
     @Test
