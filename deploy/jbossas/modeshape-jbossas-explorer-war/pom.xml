@@ -18,7 +18,6 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-explorer</artifactId>
             <version>${project.version}</version>
-            <type>war</type>
         </dependency>
     </dependencies>
     <build>

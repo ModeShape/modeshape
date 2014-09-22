@@ -8,7 +8,7 @@
         <relativePath>../../modeshape-parent</relativePath>
     </parent>
     <artifactId>modeshape-web-explorer</artifactId>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>ModeShape Repository Explorer (Bare)</name>
     <description>ModeShape repository explorer that does not contain ModeShape libraries</description>
     <url>http://www.modeshape.org</url>
@@ -40,21 +40,25 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr</artifactId>
+            <scope>provided</scope>		
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -91,6 +95,7 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
             <type>jar</type>
+	    <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>
@@ -114,6 +119,7 @@
                 </executions>
                 <configuration>
                     <runTarget>org.modeshape.explorer.client.Explorer/Explorer.html</runTarget>
+                    <webappDirectory>target/classes/META-INF/resources</webappDirectory>
                 </configuration>
             </plugin>            
             <plugin>
@@ -127,11 +133,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.testOutputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
             </plugin>           
         </plugins>
     </build>
