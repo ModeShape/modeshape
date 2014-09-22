@@ -41,6 +41,11 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-schematic</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+        </dependency>
+
         <!--Event bus clustering. Note the scope in the parent (provided) - this should be optional from a MS perspective -->
         <dependency>
             <groupId>org.jgroups</groupId>
@@ -56,6 +61,11 @@
                     <artifactId>hibernate-search-analyzers</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!--Required by Hibernate Search-->
+        <dependency>
+            <groupId>org.hibernate.common</groupId>
+            <artifactId>hibernate-commons-annotations</artifactId>
         </dependency>
         <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
         <dependency>
@@ -76,49 +86,46 @@
              if MIME type detection is to be disabled in ModeShape. -->
         <dependency>
             <groupId>org.apache.tika</groupId>
-            <artifactId>tika-parsers</artifactId>
-            <exclusions>
-                <!--
-                Exclude a few more things that we don't need for MIME type detection.
-                We do this here instead of in the parent POM because the Tika-based
-                text extractor will want these.
-                -->
-                <exclusion>
-                    <groupId>org.apache.james</groupId>
-                    <artifactId>apache-mime4j-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.james</groupId>
-                    <artifactId>apache-mime4j-dom</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.ccil.cowan.tagsoup</groupId>
-                    <artifactId>tagsoup</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>asm</groupId>
-                    <artifactId>asm</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.pdfbox</groupId>
-                    <artifactId>pdfbox</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.googlecode.juniversalchardet</groupId>
-                    <artifactId>juniversalchardet</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.geronimo.specs</groupId>
-                    <artifactId>geronimo-stax-api_1.0_spec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.googlecode.mp4parser</groupId>
-                    <artifactId>isoparser</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>tika-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.spec.javax.security.jacc</groupId>
+            <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!--  Used in tests -->
+
+        <!--
+            not used directly, but
+             a) is a transitive dep of some of the test dependencies and
+             b) the BOM brings it as compile,
+            so we need to overwrite it here
+        -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            not used directly, but
+             a) is a transitive dep of some of the test dependencies and
+             b) the BOM brings it as compile,
+            so we need to overwrite it here
+        -->
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
@@ -164,22 +171,6 @@
             <groupId>de.flapdoodle.embed</groupId>
             <artifactId>de.flapdoodle.embed.mongo</artifactId>
         </dependency>
-        
-        <dependency>
-            <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.spec.javax.security.jacc</groupId>
-            <artifactId>jboss-jacc-api_1.4_spec</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!--
-            Testing (note the scope)
-        -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -206,6 +197,14 @@
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jboss-common-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--
+            Tika Parsers for testing, so that we test using a Tika environment with all the specific extensions
+        -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers</artifactId>
             <scope>test</scope>
         </dependency>
         <!--
@@ -245,7 +244,7 @@
             <groupId>com.atomikos</groupId>
             <artifactId>transactions-jta</artifactId>
         </dependency>
-        
+
         <!-- Cassandra binary storage -->
         <dependency>
             <groupId>org.apache-extras.cassandra-jdbc</groupId>
@@ -262,7 +261,7 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-        </dependency>    
+        </dependency>
     </dependencies>
     <build>
         <resources>

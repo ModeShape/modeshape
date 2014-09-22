@@ -3,7 +3,7 @@ package org.modeshape.jcr.value.binary;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
-import org.apache.http.annotation.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.BinaryKey;

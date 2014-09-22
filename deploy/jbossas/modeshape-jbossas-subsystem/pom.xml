@@ -55,7 +55,26 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
-
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <!--
+                        This particular execution doesn't make sense here because ALL of the
+                        jboss.as dependencies are internal (-redhat suffix and they have some other crazy transitive dependencies)
+
+                        For example: JBoss DMR
+                    -->
+                    <execution>
+                        <id>enforce-direct-dependencies</id>
+                        <phase>non-existant</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
