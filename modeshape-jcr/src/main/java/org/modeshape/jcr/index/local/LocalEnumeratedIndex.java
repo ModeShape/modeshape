@@ -63,6 +63,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
     private final DB db;
     private final Set<String> possibleValues;
     private final String workspaceName;
+    private final boolean isNew;
 
     LocalEnumeratedIndex( String name,
                           String workspaceName,
@@ -78,7 +79,9 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
         this.possibleValues = possibleValues != null ? new HashSet<String>(possibleValues) : new HashSet<String>();
         this.nodeKeySetsByValue = new ConcurrentSkipListMap<>();
         // Read all of the existing collections ...
+        boolean foundContent = false;
         for (String collectionName : db.getAll().keySet()) {
+            foundContent = true;
             String prefix = this.name + "/enumerated/";
             if (collectionName.startsWith(prefix) && collectionName.length() > prefix.length()) {
                 String valueString = collectionName.substring(prefix.length());
@@ -93,6 +96,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
                 nodeKeySetsByValue.put(possibleValue, keysForValue);
             }
         }
+        this.isNew = !foundContent;
     }
 
     private Set<String> createOrGetKeySet( String value ) {
@@ -122,6 +126,11 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
 
     public String getWorkspaceName() {
         return workspace;
+    }
+    
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
     protected final Converter<String> converter() {

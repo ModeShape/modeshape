@@ -26,8 +26,15 @@ import org.modeshape.jcr.spi.index.provider.Filter;
 public interface LocalIndex<T> extends Filter, Costable {
 
     /**
-     * Get the name of the index.
+     * Return whether this index is newly created and requires reindexing, or false if the index already exists.
      * 
+     * @return true if the index is new and needs to be rebuilt, or false otherwise.
+     */
+    boolean isNew();
+
+    /**
+     * Get the name of the index.
+     *
      * @return the index name; never null
      */
     String getName();

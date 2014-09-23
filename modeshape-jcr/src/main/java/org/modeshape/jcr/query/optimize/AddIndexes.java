@@ -165,6 +165,7 @@ public class AddIndexes implements OptimizerRule {
                 // the 'selector.[jcr:primaryType] = '<nodeType>' constraint
                 // Add the alias ...
                 nodeTypeNames.add(selectorName.getString());
+                final List<IndexPlan> indexPlans = new LinkedList<>();
                 IndexCostCalculator calculator = new IndexCostCalculator() {
                     @Override
                     public Set<String> selectedNodeTypes() {
@@ -193,13 +194,9 @@ public class AddIndexes implements OptimizerRule {
                                           Collection<JoinCondition> joinConditions,
                                           int costEstimate,
                                           long cardinalityEstimate ) {
-                        // Add a plan node for this index ...
-                        PlanNode indexNode = new PlanNode(Type.INDEX, source.getSelectors());
                         IndexPlan indexPlan = new IndexPlan(name, workspaceName, providerName, null, joinConditions,
                                                             costEstimate, cardinalityEstimate, 1.0f, null);
-                        indexNode.setProperty(Property.INDEX_SPECIFICATION, indexPlan);
-                        // and add it under the SOURCE node ...
-                        source.addLastChild(indexNode);
+                        indexPlans.add(indexPlan);
                     }
 
                     @Override
@@ -212,12 +209,9 @@ public class AddIndexes implements OptimizerRule {
                                           Float selectivityEstimate,
                                           Map<String, Object> parameters ) {
                         // Add a plan node for this index ...
-                        PlanNode indexNode = new PlanNode(Type.INDEX, source.getSelectors());
                         IndexPlan indexPlan = new IndexPlan(name, workspaceName, providerName, constraints, null, costEstimate,
                                                             cardinalityEstimate, selectivityEstimate, parameters);
-                        indexNode.setProperty(Property.INDEX_SPECIFICATION, indexPlan);
-                        // and add it under the SOURCE node ...
-                        source.addLastChild(indexNode);
+                        indexPlans.add(indexPlan);
                     }
 
                     @Override
@@ -268,6 +262,18 @@ public class AddIndexes implements OptimizerRule {
                 };
                 // And collect the indexes from the index planner ...
                 planners.applyIndexes(context, calculator);
+                if (!indexPlans.isEmpty()) {
+                    // Sort the index plans, so the best one is first ...
+                    Collections.sort(indexPlans);
+                    // Add an index node for each index ...
+                    for (IndexPlan indexPlan : indexPlans) {
+                        // Add a plan node for this index ...
+                        PlanNode indexNode = new PlanNode(Type.INDEX, source.getSelectors());
+                        indexNode.setProperty(Property.INDEX_SPECIFICATION, indexPlan);
+                        // and add it under the SOURCE node ...
+                        source.addLastChild(indexNode);
+                    }
+                }
             }
         }
         return plan;

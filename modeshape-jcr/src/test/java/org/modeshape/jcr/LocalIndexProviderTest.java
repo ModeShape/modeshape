@@ -208,7 +208,6 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         newNode1.addMixin("mix:referenceable");
         Node newNode2 = root.addNode("nodeWithReference", "nt:typeWithReference");
         newNode2.setProperty("referenceId", newNode1.getIdentifier());
-        session.save();
 
         waitForIndexes();
         session.save();
@@ -668,6 +667,33 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         query = jcrSql2Query("SELECT table.* FROM [nt:unstructured] AS table WHERE table.someProperty = $value");
         query.bindValue("value", session().getValueFactory().createValue("value1"));
         validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2318" )
+    @Test
+    public void shouldNotReindexOnStartup() throws Exception {
+        // print = true;
+        registerValueIndex("ref1", "nt:unstructured", "", null, "ref1", PropertyType.STRING);
+        registerValueIndex("ref2", "nt:unstructured", "", null, "ref2", PropertyType.STRING);
+
+        waitForIndexes();
+
+        Node newNode1 = session.getRootNode().addNode("nodeWithSysName", "nt:unstructured");
+        // session1.save(); // THIS IS CAUSING the node not being indexed
+
+        final String uuId1 = "cccccccccccccccccccccc-0000-1111-1234-123456789abcd";
+        newNode1.setProperty("ref1", uuId1);
+        newNode1.setProperty("ref2", uuId1);
+
+        session.save();
+
+        printMessage("Nodes Created ...");
+
+        // Shutdown the repository and restart it ...
+        stopRepository();
+        printMessage("Stopped repository. Restarting ...");
+        startRepositoryWithConfiguration(resource(CONFIG_FILE));
+        printMessage("Repository restart complete");
     }
 
     @FixFor( "MODE-2292" )
