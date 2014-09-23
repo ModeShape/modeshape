@@ -32,6 +32,9 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.query.JcrQuery;
+import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -64,7 +67,7 @@ public class Upgrades {
     public static final Upgrades STANDARD_UPGRADES;
 
     static {
-        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE, ModeShape_4_0_0_Alpha1.INSTANCE);
+        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE, ModeShape_4_0_0_Alpha1.INSTANCE, ModeShape_4_0_0_Beta3.INSTANCE);
     }
 
     private final List<UpgradeOperation> operations = new ArrayList<>();
@@ -233,8 +236,6 @@ public class Upgrades {
         }
     }
 
-
-
     /**
      * Upgrade operation handling moving to ModeShape 4.0.0.Alpha1. This consists of making sure that the access control metadata
      * information is correctly stored in the repository metadata and that the {@link ModeShapeLexicon#ACL_COUNT} property
@@ -279,6 +280,32 @@ public class Upgrades {
                 systemSession.save();
             } catch (RepositoryException e) {
                LOGGER.error(e, JcrI18n.upgrade4_0_0_Alpha1_Failed, e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Upgrade operation handling moving to ModeShape 4.0.0.Beta3. This consists of upgrading the {@link org.modeshape.jcr.value.binary.FileSystemBinaryStore}
+     * (if one is used) and changing the storage mechanism of the unused files (see MODE-2302).
+     */
+    protected static class ModeShape_4_0_0_Beta3 extends UpgradeOperation {
+        protected static final UpgradeOperation INSTANCE = new ModeShape_4_0_0_Beta3();
+
+        protected ModeShape_4_0_0_Beta3() {
+            super(403);
+        }
+
+        @Override
+        public void apply( Context resources ) {
+            LOGGER.info(JcrI18n.upgrade4_0_0_Beta3_Running);
+            RunningState runningState = resources.getRepository();
+            BinaryStore binaryStore = runningState.binaryStore();
+            try {
+                if (binaryStore instanceof FileSystemBinaryStore) {
+                    ((FileSystemBinaryStore)binaryStore).upgradeTrashContentFormat();
+                }
+            } catch (BinaryStoreException e) {
+                LOGGER.error(e, JcrI18n.upgrade4_0_0_Beta3_Failed, e.getMessage());
             }
         }
     }
