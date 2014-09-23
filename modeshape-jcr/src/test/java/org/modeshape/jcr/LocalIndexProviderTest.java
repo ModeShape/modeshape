@@ -17,11 +17,14 @@
 package org.modeshape.jcr;
 
 import java.util.Calendar;
+import java.util.UUID;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.query.QueryResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -667,6 +670,62 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         query.bindValue("value", session().getValueFactory().createValue("value1"));
         validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
     }
+	
+	@FixFor( "MODE-2316" )
+    @Test
+    public void shouldBlockOnAddingSynchronousIndexesUntilReindexingIsFinished() throws Exception {
+		int multi = 100;
+
+		
+		Session session1 = session();
+		
+		registerNodeType("nt:typeWithIndexedSysName");
+		registerValueIndex("sysName", "nt:typeWithIndexedSysName", null, null, "sysName", PropertyType.STRING);
+
+		for (int i =0;i<=10*multi;i++){
+			String uuId = UUID.randomUUID().toString();
+			Node newNode1 = session1.getRootNode().addNode("nodeWithSysName","nt:typeWithIndexedSysName");
+			newNode1.addMixin("mix:referenceable");
+			newNode1.setProperty("sysName", uuId);
+			for (int j =0;j<10*multi;j++){
+				newNode1.addNode("nonIndexedNode","nt:unstructured");
+			}
+			
+			session1.save();
+			printMessage(Integer.valueOf(i).toString());
+		}
+		
+		//Thread.sleep(500);
+		
+		registerNodeType("nt:typeWithIndexedUuid");
+
+		registerValueIndex("sysName2", "nt:typeWithIndexedUuid", null, null, "sysName2", PropertyType.STRING);
+
+		//Thread.sleep(500);
+		
+		for (int i =0;i<=1*multi;i++){
+			Node newNode1 = session1.getRootNode().addNode("nodeWithIndexedUuid","nt:typeWithIndexedUuid");
+			newNode1.addMixin("mix:referenceable");
+			String uuId = UUID.randomUUID().toString();
+			newNode1.setProperty("sysName2", uuId);
+			session1.save();
+			printMessage(Integer.valueOf(i).toString());
+		}
+		
+		printMessage("nodes created");
+		
+		// if you add this the whole test will be finished a lot faster
+		//Thread.sleep(60000);
+		
+		// THIS WILL RUN VERY SLOW while still reindexing
+		for (int i =0;i<=100*multi;i++){
+			javax.jcr.query.Query q = session1.getWorkspace().getQueryManager().createQuery(
+			"SELECT A.sysName FROM [nt:typeWithIndexedSysName] AS A\n" +
+			"WHERE A.sysName = $sysName",javax.jcr.query.Query.JCR_SQL2);
+			q.bindValue("sysName", session1.getValueFactory().createValue("NONEXISTENT"));
+			QueryResult result = q.execute();
+		}
+	}
 
     @FixFor( "MODE-2292" )
     @Test
