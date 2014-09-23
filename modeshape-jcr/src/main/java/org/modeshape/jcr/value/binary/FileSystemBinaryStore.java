@@ -338,6 +338,39 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         }
     }
 
+    /**
+     * Upgrades the contents of the trash directory to use the new storage format, since MODE-2302.
+     * This is only meant to be used as an upgrade function.
+     *
+     * @throws BinaryStoreException if anything unexpected fails
+     */
+    public void upgradeTrashContentFormat() throws BinaryStoreException {
+        moveTrashFilesToMainStorage(trash);
+    }
+
+    private void moveTrashFilesToMainStorage( File trash ) throws BinaryStoreException  {
+        File[] files = trash.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            if (file.isDirectory()) {
+                moveTrashFilesToMainStorage(file);
+            } else {
+                if (file.canRead() && file.isFile() && file.length() > 0) {
+                    // this is an old style file which we need to convert
+                    BinaryKey key = new BinaryKey(file.getName());
+                    // create the empty shell first
+                    File persistedFile = findFile(directory, key, true);
+                    // move it to main storage
+                    moveFileExclusively(file, persistedFile, key);
+                    // and write out a new trash file
+                    getTrashFile(key, true);
+                }
+            }
+        }
+    }
+
     protected boolean removeAllTrashFilesFor( BinaryKey key ) throws BinaryStoreException {
         // remove the trash file for the main binary, extracted text and mime-type
         return removeTrashFile(key) |
@@ -401,7 +434,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     /**
      * Remove any empty directories above <code>removeable</code> but below <code>directory</code>
-     * 
+     *
      * @param directory the top-level directory to keep; may not be null and must be an ancestor of <code>removeable</code>
      * @param removeable the file or directory above which any empty directories can be removed; may not be null
      */

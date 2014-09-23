@@ -535,6 +535,8 @@ public final class JcrI18n {
     public static I18n upgrade3_6_0CannotUpdateLocks;
     public static I18n upgrade3_7_4Running;
     public static I18n upgrade3_7_4Failed;
+    public static I18n upgrade3_8_1Running;
+    public static I18n upgrade3_8_1Failed;
 
     static {
         try {
