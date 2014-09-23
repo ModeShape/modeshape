@@ -42,9 +42,9 @@ public class RuleBasedOptimizer implements Optimizer {
         Problems problems = context.getProblems();
         while (rules.peek() != null && !problems.hasErrors()) {
             OptimizerRule nextRule = rules.poll();
-            LOGGER.debug("Running query optimizer rule {0}", nextRule);
+            LOGGER.trace("Running query optimizer rule {0}", nextRule);
             plan = nextRule.execute(context, plan, rules);
-            LOGGER.debug("Plan after running query optimizer rule {0}: \n{1}", nextRule, plan);
+            LOGGER.trace("Plan after running query optimizer rule {0}: \n{1}", nextRule, plan);
         }
 
         return plan;

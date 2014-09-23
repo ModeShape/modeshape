@@ -386,6 +386,7 @@ public abstract class ManagedLocalIndexBuilder<T> {
                     } else {
                         // This is a single type ...
                         Name propertyName = name(firstColumn().getPropertyName());
+                        assert propertyName != null;
                         changeAdapter = IndexChangeAdapters.forSingleValuedProperty(context, matcher, workspaceName,
                                                                                     propertyName, factory, dupIndex);
                     }
@@ -399,6 +400,7 @@ public abstract class ManagedLocalIndexBuilder<T> {
                                                                        getBTreeKeySerializer(), getSerializer());
                     // This is a single type ...
                     Name propertyName = name(firstColumn().getPropertyName());
+                    assert propertyName != null;
                     changeAdapter = IndexChangeAdapters.forUniqueValuedProperty(context, matcher, workspaceName, propertyName,
                                                                                 factory, uidx);
                     return new ManagedLocalIndex(uidx, changeAdapter);
@@ -410,6 +412,7 @@ public abstract class ManagedLocalIndexBuilder<T> {
 
                     // We know that the value type must be a string if this is an enumerated ...
                     propertyName = name(firstColumn().getPropertyName());
+                    assert propertyName != null;
                     LocalEnumeratedIndex idx = LocalEnumeratedIndex.create(defn.getName(), workspaceName, db, stringConverter,
                                                                            stringBtreeSerializer);
                     changeAdapter = IndexChangeAdapters.forSingleValuedEnumeratedProperty(context, matcher, workspaceName,

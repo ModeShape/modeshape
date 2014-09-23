@@ -16,6 +16,8 @@
 
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.util.Calendar;
 import java.util.concurrent.CountDownLatch;
@@ -24,6 +26,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.query.Row;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -158,6 +161,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         registerValueIndex("sysIndex", "nt:typeWithSysName", null, "*", "sysName", PropertyType.STRING);
 
         // print = true;
+        waitForIndexes();
 
         Node root = session().getRootNode();
         Node newNode1 = root.addNode("nodeWithSysName", "nt:typeWithSysName");
@@ -165,10 +169,8 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         newNode1.addMixin("mix:referenceable");
         Node newNode2 = root.addNode("nodeWithReference", "nt:typeWithReference");
         newNode2.setProperty("referenceId", newNode1.getIdentifier());
-        session.save();
+        session().save();
 
-        waitForIndexes();
-        session.save();
         waitForIndexes();
 
         // Compute a query plan that should use this index ...
@@ -669,6 +671,44 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
     }
 
+    @FixFor( "MODE-2314" )
+    @Test
+    public void shouldIndexNodeAfterChange() throws Exception {
+        // print = true;
+
+        registerValueIndex("ref1", "nt:unstructured", "", null, "ref1", PropertyType.STRING);
+        registerValueIndex("ref2", "nt:unstructured", "", null, "ref2", PropertyType.STRING);
+
+        // Wait until all content has been indexed ...
+        waitForIndexes(500L);
+
+        Node newNode1 = session.getRootNode().addNode("nodeWithSysName", "nt:unstructured");
+        session.save(); // THIS IS CAUSING the node not being indexed
+        printMessage("Node Created ...");
+
+        final String uuId1 = "cccccccccccccccccccccc-0000-1111-1234-123456789abcd";
+        newNode1.setProperty("ref1", uuId1);
+        newNode1.setProperty("ref2", uuId1);
+
+        session.save();
+        printMessage("Node updated ...");
+
+        waitForIndexes();
+
+        Query query = jcrSql2Query("SELECT A.ref1 FROM [nt:unstructured] AS A WHERE A.ref2 = $ref2");
+        query.bindValue("ref2", session().getValueFactory().createValue(uuId1));
+        validateQuery().rowCount(1L).useIndex("ref2").onEachRow(new ValidateQuery.Predicate() {
+
+            @Override
+            public void validate( int rowNumber,
+                                  Row row ) throws RepositoryException {
+                if (rowNumber == 1) {
+                    assertThat(row.getValue("ref1").getString(), is(uuId1));
+                }
+            }
+        }).validate(query, query.execute());
+    }
+
     @FixFor( "MODE-2318" )
     @Test
     public void shouldNotReindexOnStartup() throws Exception {
@@ -1005,12 +1045,17 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         return true;
     }
 
-    protected void waitForIndexes() throws InterruptedException {
+    protected void waitForIndexes( long extraTime ) throws InterruptedException {
         if (useSynchronousIndexes()) {
-            Thread.sleep(10L);
+            Thread.sleep(100L);
         } else {
-            Thread.sleep(500L);
+            Thread.sleep(1000L);
         }
+        if (extraTime > 0L) Thread.sleep(extraTime);
+    }
+
+    protected void waitForIndexes() throws InterruptedException {
+        waitForIndexes(0L);
     }
 
 }

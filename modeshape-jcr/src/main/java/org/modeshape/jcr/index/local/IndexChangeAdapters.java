@@ -24,7 +24,9 @@ import org.modeshape.jcr.cache.CachedNode.Properties;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.AbstractPropertyChange;
 import org.modeshape.jcr.cache.change.ChangeSetAdapter.NodeTypePredicate;
+import org.modeshape.jcr.cache.change.PropertyAdded;
 import org.modeshape.jcr.cache.change.PropertyChanged;
+import org.modeshape.jcr.cache.change.PropertyRemoved;
 import org.modeshape.jcr.spi.index.provider.IndexChangeAdapter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -286,6 +288,21 @@ public class IndexChangeAdapters {
         }
 
         @Override
+        protected void reindexNode( String workspaceName,
+                                    NodeKey key,
+                                    Path path,
+                                    Name primaryType,
+                                    Set<Name> mixinTypes,
+                                    Properties properties,
+                                    boolean queryable ) {
+            if (path.isRoot() && includeRoot) {
+                index.add(nodeKey(key), convertRoot(path));
+            } else {
+                index.add(nodeKey(key), convert(path));
+            }
+        }
+
+        @Override
         protected void moveNode( String workspaceName,
                                  NodeKey key,
                                  Name primaryType,
@@ -450,9 +467,28 @@ public class IndexChangeAdapters {
                                 Set<Name> mixinTypes,
                                 Properties properties,
                                 boolean queryable ) {
-            Property prop = properties.getProperty(propertyName);
-            if (prop != null) {
-                addValues(key, prop);
+            // Properties on new nodes are always represented as 'PropertyAdded' events, and handled via 'modifyProperties' ...
+            // Property prop = properties.getProperty(propertyName);
+            // if (prop != null) {
+            // addValues(key, prop);
+            // }
+        }
+
+        @Override
+        protected void reindexNode( String workspaceName,
+                                    NodeKey key,
+                                    Path path,
+                                    Name primaryType,
+                                    Set<Name> mixinTypes,
+                                    Properties properties,
+                                    boolean queryable ) {
+            if (properties != null) {
+                assert propertyName != null;
+                Property prop = properties.getProperty(propertyName);
+                if (prop != null) {
+                    removeValues(key);
+                    addValues(key, prop);
+                }
             }
         }
 
@@ -464,6 +500,12 @@ public class IndexChangeAdapters {
                 PropertyChanged change = (PropertyChanged)propChange;
                 removeValues(key);
                 addValues(key, change.getNewProperty());
+            } else if (propChange instanceof PropertyAdded) {
+                PropertyAdded added = (PropertyAdded)propChange;
+                removeValues(key);
+                addValues(key, added.getProperty());
+            } else if (propChange instanceof PropertyRemoved) {
+                removeValues(key);
             }
         }
 
