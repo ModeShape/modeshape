@@ -97,11 +97,11 @@ public final class IndexPlan implements Comparable<IndexPlan> {
 
     /**
      * Determine if there is a {@link #getSelectivityEstimate() selectivity estimate}. This is equivalent to calling:
-     * 
+     *
      * <pre>
      *   return getSelectivityEstimate() != null
      * </pre>
-     * 
+     *
      * @return true if there is an estimate of selectivity, or false if there is none
      */
     public boolean hasSelectivityEstimate() {
@@ -196,6 +196,18 @@ public final class IndexPlan implements Comparable<IndexPlan> {
     public int compareTo( IndexPlan that ) {
         if (that == this) return 0;
         if (that == null) return 1;
+        // First, any index whose cardinality is >0 is better than <=0 ...
+        if (this.getCardinalityEstimate() <= 0L) {
+            if (that.getCardinalityEstimate() != 0L) {
+                // 'that' is better (lower), so return positive 1 ...
+                return 1;
+            }
+        } else if (that.getCardinalityEstimate() <= 0L) {
+            // 'this' is better (lower), so return negative ...
+            assert this.getCardinalityEstimate() > 0L;
+            return -1;
+        }
+        // Then base it upon the cost ...
         return this.getCostEstimate() - that.costEstimate;
     }
 }

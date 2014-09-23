@@ -40,6 +40,10 @@ public class ManagedLocalIndex implements ManagedIndex {
         this.adapter = adapter;
     }
 
+    public boolean isNew() {
+        return index.isNew();
+    }
+
     @Override
     public long estimateTotalCount() {
         return index.estimateTotalCount();

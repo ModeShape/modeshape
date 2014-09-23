@@ -52,6 +52,7 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
     private final Converter<T> converter;
     private final DB db;
     protected final Comparator<T> comparator;
+    private final boolean isNew;
 
     LocalMapIndex( String name,
                    String workspaceName,
@@ -73,8 +74,10 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
             this.options = db.getHashMap(name + "/options");
             this.keysByValue = db.getTreeMap(name);
             this.valuesByKey = db.getTreeSet(name + "/inverse");
+            this.isNew = false;
         } else {
             logger.debug("Creating storage for '{0}' index in workspace '{1}'", name, workspaceName);
+            this.isNew = true;
             this.options = db.createHashMap(name + "/options").make();
             this.keysByValue = db.createTreeMap(name).counterEnable().comparator(valueSerializer.getComparator())
                                  .keySerializer(valueSerializer).make();
@@ -103,6 +106,11 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
 
     public String getWorkspaceName() {
         return workspace;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
     @Override
