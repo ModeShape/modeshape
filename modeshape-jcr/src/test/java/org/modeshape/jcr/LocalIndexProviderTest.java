@@ -22,9 +22,12 @@ import java.util.concurrent.CountDownLatch;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.query.QueryResult;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -667,6 +670,50 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         query = jcrSql2Query("SELECT table.* FROM [nt:unstructured] AS table WHERE table.someProperty = $value");
         query.bindValue("value", session().getValueFactory().createValue("value1"));
         validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
+    }
+	
+	
+	@FixFor( "MODE-2317" )
+    @Test
+    public void shouldIndexNodeAfterChange() throws Exception {
+		
+		String uuId1 = "cccccccccccccccccccccc-0000-1111-1234-123456789abcd";
+
+		Session session1 = session();
+		
+		registerValueIndex("ref1", "nt:unstructured", "", null, "ref1", PropertyType.STRING);
+		registerValueIndex("ref2", "nt:unstructured", "", null, "ref2", PropertyType.STRING);
+		
+		waitForIndexes(); // THIS IS NOT ENOUGH TO MAKE IT FAIL becaus the reindex thread triggered by registerValueIndex will index the new node !
+		Thread.sleep(500);
+		
+		Node newNode1 = session1.getRootNode().addNode("nodeWithSysName","nt:unstructured");
+		session1.save(); // THIS IS CAUSING the node not being indexed
+
+		newNode1.setProperty("ref1", uuId1);
+		newNode1.setProperty("ref2", uuId1);
+		
+		session1.save();
+
+		printMessage("Nodes Created ...");
+
+		waitForIndexes();
+      
+		javax.jcr.query.Query q = session1.getWorkspace().getQueryManager().createQuery(
+		"SELECT A.ref1 FROM [nt:unstructured] AS A\n" +
+		"WHERE A.ref2 = $ref2",javax.jcr.query.Query.JCR_SQL2);
+		q.bindValue("ref2", session1.getValueFactory().createValue(uuId1));
+		
+		printMessage(q.getStatement());
+		
+		QueryResult result = q.execute();
+		
+		String plan = ((org.modeshape.jcr.api.query.QueryResult)result).getPlan();
+		printMessage(plan);
+		
+		Assert.assertEquals(uuId1,result.getRows().nextRow().getValue("ref1").getString());
+
+       
     }
 
     @FixFor( "MODE-2318" )
