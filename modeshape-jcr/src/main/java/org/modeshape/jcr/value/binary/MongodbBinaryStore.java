@@ -38,12 +38,12 @@ import com.mongodb.ServerAddress;
 
 /**
  * A {@link BinaryStore} implementation that uses a MongoDB for persisting binary values.
- * 
+ *
  * @author kulikov
  */
 public class MongodbBinaryStore extends AbstractBinaryStore {
 
-    //default database name
+    // default database name
     private static final String DEFAULT_DB_NAME = "ModeShape_BinaryStore";
 
     // field names
@@ -91,7 +91,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Creates new store.
-     * 
+     *
      * @param database database name
      * @param replicaSet list of server addresses in the form 'host:port' or null for localhost
      */
@@ -106,7 +106,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Creates new store.
-     * 
+     *
      * @param database database name
      * @param username database user
      * @param password user's password
@@ -143,7 +143,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Converts list of addresses specified in text format to mongodb specific address.
-     * 
+     *
      * @param addresses list of addresses in text format
      * @return list of mongodb addresses
      * @throws UnknownHostException when at least one host is unknown
@@ -178,7 +178,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Gets the size of the chunk used to store content.
-     * 
+     *
      * @return chunk size in bytes.
      */
     public int getChunkSize() {
@@ -187,7 +187,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Modifies chunk size used to store content.
-     * 
+     *
      * @param chunkSize chunk size in bytes.
      */
     public void setChunkSize( int chunkSize ) {
@@ -195,7 +195,8 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream, boolean markAsUnused ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream,
+                                   boolean markAsUnused ) throws BinaryStoreException {
         // store into temporary file system store and get SHA-1
         BinaryValue temp = cache.storeValue(stream, markAsUnused);
         try {
@@ -209,9 +210,8 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
             // store content
             DBCollection content = db.getCollection(key.toString());
-            ChunkOutputStream dbStream = markAsUnused ?
-                                         new ChunkOutputStream(content, System.currentTimeMillis()) :
-                                         new ChunkOutputStream(content);
+            ChunkOutputStream dbStream = markAsUnused ? new ChunkOutputStream(content, System.currentTimeMillis()) : new ChunkOutputStream(
+                                                                                                                                           content);
             try {
                 IoUtil.write(temp.getStream(), dbStream);
             } catch (Exception e) {
@@ -234,7 +234,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+    public void markAsUsed( Iterable<BinaryKey> keys ) {
         for (BinaryKey key : keys) {
             if (db.collectionExists(key.toString())) {
                 DBCollection content = db.getCollection(key.toString());
@@ -316,14 +316,13 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
         return list;
     }
 
-    private Set<String> getStoredKeys(boolean onlyUsed) {
+    private Set<String> getStoredKeys( boolean onlyUsed ) {
         Set<String> storedKeys = new HashSet<String>();
 
         Set<String> collectionNames = db.getCollectionNames();
         for (String collectionName : collectionNames) {
-            //make sure Mongo predefined collections are not taken into account
-            if (collectionName.toLowerCase().startsWith("system") ||
-                collectionName.toLowerCase().startsWith("local")) {
+            // make sure Mongo predefined collections are not taken into account
+            if (collectionName.toLowerCase().startsWith("system") || collectionName.toLowerCase().startsWith("local")) {
                 continue;
             }
             DBCollection collection = db.getCollection(collectionName);
@@ -358,7 +357,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
         // connect to database
         try {
             Mongo mongo = null;
-            if (!replicaSet.isEmpty())  {
+            if (!replicaSet.isEmpty()) {
                 mongo = new Mongo(replicaSet(replicaSet));
             } else if (!StringUtil.isBlank(host)) {
                 mongo = new Mongo(host, port);
@@ -373,7 +372,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Modifies content header.
-     * 
+     *
      * @param content stored content
      * @param fieldName attribute name
      * @param value new value for the attribute
@@ -398,7 +397,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Gets attribute's value.
-     * 
+     *
      * @param content stored content
      * @param fieldName attribute name
      * @return attributes value
@@ -410,7 +409,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Checks status of unused content.
-     * 
+     *
      * @param content content to check status
      * @param deadline moment of time in past
      * @return true if content is marked as unused before the deadline
@@ -438,7 +437,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
         /**
          * Creates new stream.
-         * 
+         *
          * @param content stored content
          */
         public ChunkOutputStream( DBCollection content ) {
@@ -458,8 +457,11 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
          * Creates new stream.
          *
          * @param content stored content
+         * @param unusedSince the number of milliseconds the binary has not been used; this value will be recorded in the binary
+         *        value
          */
-        public ChunkOutputStream( DBCollection content, long unusedSince) {
+        public ChunkOutputStream( DBCollection content,
+                                  long unusedSince ) {
             this.content = content;
 
             // start from header
@@ -529,7 +531,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
         public int read() {
             // read current chunk
             if (offset < size) {
-                //make sure it's unsigned (see javadoc)
+                // make sure it's unsigned (see javadoc)
                 return 0xff & buffer[offset++];
             }
 

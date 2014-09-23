@@ -17,6 +17,7 @@
 package org.modeshape.jcr.index.local;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.jcr.query.qom.Constraint;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.spi.index.provider.IndexChangeAdapter;
@@ -29,6 +30,7 @@ public class ManagedLocalIndex implements ManagedIndex {
 
     private final LocalIndex<?> index;
     private final IndexChangeAdapter adapter;
+    private final AtomicBoolean enabled = new AtomicBoolean(true);
 
     ManagedLocalIndex( LocalIndex<?> index,
                        IndexChangeAdapter adapter ) {
@@ -57,6 +59,16 @@ public class ManagedLocalIndex implements ManagedIndex {
     @Override
     public IndexChangeAdapter getIndexChangeAdapter() {
         return adapter;
+    }
+
+    @Override
+    public void enable( boolean enable ) {
+        this.enabled.set(enable);
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.enabled.get();
     }
 
     @Override

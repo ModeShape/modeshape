@@ -31,6 +31,7 @@ import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.RepositoryIndexManager.ScanOperation;
 import org.modeshape.jcr.RepositoryIndexManager.ScanningRequest;
 import org.modeshape.jcr.RepositoryIndexManager.ScanningTasks;
 import org.modeshape.jcr.api.query.QueryCancelledException;
@@ -57,7 +58,6 @@ import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.spi.index.IndexWriter;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
-import org.modeshape.jcr.value.WorkspaceAndPath;
 
 /**
  * The query manager a the repository. Each instance lazily starts up the {@link QueryEngine}, which can be expensive.
@@ -253,32 +253,36 @@ class RepositoryQueryManager implements ChangeSetListener {
                 @Override
                 public Void call() throws Exception {
                     // Scan each of the workspace-path pairs ...
-                    for (WorkspaceAndPath workspaceAndPath : request) {
-                        final String workspaceName = workspaceAndPath.getWorkspaceName();
-                        NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
-                        if (workspaceCache != null) {
-                            // The workspace is still valid ...
-                            Path path = workspaceAndPath.getPath();
-                            CachedNode node = workspaceCache.getNode(workspaceCache.getRootKey());
-                            if (!path.isRoot()) {
-                                for (Path.Segment segment : path) {
-                                    ChildReference child = node.getChildReferences(workspaceCache).getChild(segment);
-                                    if (child == null) {
-                                        // The child no longer exists, so ignore this pair ...
-                                        node = null;
-                                        break;
+                    ScanOperation op = new ScanOperation() {
+                        @Override
+                        public void scan( String workspaceName,
+                                          Path path ) {
+                            NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
+                            if (workspaceCache != null) {
+                                // The workspace is still valid ...
+                                CachedNode node = workspaceCache.getNode(workspaceCache.getRootKey());
+                                if (!path.isRoot()) {
+                                    for (Path.Segment segment : path) {
+                                        ChildReference child = node.getChildReferences(workspaceCache).getChild(segment);
+                                        if (child == null) {
+                                            // The child no longer exists, so ignore this pair ...
+                                            node = null;
+                                            break;
+                                        }
+                                        node = workspaceCache.getNode(child);
+                                        if (node == null) break;
                                     }
-                                    node = workspaceCache.getNode(child);
-                                    if (node == null) break;
+                                }
+                                if (node != null) {
+                                    // If we find a node to start at, then scan the content ...
+                                    boolean scanSystemContent = repoCache.getSystemWorkspaceName().equals(workspaceName);
+                                    reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent,
+                                                   writer);
                                 }
                             }
-                            if (node != null) {
-                                // If we find a node to start at, then scan the content ...
-                                boolean scanSystemContent = repoCache.getSystemWorkspaceName().equals(workspaceName);
-                                reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent, writer);
-                            }
                         }
-                    }
+                    };
+                    request.onEachPathInWorkspace(op);
                     return null;
                 }
             });

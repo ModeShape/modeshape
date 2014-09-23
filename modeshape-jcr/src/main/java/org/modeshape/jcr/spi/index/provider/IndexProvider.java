@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -403,8 +404,8 @@ public abstract class IndexProvider {
      * @param op the operation; may not be null
      */
     protected final void onEachIndex( ManagedIndexOperation op ) {
-        for (Map.Entry<String, Map<String, ProvidedIndex>> entry : providedIndexesByIndexNameByWorkspaceName.entrySet()) {
-            onEachIndexInWorkspace(entry.getKey(), op);
+        for (String workspaceName : workspaceNames()) {
+            onEachIndexInWorkspace(workspaceName, op);
         }
     }
 
@@ -414,12 +415,28 @@ public abstract class IndexProvider {
      * @param op the operation; may not be null
      */
     private final void onEachIndex( ProvidedIndexOperation op ) {
-        for (Map.Entry<String, Map<String, ProvidedIndex>> entry : providedIndexesByIndexNameByWorkspaceName.entrySet()) {
-            String workspaceName = entry.getKey();
-            for (ProvidedIndex index : entry.getValue().values()) {
-                op.apply(workspaceName, index);
+        for (String workspaceName : workspaceNames()) {
+            Collection<ProvidedIndex> indexes = providedIndexesFor(workspaceName);
+            if (indexes != null) {
+                for (ProvidedIndex providedIndex : indexes) {
+                    assert providedIndex.managed() != null;
+                    assert providedIndex.indexDefinition() != null;
+                    op.apply(workspaceName, providedIndex);
+                }
             }
         }
+    }
+
+    private synchronized Set<String> workspaceNames() {
+        return new HashSet<String>(providedIndexesByIndexNameByWorkspaceName.keySet());
+    }
+
+    private synchronized Collection<ProvidedIndex> providedIndexesFor( String workspaceName ) {
+        Map<String, ProvidedIndex> byIndexName = providedIndexesByIndexNameByWorkspaceName.get(workspaceName);
+        if (byIndexName != null) {
+            return new ArrayList<>(byIndexName.values());
+        }
+        return null;
     }
 
     /**
@@ -431,9 +448,9 @@ public abstract class IndexProvider {
     protected final void onEachIndexInWorkspace( String workspaceName,
                                                  ManagedIndexOperation op ) {
         assert workspaceName != null;
-        final Map<String, ProvidedIndex> byIndexName = providedIndexesByIndexNameByWorkspaceName.get(workspaceName);
-        if (byIndexName != null) {
-            for (ProvidedIndex providedIndex : byIndexName.values()) {
+        Collection<ProvidedIndex> indexes = providedIndexesFor(workspaceName);
+        if (indexes != null) {
+            for (ProvidedIndex providedIndex : indexes) {
                 assert providedIndex.managed() != null;
                 assert providedIndex.indexDefinition() != null;
                 op.apply(workspaceName, providedIndex.managed(), providedIndex.indexDefinition());
@@ -957,6 +974,11 @@ public abstract class IndexProvider {
         @Override
         public boolean supportsFullTextConstraints() {
             return defn.getKind() == IndexKind.TEXT;
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return managedIndex.isEnabled();
         }
 
         @Override
