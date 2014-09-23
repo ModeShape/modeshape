@@ -983,8 +983,15 @@ public class JsonReader {
                                 char second = iter.next();
                                 char third = iter.next();
                                 char fourth = iter.next();
-                                char uni = (char)Integer.parseInt("" + first + second + third + fourth, 16);
-                                sb.append(uni);
+                                String string = "" + first + second + third + fourth;
+                                try {
+                                    char uni = (char)Integer.parseInt(string, 16);
+                                    sb.append(uni);
+                                } catch (NumberFormatException e) {
+                                    // this is not a valid unicode escape sequence so just append it as is
+                                    sb.append("\\u").append(string);
+                                    continue;
+                                }
                                 break;
                             default:
                                 // It's not an escape sequence that we care about. We've already written the backslash,
@@ -1222,9 +1229,9 @@ public class JsonReader {
                                 try {
                                     c = (char)Integer.parseInt(code, 16); // hex
                                 } catch (NumberFormatException e) {
-                                    columnNumber -= 6;
-                                    throw error("Expecting escaped unicode sequence of hex characters but found '\\u" + code
-                                                + "' at line " + lineNumber + ", column " + columnNumber);
+                                    // this is not a valid unicode escape sequence so just append it as is
+                                    sb.append('\\').append('u').append(code);
+                                    continue;
                                 }
                                 break;
                             default:
