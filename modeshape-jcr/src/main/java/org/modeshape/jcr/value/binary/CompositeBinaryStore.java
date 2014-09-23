@@ -243,7 +243,7 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+    public void markAsUsed( Iterable<BinaryKey> keys ) {
         Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {

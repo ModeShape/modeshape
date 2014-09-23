@@ -219,10 +219,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 }
                 //we successfully removed the file
                 return true;
-            } else {
-                //some other thread already removed the file
-                return false;
             }
+            //some other thread already removed the file
+            return false;
         } finally {
             lock.unlock();
         }

@@ -58,7 +58,7 @@ public class CustomBinaryStoreImpl extends AbstractBinaryStore {
     }
 
     @Override
-    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+    public void markAsUsed( Iterable<BinaryKey> keys ) {
     }
 
     @Override

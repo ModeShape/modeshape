@@ -220,6 +220,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public void markAsUsed(final Iterable<BinaryKey> keys ) throws BinaryStoreException {
         dbCall(new DBCallable<Object>() {
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public Object execute( Connection connection ) throws Exception {
                 database.restoreContent(connection, keys);
