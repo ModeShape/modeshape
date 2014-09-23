@@ -250,7 +250,6 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
             IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
 
             Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
-            BinaryValue value;
             try {
                 // now store metadata
                 metadata = new Metadata(lastModified, fileLength, chunkOutputStream.chunksCount(), chunkSize);

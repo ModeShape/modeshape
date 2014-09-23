@@ -104,7 +104,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      */
     private static final Logger SAVE_LOGGER = Logger.getLogger("org.modeshape.jcr.txn");
 
-    private static final Logger LOGGER = Logger.getLogger(WritableSessionCache.class);
+    protected static final Logger LOGGER = Logger.getLogger(WritableSessionCache.class);
     private static final NodeKey REMOVED_KEY = new NodeKey("REMOVED_NODE_SHOULD_NEVER_BE_PERSISTED");
     private static final SessionNode REMOVED = new SessionNode(REMOVED_KEY, false);
     private static final int MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT = 4;
@@ -425,6 +425,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
                     txn = txns.begin();
+                    assert txn != null;
 
                     // Lock the nodes in Infinispan
                     WorkspaceCache persistedCache = lockNodes(changedNodesInOrder);
@@ -578,6 +579,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
                     txn = txns.begin();
+                    assert txn != null;
 
                     // Get a monitor via the transaction ...
                     try {
@@ -736,6 +738,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
                     txn = txns.begin();
+                    assert txn != null;
 
                     try {
                         // Lock the nodes in Infinispan
