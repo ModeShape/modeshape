@@ -63,8 +63,7 @@ public class IndexChangeAdapter extends ChangeSetAdapter {
                                 Properties properties,
                                 boolean queryable ) {
         if (predicate.matchesType(primaryType, mixinTypes)) {
-            removeNode(workspaceName, key, null, path, primaryType, mixinTypes, queryable);
-            addNode(workspaceName, key, path, primaryType, mixinTypes, properties, queryable);
+            reindexNode(workspaceName, key, path, primaryType, mixinTypes, properties, queryable);
         }
     }
 

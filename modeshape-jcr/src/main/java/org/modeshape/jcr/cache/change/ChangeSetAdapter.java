@@ -93,7 +93,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                                            removed.getPrimaryType(), removed.getMixinTypes(), removed.isQueryable());
                             } else if (change instanceof AbstractPropertyChange) {
                                 AbstractPropertyChange propChange = (AbstractPropertyChange)change;
-                                if (propChange.getKey().equals(lastKey)) firePropertyChanges(lastKey, propChanges);
+                                if (!propChange.getKey().equals(lastKey)) firePropertyChanges(lastKey, propChanges);
                                 propChanges.put(propChange.getProperty().getName(), propChange);
                             } else if (change instanceof NodeChanged) {
                                 firePropertyChanges(lastKey, propChanges);
@@ -132,6 +132,9 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                             }
                             lastKey = ((AbstractNodeChange)change).getKey();
                         }
+                    }
+                    if (lastKey != null) {
+                        firePropertyChanges(lastKey, propChanges);
                     }
                 } finally {
                     completeWorkspaceChanges();
@@ -197,7 +200,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     private void firePropertyChanges( NodeKey key,
                                       Map<Name, AbstractPropertyChange> propChanges ) {
-        if (propChanges.isEmpty()) {
+        if (!propChanges.isEmpty()) {
             modifyProperties(key, propChanges);
             propChanges.clear();
         }
@@ -261,8 +264,28 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
     }
 
     /**
+     * Handle the reindexing of a node.
+     *
+     * @param workspaceName the workspace in which the node information should be available; may not be null
+     * @param key the unique key for the node; may not be null
+     * @param path the path of the node; may not be null
+     * @param primaryType the primary type of the node; may not be null
+     * @param mixinTypes the mixin types for the node; may not be null but may be empty
+     * @param properties the properties of the node; may not be null but may be empty
+     * @param queryable true if the node is queryable, false otherwise
+     */
+    protected void reindexNode( String workspaceName,
+                                NodeKey key,
+                                Path path,
+                                Name primaryType,
+                                Set<Name> mixinTypes,
+                                Properties properties,
+                                boolean queryable ) {
+    }
+
+    /**
      * Handle the removal of a node.
-     * 
+     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param parentKey the unique key for the parent of the node; may not be null
