@@ -20,6 +20,7 @@ import java.util.Calendar;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
@@ -30,6 +31,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
+import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
 import org.modeshape.jcr.api.index.IndexManager;
@@ -666,6 +668,38 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         query = jcrSql2Query("SELECT table.* FROM [nt:unstructured] AS table WHERE table.someProperty = $value");
         query.bindValue("value", session().getValueFactory().createValue("value1"));
         validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
+    }
+	
+	@FixFor( "MODE-2318" )
+    @Test
+    public void shouldNotReindexOnStartup() throws Exception {
+		
+		String uuId1 = "cccccccccccccccccccccc-0000-1111-1234-123456789abcd";
+
+		Session session1 = session();
+		
+		registerValueIndex("ref1", "nt:unstructured", "", null, "ref1", PropertyType.STRING);
+		registerValueIndex("ref2", "nt:unstructured", "", null, "ref2", PropertyType.STRING);
+		
+		waitForIndexes();
+		
+		Node newNode1 = session1.getRootNode().addNode("nodeWithSysName","nt:unstructured");
+		//session1.save(); // THIS IS CAUSING the node not being indexed
+
+		newNode1.setProperty("ref1", uuId1);
+		newNode1.setProperty("ref2", uuId1);
+		
+		session1.save();
+
+		printMessage("Nodes Created ...");
+
+        // Shutdown the repository and restart it ...
+        stopRepository();
+        printMessage("Stopped repository. Restarting ...");
+        startRepositoryWithConfiguration(resource(CONFIG_FILE));
+        printMessage("Repository restart complete");
+
+       
     }
 
     @FixFor( "MODE-2292" )
