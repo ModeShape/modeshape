@@ -198,6 +198,17 @@ public class JsonReaderTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2317" )
+    public void shouldParseNonUnicodeEscapeSequence() throws Exception {
+        String url = "jdbc:h2:file:path\\upstream.jboss-integration.modeshape\\modeshape-jcr;DB_CLOSE_DELAY=-1";
+        doc = reader.read("{ \"url\" : \"" + url +  "\"}");
+        assertField("url", url);
+
+        InputStream stream = getClass().getClassLoader().getResourceAsStream("json/non-unicode-escape.json");
+        reader.read(stream);
+    }
+
     private int countFields( Document doc ) {
         int fieldCount = 0;
         for (Document.Field field : doc.fields()) {
