@@ -950,6 +950,9 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 indexNode.setProperty(Property.INDEX_USED, Boolean.TRUE);
                 return sequence;
             }
+            // Otherwise, keep looking for an index ...
+            LOGGER.debug("Skipping disabled index '{0}' from provider '{1}' in workspace(s) {2} for query: {3}", index.getName(),
+                         index.getProviderName(), context.getWorkspaceNames(), originalQuery);
         }
 
         // Grab all of the nodes ...

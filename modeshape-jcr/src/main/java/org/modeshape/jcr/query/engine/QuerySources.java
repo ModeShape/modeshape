@@ -285,7 +285,7 @@ public class QuerySources {
      * @param parameters the provider-specific index parameters; may not be null, but may be empty
      * @param valueFactories the value factories; never null
      * @param batchSize the ideal number of nodes that are to be included in each batch; always positive
-     * @return the sequence of nodes; never null
+     * @return the sequence of nodes; null if the index cannot be used (e.g., it might be rebuilding or in an inconsistent state)
      */
     public NodeSequence fromIndex( final Index index,
                                    final Collection<Constraint> constraints,
@@ -293,6 +293,9 @@ public class QuerySources {
                                    final Map<String, Object> parameters,
                                    final ValueFactories valueFactories,
                                    final int batchSize ) {
+        if (!index.isEnabled()) {
+            return null;
+        }
         final IndexConstraints indexConstraints = new IndexConstraints() {
 
             @Override

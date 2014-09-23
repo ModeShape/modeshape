@@ -50,6 +50,7 @@ public final class JcrI18n {
     public static I18n errorShuttingDownIndexProvider;
     public static I18n indexProviderMissingPlanner;
     public static I18n errorNotifyingNodeTypesListener;
+    public static I18n errorIndexing;
 
     public static I18n cannotConvertValue;
     public static I18n loginFailed;

@@ -16,7 +16,9 @@
 
 package org.modeshape.jcr;
 
+import static org.junit.Assert.fail;
 import java.util.Calendar;
+import java.util.concurrent.CountDownLatch;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -804,6 +806,87 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         validateQuery().rowCount(2L).validate(query, query.execute());
     }
 
+    @FixFor( "MODE-2313" )
+    @Test
+    public void shouldAllowAddingIndexWhileSessionsAreQuerying() throws Exception {
+        registerValueIndex("titleNodes", "mix:title", null, "*", "jcr:mixinTypes", PropertyType.NAME);
+
+        // print = true;
+
+        // Add a node that uses this type ...
+        Node root = session().getRootNode();
+        Node book1 = root.addNode("myFirstBook");
+        book1.addMixin("mix:title");
+        book1.setProperty("jcr:title", "The Title");
+
+        Node book2 = root.addNode("mySecondBook");
+        book2.addMixin("mix:title");
+        book2.setProperty("jcr:title", "A Different Title");
+
+        // Create a node that is not a 'mix:title' and therefore won't be included in the SELECT clauses ...
+        Node other = root.addNode("somethingElse");
+        other.setProperty("propA", "a value for property A");
+        other.setProperty("jcr:title", "The Title");
+
+        waitForIndexes();
+        session.save();
+        waitForIndexes();
+
+        for (int i = 0; i != 5; ++i) {
+            // Compute a query plan that should use this index ...
+            Query query = jcrSql2Query("SELECT * FROM [mix:title]");
+            for (int j = 0; j != 5; ++j) {
+                validateQuery().rowCount(2L).useIndex("titleNodes").validate(query, query.execute());
+            }
+        }
+
+        final int numThreads = 10;
+        final int numQueriesEachThread = 100;
+        final int numIndexes = 4;
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch stopLatch = new CountDownLatch(numThreads);
+        final Runnable queryRunner = new Runnable() {
+
+            @Override
+            public void run() {
+                JcrSession session = null;
+                try {
+                    session = repository().login();
+                    Query query = jcrSql2Query(session, "SELECT * FROM [mix:title]");
+                    startLatch.await();
+                    for (int i = 0; i != numQueriesEachThread; ++i) {
+                        // Compute a query plan that should use this index, UNLESS the index is currently undergoing rebuilding...
+                        validateQuery()./*rowCount(2L).useIndex("titleNodes")*/validate(query, query.execute());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail(e.getMessage());
+                } finally {
+                    printMessage("Completing thread");
+                    if (session != null) session.logout();
+                    stopLatch.countDown();
+                }
+            }
+        };
+
+        // Start the threads; they'll each wait just before they execute their queries ...
+        for (int i = 0; i != numThreads; ++i) {
+            Thread thread = new Thread(queryRunner);
+            thread.start();
+        }
+
+        // Release the latch so everything starts ...
+        startLatch.countDown();
+
+        // and then create several indexes ...
+        for (int i = 0; i != numIndexes; ++i) {
+            registerValueIndex("extraIndex" + i, "nt:file", null, "*", "jcr:lastModified", PropertyType.DATE);
+        }
+
+        // Wait for the threads to complete ...
+        stopLatch.await();
+    }
+
     private ValueFactory valueFactory() throws RepositoryException {
         return session.getValueFactory();
     }
@@ -880,7 +963,12 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
     }
 
     protected Query jcrSql2Query( String expr ) throws RepositoryException {
-        return session().getWorkspace().getQueryManager().createQuery(expr, Query.JCR_SQL2);
+        return jcrSql2Query(session(), expr);
+    }
+
+    protected Query jcrSql2Query( JcrSession session,
+                                  String expr ) throws RepositoryException {
+        return session.getWorkspace().getQueryManager().createQuery(expr, Query.JCR_SQL2);
     }
 
     protected ValidationBuilder validateQuery() {

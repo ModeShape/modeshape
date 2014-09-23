@@ -51,4 +51,18 @@ public interface ManagedIndex extends Filter, Costable {
      *        needed the next time the repository is started
      */
     void shutdown( boolean destroyed );
+
+    /**
+     * Mark whether this index is enabled for use, or not enabled meaning it should not be used.
+     *
+     * @param enable true if the index is to be enabled, or false otherwise
+     */
+    void enable( boolean enable );
+
+    /**
+     * Determine if this index is enabled for use.
+     * 
+     * @return true if enabled, or false otherwise
+     */
+    boolean isEnabled();
 }

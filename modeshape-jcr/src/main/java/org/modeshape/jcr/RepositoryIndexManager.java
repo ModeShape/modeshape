@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.RepositoryException;
@@ -39,7 +40,6 @@ import org.modeshape.common.collection.ArrayListMultimap;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.common.collection.ReadOnlyIterator;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -65,6 +65,7 @@ import org.modeshape.jcr.query.CompositeIndexWriter;
 import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.spi.index.IndexDefinitionChanges;
 import org.modeshape.jcr.spi.index.IndexFeedback;
+import org.modeshape.jcr.spi.index.IndexFeedback.IndexingCallback;
 import org.modeshape.jcr.spi.index.IndexManager;
 import org.modeshape.jcr.spi.index.IndexWriter;
 import org.modeshape.jcr.spi.index.WorkspaceChanges;
@@ -77,7 +78,6 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.ValueFactory;
-import org.modeshape.jcr.value.WorkspaceAndPath;
 
 /**
  * The {@link RepositoryIndexManager} is the maintainer of index definitions for the entire repository at run-time. The repository
@@ -828,30 +828,35 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         }
     }
 
+    static interface ScanOperation {
+        public void scan( String workspace,
+                          Path path );
+    }
+
     /**
      * An immutable set of provider names and non-overlapping workspace-path pairs.
      *
      * @author Randall Hauch (rhauch@redhat.com)
      */
     @Immutable
-    static class ScanningRequest implements Iterable<WorkspaceAndPath> {
+    static class ScanningRequest {
 
         protected static final ScanningRequest EMPTY = new ScanningRequest();
 
         private final Set<String> providerNames;
-        private final List<WorkspaceAndPath> workspaceAndPaths;
+        private final Multimap<String, PathToScan> pathsToScanByWorkspace;
 
         protected ScanningRequest() {
             this.providerNames = java.util.Collections.emptySet();
-            this.workspaceAndPaths = java.util.Collections.emptyList();
+            this.pathsToScanByWorkspace = ArrayListMultimap.create();
         }
 
-        protected ScanningRequest( List<WorkspaceAndPath> workspaceAndPaths,
+        protected ScanningRequest( Multimap<String, PathToScan> pathsToScanByWorkspace,
                                    Set<String> providerNames ) {
-            assert workspaceAndPaths != null;
+            assert pathsToScanByWorkspace != null;
             assert providerNames != null;
             this.providerNames = Collections.unmodifiableSet(providerNames);
-            this.workspaceAndPaths = workspaceAndPaths;
+            this.pathsToScanByWorkspace = pathsToScanByWorkspace;
         }
 
         /**
@@ -863,9 +868,39 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             return providerNames.isEmpty();
         }
 
-        @Override
-        public Iterator<WorkspaceAndPath> iterator() {
-            return ReadOnlyIterator.around(workspaceAndPaths.iterator());
+        /**
+         * Scan each required path in each of the workspaces.
+         *
+         * @param operation the scanning operation that is to be called for each workspace & path combination; may not be null
+         */
+        public void onEachPathInWorkspace( ScanOperation operation ) {
+            for (Map.Entry<String, PathToScan> entry : pathsToScanByWorkspace.entries()) {
+                String workspaceName = entry.getKey();
+                PathToScan pathToScan = entry.getValue();
+                try {
+                    for (IndexingCallback callback : pathToScan) {
+                        try {
+                            callback.beforeIndexing();
+                        } catch (RuntimeException e) {
+                            Logger.getLogger(getClass()).error(e, JcrI18n.errorIndexing, pathToScan.path(), workspaceName,
+                                                               e.getMessage());
+                        }
+                    }
+                    operation.scan(workspaceName, pathToScan.path());
+                } catch (RuntimeException e) {
+                    Logger.getLogger(getClass())
+                          .error(e, JcrI18n.errorIndexing, pathToScan.path(), workspaceName, e.getMessage());
+                } finally {
+                    for (IndexingCallback callback : pathToScan) {
+                        try {
+                            callback.afterIndexing();
+                        } catch (RuntimeException e) {
+                            Logger.getLogger(getClass()).error(e, JcrI18n.errorIndexing, pathToScan.path(), workspaceName,
+                                                               e.getMessage());
+                        }
+                    }
+                }
+            }
         }
 
         /**
@@ -875,6 +910,40 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
          */
         public Set<String> providerNames() {
             return providerNames;
+        }
+    }
+
+    private static class PathToScan implements Iterable<IndexingCallback> {
+        private final Path path;
+        private final Set<IndexingCallback> callbacks = new CopyOnWriteArraySet<>();
+
+        protected PathToScan( Path path,
+                              IndexingCallback callback ) {
+            this.path = path;
+            if (callback != null) this.callbacks.add(callback);
+        }
+
+        public void addCallbacks( PathToScan other ) {
+            callbacks.addAll(other.callbacks);
+        }
+
+        public Path path() {
+            return path;
+        }
+
+        @Override
+        public int hashCode() {
+            return path.hashCode();
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return path.equals(obj);
+        }
+
+        @Override
+        public Iterator<IndexingCallback> iterator() {
+            return callbacks.iterator();
         }
     }
 
@@ -889,7 +958,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
     @ThreadSafe
     static class ScanningTasks {
         private final Set<String> providerNames = new HashSet<>();
-        private final Multimap<String, Path> pathsByWorkspaceName = ArrayListMultimap.create();
+        private Multimap<String, PathToScan> pathsByWorkspaceName = ArrayListMultimap.create();
 
         /**
          * Add all of the provider names and workspace-path pairs from the supplied scanning task.
@@ -900,7 +969,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         public synchronized boolean add( ScanningTasks other ) {
             if (other != null) {
                 this.providerNames.addAll(other.providerNames);
-                for (Map.Entry<String, Path> entry : other.pathsByWorkspaceName.entries()) {
+                for (Map.Entry<String, PathToScan> entry : other.pathsByWorkspaceName.entries()) {
                     add(entry.getKey(), entry.getValue());
                 }
             }
@@ -917,46 +986,56 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             if (this.providerNames.isEmpty()) return ScanningRequest.EMPTY;
 
             Set<String> providerNames = new HashSet<>(this.providerNames);
-            List<WorkspaceAndPath> workspaceAndPaths = new ArrayList<>(this.pathsByWorkspaceName.size());
-            for (Map.Entry<String, Path> entry : pathsByWorkspaceName.entries()) {
-                workspaceAndPaths.add(new WorkspaceAndPath(entry.getKey(), entry.getValue()));
-            }
+            Multimap<String, PathToScan> pathsToScanByWorkspace = this.pathsByWorkspaceName;
+            this.pathsByWorkspaceName = ArrayListMultimap.create();
             this.providerNames.clear();
-            this.pathsByWorkspaceName.clear();
-            return new ScanningRequest(workspaceAndPaths, providerNames);
+            return new ScanningRequest(pathsToScanByWorkspace, providerNames);
         }
 
         protected synchronized void add( String providerName,
                                          String workspaceName,
-                                         Path path ) {
+                                         Path path,
+                                         IndexingCallback callback ) {
             assert providerName != null;
             assert workspaceName != null;
             assert path != null;
             providerNames.add(providerName);
-            add(workspaceName, path);
+            add(workspaceName, path, callback);
         }
 
         private void add( String workspaceName,
-                          Path path ) {
-            Collection<Path> paths = pathsByWorkspaceName.get(workspaceName);
-            if (paths.isEmpty()) {
-                paths.add(path);
+                          PathToScan pathToScan ) {
+            Collection<PathToScan> pathsToScan = pathsByWorkspaceName.get(workspaceName);
+            if (pathsToScan.isEmpty()) {
+                pathsToScan.add(pathToScan);
             } else {
-                Iterator<Path> iter = paths.iterator();
+                Iterator<PathToScan> iter = pathsToScan.iterator();
                 boolean add = true;
+                final Path path = pathToScan.path();
                 while (iter.hasNext()) {
-                    Path existing = iter.next();
-                    if (path.isAtOrAbove(existing)) {
+                    PathToScan existing = iter.next();
+                    Path existingPath = existing.path();
+                    if (path.isAtOrAbove(existingPath)) {
                         // Remove all of the existing paths that are at or above this path (we'll add it back in ...)
                         iter.remove();
-                    } else if (path.isDescendantOf(existing)) {
+                        // But add all of the callbacks ...
+                        pathToScan.addCallbacks(existing);
+                    } else if (path.isDescendantOf(existingPath)) {
                         // The new path is a descendant of an existing path, so we can stop now and do nothing ...
                         add = false;
+                        // But add all of the callbacks ...
+                        existing.addCallbacks(pathToScan);
                         break;
                     }
                 }
-                if (add) pathsByWorkspaceName.put(workspaceName, path);
+                if (add) pathsByWorkspaceName.put(workspaceName, pathToScan);
             }
+        }
+
+        private void add( String workspaceName,
+                          Path path,
+                          IndexingCallback callback ) {
+            add(workspaceName, new PathToScan(path, callback));
         }
 
         /**
@@ -968,15 +1047,18 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         protected IndexFeedback forProvider( final String providerName ) {
             assert providerName != null;
             return new IndexFeedback() {
+
                 @Override
-                public void scan( String workspaceName ) {
-                    add(providerName, workspaceName, Path.ROOT_PATH);
+                public void scan( String workspaceName,
+                                  IndexingCallback callback ) {
+                    add(providerName, workspaceName, Path.ROOT_PATH, callback);
                 }
 
                 @Override
                 public void scan( String workspaceName,
+                                  IndexingCallback callback,
                                   Path path ) {
-                    add(providerName, workspaceName, path);
+                    add(providerName, workspaceName, path, callback);
                 }
             };
         }

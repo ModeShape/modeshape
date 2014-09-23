@@ -165,23 +165,40 @@ public class LocalIndexProvider extends IndexProvider {
     }
 
     @Override
-    protected ManagedIndex createIndex( IndexDefinition defn,
-                                        String workspaceName,
+    protected ManagedIndex createIndex( final IndexDefinition defn,
+                                        final String workspaceName,
                                         Supplier nodeTypesSupplier,
                                         NodeTypePredicate matcher,
                                         IndexFeedback feedback ) {
         ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), defn, nodeTypesSupplier, matcher);
         logger().debug("Index provider '{0}' is creating index in workspace '{1}': {2}", getName(), workspaceName, defn);
-        ManagedIndex index = builder.build(workspaceName, db);
-        feedback.scan(workspaceName);
+        final ManagedIndex index = builder.build(workspaceName, db);
+        feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
+
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void beforeIndexing() {
+                logger().debug("Disabling index '{0}' from provider '{1}' in workspace '{2}' while it is reindexed. It will not be used in queries until reindexing has completed",
+                               defn.getName(), defn.getProviderName(), workspaceName);
+                index.enable(false);
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void afterIndexing() {
+                index.enable(true);
+                logger().debug("Eenabled index '{0}' from provider '{1}' in workspace '{2}' after reindexing has completed",
+                               defn.getName(), defn.getProviderName(), workspaceName);
+            }
+        });
         return index;
     }
 
     @Override
     protected ManagedIndex updateIndex( IndexDefinition oldDefn,
-                                        IndexDefinition updatedDefn,
+                                        final IndexDefinition updatedDefn,
                                         ManagedIndex existingIndex,
-                                        String workspaceName,
+                                        final String workspaceName,
                                         Supplier nodeTypesSupplier,
                                         NodeTypePredicate matcher,
                                         IndexFeedback feedback ) {
@@ -195,8 +212,25 @@ public class LocalIndexProvider extends IndexProvider {
         existingIndex.shutdown(true);
         ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), updatedDefn, nodeTypesSupplier, matcher);
         logger().debug("Index provider '{0}' is updating index in workspace '{1}': {2}", getName(), workspaceName, updatedDefn);
-        ManagedIndex index = builder.build(workspaceName, db);
-        feedback.scan(workspaceName);
+        final ManagedIndex index = builder.build(workspaceName, db);
+        feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
+
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void beforeIndexing() {
+                logger().debug("Disabling index '{0}' from provider '{1}' in workspace '{2}' while it is reindexed. It will not be used in queries until reindexing has completed",
+                               updatedDefn.getName(), updatedDefn.getProviderName(), workspaceName);
+                index.enable(false);
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void afterIndexing() {
+                index.enable(true);
+                logger().debug("Eenabled index '{0}' from provider '{1}' in workspace '{2}' after reindexing has completed",
+                               updatedDefn.getName(), updatedDefn.getProviderName(), workspaceName);
+            }
+        });
         return index;
     }
 

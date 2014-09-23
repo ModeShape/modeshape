@@ -55,4 +55,11 @@ public interface Index extends Filter {
      * @return true if this index can use full-text search constraints, or false otherwise.
      */
     boolean supportsFullTextConstraints();
+
+    /**
+     * Determine if this index is enabled for use.
+     *
+     * @return true if enabled, or false otherwise
+     */
+    boolean isEnabled();
 }
