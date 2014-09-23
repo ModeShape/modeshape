@@ -59,7 +59,6 @@ import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.ChildReferences.BasicContext;
 import org.modeshape.jcr.cache.ChildReferences.ChildInsertions;
-import org.modeshape.jcr.cache.ReferrerCounts.MutableReferrerCounts;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
@@ -67,6 +66,7 @@ import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferrerCounts;
+import org.modeshape.jcr.cache.ReferrerCounts.MutableReferrerCounts;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.value.BinaryValue;
@@ -2277,7 +2277,7 @@ public class SessionNode implements MutableCachedNode {
             return null;
         }
 
-        private final boolean containsKey( NodeKey key,
+        private boolean containsKey( NodeKey key,
                                            Map<String, Set<NodeKey>> source ) {
             for (Set<NodeKey> sourceKeys : source.values()) {
                 if (sourceKeys.contains(key)) return true;
@@ -2285,9 +2285,8 @@ public class SessionNode implements MutableCachedNode {
             return false;
         }
 
-        @SafeVarargs
-        private final List<NodeKey> collectKeys( Map<String, Set<NodeKey>>... sources ) {
-            List<NodeKey> keys = new ArrayList<NodeKey>();
+        private List<NodeKey> collectKeys( Map<String, Set<NodeKey>>... sources ) {
+            List <NodeKey> keys = new ArrayList<NodeKey>();
             for (Map<String, Set<NodeKey>> source : sources) {
                 for (Set<NodeKey> sourceKeys : source.values()) {
                     keys.addAll(sourceKeys);
