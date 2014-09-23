@@ -29,6 +29,7 @@ import org.modeshape.jcr.query.model.DescendantNode;
 import org.modeshape.jcr.query.model.DynamicOperand;
 import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.NodeId;
+import org.modeshape.jcr.query.model.PropertyValue;
 import org.modeshape.jcr.query.model.SameNode;
 import org.modeshape.jcr.query.model.StaticOperand;
 import org.modeshape.jcr.spi.index.IndexCostCalculator;
@@ -94,12 +95,12 @@ public abstract class IndexPlanners {
 
     }
 
-    protected static final String NODE_BY_PATH_INDEX_NAME = "NodeByPath";
-    protected static final String NODE_BY_ID_INDEX_NAME = "NodeById";
-    protected static final String CHILDREN_BY_PATH_INDEX_NAME = "ChildrenByPath";
-    protected static final String DESCENDANTS_BY_PATH_INDEX_NAME = "DescendantsByPath";
-    protected static final String PATH_PARAMETER = "path";
-    protected static final String ID_PARAMETER = "id";
+    public static final String NODE_BY_PATH_INDEX_NAME = "NodeByPath";
+    public static final String NODE_BY_ID_INDEX_NAME = "NodeById";
+    public static final String CHILDREN_BY_PATH_INDEX_NAME = "ChildrenByPath";
+    public static final String DESCENDANTS_BY_PATH_INDEX_NAME = "DescendantsByPath";
+    public static final String PATH_PARAMETER = "path";
+    public static final String ID_PARAMETER = "id";
 
     @Immutable
     private static class StandardIndexPlanner extends IndexPlanner {
@@ -131,18 +132,7 @@ public abstract class IndexPlanners {
                     if (leftSide instanceof NodePath) {
                         // This is a constraint on the path of a node ...
                         StaticOperand rightSide = comparison.getOperand2();
-                        Object value = null;
-                        if (rightSide instanceof BindVariableName) {
-                            BindVariableName varName = (BindVariableName)rightSide;
-                            value = context.getVariables().get(varName.getBindVariableName());
-                        } else if (rightSide instanceof Literal) {
-                            value = ((Literal)rightSide).value();
-                        }
-                        if (value == null) return;
-                        String path = null;
-                        if (value instanceof String) {
-                            path = (String)value;
-                        }
+                        String path = stringValue(rightSide, context);
                         if (path != null) {
                             calculator.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, -1.0f,
                                                 PATH_PARAMETER, path);
@@ -151,25 +141,50 @@ public abstract class IndexPlanners {
                     if (leftSide instanceof NodeId) {
                         // This is a constraint on the ID of a node ...
                         StaticOperand rightSide = comparison.getOperand2();
-                        Object value = null;
-                        if (rightSide instanceof BindVariableName) {
-                            BindVariableName varName = (BindVariableName)rightSide;
-                            value = context.getVariables().get(varName.getBindVariableName());
-                        } else if (rightSide instanceof Literal) {
-                            value = ((Literal)rightSide).value();
-                        }
-                        if (value == null) return;
-                        String id = null;
-                        if (value instanceof String) {
-                            id = (String)value;
-                        }
+                        String id = stringValue(rightSide, context);
                         if (id != null) {
                             calculator.addIndex(NODE_BY_ID_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, -1.0f,
                                                 ID_PARAMETER, id);
                         }
                     }
+                    if (leftSide instanceof PropertyValue) {
+                        PropertyValue propValue = (PropertyValue)leftSide;
+                        if ("jcr:uuid".equals(propValue.getPropertyName()) || "mode:id".equals(propValue.getPropertyName())) {
+                            // This is a constraint on the ID of a node ...
+                            StaticOperand rightSide = comparison.getOperand2();
+                            String id = stringValue(rightSide, context);
+                            if (id != null) {
+                                calculator.addIndex(NODE_BY_ID_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, -1.0f,
+                                                    ID_PARAMETER, id);
+                            }
+                        } else if ("jcr:path".equals(propValue.getPropertyName())) {
+                            // This is a constraint on the PATH of a node ...
+                            StaticOperand rightSide = comparison.getOperand2();
+                            String path = stringValue(rightSide, context);
+                            if (path != null) {
+                                calculator.addIndex(NODE_BY_PATH_INDEX_NAME, null, null, singletonList(constraint), 1, 1L, -1.0f,
+                                                    PATH_PARAMETER, path);
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    protected static String stringValue( StaticOperand operand,
+                                         QueryContext context ) {
+        // This is a constraint on the ID of a node ...
+        Object value = null;
+        if (operand instanceof BindVariableName) {
+            BindVariableName varName = (BindVariableName)operand;
+            value = context.getVariables().get(varName.getBindVariableName());
+        } else if (operand instanceof Literal) {
+            value = ((Literal)operand).value();
+        }
+        if (value != null && value instanceof String) {
+            return (String)value;
+        }
+        return null;
     }
 }

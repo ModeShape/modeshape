@@ -39,6 +39,7 @@ import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
 import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.api.query.Query;
+import org.modeshape.jcr.query.engine.IndexPlanners;
 
 public class LocalIndexProviderTest extends SingleUseAbstractTest {
 
@@ -222,6 +223,52 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         query.bindValue("sysName", valueFactory().createValue("X"));
         validateQuery().rowCount(1L).validate(query, query.execute());
 
+    }
+
+    @FixFor( "MODE-2312" )
+    @Test
+    public void shouldUseImplicitIdIndex() throws Exception {
+        Node root = session().getRootNode();
+        Node newNode1 = root.addNode("nodeA");
+        newNode1.setProperty("foo", "X");
+        newNode1.addMixin("mix:referenceable");
+        Node newNode2 = root.addNode("nodeB");
+        newNode2.setProperty("foo", "Y");
+        session().save();
+
+        // print = true;
+
+        // Compute a query plan that should use this index ...
+        final String uuid = newNode1.getIdentifier();
+        Query query = jcrSql2Query("SELECT [jcr:path] FROM [nt:unstructured] WHERE [jcr:uuid] = '" + uuid + "'");
+        validateQuery().rowCount(1L).useIndex(IndexPlanners.NODE_BY_ID_INDEX_NAME).validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT A.* FROM [nt:unstructured] AS A WHERE A.[jcr:uuid] = $uuidValue");
+        query.bindValue("uuidValue", valueFactory().createValue(uuid));
+        validateQuery().rowCount(1L).useIndex(IndexPlanners.NODE_BY_ID_INDEX_NAME).validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2312" )
+    @Test
+    public void shouldUseImplicitPathIndex() throws Exception {
+        Node root = session().getRootNode();
+        Node newNode1 = root.addNode("nodeA");
+        newNode1.setProperty("foo", "X");
+        newNode1.addMixin("mix:referenceable");
+        Node newNode2 = root.addNode("nodeB");
+        newNode2.setProperty("foo", "Y");
+        session().save();
+
+        // print = true;
+
+        // Compute a query plan that should use this index ...
+        final String pathValue = newNode1.getPath();
+        Query query = jcrSql2Query("SELECT [jcr:path] FROM [nt:unstructured] WHERE [jcr:path] = '" + pathValue + "'");
+        validateQuery().rowCount(1L).useIndex(IndexPlanners.NODE_BY_PATH_INDEX_NAME).validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT A.* FROM [nt:unstructured] AS A WHERE A.[jcr:path] = $pathValue");
+        query.bindValue("pathValue", valueFactory().createValue(pathValue));
+        validateQuery().rowCount(1L).useIndex(IndexPlanners.NODE_BY_PATH_INDEX_NAME).validate(query, query.execute());
     }
 
     @Test
