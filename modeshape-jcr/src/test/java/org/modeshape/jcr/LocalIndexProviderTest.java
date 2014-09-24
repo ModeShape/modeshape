@@ -679,6 +679,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
     @Test
     public void shouldUseSingleColumnResidualPropertyIndexInQueryAgainstSameNodeType() throws Exception {
         registerValueIndex("pathIndex", "nt:unstructured", "Node path index", "*", "someProperty", PropertyType.STRING);
+        registerValueIndex("titleIndex", "mix:title", "Title index", "*", "jcr:title", PropertyType.STRING);
 
         // print = true;
 
@@ -716,6 +717,12 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         query = jcrSql2Query("SELECT table.* FROM [nt:unstructured] AS table WHERE table.someProperty = $value");
         query.bindValue("value", session().getValueFactory().createValue("value1"));
         validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] = 'The Title'");
+        validateQuery().rowCount(1L).useIndex("titleIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT title.* FROM [mix:title] as title WHERE title.[jcr:title] = 'The Title'");
+        validateQuery().rowCount(1L).useIndex("titleIndex").validate(query, query.execute());
     }
 
     @FixFor( "MODE-2314" )
