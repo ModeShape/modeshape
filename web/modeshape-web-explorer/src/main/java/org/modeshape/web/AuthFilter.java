@@ -25,7 +25,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.jboss.logging.Logger;
 import org.modeshape.common.util.Base64;
 
 /**
@@ -34,8 +33,7 @@ import org.modeshape.common.util.Base64;
  */
 public class AuthFilter implements Filter {
 
-    private final static Logger logger = Logger.getLogger(AuthFilter.class);
-    
+   
     @Override
     public void init(FilterConfig fc) {
     }
@@ -43,9 +41,7 @@ public class AuthFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         String authHeader = ((HttpServletRequest)request).getHeader("Authorization");
-        logger.debug("Filter is activated");
         if (authHeader != null) {
-            logger.debug("--------------Catch authentication header");
             StringTokenizer st = new StringTokenizer(authHeader);
             if (st.hasMoreTokens()) {
                 String basic = st.nextToken();

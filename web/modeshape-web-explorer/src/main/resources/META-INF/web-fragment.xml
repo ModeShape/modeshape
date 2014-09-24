@@ -1,4 +1,19 @@
 <web-fragment>
+    <!--
+        The ModeShape Web-Explorer implementation allowes the HTTP credentials to for 
+        authentication and authorization within the JCR repository. 
+        This should generally not be modified.
+    -->   
+    <filter> 
+        <filter-name>ConnectFilter</filter-name>
+        <filter-class>org.modeshape.web.AuthFilter</filter-class>
+    </filter>   
+     
+    <filter-mapping>
+        <filter-name>ConnectFilter</filter-name>
+        <servlet-name>jcrServlet</servlet-name>        
+    </filter-mapping>
+    
     <servlet>
         <servlet-name>jcrServlet</servlet-name>
         <servlet-class>org.modeshape.web.server.JcrServiceImpl</servlet-class>
