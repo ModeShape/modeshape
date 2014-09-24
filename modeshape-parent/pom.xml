@@ -1179,6 +1179,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-explorer</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jdbc-local</artifactId>
                 <version>${project.version}</version>
             </dependency>

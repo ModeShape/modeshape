@@ -72,7 +72,6 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 @SuppressWarnings( "serial" )
 public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
-    // private final static Logger log = Logger.getLogger("JcrServiceImpl");
     private final static Logger logger = Logger.getLogger(JcrServiceImpl.class);
 
     private Connector connector() throws RemoteException {

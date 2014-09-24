@@ -1,6 +1,10 @@
-<web-fragment>
+<web-fragment xmlns="http://java.sun.com/xml/ns/javaee"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+              http://java.sun.com/xml/ns/javaee/web-fragment_3_0.xsd"
+              version="3.0">
     <!--
-        The ModeShape Web-Explorer implementation allowes the HTTP credentials to for 
+        The ModeShape Web-Explorer implementation allows the HTTP credentials to for
         authentication and authorization within the JCR repository. 
         This should generally not be modified.
     --> 
