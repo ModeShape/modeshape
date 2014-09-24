@@ -25,9 +25,7 @@ import org.junit.Test;
  *
  * @author Oleg Kulikov (okulikov@redhat.com)
  */
-@SuppressWarnings( "deprecation" )
 public class ExplorerTest {
-
 
     @Test
     public void shouldAccessInitialPage() throws Exception {
