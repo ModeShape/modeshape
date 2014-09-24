@@ -24,103 +24,40 @@ import java.util.concurrent.CountDownLatch;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
-import javax.jcr.nodetype.NodeTypeManager;
-import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.query.Row;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
-import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
-import org.modeshape.jcr.api.ValueFactory;
-import org.modeshape.jcr.api.index.IndexColumnDefinition;
-import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
-import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
-import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.query.engine.IndexPlanners;
 
-public class LocalIndexProviderTest extends SingleUseAbstractTest {
+/**
+ * This test verifies that the local index provider works when the indexes are updated <em>synchronous</em>. See
+ * {@link LocalIndexProviderAsynchronousTest} for verification of the asynchronous cases.
+ *
+ * @author Randall Hauch (rhauch@redhat.com)
+ * @see LocalIndexProviderAsynchronousTest
+ */
+public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
 
-    private static final String PROVIDER_NAME = "local";
-    private static final String CONFIG_FILE = "config/repo-config-persistent-local-provider-no-indexes.json";
-    private static final String STORAGE_DIR = "target/persistent_repository";
-
-    @Before
     @Override
-    public void beforeEach() throws Exception {
-        // We're using a Repository configuration that persists content, so clean it up ...
-        FileUtil.delete(STORAGE_DIR);
-
-        // Now start the repository ...
-        startRepositoryWithConfiguration(resource(CONFIG_FILE));
-        printMessage("Started repository...");
+    protected boolean useSynchronousIndexes() {
+        return true;
     }
 
-    @After
-    @Override
-    public void afterEach() throws Exception {
-        super.afterEach();
-        FileUtil.delete(STORAGE_DIR);
-        // Thread.sleep(100L); // wait for the repository to shut down and terminate all listeners
-    }
+    // ---------------------------------------------------------------
+    // Override these so that we can easily run them via JUnit runner.
+    // ---------------------------------------------------------------
 
+    @Override
     @Test
     public void shouldAllowRegisteringNewIndexDefinitionWithSingleStringColumn() throws Exception {
-        String indexName = "descriptionIndex";
-        registerValueIndex(indexName, "mix:title", "Index for the 'jcr:title' property on mix:title", "*", "jcr:title",
-                           PropertyType.STRING);
-        waitForIndexes();
-        indexManager().unregisterIndexes(indexName);
-        waitForIndexes();
+        super.shouldAllowRegisteringNewIndexDefinitionWithSingleStringColumn();
     }
 
+    @Override
     @Test
     public void shouldUseSingleColumnStringIndexInQueryAgainstSameNodeType() throws Exception {
-        registerValueIndex("descriptionIndex", "mix:title", "Index for the 'jcr:title' property on mix:title", "*", "jcr:title",
-                           PropertyType.STRING);
-
-        // print = true;
-
-        // Add a node that uses this type ...
-        Node root = session().getRootNode();
-        Node book1 = root.addNode("myFirstBook");
-        book1.addMixin("mix:title");
-        book1.setProperty("jcr:title", "The Title");
-
-        Node book2 = root.addNode("mySecondBook");
-        book2.addMixin("mix:title");
-        book2.setProperty("jcr:title", "A Different Title");
-
-        // Create a node that is not a 'mix:title' and therefore won't be included in the SELECT clauses ...
-        Node other = root.addNode("somethingElse");
-        other.setProperty("propA", "a value for property A");
-        other.setProperty("jcr:title", "The Title");
-
-        waitForIndexes();
-        session.save();
-        waitForIndexes();
-
-        // Compute a query plan that should use this index ...
-        Query query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] = 'The Title'");
-        validateQuery().rowCount(1L).useIndex("descriptionIndex").validate(query, query.execute());
-
-        // Compute a query plan that should NOT use this index ...
-        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE 'The Title'");
-        validateQuery().rowCount(1L).useNoIndexes().validate(query, query.execute());
-
-        // Compute a query plan that should use this index ...
-        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE 'The %'");
-        validateQuery().rowCount(1L).useNoIndexes().validate(query, query.execute());
-
-        // Compute a query plan that should use this index ...
-        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE '% Title'");
-        validateQuery().rowCount(2L).useNoIndexes().validate(query, query.execute());
-
-        // Compute a query plan that should use this index ...
-        query = jcrSql2Query("SELECT * FROM [mix:title]");
-        validateQuery().rowCount(2L).useNoIndexes().validate(query, query.execute());
+        super.shouldUseSingleColumnStringIndexInQueryAgainstSameNodeType();
     }
 
     @Test
@@ -679,6 +616,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
     @Test
     public void shouldUseSingleColumnResidualPropertyIndexInQueryAgainstSameNodeType() throws Exception {
         registerValueIndex("pathIndex", "nt:unstructured", "Node path index", "*", "someProperty", PropertyType.STRING);
+        registerValueIndex("titleIndex", "mix:title", "Title index", "*", "jcr:title", PropertyType.STRING);
 
         // print = true;
 
@@ -716,6 +654,12 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         query = jcrSql2Query("SELECT table.* FROM [nt:unstructured] AS table WHERE table.someProperty = $value");
         query.bindValue("value", session().getValueFactory().createValue("value1"));
         validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] = 'The Title'");
+        validateQuery().rowCount(1L).useIndex("titleIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT title.* FROM [mix:title] as title WHERE title.[jcr:title] = 'The Title'");
+        validateQuery().rowCount(1L).useIndex("titleIndex").validate(query, query.execute());
     }
 
     @FixFor( "MODE-2314" )
@@ -779,7 +723,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         // Shutdown the repository and restart it ...
         stopRepository();
         printMessage("Stopped repository. Restarting ...");
-        startRepositoryWithConfiguration(resource(CONFIG_FILE));
+        startRepository();
         printMessage("Repository restart complete");
     }
 
@@ -818,7 +762,7 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         // Shutdown the repository and restart it ...
         stopRepository();
         printMessage("Stopped repository. Restarting ...");
-        startRepositoryWithConfiguration(resource(CONFIG_FILE));
+        startRepository();
         printMessage("Repository restart complete");
 
         // Issues the same query and verify it uses an index...
@@ -999,110 +943,4 @@ public class LocalIndexProviderTest extends SingleUseAbstractTest {
         // Wait for the threads to complete ...
         stopLatch.await();
     }
-
-    private ValueFactory valueFactory() throws RepositoryException {
-        return session.getValueFactory();
-    }
-
-    private void registerNodeType( String typeName ) throws RepositoryException {
-        NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
-
-        // Create a template for the node type ...
-        NodeTypeTemplate type = mgr.createNodeTypeTemplate();
-        type.setName(typeName);
-        type.setDeclaredSuperTypeNames(new String[] {"nt:unstructured"});
-        type.setAbstract(false);
-        type.setOrderableChildNodes(true);
-        type.setMixin(false);
-        type.setQueryable(true);
-        mgr.registerNodeType(type, true);
-    }
-
-    protected void registerValueIndex( String indexName,
-                                       String indexedNodeType,
-                                       String desc,
-                                       String workspaceNamePattern,
-                                       String propertyName,
-                                       int propertyType ) throws RepositoryException {
-        registerIndex(indexName, IndexKind.VALUE, PROVIDER_NAME, indexedNodeType, desc, workspaceNamePattern, propertyName,
-                      propertyType);
-    }
-
-    protected void registerNodeTypeIndex( String indexName,
-                                          String indexedNodeType,
-                                          String desc,
-                                          String workspaceNamePattern,
-                                          String propertyName,
-                                          int propertyType ) throws RepositoryException {
-        registerIndex(indexName, IndexKind.NODE_TYPE, PROVIDER_NAME, indexedNodeType, desc, workspaceNamePattern, propertyName,
-                      propertyType);
-    }
-
-    protected void registerIndex( String indexName,
-                                  IndexKind kind,
-                                  String providerName,
-                                  String indexedNodeType,
-                                  String desc,
-                                  String workspaceNamePattern,
-                                  String propertyName,
-                                  int propertyType ) throws RepositoryException {
-        // Create the index template ...
-        IndexDefinitionTemplate template = indexManager().createIndexDefinitionTemplate();
-        template.setName(indexName);
-        template.setKind(kind);
-        template.setNodeTypeName(indexedNodeType);
-        template.setProviderName(providerName);
-        template.setSynchronous(useSynchronousIndexes());
-        if (workspaceNamePattern != null) {
-            template.setWorkspaceNamePattern(workspaceNamePattern);
-        } else {
-            template.setAllWorkspaces();
-        }
-        if (desc != null) {
-            template.setDescription(desc);
-        }
-
-        // Set up the columns ...
-        IndexColumnDefinition colDefn = indexManager().createIndexColumnDefinitionTemplate().setPropertyName(propertyName)
-                                                      .setColumnType(propertyType);
-        template.setColumnDefinitions(colDefn);
-
-        // Register the index ...
-        indexManager().registerIndex(template, false);
-    }
-
-    protected IndexManager indexManager() throws RepositoryException {
-        return session().getWorkspace().getIndexManager();
-    }
-
-    protected Query jcrSql2Query( String expr ) throws RepositoryException {
-        return jcrSql2Query(session(), expr);
-    }
-
-    protected Query jcrSql2Query( JcrSession session,
-                                  String expr ) throws RepositoryException {
-        return session.getWorkspace().getQueryManager().createQuery(expr, Query.JCR_SQL2);
-    }
-
-    protected ValidationBuilder validateQuery() {
-        return ValidateQuery.validateQuery().printDetail(print);
-    }
-
-    protected boolean useSynchronousIndexes() {
-        return true;
-    }
-
-    protected void waitForIndexes( long extraTime ) throws InterruptedException {
-        if (useSynchronousIndexes()) {
-            Thread.sleep(100L);
-        } else {
-            Thread.sleep(1000L);
-        }
-        if (extraTime > 0L) Thread.sleep(extraTime);
-    }
-
-    protected void waitForIndexes() throws InterruptedException {
-        waitForIndexes(0L);
-    }
-
 }

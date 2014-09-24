@@ -142,9 +142,11 @@ public class AddIndexes implements OptimizerRule {
                 private boolean isPrimaryTypeConstraint( DynamicOperand operand ) {
                     if (operand instanceof PropertyValue) {
                         PropertyValue propValue = (PropertyValue)operand;
-                        if ("jcr:primaryType".equals(propValue.getPropertyName())
-                            && propValue.getSelectorName().equals(selectorName.getString())) {
-                            return true;
+                        if (propValue.getSelectorName().equals(selectorName.getString())) {
+                            // The property value matches our selector name, so this might be a constraint on the
+                            // primary type or mixin types. If so, then the selector name is an alias ...
+                            String propName = propValue.getPropertyName();
+                            return "jcr:primaryType".equals(propName) || "jcr:mixinTypes".equals(propName);
                         }
                     }
                     return false;
