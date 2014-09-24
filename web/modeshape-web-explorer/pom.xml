@@ -26,14 +26,14 @@
         </dependency>
 
         <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr-api</artifactId>
+            <artifactId>modeshape-jcr</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -44,58 +44,27 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-user</artifactId>
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.googlecode.sardine</groupId>
-            <artifactId>sardine</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-servlet</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.gwt</groupId>
-            <artifactId>gwt-user</artifactId>
-            <scope>provided</scope>
-        </dependency>              
+
         <dependency>
             <groupId>smartgwt</groupId>
             <artifactId>smartgwt</artifactId>
             <type>jar</type>
         </dependency>
+
         <dependency>
             <groupId>com.smartgwt</groupId>
             <artifactId>smartgwt-skins</artifactId>
             <type>jar</type>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr</artifactId>
-            <type>jar</type>
-	    <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>
@@ -105,7 +74,18 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
-        <plugins>            
+        <plugins>
+            <!--Overwrite this plugin from parent, to avoid it requiring a MANIFEST.MF file -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test-jar</id>
+                        <phase>non-existent</phase>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>gwt-maven-plugin</artifactId>
@@ -120,20 +100,17 @@
                 <configuration>
                     <runTarget>org.modeshape.explorer.client.Explorer/Explorer.html</runTarget>
                     <webappDirectory>target/classes/META-INF/resources</webappDirectory>
+                    <persistentunitcachedir>target/gwt-unitCache</persistentunitcachedir>
                 </configuration>
-            </plugin>            
+            </plugin>
+            <!--We don't have any tests in this module -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>test-jar</id>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>           
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>

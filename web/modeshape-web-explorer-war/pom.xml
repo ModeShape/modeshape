@@ -10,36 +10,22 @@
     <artifactId>modeshape-web-explorer-war</artifactId>
     <packaging>war</packaging>
     <name>ModeShape Repository Explorer (Full)</name>
-    <description>ModeShape repository explorer that embeds ModeShape and can be deloyed standalone</description>
+    <description>ModeShape repository explorer that embeds ModeShape and can be deployed standalone</description>
     <url>http://www.modeshape.org</url>
     <dependencies>
         <dependency>
-            <groupId>javax.jcr</groupId>
-            <artifactId>jcr</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
-            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-explorer</artifactId>
         </dependency>
 
         <!--The following dependencies are installed in the container and will be picked up via the manifest-->
         <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-explorer</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-common</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
