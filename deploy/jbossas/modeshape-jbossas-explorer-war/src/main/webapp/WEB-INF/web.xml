@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee                http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
-    
-    <!--
-        The ModeShape Web-Explorer implementation allowes the HTTP credentials to for 
-        authentication and authorization within the JCR repository. 
-        This should generally not be modified.
-    -->    
-    <filter-mapping>
-        <filter-name>ConnectFilter</filter-name>
-        <servlet-name>jcrServlet</servlet-name>        
-    </filter-mapping>
+<web-app version="3.0" xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
     
     <!--
         This section is used to define the access privileges to a collection of 
