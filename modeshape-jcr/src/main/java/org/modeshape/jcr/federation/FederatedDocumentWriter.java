@@ -98,7 +98,7 @@ public class FederatedDocumentWriter implements DocumentWriter {
     public DocumentWriter addPropertyValue( Name name,
                                             Object value ) {
         boolean knownToBeMultiple = false;
-        translator.addPropertyValues(federatedDocument, name, knownToBeMultiple, Collections.singleton(value), null);
+        translator.addPropertyValues(federatedDocument, name, knownToBeMultiple, Collections.singleton(value), null, null);
         return this;
     }
 
@@ -137,7 +137,7 @@ public class FederatedDocumentWriter implements DocumentWriter {
         if (value == null) {
             return this;
         }
-        translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, value), null);
+        translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, value), null, null);
         return this;
     }
 
@@ -148,9 +148,9 @@ public class FederatedDocumentWriter implements DocumentWriter {
         int len = values.length;
         if (len == 0) return this;
         if (len == 1) {
-            translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, values[0]), null);
+            translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, values[0]), null, null);
         } else {
-            translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
+            translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null, null);
         }
         return this;
     }
@@ -160,14 +160,14 @@ public class FederatedDocumentWriter implements DocumentWriter {
                                        Object firstValue,
                                        Object... additionalValues ) {
         if (additionalValues.length == 0) {
-            translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, firstValue), null);
+            translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, firstValue), null, null);
         } else {
             List<Object> values = new ArrayList<Object>(1 + additionalValues.length);
             values.add(firstValue);
             for (Object value : additionalValues) {
                 values.add(value);
             }
-            translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
+            translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null, null);
         }
         return this;
     }
@@ -176,7 +176,7 @@ public class FederatedDocumentWriter implements DocumentWriter {
     public DocumentWriter addProperties( Map<Name, Property> properties ) {
         if (properties != null && !properties.isEmpty()) {
             for (Map.Entry<Name, Property> entry : properties.entrySet()) {
-                translator.setProperty(federatedDocument, entry.getValue(), null);
+                translator.setProperty(federatedDocument, entry.getValue(), null, null);
             }
         }
         return this;

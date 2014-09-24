@@ -92,6 +92,8 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStoreException;
 
 /**
  * A writable {@link SessionCache} implementation capable of making transient changes and saving them.
@@ -112,7 +114,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      */
     private static final Logger SAVE_LOGGER = Logger.getLogger("org.modeshape.jcr.txn");
 
-    private static final Logger LOGGER = Logger.getLogger(WritableSessionCache.class);
+    protected static final Logger LOGGER = Logger.getLogger(WritableSessionCache.class);
     private static final NodeKey REMOVED_KEY = new NodeKey("REMOVED_NODE_SHOULD_NEVER_BE_PERSISTED");
     private static final SessionNode REMOVED = new SessionNode(REMOVED_KEY, false);
     private static final int MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT = 4;
@@ -440,6 +442,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
                     txn = txns.begin();
+                    assert txn != null;
 
                     // Get a monitor via the transaction ...
                     final Monitor monitor = txn.createMonitor();
@@ -453,6 +456,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Now persist the changes ...
                     logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, null, null);
                     events = persistChanges(this.changedNodesInOrder, monitor, persistedCache);
+
+                    // If there are any binary changes, add a tx synchronization which will update the binary store
+                    if (events.hasBinaryChanges()) {
+                        txn.uponCompletion(binaryUsageUpdateFunction(events.usedBinaries(), events.unusedBinaries()));
+                    }
 
                     // Register a handler that will execute upon successful commit of the transaction (whenever that happens) ...
                     final ChangeSet changes = events;
@@ -601,6 +609,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
                     txn = txns.begin();
+                    assert txn != null;
 
                     // Get a monitor via the transaction ...
                     final Monitor monitor = txn.createMonitor();
@@ -618,7 +627,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                                              that.changedNodesInOrder,
                                              that.changedNodes);
                         events1 = persistChanges(this.changedNodesInOrder, monitor, thisPersistedCache);
+                        // If there are any binary changes, add a tx synchronization which will update the binary store
+                        if (events1.hasBinaryChanges()) {
+                            txn.uponCompletion(binaryUsageUpdateFunction(events1.usedBinaries(), events1.unusedBinaries()));
+                        }
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor, thatPersistedCache);
+                        if (events2.hasBinaryChanges()) {
+                            txn.uponCompletion(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
+                        }
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
                         txn.rollback();
                         if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
@@ -768,6 +784,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
                     txn = txns.begin();
+                    assert txn != null;
 
                     // Get a monitor via the transaction ...
                     final Monitor monitor = txn.createMonitor();
@@ -792,8 +809,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // Now persist the changes ...
                         logChangesBeingSaved(savedNodesInOrder, this.changedNodes, that.changedNodesInOrder, that.changedNodes);
                         events1 = persistChanges(savedNodesInOrder, monitor, thisPersistedCache);
+                        // If there are any binary changes, add a tx synchronization which will update the binary store
+                        if (events1.hasBinaryChanges()) {
+                            txn.uponCompletion(binaryUsageUpdateFunction(events1.usedBinaries(), events1.unusedBinaries()));
+                        }
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor, thatPersistedCache);
-
+                        if (events2.hasBinaryChanges()) {
+                            txn.uponCompletion(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
+                        }
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
                         txn.rollback();
                         if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
@@ -914,6 +937,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         Set<NodeKey> removedNodes = null;
         Set<BinaryKey> unusedBinaryKeys = new HashSet<BinaryKey>();
+        Set<BinaryKey> usedBinaryKeys = new HashSet<BinaryKey>();
         Set<NodeKey> renamedExternalNodes = new HashSet<NodeKey>();
         for (NodeKey key : changedNodesInOrder) {
             SessionNode node = changedNodes.get(key);
@@ -944,7 +968,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         Property property = propertyIterator.next();
                         if (property.isBinary()) {
                             Object value = property.isMultiple() ? Arrays.asList(property.getValuesAsArray()) : property.getFirstValue();
-                            translator.decrementBinaryReferenceCount(value, unusedBinaryKeys);
+                            translator.decrementBinaryReferenceCount(value, unusedBinaryKeys, null);
                         }
                     }
 
@@ -996,8 +1020,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     MixinChanges mixinChanges = node.mixinChanges(false);
                     if (mixinChanges != null && !mixinChanges.isEmpty()) {
                         Property oldProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
-                        translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded(), unusedBinaryKeys);
-                        translator.removePropertyValues(doc, JcrLexicon.MIXIN_TYPES, mixinChanges.getRemoved(), unusedBinaryKeys);
+                        translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded(), unusedBinaryKeys,
+                                                     usedBinaryKeys);
+                        translator.removePropertyValues(doc, JcrLexicon.MIXIN_TYPES, mixinChanges.getRemoved(), unusedBinaryKeys,
+                                                        usedBinaryKeys);
                         // the property was changed ...
                         Property newProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
                         if (oldProperty == null) {
@@ -1037,7 +1063,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         persisted = persistedCache.getNode(key);
                     }
                     for (Name name : removedProperties) {
-                        Property oldProperty = translator.removeProperty(doc, name, unusedBinaryKeys);
+                        Property oldProperty = translator.removeProperty(doc, name, unusedBinaryKeys, usedBinaryKeys);
                         if (oldProperty != null) {
                             // the property was removed ...
                             changes.propertyRemoved(key, newPath, oldProperty);
@@ -1057,7 +1083,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         Property prop = propEntry.getValue();
                         // Get the old property ...
                         Property oldProperty = persisted != null ? persisted.getProperty(name, persistedCache) : null;
-                        translator.setProperty(doc, prop, unusedBinaryKeys);
+                        translator.setProperty(doc, prop, unusedBinaryKeys, usedBinaryKeys);
                         if (oldProperty == null) {
                             // the property was created ...
                             changes.propertyAdded(key, newPath, prop);
@@ -1348,6 +1374,13 @@ public class WritableSessionCache extends AbstractSessionCache {
             }
         }
 
+        if (!usedBinaryKeys.isEmpty()) {
+            // There are some binary values which need to be marked as used ...
+            for (BinaryKey key : usedBinaryKeys) {
+                changes.binaryValueUsed(key);
+            }
+        }
+
         changes.setChangedNodes(changedNodes.keySet()); // don't need to make a copy
         changes.freeze(userId, userData, timestamp);
         return changes;
@@ -1415,6 +1448,43 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
         //return a transient workspace cache, which contains the latest view of the nodes which will be changed
         return workspaceCache().persistedCache(changedNodesInOrder);
+    }
+
+    private Transactions.TransactionFunction binaryUsageUpdateFunction(final Set<BinaryKey> usedBinaries,
+                                                                       final Set<BinaryKey> unusedBinaries) {
+        final BinaryStore binaryStore = getContext().getBinaryStore();
+        return new Transactions.TransactionFunction() {
+            @Override
+            public void transactionComplete() {
+                if (!usedBinaries.isEmpty()) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Marking binary values as used: {0}", usedBinaries);
+                    }
+                    try {
+                        binaryStore.markAsUsed(usedBinaries);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Finished marking binary values as used: {0}", usedBinaries);
+                        }
+                    } catch (BinaryStoreException e) {
+                        LOGGER.error(e, JcrI18n.errorMarkingBinaryValuesUsed, e.getMessage());
+                    }
+                }
+
+                if (!unusedBinaries.isEmpty()) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Marking binary values as unused: {0}", unusedBinaries);
+                    }
+                    try {
+                        binaryStore.markAsUnused(unusedBinaries);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Finished marking binary values as unused: {0}", unusedBinaries);
+                        }
+                    } catch (BinaryStoreException e) {
+                        LOGGER.error(e, JcrI18n.errorMarkingBinaryValuesUnused, e.getMessage());
+                    }
+                }
+            }
+        };
     }
 
     protected SessionNode add( SessionNode newNode ) {

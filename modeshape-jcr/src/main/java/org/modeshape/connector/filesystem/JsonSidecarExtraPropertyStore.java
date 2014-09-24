@@ -95,9 +95,9 @@ class JsonSidecarExtraPropertyStore implements ExtraPropertiesStore {
             for (Map.Entry<Name, Property> entry : properties.entrySet()) {
                 Property property = entry.getValue();
                 if (property == null) {
-                    translator.removeProperty(document, entry.getKey(), null);
+                    translator.removeProperty(document, entry.getKey(), null, null);
                 } else {
-                    translator.setProperty(document, property, null);
+                    translator.setProperty(document, property, null, null);
                 }
             }
             write(document, new FileOutputStream(sidecarFile));
@@ -118,7 +118,7 @@ class JsonSidecarExtraPropertyStore implements ExtraPropertiesStore {
             EditableDocument document = Schematic.newDocument();
             for (Property property : properties.values()) {
                 if (property == null) continue;
-                translator.setProperty(document, property, null);
+                translator.setProperty(document, property, null, null);
             }
             write(document, new FileOutputStream(sidecarFile));
         } catch (IOException e) {

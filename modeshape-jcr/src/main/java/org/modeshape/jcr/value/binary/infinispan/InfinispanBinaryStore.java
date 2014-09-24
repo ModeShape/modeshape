@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -43,6 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
+import org.infinispan.distexec.DistributedCallable;
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.infinispan.distexec.mapreduce.Mapper;
@@ -59,7 +59,6 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.InfinispanUtil;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
@@ -83,10 +82,8 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     private static final int MIN_KEY_LENGTH = BinaryKey.maxHexadecimalLength() + SUFFIX_LENGTH;
     private static final int MAX_KEY_LENGTH = MIN_KEY_LENGTH;
 
-    private static final int RETRY_COUNT = 5;
-
-    private Cache<String, Metadata> metadataCache;
-    private LockFactory lockFactory;
+    protected Cache<String, Metadata> metadataCache;
+    protected LockFactory lockFactory;
     private CacheContainer cacheContainer;
     private boolean dedicatedCacheContainer;
     private Cache<String, byte[]> blobCache;
@@ -150,7 +147,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         return key.toString() + TEXT_SUFFIX;
     }
 
-    protected final boolean isMetadataKey( String str ) {
+    protected static boolean isMetadataKey( String str ) {
         if (str == null) return false;
         int len = str.length();
         if (len < MIN_KEY_LENGTH || len > MAX_KEY_LENGTH) return false;
@@ -159,7 +156,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         return BinaryKey.isProperlyFormattedKey(key);
     }
 
-    protected final BinaryKey binaryKeyFromCacheKey( String key ) {
+    protected static BinaryKey binaryKeyFromCacheKey( String key ) {
         String plainKey;
 
         if (isMetadataKey(key)) {
@@ -228,7 +225,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream inputStream ) throws BinaryStoreException, SystemFailureException {
+    public BinaryValue storeValue( InputStream inputStream, boolean markAsUnused ) throws BinaryStoreException, SystemFailureException {
         File tmpFile = null;
         try {
             // using tmp file to determine SHA1
@@ -243,9 +240,9 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             final String metadataKey = metadataKeyFrom(binaryKey);
             Metadata metadata = metadataCache.get(metadataKey);
             if (metadata != null) {
-                logger.debug("Binary value already exist.");
+                logger.debug("Binary value already exists.");
                 // in case of an unused entry, this entry is from now used
-                if (metadata.isUnused()) {
+                if (metadata.isUnused() && !markAsUnused) {
                     metadata.markAsUsed();
                     putMetadata(metadataKey, metadata);
                 }
@@ -264,20 +261,17 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
             
             Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
-            BinaryValue value;
             try {
                 // now store metadata
                 metadata = new Metadata(lastModified, fileLength, chunkOutputStream.chunksCount(), chunkSize);
+                if (markAsUnused) {
+                    metadata.markAsUnusedSince(System.currentTimeMillis());
+                }
                 putMetadata(metadataKey, metadata);
-                value = new StoredBinaryValue(this, binaryKey, fileLength);
+                return new StoredBinaryValue(this, binaryKey, fileLength);
             } finally {
                 lock.unlock();
             }
-            // initial text extraction
-            if (extractors() != null) {
-                extractors().extract(this, value, new TextExtractorContext(detector()));
-            }
-            return value;
         } catch (IOException e) {
             throw new BinaryStoreException(e);
         } catch (NoSuchAlgorithmException e) {
@@ -305,27 +299,47 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        for (BinaryKey binaryKey : keys) {
+            Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
+            try {
+                final String metadataKey = metadataKeyFrom(binaryKey);
+                final Metadata metadata = metadataCache.get(metadataKey);
+                // we use the copy of the original object to avoid changes cache values in case of errors
+                if (metadata == null) {
+                    continue;
+                }
+                metadata.markAsUsed();
+                putMetadata(metadataKey, metadata);
+            } catch (IOException e) {
+                logger.debug(e, "Error during mark binary value used {0}", binaryKey);
+                throw new BinaryStoreException(JcrI18n.errorMarkingBinaryValuesUnused.text(e.getCause().getMessage()), e);
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         for (BinaryKey binaryKey : keys) {
             // Try to mark the metadata as unused. We loop here in case other processes (not other threads in this process,
             // which are handled via locks) are doing the same thing.
-            for (int i = 0; i != RETRY_COUNT; ++i) {
-                Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
-                try {
-                    final String metadataKey = metadataKeyFrom(binaryKey);
-                    final Metadata metadata = metadataCache.get(metadataKey);
-                    // we use the copy of the original object to avoid changes cache values in case of errors
-                    if (metadata == null || metadata.isUnused()) {
-                        continue;
-                    }
-                    metadata.markAsUnusedSince(System.currentTimeMillis());
-                    putMetadata(metadataKey, metadata);
-                } catch (IOException ex) {
-                    logger.debug(ex, "Error during mark binary value unused {0}", binaryKey);
-                    throw new BinaryStoreException(JcrI18n.errorMarkingBinaryValuesUnused.text(ex.getCause().getMessage()), ex);
-                } finally {
-                    lock.unlock();
+            Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
+            try {
+                final String metadataKey = metadataKeyFrom(binaryKey);
+                final Metadata metadata = metadataCache.get(metadataKey);
+                // we use the copy of the original object to avoid changes cache values in case of errors
+                if (metadata == null || metadata.isUnused()) {
+                    continue;
                 }
+                metadata.markAsUnusedSince(System.currentTimeMillis());
+                putMetadata(metadataKey, metadata);
+            } catch (IOException ex) {
+                logger.debug(ex, "Error during mark binary value unused {0}", binaryKey);
+                throw new BinaryStoreException(JcrI18n.errorMarkingBinaryValuesUnused.text(ex.getCause().getMessage()), ex);
+            } finally {
+                lock.unlock();
             }
         }
     }
@@ -553,33 +567,59 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     @Override
     public Iterable<BinaryKey> getAllBinaryKeys() throws BinaryStoreException {
-        Set<BinaryKey> allBinaryKeys = new HashSet<BinaryKey>();
-
         try {
-            @SuppressWarnings( "unchecked" )
-            final List<Cache<String, ? extends Serializable>> caches = Arrays.asList(metadataCache, blobCache);
+            return InfinispanUtil.execute(metadataCache, InfinispanUtil.Location.EVERYWHERE, newBinaryKeysCollector(), KeySetCombiner.INSTANCE);
+        } catch (Exception ex) {
+            throw new BinaryStoreException(ex);
+        }
+    }
 
-            for (Cache<String, ?> c : caches) {
-                final InfinispanUtil.Sequence<String> allKeys = InfinispanUtil.getAllKeys(c);
+    private UsedBinaryKeysCollector newBinaryKeysCollector() {
+        return new UsedBinaryKeysCollector();
+    }
 
-                // some of these keys are for the same BinaryKey; de-duplicate the list
-                while (allKeys.hasNext()) {
-                    final String key = allKeys.next();
+    private static class KeySetCombiner implements InfinispanUtil.Combiner<Set<BinaryKey>> {
+        private static final KeySetCombiner INSTANCE = new KeySetCombiner();
 
-                    final BinaryKey binaryKey = binaryKeyFromCacheKey(key);
-                    allBinaryKeys.add(binaryKey);
-                }
-
-            }
-        } catch (CacheLoaderException ex) {
-            throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
-        } catch (InterruptedException ex) {
-            throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
-        } catch (ExecutionException ex) {
-            throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
+        private KeySetCombiner() {
         }
 
-        return allBinaryKeys;
+        @Override
+        public Set<BinaryKey> combine( Set<BinaryKey> priorResult,
+                                       Set<BinaryKey> newResult ) throws InterruptedException, ExecutionException {
+            if (priorResult == null) { priorResult = new HashSet<BinaryKey>(); }
+            if (newResult != null) { priorResult.addAll(newResult); }
+            return priorResult;
+        }
+    }
+
+    private static class UsedBinaryKeysCollector implements DistributedCallable<String, Metadata, Set<BinaryKey>>, Serializable  {
+        private static final long serialVersionUID = 1L;
+
+        private transient Cache<String, Metadata> metadataCache;
+
+        private UsedBinaryKeysCollector() {
+        }
+
+        @Override
+        public void setEnvironment( Cache<String, Metadata> cache, Set<String> inputKeys ) {
+            this.metadataCache = cache;
+        }
+
+        @Override
+        public Set<BinaryKey> call() throws Exception {
+            Set<BinaryKey> result = new HashSet<BinaryKey>();
+            for (String key : metadataCache.keySet()) {
+                if (!isMetadataKey(key)) {
+                    continue;
+                }
+                Metadata metadata = metadataCache.get(key);
+                if (!metadata.isUnused()) {
+                    result.add(binaryKeyFromCacheKey(key));
+                }
+            }
+            return result;
+        }
     }
 
     /**

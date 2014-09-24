@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
 
 /**
@@ -54,6 +56,12 @@ import org.modeshape.jcr.value.binary.BinaryStore;
 public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
 
     private static final Random RANDOM = new Random();
+
+    @Override
+    public void beforeEach() throws Exception {
+        FileUtil.delete("target/persistent_repository");
+        super.beforeEach();
+    }
 
     @Test
     @FixFor( "MODE-1786" )
@@ -140,9 +148,6 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2200" )
     public void shouldDecrementBinaryRefCountsWithFederations() throws Exception {
-
-        FileUtil.delete("target/persistent_repository/");
-
         new File("target/federation_persistent_3").mkdir();
         startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-infinispan-fs-connector3.json"));
 
@@ -156,10 +161,27 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2144" )
     public void shouldCleanupUnusedBinariesForFilesystemStore() throws Exception {
-        FileUtil.delete("target/persistent_repository");
         startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
-
         checkUnusedBinariesAreCleanedUp();
+    }
+
+    @Test
+    @FixFor( "MODE-2302" )
+    public void shouldReuseBinariesFromTrashForFilesystemStore() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
+        int repCount = 5;
+        for (int i = 0; i < repCount; i++) {
+            // upload a file which should mark the binary as used
+            tools.uploadFile(session, "/file1.txt", resourceStream("io/file1.txt"));
+            session.save();
+            BinaryValue storedValue = (BinaryValue)session.getProperty("/file1.txt/jcr:content/jcr:data").getBinary();
+            BinaryKey key = storedValue.getKey();
+            assertTrue("Binary not stored", binaryStore().hasBinary(key));
+
+            // remove the file, which should move the binary to trash
+            session.getNode("/file1.txt").remove();
+            session.save();
+        }
     }
 
     @Test
@@ -172,9 +194,63 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2144" )
     public void shouldCleanupUnusedBinariesForCacheBinaryStore() throws Exception {
-        FileUtil.delete("target/persistent_repository");
         startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
         checkUnusedBinariesAreCleanedUp();
+    }
+
+    @Test
+    @FixFor( "MODE-2303" )
+    public void binaryUsageShouldChangeAfterSavingFS() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
+        checkBinaryUsageAfterSaving();
+    }
+
+    @Test
+    @FixFor( "MODE-2303" )
+    public void binaryUsageShouldChangeAfterSavingInfinispan() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
+        checkBinaryUsageAfterSaving();
+    }
+
+    @Test
+    @FixFor( "MODE-2303" )
+    public void binaryUsageShouldChangeAfterSavingJDBC() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
+        checkBinaryUsageAfterSaving();
+    }
+
+    private void checkBinaryUsageAfterSaving() throws Exception {
+        assertEquals("There should be no binaries in store", 0, binariesCount());
+
+        // upload 2 binaries but don't save
+        tools.uploadFile(session, "/file1.txt", resourceStream("io/file1.txt"));
+        tools.uploadFile(session, "/file2.txt", resourceStream("io/file2.txt"));
+
+        // run a cleanup
+        Thread.sleep(2);
+        binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+
+        // check that the binaries have been removed
+        assertEquals("There should be no binaries in store", 0, binariesCount());
+
+        // discard all previous changes
+        session.refresh(false);
+
+        // upload a new file
+        tools.uploadFile(session, "/file3.txt", resourceStream("io/file3.txt"));
+
+        // and save
+        session.save();
+
+        // now check there is a binary
+        assertEquals(1, binariesCount());
+
+        // run a cleanup
+        Thread.sleep(2);
+        binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+
+        //check the binary are still there
+        assertEquals(1, binariesCount());
     }
 
     private void checkUnusedBinariesAreCleanedUp() throws Exception {
@@ -201,7 +277,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
             session.removeItem("/file1.txt");
             session.removeItem("/file2.txt");
             session.save();
-            //sleep to give the binary change listener to mark the binaries as unused
+            // sleep to give the binary change listener to mark the binaries as unused
             Thread.sleep(100);
             binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
 

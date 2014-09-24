@@ -25,6 +25,7 @@ package org.modeshape.jcr.value.binary;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -88,10 +89,10 @@ public class CassandraBinaryStoreTest {
         store.start();
 
         ByteArrayInputStream stream = new ByteArrayInputStream("Binary value".getBytes());
-        aliveValue = store.storeValue(stream);
+        aliveValue = store.storeValue(stream, false);
 
         ByteArrayInputStream stream2 = new ByteArrayInputStream("Binary value".getBytes());
-        unusedValue = store.storeValue(stream2);
+        unusedValue = store.storeValue(stream2, false);
     }
 
     @Test
@@ -107,19 +108,18 @@ public class CassandraBinaryStoreTest {
     }
 
     @Test
-    public void shouldMarkUnused() throws BinaryStoreException {
+    public void shouldMarkUnused() throws Exception {
         Set<BinaryKey> unused = new HashSet<BinaryKey>();
         unused.add(unusedValue.getKey());
         store.markAsUnused(unused);
-
-        boolean res = true;
+        Thread.sleep(1000);
+        store.removeValuesUnusedLongerThan(1, TimeUnit.SECONDS);
         try {
             store.getInputStream(unusedValue.getKey());
-            res = false;
+            fail("Unused binary not removed");
         } catch (BinaryStoreException e) {
+            //expected
         }
-
-        assertTrue(res);
     }
 
     @Test

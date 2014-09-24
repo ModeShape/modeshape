@@ -40,6 +40,9 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.query.JcrQuery;
+import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 
 /**
  * @author Randall Hauch (rhauch@redhat.com)
@@ -72,7 +75,7 @@ public class Upgrades {
     public static final Upgrades STANDARD_UPGRADES;
 
     static {
-        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE, ModeShape_3_7_4.INSTANCE);
+        STANDARD_UPGRADES = new Upgrades(ModeShape_3_6_0.INSTANCE, ModeShape_3_7_4.INSTANCE, ModeShape_3_8_1.INSTANCE);
     }
 
     private final List<UpgradeOperation> operations = new ArrayList<UpgradeOperation>();
@@ -285,7 +288,33 @@ public class Upgrades {
                 systemNode.setProperty(systemSession, context.getPropertyFactory().create(ModeShapeLexicon.ACL_COUNT, nodesWithAccessControl));
                 systemSession.save();
             } catch (RepositoryException e) {
-               LOGGER.error(e, JcrI18n.upgrade3_7_4Running, e.getMessage());
+                LOGGER.error(e, JcrI18n.upgrade3_7_4Running, e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Upgrade operation handling moving to ModeShape 3.8.1. This consists of upgrading the {@link org.modeshape.jcr.value.binary.FileSystemBinaryStore}
+     * (if one is used) and changing the storage mechanism of the unused files (see MODE-2302).
+     */
+    protected static class ModeShape_3_8_1 extends UpgradeOperation {
+        protected static final UpgradeOperation INSTANCE = new ModeShape_3_8_1();
+
+        protected ModeShape_3_8_1() {
+            super(381);
+        }
+
+        @Override
+        public void apply( Context resources ) {
+            LOGGER.info(JcrI18n.upgrade3_8_1Running);
+            RunningState runningState = resources.getRepository();
+            BinaryStore binaryStore = runningState.binaryStore();
+            try {
+                if (binaryStore instanceof FileSystemBinaryStore) {
+                    ((FileSystemBinaryStore)binaryStore).upgradeTrashContentFormat();
+                }
+            } catch (BinaryStoreException e) {
+                LOGGER.error(e, JcrI18n.upgrade3_8_1Failed, e.getMessage());
             }
         }
     }

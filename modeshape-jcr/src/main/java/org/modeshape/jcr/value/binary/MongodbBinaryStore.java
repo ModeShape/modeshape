@@ -23,6 +23,19 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -30,29 +43,15 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.ServerAddress;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.BinaryValue;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A {@link BinaryStore} implementation that uses a MongoDB for persisting binary values.
- * 
+ *
  * @author kulikov
  */
 public class MongodbBinaryStore extends AbstractBinaryStore {
 
-    //default database name
+    // default database name
     private static final String DEFAULT_DB_NAME = "ModeShape_BinaryStore";
 
     // field names
@@ -100,7 +99,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Creates new store.
-     * 
+     *
      * @param database database name
      * @param replicaSet list of server addresses in the form 'host:port' or null for localhost
      */
@@ -115,7 +114,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Creates new store.
-     * 
+     *
      * @param database database name
      * @param username database user
      * @param password user's password
@@ -152,7 +151,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Converts list of addresses specified in text format to mongodb specific address.
-     * 
+     *
      * @param addresses list of addresses in text format
      * @return list of mongodb addresses
      * @throws UnknownHostException when at least one host is unknown
@@ -187,7 +186,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Gets the size of the chunk used to store content.
-     * 
+     *
      * @return chunk size in bytes.
      */
     public int getChunkSize() {
@@ -196,7 +195,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Modifies chunk size used to store content.
-     * 
+     *
      * @param chunkSize chunk size in bytes.
      */
     public void setChunkSize( int chunkSize ) {
@@ -204,9 +203,10 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream,
+                                   boolean markAsUnused ) throws BinaryStoreException {
         // store into temporary file system store and get SHA-1
-        BinaryValue temp = cache.storeValue(stream);
+        BinaryValue temp = cache.storeValue(stream, markAsUnused);
         try {
             // prepare new binary key based on SHA-1
             BinaryKey key = new BinaryKey(temp.getKey().toString());
@@ -218,7 +218,8 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
             // store content
             DBCollection content = db.getCollection(key.toString());
-            ChunkOutputStream dbStream = new ChunkOutputStream(content);
+            ChunkOutputStream dbStream = markAsUnused ? new ChunkOutputStream(content, System.currentTimeMillis()) : new ChunkOutputStream(
+                                                                                                                                           content);
             try {
                 IoUtil.write(temp.getStream(), dbStream);
             } catch (Exception e) {
@@ -241,13 +242,24 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
+    public void markAsUsed( Iterable<BinaryKey> keys ) {
+        for (BinaryKey key : keys) {
+            if (db.collectionExists(key.toString())) {
+                DBCollection content = db.getCollection(key.toString());
+                setAttribute(content, FIELD_UNUSED, false);
+                setAttribute(content, FIELD_UNUSED_SINCE, null);
+            }
+        }
+    }
+
+    @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) {
         for (BinaryKey key : keys) {
             // silently ignore if content does not exist
             if (db.collectionExists(key.toString())) {
                 DBCollection content = db.getCollection(key.toString());
                 setAttribute(content, FIELD_UNUSED, true);
-                setAttribute(content, FIELD_UNUSED_SINCE, new Date().getTime());
+                setAttribute(content, FIELD_UNUSED_SINCE, System.currentTimeMillis());
             }
         }
     }
@@ -255,8 +267,8 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     @Override
     public void removeValuesUnusedLongerThan( long minimumAge,
                                               TimeUnit unit ) {
-        long deadline = new Date().getTime() - unit.toMillis(minimumAge);
-        Set<String> keys = getStoredKeys();
+        long deadline = System.currentTimeMillis() - unit.toMillis(minimumAge);
+        Set<String> keys = getStoredKeys(false);
         for (String key : keys) {
             DBCollection content = db.getCollection(key);
             if (isExpired(content, deadline)) content.drop();
@@ -305,23 +317,27 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     @Override
     public Iterable<BinaryKey> getAllBinaryKeys() {
         ArrayList<BinaryKey> list = new ArrayList<BinaryKey>();
-        Set<String> keys = getStoredKeys();
+        Set<String> keys = getStoredKeys(true);
         for (String s : keys) {
             list.add(new BinaryKey(s));
         }
         return list;
     }
 
-    private Set<String> getStoredKeys() {
+    private Set<String> getStoredKeys( boolean onlyUsed ) {
         Set<String> storedKeys = new HashSet<String>();
 
         Set<String> collectionNames = db.getCollectionNames();
         for (String collectionName : collectionNames) {
-            //make sure Mongo predefined collections are not taken into account
+            // make sure Mongo predefined collections are not taken into account
             if (collectionName.toLowerCase().startsWith("system") || collectionName.toLowerCase().startsWith("local")) {
                 continue;
             }
-            storedKeys.add(collectionName);
+            DBCollection collection = db.getCollection(collectionName);
+            boolean unused = (Boolean)getAttribute(collection, FIELD_UNUSED);
+            if ((unused && !onlyUsed) || !unused) {
+                storedKeys.add(collectionName);
+            }
         }
         return storedKeys;
     }
@@ -349,7 +365,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
         // connect to database
         try {
             Mongo mongo = null;
-            if (!replicaSet.isEmpty())  {
+            if (!replicaSet.isEmpty()) {
                 mongo = new Mongo(replicaSet(replicaSet));
             } else if (!StringUtil.isBlank(host)) {
                 mongo = new Mongo(host, port);
@@ -364,7 +380,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Modifies content header.
-     * 
+     *
      * @param content stored content
      * @param fieldName attribute name
      * @param value new value for the attribute
@@ -389,7 +405,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Gets attribute's value.
-     * 
+     *
      * @param content stored content
      * @param fieldName attribute name
      * @return attributes value
@@ -401,7 +417,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     /**
      * Checks status of unused content.
-     * 
+     *
      * @param content content to check status
      * @param deadline moment of time in past
      * @return true if content is marked as unused before the deadline
@@ -429,7 +445,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
         /**
          * Creates new stream.
-         * 
+         *
          * @param content stored content
          */
         public ChunkOutputStream( DBCollection content ) {
@@ -440,6 +456,28 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
             BasicDBObject header = new BasicDBObject();
             header.put(FIELD_CHUNK_TYPE, CHUNK_TYPE_HEADER);
             header.put(FIELD_UNUSED, false);
+
+            // insert into database
+            this.content.insert(header);
+        }
+
+        /**
+         * Creates new stream.
+         *
+         * @param content stored content
+         * @param unusedSince the number of milliseconds the binary has not been used; this value will be recorded in the binary
+         *        value
+         */
+        public ChunkOutputStream( DBCollection content,
+                                  long unusedSince ) {
+            this.content = content;
+
+            // start from header
+            // mark first chunk as header and mark it as used
+            BasicDBObject header = new BasicDBObject();
+            header.put(FIELD_CHUNK_TYPE, CHUNK_TYPE_HEADER);
+            header.put(FIELD_UNUSED, true);
+            header.put(FIELD_UNUSED_SINCE, unusedSince);
 
             // insert into database
             this.content.insert(header);
@@ -501,7 +539,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
         public int read() {
             // read current chunk
             if (offset < size) {
-                //make sure it's unsigned (see javadoc)
+                // make sure it's unsigned (see javadoc)
                 return 0xff & buffer[offset++];
             }
 

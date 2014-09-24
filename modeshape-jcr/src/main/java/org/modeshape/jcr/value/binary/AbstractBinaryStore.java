@@ -252,9 +252,8 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue( InputStream stream,
-                                   String hint ) throws BinaryStoreException {
-        return storeValue(stream);
+    public BinaryValue storeValue( InputStream stream, String hint, boolean markAsUnused ) throws BinaryStoreException {
+        return storeValue(stream, markAsUnused);
     }
 
     @Override

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * 
@@ -71,6 +72,27 @@ public interface ChangeSet extends Iterable<Change>, Serializable {
     public String getWorkspaceName();
 
     public Set<NodeKey> changedNodes();
+
+    /**
+     * Returns the set of binary keys for those binary values which have become unused.
+     *
+     * @return the set of binary keys; never null;
+     */
+    public Set<BinaryKey> unusedBinaries();
+
+    /**
+     * Returns the set of binary keys for those binary values which are being used.
+     *
+     * @return the set of binary keys; never null;
+     */
+    public Set<BinaryKey> usedBinaries();
+
+    /**
+     * Checks if there are any binary changes in this change set.
+     *
+     * @return true if there are any binary changes (either values used or unused), false otherwise.
+     */
+    public boolean hasBinaryChanges();
 
     /**
      * Returns the ID of the session in which the changes occurred.

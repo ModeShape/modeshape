@@ -32,6 +32,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.File;
 import java.net.URL;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -66,8 +67,10 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.security.SimplePrincipal;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
@@ -355,7 +358,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 Session session = repository.login();
 
                 QueryManager queryManager = session.getWorkspace().getQueryManager();
-                Query query = queryManager.createQuery("select * from [nt:unstructured] where [jcr:path] like '/testNode'", Query.JCR_SQL2);
+                Query query = queryManager.createQuery("select * from [nt:unstructured] where [jcr:path] like '/testNode'",
+                                                       Query.JCR_SQL2);
                 assertEquals(1, query.execute().getNodes().getSize());
 
                 return null;
@@ -546,7 +550,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         }, config);
 
         final Editor editor = config.edit();
-        EditableArray predefinedWs = editor.getDocument(RepositoryConfiguration.FieldName.WORKSPACES).getArray(RepositoryConfiguration.FieldName.PREDEFINED);
+        EditableArray predefinedWs = editor.getDocument(RepositoryConfiguration.FieldName.WORKSPACES).getArray(
+                RepositoryConfiguration.FieldName.PREDEFINED);
         predefinedWs.add("ws3");
         predefinedWs.add("ws4");
 
@@ -799,6 +804,46 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 assertEquals(0, Long.valueOf(aclCountProp.getFirstValue().toString()).longValue());
 
                 assertFalse(repository.runningState().repositoryCache().isAccessControlEnabled());
+                return null;
+            }
+        }, config);
+    }
+
+    @Test
+    @FixFor( "MODE-2302" )
+    public void shouldRun3_8_1_UpgradeFunction() throws Exception {
+        FileUtil.delete("target/legacy_fs_binarystore");
+        FileUtil.delete("target/persistent_repository/");
+        String config = "config/repo-config-persistent-legacy-fsbinary.json";
+        //copy the test-resources legacy structure onto the configured one
+        FileUtil.copy(new File("src/test/resources/legacy_fs_binarystore"), new File("target/legacy_fs_binarystore"));
+        // this is coming from the test resources
+        final BinaryKey binaryKey = new BinaryKey("ef2138973a86a8929eebe7bf52419b7cde73ba0a");
+        // first run is empty, so no upgrades will be performed but we'll decrement the last upgrade ID to force an upgrade next
+        // restart
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                changeLastUpgradeId(repository, Upgrades.ModeShape_3_8_1.INSTANCE.getId() - 1);
+                FileSystemBinaryStore binaryStore = (FileSystemBinaryStore)repository.runningState().binaryStore();
+                assertFalse("No used binaries expected", binaryStore.getAllBinaryKeys().iterator().hasNext());
+                assertFalse("The binary should not be found", binaryStore.hasBinary(binaryKey));
+                File mainStorageDirectory = binaryStore.getDirectory();
+                File[] files = mainStorageDirectory.listFiles();
+                assertEquals("Just the trash directory was expected", 1, files.length);
+                File trash = files[0];
+                assertTrue(trash.isDirectory());
+                return null;
+            }
+        }, config);
+
+        //run the repo a second time, which should run the upgrade
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                FileSystemBinaryStore binaryStore = (FileSystemBinaryStore)repository.runningState().binaryStore();
+                assertFalse("No used binaries expected", binaryStore.getAllBinaryKeys().iterator().hasNext());
+                assertTrue("The binary should be found", binaryStore.hasBinary(binaryKey));
                 return null;
             }
         }, config);

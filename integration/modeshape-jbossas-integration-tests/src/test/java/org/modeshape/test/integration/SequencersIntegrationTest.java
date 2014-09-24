@@ -31,6 +31,7 @@ import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
@@ -172,19 +173,21 @@ public class SequencersIntegrationTest {
     @FixFor( "MODE-2288" )
     public void shouldManuallySequenceZip() throws Exception {
         JcrSession session = repository.login("default");
-        ((Node) session.getRootNode()).addNode("output");
+        String outputNode = "output_zip_" + UUID.randomUUID().toString();
+        ((Node) session.getRootNode()).addNode(outputNode);
 
         InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("sequencer/zip_file_1.zip");
         assertNotNull(resourceAsStream);
         jcrTools.uploadFile(session, "/testRoot/zip", resourceAsStream);
         session.save();
 
-        Node output = session.getNode("/output");
+        String outputPath = "/" + outputNode;
+        Node output = session.getNode(outputPath);
         Property binaryProperty = session.getProperty("/testRoot/zip/jcr:content/jcr:data");
         session.sequence("zip-sequencer-manual", binaryProperty, output);
         session.save();
 
-        assertEquals(1, ((Node) session.getNode("/output")).getNodes().getSize());
+        assertEquals(1, ((Node) session.getNode(outputPath)).getNodes().getSize());
     }
 
     private void uploadFileAndAssertSequenced( String fileName,
