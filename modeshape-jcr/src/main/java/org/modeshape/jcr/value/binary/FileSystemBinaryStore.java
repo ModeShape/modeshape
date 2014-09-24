@@ -600,11 +600,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     private boolean binaryValueExists( BinaryValue binaryValue ) throws BinaryStoreException {
         File fileInMainStorage = findFile(directory, binaryValue.getKey(), false);
-        if (fileInMainStorage.exists() && fileInMainStorage.canRead()) {
-            return true;
-        }
-        File fileInTrash = findFile(trash, binaryValue.getKey(), false);
-        return fileInTrash.exists() && fileInTrash.canRead();
+        return fileInMainStorage.exists() && fileInMainStorage.canRead();
     }
 
     private BinaryKey createKeyFromSourceWithSuffix( BinaryKey sourceKey,
