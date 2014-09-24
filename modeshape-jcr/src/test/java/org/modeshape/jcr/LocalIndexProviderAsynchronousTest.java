@@ -16,9 +16,36 @@
 
 package org.modeshape.jcr;
 
-public class LocalIndexProviderAsynchronousTest extends LocalIndexProviderTest {
+import org.junit.Test;
+
+/**
+ * We don't test a lot of functionality here. It's the same provider as tested in the {@link LocalIndexProviderTest}, except that
+ * in these tests we want to simply verify that the asynchronous indexing is working. (These asynchronous tests take a lot longer
+ * since we have to wait an unknown amount of time after saving changes before we can issue the query.)
+ *
+ * @author Randall Hauch (rhauch@redhat.com)
+ * @see LocalIndexProviderTest
+ */
+public class LocalIndexProviderAsynchronousTest extends AbstractLocalIndexProviderTest {
+
     @Override
     protected boolean useSynchronousIndexes() {
         return false;
+    }
+
+    // ---------------------------------------------------------------
+    // Override these so that we can easily run them via JUnit runner.
+    // ---------------------------------------------------------------
+
+    @Override
+    @Test
+    public void shouldAllowRegisteringNewIndexDefinitionWithSingleStringColumn() throws Exception {
+        super.shouldAllowRegisteringNewIndexDefinitionWithSingleStringColumn();
+    }
+
+    @Override
+    @Test
+    public void shouldUseSingleColumnStringIndexInQueryAgainstSameNodeType() throws Exception {
+        super.shouldUseSingleColumnStringIndexInQueryAgainstSameNodeType();
     }
 }
