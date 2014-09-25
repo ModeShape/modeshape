@@ -14,35 +14,61 @@
     <url>http://www.modeshape.org</url>
     <dependencies>
         <dependency>
-            <groupId>javax.jcr</groupId>
-            <artifactId>jcr</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-explorer</artifactId>
         </dependency>
 
         <!--The following dependencies are installed in the container and will be picked up via the manifest-->
         <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-explorer</artifactId>
-            <type>war</type>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
-   <build>
-       <finalName>modeshape-standalone-explorer-${project.version}</finalName>
-       <plugins>
-           <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-               <artifactId>maven-surefire-plugin</artifactId>
-               <configuration>
-                   <skip>true</skip>
-               </configuration>
-           </plugin>
-           <plugin>
+    <build>
+        <finalName>modeshape-explorer</finalName>
+        <plugins>
+            <!--Overwrite this plugin from parent, to avoid it requiring a MANIFEST.MF file -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test-jar</id>
+                        <phase>non-existent</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.codehaus.cargo</groupId>
                 <artifactId>cargo-maven2-plugin</artifactId>
+            </plugin>
+            <!--
+                Override the default Surefire behavior to run during
+                integration-test phase
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>surefire-it</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -23,8 +23,6 @@
  */
 package org.modeshape.web.client;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
@@ -34,14 +32,16 @@ import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
  *
  * @author kulikov
  */
-public class AddPropertyDialog extends ModalDialog{
+public class AddPropertyDialog extends ModalDialog {
     
-    private Console console;
+    private Contents contents;
+    
     private ComboBoxItem name = new ComboBoxItem("Property name");
     private TextItem value = new TextItem("Value");
     
-    public AddPropertyDialog(String title, Console console) {
-        super(title, 400, 200);
+    public AddPropertyDialog(Contents contents) {
+        super("Property", 400, 200);
+        this.contents = contents;        
         StaticTextItem description = new StaticTextItem();
         description.setValue("Select property name and specify value");
         description.setTitle("");
@@ -49,31 +49,21 @@ public class AddPropertyDialog extends ModalDialog{
         description.setEndRow(true);
         
         setControls(description, name, value);
-        this.console = console;
     }
     
     @Override
     public void showModal() {
-        JcrTreeNode node = console.navigator.getSelectedNode();
-        if (node != null) {
-            name.setValueMap(node.getPropertyDefs());
-        } 
+        contents.updatePropertyDefs();
         super.showModal();
     }
-        
+    
+    protected void updatePropertyDefs(String[] defs) {
+        name.setValueMap(defs);
+    }
+    
     @Override
     public void onConfirm(ClickEvent event) {
-        String path = console.navigator.getSelectedPath();
-        console.jcrService.setProperty(path, name.getValueAsString(), value.getValueAsString(), new AsyncCallback() {
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess(Object result) {
-            }
-        });
+        contents.setNodeProperty(name.getValueAsString(), value.getValueAsString());
     }
     
 }

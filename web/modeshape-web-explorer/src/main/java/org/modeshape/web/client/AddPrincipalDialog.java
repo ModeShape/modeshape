@@ -26,7 +26,6 @@ package org.modeshape.web.client;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
-import org.modeshape.web.shared.JcrPolicy;
 
 /**
  * Dialog asking principal's name.
@@ -36,11 +35,11 @@ import org.modeshape.web.shared.JcrPolicy;
 public class AddPrincipalDialog extends ModalDialog {
     
     private TextItem name = new TextItem("Principal");
-    private Console console;
+    private Contents contents;
     
-    public AddPrincipalDialog(String title, Console console) {
-        super(title, 400, 200);
-        this.console = console;
+    public AddPrincipalDialog(Contents contents) {
+        super("Add access list", 400, 200);
+        this.contents = contents;
         
         StaticTextItem description = new StaticTextItem();
         description.setValue("Specify principal's name");
@@ -50,13 +49,7 @@ public class AddPrincipalDialog extends ModalDialog {
     
     @Override
     public void onConfirm(ClickEvent event) {
-        //pick up selected node and entered principal name
-        JcrTreeNode node = console.navigator.getSelectedNode();
-        String principal = name.getValueAsString();
-        
-        //add new entry with all permissions and display it
-        node.getAccessList().add(new JcrPolicy(principal));
-        console.nodePanel.display(node.getAccessList(), principal);
+        contents.addAccessList(name.getValueAsString());
     }
     
 }

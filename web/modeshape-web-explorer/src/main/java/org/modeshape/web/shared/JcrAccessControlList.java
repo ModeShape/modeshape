@@ -23,6 +23,7 @@
  */
 package org.modeshape.web.shared;
 
+import com.smartgwt.client.util.SC;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,14 +36,24 @@ import com.smartgwt.client.widgets.grid.ListGridRecord;
  * @author kulikov
  */
 public class JcrAccessControlList implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    private static JcrPermission[] PERMISSIONS = new JcrPermission[] {JcrPermission.ALL, JcrPermission.LIFECYCLE_MANAGEMENT,
-        JcrPermission.LOCK_MANAGEMENT, JcrPermission.NODE_TYPE_MANAGEMENT, JcrPermission.RETENTION_MANAGEMENT,
-        JcrPermission.VERSION_MANAGEMENT, JcrPermission.READ_ACCESS_CONTROL, JcrPermission.MODIFY_ACCESS_CONTROL,
-        JcrPermission.READ, JcrPermission.WRITE, JcrPermission.ADD_CHILD_NODES, JcrPermission.MODIFY_PROPERTIES,
+    private static JcrPermission[] PERMISSIONS = new JcrPermission[] {
+        JcrPermission.ALL, 
+        JcrPermission.LIFECYCLE_MANAGEMENT,
+        JcrPermission.LOCK_MANAGEMENT, 
+        JcrPermission.NODE_TYPE_MANAGEMENT, 
+        JcrPermission.RETENTION_MANAGEMENT,
+        JcrPermission.VERSION_MANAGEMENT, 
+        JcrPermission.READ_ACCESS_CONTROL, 
+        JcrPermission.MODIFY_ACCESS_CONTROL,
+        JcrPermission.READ, 
+        JcrPermission.WRITE, 
+        JcrPermission.ADD_CHILD_NODES, 
+        JcrPermission.MODIFY_PROPERTIES,
         JcrPermission.REMOVE_CHILD_NODES};
 
-    private ArrayList<JcrPolicy> entries = new ArrayList();
+    private ArrayList<JcrPolicy> entries = new ArrayList<JcrPolicy>();
     private boolean isModified = false;
 
     public static JcrAccessControlList defaultInstance() {
@@ -91,6 +102,8 @@ public class JcrAccessControlList implements Serializable {
         if (policy != null) {
             entries.remove(policy);
             this.isModified = true;
+        } else {
+            SC.say("principal not found");
         }
     }
 
@@ -160,5 +173,14 @@ public class JcrAccessControlList implements Serializable {
 
     public void cleanModificationFlag() {
         this.isModified = false;
+    }
+    
+    public String[] principals() {
+        String[] res = new String[entries.size()];
+        int i = 0;
+        for (JcrPolicy p : entries) {
+            res[i++] = p.getPrincipal();
+        }
+        return res;
     }
 }

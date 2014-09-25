@@ -41,7 +41,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -126,18 +126,20 @@ public class JBossASKitTest {
 
     @Test
     public void webApplicationsShouldBeAccessible() throws Exception {
-        DefaultHttpClient httpClient = new DefaultHttpClient();
+        HttpClient httpClient = HttpClientBuilder.create()
+                                                 .setDefaultCredentialsProvider(new BasicCredentialsProvider() {
+                                                     @Override
+                                                     public Credentials getCredentials( AuthScope authscope ) {
+                                                         //defined via modeshape-user and modeshape-roles
+                                                         return new UsernamePasswordCredentials("admin", "admin");
+                                                     }
+                                                 })
+                                                 .build();
 
-        httpClient.setCredentialsProvider(new BasicCredentialsProvider() {
-            @Override
-            public Credentials getCredentials( AuthScope authscope ) {
-                //defined via modeshape-user and modeshape-roles
-                return new UsernamePasswordCredentials("admin", "admin");
-            }
-        });
         assertURIisAccessible("http://localhost:8080/modeshape-webdav", httpClient);
         assertURIisAccessible("http://localhost:8080/modeshape-rest", httpClient);
         assertURIisAccessible("http://localhost:8080/modeshape-cmis", httpClient);
+        assertURIisAccessible("http://localhost:8080/modeshape-explorer", httpClient);
     }
 
     private void assertURIisAccessible( String uri,
