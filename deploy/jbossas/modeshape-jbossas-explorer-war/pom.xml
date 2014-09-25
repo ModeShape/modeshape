@@ -6,7 +6,7 @@
         <artifactId>modeshape-parent</artifactId>
         <version>3.8-SNAPSHOT</version>
         <relativePath>../../../modeshape-parent/pom.xml</relativePath>
-    </parent>
+    </parent> 
     <artifactId>modeshape-jbossas-explorer-war</artifactId>
     <packaging>war</packaging>
     <name>ModeShape Explorer for JBoss AS</name>
@@ -17,7 +17,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-explorer</artifactId>
-            <type>war</type>
         </dependency>
     </dependencies>
     <build>

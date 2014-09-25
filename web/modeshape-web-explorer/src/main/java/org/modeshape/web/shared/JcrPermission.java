@@ -23,7 +23,6 @@
  */
 package org.modeshape.web.shared;
 
-import com.smartgwt.client.util.SC;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,10 +34,12 @@ import javax.jcr.security.Privilege;
  * @author kulikov
  */
 public class JcrPermission implements Serializable {
-    
+    private static final long serialVersionUID = 1L;
     private String name;
     private String displayName;
-    private ArrayList<JcrPermission> aggregates = new ArrayList();
+    private String jcrName;
+    
+    private ArrayList<JcrPermission> aggregates = new ArrayList<JcrPermission>();
     
     public static final JcrPermission LIFECYCLE_MANAGEMENT = new JcrPermission(Privilege.JCR_LIFECYCLE_MANAGEMENT, "Life cycle management");
     public static final JcrPermission LOCK_MANAGEMENT = new JcrPermission(Privilege.JCR_LOCK_MANAGEMENT, "Lock management");
@@ -92,21 +93,35 @@ public class JcrPermission implements Serializable {
         }
         return null;
     }
+
+    public static JcrPermission forName(String name) {
+        for (int i = 0; i < PERMISSIONS.length; i++) {
+            if (PERMISSIONS[i].getName().equalsIgnoreCase(name)) {
+                return PERMISSIONS[i];
+            }
+        }
+        return null;
+    }
     
     public JcrPermission() {
     }
     
-    public JcrPermission(String name) {
-        this.name = name;
+    protected JcrPermission(String name) {
+        if (name.startsWith("{")) {
+            this.name = "jcr:" + name.substring(name.indexOf("}") + 1);
+            this.jcrName = name;
+        } else {
+            this.name = name;
+        }
     }
     
-    public JcrPermission(String name, String displayName) {
-        this.name = name;
+    protected JcrPermission(String name, String displayName) {
+        this(name);
         this.displayName = displayName;
     }
     
-    public JcrPermission(String name, String displayName, JcrPermission... aggregates) {
-        this.name = name;
+    protected JcrPermission(String name, String displayName, JcrPermission... aggregates) {
+        this(name);
         this.displayName = displayName;
         this.aggregates.addAll(Arrays.asList(aggregates));
     }
@@ -127,8 +142,12 @@ public class JcrPermission implements Serializable {
         this.displayName = displayName;
     }
     
+    public String getJcrName() {
+        return jcrName;
+    }
+    
     public boolean matches(JcrPermission permission) {
-        if (this.name.equals(permission.name)) {
+        if (this.name.equalsIgnoreCase(permission.name)) {
             return true;
         }
         

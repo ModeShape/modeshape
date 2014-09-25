@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+    version="3.0">
+    
+    <!--
+        This section is used to define the access privileges to a collection of 
+        resources using their URL mapping.
+    
+        By default the entire web application  requires authentication
+    -->    
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Web-Explorer</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <!--
+            A user must be assigned this role to connect to this web application, 
+            in addition to needing the READONLY, READWRITE or ADMIN roles to 
+            actually connect to the repository, read or modify the data.
+            This is not used internally, so another role could be substituted here.
+        -->        
+        <auth-constraint>
+            <role-name>connect</role-name>
+        </auth-constraint>
+    </security-constraint>  
+      
+    <!--
+        BASIC is only allowed method.
+    -->
+    <login-config>
+        <auth-method>BASIC</auth-method>
+    </login-config>
+
+    <!--
+       This must match the role-name in the auth-constraint above.
+    -->
+    <security-role>
+        <role-name>connect</role-name>
+    </security-role>
+</web-app>

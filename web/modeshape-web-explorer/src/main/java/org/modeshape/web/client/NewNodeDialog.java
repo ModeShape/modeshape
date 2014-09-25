@@ -23,28 +23,24 @@
  */
 package org.modeshape.web.client;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 
 /**
  * Dialog asking node's name and primary type and creating new node.
- * 
+ *
  * @author kulikov
  */
 public class NewNodeDialog extends ModalDialog {
 
     private TextItem name = new TextItem();
     private ComboBoxItem primaryType = new ComboBoxItem();
-
-    private Console console;
-
-    public NewNodeDialog( String title,
-                          Console console ) {
-        super(title, 450, 250);
-        this.console = console;
+    private Contents contents;
+    
+    public NewNodeDialog(Contents contents) {
+        super("Create new node", 450, 250);
+        this.contents = contents;
 
         name.setName("name");
         name.setTitle("Node name");
@@ -74,39 +70,16 @@ public class NewNodeDialog extends ModalDialog {
 
     @Override
     public void showModal() {
-        console.jcrService.getPrimaryTypes(false, new AsyncCallback<String[]>() {
-            @Override
-            public void onFailure( Throwable caught ) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess( String[] result ) {
-                primaryType.setValueMap(result);
-                NewNodeDialog.super.showModal();
-            }
-        });
+        contents.updatePrimaryTypes();
+        super.showModal();
     }
 
+    protected void updatePrimaryTypes(String[] primaryTypes) {
+        primaryType.setValueMap(primaryTypes);
+    }
+    
     @Override
-    public void onConfirm( com.smartgwt.client.widgets.form.fields.events.ClickEvent event ) {
-        String path = NewNodeDialog.this.console.navigator.getSelectedPath();
-        NewNodeDialog.this.console.jcrService.addNode(path,
-                                                      name.getValueAsString(),
-                                                      primaryType.getValueAsString(),
-                                                      new AsyncCallback() {
-
-                                                          @Override
-                                                          public void onFailure( Throwable caught ) {
-                                                              SC.say(caught.getMessage());
-                                                          }
-
-                                                          @Override
-                                                          public void onSuccess( Object result ) {
-                                                              console.navigator.selectNode();
-                                                          }
-
-                                                      });
+    public void onConfirm(com.smartgwt.client.widgets.form.fields.events.ClickEvent event) {
+        contents.addNode(name.getValueAsString(), primaryType.getValueAsString());
     }
-
 }

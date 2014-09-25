@@ -6,9 +6,9 @@
         <artifactId>modeshape-parent</artifactId>
         <version>3.8-SNAPSHOT</version>
         <relativePath>../../modeshape-parent</relativePath>
-    </parent>
+    </parent> 
     <artifactId>modeshape-web-explorer</artifactId>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>ModeShape Repository Explorer (Bare)</name>
     <description>ModeShape repository explorer that does not contain ModeShape libraries</description>
     <url>http://www.modeshape.org</url>
@@ -26,12 +26,6 @@
         </dependency>
 
         <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr-api</artifactId>
             <scope>provided</scope>
@@ -39,56 +33,38 @@
 
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr</artifactId>
+            <scope>provided</scope>		
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-user</artifactId>
+            <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.googlecode.sardine</groupId>
-            <artifactId>sardine</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-servlet</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.gwt</groupId>
-            <artifactId>gwt-user</artifactId>
-            <scope>provided</scope>
-        </dependency>              
+
         <dependency>
             <groupId>smartgwt</groupId>
             <artifactId>smartgwt</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.smartgwt</groupId>
-            <artifactId>smartgwt-skins</artifactId>
+            <type>jar</type>
         </dependency>
 
         <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr</artifactId>
-            <scope>test</scope>
+            <groupId>com.smartgwt</groupId>
+            <artifactId>smartgwt-skins</artifactId>
+            <type>jar</type>
         </dependency>
     </dependencies>
     <build>
@@ -98,7 +74,18 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
-        <plugins>            
+        <plugins>
+            <!--Overwrite this plugin from parent, to avoid it requiring a MANIFEST.MF file -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test-jar</id>
+                        <phase>non-existent</phase>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>gwt-maven-plugin</artifactId>
@@ -112,25 +99,18 @@
                 </executions>
                 <configuration>
                     <runTarget>org.modeshape.explorer.client.Explorer/Explorer.html</runTarget>
+                    <webappDirectory>target/classes/META-INF/resources</webappDirectory>
+                    <persistentunitcachedir>target/gwt-unitCache</persistentunitcachedir>
                 </configuration>
-            </plugin>            
+            </plugin>
+            <!--We don't have any tests in this module -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>test-jar</id>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <archive>
-                        <manifestFile>${project.build.testOutputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
+                    <skip>true</skip>
                 </configuration>
-            </plugin>           
+            </plugin>
         </plugins>
     </build>
     <profiles>

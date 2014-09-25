@@ -24,7 +24,6 @@
 package org.modeshape.web.client;
 
 import java.io.Serializable;
-import java.text.ParseException;
 
 /**
  * Represents fully qualified node path including repository name and workspace.
@@ -32,10 +31,19 @@ import java.text.ParseException;
  * @author kulikov
  */
 public class JcrURL implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String context;
     private String repository;
     private String workspace;
     private String path;
+    
+    public void parse2(String uri) {
+        String path = uri;
+        path = path.replace("http://", "");
+        int pos = path.indexOf("/");
+        path = path.substring(pos);
+        parse(path);
+    }
     
     public void parse(String uri) {
         if (uri.startsWith("/")) {

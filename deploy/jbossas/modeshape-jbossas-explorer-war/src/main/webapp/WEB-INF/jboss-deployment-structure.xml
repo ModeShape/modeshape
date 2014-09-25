@@ -1,0 +1,9 @@
+<jboss-deployment-structure>
+    <deployment>
+        <dependencies>
+            <module name="javax.jcr"/>
+            <module name="org.modeshape.jcr.api" services="import"/>
+            <module name="org.modeshape" services="import"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>

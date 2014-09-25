@@ -1,0 +1,48 @@
+<web-fragment xmlns="http://java.sun.com/xml/ns/javaee"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+              http://java.sun.com/xml/ns/javaee/web-fragment_3_0.xsd"
+              version="3.0">
+    <!--
+        The ModeShape Web-Explorer implementation allows the HTTP credentials to for
+        authentication and authorization within the JCR repository. 
+        This should generally not be modified.
+    --> 
+    <filter>
+        <filter-name>ConnectFilter</filter-name>
+        <filter-class>org.modeshape.web.AuthFilter</filter-class>
+    </filter>       
+    <filter-mapping>
+        <filter-name>ConnectFilter</filter-name>
+        <servlet-name>jcrServlet</servlet-name>        
+    </filter-mapping>
+    
+    <servlet>
+        <servlet-name>jcrServlet</servlet-name>
+        <servlet-class>org.modeshape.web.server.JcrServiceImpl</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>InitialServlet</servlet-name>
+        <servlet-class>org.modeshape.web.InitialServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>BackupExportServlet</servlet-name>
+        <servlet-class>org.modeshape.web.BackupExportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>jcrServlet</servlet-name>
+        <url-pattern>/console/jcr</url-pattern>
+    </servlet-mapping>
+    <!-- Default page to serve -->
+    <servlet-mapping>
+        <servlet-name>InitialServlet</servlet-name>
+        <url-pattern>/tree/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>BackupExportServlet</servlet-name>
+        <url-pattern>/console/backup/*</url-pattern>
+    </servlet-mapping>
+    <welcome-file-list>
+        <welcome-file>Console.html</welcome-file>
+    </welcome-file-list>
+</web-fragment>

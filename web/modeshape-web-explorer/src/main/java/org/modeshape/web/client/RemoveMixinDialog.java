@@ -23,8 +23,6 @@
  */
 package org.modeshape.web.client;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
@@ -35,12 +33,12 @@ import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
  */
 public class RemoveMixinDialog extends ModalDialog {
     
-    private Console console;
+    private Contents contents;
     private ComboBoxItem mixins = new ComboBoxItem("Mixin type");
     
-    public RemoveMixinDialog(String title, Console console) {
-        super(title, 450, 150);
-        this.console = console;
+    public RemoveMixinDialog(Contents contents) {
+        super("Remove mixin", 450, 150);
+        this.contents = contents;
         
         StaticTextItem description = new StaticTextItem();
         description.setValue("Select mixin type");
@@ -53,25 +51,17 @@ public class RemoveMixinDialog extends ModalDialog {
     
     @Override
     public void showModal() {
-        mixins.setValueMap(console.navigator.getSelectedNode().getMixins());
+        contents.updateMixinTypes();
         super.showModal();
+    }
+    
+    protected void updateMixinTypes(String[] mixins) {
+        this.mixins.setValueMap(mixins);
     }
     
     @Override
     public void onConfirm(ClickEvent event) {
-        console.jcrService.removeMixin(console.navigator.getSelectedPath(), mixins.getValueAsString(), new AsyncCallback(){
-
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess(Object result) {
-                console.navigator.selectNode();
-            }
-            
-        });
+        contents.removeMixin(mixins.getValueAsString());
     }
     
 }
