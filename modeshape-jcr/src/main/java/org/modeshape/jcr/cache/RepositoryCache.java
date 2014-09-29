@@ -198,7 +198,7 @@ public class RepositoryCache {
             LOGGER.debug("Initializing the '{0}' repository", name);
         } else {
             // Get the repository key and source key from the repository info document ...
-            Document info = repositoryInfo.getContentAsDocument();
+            Document info = repositoryInfo.getContent();
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Repository '{0}' already initialized at '{1}'", name,
                              info.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME));
@@ -223,8 +223,7 @@ public class RepositoryCache {
                     public Boolean call() throws Exception {
                         LocalDocumentStore store = documentStore().localStore();
                         store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
-                        EditableDocument editor = repositoryInfo.editDocumentContent();
+                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
                         if (editor.get(REPOSITORY_UPGRADER_FIELD_NAME) == null) {
                             // Make sure that some other process didn't sneak in and already upgrade ...
                             int lastUpgradeId = editor.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
@@ -254,7 +253,7 @@ public class RepositoryCache {
             waitUntil(new Callable<Boolean>() {
                 @Override
                 public Boolean call() {
-                    Document info = documentStore().localStore().get(REPOSITORY_INFO_KEY).getContentAsDocument();
+                    Document info = documentStore().localStore().get(REPOSITORY_INFO_KEY).getContent();
                     int lastUpgradeId = info.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
                     return !upgrades.isUpgradeRequired(lastUpgradeId);
                 }
@@ -353,7 +352,7 @@ public class RepositoryCache {
         try {
             SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
             if (repositoryInfoEntry != null) {
-                Document repoInfoDoc = repositoryInfoEntry.getContentAsDocument();
+                Document repoInfoDoc = repositoryInfoEntry.getContent();
                 // we should only remove the repository info if it wasn't initialized successfully previously
                 // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
                 // should not remove the entry)
@@ -435,8 +434,7 @@ public class RepositoryCache {
                     public Void call() throws Exception {
                         LocalDocumentStore store = documentStore().localStore();
                         store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
-                        EditableDocument editor = repositoryInfo.editDocumentContent();
+                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
                         if (editor.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
                             DateTime now = context().getValueFactories().getDateFactory().create();
                             editor.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
@@ -469,8 +467,7 @@ public class RepositoryCache {
 
                         LocalDocumentStore store = documentStore().localStore();
                         store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
-                        EditableDocument editor = repositoryInfo.editDocumentContent();
+                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
                         DateTime now = context().getValueFactories().getDateFactory().create();
                         editor.setDate(REPOSITORY_UPGRADED_AT_FIELD_NAME, now.toDate());
                         editor.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, lastUpgradeId);
@@ -567,7 +564,7 @@ public class RepositoryCache {
 
         if (!update && entry != null) {
             // We just need to read the metadata from the document, and we don't need a transaction for it ...
-            Document doc = entry.getContentAsDocument();
+            Document doc = entry.getContent();
             Property accessProp = translator.getProperty(doc, name("accessControl"));
             boolean enabled = false;
             if (accessProp != null) {
@@ -615,7 +612,7 @@ public class RepositoryCache {
                             entry = documentStore().localStore().get(systemMetadataKeyStr);
                         }
                     }
-                    EditableDocument doc = entry.editDocumentContent();
+                    EditableDocument doc = documentStore().localStore().edit(systemMetadataKeyStr, true);
                     PropertyFactory propFactory = context().getPropertyFactory();
                     translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null, null);
                     translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null, null);
@@ -837,11 +834,9 @@ public class RepositoryCache {
                         DocumentTranslator trans = new DocumentTranslator(context, documentStore, Long.MAX_VALUE);
                         trans.setProperty(rootDoc,
                                           context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT),
-                                          null,
-                                          null);
+                                          null, null);
                         trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()),
-                                          null,
-                                          null);
+                                          null, null);
 
                         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, systemWorkspaceCache,
                                                                            documentStore, translator, rootKey, nodeCache,

@@ -65,11 +65,7 @@ public class DocumentOptimizer implements DocumentConstants {
                                            int targetCountPerBlock,
                                            int tolerance ) {
         if (document == null) {
-            SchematicEntry entry = lookup(key.toString());
-            if (entry == null) {
-                return false;
-            }
-            document = entry.editDocumentContent();
+            document = lookup(key.toString());
             if (document == null) {
                 return false;
             }
@@ -132,8 +128,7 @@ public class DocumentOptimizer implements DocumentConstants {
 
                 // Find the next block ...
                 if (nextKey != null) {
-                    SchematicEntry nextEntry = lookup(nextKey);
-                    doc = nextEntry.editDocumentContent();
+                    doc = lookup(nextKey);
                     docKey = new NodeKey(nextKey);
                 } else {
                     doc = null;
@@ -143,8 +138,12 @@ public class DocumentOptimizer implements DocumentConstants {
         return changed;
     }
 
-    protected SchematicEntry lookup( String key ) {
-        return documentStore != null ? documentStore.get(key) : store.get(key);
+    protected EditableDocument lookup( String key ) {
+        if (documentStore != null) {
+            return documentStore.edit(key, false);
+        }
+        SchematicEntry entry = store.get(key);
+        return entry.edit(store);
     }
 
     /**
@@ -295,7 +294,7 @@ public class DocumentOptimizer implements DocumentConstants {
         String nextBlocksNext = null;
         while (nextBlock != null) {
             nextEntry = documentStore.get(nextBlock);
-            Document nextDoc = nextEntry.getContentAsDocument();
+            Document nextDoc = nextEntry.getContent();
             List<?> nextChildren = nextDoc.getArray(CHILDREN);
             Document nextInfo = nextDoc.getDocument(CHILDREN_INFO);
 

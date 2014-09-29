@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.commons.marshall.AbstractExternalizer;
 import org.infinispan.commons.marshall.AdvancedExternalizer;
@@ -45,9 +46,7 @@ import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.document.Timestamp;
 import org.infinispan.schematic.internal.CacheSchematicDb;
 import org.infinispan.schematic.internal.InMemorySchemaLibrary;
-import org.infinispan.schematic.internal.SchematicEntryDelta;
 import org.infinispan.schematic.internal.SchematicEntryLiteral;
-import org.infinispan.schematic.internal.SchematicEntryWholeDelta;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.delta.AddValueIfAbsentOperation;
 import org.infinispan.schematic.internal.delta.AddValueOperation;
@@ -88,7 +87,8 @@ public class Schematic extends DocumentFactory {
      */
     public static SchematicDb get( CacheContainer cacheContainer,
                                    String cacheName ) {
-        Cache<String, SchematicEntry> cache = cacheContainer.getCache(cacheName);
+        Cache<String, SchematicEntry> rawCache = cacheContainer.getCache(cacheName);
+        AdvancedCache<String, SchematicEntry> cache = rawCache.getAdvancedCache();
         return new CacheSchematicDb(cache);
     }
 
@@ -328,8 +328,6 @@ public class Schematic extends DocumentFactory {
 
         // SchematicDb values ...
         externalizers.add(new SchematicEntryLiteral.Externalizer());
-        externalizers.add(new SchematicEntryDelta.Externalizer());
-        externalizers.add(new SchematicEntryWholeDelta.Externalizer());
 
         // Documents ...
         externalizers.add(new DocumentExternalizer()); // BasicDocument and BasicArray

@@ -19,22 +19,17 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import org.infinispan.Cache;
-import org.infinispan.atomic.Delta;
-import org.infinispan.atomic.DeltaAware;
 import org.infinispan.commons.marshall.SerializeWith;
 import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Document.Field;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.delta.Operation;
-import org.infinispan.schematic.internal.delta.PutOperation;
-import org.infinispan.schematic.internal.delta.RemoveOperation;
 import org.infinispan.schematic.internal.document.BasicDocument;
+import org.infinispan.schematic.internal.document.DocumentEditor;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.document.Paths;
 import org.infinispan.schematic.internal.marshall.Ids;
@@ -43,29 +38,24 @@ import org.infinispan.util.logging.LogFactory;
 
 /**
  * The primary implementation of {@link SchematicEntry}.
- * 
+ *
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
- * @since 5.1
- * @see org.infinispan.atomic.AtomicHashMap
  */
 @SerializeWith( SchematicEntryLiteral.Externalizer.class )
-public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
+public class SchematicEntryLiteral implements SchematicEntry {
 
     private static final Log LOGGER = LogFactory.getLog(SchematicEntryLiteral.class);
-    private static final boolean TRACE = LOGGER.isTraceEnabled();
 
     protected static class FieldPath {
         protected static final Path ROOT = Paths.path();
         protected static final Path METADATA = Paths.path(FieldName.METADATA);
         protected static final Path CONTENT = Paths.path(FieldName.CONTENT);
         protected static final Path ID = Paths.path(FieldName.METADATA, FieldName.ID);
-        protected static final Path CONTENT_TYPE = Paths.path(FieldName.METADATA, FieldName.CONTENT_TYPE);
     }
 
     /**
      * Construction only allowed through this factory method. This factory is intended for use internally by the CacheDelegate.
-     * User code should use {@link SchematicEntryLookup#getSchematicValue(CacheContext, String)}.
-     * 
+     *
      * @param cache underlying cache
      * @param key key under which the schematic value exists
      * @return the schematic entry
@@ -79,8 +69,6 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     }
 
     private volatile MutableDocument value;
-    private final AtomicReference<SchematicDelta> delta = new AtomicReference<SchematicDelta>(null);
-    private volatile SchematicEntryProxy proxy;
     volatile boolean copied = false;
     volatile boolean removed = false;
 
@@ -89,8 +77,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     }
 
     public SchematicEntryLiteral( String key ) {
-        Document metadata = new BasicDocument(FieldName.ID, key);
-        value = new BasicDocument(FieldName.METADATA, metadata, FieldName.CONTENT, new BasicDocument());
+        this(key, new BasicDocument());
     }
 
     protected SchematicEntryLiteral( MutableDocument document ) {
@@ -98,20 +85,22 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         assert this.value != null;
     }
 
-    protected SchematicEntryLiteral( String key,
-                                     Document content,
-                                     Document metadata,
-                                     String defaultContentType ) {
-        this(key);
-        internalSetContent(content, metadata, defaultContentType);
+    public SchematicEntryLiteral( String key,
+                                  Document content ) {
+        Document metadata = new BasicDocument(FieldName.ID, key);
+        value = new BasicDocument(FieldName.METADATA, metadata, FieldName.CONTENT, unwrap(content));
     }
 
-    protected SchematicEntryLiteral( String key,
-                                     Binary content,
-                                     Document metadata,
-                                     String defaultContentType ) {
-        this(key);
-        internalSetContent(content, metadata, defaultContentType);
+    protected SchematicEntryLiteral( Document metadata,
+                                     Document content ) {
+        value = new BasicDocument(FieldName.METADATA, unwrap(metadata), FieldName.CONTENT, unwrap(content));
+    }
+
+    protected MutableDocument unwrap( Document doc ) {
+        if (doc instanceof EditableDocument) {
+            doc = ((EditableDocument)doc).unwrap();
+        }
+        return (MutableDocument)doc;
     }
 
     protected final String key() {
@@ -120,7 +109,6 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     public SchematicEntryLiteral copyForWrite() {
         SchematicEntryLiteral clone = new SchematicEntryLiteral((MutableDocument)value.clone());
-        clone.proxy = proxy;
         clone.copied = true;
         return clone;
     }
@@ -131,7 +119,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     protected void setDocument( Document document ) {
         assert this.value != null;
-        this.value = (MutableDocument)document;
+        this.value = unwrap(document);
     }
 
     @Override
@@ -139,55 +127,8 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return "SchematicEntryLiteral" + value;
     }
 
-    /**
-     * Builds a thread-safe proxy for this instance so that concurrent reads are isolated from writes.
-     * 
-     *
-     * @param context the cache context
-     * @param mapKey the key
-     * @return an instance of {@link SchematicEntryProxy}
-     */
-    public SchematicEntry getProxy( CacheContext context,
-                                    String mapKey ) {
-        // construct the proxy lazily
-        if (proxy == null) { // DCL is OK here since proxy is volatile (and we live in a post-JDK 5 world)
-            synchronized (this) {
-                if (proxy == null) proxy = new SchematicEntryProxy(context, mapKey);
-            }
-        }
-        return proxy;
-    }
-
     public void markRemoved( boolean b ) {
         removed = b;
-    }
-
-    @Override
-    public Delta delta() {
-        SchematicDelta delta = this.delta.getAndSet(null);
-        return delta != null ? delta : new SchematicEntryWholeDelta(value);
-    }
-
-    protected final SchematicDelta getDelta() {
-        return delta.get();
-    }
-
-    protected void createDelta( CacheContext context ) {
-        assert delta.get() == null;
-        if (context.isDeltaContainingChangesEnabled()) {
-            delta.set(new SchematicEntryDelta(key()));
-        } else {
-            delta.set(new SchematicEntryWholeDelta(value));
-        }
-    }
-
-    @Override
-    public void commit() {
-        if (TRACE) {
-            LOGGER.trace("Committed " + getKey() + ": " + data());
-        }
-        copied = false;
-        delta.set(null);
     }
 
     @Override
@@ -200,55 +141,11 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     }
 
     @Override
-    public String getContentType() {
-        return getMetadata().getString(FieldName.CONTENT_TYPE);
-    }
-
-    @Override
-    public Object getContent() {
-        return value.get(FieldName.CONTENT);
-    }
-
-    @Override
-    public Document getContentAsDocument() {
+    public Document getContent() {
         return value.getDocument(FieldName.CONTENT);
     }
 
-    @Override
-    public Binary getContentAsBinary() {
-        return value.getBinary(FieldName.CONTENT);
-    }
-
-    @Override
-    public boolean hasDocumentContent() {
-        return getContentAsDocument() != null;
-    }
-
-    @Override
-    public boolean hasBinaryContent() {
-        return getContentAsBinary() != null;
-    }
-
-    protected Object setContent( Object content ) {
-        assert content != null;
-        if (content instanceof EditableDocument) {
-            content = ((EditableDocument)content).unwrap();
-        }
-
-        Object existing = this.value.put(FieldName.CONTENT, content);
-        SchematicDelta delta = this.delta.get();
-        if (delta != null && delta.isRecordingOperations()) {
-            if (existing != null) {
-                delta.addOperation(new PutOperation(FieldPath.ROOT, FieldName.CONTENT, existing, content));
-            } else {
-                delta.addOperation(new RemoveOperation(FieldPath.ROOT, FieldName.CONTENT, content));
-            }
-        }
-        return existing;
-    }
-
-    protected void setMetadata( Document metadata,
-                                String defaultContentType ) {
+    protected void setMetadata( Document metadata ) {
         if (metadata != null) {
             if (metadata instanceof EditableDocument) metadata = ((EditableDocument)metadata).unwrap();
 
@@ -262,66 +159,32 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
                 newMetadata.put(fieldName, field.getValue());
             }
 
-            // Make sure the metadata has the content type
-            if (newMetadata.getString(FieldName.CONTENT_TYPE) == null) {
-                newMetadata.put(FieldName.CONTENT_TYPE, defaultContentType);
-            }
-
             // Now record the change ...
             value.put(FieldName.METADATA, newMetadata);
-            SchematicDelta delta = this.delta.get();
-            if (delta != null && delta.isRecordingOperations()) {
-                PutOperation op = new PutOperation(FieldPath.ROOT, FieldName.METADATA, existingMetadata, newMetadata);
-                delta.addOperation(op);
-            }
         }
     }
 
-    protected void internalSetContent( Document content,
-                                       Document metadata,
-                                       String defaultContentType ) {
-        setContent(content);
-        setMetadata(metadata, defaultContentType);
-    }
-
-    protected void internalSetContent( Binary content,
-                                       Document metadata,
-                                       String defaultContentType ) {
-        setContent(content);
-        setMetadata(metadata, defaultContentType);
-    }
-
     @Override
-    public void setContent( Document content,
-                            Document metadata,
-                            String defaultContentType ) {
-        // Should always go through the proxy instead
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setContent( Binary content,
-                            Document metadata,
-                            String defaultContentType ) {
-        // Should always go through the proxy instead
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public EditableDocument editDocumentContent() {
-        // Should always go through the proxy instead
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public EditableDocument editMetadata() {
-        // Should always go through the proxy instead
-        throw new UnsupportedOperationException();
+    public void setContent( Document content ) {
+        this.value.put(FieldName.CONTENT, unwrap(content));
     }
 
     @Override
     public Document asDocument() {
         return value;
+    }
+
+    @Override
+    public EditableDocument edit( Cache<String, SchematicEntry> cache ) {
+        MutableDocument copy = (MutableDocument)value.clone();
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(copy);
+        cache.put(getKey(), newEntry);
+        return new DocumentEditor((MutableDocument)newEntry.getContent());
+    }
+
+    @Override
+    public SchematicEntryLiteral clone() {
+        return new SchematicEntryLiteral((MutableDocument)value.clone());
     }
 
     boolean apply( Iterable<Operation> changes ) {

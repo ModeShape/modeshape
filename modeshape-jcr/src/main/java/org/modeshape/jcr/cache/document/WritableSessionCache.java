@@ -17,6 +17,7 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -119,7 +120,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Create a new SessionCache that can be used for making changes to the workspace.
-     * 
+     *
      * @param context the execution context; may not be null
      * @param workspaceCache the (shared) workspace cache; may not be null
      * @param sessionContext the context for the session; may not be null
@@ -231,7 +232,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Returns the list of changed nodes at or below the given path, starting with the children.
-     * 
+     *
      * @param nodePath the path of the parent node
      * @return the list of changed nodes
      */
@@ -393,7 +394,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Persist the changes within a transaction.
-     * 
+     *
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
      *         document
@@ -688,7 +689,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      * This method saves the changes made by both sessions within a single transaction. <b>Note that this must be used with
      * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
      * elsewhere (otherwise deadlocks might occur).</b>
-     * 
+     *
      * @param toBeSaved the set of keys identifying the nodes whose changes should be saved; may not be null
      * @param other the other session
      * @param preSaveOperation the pre-save operation
@@ -838,7 +839,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Persist the changes within an already-established transaction.
-     * 
+     *
      * @param changedNodesInOrder the nodes that are to be persisted; may not be null
      * @param persistedCache a view of the existing (persisted) nodes which are going to be modified.
      * @return the ChangeSet encapsulating the changes that were made
@@ -857,8 +858,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         DateTime timestamp = context.getValueFactories().getDateFactory().create();
         String workspaceName = persistedCache.getWorkspaceName();
         String repositoryKey = persistedCache.getRepositoryKey();
-        RecordingChanges changes = new RecordingChanges(context.getId(),
-                context.getProcessId(), repositoryKey, workspaceName, sessionContext().journalId());
+        RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), repositoryKey, workspaceName,
+                                                        sessionContext().journalId());
 
         // Get the documentStore ...
         DocumentStore documentStore = persistedCache.documentStore();
@@ -893,8 +894,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // if there were any referrer changes for the removed nodes, we need to process them
                     ReferrerChanges referrerChanges = referrerChangesForRemovedNodes.get(key);
                     if (referrerChanges != null) {
-                        EditableDocument doc = documentStore.get(keyStr).editDocumentContent();
-                        translator.changeReferrers(doc, referrerChanges);
+                        EditableDocument doc = documentStore.edit(keyStr, false);
+                        if (doc != null) translator.changeReferrers(doc, referrerChanges);
                     }
 
                     // if the node had any binary properties, make sure we decrement the ref count of each
@@ -930,8 +931,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Create an event ...
                     changes.nodeCreated(key, newParent, newPath, primaryType, mixinTypes, node.changedProperties(), queryable);
                 } else {
-                    SchematicEntry nodeEntry = documentStore.get(keyStr);
-                    if (nodeEntry == null) {
+                    doc = documentStore.edit(keyStr, true);
+                    if (doc == null) {
                         if (isExternal && renamedExternalNodes.contains(key)) {
                             // this is a renamed external node which has been processed in the parent, so we can skip it
                             continue;
@@ -940,7 +941,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // just moments before we got our transaction to save ...
                         throw new DocumentNotFoundException(keyStr);
                     }
-                    doc = nodeEntry.editDocumentContent();
                     if (newParent != null) {
                         persisted = persistedCache.getNode(key);
                         // The node has moved (either within the same parent or to another parent) ...
@@ -966,8 +966,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     MixinChanges mixinChanges = node.mixinChanges(false);
                     if (mixinChanges != null && !mixinChanges.isEmpty()) {
                         Property oldProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
-                        translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded(), unusedBinaryKeys,
-                                                     usedBinaryKeys);
+                        translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded(),
+                                                     unusedBinaryKeys, usedBinaryKeys);
                         translator.removePropertyValues(doc, JcrLexicon.MIXIN_TYPES, mixinChanges.getRemoved(), unusedBinaryKeys,
                                                         usedBinaryKeys);
                         // the property was changed ...
@@ -1247,7 +1247,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 SchematicEntry entry = documentStore.get(removedKey.toString());
                 if (entry != null) {
                     // The entry hasn't yet been removed by another (concurrent) session ...
-                    Document doc = documentStore.get(removedKey.toString()).getContentAsDocument();
+                    Document doc = documentStore.get(removedKey.toString()).getContent();
                     referrers.addAll(translator.getReferrers(doc, ReferenceType.STRONG));
                 }
             }
@@ -1285,48 +1285,47 @@ public class WritableSessionCache extends AbstractSessionCache {
         return changes;
     }
 
-    private WorkspaceCache lockNodes( Iterable<NodeKey> changedNodesInOrder ) {
+    private WorkspaceCache lockNodes( Collection<NodeKey> changedNodesInOrder ) {
+        if (changedNodesInOrder.isEmpty()) {
+            return workspaceCache();
+        }
         DocumentStore documentStore = workspaceCache().documentStore();
 
-        if (documentStore.updatesRequirePreparing()) {
-            if (LOGGER.isDebugEnabled()) {
-                if (!this.changedNodes.isEmpty()) {
-                    LOGGER.debug("Attempting to lock nodes in Infinispan: {0}", changedNodes.keySet());
-                }
+        if (LOGGER.isDebugEnabled()) {
+            if (!this.changedNodes.isEmpty()) {
+                LOGGER.debug("Attempting to lock nodes in Infinispan: {0}", changedNodes.keySet());
             }
-            // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
-            Set<String> keysToLock = new HashSet<String>();
+        }
+        // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
+        Set<String> keysToLock = new HashSet<String>();
 
-            for (NodeKey key : changedNodesInOrder) {
-                SessionNode node = changedNodes.get(key);
-                if (node != REMOVED && !node.isNew()) {
-                    String keyStr = key.toString();
-                    keysToLock.add(keyStr);
-                }
+        for (NodeKey key : changedNodesInOrder) {
+            SessionNode node = changedNodes.get(key);
+            if (node != REMOVED && !node.isNew()) {
+                String keyStr = key.toString();
+                keysToLock.add(keyStr);
             }
+        }
+        if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
+            // try again ...
             if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
-                // try again ...
-                if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
-                    throw new org.infinispan.util.concurrent.TimeoutException("Unable to acquire storage locks: " + keysToLock);
-                } else if (LOGGER.isDebugEnabled()) {
-                    if (!keysToLock.isEmpty()) {
-                        LOGGER.debug("Locked the nodes: {0}", keysToLock);
-                    }
-                }
+                throw new org.infinispan.util.concurrent.TimeoutException("Unable to acquire storage locks: " + keysToLock);
             } else if (LOGGER.isDebugEnabled()) {
                 if (!keysToLock.isEmpty()) {
                     LOGGER.debug("Locked the nodes: {0}", keysToLock);
                 }
             }
-        } else {
-            LOGGER.debug("Infinispan is not configured with pessimistic locks, no nodes will be locked");
+        } else if (LOGGER.isDebugEnabled()) {
+            if (!keysToLock.isEmpty()) {
+                LOGGER.debug("Locked the nodes: {0}", keysToLock);
+            }
         }
         // return a transient workspace cache, which contains the latest view of the nodes which will be changed
         return workspaceCache().persistedCache(changedNodesInOrder);
     }
 
-    private Transactions.TransactionFunction binaryUsageUpdateFunction(final Set<BinaryKey> usedBinaries,
-                                                                       final Set<BinaryKey> unusedBinaries) {
+    private Transactions.TransactionFunction binaryUsageUpdateFunction( final Set<BinaryKey> usedBinaries,
+                                                                        final Set<BinaryKey> unusedBinaries ) {
         final BinaryStore binaryStore = getContext().getBinaryStore();
         return new Transactions.TransactionFunction() {
             @Override

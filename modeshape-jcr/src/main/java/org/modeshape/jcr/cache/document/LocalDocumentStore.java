@@ -27,6 +27,7 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.distexec.DistributedCallable;
 import org.infinispan.schematic.SchematicDb;
@@ -97,12 +98,11 @@ public class LocalDocumentStore implements DocumentStore {
      * @param key the key or identifier for the document
      * @param document the document that is to be stored
      * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
-     * @see SchematicDb#putIfAbsent(String, org.infinispan.schematic.document.Document,
-     *      org.infinispan.schematic.document.Document)
+     * @see SchematicDb#putIfAbsent(String, org.infinispan.schematic.document.Document)
      */
     public SchematicEntry putIfAbsent( String key,
                                        Document document ) {
-        return database.putIfAbsent(key, document, null);
+        return database.putIfAbsent(key, document);
     }
 
     /**
@@ -110,11 +110,11 @@ public class LocalDocumentStore implements DocumentStore {
      * 
      * @param key the key or identifier for the document
      * @param document the document that is to be stored
-     * @see SchematicDb#put(String, org.infinispan.schematic.document.Document, org.infinispan.schematic.document.Document)
+     * @see SchematicDb#put(String, org.infinispan.schematic.document.Document)
      */
     public void put( String key,
                      Document document ) {
-        database.put(key, document, null);
+        database.put(key, document);
     }
 
     /**
@@ -135,7 +135,7 @@ public class LocalDocumentStore implements DocumentStore {
      */
     public void replace( String key,
                          Document document ) {
-        database.replace(key, document, null);
+        database.replace(key, document);
     }
 
     @Override
@@ -149,8 +149,9 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     @Override
-    public boolean updatesRequirePreparing() {
-        return database.isExplicitLockingEnabled();
+    public EditableDocument edit( String key,
+                                  boolean createIfMissing ) {
+        return database.editContent(key, createIfMissing);
     }
 
     @Override
@@ -194,7 +195,7 @@ public class LocalDocumentStore implements DocumentStore {
             // There is no such node ...
             return null;
         }
-        return entry.getContentAsDocument();
+        return entry.getContent();
     }
 
     @Override
@@ -348,7 +349,7 @@ public class LocalDocumentStore implements DocumentStore {
         Combiner<DocumentOperationResults> {
         private static final long serialVersionUID = 1L;
 
-        private transient Cache<String, SchematicEntry> cache;
+        private transient AdvancedCache<String, SchematicEntry> cache;
         private transient Set<String> inputKeys;
         private transient TransactionManager txnMgr;
         private transient DocumentOperation operation;
@@ -362,9 +363,9 @@ public class LocalDocumentStore implements DocumentStore {
                                     Set<String> inputKeys ) {
             assert this.cache != null;
             assert this.inputKeys != null;
-            this.cache = cache;
+            this.cache = cache.getAdvancedCache();
             this.inputKeys = inputKeys;
-            this.txnMgr = this.cache.getAdvancedCache().getTransactionManager();
+            this.txnMgr = this.cache.getTransactionManager();
             this.operation.setEnvironment(this.cache);
         }
 
@@ -374,15 +375,18 @@ public class LocalDocumentStore implements DocumentStore {
             for (String key : inputKeys) {
                 // We operate upon each document within a transaction ...
                 try {
-                    txnMgr.begin();
                     SchematicEntry entry = cache.get(key);
-                    EditableDocument doc = entry.editDocumentContent();
-                    if (operation.execute(key, doc)) {
-                        results.recordModified();
-                    } else {
-                        results.recordUnmodified();
+                    if (entry != null) {
+                        txnMgr.begin();
+                        cache.lock(key);
+                        EditableDocument doc = entry.edit(cache);
+                        if (operation.execute(key, doc)) {
+                            results.recordModified();
+                        } else {
+                            results.recordUnmodified();
+                        }
+                        txnMgr.commit();
                     }
-                    txnMgr.commit();
                 } catch (org.infinispan.util.concurrent.TimeoutException e) {
                     // Couldn't wait long enough for the lock, so skip this for now ...
                     results.recordSkipped();

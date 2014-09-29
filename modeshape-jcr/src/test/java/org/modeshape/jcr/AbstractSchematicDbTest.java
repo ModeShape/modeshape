@@ -33,6 +33,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
+import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
@@ -53,10 +54,8 @@ public abstract class AbstractSchematicDbTest {
     public void beforeEach() {
         logger = Logger.getLogger(getClass());
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.invocationBatching()
-                            .enable()
-                            .transaction()
-                            .transactionManagerLookup(new DummyTransactionManagerLookup());
+        configurationBuilder.invocationBatching().enable().transaction()
+                            .transactionManagerLookup(new DummyTransactionManagerLookup()).lockingMode(LockingMode.PESSIMISTIC);
 
         cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         // Now create the SchematicDb ...
@@ -104,7 +103,7 @@ public abstract class AbstractSchematicDbTest {
                         Document content = dataDoc.getDocument("content");
                         Document metadata = dataDoc.getDocument("metadata");
                         String key = metadata.getString("id");
-                        schematicDb.put(key, content, metadata);
+                        schematicDb.put(key, content);
                     }
                 }
             }

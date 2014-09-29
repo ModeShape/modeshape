@@ -29,7 +29,6 @@ import org.infinispan.notifications.cachelistener.annotation.CacheEntryRemoved;
 import org.infinispan.notifications.cachelistener.event.CacheEntryModifiedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryRemovedEvent;
 import org.infinispan.schematic.SchemaLibrary;
-import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.internal.document.Paths;
@@ -42,14 +41,12 @@ public class CacheSchemaLibrary implements SchemaLibrary, Lifecycle {
 
     private final String name;
     private final Cache<String, SchematicEntry> store;
-    private final String defaultContentType;
     private final SchemaDocumentCache schemaDocuments;
     private final SchemaListener listener;
 
     public CacheSchemaLibrary( Cache<String, SchematicEntry> schemaStore ) {
         this.name = schemaStore.getName();
         this.store = schemaStore;
-        this.defaultContentType = Schematic.ContentTypes.JSON_SCHEMA;
         this.schemaDocuments = new SchemaDocumentCache(this, null);
         this.listener = new SchemaListener(this.schemaDocuments);
         this.store.addListener(this.listener);
@@ -83,21 +80,21 @@ public class CacheSchemaLibrary implements SchemaLibrary, Lifecycle {
     @Override
     public Document put( String key,
                          Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document);
         return document(store.put(key, newEntry));
     }
 
     @Override
     public Document putIfAbsent( String key,
                                  Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document);
         return document(store.putIfAbsent(key, newEntry));
     }
 
     @Override
     public Document replace( String key,
                              Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document);
         return document(store.replace(key, newEntry));
     }
 
@@ -131,7 +128,7 @@ public class CacheSchemaLibrary implements SchemaLibrary, Lifecycle {
     }
 
     protected Document document( SchematicEntry entry ) {
-        return entry != null ? entry.getContentAsDocument() : null;
+        return entry != null ? entry.getContent() : null;
     }
 
     protected NotifyingFuture<Document> future( final NotifyingFuture<SchematicEntry> original ) {
@@ -164,14 +161,14 @@ public class CacheSchemaLibrary implements SchemaLibrary, Lifecycle {
         @Override
         public Document get() throws InterruptedException, ExecutionException {
             SchematicEntry result = original.get();
-            return result != null ? result.getContentAsDocument() : null;
+            return result != null ? result.getContent() : null;
         }
 
         @Override
         public Document get( long timeout,
                              TimeUnit unit ) throws InterruptedException, ExecutionException, TimeoutException {
             SchematicEntry result = original.get(timeout, unit);
-            return result != null ? result.getContentAsDocument() : null;
+            return result != null ? result.getContent() : null;
         }
 
         @Override

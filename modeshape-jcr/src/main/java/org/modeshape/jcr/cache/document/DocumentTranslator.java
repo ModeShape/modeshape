@@ -734,10 +734,11 @@ public class DocumentTranslator implements DocumentConstants {
                 }
 
                 if (nextEntry != null) {
+                    assert docInfo != null && docInfo.nextKey != null;
                     // There is more than one block, so update the block size ...
                     doc.getDocument(CHILDREN_INFO).setNumber(BLOCK_SIZE, blockCount);
 
-                    doc = nextEntry.editDocumentContent();
+                    doc = documentStore.edit(docInfo.nextKey, true);
                     lastDoc = doc;
                     assert docInfo != null;
                     lastDocKey = docInfo.nextKey;
@@ -760,8 +761,7 @@ public class DocumentTranslator implements DocumentConstants {
             String lastKey = info != null ? info.lastKey : null;
             if (lastKey != null && !lastKey.equals(lastDocKey)) {
                 // Find the last document ...
-                SchematicEntry lastBlockEntry = documentStore.get(lastKey);
-                lastDoc = lastBlockEntry.editDocumentContent();
+                lastDoc = documentStore.edit(lastKey, true);
             } else {
                 lastKey = null;
             }
@@ -870,12 +870,9 @@ public class DocumentTranslator implements DocumentConstants {
         if (!hasChildren && !hasFederatedSegments) {
             return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         }
-        ChildReferences internalChildRefs = hasChildren ?
-                                            ImmutableChildReferences.create(this, document, CHILDREN) :
-                                            ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
-        ChildReferences externalChildRefs = hasFederatedSegments ?
-                                            ImmutableChildReferences.create(this, document, FEDERATED_SEGMENTS) :
-                                            ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+        ChildReferences internalChildRefs = hasChildren ? ImmutableChildReferences.create(this, document, CHILDREN) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+        ChildReferences externalChildRefs = hasFederatedSegments ? ImmutableChildReferences.create(this, document,
+                                                                                                   FEDERATED_SEGMENTS) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
 
         // Now look at the 'childrenInfo' document for info about the next block of children ...
         ChildReferencesInfo info = getChildReferencesInfo(document);
@@ -1211,26 +1208,25 @@ public class DocumentTranslator implements DocumentConstants {
 
     /**
      * Increment the reference count for the stored binary value with the supplied SHA-1 hash.
-     * 
+     *
      * @param binaryKey the key for the binary value; never null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
-     * @param usedBinaryKeys the set of binary keys that are considered used; may  be null
+     * @param usedBinaryKeys the set of binary keys that are considered used; may be null
      */
     protected void incrementBinaryReferenceCount( BinaryKey binaryKey,
                                                   Set<BinaryKey> unusedBinaryKeys,
-                                                  Set<BinaryKey> usedBinaryKeys) {
+                                                  Set<BinaryKey> usedBinaryKeys ) {
         // Find the document metadata and increment the usage count ...
         String sha1 = binaryKey.toString();
         String key = keyForBinaryReferenceDocument(sha1);
-        SchematicEntry entry = documentStore.get(key);
+        EditableDocument entry = documentStore.edit(key, false);
         if (entry == null) {
             // The document doesn't yet exist, so create it ...
             Document content = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
             documentStore.localStore().put(key, content);
         } else {
-            EditableDocument sha1Usage = entry.editDocumentContent();
-            Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
-            sha1Usage.setNumber(REFERENCE_COUNT, countValue != null ? countValue + 1 : 1L);
+            Long countValue = entry.getLong(REFERENCE_COUNT);
+            entry.setNumber(REFERENCE_COUNT, countValue != null ? countValue + 1 : 1L);
         }
         // We're using the sha1, so remove it if its in the set of unused binary keys ...
         if (unusedBinaryKeys != null) {
@@ -1273,9 +1269,8 @@ public class DocumentTranslator implements DocumentConstants {
             if (sha1 != null) {
                 BinaryKey binaryKey = new BinaryKey(sha1);
                 // Find the document metadata and decrement the usage count ...
-                SchematicEntry entry = documentStore.get(keyForBinaryReferenceDocument(sha1));
-                if (entry != null) {
-                    EditableDocument sha1Usage = entry.editDocumentContent();
+                EditableDocument sha1Usage = documentStore.edit(keyForBinaryReferenceDocument(sha1), false);
+                if (sha1Usage != null) {
                     Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
                     assert countValue != null;
 
@@ -1415,28 +1410,6 @@ public class DocumentTranslator implements DocumentConstants {
             segments.add(segment);
         }
         return segments;
-    }
-
-    protected Object resolveLargeValue( String sha1 ) {
-        // NOTE: In the future, we may want to delay reading the large value. This could be accomplished
-        // by create a Binary implementation that creates reads (and caches) the content. This would definitely
-        // work for large Binary values, but would work for large String values only if we're not later
-        // attempting to discover the PropertyType based upon the value (as the discovery process would
-        // return BINARY for the large String value).
-
-        // Look up the large value in the database ...
-        SchematicEntry entry = documentStore.get(sha1);
-        if (entry == null) {
-            // The large value is no longer there, so return null ...
-            return null;
-        }
-        if (entry.hasBinaryContent()) {
-            // It's a large binary value ...
-            return binaries.create(entry.getContentAsBinary().getBytes());
-        }
-        // Otherwise, it's just a large string value ...
-        Document largeValueDoc = entry.getContentAsDocument();
-        return largeValueDoc.getString(LARGE_VALUE);
     }
 
     /**

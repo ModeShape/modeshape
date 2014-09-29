@@ -1336,7 +1336,7 @@ public final class Connectors {
             if (entry == null) {
                 return NO_PROPERTIES;
             }
-            Document doc = entry.getContentAsDocument();
+            Document doc = entry.getContent();
             Map<Name, Property> props = new HashMap<>();
             translator.getProperties(doc, props);
             return props;
@@ -1366,13 +1366,8 @@ public final class Connectors {
         public void updateProperties( String id,
                                       Map<Name, Property> properties ) {
             String key = keyFor(id);
-            SchematicEntry entry = localStore.get(key);
-            EditableDocument doc = null;
-            if (entry != null) {
-                doc = entry.editDocumentContent();
-            } else {
-                doc = Schematic.newDocument();
-            }
+            EditableDocument doc = localStore.edit(key, true);
+            assert doc != null;
             for (Map.Entry<Name, Property> propertyEntry : properties.entrySet()) {
                 Property property = propertyEntry.getValue();
                 if (property != null) {

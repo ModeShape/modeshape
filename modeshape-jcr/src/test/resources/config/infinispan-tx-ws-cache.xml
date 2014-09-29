@@ -12,6 +12,6 @@
         <transaction
                 transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
                 transactionMode="TRANSACTIONAL"
-                lockingMode="OPTIMISTIC"/>
+                lockingMode="PESSIMISTIC"/>
     </namedCache>
 </infinispan>

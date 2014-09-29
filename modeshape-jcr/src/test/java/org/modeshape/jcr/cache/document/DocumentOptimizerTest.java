@@ -57,8 +57,7 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
     @Test
     public void shouldNotSplitDocumentWithChildReferenceBlocksThatAreAlreadyTooSmall() throws Exception {
         NodeKey key = new NodeKey("source1works1-childB");
-        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
-        EditableDocument doc = entry.editDocumentContent();
+        EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
         EditableArray children = doc.getArray(DocumentTranslator.CHILDREN);
         String nextBlock = doc.getDocument(DocumentTranslator.CHILDREN_INFO).getString(DocumentTranslator.NEXT_BLOCK);
         boolean changed = optimizer.splitChildren(key, doc, children, 100, 50, true, nextBlock);
@@ -68,16 +67,14 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
     @Test
     public void shouldMergeDocumentWithTooSmallChildReferencesSegmentInFirstBlock() throws Exception {
         NodeKey key = new NodeKey("source1works1-childB");
-        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
-        EditableDocument doc = entry.editDocumentContent();
+        EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
         EditableArray children = doc.getArray(DocumentTranslator.CHILDREN);
         String nextBlock = doc.getDocument(DocumentTranslator.CHILDREN_INFO).getString(DocumentTranslator.NEXT_BLOCK);
         optimizer.mergeChildren(key, doc, children, true, nextBlock);
 
         // Refetch the document, which should no longer be segmented ...
-        entry = workspaceCache.documentStore().get(key.toString());
-        doc = entry.editDocumentContent();
-        assertInfo(entry, 2, null, null, true, 0);
+        doc = workspaceCache.documentStore().edit(key.toString(), true);
+        assertInfo(key.toString(), 2, null, null, true, 0);
         children = doc.getArray(DocumentTranslator.CHILDREN);
         assertThat(children.size(), is(2));
         assertChildren(doc, name("childC"), name("childD"));
@@ -98,8 +95,7 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
 
         // Optimize the storage ...
         NodeKey key = nodeB.getKey();
-        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
-        EditableDocument doc = entry.editDocumentContent();
+        EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
         optimizer.optimizeChildrenBlocks(key, doc, 9, 5);
 
         print(false);
@@ -118,8 +114,7 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
 
         // Optimize the storage ...
         NodeKey key = nodeB.getKey();
-        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
-        EditableDocument doc = entry.editDocumentContent();
+        EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
         optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will merge into a single block ...
         optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will split into two blocks ...
 
@@ -169,7 +164,7 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
 
     protected Document document( NodeKey key ) {
         SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
-        return entry.getContentAsDocument();
+        return entry.getContent();
     }
 
     protected void assertChildren( Document doc,
@@ -184,8 +179,7 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
             }
             Segment expectedName = expectedIter.next();
             assertThat("Expecting child \"" + expectedName + "\" but found \"" + childRef.toString() + "\"",
-                       childRef.getSegment(),
-                       is(expectedName));
+                       childRef.getSegment(), is(expectedName));
         }
         if (expectedIter.hasNext()) {
             fail("Expected \"" + expectedIter.next() + "\" but found no such child");
@@ -204,21 +198,20 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
             }
             Name expectedName = expectedIter.next();
             assertThat("Expecting child \"" + expectedName + "[1]\" but found \"" + childRef.toString() + "\"",
-                       childRef.getSegment(),
-                       is(segment(expectedName, 1)));
+                       childRef.getSegment(), is(segment(expectedName, 1)));
         }
         if (expectedIter.hasNext()) {
             fail("Expected \"" + expectedIter.next() + "\" but found no such child");
         }
     }
 
-    protected void assertInfo( SchematicEntry entry,
+    protected void assertInfo( String key,
                                long expectedChildCount,
                                String expectedNextBlock,
                                String expectedLastBlock,
                                boolean firstBlock,
                                long expectedBlockSize ) {
-        Document doc = entry.getContentAsDocument();
+        Document doc = workspaceCache.documentStore().get(key).getContent();
         Document info = doc.getDocument(DocumentTranslator.CHILDREN_INFO);
         assertThat(info.getLong(DocumentTranslator.COUNT), is(expectedChildCount));
         assertThat(info.getString(DocumentTranslator.NEXT_BLOCK), is(expectedNextBlock));

@@ -16,8 +16,8 @@
 
 package org.modeshape.jcr.federation;
 
+import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 
@@ -40,57 +40,22 @@ public class FederatedSchematicEntry implements SchematicEntry {
     }
 
     @Override
-    public String getContentType() {
-        throw new UnsupportedOperationException("Metadata not supported for " + this.getClass().getName());
-    }
-
-    @Override
-    public Object getContent() {
+    public Document getContent() {
         return document;
     }
 
     @Override
-    public Document getContentAsDocument() {
-        return document;
-    }
-
-    @Override
-    public Binary getContentAsBinary() {
-        throw new UnsupportedOperationException("Binaries documents not supported for " + this.getClass().getName());
-    }
-
-    @Override
-    public boolean hasDocumentContent() {
-        return document != null;
-    }
-
-    @Override
-    public boolean hasBinaryContent() {
-        return false;
-    }
-
-    @Override
-    public void setContent( Document content,
-                            Document metadata,
-                            String defaultContentType ) {
+    public void setContent( Document content ) {
         throw new UnsupportedOperationException(this.getClass().getName() + " does support content changing");
     }
 
-    @Override
-    public void setContent( Binary content,
-                            Document metadata,
-                            String defaultContentType ) {
-        throw new UnsupportedOperationException("Binaries documents not supported for " + this.getClass().getName());
+    public EditableDocument edit() {
+        return document;
     }
 
     @Override
-    public EditableDocument editDocumentContent() {
-       return document;
-    }
-
-    @Override
-    public EditableDocument editMetadata() {
-        throw new UnsupportedOperationException("Metadata not supported for " + this.getClass().getName());
+    public EditableDocument edit( Cache<String, SchematicEntry> cache ) {
+        return document;
     }
 
     @Override

@@ -19,19 +19,21 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import org.infinispan.schematic.SchemaLibrary.Results;
-import org.infinispan.schematic.SchematicEntry.FieldName;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Json;
-import org.infinispan.schematic.internal.document.BasicDocument;
+import org.junit.Before;
 import org.junit.Test;
 
 public class SchematicDbTest extends AbstractSchematicDbTest {
+
+    private volatile boolean print = false;
+
+    @Before
+    public void beforeEach() {
+        print = false;
+    }
 
     protected static InputStream resource( String resourcePath ) {
         InputStream result = SchemaValidationTest.class.getClassLoader().getResourceAsStream(resourcePath);
@@ -39,27 +41,20 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         return result;
     }
 
-    protected void loadSchemas() throws IOException {
-        SchemaLibrary schemas = db.getSchemaLibrary();
-        schemas.put("http://json-schema.org/draft-03/schema#", Json.read(resource("json/schema/draft-03/schema.json")));
-        schemas.put("json/schema/spec-example.json", Json.read(resource("json/schema/spec-example.json")));
-    }
-
     @Test
     public void shouldStoreDocumentWithUnusedKeyAndWithNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc, null);
+        SchematicEntry prior = db.put(key, doc);
         assertThat("Should not have found a prior entry", prior, is(nullValue()));
         SchematicEntry entry = db.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
-        Document read = entry.getContentAsDocument();
+        Document read = entry.getContent();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k2"), is(2));
-        assertThat("Should not have a Binary value for the entry's content", entry.getContentAsBinary(), is(nullValue()));
         assertThat(read.containsAll(doc), is(true));
         assertThat(read.equals(doc), is(true));
 
@@ -72,9 +67,8 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     @Test
     public void shouldStoreDocumentWithUnusedKeyAndWithNonNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
-        Document metadata = Schematic.newDocument("mimeType", "text/plain");
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc, metadata);
+        SchematicEntry prior = db.put(key, doc);
         assertThat("Should not have found a prior entry", prior, is(nullValue()));
 
         // Read back from the database ...
@@ -82,66 +76,25 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
-        Document read = entry.getContentAsDocument();
+        Document read = entry.getContent();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k2"), is(2));
-        assertThat("Should not have a Binary value for the entry's content", entry.getContentAsBinary(), is(nullValue()));
         assertThat(read.containsAll(doc), is(true));
         assertThat(read.equals(doc), is(true));
 
         // Verify the metadata ...
         Document readMetadata = entry.getMetadata();
-        assertThat(readMetadata, is(notNullValue()));
-        assertThat(readMetadata.getString("mimeType"), is(metadata.getString("mimeType")));
-        assertThat(readMetadata.containsAll(metadata), is(true));
-
-        // metadata contains more than what we specified ...
-        assertThat("Expected:\n" + metadata + "\nFound: \n" + readMetadata, readMetadata.equals(metadata), is(false));
-    }
-
-    @Test
-    public void shouldStoreDocumentAndValidateAfterRefetching() throws Exception {
-        loadSchemas();
-        Document doc = Json.read(resource("json/spec-example-doc.json"));
-        String key = "json/spec-example-doc.json";
-        String schemaUri = "json/schema/spec-example.json";
-        Document metadata = new BasicDocument(FieldName.SCHEMA_URI, schemaUri);
-        db.put(key, doc, metadata);
-        Results results = db.getSchemaLibrary().validate(doc, schemaUri);
-        assertThat("There are validation problems: " + results, results.hasProblems(), is(false));
-
-        SchematicEntry actualEntry = db.get(key);
-        Document actualMetadata = actualEntry.getMetadata();
-        Document actualDocument = actualEntry.getContentAsDocument();
-        assertThat(actualMetadata, is(notNullValue()));
-        assertThat(actualDocument, is(notNullValue()));
-        assertThat("The $schema in the metadata doesn't match: " + metadata,
-                   actualMetadata.getString(FieldName.SCHEMA_URI),
-                   is(schemaUri));
-
-        // Validate just the document ...
-        results = db.validate(key);
-        assertThat("There are validation problems: " + results, results.hasProblems(), is(false));
-
-        // Now validate the whole database ...
-        Map<String, Results> resultsByKey = db.validate(key, "non-existant");
-        assertThat(resultsByKey, is(notNullValue()));
-        assertThat("There are validation problems: " + resultsByKey.get(key), resultsByKey.containsKey(key), is(false));
-
-        // Now validate the whole database ...
-        resultsByKey = db.validateAll();
-        assertThat(resultsByKey, is(notNullValue()));
-        assertThat("There are validation problems: " + resultsByKey.get(key), resultsByKey.containsKey(key), is(false));
+        assert readMetadata != null;
+        assert readMetadata.getString("id").equals(key);
     }
 
     @Test
     public void shouldStoreDocumentAndFetchAndModifyAndRefetch() throws Exception {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
-        Document metadata = Schematic.newDocument("mimeType", "text/plain");
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc, metadata);
+        SchematicEntry prior = db.put(key, doc);
         assertThat("Should not have found a prior entry", prior, is(nullValue()));
 
         // Read back from the database ...
@@ -149,18 +102,18 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
-        Document read = entry.getContentAsDocument();
+        Document read = entry.getContent();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k2"), is(2));
-        assertThat("Should not have a Binary value for the entry's content", entry.getContentAsBinary(), is(nullValue()));
         assertThat(read.containsAll(doc), is(true));
         assertThat(read.equals(doc), is(true));
 
         // Modify using an editor ...
         try {
             tm.begin();
-            EditableDocument editable = entry.editDocumentContent();
+            db.lock(key);
+            EditableDocument editable = db.editContent(key, true);
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
         } finally {
@@ -169,7 +122,7 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
 
         // Now re-read ...
         SchematicEntry entry2 = db.get(key);
-        Document read2 = entry2.getContentAsDocument();
+        Document read2 = entry2.getContent();
         assertThat(read2, is(notNullValue()));
         assertThat(read2.getString("k1"), is("value1"));
         assertThat(read2.getInteger("k2"), is(2));
@@ -181,9 +134,8 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     public void shouldStoreDocumentAndFetchAndModifyAndRefetchUsingTransaction() throws Exception {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
-        Document metadata = Schematic.newDocument("mimeType", "text/plain");
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc, metadata);
+        SchematicEntry prior = db.put(key, doc);
         assertThat("Should not have found a prior entry", prior, is(nullValue()));
 
         // Read back from the database ...
@@ -191,18 +143,18 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
-        Document read = entry.getContentAsDocument();
+        Document read = entry.getContent();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k2"), is(2));
-        assertThat("Should not have a Binary value for the entry's content", entry.getContentAsBinary(), is(nullValue()));
         assertThat(read.containsAll(doc), is(true));
         assertThat(read.equals(doc), is(true));
 
         // Modify using an editor ...
         try {
             tm.begin();
-            EditableDocument editable = entry.editDocumentContent();
+            db.lock(key);
+            EditableDocument editable = db.editContent(key, true);
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
         } finally {
@@ -211,7 +163,7 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
 
         // Now re-read ...
         SchematicEntry entry2 = db.get(key);
-        Document read2 = entry2.getContentAsDocument();
+        Document read2 = entry2.getContent();
         assertThat(read2, is(notNullValue()));
         assertThat(read2.getString("k1"), is("value1"));
         assertThat(read2.getInteger("k2"), is(2));
@@ -221,10 +173,10 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
 
     @FixFor( "MODE-1734" )
     @Test
-    public void shouldAllowMultipleConcurrentWritersToUpdateEntry() throws Exception {
+    public void shouldAllowMultipleConcurrentWritersToUpdateEntryInSerialFashion() throws Exception {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         final String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc, null);
+        SchematicEntry prior = db.put(key, doc);
         assertThat("Should not have found a prior entry", prior, is(nullValue()));
         SchematicEntry entry = db.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
@@ -239,12 +191,12 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
                 try {
                     latch.await(); // synchronize ...
                     tm().begin();
-                    log.info("Began txn1");
-                    SchematicEntry entry = db().get(key);
-                    EditableDocument editor = entry.editDocumentContent();
+                    print("Began txn1");
+                    db.lock(key);
+                    EditableDocument editor = db.editContent(key, true);
                     editor.setNumber("k2", 3); // update an existing field
-                    log.info(editor);
-                    log.info("Committing txn1");
+                    print(editor);
+                    print("Committing txn1");
                     tm().commit();
                 } catch (Exception e) {
                     log.error("Unexpected error performing transaction", e);
@@ -258,12 +210,12 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
                 try {
                     latch.await(); // synchronize ...
                     tm().begin();
-                    log.info("Began txn2");
-                    SchematicEntry entry = db().get(key);
-                    EditableDocument editor = entry.editDocumentContent();
+                    print("Began txn2");
+                    db.lock(key);
+                    EditableDocument editor = db.editContent(key, true);
                     editor.setNumber("k3", 3); // add a new field
-                    log.info(editor);
-                    log.info("Committing txn2");
+                    print(editor);
+                    print("Committing txn2");
                     tm().commit();
                 } catch (Exception e) {
                     log.error("Unexpected error performing transaction", e);
@@ -271,19 +223,28 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
             }
         }, false);
 
+        // print = true;
+
         // Start the threads ...
         latch.countDown();
 
         // Wait for the threads to die ...
         t1.join();
         t2.join();
+        // System.out.println("Completed all threads");
 
         // Now re-read ...
-        Document read = entry.getContentAsDocument();
+        tm().begin();
+        Document read = db.get(key).getContent();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k3"), is(3)); // Thread 2 is last, so this should definitely be there
         assertThat(read.getInteger("k2"), is(3)); // Thread 1 is first, but still shouldn't have been overwritten
+        tm().commit();
+    }
+
+    protected void print( Object obj ) {
+        if (print) log.info(obj);
     }
 
 }

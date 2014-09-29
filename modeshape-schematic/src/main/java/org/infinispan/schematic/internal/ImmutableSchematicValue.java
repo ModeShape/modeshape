@@ -15,75 +15,40 @@
  */
 package org.infinispan.schematic.internal;
 
+import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 
 public class ImmutableSchematicValue implements SchematicEntry {
 
-   private final SchematicEntry delegate;
+    private final SchematicEntry delegate;
 
-   public ImmutableSchematicValue(SchematicEntry delegate) {
-      this.delegate = delegate;
-   }
+    public ImmutableSchematicValue( SchematicEntry delegate ) {
+        this.delegate = delegate;
+    }
 
-   @Override
-   public Document getMetadata() {
-      return delegate.getMetadata();
-   }
+    @Override
+    public Document getMetadata() {
+        return delegate.getMetadata();
+    }
 
-   @Override
-   public Object getContent() {
-      return delegate.getContent();
-   }
+    @Override
+    public Document getContent() {
+        return delegate.getContent();
+    }
 
-   @Override
-   public String getContentType() {
-      return delegate.getContentType();
-   }
+    @Override
+    public void setContent( Document content ) {
+        throw new UnsupportedOperationException("This SchematicValue is read only");
+    }
 
-   @Override
-   public Binary getContentAsBinary() {
-      return delegate.getContentAsBinary();
-   }
+    @Override
+    public EditableDocument edit( Cache<String, SchematicEntry> cache ) {
+        throw new UnsupportedOperationException("This SchematicValue is read only");
+    }
 
-   @Override
-   public Document getContentAsDocument() {
-      return delegate.getContentAsDocument();
-   }
-
-   @Override
-   public boolean hasDocumentContent() {
-      return delegate.hasDocumentContent();
-   }
-
-   @Override
-   public boolean hasBinaryContent() {
-      return delegate.hasBinaryContent();
-   }
-
-   @Override
-   public void setContent(Binary content, Document metadata, String defaultContentType) {
-      throw new UnsupportedOperationException("This SchematicValue is read only");
-   }
-
-   @Override
-   public void setContent(Document content, Document metadata, String defaultContentType) {
-      throw new UnsupportedOperationException("This SchematicValue is read only");
-   }
-
-   @Override
-   public EditableDocument editDocumentContent() {
-      throw new UnsupportedOperationException("This SchematicValue is read only");
-   }
-
-   @Override
-   public EditableDocument editMetadata() {
-      throw new UnsupportedOperationException("This SchematicValue is read only");
-   }
-
-   @Override
+    @Override
     public Document asDocument() {
         return delegate.asDocument();
     }

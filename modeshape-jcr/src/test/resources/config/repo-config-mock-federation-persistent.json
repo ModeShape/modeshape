@@ -5,15 +5,15 @@
         "default" : "default",
         "allowCreation" : true
     },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
+    },
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
             "persistentDataAcrossRestarts" : true,
             "cacheTtlSeconds" : 1
         }
-    },
-    "storage" : {
-        "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
     },
 }

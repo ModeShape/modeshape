@@ -152,6 +152,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * @see #startRepositoryAutomatically
      */
     protected void startRepositoryWithConfiguration( String configContent ) throws Exception {
+        assertThat(configContent, is(notNullValue()));
         Document doc = Json.read(configContent);
         startRepositoryWithConfiguration(doc);
     }
@@ -168,6 +169,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * @see #startRepositoryAutomatically
      */
     protected void startRepositoryWithConfiguration( Document doc ) throws Exception {
+        assertThat(doc, is(notNullValue()));
         RepositoryConfiguration config = new RepositoryConfiguration(doc, REPO_NAME, environment);
         startRepositoryWithConfiguration(config);
     }
@@ -184,6 +186,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * @see #startRepositoryAutomatically
      */
     protected void startRepositoryWithConfiguration( InputStream configInputStream ) throws Exception {
+        assertThat(configInputStream, is(notNullValue()));
         RepositoryConfiguration config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(environment);
         startRepositoryWithConfiguration(config);
     }
@@ -201,6 +204,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * @see #startRepositoryAutomatically
      */
     protected void startRepositoryWithConfiguration( RepositoryConfiguration configuration ) throws Exception {
+        assertThat(configuration, is(notNullValue()));
         config = configuration;
         if (repository != null) {
             try {
