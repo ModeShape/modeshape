@@ -101,6 +101,20 @@ public interface DocumentStore {
                                   boolean createIfMissing );
 
     /**
+     * Remove the existing document at the given key, and optionally explicitly locking the entry before returning the editor.
+     *
+     * @param key the key or identifier for the document
+     * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
+     * @param acquireLock true if the lock for the entry should be obtained before returning, or false if the lock was already
+     *        obtained via {@link #prepareDocumentsForUpdate(Collection)} within the current transaction.
+     * @return true if a document was removed, or false if there was no document with that key
+     * @throws DocumentStoreException if there is a problem removing the document
+     */
+    public EditableDocument edit( String key,
+                                  boolean createIfMissing,
+                                  boolean acquireLock );
+
+    /**
      * Remove the existing document at the given key.
      *
      * @param key the key or identifier for the document

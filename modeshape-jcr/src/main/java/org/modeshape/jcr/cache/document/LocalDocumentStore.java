@@ -27,9 +27,9 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
-import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.distexec.DistributedCallable;
+import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
@@ -152,6 +152,13 @@ public class LocalDocumentStore implements DocumentStore {
     public EditableDocument edit( String key,
                                   boolean createIfMissing ) {
         return database.editContent(key, createIfMissing);
+    }
+
+    @Override
+    public EditableDocument edit( String key,
+                                  boolean createIfMissing,
+                                  boolean acquireLock ) {
+        return database.editContent(key, createIfMissing, acquireLock);
     }
 
     @Override
@@ -349,7 +356,7 @@ public class LocalDocumentStore implements DocumentStore {
         Combiner<DocumentOperationResults> {
         private static final long serialVersionUID = 1L;
 
-        private transient AdvancedCache<String, SchematicEntry> cache;
+        private transient SchematicDb db;
         private transient Set<String> inputKeys;
         private transient TransactionManager txnMgr;
         private transient DocumentOperation operation;
@@ -361,12 +368,12 @@ public class LocalDocumentStore implements DocumentStore {
         @Override
         public void setEnvironment( Cache<String, SchematicEntry> cache,
                                     Set<String> inputKeys ) {
-            assert this.cache != null;
-            assert this.inputKeys != null;
-            this.cache = cache.getAdvancedCache();
+            assert cache != null;
+            assert inputKeys != null;
+            this.db = Schematic.get(cache);
             this.inputKeys = inputKeys;
-            this.txnMgr = this.cache.getTransactionManager();
-            this.operation.setEnvironment(this.cache);
+            this.txnMgr = cache.getAdvancedCache().getTransactionManager();
+            this.operation.setEnvironment(cache);
         }
 
         @Override
@@ -375,18 +382,16 @@ public class LocalDocumentStore implements DocumentStore {
             for (String key : inputKeys) {
                 // We operate upon each document within a transaction ...
                 try {
-                    SchematicEntry entry = cache.get(key);
-                    if (entry != null) {
-                        txnMgr.begin();
-                        cache.lock(key);
-                        EditableDocument doc = entry.edit(cache);
+                    txnMgr.begin();
+                    EditableDocument doc = db.editContent(key, false, true);
+                    if (doc != null) {
                         if (operation.execute(key, doc)) {
                             results.recordModified();
                         } else {
                             results.recordUnmodified();
                         }
-                        txnMgr.commit();
                     }
+                    txnMgr.commit();
                 } catch (org.infinispan.util.concurrent.TimeoutException e) {
                     // Couldn't wait long enough for the lock, so skip this for now ...
                     results.recordSkipped();

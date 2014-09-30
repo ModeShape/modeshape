@@ -339,8 +339,15 @@ public class FederatedDocumentStore implements DocumentStore {
     @Override
     public EditableDocument edit( String key,
                                   boolean createIfMissing ) {
+        return edit(key, createIfMissing, true);
+    }
+
+    @Override
+    public EditableDocument edit( String key,
+                                  boolean createIfMissing,
+                                  boolean acquireLock ) {
         if (isLocalSource(key)) {
-            return localStore().edit(key, createIfMissing);
+            return localStore().edit(key, createIfMissing, acquireLock);
         }
         // It's federated, so we have to use the federated logic ...
         FederatedSchematicEntry entry = (FederatedSchematicEntry)get(key);

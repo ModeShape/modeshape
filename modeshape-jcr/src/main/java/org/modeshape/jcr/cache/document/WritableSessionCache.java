@@ -457,7 +457,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                     if (repeat <= 0) {
                         throw new TimeoutException(e.getMessage(), e);
                     }
-                    --repeat;
                     Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                     continue;
                 } catch (NotSupportedException err) {
@@ -855,6 +854,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         ExecutionContext context = context();
         String userId = context.getSecurityContext().getUserName();
         Map<String, String> userData = context.getData();
+        final boolean acquireLock = false; // we already pre-locked all of the existing documents that we'll edit ...
         DateTime timestamp = context.getValueFactories().getDateFactory().create();
         String workspaceName = persistedCache.getWorkspaceName();
         String repositoryKey = persistedCache.getRepositoryKey();
@@ -894,7 +894,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // if there were any referrer changes for the removed nodes, we need to process them
                     ReferrerChanges referrerChanges = referrerChangesForRemovedNodes.get(key);
                     if (referrerChanges != null) {
-                        EditableDocument doc = documentStore.edit(keyStr, false);
+                        EditableDocument doc = documentStore.edit(keyStr, false, acquireLock);
                         if (doc != null) translator.changeReferrers(doc, referrerChanges);
                     }
 
@@ -931,7 +931,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Create an event ...
                     changes.nodeCreated(key, newParent, newPath, primaryType, mixinTypes, node.changedProperties(), queryable);
                 } else {
-                    doc = documentStore.edit(keyStr, true);
+                    doc = documentStore.edit(keyStr, true, acquireLock);
                     if (doc == null) {
                         if (isExternal && renamedExternalNodes.contains(key)) {
                             // this is a renamed external node which has been processed in the parent, so we can skip it

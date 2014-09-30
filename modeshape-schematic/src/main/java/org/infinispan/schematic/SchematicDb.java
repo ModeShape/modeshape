@@ -53,16 +53,33 @@ public interface SchematicDb extends Lifecycle {
     SchematicEntry get( String key );
 
     /**
-     * Get an editor for the entry with the supplied key. This entry should have been {@link #lock(Collection) locked} as part of
-     * a transaction. The resulting editor will operate upon a copy of the entry and the database will be updated as part of the
-     * transaction.
+     * Get an editor for the entry with the supplied key. This method will automatically try to acquire the lock for this entry.
+     * The resulting editor will operate upon a copy of the entry and the database will be updated as part of the transaction. See
+     * also {@link #editContent(String, boolean, boolean)} if the lock is known to have already been acquired.
      *
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
      * @return the entry, or null if there was no document with the supplied key
+     * @see #editContent(String, boolean, boolean)
      */
     EditableDocument editContent( String key,
                                   boolean createIfMissing );
+
+    /**
+     * Get an editor for the entry with the supplied key and say whether the entry should be locked. If {@code acquireLock} is
+     * false, then the entry should have been explicitly {@link #lock(Collection) locked} as part of a transaction before this
+     * method is called. The resulting editor will operate upon a copy of the entry and the database will be updated as part of
+     * the transaction.
+     *
+     * @param key the key or identifier for the document
+     * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
+     * @param acquireLock true if the lock should be acquired for this entry, or false if the lock is known to have already been
+     *        acquired for the current transaction
+     * @return the entry, or null if there was no document with the supplied key
+     */
+    EditableDocument editContent( String key,
+                                  boolean createIfMissing,
+                                  boolean acquireLock );
 
     /**
      * Determine whether the database contains an entry with the supplied key.

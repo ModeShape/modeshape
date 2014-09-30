@@ -9,8 +9,8 @@
 
     <namedCache name="inmemoryRepository">
         <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
                 transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
+                lockingMode="OPTIMISTIC"/>
     </namedCache>
 </infinispan>

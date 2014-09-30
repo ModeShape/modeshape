@@ -7,7 +7,7 @@
     },
     "storage" : {
         "cacheName" : "inmemoryRepository",
-        "cacheConfiguration" : "config/infinispan-inmemory.xml"
+        "cacheConfiguration" : "config/infinispan-inmemory-optimistic.xml"
     },
     "externalSources" : {
         "mock-source" : {

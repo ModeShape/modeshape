@@ -16,7 +16,6 @@
 
 package org.modeshape.jcr.federation;
 
-import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -50,11 +49,6 @@ public class FederatedSchematicEntry implements SchematicEntry {
     }
 
     public EditableDocument edit() {
-        return document;
-    }
-
-    @Override
-    public EditableDocument edit( Cache<String, SchematicEntry> cache ) {
         return document;
     }
 

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.commons.marshall.SerializeWith;
 import org.infinispan.commons.util.Util;
@@ -107,12 +108,6 @@ public class SchematicEntryLiteral implements SchematicEntry {
         return getMetadata().getString(FieldName.ID);
     }
 
-    public SchematicEntryLiteral copyForWrite() {
-        SchematicEntryLiteral clone = new SchematicEntryLiteral((MutableDocument)value.clone());
-        clone.copied = true;
-        return clone;
-    }
-
     protected final MutableDocument data() {
         return value;
     }
@@ -174,8 +169,12 @@ public class SchematicEntryLiteral implements SchematicEntry {
         return value;
     }
 
-    @Override
-    public EditableDocument edit( Cache<String, SchematicEntry> cache ) {
+    protected EditableDocument edit( String key,
+                                     AdvancedCache<String, SchematicEntry> cache,
+                                     AdvancedCache<String, SchematicEntry> lockingCache ) {
+        if (lockingCache != null) {
+            lockingCache.lock(key);
+        }
         MutableDocument copy = (MutableDocument)value.clone();
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(copy);
         cache.put(getKey(), newEntry);

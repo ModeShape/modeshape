@@ -856,12 +856,14 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     }
 
     protected void changeLastUpgradeId( JcrRepository repository,
-                                        int value ) {
+                                        int value ) throws Exception {
         // modify the repository-info document to force an upgrade on the next restart
         DocumentStore documentStore = repository.documentStore();
+        repository.transactionManager().begin();
         EditableDocument editableDocument = documentStore.localStore().edit("repository:info", true);
         editableDocument.set("lastUpgradeId", value);
         documentStore.localStore().put("repository:info", editableDocument);
+        repository.transactionManager().commit();
     }
 
     protected AccessControlList getACL( AccessControlManager acm,

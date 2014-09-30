@@ -82,10 +82,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         MutableCachedNode nodeB = check(session1).mutableNode("/childB");
         NodeKey newKey = session1.createNodeKeyWithIdentifier("newChild");
         long nanos = System.nanoTime();
-        MutableCachedNode newChild = nodeB.createChild(session(),
-                                                       newKey,
-                                                       name("newChild"),
-                                                       property("p1a", 344),
+        MutableCachedNode newChild = nodeB.createChild(session(), newKey, name("newChild"), property("p1a", 344),
                                                        property("p2", false));
         print("Time (createChild): " + millis(Math.abs(System.nanoTime() - nanos)) + " ms");
         assertThat(newChild.getPath(session1), is(path("/childB/newChild")));
@@ -162,7 +159,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
     }
 
     @Test
-    public void shouldAllowSessionToCreateChildrenWithSameNameWithMultipleSaves() {
+    public void shouldAllowSessionToCreateChildrenWithSameNameWithMultipleSaves() throws Exception {
         // Make sure the property does not exist ...
         check(cache).noNode("/childB/newChild");
 
@@ -175,7 +172,9 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         Stopwatch total = new Stopwatch();
         Stopwatch save = new Stopwatch();
         Stopwatch opt = new Stopwatch();
+        txnManager().begin();
         optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will merge two into a single block ...
+        txnManager().commit();
         print(true);
         print("Creating nodes ...");
         total.start();
@@ -196,7 +195,9 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
                 print("Optimizing...");
                 print(false);
                 opt.start();
+                txnManager().begin();
                 optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will split into blocks ...
+                txnManager().commit();
                 opt.stop();
                 // Find node B again after the save ...
                 nodeB = check(session1).mutableNode("/childB");

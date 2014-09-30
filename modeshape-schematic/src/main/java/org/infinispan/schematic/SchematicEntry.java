@@ -15,11 +15,9 @@
  */
 package org.infinispan.schematic;
 
-import org.infinispan.Cache;
 import org.infinispan.schematic.Schematic.ContentTypes;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
 
 /**
  * A value used to store user's content (often a JSON document or a binary value) and metadata as an entry in a SchematicDb. These
@@ -76,15 +74,6 @@ public interface SchematicEntry extends Cloneable {
      * @param content the Document representing the JSON content; may not be null
      */
     void setContent( Document content );
-
-    /**
-     * Get an {@link EditableDocument editable document}. The client is expected to make these edits within the context of a
-     * transaction, and the edits will be saved when the transaction is committed.
-     * 
-     * @param cache the Infinispan cache
-     * @return the editable representation of the content document
-     */
-    EditableDocument edit( Cache<String, SchematicEntry> cache );
 
     /**
      * Get the representation of this entry as a document, which will include the {@link #getMetadata() metadata} and
