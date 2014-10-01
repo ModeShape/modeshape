@@ -251,13 +251,13 @@ public class FederatedDocumentStore implements DocumentStore {
         if (connector != null) {
             Document document = null;
             if (connector instanceof Pageable && PageKey.isValidFormat(key)) {
-                //a page was requested
+                // a page was requested
                 PageKey pageKey = new PageKey(key);
                 String parentId = pageKey.getParentId();
                 pageKey = pageKey.withParentId(documentIdFromNodeKey(parentId));
-                document = ((Pageable) connector).getChildren(pageKey);
+                document = ((Pageable)connector).getChildren(pageKey);
             } else {
-                //interpret the key as a regular node id
+                // interpret the key as a regular node id
                 String docId = documentIdFromNodeKey(key);
                 document = connector.getDocumentById(docId);
             }
@@ -332,13 +332,29 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public boolean updatesRequirePreparing() {
-        return localDocumentStore.updatesRequirePreparing();
+    public boolean prepareDocumentsForUpdate( Collection<String> keys ) {
+        return localDocumentStore.prepareDocumentsForUpdate(keys);
     }
 
     @Override
-    public boolean prepareDocumentsForUpdate( Collection<String> keys ) {
-        return localDocumentStore.prepareDocumentsForUpdate(keys);
+    public EditableDocument edit( String key,
+                                  boolean createIfMissing ) {
+        return edit(key, createIfMissing, true);
+    }
+
+    @Override
+    public EditableDocument edit( String key,
+                                  boolean createIfMissing,
+                                  boolean acquireLock ) {
+        if (isLocalSource(key)) {
+            return localStore().edit(key, createIfMissing, acquireLock);
+        }
+        // It's federated, so we have to use the federated logic ...
+        FederatedSchematicEntry entry = (FederatedSchematicEntry)get(key);
+        if (entry != null) {
+            return entry.edit();
+        }
+        return null;
     }
 
     @Override

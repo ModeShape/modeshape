@@ -21,6 +21,7 @@ import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
@@ -67,34 +68,51 @@ public interface DocumentStore {
     /**
      * Generates a new key which will be assigned to a new child document when it is being added to its parent.
      *
-     *
      * @param parentKey a {@code non-null} {@link String}, the key of the existing parent
      * @param documentName {@code non-null} {@link org.modeshape.jcr.value.Name}, the name of the new child document.
-     * @param documentPrimaryType {@code non-null} {@link org.modeshape.jcr.value.Name}, the name of the primary type of the new child document
+     * @param documentPrimaryType {@code non-null} {@link org.modeshape.jcr.value.Name}, the name of the primary type of the new
+     *        child document
      * @return a {@link String} which will be assigned as key to the new child, or {@code null} indicating that no preferred key
-     * is to be used. If this is the case, the repository will assign a random key.
+     *         is to be used. If this is the case, the repository will assign a random key.
      */
     public String newDocumentKey( String parentKey,
                                   Name documentName,
                                   Name documentPrimaryType );
 
     /**
-     * Return whether {@link #prepareDocumentsForUpdate(Collection)} should be called before updating the documents.
-     *
-     * @return true if {@link #prepareDocumentsForUpdate(Collection)} should be called, or false otherwise
-     */
-    public boolean updatesRequirePreparing();
-
-    /**
      * Prepare to update all of the documents with the given keys.
      *
      * @param keys the set of keys identifying the documents that are to be updated via
-     * {@link #updateDocument(String, Document, SessionNode)} or via {@link #get(String)} followed by
-     * {@link SchematicEntry#editDocumentContent()}.
+     *        {@link #updateDocument(String, Document, SessionNode)} or via {@link #edit(String,boolean)}.
      * @return true if the documents were locked, or false if not all of the documents could be locked
      * @throws DocumentStoreException if there is an error or problem while obtaining the locks
      */
     public boolean prepareDocumentsForUpdate( Collection<String> keys );
+
+    /**
+     * Remove the existing document at the given key.
+     *
+     * @param key the key or identifier for the document
+     * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
+     * @return true if a document was removed, or false if there was no document with that key
+     * @throws DocumentStoreException if there is a problem removing the document
+     */
+    public EditableDocument edit( String key,
+                                  boolean createIfMissing );
+
+    /**
+     * Remove the existing document at the given key, and optionally explicitly locking the entry before returning the editor.
+     *
+     * @param key the key or identifier for the document
+     * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
+     * @param acquireLock true if the lock for the entry should be obtained before returning, or false if the lock was already
+     *        obtained via {@link #prepareDocumentsForUpdate(Collection)} within the current transaction.
+     * @return true if a document was removed, or false if there was no document with that key
+     * @throws DocumentStoreException if there is a problem removing the document
+     */
+    public EditableDocument edit( String key,
+                                  boolean createIfMissing,
+                                  boolean acquireLock );
 
     /**
      * Remove the existing document at the given key.

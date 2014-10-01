@@ -5,6 +5,10 @@
         "default" : "default",
         "allowCreation" : true
     },
+    "storage" : {
+        "cacheName" : "inmemoryRepository",
+        "cacheConfiguration" : "config/infinispan-inmemory-optimistic.xml"
+    },
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import org.infinispan.Cache;
 import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
@@ -31,19 +32,19 @@ import org.modeshape.jcr.cache.NodeKey;
  */
 public class DocumentOptimizer implements DocumentConstants {
 
-    private final Cache<String, SchematicEntry> store;
+    private final SchematicDb storeDb;
     private final DocumentStore documentStore;
 
     public DocumentOptimizer( DocumentStore documentStore ) {
         this.documentStore = documentStore;
-        this.store = null;
-        assert this.store != null || this.documentStore != null;
+        this.storeDb = null;
+        assert this.storeDb != null || this.documentStore != null;
     }
 
-    public DocumentOptimizer( Cache<String, SchematicEntry> store ) {
+    public DocumentOptimizer( Cache<String, SchematicEntry> cache ) {
         this.documentStore = null;
-        this.store = store;
-        assert this.store != null || this.documentStore != null;
+        this.storeDb = Schematic.get(cache);
+        assert this.storeDb != null || this.documentStore != null;
     }
 
     /**
@@ -53,7 +54,7 @@ public class DocumentOptimizer implements DocumentConstants {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     * 
+     *
      * @param key the key for the node
      * @param document the node's document representation that is to be optimized
      * @param targetCountPerBlock the target number of children per block
@@ -65,11 +66,7 @@ public class DocumentOptimizer implements DocumentConstants {
                                            int targetCountPerBlock,
                                            int tolerance ) {
         if (document == null) {
-            SchematicEntry entry = lookup(key.toString());
-            if (entry == null) {
-                return false;
-            }
-            document = entry.editDocumentContent();
+            document = edit(key.toString());
             if (document == null) {
                 return false;
             }
@@ -132,8 +129,7 @@ public class DocumentOptimizer implements DocumentConstants {
 
                 // Find the next block ...
                 if (nextKey != null) {
-                    SchematicEntry nextEntry = lookup(nextKey);
-                    doc = nextEntry.editDocumentContent();
+                    doc = edit(nextKey);
                     docKey = new NodeKey(nextKey);
                 } else {
                     doc = null;
@@ -143,8 +139,14 @@ public class DocumentOptimizer implements DocumentConstants {
         return changed;
     }
 
-    protected SchematicEntry lookup( String key ) {
-        return documentStore != null ? documentStore.get(key) : store.get(key);
+    protected EditableDocument edit( String key ) {
+        if (documentStore != null) {
+            return documentStore.edit(key, false);
+        }
+        if (storeDb != null) {
+            return storeDb.editContent(key, false);
+        }
+        return null;
     }
 
     /**
@@ -295,7 +297,7 @@ public class DocumentOptimizer implements DocumentConstants {
         String nextBlocksNext = null;
         while (nextBlock != null) {
             nextEntry = documentStore.get(nextBlock);
-            Document nextDoc = nextEntry.getContentAsDocument();
+            Document nextDoc = nextEntry.getContent();
             List<?> nextChildren = nextDoc.getArray(CHILDREN);
             Document nextInfo = nextDoc.getDocument(CHILDREN_INFO);
 

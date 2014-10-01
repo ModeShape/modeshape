@@ -182,7 +182,7 @@ public class WorkspaceCache implements DocumentCache {
             return null;
         }
         try {
-            return entry.getContentAsDocument();
+            return entry.getContent();
         } catch (IllegalStateException e) {
             LOGGER.debug("The document '{0}' was concurrently removed; returning null.", key);
             // The document was already removed

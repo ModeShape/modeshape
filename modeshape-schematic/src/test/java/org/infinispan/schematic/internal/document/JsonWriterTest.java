@@ -94,7 +94,7 @@ public class JsonWriterTest {
         doc1.setString("field4", "basic ascii with some chinese: 這是在主要街道一家書店的故事");
         doc1.setString("Hauptstraße", "Main street");
         String s = writer.write(doc1);
-        System.out.println(s);
+        // System.out.println(s);
         doc2 = reader.read(s);
         assertMatch(doc1, doc2);
     }

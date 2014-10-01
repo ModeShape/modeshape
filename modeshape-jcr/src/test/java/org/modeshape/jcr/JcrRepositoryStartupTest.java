@@ -813,7 +813,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         FileUtil.delete("target/legacy_fs_binarystore");
         FileUtil.delete("target/persistent_repository/");
         String config = "config/repo-config-persistent-legacy-fsbinary.json";
-        //copy the test-resources legacy structure onto the configured one
+        // copy the test-resources legacy structure onto the configured one
         FileUtil.copy(new File("src/test/resources/legacy_fs_binarystore"), new File("target/legacy_fs_binarystore"));
         // this is coming from the test resources
         final BinaryKey binaryKey = new BinaryKey("ef2138973a86a8929eebe7bf52419b7cde73ba0a");
@@ -823,23 +823,23 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             @Override
             public Void call() throws Exception {
                 changeLastUpgradeId(repository, Upgrades.ModeShape_4_0_0_Beta3.INSTANCE.getId() - 1);
-                FileSystemBinaryStore binaryStore = (FileSystemBinaryStore) repository.runningState().binaryStore();
+                FileSystemBinaryStore binaryStore = (FileSystemBinaryStore)repository.runningState().binaryStore();
                 assertFalse("No used binaries expected", binaryStore.getAllBinaryKeys().iterator().hasNext());
                 assertFalse("The binary should not be found", binaryStore.hasBinary(binaryKey));
                 File mainStorageDirectory = binaryStore.getDirectory();
                 File[] files = mainStorageDirectory.listFiles();
-                assertEquals("Just the trash directory was expected",1, files.length);
+                assertEquals("Just the trash directory was expected", 1, files.length);
                 File trash = files[0];
                 assertTrue(trash.isDirectory());
                 return null;
             }
         }, config);
 
-        //run the repo a second time, which should run the upgrade
+        // run the repo a second time, which should run the upgrade
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
-                FileSystemBinaryStore binaryStore = (FileSystemBinaryStore) repository.runningState().binaryStore();
+                FileSystemBinaryStore binaryStore = (FileSystemBinaryStore)repository.runningState().binaryStore();
                 assertFalse("No used binaries expected", binaryStore.getAllBinaryKeys().iterator().hasNext());
                 assertTrue("The binary should be found", binaryStore.hasBinary(binaryKey));
                 return null;
@@ -856,12 +856,14 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     }
 
     protected void changeLastUpgradeId( JcrRepository repository,
-                                        int value ) {
+                                        int value ) throws Exception {
         // modify the repository-info document to force an upgrade on the next restart
         DocumentStore documentStore = repository.documentStore();
-        EditableDocument editableDocument = documentStore.localStore().get("repository:info").editDocumentContent();
+        repository.transactionManager().begin();
+        EditableDocument editableDocument = documentStore.localStore().edit("repository:info", true);
         editableDocument.set("lastUpgradeId", value);
         documentStore.localStore().put("repository:info", editableDocument);
+        repository.transactionManager().commit();
     }
 
     protected AccessControlList getACL( AccessControlManager acm,

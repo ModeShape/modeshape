@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.commons.marshall.AbstractExternalizer;
 import org.infinispan.commons.marshall.AdvancedExternalizer;
@@ -45,9 +46,7 @@ import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.document.Timestamp;
 import org.infinispan.schematic.internal.CacheSchematicDb;
 import org.infinispan.schematic.internal.InMemorySchemaLibrary;
-import org.infinispan.schematic.internal.SchematicEntryDelta;
 import org.infinispan.schematic.internal.SchematicEntryLiteral;
-import org.infinispan.schematic.internal.SchematicEntryWholeDelta;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.delta.AddValueIfAbsentOperation;
 import org.infinispan.schematic.internal.delta.AddValueOperation;
@@ -80,22 +79,34 @@ public class Schematic extends DocumentFactory {
     }
 
     /**
-     * Get the {@link SchematicDb} instance given the cache name and container.
-     * 
+     * Get the {@link SchematicDb} instance given the container that can obtain the appropriately-configured cache with the given
+     * name.
+     *
      * @param cacheContainer the container for the named cache; may not be null
      * @param cacheName the name of the cache; may not be null
      * @return the schematic database instance; never null
      */
     public static SchematicDb get( CacheContainer cacheContainer,
                                    String cacheName ) {
-        Cache<String, SchematicEntry> cache = cacheContainer.getCache(cacheName);
+        Cache<String, SchematicEntry> rawCache = cacheContainer.getCache(cacheName);
+        AdvancedCache<String, SchematicEntry> cache = rawCache.getAdvancedCache();
         return new CacheSchematicDb(cache);
+    }
+
+    /**
+     * Get the {@link SchematicDb} instance given the appropriately-configured cache.
+     *
+     * @param cache the cache to be used for storage; may not be null
+     * @return the schematic database instance; never null
+     */
+    public static SchematicDb get( Cache<String, SchematicEntry> cache ) {
+        return new CacheSchematicDb(cache.getAdvancedCache());
     }
 
     /**
      * Obtain an editor for the supplied document. The editor allows the caller to make changes to the document and to obtain
      * these changes as a {@link Changes serializable memento} that can be applied to another document.
-     * 
+     *
      * @param document the document to be edited
      * @param clone true if the editor should operate against a clone of the document, or false if it should operate against the
      *        supplied document
@@ -283,7 +294,7 @@ public class Schematic extends DocumentFactory {
 
     /**
      * Create an in-memory schema library.
-     * 
+     *
      * @return the empty, in-memory schema library
      */
     public static SchemaLibrary createSchemaLibrary() {
@@ -292,7 +303,7 @@ public class Schematic extends DocumentFactory {
 
     /**
      * Create an in-memory schema library.
-     * 
+     *
      * @param name the name of the library; may be null if a default name is to be used
      * @return the empty, in-memory schema library
      */
@@ -301,8 +312,8 @@ public class Schematic extends DocumentFactory {
     }
 
     /**
-     * Get the set of {@link org.infinispan.commons.marshall.Externalizer} implementations that are used by Schematic.
-     * These need to be registered with the {@link GlobalConfiguration}:
+     * Get the set of {@link org.infinispan.commons.marshall.Externalizer} implementations that are used by Schematic. These need
+     * to be registered with the {@link GlobalConfiguration}:
      *
      * @return the list of externalizer
      */
@@ -314,7 +325,7 @@ public class Schematic extends DocumentFactory {
     /**
      * Get the complete set of {@link AdvancedExternalizer} implementations. Note that this does not include
      * {@link org.infinispan.commons.marshall.Externalizer} implementations that are not {@link AdvancedExternalizer}s.
-     * 
+     *
      * @return immutable set of {@link AdvancedExternalizer} implementations.
      */
     public static Set<? extends AdvancedExternalizer<?>> externalizerSet() {
@@ -328,8 +339,6 @@ public class Schematic extends DocumentFactory {
 
         // SchematicDb values ...
         externalizers.add(new SchematicEntryLiteral.Externalizer());
-        externalizers.add(new SchematicEntryDelta.Externalizer());
-        externalizers.add(new SchematicEntryWholeDelta.Externalizer());
 
         // Documents ...
         externalizers.add(new DocumentExternalizer()); // BasicDocument and BasicArray

@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.infinispan.commons.marshall.AdvancedExternalizer;
 import org.infinispan.commons.marshall.jboss.JBossExternalizerAdapter;
-import org.infinispan.schematic.internal.SchematicEntryDelta;
-import org.infinispan.schematic.internal.SchematicEntryWholeDelta;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.delta.AddValueIfAbsentOperation;
 import org.infinispan.schematic.internal.delta.AddValueOperation;
@@ -75,8 +73,6 @@ public class AbstractExternalizerTest {
         addExternalizer(new RemoveAtIndexOperation.Externalizer());
         addExternalizer(new RetainAllValuesOperation.Externalizer());
         addExternalizer(new SetValueOperation.Externalizer());
-        addExternalizer(new SchematicEntryDelta.Externalizer());
-        addExternalizer(new SchematicEntryWholeDelta.Externalizer());
         addExternalizer(new Paths.Externalizer());
         ClassExternalizerFactory externalizerFactory = new MappingClassExternalizerFactory(externalizersByClass);
         configuration.setClassExternalizerFactory(externalizerFactory);

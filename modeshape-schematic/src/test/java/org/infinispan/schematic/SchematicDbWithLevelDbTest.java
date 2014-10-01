@@ -23,7 +23,9 @@ import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfiguratio
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
+import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
+import org.infinispan.util.concurrent.IsolationLevel;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,14 +42,11 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
 
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.invocationBatching().enable().transaction()
-        // .lockingMode(LockingMode.PESSIMISTIC)
-                            .transactionManagerLookup(new DummyTransactionManagerLookup());
-        configurationBuilder.persistence()
-                            .addStore(LevelDBStoreConfigurationBuilder.class)
+                            .transactionManagerLookup(new DummyTransactionManagerLookup()).lockingMode(LockingMode.PESSIMISTIC)
+                            .locking().isolationLevel(IsolationLevel.READ_COMMITTED);
+        configurationBuilder.persistence().addStore(LevelDBStoreConfigurationBuilder.class)
                             .implementationType(LevelDBStoreConfiguration.ImplementationType.JAVA)
-                            .location("target/leveldb/store")
-                            .expiredLocation("target/leveldb/expired")
-                            .purgeOnStartup(true);
+                            .location("target/leveldb/store").expiredLocation("target/leveldb/expired").purgeOnStartup(true);
 
         cm = TestCacheManagerFactory.createClusteredCacheManager(globalConfigurationBuilder, configurationBuilder);
         tm = cm.getCache().getAdvancedCache().getTransactionManager();
@@ -66,17 +65,16 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
     public void shouldStoreDocumentWithUnusedKeyAndWithNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc, null);
+        SchematicEntry prior = db.put(key, doc);
         assert prior == null : "Should not have found a prior entry";
         SchematicEntry entry = db.get(key);
         assert entry != null : "Should have found the entry";
 
         // Verify the content ...
-        Document read = entry.getContentAsDocument();
+        Document read = entry.getContent();
         assert read != null;
         assert "value1".equals(read.getString("k1"));
         assert 2 == read.getInteger("k2");
-        assert entry.getContentAsBinary() == null : "Should not have a Binary value for the entry's content";
         assert read.containsAll(doc);
         assert read.equals(doc);
 
@@ -89,9 +87,8 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
     @Test
     public void shouldStoreDocumentWithUnusedKeyAndWithNonNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
-        Document metadata = Schematic.newDocument("mimeType", "text/plain");
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc, metadata);
+        SchematicEntry prior = db.put(key, doc);
         assert prior == null : "Should not have found a prior entry";
 
         // Read back from the database ...
@@ -99,30 +96,25 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
         assert entry != null : "Should have found the entry";
 
         // Verify the content ...
-        Document read = entry.getContentAsDocument();
+        Document read = entry.getContent();
         assert read != null;
         assert "value1".equals(read.getString("k1"));
         assert 2 == read.getInteger("k2");
-        assert entry.getContentAsBinary() == null : "Should not have a Binary value for the entry's content";
         assert read.containsAll(doc);
         assert read.equals(doc);
 
         // Verify the metadata ...
         Document readMetadata = entry.getMetadata();
         assert readMetadata != null;
-        assert readMetadata.getString("mimeType").equals(metadata.getString("mimeType"));
-        assert readMetadata.containsAll(metadata);
-        // metadata contains more than what we specified ...
-        assert !readMetadata.equals(metadata) : "Expected:\n" + metadata + "\nFound: \n" + readMetadata;
+        assert readMetadata.getString("id").equals(key);
     }
 
     @Test
     public void shouldStoreDocumentAndFetchAndModifyAndRefetch() throws Exception {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
-        Document metadata = Schematic.newDocument("mimeType", "text/plain");
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc, metadata);
+        SchematicEntry prior = db.put(key, doc);
         assert prior == null : "Should not have found a prior entry";
 
         // Read back from the database ...
@@ -130,18 +122,18 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
         assert entry != null : "Should have found the entry";
 
         // Verify the content ...
-        Document read = entry.getContentAsDocument();
+        Document read = entry.getContent();
         assert read != null;
         assert "value1".equals(read.getString("k1"));
         assert 2 == read.getInteger("k2");
-        assert entry.getContentAsBinary() == null : "Should not have a Binary value for the entry's content";
         assert read.containsAll(doc);
         assert read.equals(doc);
 
         // Modify using an editor ...
         try {
             tm.begin();
-            EditableDocument editable = entry.editDocumentContent();
+            db.lock(key);
+            EditableDocument editable = db.editContent(key, true);
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
         } finally {
@@ -150,7 +142,7 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
 
         // Now re-read ...
         SchematicEntry entry2 = db.get(key);
-        Document read2 = entry2.getContentAsDocument();
+        Document read2 = entry2.getContent();
         assert read2 != null;
         assert "value1".equals(read2.getString("k1"));
         assert 2 == read2.getInteger("k2");

@@ -11,6 +11,6 @@
         <transaction
                 transactionManagerLookupClass="org.modeshape.transaction.lookup.AtomikosStandaloneJTAManagerLookup"
                 transactionMode="TRANSACTIONAL"
-                lockingMode="OPTIMISTIC"/>
+                lockingMode="PESSIMISTIC"/>
     </namedCache>
 </infinispan>
