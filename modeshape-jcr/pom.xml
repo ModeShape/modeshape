@@ -56,7 +56,12 @@
              if MIME type detection is to be disabled in ModeShape. -->
         <dependency>
             <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
             <artifactId>tika-parsers</artifactId>
+            <scope>provided</scope>
             <exclusions>
                 <!--
                 Exclude a few more things that we don't need for MIME type detection.
