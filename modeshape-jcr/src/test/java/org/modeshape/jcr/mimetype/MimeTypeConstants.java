@@ -65,6 +65,7 @@ public final class MimeTypeConstants {
     public static final String XPM = "image/xpm";
     public static final String PHOTOSHOP = "image/vnd.adobe.photoshop";
     public static final String PCX = "image/x-pcx";
+    public static final String PICT = "image/x-pict";
 
     public static final String JAVA = "text/java";
     public static final String JAVA_CLASS = "application/x-java-class";

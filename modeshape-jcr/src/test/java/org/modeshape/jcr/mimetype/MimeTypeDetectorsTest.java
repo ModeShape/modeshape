@@ -27,6 +27,7 @@ import static org.modeshape.jcr.mimetype.MimeTypeConstants.OPEN_DOC_PRESENTATION
 import static org.modeshape.jcr.mimetype.MimeTypeConstants.PCX;
 import static org.modeshape.jcr.mimetype.MimeTypeConstants.PDF;
 import static org.modeshape.jcr.mimetype.MimeTypeConstants.PHOTOSHOP;
+import static org.modeshape.jcr.mimetype.MimeTypeConstants.PICT;
 import static org.modeshape.jcr.mimetype.MimeTypeConstants.PNG;
 import static org.modeshape.jcr.mimetype.MimeTypeConstants.WAV;
 import static org.modeshape.jcr.mimetype.MimeTypeConstants.WSDL_XML;
@@ -40,7 +41,7 @@ import org.modeshape.jcr.InMemoryTestBinary;
 
 /**
  * Unit test for {@link org.modeshape.jcr.mimetype.MimeTypeDetectors}.
- * 
+ *
  * @author Horia Chiorean
  */
 public class MimeTypeDetectorsTest {
@@ -58,8 +59,7 @@ public class MimeTypeDetectorsTest {
                 if (!StringUtil.isBlank(mimeType)) acceptableMimeTypes.add(mimeType);
             }
             assertThat("Expected " + acceptableMimeTypes + " but found " + actualMimeType,
-                       acceptableMimeTypes.contains(actualMimeType),
-                       is(true));
+                       acceptableMimeTypes.contains(actualMimeType), is(true));
         }
     }
 
@@ -94,7 +94,7 @@ public class MimeTypeDetectorsTest {
 
     @Test
     public void shouldProvideMimeTypeForPict() throws Exception {
-        testMimeType("test.pict", OCTET_STREAM);
+        testMimeType("test.pict", PICT);
     }
 
     @Test
