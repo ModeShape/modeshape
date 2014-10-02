@@ -45,6 +45,26 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <overlays>
+                        <overlay>
+                            <!--
+                                  The chemistry-opencmis-server-bindings-war war is a transitive dependency of chemistry-opencmis-server-jcr
+                                  and contains some libraries (pre-packaged) which are conflicting with some of our explicit versions
+                                  So we're excluding them from the WAR
+                              -->
+                            <groupId>org.apache.chemistry.opencmis</groupId>
+                            <artifactId>chemistry-opencmis-server-bindings-war</artifactId>
+                            <excludes>
+                                <exclude>WEB-INF/lib/jaxb-impl-2.1.11.jar</exclude>
+                            </excludes>
+                        </overlay>
+                    </overlays>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

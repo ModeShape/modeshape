@@ -302,7 +302,7 @@
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
 
         <!-- Apache chemistry version -->
-        <chemistry.version>0.10.0</chemistry.version>
+        <chemistry.version>0.11.0</chemistry.version>
 
         <!-- GWT version -->
         <gwt.version>2.5.1</gwt.version>
@@ -1148,6 +1148,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-cmis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-rest-war</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
@@ -1418,6 +1423,7 @@
                 <artifactId>chemistry-opencmis-server-inmemory</artifactId>
                 <version>${chemistry.version}</version>
                 <type>war</type>
+                <scope>test</scope>
             </dependency>
 
             <!-- GWT dependency -->

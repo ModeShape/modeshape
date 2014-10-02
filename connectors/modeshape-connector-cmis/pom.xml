@@ -27,7 +27,6 @@
             <groupId>org.apache.chemistry.opencmis</groupId>
             <artifactId>chemistry-opencmis-server-inmemory</artifactId>
             <type>war</type>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
