@@ -8,6 +8,7 @@
         "cacheName" : "inmemory",
         "binaryStorage" : {
             "type"  : "cache",
+            "minimumStringSize" : 2,
             "cacheConfiguration" : "config/infinispan-persistent-binary-store.xml",
             "dataCacheName" : "binary-data",
             "metadataCacheName" : "binary-meta-data",
