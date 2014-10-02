@@ -27,6 +27,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.Assert;
@@ -47,6 +48,7 @@ import org.modeshape.jcr.value.binary.BinaryStore;
  */
 public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
 
+    private static final char[] CHARS = new char[] {'a', 'b', 'c'};
     private static final Random RANDOM = new Random();
 
     @Override
@@ -60,7 +62,8 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     public void shouldStoreBinariesIntoJDBCBinaryStore() throws Exception {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
         byte[] data = randomBytes(4 * 1024);
-        storeAndAssert(data, "node");
+        storeBinaryAndAssert(data, "node");
+        storeStringsAndAssert("stringNode");
     }
 
     @Test
@@ -68,9 +71,10 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     public void shouldStoreBinariesIntoCacheBinaryStoreWithTransientRepository() throws Exception {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
         byte[] smallData = randomBytes(100);
-        storeAndAssert(smallData, "smallNode");
+        storeBinaryAndAssert(smallData, "smallNode");
         byte[] largeData = randomBytes(3 * 1025);
-        storeAndAssert(largeData, "largeNode");
+        storeBinaryAndAssert(largeData, "largeNode");
+        storeStringsAndAssert("stringNode");
     }
 
     @Test
@@ -79,9 +83,9 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         FileUtil.delete("target/persistent_repository");
         startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-persistent-binary-storage-same-location.json"));
         byte[] smallData = randomBytes(100);
-        storeAndAssert(smallData, "smallNode");
+        storeBinaryAndAssert(smallData, "smallNode");
         byte[] largeData = randomBytes(3 * 1024);
-        storeAndAssert(largeData, "largeNode");
+        storeBinaryAndAssert(largeData, "largeNode");
     }
 
     @Test
@@ -210,6 +214,44 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         checkBinaryUsageAfterSaving();
     }
 
+    private String randomString(long size) {
+        StringBuilder builder = new StringBuilder("");
+        while (builder.length() < size) {
+            builder.append(CHARS[RANDOM.nextInt(3)]);
+        }
+        return builder.toString();
+    }
+
+    private void storeStringsAndAssert( String stringNode ) throws Exception {
+        Node testRoot = jcrSession().getRootNode().addNode(stringNode);
+
+        long minStringSize = repository.getConfiguration().getBinaryStorage().getMinimumStringSize();
+        //the small string should be stored as a string
+        String smallString = randomString(minStringSize - 1);
+        testRoot.setProperty("smallString", smallString);
+
+        //the large string should be stored as a binary
+        String largeString = randomString(minStringSize + 1);
+        testRoot.setProperty("largeString", largeString);
+
+        jcrSession().save();
+
+        //use a separate session to validate because the original one still caches the properties as string...
+        JcrSession readerSession = repository.login();
+        try {
+            Property smallStringProperty = readerSession.getProperty("/" + stringNode + "/smallString");
+            assertEquals("Small string should've been stored as a string", PropertyType.STRING, smallStringProperty.getType());
+            assertEquals("Incorrect stored string value", smallString, smallStringProperty.getString());
+
+            Property largeStringProperty = readerSession.getProperty("/" + stringNode + "/largeString");
+            assertEquals("Large string should've been stored as a binary", PropertyType.BINARY, largeStringProperty.getType());
+            String binaryStringValue = IoUtil.read(largeStringProperty.getBinary().getStream());
+            assertEquals("Incorrect stored string value", largeString, binaryStringValue);
+        } finally {
+            readerSession.logout();
+        }
+    }
+
     private void checkBinaryUsageAfterSaving() throws Exception {
         assertEquals("There should be no binaries in store", 0, binariesCount());
 
@@ -306,8 +348,8 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         return data;
     }
 
-    private void storeAndAssert( byte[] data,
-                                 String nodeName ) throws RepositoryException, IOException {
+    private void storeBinaryAndAssert( byte[] data,
+                                       String nodeName ) throws RepositoryException, IOException {
         InputStream stream = storeBinaryProperty(data, nodeName);
         byte[] storedData = IoUtil.readBytes(stream);
         assertArrayEquals("Data retrieved does not match data stored", data, storedData);
