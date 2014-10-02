@@ -12,74 +12,49 @@ All JCR 2.0 features are supported, and ModeShape 4 has complete integration wit
 Wildfly 8, allowing deployed applications to simply lookup and use repositories managed 
 by ModeShape's service.
 
-As of 4.0.0.Alpha1, ModeShape is licensed under the Apache Software License, 2.0.
+ModeShape &version; is licensed under the Apache Software License, 2.0.
 
-This is the second beta release of the 4.0 stream, and it fixes 19 issues (many
-around indexing) and introduces two new features. One of these is a new CHILDCOUNT 
-dynamic operand in ModeShape's extended JCR-SQL2 query language. The other feature
-is that indexes can be updated synchronously (before save returns) or asynchronously;
-synchronous is the default since it is safer, but asynchronous indexes are far more
-efficient and reduce the amount of work that has to be done during 'save' calls.
-Where possible, we recommend using asynchronous indexes. 
+This version incorporates many new features and bug fixes. Some of these include:
 
-The second beta release included 46 bug fixes and several new features. There is 
-now support for explicit single-column indexes stored locally on the file system. 
-As a result, the index provider SPI first released in an earlier alpha has changed 
-slightly, though we expect it to remain unchanged from this point forward. We've 
-also extended the JCR-SQL2 query language with a new pseudocolumn, "mode:id", that 
-provides access to exactly the same value as "Node.getIndentifier()" would via the 
-API. Like all pseudocolumns, it can be used in WHERE constraints and JOIN criteria.
-
-The first alpha release introduced a new query engine that allows 
-clients to explicitly define the indexes used in the query system, and the second
-alpha release brought minor changes to the Service Provider Interface (SPI) for 
-query providers and introduced a programmatic API and configuration
-modifications for defining indexes, although no complete query providers are included
-(see next release). Alpha2 had support for the JCR event journal feature, allowing
-applications to poll for changes that occurred during time ranges. This is a useful
-alternative to listeners that may be expensive or time-consuming. Alpha3 introduced
-a new event system and our new ring buffer that is substantially faster than what
-we had in 3.x; of course, there's no change in the event APIs so your listener 
-implementations will continue to work unchanged. Alpha4 fixed a number of issues
-and introduced the newly redesigned Repository Explorer web application that
-can be deployed in a web server alongside ModeShape, including on Wildfly 8.
-
-
-## What to test
-
-Since this is the first beta release, all features targeted to 4.0 are complete and
-are suitable for testing. It is not a stable release, so please do not put &version;
-into production.
-
-We would like to get as much feedback as possible, so we do ask that our
-community do testing with &version; to help us identify problems. Specifically,
-we ask that you test the following areas:
-
-* JDK - ModeShape now requires JDK 7. We've not yet begun testing with Java 8, but we'd
-be happy to hear about it if you do.
-* Queries - the new query engine passes all of our regression tests. Without explicit
-indexes, all queries are expected to work properly but may be slow (except for very tiny
-repositories). You can explicitly define indexes via the configuration files or programmatically
-via ModeShape's public API. In fact, it is recommended that you define indexes that can
-be used in each of your queries, and doing so will make those queries much faster.
-The query plan contains information about all indexes considered by the query engine 
-as well the index (if any) selected for use in each part of the query; please use the
-query plan to understand whether your indexes are being used.
+* A new query engine with explicit index definitions and buffered results stored
+off-heap that make it possible to handle very large results. All queries will work
+whether or not indexes are defined, but without indexes they will be slow. Simply
+look at the query plans for your queries, and define indexes that match your queries'
+needs. When proper indexes are available, query execution is very fast. The query plan
+will even show which indexes were considered for each part of the query. All of this is more
+like how traditional databases are used, and it allows ModeShape to update only the indexes
+(rather than indexing everything like in 3.x). Indexes can be defined as part of the configuration 
+or programmatically via new API methods. New indexes are automatically populated 
+with the repository contents, but this is an asynchronous process that make take
+some time if the repository contents are large. Each index can be marked as updated
+synchronously as part of the 'save' operation, or asynchronously in the background
+after the 'save' call. Indexes are assigned to a single 'index provider'.
+* An SPI for index providers, allowing customization of all indexing behavior.
+A local index provider is included in 4.0, and it stores a complete copy of its indexes 
+on each process in the cluster, making it very fast to query.
+* More extensions to the JCR-SQL2 query language, including a new `mode:id` pseudocolumn
+that provides access to exactly the same value as "Node.getIndentifier()" would via the 
+API. There is also a new `CHILDCOUNT` dynamic operand that makes it very easy to find
+nodes that have no children or to find nodes that have child counts within some range.
+* New support for the JCR event journal feature, allowing applications to poll for changes
+that occurred during specific time ranges. This is a useful alternative to listeners for 
+operations may be expensive or time-consuming. Note that journaling is disabled by default.
+* The internal event bus is vastly improved and substantially faster than in 3.x. 
+Of course, there's no change in the event APIs so your listener implementations will 
+continue to work unchanged. 
+* The Repository Explorer web application was completely rewritten and is much more
+dynamic. It's useful for developers of appliations that use the JCR API, allowing you
+to visualize, navigate, and query repository content.
+* Support for deploying ModeShape as a subsystem in Wildfly 8.x
+* ModeShape now requires JDK 7. We don't expect any issues using Java 8, but let us know
+if you have any problems.
 * Clustering - ModeShape no longer has a clustering section in its configuration, since
-we simply piggyback on top of Infinispan's clustering setup. We've also upgraded to 
-a newer version of JGroups.
-* Journalling - Try enabling journaling and verify it works and does not affect performance.
-Then try using the JCR Event Journal feature.
+we simply piggyback on top of Infinispan's clustering setup. So it's much easier to configure
+clustering. We've also upgraded to a newer version of JGroups.
 * Infinispan - We've moved to Infinispan 6.0.1.Final, which is faster and has new cache stores.
 Some older and poorly-performaing cache stores are no longer valid, so check out the new
 file-based cache stores. Also, the LevelDB cache store is supposedly very fast.
-* Backup and restore - given that some older Infinispan cache stores are no longer supported,
-in order to test migrating 3.x repositories to 4.0 you will need to use ModeShape's backup
-and restore feature. If you don't regularly use that, please test it with your repository.
-Just be sure not to overwrite any 3.x repositories.
-* Bugs - we've fixed a number of bugs reported against and fixed in 3.x; see the list 
-below for details. All these are ready for testing.
-* Configuration - comments are now allowed in our JSON configuration.
+
 
 
 ## Features
@@ -194,6 +169,7 @@ All of the JCR 2.0 features previously supported in 2.x are currently supported:
 - Versioning
 - Shareable nodes
 - Access controls
+- Even journal
 
 ### Content Storage Options
 - In-memory (local, replicated, and distributed)
