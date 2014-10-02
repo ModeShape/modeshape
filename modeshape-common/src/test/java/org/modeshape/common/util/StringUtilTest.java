@@ -38,6 +38,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 public class StringUtilTest {
 
@@ -124,6 +125,16 @@ public class StringUtilTest {
     @Test
     public void setLengthShouldTruncateStringsThatAreTooLong() {
         assertEquals("This is the st", StringUtil.setLength("This is the string", 14, ' '));
+    }
+
+    @Test
+    @FixFor( "MODE-2322" )
+    public void shouldSupportPrimitiveArrays() {
+        String text = StringUtil.createString("Error converting \"{2}\" from {0} to a {1}",
+                                              byte[].class.getSimpleName(),
+                                              "BinaryValue",
+                                              new byte[] {-1});
+        assertEquals("Error converting \"[-1]\" from byte[] to a BinaryValue", text);
     }
 
     @Test

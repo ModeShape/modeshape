@@ -31,9 +31,11 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -173,7 +175,16 @@ public class StringUtil {
 
                 // Automatically pretty-print arrays
                 if (parameter != null && parameter.getClass().isArray()) {
-                    parameter = Arrays.asList((Object[])parameter);
+                    if (parameter instanceof Object[]) {
+                        parameter = Arrays.asList((Object[])parameter);
+                    } else {
+                        int length = Array.getLength(parameter);
+                        List<Object> parameterAsList = new ArrayList<Object>(length);
+                        for (int i = 0; i < length; i++) {
+                            parameterAsList.add(Array.get(parameter, i));
+                        }
+                        parameter = parameterAsList;
+                    }
                 }
 
                 matcher.appendReplacement(text, Matcher.quoteReplacement(parameter == null ? "null" : parameter.toString()));
