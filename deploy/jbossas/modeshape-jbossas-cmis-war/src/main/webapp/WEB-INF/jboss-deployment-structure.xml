@@ -1,6 +1,11 @@
 <jboss-deployment-structure>
     <deployment>
         <dependencies>
+            <!--
+                We should use the SAAJ implementation that's available in the container
+                see https://bugzilla.redhat.com/show_bug.cgi?id=1148297
+            -->
+            <module name="com.sun.xml.messaging.saaj"/>
             <module name="javax.jcr"/>
             <module name="org.modeshape.jcr.api" services="import"/>
             <module name="org.modeshape" services="import"/>
