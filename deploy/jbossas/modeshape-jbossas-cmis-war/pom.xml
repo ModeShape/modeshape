@@ -33,6 +33,20 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-cmis</artifactId>
+            <exclusions>
+                <!--
+                    We should use the SAAJ implementation that's available in the container
+                    see https://bugzilla.redhat.com/show_bug.cgi?id=1148297
+                -->
+                <exclusion>
+                    <groupId>javax.xml.soap</groupId>
+                    <artifactId>saaj-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.xml.messaging.saaj</groupId>
+                    <artifactId>saaj-impl</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>
@@ -42,6 +56,34 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <overlays>
+                        <overlay>
+                            <!--
+                            The chemistry-opencmis-server-bindings-war war is a transitive dependency of chemistry-opencmis-server-jcr
+                            and contains some libraries (pre-packaged) which are conflicting with some of our explicit versions
+                            So we're excluding them from the WAR
+                            -->
+                            <groupId>org.apache.chemistry.opencmis</groupId>
+                            <artifactId>chemistry-opencmis-server-bindings-war</artifactId>
+                            <excludes>
+                                <exclude>WEB-INF/lib/jaxb-impl-2.1.11.jar</exclude>
+                                <exclude>WEB-INF/lib/jaxb-api-2.1.jar</exclude>
+                                <exclude>WEB-INF/lib/activation-1.1.jar</exclude>
+                                <!--
+                                    We should use the SAAJ implementation that's available in the container
+                                    see https://bugzilla.redhat.com/show_bug.cgi?id=1148297
+                                -->
+                                <exclude>WEB-INF/lib/saaj-api-1.3.jar</exclude>
+                                <exclude>WEB-INF/lib/saaj-impl-1.3.3.jar</exclude>
+                            </excludes>
+                        </overlay>
+                    </overlays>
                 </configuration>
             </plugin>
         </plugins>
