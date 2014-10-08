@@ -2591,9 +2591,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                     }
 
                     if (match == null) {
-                        throw new ConstraintViolationException(JcrI18n.noPropertyDefinition.text(property.getName(), location(),
-                                                                                                 readable(primaryTypeName),
-                                                                                                 readable(newMixinNames)));
+                        throw new ConstraintViolationException(JcrI18n.cannotRemoveMixinNoPropertyDefinition.text(
+                                mixinName,
+                                property.getName(),
+                                location(),
+                                readable(primaryTypeName),
+                                readable(newMixinNames)));
                     }
                 }
             }
@@ -2627,9 +2630,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                                                                     child.getPrimaryNodeType().getInternalName(),
                                                                                     skipProtected, siblingCounter);
                     if (match == null) {
-                        throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(child.getName(), location(),
-                                                                                                  readable(primaryTypeName),
-                                                                                                  readable(newMixinNames)));
+                        throw new ConstraintViolationException(JcrI18n.cannotRemoveMixinNoChildNodeDefinition.text(
+                                mixinName,
+                                child.getName(),
+                                location(),
+                                readable(primaryTypeName),
+                                readable(newMixinNames)));
                     }
                 }
             }

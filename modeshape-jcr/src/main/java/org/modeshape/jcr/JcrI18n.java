@@ -324,6 +324,9 @@ public final class JcrI18n {
     public static I18n cannotRedefineChildNodeWithIncompatibleDefinition;
     public static I18n cannotRemoveItemWithProtectedDefinition;
     public static I18n errorCheckingNodeTypeUsage;
+    public static I18n cannotRemoveMixinNoPropertyDefinition;
+    public static I18n cannotRemoveMixinNoChildNodeDefinition;
+
 
     public static I18n noChildNodeDefinitions;
     public static I18n noChildNodeDefinition;
