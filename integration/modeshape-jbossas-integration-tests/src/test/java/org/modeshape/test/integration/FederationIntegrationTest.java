@@ -143,20 +143,6 @@ public class FederationIntegrationTest {
             assertNotNull(gitNode);
             assertNotNull(gitNode.getNode("branches"));
             assertNotNull(gitNode.getNode("tags"));
-
-            /**
-             * //TODO author=Horia Chiorean date=11-Sep-14 description=This should be re-enabled after MODE-2178
-            // check configured queryable branches
-            workspace.reindex(gitNode.getPath() + "/tree/master/.gitignore");
-            Query query = workspace.getQueryManager()
-                                   .createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/master/%'", Query.JCR_SQL2);
-            assertEquals(2, query.execute().getNodes().getSize());
-
-            workspace.reindex(gitNode.getPath() + "/tree/2.x/.gitignore");
-            query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/2.x/%'",
-                                                            Query.JCR_SQL2);
-            assertEquals(2, query.execute().getNodes().getSize());
-             */
         } finally {
             testRoot.remove();
             session.save();

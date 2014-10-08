@@ -8,8 +8,7 @@
             "classname" : "org.modeshape.connector.git.GitConnector",
             "directoryPath" : "../../",
             "remoteName" : "upstream,origin",
-            "includeMimeType" : true,
-            "queryableBranches" : ["master", "2.x"]
+            "includeMimeType" : true
         }
     }
 }
