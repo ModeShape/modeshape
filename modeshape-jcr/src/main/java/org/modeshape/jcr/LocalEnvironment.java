@@ -18,7 +18,9 @@ package org.modeshape.jcr;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.naming.Context;
@@ -139,26 +141,35 @@ public class LocalEnvironment implements Environment {
                 }
             }
         }
-        List<ClassLoader> delegatesList = new ArrayList<ClassLoader>();
+        Set<ClassLoader> delegates = new LinkedHashSet<>();
         if (!urls.isEmpty()) {
             StringURLClassLoader urlClassLoader = new StringURLClassLoader(urls);
             // only if any custom urls were parsed add this loader
             if (urlClassLoader.getURLs().length > 0) {
-                delegatesList.add(urlClassLoader);
+                delegates.add(urlClassLoader);
             }
         }
 
         ClassLoader currentLoader = getClass().getClassLoader();
+
+        ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        //add the TCCL to the list if it's not the same as the current loader or the fallback loader
+        if (fallbackLoader != null && !fallbackLoader.equals(tccl) ||
+            fallbackLoader == null && !currentLoader.equals(tccl)) {
+            delegates.add(tccl);
+        }
+
         if (fallbackLoader != null && !fallbackLoader.equals(currentLoader)) {
             // if the parent of fallback is the same as the current loader, just use that
             if (fallbackLoader.getParent().equals(currentLoader)) {
                 currentLoader = fallbackLoader;
             } else {
-                delegatesList.add(fallbackLoader);
+                delegates.add(fallbackLoader);
             }
         }
 
-        return delegatesList.isEmpty() ? currentLoader : new DelegatingClassLoader(currentLoader, delegatesList);
+
+        return delegates.isEmpty() ? currentLoader : new DelegatingClassLoader(currentLoader, delegates);
     }
 
     protected void shutdown( CacheContainer container ) {
