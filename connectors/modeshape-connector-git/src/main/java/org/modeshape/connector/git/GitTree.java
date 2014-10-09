@@ -16,7 +16,6 @@
 package org.modeshape.connector.git;
 
 import java.io.IOException;
-import java.util.List;
 import javax.jcr.RepositoryException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -304,20 +303,5 @@ public class GitTree extends GitFunction implements PageableGitFunction {
         if (spec.parameterCount() != 0) return null;
         addCommitsAsPageOfChildren(git, repository, spec, writer, pageKey);
         return writer.document();
-    }
-
-    @Override
-    protected boolean isQueryable( CallSpecification callSpec ) {
-        List<String> queryableBranches = connector.getQueryableBranches();
-        if (callSpec.parameterCount() == 0) {
-            return !queryableBranches.isEmpty();
-        }
-        String branchName = callSpec.parameter(0);
-        for (String queryableBranchName : connector.getQueryableBranches()) {
-            if (branchName.equalsIgnoreCase(queryableBranchName)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

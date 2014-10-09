@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -96,7 +95,6 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
     private static final boolean DEFAULT_INCLUDE_MIME_TYPE = false;
     private static final String DEFAULT_REMOTE_NAME = "origin";
     private static final String GIT_DIRECTORY_NAME = ".git";
-    private static final List<String> DEFAULT_QUERYABLE_BRANCHES = Arrays.asList("master");
 
     private static final String GIT_CND_PATH = "org/modeshape/connector/git/git.cnd";
 
@@ -124,11 +122,6 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
      * via reflection.
      */
     private boolean includeMimeType = DEFAULT_INCLUDE_MIME_TYPE;
-
-    /**
-     * The optional list of branch names (under /tree) which should be indexed by the repository and therefore queryable.
-     */
-    private List<String> queryableBranches = DEFAULT_QUERYABLE_BRANCHES;
 
     private Repository repository;
     private Git git;
@@ -304,9 +297,5 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
 
     protected final List<String> remoteNames() {
         return parsedRemoteNames;
-    }
-
-    protected List<String> getQueryableBranches() {
-        return queryableBranches;
     }
 }
