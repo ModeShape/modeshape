@@ -273,7 +273,7 @@
         <sardine.version>146</sardine.version>
         <javaassist.version>3.11.0.GA</javaassist.version>
         <jaudiotagger.version>2.0.3</jaudiotagger.version>
-        <poi.version>3.10.1</poi.version>
+        <poi.version>3.11-beta2</poi.version>
         <jcommander.version>1.5</jcommander.version>
         <wsdl4j.version>1.6.2</wsdl4j.version>
         <bson4jackson.version>1.1.2</bson4jackson.version>
@@ -1708,20 +1708,6 @@
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi-scratchpad</artifactId>
-                <version>${poi.version}</version>
-            </dependency>
-            <!--
-                The following 2 POI dependencies are not used directly, but defined so that we use the same "beta" version
-                across the board (see https://issues.jboss.org/browse/MODE-1934).Tika-parsers brings these 2 transitively in
-             -->
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml</artifactId>
-                <version>${poi.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml-schemas</artifactId>
                 <version>${poi.version}</version>
             </dependency>
             <!--Teiid sequencer-->
