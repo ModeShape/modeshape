@@ -35,7 +35,6 @@
         <resource-root path="poi-ooxml-${poi.version}.jar" />
         <resource-root path="poi-ooxml-schemas-${poi.version}.jar" />
         <resource-root path="poi-scratchpad-${poi.version}.jar" />
-        <resource-root path="dom4j-1.6.1.jar" />
         <resource-root path="xmlbeans-2.6.0.jar" />
         <resource-root path="tagsoup-1.2.1.jar" />
         <resource-root path="vorbis-java-core-0.6.jar" />
