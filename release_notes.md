@@ -12,9 +12,15 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This patch release addresses 17 issues and upgrades several third party dependencies,
-including Infinispan to 5.2.10.Final and tested support for the ModeShape subsystem deployed
-on EAP 6.2.1 and EAP 6.3 Beta.
+This patch release addresses 44 issues, most of which are bug fixes. We've improved performance
+when getting the path of a node and when adding children under a parent with lots of children.
+The Repository Explorer web app has been completely rewritten, and is the same as what is in 4.x.
+The release also upgrades to EAP 6.3 Beta for the ModeShape subsystem.
+
+## Community support
+
+The ModeShape community has moved on to support the 4.x releases. Therefore, we anticipate that
+this will be the last 3.x release.
 
 ## Features
 
