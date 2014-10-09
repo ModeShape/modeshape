@@ -15,10 +15,9 @@
  */
 package org.modeshape.common.util;
 
-import org.modeshape.common.logging.Logger;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.List;
+import org.modeshape.common.logging.Logger;
 
 /**
  * Class loader which contains a list of classloaders to which it delegates each operation. If none of the delegates are able
@@ -31,10 +30,10 @@ public final class DelegatingClassLoader extends URLClassLoader {
 
     private static final Logger LOGGER = Logger.getLogger(DelegatingClassLoader.class);
 
-    private final List<? extends  ClassLoader> delegates;
+    private final Iterable<? extends  ClassLoader> delegates;
 
     public DelegatingClassLoader( ClassLoader parent,
-                                  List<? extends ClassLoader> delegates ) {
+                                  Iterable<? extends  ClassLoader> delegates ) {
         super(new URL[0], parent);
         CheckArg.isNotNull(delegates, "delegates");
         this.delegates = delegates;
