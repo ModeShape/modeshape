@@ -4,7 +4,7 @@
 
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-remote-client</artifactId>
-    <version>3.8-SNAPSHOT</version>
+    <version>3.8.1.Final</version>
 
     <name>ModeShape BOM for remote REST and JDBC clients</name>
 
