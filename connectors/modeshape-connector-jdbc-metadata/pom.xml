@@ -19,7 +19,14 @@
         defined in the dependencyManagement section of the parent pom.
     -->
     <dependencies>
-        <!--This needs to be overwritten, because the default scope is test -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-schematic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>c3p0</groupId>
             <artifactId>c3p0</artifactId>
