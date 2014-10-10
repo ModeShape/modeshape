@@ -45,16 +45,16 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
 
     static final String DELIMITER = "/";
 
-    protected static final String DEFAULT_NAME_OF_DEFAULT_CATALOG = "default";
-    protected static final String DEFAULT_NAME_OF_DEFAULT_SCHEMA = "default";
+    private static final String DEFAULT_NAME_OF_DEFAULT_CATALOG = "default";
+    private static final String DEFAULT_NAME_OF_DEFAULT_SCHEMA = "default";
 
-    protected static final int DEFAULT_RETRY_LIMIT = 0;
-    protected static final int DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL = 5;
-    protected static final int DEFAULT_MINIMUM_CONNECTIONS_IN_POOL = 0;
-    protected static final int DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS = 60 * 10; // 10 minutes
-    protected static final int DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE = 100;
-    protected static final int DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED = 1;
-    protected static final int DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS = 60 * 3; // 3 minutes
+    private static final int DEFAULT_RETRY_LIMIT = 0;
+    private static final int DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL = 5;
+    private static final int DEFAULT_MINIMUM_CONNECTIONS_IN_POOL = 0;
+    private static final int DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS = 60 * 10; // 10 minutes
+    private static final int DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE = 100;
+    private static final int DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED = 1;
+    private static final int DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS = 60 * 3; // 3 minutes
 
     /**
      * The JNDI name of the JDBC DataSource instance that should be used. If not specified, the other driver properties must be set.
