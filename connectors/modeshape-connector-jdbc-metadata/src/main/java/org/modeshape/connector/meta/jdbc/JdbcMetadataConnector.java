@@ -296,15 +296,15 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
         }
     }
 
-    public MetadataCollector getMetadataCollector() {
+    protected MetadataCollector getMetadataCollector() {
         return metadataCollector;
     }
 
-    public String getDefaultCatalogName() {
+    protected String getDefaultCatalogName() {
         return defaultCatalogName;
     }
 
-    public String getDefaultSchemaName() {
+    protected String getDefaultSchemaName() {
         return defaultSchemaName;
     }
 
