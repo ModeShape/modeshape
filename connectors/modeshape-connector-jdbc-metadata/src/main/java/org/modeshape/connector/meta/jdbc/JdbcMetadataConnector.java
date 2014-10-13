@@ -43,7 +43,7 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
  */
 public class JdbcMetadataConnector extends ReadOnlyConnector {
 
-    static final String DELIMITER = "/";
+    protected static final String DELIMITER = "/";
 
     protected static final String DEFAULT_NAME_OF_DEFAULT_CATALOG = "default";
     protected static final String DEFAULT_NAME_OF_DEFAULT_SCHEMA = "default";
@@ -59,82 +59,82 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
     /**
      * The JNDI name of the JDBC DataSource instance that should be used. If not specified, the other driver properties must be set.
      */
-    private String dataSourceJndiName;
+    protected String dataSourceJndiName;
 
     /**
      * The username that should be used when creating JDBC connections using the JDBC driver class.
      * This is not required if the DataSource is found in JNDI.
      */
-    private String username;
+    protected String username;
 
     /**
      * The password that should be used when creating JDBC connections using the JDBC driver class.
      * This is not required if the DataSource is found in JNDI.
      */
-    private String password;
+    protected String password;
 
     /**
      * The URL that should be used when creating JDBC connections using the JDBC driver class.
      * This is not required if the DataSource is found in JNDI.
      */
-    private String url;
+    protected String url;
 
     /**
      * The name of the JDBC driver class. This is not required if the DataSource is found in JNDI, but is required otherwise.
      */
-    private String driverClassName;
+    protected String driverClassName;
 
     /**
      * The default number of times that a failed attempt to connect to a datasource should be retried
      */
-    private int retryLimit = DEFAULT_RETRY_LIMIT;
+    protected int retryLimit = DEFAULT_RETRY_LIMIT;
 
     /**
      * The maximum number of connections that may be in the connection pool. The default is "5".
      * This is not required if the DataSource is found in JNDI.
      */
-    private int maximumConnectionsInPool = DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL;
+    protected int maximumConnectionsInPool = DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL;
 
     /**
      * The minimum number of connections that will be kept in the connection pool. The default is "0".
      */
-    private int minimumConnectionsInPool = DEFAULT_MINIMUM_CONNECTIONS_IN_POOL;
+    protected int minimumConnectionsInPool = DEFAULT_MINIMUM_CONNECTIONS_IN_POOL;
 
     /**
      * The maximum number of seconds that a connection can remain idle in the pool before it is closed.
      * The default is "600" seconds (or 10 minutes).
      */
-    private int maximumConnectionIdleTimeInSeconds = DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS;
+    protected int maximumConnectionIdleTimeInSeconds = DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS;
 
     /**
      * The maximum number of statements that should be cached.
      * Statement caching can be disabled by setting to "0". The default is "100".
      */
-    private int maximumSizeOfStatementCache = DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE;
+    protected int maximumSizeOfStatementCache = DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE;
 
     /**
      * The number of connections that should be added to the pool when there are not enough to be used.
      * The default is "1".
      */
-    private int numberOfConnectionsToAcquireAsNeeded = DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED;
+    protected int numberOfConnectionsToAcquireAsNeeded = DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED;
 
     /**
      * The number of seconds that a connection can remain idle before the connection should be tested to ensure it is still valid.
      * The default is 180 seconds (or 3 minutes).
      */
-    private int idleTimeInSecondsBeforeTestingConnections = DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS;
+    protected int idleTimeInSecondsBeforeTestingConnections = DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS;
 
     /**
      * The name to use for the catalog name if the database does not support catalogs or the database has a catalog with the empty string as a name.
      * The default value is "default".
      */
-    private String defaultCatalogName = DEFAULT_NAME_OF_DEFAULT_CATALOG;
+    protected String defaultCatalogName = DEFAULT_NAME_OF_DEFAULT_CATALOG;
 
     /**
      * The name to use for the schema name if the database does not support schemas or the database has a schema with the empty string as a name.
      * The default value is "default".
      */
-    private String defaultSchemaName = DEFAULT_NAME_OF_DEFAULT_SCHEMA;
+    protected String defaultSchemaName = DEFAULT_NAME_OF_DEFAULT_SCHEMA;
 
     /**
      * The name of a custom class to use for metadata collection. The class must implement the MetadataCollector interface.
@@ -143,16 +143,16 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
      * This property is provided as a means for connecting to databases with a JDBC driver that provides a non-standard DatabaseMetaData
      * implementation or no DatabaseMetaData implementation at all.
      */
-    private String metadataCollectorClassName = JdbcMetadataCollector.class.getName();
+    protected String metadataCollectorClassName = JdbcMetadataCollector.class.getName();
 
     /**
      * Whether to close the data source when the connector shuts down or not
      */
-    private boolean closeDataSourceOnShutdown = false;
+    protected boolean closeDataSourceOnShutdown = false;
 
-    private DataSource dataSource;
-    private MetadataCollector metadataCollector;
-    private List<? extends AbstractMetadataRetriever> metadataRetrievers;
+    protected DataSource dataSource;
+    protected MetadataCollector metadataCollector;
+    protected List<? extends AbstractMetadataRetriever> metadataRetrievers;
 
     @Override
     public void initialize( NamespaceRegistry registry,
@@ -163,19 +163,19 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
         initRetrievers();
     }
 
-    private void initRetrievers() {
+    protected void initRetrievers() {
         metadataRetrievers = Arrays.asList(new DatabaseRetriever(this), new CatalogRetriever(this), new SchemaRetriever(this),
                                            new TableRetriever(this), new ColumnRetriever(this), new ProcedureRetriever(this),
                                            new ForeignKeyRetriever(this));
     }
 
-    private void initNodeTypes( NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+    protected void initNodeTypes( NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         InputStream cndStream = getClass().getClassLoader().getResourceAsStream(
                 "org/modeshape/connector/meta/jdbc/metajdbc.cnd");
         nodeTypeManager.registerNodeTypes(cndStream, true);
     }
 
-    private void initDataSource() {
+    protected void initDataSource() {
         if (this.dataSource == null && this.dataSourceJndiName != null) {
             // Try to load the DataSource from JNDI ...
             try {
@@ -213,7 +213,7 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
         }
     }
 
-    private void initMetadataCollector() {
+    protected void initMetadataCollector() {
         try {
             Class<?> newCollectorClass = Class.forName(metadataCollectorClassName, true, getEnvironment().getClassLoader(
                     getClass().getClassLoader()));
@@ -243,7 +243,7 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
         return null;
     }
 
-    private void tryToClose( Connection connection ) {
+    protected void tryToClose( Connection connection ) {
         if (connection != null) {
             try {
                 connection.close();
@@ -270,7 +270,7 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
         return Collections.singletonList(id);
     }
 
-    private String trimPath( String externalPath ) {
+    protected String trimPath( String externalPath ) {
         if (externalPath.trim().equalsIgnoreCase(DELIMITER)) {
             return DELIMITER;
         } else if (externalPath.endsWith(DELIMITER)) {
