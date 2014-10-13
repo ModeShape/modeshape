@@ -107,6 +107,7 @@ public final class RepositoryI18n {
     public static I18n unableToLoadClassUsingClasspath;
     public static I18n unableToInstantiateClassUsingClasspath;
     public static I18n unableToAccessClassUsingClasspath;
+    public static I18n unexpectedErrorAfterRepositoryHasBeenShutDown;
 
     // Repository
     public static I18n errorStartingRepositoryService;

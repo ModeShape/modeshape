@@ -63,11 +63,8 @@ public class WsdlSequencer extends AbstractSrampSequencer {
         }
 
         String baseUri = inputProperty.getParent().getPath();
-        InputStream stream = binaryValue.getStream();
-        try {
+        try (InputStream stream = binaryValue.getStream()) {
             new Wsdl11Reader(context, baseUri).read(stream, outputNode);
-        } finally {
-            stream.close();
         }
         return true;
     }

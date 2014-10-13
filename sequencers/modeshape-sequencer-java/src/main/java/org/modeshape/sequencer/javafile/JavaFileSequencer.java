@@ -49,17 +49,10 @@ public class JavaFileSequencer extends Sequencer {
                             Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
-        InputStream stream = binaryValue.getStream();
 
-        try {
+        try (InputStream stream = binaryValue.getStream()) {
             new JdtRecorder().record(context, stream, binaryValue.getSize(), null, outputNode);
             return true;
-        } catch (Exception ex) {
-            getLogger().error(ex, "Error sequencing file");
-            return false;
-        } finally {
-            stream.close();
         }
     }
-
 }

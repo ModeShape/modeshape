@@ -101,8 +101,7 @@ public class ImageMetadataSequencer extends Sequencer {
     private boolean processUsingAdvancedMetadata( Node imageNode,
                                                   Binary binaryValue,
                                                   boolean imageParsedUsingDefaultMetadata ) throws Exception {
-        InputStream stream = binaryValue.getStream();
-        try {
+        try (InputStream stream = binaryValue.getStream()) {
             Metadata advancedMetadata = ImageMetadataReader.readMetadata(new BufferedInputStream(stream), false);
             ExifIFD0Directory exifIFD0Directory = advancedMetadata.getDirectory(ExifIFD0Directory.class);
             if (exifIFD0Directory == null || !hasTags(exifIFD0Directory, EXIF_TAGS)) {
@@ -127,8 +126,6 @@ public class ImageMetadataSequencer extends Sequencer {
         } catch (Exception e) {
             getLogger().debug(e, "Cannot process image for advanced metadata");
             return imageParsedUsingDefaultMetadata;
-        } finally {
-            stream.close();
         }
     }
 

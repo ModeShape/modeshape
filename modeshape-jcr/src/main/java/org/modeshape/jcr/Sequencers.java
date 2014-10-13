@@ -334,11 +334,12 @@ public class Sequencers implements ChangeSetListener {
     }
 
     protected final void shutdown() {
+        // mark it as shutdown first, before attempting to terminate any existing jobs
+        shutdown = true;
         if (workQueue != null) {
             sequencingExecutor.shutdown();
             workQueue.shutdown();
         }
-        shutdown = true;
     }
 
     protected final RepositoryStatistics statistics() {
@@ -385,6 +386,10 @@ public class Sequencers implements ChangeSetListener {
             result.add(expression);
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    protected boolean isShutdown() {
+        return shutdown;
     }
 
     @Immutable

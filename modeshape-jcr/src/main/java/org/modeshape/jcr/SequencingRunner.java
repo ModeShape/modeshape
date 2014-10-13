@@ -221,13 +221,19 @@ final class SequencingRunner implements Runnable {
             }
         } catch (Throwable t) {
             Logger logger = Logger.getLogger(getClass());
-            if (work.getOutputWorkspaceName() != null) {
-                logger.error(t, RepositoryI18n.errorWhileSequencingNodeIntoWorkspace, sequencerName, repository.name(),
-                             work.getInputPath(), work.getInputWorkspaceName(), work.getOutputPath(),
-                             work.getOutputWorkspaceName());
+            if (repository.sequencers().isShutdown()) {
+                // the repository has already been shut down, so we'll just log a warning
+                logger.warn(RepositoryI18n.unexpectedErrorAfterRepositoryHasBeenShutDown, t.getMessage());
             } else {
-                logger.error(t, RepositoryI18n.errorWhileSequencingNode, sequencerName, repository.name(), work.getInputPath(),
-                             work.getInputWorkspaceName(), work.getOutputPath());
+                if (work.getOutputWorkspaceName() != null) {
+                    logger.error(t, RepositoryI18n.errorWhileSequencingNodeIntoWorkspace, sequencerName, repository.name(),
+                                 work.getInputPath(), work.getInputWorkspaceName(), work.getOutputPath(),
+                                 work.getOutputWorkspaceName());
+                } else {
+                    logger.error(t, RepositoryI18n.errorWhileSequencingNode, sequencerName, repository.name(),
+                                 work.getInputPath(),
+                                 work.getInputWorkspaceName(), work.getOutputPath());
+                }
             }
         } finally {
             stats.increment(ValueMetric.SEQUENCED_COUNT);

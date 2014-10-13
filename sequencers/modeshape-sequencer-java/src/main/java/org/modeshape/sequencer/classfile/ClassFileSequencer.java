@@ -42,13 +42,10 @@ public class ClassFileSequencer extends Sequencer {
                             Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
-        InputStream stream = binaryValue.getStream();
-        try {
+        try (InputStream stream = binaryValue.getStream()) {
             ClassMetadata classMetadata = ClassFileMetadataReader.instance(stream);
             classFileRecorder.recordClass(context, outputNode, classMetadata);
             return true;
-        } finally {
-            stream.close();
         }
     }
 

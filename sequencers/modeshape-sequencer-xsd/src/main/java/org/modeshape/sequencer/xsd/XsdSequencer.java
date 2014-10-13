@@ -67,11 +67,8 @@ public class XsdSequencer extends AbstractSrampSequencer {
         } else {
             outputNode = outputNode.addNode(SCHEMA_DOCUMENT, SCHEMA_DOCUMENT);
         }
-        InputStream stream = binaryValue.getStream();
-        try {
+        try (InputStream stream = binaryValue.getStream()) {
             new XsdReader(context).read(stream, outputNode);
-        } finally {
-            stream.close();
         }
         return true;
     }
