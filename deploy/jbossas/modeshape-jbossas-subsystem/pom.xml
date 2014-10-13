@@ -16,11 +16,30 @@
     <dependencies>
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr</artifactId>
+            <artifactId>modeshape-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-common</artifactId>
+            <artifactId>modeshape-schematic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Set these AS7 resources as 'provided' here rather than in parent POM, since other distributions may need to include them -->
@@ -45,10 +64,7 @@
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-subsystem-test-framework</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-        </dependency>
+
 
         <!--Testing-->
         <dependency>
@@ -61,5 +77,22 @@
         </dependency>
 
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <!--
+                        Disabled on purpose because of the JUNGLE of artifacts required by the WF kit
+                    -->
+                    <execution>
+                        <id>enforce-direct-dependencies</id>
+                        <phase>non-existent</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

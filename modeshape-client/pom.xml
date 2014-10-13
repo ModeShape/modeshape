@@ -108,7 +108,7 @@
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_httpclient.txt"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/httpcore-4.3.2.jar"
+                                        <unzip src="${project.build.directory}/tempjars/httpcore-${httpcore.version}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_httpcore.txt"/>

@@ -23,8 +23,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.compress.utils.IOUtils;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -317,7 +317,7 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     private ByteBuffer buffer( InputStream stream ) throws IOException {
         stream.reset();
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        IOUtils.copy(stream, bout);
+        IoUtil.write(stream, bout);
         return ByteBuffer.wrap(bout.toByteArray());
     }
 

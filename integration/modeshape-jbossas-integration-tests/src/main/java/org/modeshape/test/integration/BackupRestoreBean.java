@@ -21,7 +21,6 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Problems;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.RepositoryManager;
@@ -41,7 +40,7 @@ public class BackupRestoreBean extends RepositoryProvider {
     @TransactionAttribute( TransactionAttributeType.NOT_SUPPORTED )
     public void run() throws Exception {
         final String path = System.getProperty("jboss.server.base.dir");
-        if (StringUtil.isBlank(path)) {
+        if (path == null || path.trim().length() == 0) {
             throw new IllegalStateException("Cannot locate the jboss server dir");
         }
         final File backupDirectory = new File(path);
