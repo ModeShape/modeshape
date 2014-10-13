@@ -68,6 +68,7 @@ public enum Attribute {
     CACHE_TTL_SECONDS("cacheTtlSeconds"),
     QUERYABLE("queryable"),
     READONLY("readonly"),
+    EXPOSE_AS_WORKSPACE("exposeAsWorkspace"),
     EXPLODED("exploded"),
     MAX_DAYS_TO_KEEP_RECORDS("max-days-to-keep-records"),
     ASYNC_WRITES("async-writes"),

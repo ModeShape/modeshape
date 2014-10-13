@@ -137,6 +137,29 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
+    public void shouldBrowseExternalWorkspace() throws Exception {
+        Session session2 = session.getRepository().login("readonly-fls");
+        assertTrue(session2 != null);
+        
+        Node node = session2.getNode("/");
+//        System.out.println("Root=" + node.getName());
+        
+//        System.out.println("Level1------------");
+        NodeIterator it = node.getNodes();
+        
+        ArrayList<String> dirs = new ArrayList();
+        dirs.add("dir1");
+        dirs.add("dir2");
+        dirs.add("dir3");
+        
+        while (it.hasNext()) {
+            dirs.remove(it.nextNode().getName());
+        }
+        
+        assertEquals(0, dirs.size());
+    }
+    
+    @Test
     @FixFor( "MODE-2061" )
     public void largeFilesTest() throws Exception {
         largeFilesURIBased();

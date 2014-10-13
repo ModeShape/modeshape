@@ -1039,6 +1039,10 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.READONLY.parseAndSetParameter(attrValue, externalSource, reader);
                         break;
                     }
+                    case EXPOSE_AS_WORKSPACE: {
+                        ModelAttributes.EXPOSE_AS_WORKSPACE.parseAndSetParameter(attrValue, externalSource, reader);
+                        break;
+                    }
                     default:
                         // extra attributes are allowed to set externalSource-specific properties ...
                         externalSource.get(ModelKeys.PROPERTIES).add(attrName, attrValue);

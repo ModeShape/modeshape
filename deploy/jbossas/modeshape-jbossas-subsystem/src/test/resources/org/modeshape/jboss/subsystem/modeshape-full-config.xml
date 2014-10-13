@@ -26,7 +26,7 @@
         <external-sources>
             <source cacheTtlSeconds="1"
                     classname="org.modeshape.connector.filesystem.FileSystemConnector"
-                    directoryPath="." name="filesystem" readonly="true">
+                    directoryPath="." name="filesystem" readonly="true" exposeAsWorkspace="ws-fs">
                 <projection>default:/projection1 =&gt; /</projection>
                 <projection>other:/projection1 =&gt; /</projection>
             </source>

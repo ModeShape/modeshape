@@ -629,7 +629,7 @@
                 </workspaces>
                 <external-sources>
                     <source name="filesystem_readonly" classname="org.modeshape.connector.filesystem.FileSystemConnector"
-                            directoryPath="${rootDirectoryPath}" cacheTtlSeconds="1" readonly="true">
+                            directoryPath="${rootDirectoryPath}" cacheTtlSeconds="1" readonly="true" exposeAsWorkspace="filesystem">
                         <projection>default:/projection1 => /</projection>
                         <projection>other:/projection1 => /</projection>
                     </source>

@@ -113,7 +113,7 @@ public class ModelKeys {
     static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
     static final String QUERYABLE = "queryable";
     static final String READONLY = "readonly";
-
+    static final String EXPOSE_AS_WORKSPACE = "exposeAsWorkspace";
     static final String EXPLODED = "exploded";
 
     static final String MAX_DAYS_TO_KEEP_RECORDS = "journal-max-days-to-keep-records";

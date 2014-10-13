@@ -9,7 +9,8 @@
         "readonly-files" : {
             "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
             "directoryPath" : "target/federation/files-read",
-            "readonly" : true
+            "readonly" : true,
+            "exposeAsWorkspace" : "readonly-fls"
         },
         "readonly-files-with-exclusion" : {
             "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",

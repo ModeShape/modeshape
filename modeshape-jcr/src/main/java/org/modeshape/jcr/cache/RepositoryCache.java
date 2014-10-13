@@ -43,6 +43,7 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.ConfigurationException;
+import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -69,6 +70,7 @@ import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
 import org.modeshape.jcr.clustering.ClusteringService;
+import org.modeshape.jcr.federation.ExternalDocumentStore;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.txn.Transactions.Transaction;
 import org.modeshape.jcr.value.Name;
@@ -1034,6 +1036,48 @@ public class RepositoryCache {
     }
 
     /**
+     * Creates a new workspace in the repository coupled with external document
+     * store.
+     *
+     * @param name the name of the repository
+     * @param connectors connectors to the external systems.
+     * @return workspace cache for the new workspace.
+     */
+    public WorkspaceCache createExternalWorkspace(String name, Connectors connectors) {
+        String[] tokens = name.split(":");
+        
+        String conName = tokens[0];
+        String wsName = tokens[1];
+        
+        this.workspaceNames.add(wsName);
+        refreshRepositoryMetadata(true);
+
+        Cache<NodeKey, CachedNode> nodeCache = cacheForWorkspace(name);
+        ExecutionContext context = context();
+        
+        //the name of the external connector is used for source name and workspace name
+        
+        String sourceKey = NodeKey.keyForSourceName(conName);
+        String workspaceKey = NodeKey.keyForWorkspaceName(conName);
+
+        //ask external system to determine root identifier.
+        ExternalDocumentStore documentStore = new ExternalDocumentStore(connectors);
+        String rootId = documentStore.getRootId(sourceKey);
+
+        // Compute the root key for this workspace ...
+        NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootId);
+
+        // We know that this workspace is not the system workspace, so find it ...
+        final WorkspaceCache systemWorkspaceCache = workspaceCachesByName.get(systemWorkspaceName);
+        
+        WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), 
+                wsName, systemWorkspaceCache, documentStore, translator, rootKey, nodeCache, changeBus);
+        workspaceCachesByName.put(wsName, workspaceCache);
+
+        return workspace(wsName);
+    }
+    
+    /**
      * Create a session for the workspace with the given name, using the supplied ExecutionContext for the session.
      *
      * @param context the context for the new session; may not be null
@@ -1042,13 +1086,14 @@ public class RepositoryCache {
      * @return the new session that supports writes; never null
      * @throws WorkspaceNotFoundException if no such workspace exists
      */
-    public SessionCache createSession( ExecutionContext context,
-                                       String workspaceName,
-                                       boolean readOnly ) {
-        if (readOnly) {
-            return new ReadOnlySessionCache(context, workspace(workspaceName), sessionContext);
+    public SessionCache createSession(ExecutionContext context,
+            String workspaceName,
+            boolean readOnly) {
+        WorkspaceCache workspaceCache = workspace(workspaceName);
+        if (readOnly || workspaceCache.isExternal()) {
+            return new ReadOnlySessionCache(context, workspaceCache, sessionContext);
         }
-        return new WritableSessionCache(context, workspace(workspaceName), sessionContext);
+        return new WritableSessionCache(context, workspaceCache, sessionContext);
     }
 
     /**

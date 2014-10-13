@@ -17,7 +17,7 @@
             <projection>default:/projection1 => /doc1</projection>
             <projection>default:/testRoot/projection2 => /doc2</projection>
         </source>
-        <source name="filesystem" classname="org.modeshape.connector.filesystem.FileSystemConnector" module="modeshape"
+        <source name="filesystem" classname="org.modeshape.connector.filesystem.FileSystemConnector" module="modeshape" exposeAsWorkspace="ws-filesystem"
                 directoryPath="${jboss.server.data.dir}"/>
     </external-sources>
   </repository>
