@@ -71,6 +71,7 @@ public final class RepositoryI18n {
     public static I18n executionContextHasBeenClosed;
     public static I18n unableToFindPropertyForSequencing;
     public static I18n atLeastOneSequencerPathExpressionMustBeSpecified;
+    public static I18n shutdownWhileSequencing;
 
     // Properties
     public static I18n errorReadingPropertiesFromContainerNode;
@@ -107,7 +108,6 @@ public final class RepositoryI18n {
     public static I18n unableToLoadClassUsingClasspath;
     public static I18n unableToInstantiateClassUsingClasspath;
     public static I18n unableToAccessClassUsingClasspath;
-    public static I18n unexpectedErrorAfterRepositoryHasBeenShutDown;
 
     // Repository
     public static I18n errorStartingRepositoryService;
@@ -120,6 +120,9 @@ public final class RepositoryI18n {
 
     // MimeTypes
     public static I18n unableToLoadMimeTypeDetector;
+
+    // Text extraction
+    public static I18n shutdownWhileExtractingText;
 
     private RepositoryI18n() {
     }
