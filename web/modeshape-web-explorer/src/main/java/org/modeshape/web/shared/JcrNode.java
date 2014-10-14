@@ -28,6 +28,8 @@ import java.util.Collection;
 public class JcrNode implements Serializable, IsSerializable {
     private static final long serialVersionUID = 1L;
     
+    private String repository;
+    private String workspace;
     private String name;
     private String path;
     private String primaryType;
@@ -45,10 +47,20 @@ public class JcrNode implements Serializable, IsSerializable {
     public JcrNode() {
     }
     
-    public JcrNode(String name, String path, String primaryType) {
+    public JcrNode(String repository, String workspace, String name, String path, String primaryType) {
+        this.repository = repository;
+        this.workspace = workspace;
         this.name = name;
         this.path = path;
         this.primaryType = primaryType;
+    }
+    
+    public String getRepository() {
+        return repository;
+    }
+    
+    public String getWorkspace() {
+        return workspace;
     }
     
     public void setName(String name) {
@@ -85,10 +97,6 @@ public class JcrNode implements Serializable, IsSerializable {
     
     public void setProperties(Collection<JcrProperty> properties) {
         this.properties = properties;
-    }
-    
-    public void addProperty(String name, String type, String value) {
-        properties.add(new JcrProperty(name, type, value));
     }
     
     public JcrAccessControlList getAccessList() {

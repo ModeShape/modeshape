@@ -20,7 +20,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.math.BigDecimal;
 import java.security.Principal;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -28,7 +27,6 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -65,6 +63,9 @@ import org.modeshape.web.shared.Policy;
 import org.modeshape.web.shared.RepositoryName;
 import org.modeshape.web.shared.ResultSet;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+import java.util.Arrays;
+import java.util.Date;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * The server side implementation of the RPC service.
@@ -145,9 +146,9 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             Node n = session.getNode(path);
 
             // convert into value object
-            JcrNode node = new JcrNode(n.getName(), n.getPath(), n.getPrimaryNodeType().getName());
+            JcrNode node = new JcrNode(repository, workspace, n.getName(), n.getPath(), n.getPrimaryNodeType().getName());
             node.setMixins(mixinTypes(n));
-            node.setProperties(getProperties(n));
+            node.setProperties(getProperties(repository, workspace, path, n));
 
             node.setPropertyDefs(propertyDefs(n));
             node.setAcl(getAcl(repository, workspace, path));
@@ -155,7 +156,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             NodeIterator it = n.getNodes();
             while (it.hasNext()) {
                 Node child = it.nextNode();
-                node.addChild(new JcrNode(child.getName(), child.getPath(), child.getPrimaryNodeType().getName()));
+                node.addChild(new JcrNode(repository, workspace, child.getName(), child.getPath(), child.getPrimaryNodeType().getName()));
             }
             return node;
         } catch (RepositoryException e) {
@@ -266,18 +267,53 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      * @return list of node's properties.
      * @throws RepositoryException
      */
-    private Collection<JcrProperty> getProperties( Node node ) throws RepositoryException {
+    private Collection<JcrProperty> getProperties( String repository, String workspace, String path, Node node ) throws RepositoryException {
+        ArrayList<PropertyDefinition> names = new ArrayList();
+        
+        NodeType primaryType = node.getPrimaryNodeType();
+        PropertyDefinition[] defs = primaryType.getPropertyDefinitions();
+
+        names.addAll(Arrays.asList(defs));
+        
+        NodeType[] mixinType = node.getMixinNodeTypes();
+        for (NodeType type : mixinType) {
+            defs = type.getPropertyDefinitions();
+            names.addAll(Arrays.asList(defs));
+        }
+
         ArrayList<JcrProperty> list = new ArrayList<>();
-        PropertyIterator it = node.getProperties();
-        while (it.hasNext()) {
-            Property p = it.nextProperty();
-            JcrProperty property = new JcrProperty(p.getName(), PropertyType.nameFromValue(p.getType()), values(p));
-            property.setProtected(p.getDefinition().isProtected());
-            property.setProtected(p.getDefinition().isMultiple());
-            list.add(property);
+        for (PropertyDefinition def :  names) {
+            JcrProperty prop = null;
+            
+            String name = def.getName();
+            String type = PropertyType.nameFromValue(def.getRequiredType());
+            String value = null;
+            String display = null;
+            
+            Property p = null;
+            try {
+                p = node.getProperty(def.getName());
+            } catch (PathNotFoundException e) {
+            }
+            
+            display = values(def, p);  
+            
+            switch (def.getRequiredType()) {
+                case PropertyType.BINARY:
+                    HttpServletRequest request = this.getThreadLocalRequest();
+                    String context = request.getContextPath();
+                    value = String.format("%s/binary/node?repository=%s&workspace=%s&path=%s&property=%s", 
+                            context, repository, workspace, path, def.getName());
+                    break;
+                default:
+                    value = p == null ? "N/A" : p.getValue() != null ? p.getValue().getString() : "N/A";
+                    break;
+            }
+            
+            list.add(new JcrProperty(name, type, value, display));
         }
         return list;
-    }
+    }    
 
     /**
      * Displays property value as string
@@ -286,7 +322,15 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
      * @return property value as text string
      * @throws RepositoryException
      */
-    private String values( Property p ) throws RepositoryException {
+    private String values( PropertyDefinition pd, Property p ) throws RepositoryException {
+        if (p == null) {
+            return "N/A";
+        }
+        
+        if (pd.getRequiredType() == PropertyType.BINARY) {
+            return "BINARY";
+        }
+        
         if (!p.isMultiple()) {
             return p.getString();
         }
@@ -438,43 +482,75 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
 
     @Override
+    public void setProperty(JcrNode node, String name, String value) throws RemoteException {
+        Session session = connector().find(node.getRepository()).session(node.getWorkspace());
+        try {
+            Node n = session.getNode(node.getPath());
+            n.setProperty(name, value);
+        } catch (Exception e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void setProperty(JcrNode node, String name, Boolean value) throws RemoteException {
+        Session session = connector().find(node.getRepository()).session(node.getWorkspace());
+        try {
+            Node n = session.getNode(node.getPath());
+            n.setProperty(name, value);
+        } catch (Exception e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void setProperty(JcrNode node, String name, Date value) throws RemoteException {
+        Session session = connector().find(node.getRepository()).session(node.getWorkspace());
+        try {
+            Node n = session.getNode(node.getPath());
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(value);
+            n.setProperty(name, calendar);
+        } catch (Exception e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
+    
     public void setProperty( String repository,
                              String workspace,
                              String path,
                              String name,
-                             String value ) throws RemoteException {
+                             Object value ) throws RemoteException {
         Session session = connector().find(repository).session(workspace);
         try {
             Node node = (Node)session.getItem(path);
             switch (type(node, name)) {
                 case PropertyType.BOOLEAN:
-                    node.setProperty(name, Boolean.parseBoolean(value));
+                    node.setProperty(name, (Boolean)value);
                     break;
                 case PropertyType.DATE:
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(new SimpleDateFormat("").parse(value));
-                    node.setProperty(name, cal);
+                    node.setProperty(name, (Calendar)value);
                     break;
                 case PropertyType.DECIMAL:
-                    node.setProperty(name, BigDecimal.valueOf(Double.parseDouble(value)));
+                    node.setProperty(name, BigDecimal.valueOf(Double.parseDouble((String)value)));
                     break;
                 case PropertyType.DOUBLE:
-                    node.setProperty(name, Double.parseDouble(value));
+                    node.setProperty(name, Double.parseDouble((String)value));
                     break;
                 case PropertyType.LONG:
-                    node.setProperty(name, Long.parseLong(value));
+                    node.setProperty(name, Long.parseLong((String)value));
                     break;
                 case PropertyType.NAME:
-                    node.setProperty(name, value);
+                    node.setProperty(name, (String)value);
                     break;
                 case PropertyType.PATH:
-                    node.setProperty(name, value);
+                    node.setProperty(name, (String)value);
                     break;
                 case PropertyType.STRING:
-                    node.setProperty(name, value);
+                    node.setProperty(name, (String)value);
                     break;
                 case PropertyType.URI:
-                    node.setProperty(name, value);
+                    node.setProperty(name, (String)value);
                     break;
 
             }

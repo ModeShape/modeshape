@@ -24,6 +24,8 @@ import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
 import org.modeshape.web.client.Contents;
 import org.modeshape.web.client.grid.Properties.PropertyRecord;
+import org.modeshape.web.client.peditor.BaseEditor;
+import org.modeshape.web.client.peditor.ValueEditor;
 import org.modeshape.web.shared.JcrNode;
 import org.modeshape.web.shared.JcrProperty;
 
@@ -31,17 +33,19 @@ import org.modeshape.web.shared.JcrProperty;
  *
  * @author kulikov
  */
-@SuppressWarnings( "synthetic-access" )
+@SuppressWarnings("synthetic-access")
 public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
 
     private final Contents contents;
-
+    private JcrNode node;
+    
     public Properties(Contents contents) {
         super("Properties");
         this.contents = contents;
     }
 
     public void show(JcrNode node) {
+        this.node = node;
         setValues(node.getProperties());
     }
 
@@ -87,7 +91,6 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
     protected HLayout toolBar() {
         HLayout header = new HLayout();
         header.setBackgroundColor("#ffffff");
-//        header.setMargin(5);
         header.setAlign(Alignment.LEFT);
         header.setDefaultLayoutAlign(Alignment.LEFT);
         header.setLayoutAlign(Alignment.LEFT);
@@ -104,12 +107,6 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
         panel.setDefaultLayoutAlign(VerticalAlignment.CENTER);
         panel.setLayoutAlign(VerticalAlignment.CENTER);
 
-//            Label hint = new Label();
-//            hint.setWidth(200);
-//            hint.setAlign(Alignment.RIGHT);
-//            hint.setLayoutAlign(VerticalAlignment.BOTTOM);
-
-//            hint.setContents("Click button to switch view");
 
         Button addMixinButton = new Button();
         addMixinButton.setTitle("Add mixin");
@@ -129,25 +126,13 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
             }
         });
 
-        Button editPropertyButton = new Button();
-        editPropertyButton.setTitle("Edit property");
-        editPropertyButton.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                contents.setProperty();
-            }
-        });
-
-
         header.addMember(panel);
 
-//            panel.addMember(hint);
         panel.addMember(new Strut(10));
         panel.addMember(addMixinButton);
         panel.addMember(new Strut(5));
         panel.addMember(removeMixinButton);
         panel.addMember(new Strut(5));
-        panel.addMember(editPropertyButton);
 
         return header;
     }
@@ -164,7 +149,8 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
         private BooleanField isProtected = new BooleanField();
         private BooleanField isMultiple = new BooleanField();
         private Label value = new Label();
-
+        private ValueEditor editor;
+        
         public PropertyRecord() {
             super();
             setStyleName("grid");
@@ -198,12 +184,21 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
             addMember(value);
         }
 
-        private void setValue(JcrProperty property) {
+        private void setValue(final JcrProperty property) {
             this.name.setContents(property.getName());
             this.type.setContents(property.getType());
             this.isProtected.setValue(property.isProtected());
             this.isMultiple.setValue(property.isMultiValue());
-            this.value.setContents(property.getValue());
+            this.value.setContents(property.getDisplayValue());
+            this.editor = BaseEditor.getValueEditor(property.getType(), contents);
+            this.value.addClickHandler(new ClickHandler() {
+                @Override
+                public void onClick(ClickEvent event) {
+                    //show modal form with reference to property.getValue()
+                    editor.setValue(node, property.getName(), property.getValue());
+                }
+            });
         }
     }
+
 }
