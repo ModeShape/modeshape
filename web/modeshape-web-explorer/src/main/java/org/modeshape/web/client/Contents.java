@@ -173,7 +173,11 @@ public class Contents extends View {
         jcrService.getWorkspaces(repository, new AsyncCallback<String[]>() {
             @Override
             public void onFailure(Throwable caught) {
+                RemoteException e = (RemoteException) caught;
                 SC.say(caught.getMessage());
+                if (e.code() == RemoteException.SECURITY_ERROR) {
+                    console.showRepositories();
+                }
             }
 
             @Override

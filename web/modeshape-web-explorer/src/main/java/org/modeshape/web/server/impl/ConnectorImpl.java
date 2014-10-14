@@ -94,6 +94,12 @@ public class ConnectorImpl implements Connector {
     }
 
     @Override
+    public void logout() {
+        credentials = null;
+        userName = null;
+    }
+    
+    @Override
     public String userName() {
         return userName;
     }
