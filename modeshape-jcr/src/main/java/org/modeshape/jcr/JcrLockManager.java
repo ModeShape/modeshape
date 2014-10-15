@@ -64,7 +64,9 @@ class JcrLockManager implements LockManager {
      */
     final void cleanLocks() throws RepositoryException {
         lockManager.cleanLocks(session);
-        lockTokens.clear();
+        for (String token : lockTokens.keySet()) {
+            removeLockToken(token);
+        }
     }
 
     @Override
