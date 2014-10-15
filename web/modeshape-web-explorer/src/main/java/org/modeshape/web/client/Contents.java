@@ -46,7 +46,8 @@ import org.modeshape.web.shared.Policy;
  */
 @SuppressWarnings( "synthetic-access" )
 public class Contents extends View {
-
+    private final static String ROOT_PATH = "/";
+    
     private Console console;
     private JcrServiceAsync jcrService;
     private String repository;
@@ -97,7 +98,7 @@ public class Contents extends View {
         workspaces.addChangedHandler(new ChangedHandler() {
             @Override
             public void onChanged(ChangedEvent event) {
-                select(repository(), (String)event.getValue(), path(), true);
+                select(repository(), (String)event.getValue(), ROOT_PATH, true);
             }
         });
         
@@ -161,7 +162,7 @@ public class Contents extends View {
                 if (result.length > 0) {
                     workspaces.setValue(result[0]);
                 }
-                select(path(), changeHistory);
+                select(ROOT_PATH, changeHistory);
             }
         });
     }
