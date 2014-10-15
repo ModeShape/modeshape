@@ -120,11 +120,8 @@ public class XmlSequencer extends Sequencer {
         // Prevent the resolving of DTD entities into fully-qualified URIS
         setFeature(reader, RESOLVE_DTD_URIS_FEATURE, false);
         // Parse XML document
-        InputStream stream = binaryValue.getStream();
-        try {
+        try (InputStream stream = binaryValue.getStream()) {
             reader.parse(new InputSource(stream));
-        } finally {
-            stream.close();
         }
         return true;
     }

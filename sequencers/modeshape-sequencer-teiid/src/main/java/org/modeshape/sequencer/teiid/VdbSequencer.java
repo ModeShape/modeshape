@@ -86,10 +86,8 @@ public class VdbSequencer extends Sequencer {
 
         final Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
-        ZipInputStream vdbStream = null;
 
-        try {
-            vdbStream = new ZipInputStream(binaryValue.getStream());
+        try (final ZipInputStream vdbStream = new ZipInputStream(binaryValue.getStream())) {
             VdbManifest manifest = null;
             ZipEntry entry = null;
 
@@ -167,16 +165,7 @@ public class VdbSequencer extends Sequencer {
 
             return true;
         } catch (final Exception e) {
-            getLogger().error(e, TeiidI18n.errorReadingVdbFile.text(inputProperty.getPath(), e.getMessage()));
-            return false;
-        } finally {
-            if (vdbStream != null) {
-                try {
-                    vdbStream.close();
-                } catch (final Exception e) {
-                    getLogger().warn(e, TeiidI18n.errorClosingVdbFile.text(inputProperty.getPath(), e.getMessage()));
-                }
-            }
+            throw new RuntimeException(TeiidI18n.errorReadingVdbFile.text(inputProperty.getPath(), e.getMessage()), e);
         }
     }
 

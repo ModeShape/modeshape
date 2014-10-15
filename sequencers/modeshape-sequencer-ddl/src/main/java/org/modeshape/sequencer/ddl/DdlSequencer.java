@@ -189,8 +189,7 @@ public class DdlSequencer extends Sequencer {
         // Perform the parsing
         final AstNode rootNode;
         DdlParsers parsers = createParsers(getParserList());
-        InputStream stream = ddlContent.getStream();
-        try {
+        try (InputStream stream = ddlContent.getStream()) {
             rootNode = parsers.parse(IoUtil.read(stream), fileName);
         } catch (ParsingException e) {
             LOGGER.error(e, DdlSequencerI18n.errorParsingDdlContent, e.getLocalizedMessage());
@@ -198,8 +197,6 @@ public class DdlSequencer extends Sequencer {
         } catch (IOException e) {
             LOGGER.error(e, DdlSequencerI18n.errorSequencingDdlContent, e.getLocalizedMessage());
             return false;
-        } finally {
-            stream.close();
         }
 
         Queue<AstNode> queue = new LinkedList<AstNode>();

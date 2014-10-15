@@ -93,16 +93,12 @@ public class CndSequencer extends Sequencer {
         }
 
         CndImporter cndImporter = null;
-        InputStream stream = binaryValue.getStream();
-        try {
+        try (InputStream stream = binaryValue.getStream()) {
             cndImporter = importNodesFromCND(stream);
             if (cndImporter == null) {
                 return false;
             }
-        } finally {
-            stream.close();
         }
-        assert cndImporter != null;
 
         registerImportedNamespaces(outputNode, cndImporter);
         processNodeTypeDefinitions(outputNode, cndImporter);

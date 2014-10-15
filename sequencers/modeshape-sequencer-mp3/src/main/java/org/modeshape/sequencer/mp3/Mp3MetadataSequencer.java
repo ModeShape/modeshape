@@ -69,32 +69,23 @@ public class Mp3MetadataSequencer extends Sequencer {
                             Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
-        try {
-            Mp3Metadata metadata = null;
-            InputStream stream = binaryValue.getStream();
-            try {
-                metadata = Mp3Metadata.instance(stream);
-            } finally {
-                stream.close();
-            }
-            Node sequencedNode = outputNode;
-            if (outputNode.isNew()) {
-                outputNode.setPrimaryType(METADATA_NODE);
-            } else {
-                sequencedNode = outputNode.addNode(METADATA_NODE, METADATA_NODE);
-            }
-
-            sequencedNode.setProperty(TITLE, metadata.getTitle());
-            sequencedNode.setProperty(AUTHOR, metadata.getAuthor());
-            sequencedNode.setProperty(ALBUM, metadata.getAlbum());
-            sequencedNode.setProperty(YEAR, metadata.getYear());
-            sequencedNode.setProperty(COMMENT, metadata.getComment());
-
-            return true;
-
-        } catch (Exception e) {
-            getLogger().error(e, "Cannot sequence mp3 content ");
-            return false;
+        Mp3Metadata metadata = null;
+        try (InputStream stream = binaryValue.getStream()) {
+            metadata = Mp3Metadata.instance(stream);
         }
+        Node sequencedNode = outputNode;
+        if (outputNode.isNew()) {
+            outputNode.setPrimaryType(METADATA_NODE);
+        } else {
+            sequencedNode = outputNode.addNode(METADATA_NODE, METADATA_NODE);
+        }
+
+        sequencedNode.setProperty(TITLE, metadata.getTitle());
+        sequencedNode.setProperty(AUTHOR, metadata.getAuthor());
+        sequencedNode.setProperty(ALBUM, metadata.getAlbum());
+        sequencedNode.setProperty(YEAR, metadata.getYear());
+        sequencedNode.setProperty(COMMENT, metadata.getComment());
+
+        return true;
     }
 }

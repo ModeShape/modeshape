@@ -142,32 +142,23 @@ public class MSOfficeMetadataSequencer extends Sequencer {
 
         setProperty(sequencedNode, JCR_MIME_TYPE, mimeType);
         if (isPowerpoint(mimeType)) {
-            InputStream stream = binaryValue.getStream();
-            try {
+            try (InputStream stream = binaryValue.getStream()) {
                 sequencePowerpoint(sequencedNode, context.valueFactory(), stream);
                 return true;
-            } finally {
-                stream.close();
             }
         }
 
         if (isWord(mimeType)) {
-            InputStream stream = binaryValue.getStream();
-            try {
-                sequenceWord(sequencedNode, context.valueFactory(), binaryValue.getStream());
+            try (InputStream stream = binaryValue.getStream()) {
+                sequenceWord(sequencedNode, context.valueFactory(), stream);
                 return true;
-            } finally {
-                stream.close();
             }
         }
 
         if (isExcel(mimeType)) {
-            InputStream stream = binaryValue.getStream();
-            try {
-                sequenceExcel(sequencedNode, context.valueFactory(), binaryValue.getStream());
+            try (InputStream stream = binaryValue.getStream()) {
+                sequenceExcel(sequencedNode, context.valueFactory(), stream);
                 return true;
-            } finally {
-                stream.close();
             }
         }
 

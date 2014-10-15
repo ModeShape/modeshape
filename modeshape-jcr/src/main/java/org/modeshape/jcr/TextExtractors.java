@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -42,32 +43,44 @@ public final class TextExtractors {
 
     private final List<TextExtractor> extractors;
     private final ExecutorService extractingQueue;
+    private final List<Future<?>> extractionResults;
     private final ConcurrentHashMap<BinaryKey, CountDownLatch> workerLatches;
+    private volatile boolean active;
 
     public TextExtractors( ExecutorService extractingQueue,
                            List<TextExtractor> extractors ) {
         this.extractingQueue = extractingQueue;
-        this.workerLatches = new ConcurrentHashMap<BinaryKey, CountDownLatch>();
+        this.workerLatches = new ConcurrentHashMap<>();
+        this.extractionResults = new ArrayList<>();
         this.extractors = extractors;
+        this.active = true;
     }
 
-    TextExtractors( JcrRepository.RunningState repository,
+    protected TextExtractors( JcrRepository.RunningState repository,
                     RepositoryConfiguration.TextExtraction extracting ) {
         this(repository.context().getCachedTreadPool(extracting.getThreadPoolName()), getConfiguredExtractors(repository,
                                                                                                               extracting));
     }
 
     protected void shutdown() {
-        extractors.clear();
-        extractingQueue.shutdown();
+        this.active = false;
+        this.extractors.clear();
+        this.extractingQueue.shutdown();
+        for (Future<?>  extractionResult : extractionResults ) {
+            extractionResult.cancel(true);
+        }
+        extractionResults.clear();
     }
 
     public boolean extractionEnabled() {
-        return !extractors.isEmpty();
+        return active && !extractors.isEmpty();
     }
 
     public String extract( InMemoryBinaryValue inMemoryBinaryValue,
                            TextExtractor.Context context ) {
+        if (!extractionEnabled()) {
+            return null;
+        }
         try {
             String mimeType = inMemoryBinaryValue.getMimeType();
             TextExtractorOutput output = new TextExtractorOutput();
@@ -99,7 +112,7 @@ public final class TextExtractors {
         }
         CheckArg.isNotNull(binaryValue, "binaryValue");
         CountDownLatch latch = getWorkerLatch(binaryValue.getKey(), true);
-        extractingQueue.execute(new Worker(store, binaryValue, context, latch));
+        extractionResults.add(extractingQueue.submit(new Worker(store, binaryValue, context, latch)));
         return latch;
     }
 
@@ -154,6 +167,9 @@ public final class TextExtractors {
         @SuppressWarnings( "synthetic-access" )
         @Override
         public void run() {
+            if (!active) {
+                return;
+            }
             try {
                 // only extract text if there isn't a stored value for the binary key (note that any changes in the binary will
                 // produce a different key)
@@ -176,8 +192,15 @@ public final class TextExtractors {
                 if (extractedText != null && !StringUtil.isBlank(extractedText)) {
                     store.storeExtractedText(binaryValue, extractedText);
                 }
-            } catch (Exception e) {
-                LOGGER.error(e, JcrI18n.errorExtractingTextFromBinary, binaryValue.getHexHash(), e.getLocalizedMessage());
+            }  catch (InterruptedException ie) {
+                Thread.interrupted();
+                LOGGER.warn(RepositoryI18n.shutdownWhileExtractingText, binaryValue.getKey(), ie.getMessage());
+            } catch (Throwable t) {
+                if (!active) {
+                    LOGGER.warn(RepositoryI18n.shutdownWhileExtractingText, binaryValue.getKey(), t.getMessage());
+                } else {
+                    LOGGER.error(t, JcrI18n.errorExtractingTextFromBinary, binaryValue.getHexHash(), t.getLocalizedMessage());
+                }
             } finally {
                 // decrement the latch regardless of success/failure to avoid blocking, as extraction is not retried
                 latch.countDown();

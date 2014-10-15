@@ -91,7 +91,7 @@ public class Sequencers implements ChangeSetListener {
     private final WorkQueue workQueue;
     protected final ExecutorService sequencingExecutor;
     private boolean initialized;
-    private volatile boolean shutdown = false;
+    private volatile boolean acceptsWork = true;
 
     protected Sequencers( JcrRepository.RunningState repository,
                           RepositoryConfiguration config,
@@ -334,11 +334,12 @@ public class Sequencers implements ChangeSetListener {
     }
 
     protected final void shutdown() {
+        // mark it as shutdown first, before attempting to terminate any existing jobs
+        acceptsWork = false;
         if (workQueue != null) {
             sequencingExecutor.shutdown();
             workQueue.shutdown();
         }
-        shutdown = true;
     }
 
     protected final RepositoryStatistics statistics() {
@@ -350,7 +351,7 @@ public class Sequencers implements ChangeSetListener {
                                String inputWorkspaceName,
                                String propertyName,
                                String userId ) {
-        if (shutdown) return;
+        if (!acceptsWork) return;
         // Convert the input path (which has a '@' to denote a property) to a standard JCR path ...
         SequencingWorkItem workItem = new SequencingWorkItem(sequencingConfig.getSequencer().getUniqueId(), userId,
                                                              inputWorkspaceName, matcher.getSelectedPath(),
@@ -385,6 +386,10 @@ public class Sequencers implements ChangeSetListener {
             result.add(expression);
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    protected boolean acceptsWork() {
+        return acceptsWork;
     }
 
     @Immutable

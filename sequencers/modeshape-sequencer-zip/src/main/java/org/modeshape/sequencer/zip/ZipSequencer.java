@@ -57,26 +57,13 @@ public class ZipSequencer extends Sequencer {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
 
-        ZipInputStream zipInputStream = null;
-        try {
-            zipInputStream = new ZipInputStream(binaryValue.getStream());
-
+        try (ZipInputStream zipInputStream = new ZipInputStream(binaryValue.getStream())){
             ZipEntry entry = zipInputStream.getNextEntry();
-
             outputNode = createTopLevelNode(outputNode);
-
             while (entry != null) {
                 entry = sequenceZipEntry(outputNode, context, zipInputStream, entry);
             }
             return true;
-        } finally {
-            if (zipInputStream != null) {
-                try {
-                    zipInputStream.close();
-                } catch (Exception e) {
-                    getLogger().warn(e, "Cannot close zip input stream");
-                }
-            }
         }
     }
 
