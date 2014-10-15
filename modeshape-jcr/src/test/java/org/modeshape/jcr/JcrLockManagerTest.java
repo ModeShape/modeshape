@@ -17,6 +17,11 @@ package org.modeshape.jcr;
 
 import static org.junit.Assert.fail;
 import javax.jcr.InvalidItemStateException;
+import javax.jcr.Session;
+import javax.jcr.lock.Lock;
+import javax.jcr.lock.LockManager;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 
@@ -39,5 +44,24 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
         } catch (InvalidItemStateException e) {
             // expected
         }
+    }
+
+    @Test
+    public void lockTokensShouldBeRemovedFromSessionUponLogout() throws Exception {
+        final AbstractJcrNode testNode
+                = session.getRootNode().addNode("test");
+        final String path = testNode.getPath();
+        testNode.addMixin("mix:lockable");
+        session.save();
+        final Lock lock = session.getWorkspace().getLockManager().lock(path,
+                false, false, Long.MAX_VALUE, session.getUserID());
+        final String token = lock.getLockToken();
+        Assert.assertNotNull(token);
+        session.logout();
+
+        Session session2 = repository.login();
+        final LockManager lockManager = session2.getWorkspace().getLockManager();
+        lockManager.addLockToken(token);
+        Assert.assertTrue("New session should now own the lock.", lockManager.getLock(path).isLockOwningSession());
     }
 }
