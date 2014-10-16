@@ -750,4 +750,14 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             session.save();
         }
     }
+
+    @Test
+    @FixFor("MODE-2338")
+    public void shouldReturnEmptyIteratorWithGlob() throws RepositoryException {
+        Node jcrRootNode = session.getRootNode();
+        Node rootNode = jcrRootNode.addNode("mapSuperclassTest");
+        rootNode.addNode("newNode");
+        NodeIterator nodeIterator = rootNode.getNodes("my*");
+        assertFalse(nodeIterator.hasNext());
+    }
 }
