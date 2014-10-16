@@ -33,6 +33,11 @@ public interface Connector extends Serializable {
     public void login( String username, String password );
 
     /**
+     * Logs out.
+     */
+    public void logout();
+    
+    /**
      * Gets name of user currently logged in.
      * 
      * @return user name or null if not logged yet.

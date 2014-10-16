@@ -22,13 +22,25 @@ import com.google.gwt.user.client.rpc.IsSerializable;
  * @author kulikov
  */
 public class RemoteException extends Exception implements IsSerializable {
+    public final static int SECURITY_ERROR = 1;
+    
     private static final long serialVersionUID = 1L;
-
+    private int code;
+    
     public RemoteException() {
         super();
     }
 
     public RemoteException(String e) {
         super(e);
+    }
+    
+    public RemoteException(int code, String e) {
+        super(e);
+        this.code = code;
+    }
+    
+    public int code() {
+        return code;
     }
 }

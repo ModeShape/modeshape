@@ -65,6 +65,7 @@ import org.modeshape.web.shared.ResultSet;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import java.util.Arrays;
 import java.util.Date;
+import javax.jcr.AccessDeniedException;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -133,6 +134,17 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
 
     @Override
+    public void logout() {
+        try {
+            connector().logout();
+        } catch (RemoteException e) {
+            //nothing to do here in case of the exception
+        } finally {
+            getThreadLocalRequest().getSession(true).invalidate();
+        }
+    }
+    
+    @Override
     public JcrNode node( String repository,
                          String workspace,
                          String path ) throws RemoteException {
@@ -159,8 +171,9 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 node.addChild(new JcrNode(repository, workspace, child.getName(), child.getPath(), child.getPrimaryNodeType().getName()));
             }
             return node;
+        } catch (AccessDeniedException | SecurityException ade) {
+            throw new RemoteException(RemoteException.SECURITY_ERROR, ade.getMessage());
         } catch (RepositoryException e) {
-            e.printStackTrace();
             throw new RemoteException(e.getMessage());
         }
     }

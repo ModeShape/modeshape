@@ -137,7 +137,7 @@ public class ToolBar extends HLayout {
         logout.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                console.jcrService.login(null, null, new AsyncCallback<Object>() {
+                console.jcrService.logout(new AsyncCallback<Object>() {
                     @Override
                     public void onFailure(Throwable caught) {
                         SC.say(caught.getMessage());
@@ -146,6 +146,7 @@ public class ToolBar extends HLayout {
                     @Override
                     public void onSuccess(Object result) {
                         console.updateUserName(null);
+                        console.showContent();
                     }
                 });
             }
