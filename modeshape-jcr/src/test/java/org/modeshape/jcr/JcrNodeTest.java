@@ -750,4 +750,24 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             session.save();
         }
     }
+
+    @Test
+    @FixFor("MODE-2338")
+    public void shouldReturnEmptyIteratorWhenGettingNodesViaGlobsWhichDontMatch() throws RepositoryException {
+        try {
+            Node jcrRootNode = session.getRootNode();
+            Node rootNode = jcrRootNode.addNode("testRoot");
+            rootNode.addNode("newNode");
+            NodeIterator nodeIterator = rootNode.getNodes("my*");
+            assertFalse(nodeIterator.hasNext());
+            session.save();
+            nodeIterator = rootNode.getNodes("my*");
+            assertFalse(nodeIterator.hasNext());
+            nodeIterator = rootNode.getNodes("new*");
+            assertTrue(nodeIterator.hasNext());
+        } finally {
+            session.getNode("/testRoot").remove();
+            session.save();
+        }
+    }
 }
