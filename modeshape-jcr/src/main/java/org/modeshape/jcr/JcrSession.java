@@ -1764,8 +1764,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     @Override
     public synchronized void logout() {
-        this.isLive = false;
-        cleanLocks();
+        terminate(true);
         try {
             RunningState running = repository.runningState();
             long lifetime = Math.abs(System.nanoTime() - this.nanosCreated);
