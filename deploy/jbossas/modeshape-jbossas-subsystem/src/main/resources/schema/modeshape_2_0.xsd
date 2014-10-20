@@ -797,24 +797,21 @@
     <xs:attributeGroup name="file-storage-attributes">
         <xs:attribute name="relative-to" type="xs:string" default="jboss.server.data.dir">
             <xs:annotation>
-                <xs:documentation>The base directory in which to store the indexes.</xs:documentation>
+                <xs:documentation>The base directory in which to store the binary values.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="path" type="xs:string">
             <xs:annotation>
-                <xs:documentation>The system may maintain a set of indexes that
-                    improve the performance of searching and querying the content.
-                    These size of these indexes depend upon the size of the content
-                    being stored, and thus may consume a significant amount of
-                    space. This option defines the path on the file system
-                    (within the "relative-to" location) where the indexes are to be stored
+                <xs:documentation>This option defines the path on the file system
+                    where the binary values are to be stored.
                     If specified, the value must be a valid path to a writable directory
-                    on the file system. If the path specifies a non-existant location, the
+                    on the file system, relative to the location indicated by the "relative-to" attribute.
+                    If the path specifies a non-existant location, the
                     repository may attempt to create the missing directories.
                     If the specified location is not a readable and writable
                     directory (or cannot be created as such), then this will
                     generate an exception when the repository is created.
-                    If undefined, the path defaults to 'modeshape/{repositoryName}/indexes'.
+                    If undefined, the path defaults to 'modeshape/{repositoryName}/binaries'.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
