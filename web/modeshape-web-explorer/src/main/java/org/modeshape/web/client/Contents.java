@@ -145,9 +145,21 @@ public class Contents extends View {
 
         addMember(strut);
         addMember(pathLabel);
-        addMember(mainGrid);
+        addMember(mainGrid);        
     }
 
+    private void showLoadIcon() {
+        pathLabel.setVisible(false);
+        mainGrid.setVisible(false);
+        console.showLoadingIcon();
+    }
+    
+    private void hideLoadIcon() {
+        pathLabel.setVisible(true);
+        mainGrid.setVisible(true);
+        console.hideLoadingIcon();
+    }
+    
     public void show(String repository, final boolean changeHistory) {
         this.repository = repository;
         jcrService.getWorkspaces(repository, new AsyncCallback<String[]>() {
@@ -170,9 +182,11 @@ public class Contents extends View {
     public void select(final String repository, final String workspace, 
             final String path, final boolean changeHistory) {
         this.repository = repository;
+        showLoadIcon();
         jcrService.getWorkspaces(repository, new AsyncCallback<String[]>() {
             @Override
             public void onFailure(Throwable caught) {
+                hideLoadIcon();
                 RemoteException e = (RemoteException) caught;
                 SC.say(caught.getMessage());
                 if (e.code() == RemoteException.SECURITY_ERROR) {
@@ -185,23 +199,23 @@ public class Contents extends View {
                 workspaces.setValueMap(result);
                 workspaces.setValue(workspace);
                 select(path, changeHistory);
+                hideLoadIcon();
             }
         });        
     }
     
     public void select(final String path, final boolean changeHistory) {
-        console.showLoadingIcon();
+        showLoadIcon();
         this.path = path;
         jcrService.node(repository(), workspace(), path, new AsyncCallback<JcrNode>() {
             @Override
             public void onFailure(Throwable caught) {
-                console.hideLoadingIcon();
+                hideLoadIcon();
                 SC.say(caught.getMessage());
             }
 
             @Override
             public void onSuccess(JcrNode result) {
-                console.hideLoadingIcon();
                 node = result;
                 
                 Contents.this.path = result.getPath();
@@ -215,6 +229,7 @@ public class Contents extends View {
                 accessList.show(node);
                 
                 viewPort().display(Contents.this);
+                hideLoadIcon();
             }
         });
     }
