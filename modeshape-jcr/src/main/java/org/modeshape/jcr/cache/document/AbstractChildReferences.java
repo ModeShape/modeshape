@@ -189,7 +189,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
     public Iterator<ChildReference> iterator( Collection<?> namePatterns,
                                               final NamespaceRegistry registry ) {
         //we don't care about SNSs here
-        return iterator(null, namePatterns, registry);
+        return iterator(new BasicContext(), namePatterns, registry);
     }
 
     @Override
