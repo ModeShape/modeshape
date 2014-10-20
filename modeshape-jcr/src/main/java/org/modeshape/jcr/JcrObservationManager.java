@@ -35,11 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RangeIterator;
 import javax.jcr.RepositoryException;
@@ -56,7 +52,6 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.observation.PropertyEvent;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
@@ -88,7 +83,7 @@ import org.modeshape.jcr.value.PathFactory;
  * @author Horia Chiorean
  */
 @ThreadSafe
-final class JcrObservationManager implements ObservationManager, ChangeSetListener {
+final class JcrObservationManager implements ObservationManager {
 
     protected static final Logger LOGGER = Logger.getLogger(JcrObservationManager.class);
 
@@ -116,9 +111,9 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
     private final Observable repositoryObservable;
 
     /**
-     * The map of the JCR repository listeners and their associated wrapped class.
+     * The JCR repository listener wrappers.
      */
-    private final Map<EventListener, JcrListenerAdapter> listeners;
+    private final Set<JcrListenerAdapter> listeners;
 
     /**
      * The associated session.
@@ -126,52 +121,19 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
     protected final JcrSession session;
 
     /**
-     * An object recording various metrics
-     */
-    private final RepositoryStatistics repositoryStatistics;
-
-    /**
-     * A map of [changeSetHashCode, integer] which keep track of the events which have been received by the observation manager
-     * and dispatched to the individual listeners. This is used for statistic purposes only.
-     */
-    private final Map<Integer, AtomicInteger> changesReceivedAndDispatched;
-
-    /**
-     * A lock which guards the JcrObservationManager#changesReceivedAndDispatched map
-     */
-    private final Lock changesLock;
-
-    /**
-     * A lock used to provide thread-safe guarantees when working it the repository observable
-     */
-    private final ReadWriteLock listenersLock;
-
-    /**
      * @param session the owning session (never <code>null</code>)
      * @param repositoryObservable the repository observable used to register JCR listeners (never <code>null</code>)
-     * @param statistics a {@link RepositoryStatistics} instance with which the {@link ValueMetric#EVENT_QUEUE_SIZE} metric is
-     *        updated
      * @throws IllegalArgumentException if either parameter is <code>null</code>
      */
     JcrObservationManager( JcrSession session,
-                           Observable repositoryObservable,
-                           RepositoryStatistics statistics ) {
+                           Observable repositoryObservable ) {
         CheckArg.isNotNull(session, "session");
         CheckArg.isNotNull(repositoryObservable, "repositoryObservable");
-        CheckArg.isNotNull(statistics, "statistics");
 
         this.session = session;
         this.repositoryObservable = repositoryObservable;
 
-        this.listenersLock = new ReentrantReadWriteLock(true);
-        this.listeners = new HashMap<>();
-
-        this.repositoryStatistics = statistics;
-        this.changesLock = new ReentrantLock();
-        this.changesReceivedAndDispatched = new HashMap<>();
-
-        // this is registered as an observer just so it can count the number of events dispatched
-        this.repositoryObservable.register(this);
+        this.listeners = Collections.newSetFromMap(new ConcurrentHashMap<JcrListenerAdapter, Boolean>());
     }
 
     @Override
@@ -187,108 +149,47 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
 
         // create wrapper and register
         JcrListenerAdapter adapter = new JcrListenerAdapter(listener, eventTypes, absPath, isDeep, uuid, nodeTypeName, noLocal);
-        // unregister if already registered
-        try {
-            listenersLock.writeLock().lock();
-
-            this.repositoryObservable.unregister(adapter);
-            this.repositoryObservable.register(adapter);
-            this.listeners.put(listener, adapter);
-        } finally {
-            listenersLock.writeLock().unlock();
+        if (this.repositoryObservable.register(adapter)) {
+            this.listeners.add(adapter);
         }
     }
 
     /**
      * @throws RepositoryException if session is not active
      */
-    void checkSession() throws RepositoryException {
+    private void checkSession() throws RepositoryException {
         session.checkLive();
-    }
-
-    @Override
-    public void notify( ChangeSet changeSet ) {
-        incrementEventQueueStatistic(changeSet);
-    }
-
-    private void incrementEventQueueStatistic( ChangeSet changeSet ) {
-        // whenever a change set is received from the bus, increment the que size
-        if (repositoryStatistics != null) {
-            repositoryStatistics.increment(ValueMetric.EVENT_QUEUE_SIZE);
-        }
-
-        changesLock.lock();
-        try {
-            if (!this.changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
-                // none of the adapters have processed this change set yet, register it
-                changesReceivedAndDispatched.put(changeSet.hashCode(), new AtomicInteger(listeners.size()));
-            }
-        } finally {
-            changesLock.unlock();
-        }
-    }
-
-    protected void decrementEventQueueStatistic( ChangeSet changeSet ) {
-        changesLock.lock();
-        try {
-            if (changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
-                // the change set has already been registered (and the que size incremented)
-                int timesProcessed = changesReceivedAndDispatched.get(changeSet.hashCode()).decrementAndGet();
-                if (timesProcessed == 0) {
-                    if (repositoryStatistics != null) {
-                        repositoryStatistics.decrement(ValueMetric.EVENT_QUEUE_SIZE);
-                    }
-                    changesReceivedAndDispatched.remove(changeSet.hashCode());
-                }
-            } else {
-                // the change got to this adapter (from the bus) before it got to the observation manager, so it'll be registered
-                // this listener already received the event, so total count of expected listeners is decremented by 1
-                changesReceivedAndDispatched.put(changeSet.hashCode(), new AtomicInteger(listeners.size() - 1));
-            }
-        } finally {
-            changesLock.unlock();
-        }
     }
 
     @Override
     public EventListenerIterator getRegisteredEventListeners() throws RepositoryException {
         checkSession(); // make sure session is still active
-        try {
-            listenersLock.readLock().lock();
-            return new JcrEventListenerIterator(Collections.unmodifiableSet(this.listeners.keySet()));
-        } finally {
-            listenersLock.readLock().unlock();
-        }
+        return new JcrEventListenerIterator(Collections.unmodifiableSet(this.listeners));
     }
 
     /**
      * Remove all of the listeners. This is typically called when the {@link JcrSession#logout() session logs out}.
      */
     void removeAllEventListeners() {
-        try {
-            listenersLock.writeLock().lock();
-            for (JcrListenerAdapter listener : this.listeners.values()) {
-                assert (listener != null);
-                this.repositoryObservable.unregister(listener);
-            }
-            this.listeners.clear();
-        } finally {
-            listenersLock.writeLock().unlock();
+        for (JcrListenerAdapter adapter : this.listeners) {
+            assert (adapter != null);
+            this.repositoryObservable.unregister(adapter);
         }
+        this.listeners.clear();
     }
 
     @Override
     public void removeEventListener( EventListener listener ) throws RepositoryException {
         checkSession(); // make sure session is still active
         CheckArg.isNotNull(listener, "listener");
-        try {
-            listenersLock.writeLock().lock();
-            JcrListenerAdapter jcrListener = this.listeners.remove(listener);
-            if (jcrListener != null) {
-                this.repositoryObservable.unregister(jcrListener);
+        for (Iterator<JcrListenerAdapter> adapterIterator = listeners.iterator(); adapterIterator.hasNext(); ) {
+            JcrListenerAdapter adapter = adapterIterator.next();
+            assert (adapter != null);
+            if (adapter.delegate.equals(listener)) {
+                this.repositoryObservable.unregister(adapter);
+                adapterIterator.remove();
+                break;
             }
-        } finally {
-            listenersLock.writeLock().unlock();
         }
     }
 
@@ -369,8 +270,6 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
 
         @Override
         public void notify( ChangeSet changeSet ) {
-            decrementEventQueueStatistic(changeSet);
-
             Collection<Event> events = changeSetConverter.convert(changeSet);
 
             // notify delegate
@@ -467,19 +366,19 @@ final class JcrObservationManager implements ObservationManager, ChangeSetListen
     /**
      * An implementation of the JCR {@link EventListenerIterator}.
      */
-    protected static class JcrEventListenerIterator extends JcrRangeIterator<EventListener> implements EventListenerIterator {
+    protected static class JcrEventListenerIterator extends JcrRangeIterator<JcrListenerAdapter> implements EventListenerIterator {
 
         /**
          * @param listeners the listeners being iterated over
          * @throws IllegalArgumentException if <code>listeners</code> is <code>null</code>
          */
-        public JcrEventListenerIterator( Collection<EventListener> listeners ) {
+        public JcrEventListenerIterator( Collection<JcrListenerAdapter> listeners ) {
             super(listeners);
         }
 
         @Override
         public EventListener nextEventListener() {
-            return (EventListener)next();
+            return ((JcrListenerAdapter) next()).delegate;
         }
     }
 
