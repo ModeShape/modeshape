@@ -730,22 +730,18 @@ final class JcrVersionManager implements VersionManager {
 
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
-        try {
-            Path path = restoreSession.absolutePathFor(absPath);
+        Path path = restoreSession.absolutePathFor(absPath);
 
-            if (failIfNodeAlreadyExists) {
-                try {
-                    AbstractJcrNode existingNode = restoreSession.node(path);
-                    String msg = JcrI18n.unableToRestoreAtAbsPathNodeAlreadyExists.text(absPath, existingNode.key());
-                    throw new VersionException(msg);
-                } catch (PathNotFoundException e) {
-                    // expected
-                }
+        if (failIfNodeAlreadyExists) {
+            try {
+                AbstractJcrNode existingNode = restoreSession.node(path);
+                String msg = JcrI18n.unableToRestoreAtAbsPathNodeAlreadyExists.text(absPath, existingNode.key());
+                throw new VersionException(msg);
+            } catch (PathNotFoundException e) {
+                // expected
             }
-            restore(restoreSession, path, version, null, removeExisting);
-        } finally {
-            restoreSession.logout();
         }
+        restore(restoreSession, path, version, null, removeExisting);
     }
 
     @Override

@@ -531,13 +531,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
 
         // Create a new JCR session, perform the move, and then save the session ...
-        JcrSession session = this.session.spawnSession(false);
-        try {
-            session.move(srcAbsPath, destAbsPath);
-            session.save();
-        } finally {
-            session.logout();
-        }
+        JcrSession moveSession = this.session.spawnSession(false);
+        moveSession.move(srcAbsPath, destAbsPath);
+        moveSession.save();
     }
 
     @Override
@@ -628,8 +624,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             try {
                 lock.lock();
                 if (observationManager == null) {
-                    observationManager = new JcrObservationManager(session, repository().repositoryCache(),
-                                                                   repository().getRepositoryStatistics());
+                    observationManager = new JcrObservationManager(session, repository().changeBus());
                 }
             } finally {
                 lock.unlock();

@@ -1512,6 +1512,26 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertTrue(repository.repositoryCache().lockingUsed());
     }
 
+    @Test
+    @FixFor( "MODE-2343" )
+    public void shouldReleaseObservationManagerThreadsOnLogout() throws Exception {
+        // take a snapshot of the current thread count
+        int oldCount = Thread.activeCount();
+        int sessionsCount = 10;
+        for (int i = 0; i < sessionsCount; ++i) {
+            // create a new session
+            final Session newSession = createSession();
+            // this will spawn a new thread for the observation manager
+            newSession.getWorkspace().getObservationManager();
+            // this will spawn a new thread for the listener
+            addListener(newSession, 0, 0, Event.NODE_ADDED, "/", true, null, null, false);
+            newSession.logout();
+        }
+        // each iteration creates and should release 1 new thread, but activeThreadCount is not accurate, since a thread may
+        // have finished its work but is being kept alive in the thread pool. So we're only approximating the next assert
+        assertTrue("Observation threads not released when session was logged out", Thread.activeCount() - oldCount  < sessionsCount);
+    }
+
     protected void nodeExists( Session session,
                                String parentPath,
                                String childName,
