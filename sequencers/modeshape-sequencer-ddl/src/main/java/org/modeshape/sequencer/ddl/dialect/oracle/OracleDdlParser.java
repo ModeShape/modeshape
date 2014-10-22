@@ -20,6 +20,8 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_OPTION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
@@ -1027,79 +1029,50 @@ public class OracleDdlParser extends StandardDdlParser
         assert tokens != null;
         assert parentNode != null;
 
-        if (tokens.matches("ALTER", "TABLE", TokenStream.ANY_VALUE, "ADD")) {
+        markStartOfStatement(tokens);
 
-            // ALTER TABLE
-            // ADD ( {column_definition | virtual_column_definition
-            // [, column_definition | virtual_column_definition] ... } [ column_properties ]
+        tokens.consume("ALTER", "TABLE");
+        String tableName = parseName(tokens);
 
-            markStartOfStatement(tokens);
+        // System.out.println(" >> PARSING ALTER STATEMENT >> TABLE Name = " + tableName);
 
-            tokens.consume(ALTER, TABLE);
+        AstNode alterTableNode = nodeFactory().node(tableName, parentNode, TYPE_ALTER_TABLE_STATEMENT);
 
-            String tableName = parseName(tokens);
+        // Standalone alter commands
+        if (tokens.canConsume("RENAME")) {
+            if (tokens.matches("COLUMN", TokenStream.ANY_VALUE, "TO", TokenStream.ANY_VALUE)) {
+                // Rename of column
+                tokens.consume("COLUMN");
+                String oldColumnName = parseName(tokens);
+                tokens.consume("TO");
+                String newColumnName = parseName(tokens);
 
-            AstNode alterTableNode = nodeFactory().node(tableName, parentNode, TYPE_ALTER_TABLE_STATEMENT);
+                AstNode renameColumn = nodeFactory().node(oldColumnName, alterTableNode, TYPE_RENAME_COLUMN);
+                renameColumn.setProperty(NEW_NAME, newColumnName);
+            } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "TO", TokenStream.ANY_VALUE)) {
+                // Rename of constraint
+                tokens.consume("CONSTRAINT");
+                String oldConstraintName = parseName(tokens);
+                tokens.consume("TO");
+                String newConstraintName = parseName(tokens);
 
-            tokens.consume("ADD");
-
-            // System.out.println("  >> PARSING ALTER STATEMENT >>  TABLE Name = " + tableName);
-
-            if (isTableConstraint(tokens)) {
-                parseTableConstraint(tokens, alterTableNode, true);
+                AstNode renameColumn = nodeFactory().node(oldConstraintName, alterTableNode, TYPE_RENAME_CONSTRAINT);
+                renameColumn.setProperty(NEW_NAME, newConstraintName);
+            } else if (tokens.canConsume("TO")) {
+                // Rename of table
+                alterTableNode.setProperty(NEW_NAME, parseName(tokens));
             } else {
-                // This segment can also be enclosed in "()" brackets to handle multiple ColumnDefinition ADDs
-                if (tokens.matches(L_PAREN, "REF")) {
-                    // ALTER TABLE staff ADD (REF(dept) WITH ROWID);
-                    tokens.consume(L_PAREN, "REF", L_PAREN);
-                    parseName(tokens);
-                    tokens.consume(R_PAREN, "WITH", "ROWID", R_PAREN);
-
-                } else if (tokens.matches(L_PAREN, "SCOPE")) {
-                    // ALTER TABLE staff ADD (SCOPE FOR (dept) IS offices);
-                    tokens.consume(L_PAREN, "SCOPE", "FOR", L_PAREN);
-                    parseName(tokens);
-                    tokens.consume(R_PAREN, "IS");
-                    parseName(tokens);
-                    tokens.consume(R_PAREN);
-                } else if (tokens.matches(L_PAREN)) {
-                    parseColumns(tokens, alterTableNode, true);
-                } else {
-                    // Assume single ADD COLUMN
-                    parseSingleTerminatedColumnDefinition(tokens, alterTableNode, true);
-                }
+                // TODO add problem
             }
 
-            parseUntilTerminator(tokens); // COULD BE "NESTED TABLE xxxxxxxx" option clause
+            parseUntilTerminator(tokens);
+        } else if (tokens.canConsume("DROP")) {
 
-            markEndOfStatement(tokens, alterTableNode);
-
-            return alterTableNode;
-        } else if (tokens.matches("ALTER", "TABLE", TokenStream.ANY_VALUE, "DROP")) {
-            markStartOfStatement(tokens);
-
-            tokens.consume(ALTER, TABLE);
-
-            String tableName = parseName(tokens);
-
-            AstNode alterTableNode = nodeFactory().node(tableName, parentNode, TYPE_ALTER_TABLE_STATEMENT);
-
-            tokens.consume(DROP);
-
-            if (tokens.canConsume("CONSTRAINT")) {
-                String constraintName = parseName(tokens); // constraint name
-
-                AstNode constraintNode = nodeFactory().node(constraintName, alterTableNode, TYPE_DROP_TABLE_CONSTRAINT_DEFINITION);
-
-                if (tokens.canConsume(DropBehavior.CASCADE)) {
-                    constraintNode.setProperty(DROP_BEHAVIOR, DropBehavior.CASCADE);
-                } else if (tokens.canConsume(DropBehavior.RESTRICT)) {
-                    constraintNode.setProperty(DROP_BEHAVIOR, DropBehavior.RESTRICT);
-                }
+            if (tokens.matches(L_PAREN)) {
+                // Columns enclosed in "()"
+                parseColumnNameList(tokens, alterTableNode, TYPE_DROP_COLUMN_DEFINITION);
             } else if (tokens.canConsume("COLUMN")) {
-                // ALTER TABLE supplier
-                // DROP COLUMN supplier_name;
-
+                // Single DROP COLUMN
                 String columnName = parseName(tokens);
 
                 AstNode columnNode = nodeFactory().node(columnName, alterTableNode, TYPE_DROP_COLUMN_DEFINITION);
@@ -1109,59 +1082,74 @@ public class OracleDdlParser extends StandardDdlParser
                 } else if (tokens.canConsume(DropBehavior.RESTRICT)) {
                     columnNode.setProperty(DROP_BEHAVIOR, DropBehavior.RESTRICT);
                 }
-            } else {
-                parseUntilTerminator(tokens); // EXAMPLE: "DROP UNIQUE (email)", or "DROP (col_1, col_2)"
+            } else if (tokens.canConsume("CONSTRAINT")) {
+                // Single DROP COLUMN
+                String constraintName = parseName(tokens);
+
+                AstNode constraintNode = nodeFactory().node(constraintName, alterTableNode, TYPE_DROP_TABLE_CONSTRAINT_DEFINITION);
+
+                if (tokens.canConsume(DropBehavior.CASCADE)) {
+                    constraintNode.setProperty(DROP_BEHAVIOR, DropBehavior.CASCADE);
+                } else if (tokens.canConsume(DropBehavior.RESTRICT)) {
+                    constraintNode.setProperty(DROP_BEHAVIOR, DropBehavior.RESTRICT);
+                }
             }
 
-            markEndOfStatement(tokens, alterTableNode);
+            parseUntilTerminator(tokens);
+        } else {
+            // Loop over tokens and find known parts
+            while (tokens.hasNext() && !tokens.matches(DdlTokenizer.STATEMENT_KEY)
+                   && ((doUseTerminator() && !isTerminator(tokens)) || !doUseTerminator())) {
+                // skip to next known part in statement
+                while (tokens.hasNext() && !tokens.matchesAnyOf(new String[] {"ADD", "MODIFY"})
+                       && ((doUseTerminator() && !isTerminator(tokens)) || !doUseTerminator())) {
+                    tokens.consume();
+                }
 
-            return alterTableNode;
-        } else if (tokens.matches("ALTER", "TABLE", TokenStream.ANY_VALUE, "RENAME")) {
+                if (!tokens.hasNext()) break;
 
-            // ALTER TABLE customers RENAME TO my_customers;
-            // ALTER TABLE customers RENAME CONSTRAINT cust_fname_nn TO cust_firstname_nn;
-            markStartOfStatement(tokens);
+                if (tokens.canConsume("ADD")) {
 
-            tokens.consume(ALTER, TABLE);
+                    if (isTableConstraint(tokens)) {
+                        parseTableConstraint(tokens, alterTableNode, true);
+                    } else {
+                        // This segment can also be enclosed in "()" brackets to handle multiple ColumnDefinition ADDs
+                        if (tokens.matches(L_PAREN, "REF")) {
+                            // ALTER TABLE staff ADD (REF(dept) WITH ROWID);
+                            tokens.consume(L_PAREN, "REF", L_PAREN);
+                            parseName(tokens);
+                            tokens.consume(R_PAREN, "WITH", "ROWID", R_PAREN);
+                        } else if (tokens.matches(L_PAREN, "SCOPE")) {
+                            // ALTER TABLE staff ADD (SCOPE FOR (dept) IS offices);
+                            tokens.consume(L_PAREN, "SCOPE", "FOR", L_PAREN);
+                            parseName(tokens);
+                            tokens.consume(R_PAREN, "IS");
+                            parseName(tokens);
+                            tokens.consume(R_PAREN);
+                        } else if (tokens.matches(L_PAREN)) {
+                            // Columns enclosed in "()"
+                            parseColumns(tokens, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
+                        } else {
+                            // Assume single ADD COLUMN
+                            parseColumnDefinition(tokens, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
+                        }
+                    }
 
-            String oldName = parseName(tokens);
-            AstNode alterTableNode = nodeFactory().node(oldName, parentNode, TYPE_ALTER_TABLE_STATEMENT);
+                } else if (tokens.canConsume("MODIFY")) {
 
-            if (tokens.canConsume("RENAME", "TO")) {
-                String newName = parseName(tokens);
-                alterTableNode.setProperty(NEW_NAME, newName);
+                    // Only support column definition changes (enclosed even if single column, unenclosed is column substitution)
+                    if (!tokens.matches(L_PAREN)) continue;
 
-                parseUntilTerminator(tokens);
+                    parseColumns(tokens, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
 
-            } else if (tokens.canConsume("RENAME", "COLUMN")) {
-                String oldColumnName = parseName(tokens);
-                tokens.consume("TO");
-                String newColumnName = parseName(tokens);
-
-                parseUntilTerminator(tokens);
-
-                AstNode renameColumnNode = nodeFactory().node(oldColumnName, alterTableNode, TYPE_RENAME_COLUMN);
-                renameColumnNode.setProperty(NEW_NAME, newColumnName);
-
-            } else if (tokens.canConsume("RENAME", "CONSTRAINT")) {
-                String oldConstraintName = parseName(tokens);
-                tokens.consume("TO");
-                String newConstraintName = parseName(tokens);
-
-                parseUntilTerminator(tokens);
-
-                AstNode renameColumnNode = nodeFactory().node(oldConstraintName, alterTableNode, TYPE_RENAME_CONSTRAINT);
-                renameColumnNode.setProperty(NEW_NAME, newConstraintName);
+                }
             }
-
-            markEndOfStatement(tokens, alterTableNode);
-
-            return alterTableNode;
-        } else if (tokens.matches("ALTER", "TABLE", TokenStream.ANY_VALUE, "MODIFY")) {
-
         }
 
-        return super.parseAlterTableStatement(tokens, parentNode);
+        markEndOfStatement(tokens, alterTableNode);
+
+        return alterTableNode;
+
     }
 
     @Override
@@ -1916,16 +1904,16 @@ public class OracleDdlParser extends StandardDdlParser
     }
 
     /**
-     * Utility method designed to parse columns within an ALTER TABLE ADD statement.
+     * Utility method designed to parse columns within an ALTER TABLE ADD/MODIFY statement.
      * 
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
      * @param tableNode
-     * @param isAlterTable
+     * @param columnMixinType
      * @throws ParsingException
      */
     protected void parseColumns( DdlTokenStream tokens,
                                  AstNode tableNode,
-                                 boolean isAlterTable ) throws ParsingException {
+                                 String columnMixinType ) throws ParsingException {
         assert tokens != null;
         assert tableNode != null;
 
@@ -1943,9 +1931,9 @@ public class OracleDdlParser extends StandardDdlParser
 
         do {
             if (isColumnDefinitionStart(localTokens)) {
-                parseColumnDefinition(localTokens, tableNode, true);
+                parseColumnDefinition(localTokens, tableNode, columnMixinType);
             } else {
-                // THIS IS AN ERROR. NOTHING FOUND.
+                // THIS IS AN ERROR (WARNING if it is an ALTER TABLE MODIFY part). NOTHING FOUND.
                 // NEED TO absorb tokens
                 while (localTokens.hasNext() && !localTokens.matches(COMMA)) {
                     unusedTokensSB.append(SPACE).append(localTokens.consume());
@@ -1953,9 +1941,72 @@ public class OracleDdlParser extends StandardDdlParser
             }
         } while (localTokens.canConsume(COMMA));
 
-        if (unusedTokensSB.length() > 0) {
+        if (unusedTokensSB.length() > 0 && columnMixinType == TYPE_COLUMN_DEFINITION) {
             String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
+            problem.setUnusedSource(unusedTokensSB.toString());
+            addProblem(problem, tableNode);
+        }
+    }
+
+    /**
+     * Overloaded version of method with default mixin type set to {@link StandardDdlLexicon.TYPE_COLUMN_DEFINITION}
+     * 
+     * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
+     * @param tableNode
+     * @param isAlterTable
+     * @throws ParsingException
+     */
+    protected void parseColumns( DdlTokenStream tokens,
+                                 AstNode tableNode,
+                                 boolean isAlterTable ) throws ParsingException {
+        parseColumns(tokens, tableNode, (isAlterTable ? TYPE_ALTER_COLUMN_DEFINITION : TYPE_COLUMN_DEFINITION));
+    }
+
+    /**
+     * Alternative StandardDdlParser method that can handle column definition without datatype (for MODIFY) and supports setting
+     * mixin type of a column.
+     * 
+     * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
+     * @param tableNode
+     * @param columnMixinType
+     * @throws ParsingException
+     */
+    protected void parseColumnDefinition( DdlTokenStream tokens,
+                                          AstNode tableNode,
+                                          String columnMixinType ) throws ParsingException {
+        assert tokens != null;
+        assert tableNode != null;
+
+        boolean isAlterTable = columnMixinType != TYPE_COLUMN_DEFINITION;
+
+        tokens.canConsume("COLUMN");
+        String columnName = parseName(tokens);
+        AstNode columnNode = nodeFactory().node(columnName, tableNode, columnMixinType);
+
+        DataType datatype = getDatatypeParser().parse(tokens);
+        getDatatypeParser().setPropertiesOnNode(columnNode, datatype);
+
+        // Now clauses and constraints can be defined in any order, so we need to keep parsing until we get to a comma
+        StringBuilder unusedTokensSB = new StringBuilder();
+
+        while (tokens.hasNext() && !tokens.matches(COMMA)) {
+            boolean parsedDefaultClause = parseDefaultClause(tokens, columnNode);
+            if (!parsedDefaultClause) {
+                boolean parsedCollate = parseCollateClause(tokens, columnNode);
+                boolean parsedConstraint = parseColumnConstraint(tokens, columnNode, isAlterTable);
+                if (!parsedCollate && !parsedConstraint) {
+                    // THIS IS AN ERROR. NOTHING FOUND.
+                    // NEED TO absorb tokens
+                    unusedTokensSB.append(SPACE).append(tokens.consume());
+                }
+            }
+            tokens.canConsume(DdlTokenizer.COMMENT);
+        }
+
+        if (unusedTokensSB.length() > 0) {
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
+            DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, Position.EMPTY_CONTENT_POSITION, msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
         }

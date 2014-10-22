@@ -113,9 +113,19 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         // This is a one-off case where there is a custom datatype (i.e. skill_table_type)
         printTest("shouldParseAlterTableADDWithNESTED_TABLE()");
         String content = "ALTER TABLE employees ADD (skills skill_table_type) NESTED TABLE skills STORE AS nested_skill_table;";
-        assertScoreAndParse(content, null, 2); // ALTER TABLE + 1 PROBLEM
+        assertScoreAndParse(content, null, 1); // ALTER TABLE + NO MORE PROBLEM
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+    }
+
+    @Test
+    public void shouldParseAlterTableMultipleOps() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees ADD (add_field NUMBER) MODIFY (mod_field VARCHAR2(10));";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 2);
     }
 
     @Test
