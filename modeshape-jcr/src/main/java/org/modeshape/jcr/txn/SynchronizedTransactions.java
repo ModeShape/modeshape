@@ -25,8 +25,6 @@ package org.modeshape.jcr.txn;
 
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.NotSupportedException;
@@ -35,9 +33,12 @@ import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
+import org.infinispan.Cache;
+import org.infinispan.notifications.Listener;
+import org.infinispan.notifications.cachelistener.annotation.TransactionCompleted;
+import org.infinispan.notifications.cachelistener.event.TransactionCompletedEvent;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
-import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
+import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -50,43 +51,65 @@ import org.modeshape.jcr.value.Property;
  */
 public final class SynchronizedTransactions extends Transactions {
 
+    private static final ThreadLocal<Transaction> ACTIVE_TRANSACTION = new ThreadLocal<Transaction>();
+
+    @SuppressWarnings( "rawtypes")
+    private final Cache localCache;
+
     /**
      * Creates a new instance which wrapps a transaction manager and monitor factory
-     * @param monitorFactory a {@link MonitorFactory} instance; never null
-     * @param txnMgr a {@link TransactionManager} instance; never null
+     *
+     * @param monitorFactory a {@link org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory} instance; never null
+     * @param txnMgr a {@link javax.transaction.TransactionManager} instance; never null
+     * @param localCache a {@link org.infinispan.Cache} instance representing the main ISPN cache
      */
-    public SynchronizedTransactions( MonitorFactory monitorFactory,
-                                     TransactionManager txnMgr ) {
+    @SuppressWarnings( "rawtypes")
+    public SynchronizedTransactions( SessionEnvironment.MonitorFactory monitorFactory,
+                                     TransactionManager txnMgr,
+                                     Cache localCache ) {
         super(monitorFactory, txnMgr);
+        this.localCache = localCache;
         assert txnMgr != null;
+        assert localCache != null;
+    }
+
+    @Override
+    public Transaction currentTransaction() {
+        return ACTIVE_TRANSACTION.get();
     }
 
     @Override
     public Transaction begin() throws NotSupportedException, SystemException {
+        // check if there isn't an active transaction already
+        Transaction result = ACTIVE_TRANSACTION.get();
+        if (result != null) {
+            // we have an existing transaction so depending on the type we either need to be aware of nesting
+            // or return as-is
+            return result instanceof NestableThreadLocalTransaction ?
+                   ((NestableThreadLocalTransaction) result).begin() :
+                   result;
+        }
+
         // Get the transaction currently associated with this thread (if there is one) ...
         javax.transaction.Transaction txn = txnMgr.getTransaction();
-        Transaction result = null;
         if (txn == null) {
             // There is no transaction, so start one ...
             txnMgr.begin();
             // and return our wrapper ...
-            result = new SimpleTransaction(txnMgr);
+            result = new NestableThreadLocalTransaction(txnMgr, ACTIVE_TRANSACTION).begin();
         } else {
-            // Otherwise, there's already a transaction, so wrap it ...
-            try {
-                result = new SynchronizedTransaction(txnMgr); // may throw RollbackException ...
-            } catch (RollbackException e) {
-                // This transaction has been marked for rollback only ...
-                return new RollbackOnlyTransaction();
-            }
+            // Otherwise, there's already a transaction, so wrap it with a cache listener
+            result = new ListenerTransaction(txnMgr);
         }
+        // Store it
+        ACTIVE_TRANSACTION.set(result);
         if (logger.isTraceEnabled()) {
             if (txn == null) txn = txnMgr.getTransaction();
             assert txn != null;
             final String id = txn.toString();
             // Register a synchronization for this transaction ...
             if (!ACTIVE_TRACE_SYNCHRONIZATIONS.contains(id)) {
-                if (result instanceof SynchronizedTransaction) {
+                if (result instanceof ListenerTransaction) {
                     logger.trace("Found user transaction {0}", txn);
                 } else {
                     logger.trace("Begin transaction {0}", id);
@@ -106,18 +129,18 @@ public final class SynchronizedTransactions extends Transactions {
     }
 
     @Override
-    public void updateCache( WorkspaceCache workspace,
-                             ChangeSet changes,
+    public void updateCache( final WorkspaceCache workspace,
+                             final ChangeSet changes,
                              Transaction transaction ) {
         if (changes != null && !changes.isEmpty()) {
-            if (transaction instanceof SynchronizedTransaction) {
-                // We're in a transaction being managed outside of ModeShape (e.g., container-managed, user-managed,
-                // distributed, etc.) ...
-                // Capture the changes so they can be applied if and only if the transaction is committed succesfully ...
-                SynchronizedTransaction synched = (SynchronizedTransaction)transaction;
-                synched.addUpdate(new WorkspaceUpdates(workspace, changes));
-                // Also, if we're in a transaction then the workspace should be a TransactionalWorkspaceCache, in which case
-                // we should also immediately notify the workspace of the changes ...
+            if (transaction instanceof ListenerTransaction) {
+                // only issue the changes when the transaction is successfully committed
+                transaction.uponCommit(new TransactionFunction() {
+                    @Override
+                    public void execute() {
+                        workspace.changed(changes);
+                    }
+                });
                 if (workspace instanceof TransactionalWorkspaceCache) {
                     ((TransactionalWorkspaceCache)workspace).changedWithinTransaction(changes);
                 }
@@ -125,83 +148,67 @@ public final class SynchronizedTransactions extends Transactions {
                 // The transaction has been marked for rollback only, so no need to even capture these changes because
                 // no changes will ever escape the Session ...
             } else {
-                // We're not in a transaction anymore (the changes were succesfully committed already),
-                // so immediately fire the changes ...
+                // in all other cases we want to dispatch the changes immediately
                 workspace.changed(changes);
             }
         }
     }
 
-    protected class SynchronizedTransaction extends BaseTransaction {
-
-        private final Synchronization synchronization;
-        private final List<WorkspaceUpdates> updates = new LinkedList<WorkspaceUpdates>();
+    /**
+     * A transaction implementation that is an Infinispan listener. This is the only reliable way to be able to tell, when
+     * using user transactions, that ISPN has finished updating the data after a "commit" call.
+     */
+    @Listener
+    @SuppressWarnings( "rawtypes")
+    public final class ListenerTransaction extends Transactions.BaseTransaction {
         private final SynchronizedMonitor monitor;
-        private boolean finished = false;
 
-        protected SynchronizedTransaction( TransactionManager txnMgr ) throws SystemException, RollbackException {
+        protected ListenerTransaction( TransactionManager txnMgr ) {
             super(txnMgr);
-            this.synchronization = new Synchronization() {
-
-                @Override
-                public void beforeCompletion() {
-                    // do nothing ...
-                }
-
-                @Override
-                public void afterCompletion( int status ) {
-                    switch (status) {
-                        case Status.STATUS_COMMITTED:
-                            afterCommit();
-                            break;
-                        case Status.STATUS_ROLLEDBACK:
-                            break;
-                        default:
-                            // Don't do anything ...
-                            break;
-                    }
-                }
-            };
+            localCache.addListener(this);
             this.monitor = new SynchronizedMonitor(newMonitor());
-            txnMgr.getTransaction().registerSynchronization(synchronization);
         }
 
-        protected void addUpdate( WorkspaceUpdates updates ) {
-            assert updates != null;
-            assert !finished;
-            this.updates.add(updates);
+        /**
+         * Method which will be invoked by Infinispan once a tx.commit or tx.rollback has finished processing at a cache-level.
+         * @param event a {@link TransactionCompletedEvent} instance.
+         */
+        @TransactionCompleted
+        public void transactionCompleted( TransactionCompletedEvent event ) {
+            if (!event.isOriginLocal()) {
+                // if the event is not local, we're not interested in processing it
+                return;
+            }
+            try {
+                if (event.isTransactionSuccessful()) {
+                    // run the functions for a successful commit
+                    executeFunctionsUponCommit();
+                    // Update the statistics about the changed number of nodes
+                    monitor.dispatchRecordedChanges();
+                }
+                // run all the other (both commit & rollback) functions
+                executeFunctionsUponCompletion();
+            } finally {
+                // always remove the active transaction
+                ACTIVE_TRANSACTION.remove();
+                // after we've been invoked, it means that ISPN has finished processing the transaction, we need to always
+                // remove ourselves from the cache
+                localCache.removeListener(this);
+            }
         }
 
         @Override
-        public void commit() {
-            // This transaction spans more than just our usage, so we don't commit anything here ...
+        public void commit()  {
+            //nothing by default
         }
 
         @Override
         public void rollback() {
-            // This transaction spans more than just our usage, so we don't rollback anything here ...
-        }
-
-        /**
-         * Method called after the transaction has successfully completed via commit (not rollback). Override this method in
-         * subclasses to alter the behavior.
-         */
-        protected void afterCommit() {
-            // Execute the functions
-            executeFunctions();
-
-            // Update the statistics about the changed number of nodes
-            monitor.dispatchRecordedChanges();
-
-            // Apply the updates, and do AFTER the monitor is updated ...
-            for (WorkspaceUpdates update : updates) {
-                update.apply();
-            }
-            finished = true;
+            // nothing by default
         }
 
         @Override
-        public Monitor createMonitor() {
+        public SessionEnvironment.Monitor createMonitor() {
             return this.monitor;
         }
     }
@@ -212,8 +219,13 @@ public final class SynchronizedTransactions extends Transactions {
         }
 
         @Override
-        public Monitor createMonitor() {
+        public SessionEnvironment.Monitor createMonitor() {
             return newMonitor();
+        }
+
+        @Override
+        public int status() throws SystemException {
+            return Status.STATUS_UNKNOWN;
         }
 
         @Override
@@ -227,31 +239,21 @@ public final class SynchronizedTransactions extends Transactions {
         }
 
         @Override
-        public void uponCompletion( TransactionFunction function ) {
+        public void uponCompletion( Transactions.TransactionFunction function ) {
+            // do nothing
+        }
+
+        @Override
+        public void uponCommit( Transactions.TransactionFunction function ) {
             // do nothing
         }
     }
 
-    protected static final class WorkspaceUpdates {
-        private final WorkspaceCache workspace;
-        private final ChangeSet changes;
-
-        protected WorkspaceUpdates( WorkspaceCache workspace,
-                                    ChangeSet changes ) {
-            this.workspace = workspace;
-            this.changes = changes;
-        }
-
-        protected void apply() {
-            workspace.changed(changes);
-        }
-    }
-
-    protected static final class SynchronizedMonitor implements Monitor {
-        private final Monitor delegate;
+    protected static final class SynchronizedMonitor implements SessionEnvironment.Monitor {
+        private final SessionEnvironment.Monitor delegate;
         private final AtomicLong changesCount;
 
-        protected SynchronizedMonitor( Monitor delegate ) {
+        protected SynchronizedMonitor( SessionEnvironment.Monitor delegate ) {
             this.delegate = delegate;
             this.changesCount = new AtomicLong(0);
         }

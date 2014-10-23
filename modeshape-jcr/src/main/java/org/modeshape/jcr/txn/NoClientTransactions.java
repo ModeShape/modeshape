@@ -23,11 +23,7 @@
  */
 package org.modeshape.jcr.txn;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import org.modeshape.jcr.cache.SessionCache;
@@ -45,7 +41,7 @@ public final class NoClientTransactions extends Transactions {
      * nested simple transactions, so we need effective make sure that only 1 instance of an active transaction can exist at any
      * given time. We cannot use multiple instance because completion functions are instance-dependent
      */
-    protected static final ThreadLocal<NoClientTransaction> ACTIVE_TRANSACTION = new ThreadLocal<NoClientTransaction>();
+    private static final ThreadLocal<NestableThreadLocalTransaction> ACTIVE_TRANSACTION = new ThreadLocal<NestableThreadLocalTransaction>();
 
     /**
      * Creates a new instance passing in the given monitor factory and transaction manager
@@ -58,6 +54,11 @@ public final class NoClientTransactions extends Transactions {
     }
 
     @Override
+    public Transaction currentTransaction() {
+        return ACTIVE_TRANSACTION.get();
+    }
+
+    @Override
     public synchronized Transaction begin() throws NotSupportedException, SystemException {
         if (ACTIVE_TRANSACTION.get() == null) {
             // Start a transaction ...
@@ -65,39 +66,8 @@ public final class NoClientTransactions extends Transactions {
             if (logger.isTraceEnabled()) {
                 logger.trace("Begin transaction {0}", currentTransactionId());
             }
-            ACTIVE_TRANSACTION.set(new NoClientTransaction(txnMgr));
+            ACTIVE_TRANSACTION.set(new NestableThreadLocalTransaction(txnMgr, ACTIVE_TRANSACTION));
         }
-        return ACTIVE_TRANSACTION.get().transactionBegin();
-    }
-
-    protected class NoClientTransaction extends TraceableSimpleTransaction {
-        private final AtomicInteger nestedLevel = new AtomicInteger(0);
-
-        public NoClientTransaction( TransactionManager txnMgr ) {
-            super(txnMgr);
-        }
-
-        @Override
-        public void commit()
-            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
-            IllegalStateException, SystemException {
-            if (nestedLevel.getAndDecrement() == 1) {
-                NoClientTransactions.ACTIVE_TRANSACTION.remove();
-                super.commit();
-            } else {
-                logger.trace("Not committing transaction because it's nested within another transaction. Only the top level transaction should commit");
-            }
-        }
-
-        @Override
-        public void rollback() throws IllegalStateException, SecurityException, SystemException {
-            NoClientTransactions.ACTIVE_TRANSACTION.remove();
-            super.rollback();
-        }
-
-        protected NoClientTransaction transactionBegin() {
-            nestedLevel.incrementAndGet();
-            return this;
-        }
+        return ACTIVE_TRANSACTION.get().begin();
     }
 }
