@@ -438,9 +438,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                     logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, null, null);
                     events = persistChanges(this.changedNodesInOrder, persistedCache);
 
-                    // If there are any binary changes, add a tx synchronization which will update the binary store
+                    // If there are any binary changes, add a function which will update the binary store
                     if (events.hasBinaryChanges()) {
-                        txn.uponCompletion(binaryUsageUpdateFunction(events.usedBinaries(), events.unusedBinaries()));
+                        txn.uponCommit(binaryUsageUpdateFunction(events.usedBinaries(), events.unusedBinaries()));
                     }
 
                     LOGGER.debug("Altered {0} node(s)", numNodes);
@@ -594,13 +594,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                         logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, that.changedNodesInOrder,
                                              that.changedNodes);
                         events1 = persistChanges(this.changedNodesInOrder, thisPersistedCache);
-                        // If there are any binary changes, add a tx synchronization which will update the binary store
+                        // If there are any binary changes, add a function which will update the binary store
                         if (events1.hasBinaryChanges()) {
-                            txn.uponCompletion(binaryUsageUpdateFunction(events1.usedBinaries(), events1.unusedBinaries()));
+                            txn.uponCommit(binaryUsageUpdateFunction(events1.usedBinaries(), events1.unusedBinaries()));
                         }
                         events2 = that.persistChanges(that.changedNodesInOrder, thatPersistedCache);
                         if (events2.hasBinaryChanges()) {
-                            txn.uponCompletion(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
+                            txn.uponCommit(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
                         }
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
                         txn.rollback();
@@ -760,13 +760,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // Now persist the changes ...
                         logChangesBeingSaved(savedNodesInOrder, this.changedNodes, that.changedNodesInOrder, that.changedNodes);
                         events1 = persistChanges(savedNodesInOrder, thisPersistedCache);
-                        // If there are any binary changes, add a tx synchronization which will update the binary store
+                        // If there are any binary changes, add a function which will update the binary store
                         if (events1.hasBinaryChanges()) {
-                            txn.uponCompletion(binaryUsageUpdateFunction(events1.usedBinaries(), events1.unusedBinaries()));
+                            txn.uponCommit(binaryUsageUpdateFunction(events1.usedBinaries(), events1.unusedBinaries()));
                         }
                         events2 = that.persistChanges(that.changedNodesInOrder, thatPersistedCache);
                         if (events2.hasBinaryChanges()) {
-                            txn.uponCompletion(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
+                            txn.uponCommit(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
                         }
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
                         txn.rollback();
@@ -1329,7 +1329,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         final BinaryStore binaryStore = getContext().getBinaryStore();
         return new Transactions.TransactionFunction() {
             @Override
-            public void transactionComplete() {
+            public void execute() {
                 if (!usedBinaries.isEmpty()) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Marking binary values as used: {0}", usedBinaries);

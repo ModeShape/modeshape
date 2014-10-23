@@ -1067,7 +1067,7 @@ public class JcrRepositoryTest {
         new Thread(worker2).start();
 
         // Wait for the threads to complete ...
-        completionBarrier.await();
+        completionBarrier.await(10, TimeUnit.SECONDS);
     }
 
     protected abstract class SessionWorker implements Runnable {

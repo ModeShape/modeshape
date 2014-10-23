@@ -56,6 +56,7 @@ import org.modeshape.jcr.api.observation.PropertyEvent;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
+import org.modeshape.jcr.cache.change.AbstractPropertyChange;
 import org.modeshape.jcr.cache.change.AbstractSequencingChange;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -1010,8 +1011,14 @@ final class JcrObservationManager implements ObservationManager {
             if (shouldCheckNodeType()) {
                 String primaryTypeName = null;
                 try {
-                    Path parentPath = parentNodePathOfChange(change);
-                    AbstractJcrNode parentNode = session.node(parentPath);
+                    AbstractJcrNode parentNode = null;
+                    if (change instanceof AbstractPropertyChange) {
+                        // we can optimize this case, because we can get the parent node directly via key
+                        parentNode = session.node(change.getKey(), null);
+                    } else {
+                        Path parentPath = parentNodePathOfChange(change);
+                        parentNode = session.node(parentPath);
+                    }
 
                     Set<Name> parentMixinNames = parentNode.getMixinTypeNames();
                     mixinStrings = new String[parentMixinNames.size()];
@@ -1056,7 +1063,7 @@ final class JcrObservationManager implements ObservationManager {
 
         private Path parentNodePathOfChange( AbstractNodeChange change ) {
             Path changePath = change.getPath();
-            if (change instanceof PropertyAdded || change instanceof PropertyRemoved || change instanceof PropertyChanged) {
+            if (change instanceof AbstractPropertyChange) {
                 return changePath;
             }
             return changePath.isRoot() ? changePath : changePath.getParent();
