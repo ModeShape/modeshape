@@ -23,15 +23,14 @@
  */
 package org.modeshape.jcr.txn;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
-import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
@@ -92,7 +91,7 @@ public abstract class Transactions {
 
     /**
      * Determine if the current thread is already associated with an existing transaction.
-     * 
+     *
      * @return true if there is an existing transaction, or false if there is none
      * @throws SystemException If the transaction service fails in an unexpected way.
      */
@@ -102,7 +101,7 @@ public abstract class Transactions {
 
     /**
      * Get a string representation of the current transaction if there already is an existing transaction.
-     * 
+     *
      * @return a string representation of the transaction if there is an existing transaction, or null if there is none
      */
     public String currentTransactionId() {
@@ -116,7 +115,7 @@ public abstract class Transactions {
 
     /**
      * Get the transaction manager.
-     * 
+     *
      * @return the transaction manager
      */
     public TransactionManager getTransactionManager() {
@@ -125,7 +124,7 @@ public abstract class Transactions {
 
     /**
      * Starts a new transaction if one does not already exist, and associate it with the calling thread.
-     * 
+     *
      * @return the ModeShape transaction
      * @throws NotSupportedException If the calling thread is already associated with a transaction, and nested transactions are
      *         not supported.
@@ -134,11 +133,18 @@ public abstract class Transactions {
     public abstract Transaction begin() throws NotSupportedException, SystemException;
 
     /**
+     * Returns a the current transaction, if one exists.
+     *
+     * @return either a {@link org.modeshape.jcr.txn.Transactions.Transaction instance} or {@code null}
+     */
+    public abstract Transaction currentTransaction();
+
+    /**
      * Notify the workspace of the supplied changes, if and when the current transaction is completed. If the current thread is
      * not associated with a transaction when this method is called (e.g., the transaction was started, changes were made, the
      * transaction was committed, and then this method was called), then the workspace is notified immediately. Otherwise, the
      * notifications will be accumulated until the current transaction is committed.
-     * 
+     *
      * @param workspace the workspace to which the changes were made; may not be null
      * @param changes the changes; may be null if there are no changes
      * @param transaction the transaction with which the changes were made; may not be null
@@ -155,7 +161,7 @@ public abstract class Transactions {
 
     /**
      * Suspends the existing transaction, if there is one.
-     * 
+     *
      * @return either the {@link javax.transaction.Transaction} which was suspended or {@code null} if there isn't such a
      *         transaction.
      * @throws SystemException if the operation fails.
@@ -168,7 +174,7 @@ public abstract class Transactions {
     /**
      * Resumes a transaction that was previously suspended via the {@link org.modeshape.jcr.txn.Transactions#suspend()} call. If
      * there is no such transaction or there is another active transaction, nothing happens.
-     * 
+     *
      * @param transaction a {@link javax.transaction.Transaction} instance which was suspended previously or {@code null}
      * @throws javax.transaction.SystemException if the operation fails.
      * @see javax.transaction.TransactionManager#resume(javax.transaction.Transaction)
@@ -200,16 +206,34 @@ public abstract class Transactions {
         Monitor createMonitor();
 
         /**
+         * Returns the status associated with the current transaction
+         *
+         * @return an {@code int} code representing a transaction status.
+         * @throws SystemException - If the transaction service fails in an unexpected way.
+         * @see {@link javax.transaction.Status}
+         */
+        int status() throws SystemException;
+
+        /**
          * Register a function that will be called when the current transaction completes, or immediately if there is not
          * currently an active transaction.
-         * 
+         * The function will be executed regardless whether the transaction was committed or rolled back.
+         *
          * @param function the completion function
          */
         void uponCompletion( TransactionFunction function );
 
         /**
+         * Register a function that will be called after the current transaction has been committed successfully, or immediately if there is not
+         * currently an active transaction. If the transaction is rolled back, this function will not be executed.
+         *
+         * @param function the completion function
+         */
+        void uponCommit( TransactionFunction function );
+
+        /**
          * Commit the transaction currently associated with the calling thread.
-         * 
+         *
          * @throws RollbackException If the transaction was marked for rollback only, the transaction is rolled back and this
          *         exception is thrown.
          * @throws IllegalStateException If the calling thread is not associated with a transaction.
@@ -225,9 +249,9 @@ public abstract class Transactions {
 
         /**
          * Rolls back the transaction currently associated with the calling thread.
-         * 
+         *
          * @throws IllegalStateException If the transaction is in a state where it cannot be rolled back. This could be because
-         *         the calling thread is not associated with a transaction, or because it is in the {@link Status#STATUS_PREPARED
+         *         the calling thread is not associated with a transaction, or because it is in the {@link javax.transaction.Status#STATUS_PREPARED
          *         prepared state}.
          * @throws SecurityException If the caller is not allowed to roll back this transaction.
          * @throws SystemException If the transaction service fails in an unexpected way.
@@ -235,8 +259,11 @@ public abstract class Transactions {
         void rollback() throws IllegalStateException, SecurityException, SystemException;
     }
 
+    /**
+     * A function that should be executed in relation to a transaction.
+     */
     public static interface TransactionFunction {
-        void transactionComplete();
+        void execute();
     }
 
     protected Monitor newMonitor() {
@@ -245,7 +272,8 @@ public abstract class Transactions {
 
     protected abstract class BaseTransaction implements Transaction {
         protected final TransactionManager txnMgr;
-        private List<TransactionFunction> functions;
+        private Set<TransactionFunction> uponCompletionFunctions;
+        private Set<TransactionFunction> uponCommitFunctions;
 
         protected BaseTransaction( TransactionManager txnMgr ) {
             this.txnMgr = txnMgr;
@@ -256,29 +284,51 @@ public abstract class Transactions {
             return newMonitor();
         }
 
-        protected void executeFunctions() {
-            // Execute the functions immediately ...
-            if (functions != null) {
-                for (TransactionFunction function : functions) {
-                    function.transactionComplete();
-                }
+        @Override
+        public void uponCompletion( TransactionFunction function ) {
+            if (uponCompletionFunctions == null) {
+                uponCompletionFunctions = new LinkedHashSet<TransactionFunction>();
             }
+            uponCompletionFunctions.add(function);
         }
 
         @Override
-        public void uponCompletion( TransactionFunction function ) {
-            if (functions == null) {
-                functions = Collections.singletonList(function);
-            } else {
-                if (functions.size() == 1) {
-                    functions = new LinkedList<TransactionFunction>(functions);
-                }
-                functions.add(function);
+        public void uponCommit( TransactionFunction function ) {
+            if (uponCommitFunctions == null) {
+                uponCommitFunctions = new LinkedHashSet<TransactionFunction>();
             }
+            uponCommitFunctions.add(function);
+        }
+
+        @Override
+        public int status() throws SystemException {
+            return txnMgr.getStatus();
+        }
+
+        protected void executeFunctionsUponCompletion() {
+            if (uponCompletionFunctions != null) {
+                executeFunctions(uponCompletionFunctions);
+                uponCompletionFunctions = null;
+            }
+        }
+
+        protected void executeFunctionsUponCommit() {
+            if (uponCommitFunctions != null) {
+                executeFunctions(uponCommitFunctions);
+                uponCommitFunctions = null;
+            }
+        }
+
+        protected void executeFunctions( Set<TransactionFunction> functions ) {
+            // Execute the functions immediately ...
+            for (TransactionFunction function : functions) {
+                function.execute();
+            }
+            functions.clear();
         }
     }
 
-    protected class SimpleTransaction extends BaseTransaction {
+    protected abstract class SimpleTransaction extends BaseTransaction {
 
         protected SimpleTransaction( TransactionManager txnMgr ) {
             super(txnMgr);
@@ -286,21 +336,25 @@ public abstract class Transactions {
 
         @Override
         public void rollback() throws IllegalStateException, SecurityException, SystemException {
+            // rollback first
             txnMgr.rollback();
+            // if rollback succeeded execute the functions
+            executeFunctionsUponCompletion();
         }
 
         @Override
         public void commit()
-            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
-            IllegalStateException, SystemException {
+                throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+                       IllegalStateException, SystemException {
+            // commit first
             txnMgr.commit();
-
-            // Execute the functions immediately ...
-            executeFunctions();
+            // if the above succeeded, ISPN should have been updated so execute the functions
+            executeFunctionsUponCommit();
+            executeFunctionsUponCompletion();
         }
     }
 
-    protected class TraceableSimpleTransaction extends SimpleTransaction {
+    protected abstract class TraceableSimpleTransaction extends SimpleTransaction {
 
         protected TraceableSimpleTransaction( TransactionManager txnMgr ) {
             super(txnMgr);
@@ -316,8 +370,8 @@ public abstract class Transactions {
 
         @Override
         public void commit()
-            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
-            IllegalStateException, SystemException {
+                throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+                       IllegalStateException, SystemException {
             if (logger.isTraceEnabled()) {
                 String id = currentTransactionId();
                 super.commit();
@@ -328,4 +382,42 @@ public abstract class Transactions {
         }
     }
 
+    protected class NestableThreadLocalTransaction extends TraceableSimpleTransaction {
+        private AtomicInteger nestedLevel = new AtomicInteger(0);
+        private ThreadLocal<? extends Transaction> txReference;
+
+        protected NestableThreadLocalTransaction( TransactionManager txnMgr, ThreadLocal<? extends Transaction> txReference) {
+            super(txnMgr);
+            this.txReference = txReference;
+        }
+
+        @Override
+        public void rollback() throws IllegalStateException, SecurityException, SystemException {
+            // cleanup first, regardless of what happens
+            cleanup();
+            super.rollback();
+        }
+
+        @Override
+        public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
+            if (nestedLevel.getAndDecrement() == 1) {
+                // cleanup first, regardless of what happens
+                cleanup();
+                super.commit();
+            } else {
+                logger.trace("Not committing transaction because it's nested within another transaction. Only the top level transaction should commit");
+            }
+        }
+
+        protected void cleanup() {
+            txReference.remove();
+            txReference = null;
+            nestedLevel = null;
+        }
+
+        protected NestableThreadLocalTransaction begin() {
+            nestedLevel.incrementAndGet();
+            return this;
+        }
+    }
 }

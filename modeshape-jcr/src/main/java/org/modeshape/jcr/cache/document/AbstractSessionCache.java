@@ -31,7 +31,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
-import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import org.modeshape.common.annotation.Immutable;
@@ -45,6 +44,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
+import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -84,6 +84,7 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     private final SessionEnvironment sessionContext;
 
     private ExecutionContext context;
+    private AtomicReference<Transactions.TransactionFunction> completeTransactionFunction = new AtomicReference<Transactions.TransactionFunction>();
 
     protected AbstractSessionCache( ExecutionContext context,
                                     WorkspaceCache sharedWorkspaceCache,
@@ -111,28 +112,33 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     @Override
     public void checkForTransaction() {
         try {
-            Transaction txn = sessionContext.getTransactions().getTransactionManager().getTransaction();
+            Transactions transactions = sessionContext.getTransactions();
+            Transaction txn = transactions.getTransactionManager().getTransaction();
             if (txn != null && txn.getStatus() == Status.STATUS_ACTIVE) {
                 // There is an active transaction, so we need a transaction-specific workspace cache ...
                 workspaceCache.set(sessionContext.getTransactionalWorkspaceCacheFactory()
                                                  .getTransactionalWorkspaceCache(sharedWorkspaceCache));
-                // Register a synchronization to reset this workspace cache when the transaction completes ...
-                txn.registerSynchronization(new Synchronization() {
-
-                    @Override
-                    public void beforeCompletion() {
-                        // do nothing ...
+                // only register the function if there's an active ModeShape transaction because we need to run the
+                // function *only after* ISPN has committed its transaction & updated the cache
+                // if there isn't an active ModeShape transaction, one will become active later during "save"
+                // otherwise, "save" is never called meaning this cache should be discarded
+                Transactions.Transaction modeshapeTx = transactions.currentTransaction();
+                if (modeshapeTx != null) {
+                    if (this.completeTransactionFunction.get() == null) {
+                        // create and register the complete transaction function only once
+                        this.completeTransactionFunction.compareAndSet(null, new Transactions.TransactionFunction() {
+                            @Override
+                            public void execute() {
+                                completeTransaction();
+                            }
+                        });
+                        // always run this function, regardless whether the transaction succeeds or not
+                        modeshapeTx.uponCompletion(this.completeTransactionFunction.get());
                     }
-
-                    @Override
-                    public void afterCompletion( int status ) {
-                        // Tell the session that the transaction has completed ...
-                        completeTransaction();
-                    }
-                });
+                }
             } else {
                 // There is no active transaction, so just use the shared workspace cache ...
-                workspaceCache.set(sharedWorkspaceCache);
+                completeTransaction();
             }
         } catch (SystemException e) {
             logger().error(e, JcrI18n.errorDeterminingCurrentTransactionAssumingNone, workspaceName(), e.getMessage());
