@@ -1279,7 +1279,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 case AUTO:
                     break;
             }
-            return new SynchronizedTransactions(txnMgr);
+            return new SynchronizedTransactions(txnMgr, documentStore.localStore().localCache());
         }
 
         /**

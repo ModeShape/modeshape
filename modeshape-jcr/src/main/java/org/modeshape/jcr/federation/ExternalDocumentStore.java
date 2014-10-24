@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -72,7 +71,6 @@ public class ExternalDocumentStore implements DocumentStore {
      * Creates a new instance with the given connectors and local db.
      * 
      * @param connectors a {@code non-null} {@link Connectors} instance
-     * @param localDb a {@code non-null} {@link SchematicDb} instance
      */
     public ExternalDocumentStore( Connectors connectors) {
         this.connectors = connectors;

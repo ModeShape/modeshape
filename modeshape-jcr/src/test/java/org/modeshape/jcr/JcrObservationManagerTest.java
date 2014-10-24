@@ -48,6 +48,7 @@ import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
+import javax.transaction.TransactionManager;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
@@ -2220,6 +2221,47 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         journal = getObservationManager().getEventJournal();
         journal.skipTo(afterNode3);
         assertFalse(journal.hasNext());
+    }
+
+    @Test
+    @FixFor( "MODE-2336" )
+    public void shouldReceiveNodeTypeFilteredEventsWithUserTransactions() throws Exception {
+        stopRepository();
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-inmemory-jbosstxn.json"));
+        session = repository.login();
+        // initialize workspace
+        session.getRootNode().addNode("folder1");
+        session.save();
+        // register listener for PropertyEvent with nodeType restriction
+        Session listenerSession = newSession();
+        EventListener listener = new EventListener() {
+            public void onEvent(EventIterator events) {
+                while (events.hasNext()) {
+                    events.nextEvent();
+                }
+            }
+        };
+        listenerSession
+                .getWorkspace()
+                .getObservationManager()
+                .addEventListener(listener, ALL_EVENTS, "/folder1", true, null, new String[] { "nt:unstructured" }, false);
+
+        // try to add nodes within transactions
+        TransactionManager txMgr = repository.transactionManager();
+        for (int i = 0; i < 1000; i++) {
+            txMgr.begin();
+            Session writerSession = repository().login();
+            String nodeName = "node" + i;
+            writerSession.getNode("/folder1").addNode(nodeName);
+            writerSession.save();
+            writerSession.logout();
+            txMgr.commit();
+        }
+        // wait for listener thread
+        Thread.sleep(1000);
+        // clean
+        listenerSession.getWorkspace().getObservationManager().removeEventListener(listener);
+        listenerSession.logout();
     }
 
     protected void assertPathsInJournal(EventJournal journal, boolean assertSize, String...expectedPaths) throws RepositoryException {
