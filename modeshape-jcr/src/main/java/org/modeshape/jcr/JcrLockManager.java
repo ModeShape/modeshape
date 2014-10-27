@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.PathNotFoundException;
@@ -45,7 +44,7 @@ class JcrLockManager implements LockManager {
 
     private final JcrSession session;
     private final RepositoryLockManager lockManager;
-    private final ConcurrentMap<String, Object> lockTokens = new ConcurrentHashMap<String, Object>();
+    private final Set<String> lockTokens = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
     JcrLockManager( JcrSession session,
                     RepositoryLockManager lockManager ) {
@@ -54,7 +53,7 @@ class JcrLockManager implements LockManager {
     }
 
     boolean hasLockToken( String token ) {
-        return lockTokens.containsKey(token);
+        return lockTokens.contains(token);
     }
 
     /**
@@ -63,7 +62,28 @@ class JcrLockManager implements LockManager {
      * @throws RepositoryException if the session is not live
      */
     final void cleanLocks() throws RepositoryException {
-        lockManager.cleanLocks(session);
+        // clean the session-scoped locks: unlock all the nodes and remove the lock tokens from the system area
+        Set<String> cleanedTokens = lockManager.cleanLocks(session);
+        if (lockTokens.isEmpty()) {
+            return;
+        }
+        // clean all open-scoped locks created via this session
+        for (String lockToken : lockTokens) {
+            if (!cleanedTokens.contains(lockToken)) {
+                ModeShapeLock lock = lockManager.findLockByToken(lockToken);
+                if (lock == null) {
+                    // there is no existing lock for this token (it must've been removed from somewhere else)
+                    continue;
+                }
+                // this is an open-scoped lock created via this session for which we'll have to update the 'held' flag
+                if (!lockManager.setHeldBySession(session, lockToken, false)) {
+                    // Generally not expected, because if the lock exists we can always change the lock-held value to false
+                    // even when it is already false ...
+                    throw new LockException(JcrI18n.invalidLockToken.text(lockToken));
+                }
+            }
+        }
+        // always clean our internal map of tokens
         lockTokens.clear();
     }
 
@@ -71,7 +91,7 @@ class JcrLockManager implements LockManager {
     public void addLockToken( String lockToken ) throws LockException {
         CheckArg.isNotNull(lockToken, "lockToken");
 
-        if (lockTokens.containsKey(lockToken)) {
+        if (lockTokens.contains(lockToken)) {
             // We already hold the token ...
             return;
         }
@@ -81,7 +101,7 @@ class JcrLockManager implements LockManager {
             if (!lockManager.setHeldBySession(session, lockToken, true)) {
                 throw new LockException(JcrI18n.lockTokenAlreadyHeld.text(lockToken));
             }
-            lockTokens.putIfAbsent(lockToken, lockToken);
+            lockTokens.add(lockToken);
         } catch (LockException e) {
             lockTokens.remove(lockToken);
             throw e;
@@ -93,7 +113,7 @@ class JcrLockManager implements LockManager {
         CheckArg.isNotNull(lockToken, "lockToken");
 
         // Trivial case of giving a token back to ourself
-        if (!lockTokens.containsKey(lockToken)) {
+        if (!lockTokens.contains(lockToken)) {
             // We don't already hold the token ...
             throw new LockException(JcrI18n.invalidLockToken.text(lockToken));
         }
@@ -115,13 +135,13 @@ class JcrLockManager implements LockManager {
     }
 
     Set<String> lockTokens() {
-        return Collections.unmodifiableSet(lockTokens.keySet());
+        return Collections.unmodifiableSet(lockTokens);
     }
 
     @Override
     public String[] getLockTokens() {
         Set<String> tokens =  new HashSet<String>();
-        for (String token : lockTokens.keySet()) {
+        for (String token : lockTokens) {
             ModeShapeLock lock = lockManager.findLockByToken(token);
             if (lock != null && !lock.isSessionScoped()) {
                 tokens.add(token);
@@ -250,7 +270,7 @@ class JcrLockManager implements LockManager {
         // Try to obtain the lock ...
         ModeShapeLock lock = lockManager.lock(session, node.node(), isDeep, isSessionScoped, timeoutHint, ownerInfo);
         String token = lock.getLockToken();
-        lockTokens.put(token, token);
+        lockTokens.add(token);
         return lock.lockFor(session);
     }
 
@@ -269,7 +289,7 @@ class JcrLockManager implements LockManager {
         }
 
         ModeShapeLock lock = lockManager.findLockFor(node.key());
-        if (lock != null && !lockTokens.containsKey(lock.getLockToken())) {
+        if (lock != null && !lockTokens.contains(lock.getLockToken())) {
             // Someone else holds the lock, so see if the user has the permission to break someone else's lock ...
             try {
                 session.checkPermission(session.workspaceName(), node.path(), ModeShapePermissions.UNLOCK_ANY);

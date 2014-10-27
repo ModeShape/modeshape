@@ -410,9 +410,11 @@ class RepositoryLockManager implements ChangeSetListener {
      * Unlocks all locks corresponding to the tokens held by the supplied session.
      * 
      * @param session the session on behalf of which the lock operation is being performed
+     * @return a {@link Set} of the lock tokens that have been cleaned (removed from the system area and the corresponding nodes
+     * unlocked)
      * @throws RepositoryException if the session is not live
      */
-    void cleanLocks( JcrSession session ) throws RepositoryException {
+    Set<String> cleanLocks( JcrSession session ) throws RepositoryException {
         Set<String> lockTokens = session.lockManager().lockTokens();
         List<ModeShapeLock> locks = null;
         for (ModeShapeLock lock : locksByNodeKey.values()) {
@@ -421,13 +423,18 @@ class RepositoryLockManager implements ChangeSetListener {
                 locks.add(lock);
             }
         }
+
+        Set<String> cleanedTokens = null;
         if (locks != null) {
+            cleanedTokens = new HashSet<>(locks.size());
             // clear the locks which have been unlocked
             unlock(session, locks);
             for (ModeShapeLock lock : locks) {
                 locksByNodeKey.remove(lock.getLockedNodeKey());
+                cleanedTokens.add(lock.getLockToken());
             }
         }
+        return cleanedTokens != null ? cleanedTokens : Collections.<String>emptySet();
     }
 
     @Override
