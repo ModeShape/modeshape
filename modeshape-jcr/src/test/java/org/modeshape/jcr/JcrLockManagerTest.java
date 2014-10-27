@@ -20,7 +20,6 @@ import javax.jcr.InvalidItemStateException;
 import javax.jcr.Session;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockManager;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -47,9 +46,9 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-2342" )
     public void lockTokensShouldBeRemovedFromSessionUponLogout() throws Exception {
-        final AbstractJcrNode testNode
-                = session.getRootNode().addNode("test");
+        final AbstractJcrNode testNode = session.getRootNode().addNode("test");
         final String path = testNode.getPath();
         testNode.addMixin("mix:lockable");
         session.save();
