@@ -51,6 +51,7 @@ import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.query.validate.Schemata.Table;
 import org.modeshape.jcr.query.validate.Schemata.View;
 import org.modeshape.jcr.query.validate.Validator;
+import org.modeshape.jcr.value.NameFactory;
 
 /**
  * The planner that produces a canonical query plan given a {@link QueryCommand query command}.
@@ -234,7 +235,9 @@ public class CanonicalPlanner implements Planner {
                 node.setProperty(Property.SOURCE_NAME, selector.name());
             }
             // Validate the source name and set the available columns ...
-            Table table = context.getSchemata().getTable(selector.name());
+            NameFactory nameFactory = context.getExecutionContext().getValueFactories().getNameFactory();
+            // Always use the qualified form when searching for tables
+            Table table = context.getSchemata().getTable(selector.name().qualifiedForm(nameFactory));
             if (table != null) {
                 if (table instanceof View) context.getHints().hasView = true;
                 if (usedSelectors.put(selector.aliasOrName(), table) != null) {

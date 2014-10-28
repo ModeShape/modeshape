@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.value.NameFactory;
 
 /**
  * A representation of a qualified or expanded name.
@@ -30,10 +31,12 @@ public class SelectorName implements Readable, Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String name;
+    private final boolean expandedForm;
 
     public SelectorName( String name ) {
         CheckArg.isNotEmpty(name, "name");
         this.name = name;
+        this.expandedForm = name.startsWith("{");
     }
 
     /**
@@ -43,6 +46,16 @@ public class SelectorName implements Readable, Serializable {
      */
     public String name() {
         return name;
+    }
+
+    /**
+     * Returns this selector in qualified form (see #3.2.5 of the JCR spec)
+     *
+     * @param nameFactory a {@link org.modeshape.jcr.value.NameFactory} instance; may not be null
+     * @return a {@link org.modeshape.jcr.query.model.SelectorName} instance for which the name is always in qualified form; never null
+     */
+    public SelectorName qualifiedForm(NameFactory nameFactory) {
+        return expandedForm ? new SelectorName(nameFactory.create(this.name).getString()) : this;
     }
 
     @Override

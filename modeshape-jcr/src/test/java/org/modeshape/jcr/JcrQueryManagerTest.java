@@ -60,6 +60,7 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.query.InvalidQueryException;
@@ -4599,6 +4600,20 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             nodeTypeManager.unregisterNodeType("foo:nodeType2");
             namespaceRegistry.unregisterNamespace("foo");
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2329" )
+    public void shouldAllowUsingExpandedSelectorNameInQOM() throws Exception {
+        QueryObjectModelFactory qomFactory = session.getWorkspace().getQueryManager().getQOMFactory();
+
+        Selector selector = qomFactory.selector(NodeType.NT_BASE, "category");
+
+        // Build and execute the query ...
+        Query query = qomFactory.createQuery(selector, qomFactory.childNode("category", "/Cars"), null, new Column[0]);
+        assertThat(query.getStatement(), is("SELECT * FROM [{http://www.jcp.org/jcr/nt/1.0}base] AS category WHERE ISCHILDNODE(category,'/Cars')"));
+        QueryResult result = query.execute();
+        validateQuery().rowCount(4).hasColumns(allColumnNames("category")).validate(query, result);
     }
 
     private void registerNodeType( String typeName ) throws RepositoryException {
