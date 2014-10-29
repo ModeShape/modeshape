@@ -58,7 +58,7 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
         hints.hasFullTextSearch = true; // always include the score
         hints.qualifyExpandedColumnNames = true; // always qualify expanded names with the selector name in JCR-SQL2
         // We want to allow use of residual properties (not in the schemata) for criteria ...
-        hints.validateColumnExistance = true;
+        hints.validateColumnExistance = false;   // see MODE-1055
         return new QueryObjectModel(context, statement, LANGUAGE, query, hints, null);
     }
 
@@ -72,7 +72,7 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
         hints.hasFullTextSearch = true; // always include the score
         hints.qualifyExpandedColumnNames = true; // always qualify expanded names with the selector name in JCR-SQL2
         // We want to allow use of residual properties (not in the schemata) for criteria ...
-        hints.validateColumnExistance = true;
+        hints.validateColumnExistance = false; // see MODE-1055
         return new SetQueryObjectModel(context, statement, LANGUAGE, setQuery, hints, null);
     }
 
@@ -86,7 +86,7 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
         hints.hasFullTextSearch = true; // always include the score
         hints.qualifyExpandedColumnNames = true; // always qualify expanded names with the selector name in JCR-SQL2
         // We want to allow use of residual properties (not in the schemata) for criteria ...
-        hints.validateColumnExistance = true;
+        hints.validateColumnExistance = false;  // see MODE-1055
         return new QueryObjectModel(context, statement, LANGUAGE, selectQuery, hints, null);
     }
 
