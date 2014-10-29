@@ -241,9 +241,8 @@ class RepositoryNodeTypeManager implements ChangeSetListener, NodeTypes.Supplier
 
                     for (JcrNodeType supertype : nodeType.supertypes()) {
                         if (nodeTypeName.equals(supertype.getInternalName())) {
-                            throw new InvalidNodeTypeDefinitionException(
-                                                                         JcrI18n.cannotUnregisterSupertype.text(name,
-                                                                                                                supertype.getName()));
+                            throw new InvalidNodeTypeDefinitionException(JcrI18n.cannotUnregisterSupertype.text(name,
+                                                                                                                nodeType.getName()));
                         }
                     }
 

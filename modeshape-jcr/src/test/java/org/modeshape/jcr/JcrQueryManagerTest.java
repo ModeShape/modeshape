@@ -4616,6 +4616,31 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(4).hasColumns(allColumnNames("category")).validate(query, result);
     }
 
+    @Test
+    @FixFor( { "MODE-1055", "MODE-2347" } )
+    public void shouldAllowMissingSelectorColumnsInQOM() throws Exception {
+        Node node = session.getRootNode().addNode("test", "modetest:simpleType");
+        node.setProperty("fieldA", "A_value");
+        session.save();
+        // query for a property present in a subtype which doesn't have any residuals, using a super-type selector
+        String sql = "SELECT * FROM [nt:base] AS node WHERE node.fieldA = 'A_value'";
+        try {
+            QueryObjectModelFactory qomFactory = session.getWorkspace().getQueryManager().getQOMFactory();
+            Selector selector = qomFactory.selector("nt:base", "node");
+            PropertyValue propValue = qomFactory.propertyValue("node", "fieldA");
+            Literal literal = qomFactory.literal(session.getValueFactory().createValue("A_value"));
+            Constraint constraint = qomFactory.comparison(propValue, QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO, literal);
+            Query query = qomFactory.createQuery(selector, constraint, null, new Column[0]);
+
+            assertThat(query.getStatement(), is(sql));
+            QueryResult result = query.execute();
+            validateQuery().rowCount(1).validate(query, result);
+        } finally {
+            node.remove();
+            session.save();
+        }
+    }
+
     private void registerNodeType( String typeName ) throws RepositoryException {
         NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
 
