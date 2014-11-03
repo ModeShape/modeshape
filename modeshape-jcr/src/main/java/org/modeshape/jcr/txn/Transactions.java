@@ -289,7 +289,7 @@ public abstract class Transactions {
             }
         }
 
-        protected void executeFunctions( Set<TransactionFunction> functions ) {
+        private void executeFunctions( Set<TransactionFunction> functions ) {
             // Execute the functions immediately ...
             for (TransactionFunction function : functions) {
                 function.execute();

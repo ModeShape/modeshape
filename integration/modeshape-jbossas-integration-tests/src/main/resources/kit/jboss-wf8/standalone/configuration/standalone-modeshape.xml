@@ -338,28 +338,38 @@
                  with a "sample" cache (each repository assumes the cache name matches the repository name). -->
             <cache-container name="modeshape" default-cache="sample" module="org.modeshape">
                 <local-cache name="sample">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/sample" purge="false"/>
                 </local-cache>
                 <local-cache name="artifacts">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/artifacts" purge="false"/>
                 </local-cache>
                 <local-cache name="preconfiguredRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/preconfiguredRepository" purge="false"/>
                 </local-cache>
                 <local-cache name="federatedRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                 </local-cache>
                 <local-cache name="infinispanRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
@@ -367,6 +377,8 @@
                 </local-cache>
                 <!--ModeShape using JDBC persistence-->
                 <local-cache name="jdbcRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeJDBCStoreDS" shared="false"
                                              preload="false" passivation="false" purge="false">
@@ -380,6 +392,8 @@
                     </string-keyed-jdbc-store>
                 </local-cache>
                 <local-cache name="jdbcRepositoryWithEviction">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA" locking="PESSIMISTIC"/>
                     <eviction strategy="LRU" max-entries="100"/>
                     <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeJDBCStoreDS" shared="false"
@@ -394,44 +408,66 @@
                     </string-keyed-jdbc-store>
                 </local-cache>
                 <local-cache name="binaryJDBCRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                 </local-cache>
                 <local-cache name="dbBinaryJDBCRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                 </local-cache>
                 <local-cache name="binaryIndexingJDBCRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                 </local-cache>
                 <local-cache name="compositeBinaryStoreRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                 </local-cache>
                 <local-cache name="anonymousRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                 </local-cache>
                 <local-cache name="defaultAnonymousRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                 </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/binary-store/ispn-data"  purge="false"/>
                 </local-cache>
                 <local-cache name="binary-fs-meta">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/binary-store/ispn-meta" purge="false"/>
                 </local-cache>
                 <local-cache name="binary-nested">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/composite-binary-store/ispn-data" purge="false"/>
                 </local-cache>
                 <local-cache name="binary-nested-meta">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/composite-binary-store/ispn-meta" purge="false"/>
                 </local-cache>
             </cache-container>
             <cache-container name="jdbc-binary-cache-container">
                 <local-cache name="binaryJDBCRepository-binary-data">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LIRS" max-entries="5"/>
                     <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" passivation="false"
@@ -444,6 +480,8 @@
                     </string-keyed-jdbc-store>
                 </local-cache>
                 <local-cache name="binaryJDBCRepository-binary-metadata">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LIRS" max-entries="2000"/>
                     <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" passivation="false"
@@ -456,6 +494,8 @@
                     </string-keyed-jdbc-store>
                 </local-cache>
                 <local-cache name="binaryJDBCRepository-binary-data-wb">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" shared="false"
                                              preload="false" passivation="false" purge="false">
@@ -469,6 +509,8 @@
                     </string-keyed-jdbc-store>
                 </local-cache>
                 <local-cache name="binaryJDBCRepository-binary-metadata-wb">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LRU" max-entries="100"/>
                     <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" shared="false"
@@ -484,6 +526,8 @@
             <!--Sample workspace cache container which should really be used only in special cases, when the provided default is not enough-->
             <cache-container name="ws-cache-container" default-cache="ws-cache" module="org.modeshape">
                 <local-cache name="ws-cache">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LRU" max-entries="100"/>
                     <expiration lifespan="10000" interval="1000" max-idle="5000"/>
@@ -493,10 +537,14 @@
             <cache-container name="modeshape-repository-clustered" default-cache="repo-clustered1" module="org.modeshape">
                 <transport lock-timeout="60000"/>
                 <replicated-cache name="repo-clustered1" mode="SYNC">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <file-store path="modeshape/store/repo-clustered1" passivation="false" purge="false"/>
                 </replicated-cache>
                 <replicated-cache name="repo-clustered2" mode="SYNC">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
                     <file-store path="modeshape/store/repo-clustered2" passivation="false" purge="false"/>
                 </replicated-cache>
