@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -43,6 +45,7 @@ import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 
 public class TransactionsTest extends SingleUseAbstractTest {
 
@@ -351,6 +354,43 @@ public class TransactionsTest extends SingleUseAbstractTest {
             result.cancel(true);
         }
         executorService.shutdown();
+    }
+
+    @Test
+    @FixFor( "MODE-2352 ")
+    public void shouldSupportConcurrentWritersUpdatingTheSameNodeWithSeparateUserTransactions() throws Exception {
+        FileUtil.delete("target/persistent_repository");
+        InputStream configFile = getClass().getClassLoader()
+                                           .getResourceAsStream("config/repo-config-filesystem-jbosstxn-pessimistic.json");
+        startRepositoryWithConfiguration(configFile);
+        int threadsCount = 10;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadsCount);
+        List<Future<Void>> results = new ArrayList<>(threadsCount);
+        final AtomicInteger counter = new AtomicInteger(1);
+        for (int i = 0; i < threadsCount; i++) {
+            Future<Void> result = executorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    startTransaction();
+                    Session session = repository.login();
+                    session.getRootNode().addNode("test_" + counter.incrementAndGet());
+                    session.save();
+                    session.logout();
+                    commitTransaction();
+                    return null;
+                }
+            });
+            results.add(result);
+        }
+
+        for (Future<Void> result : results) {
+            result.get(10, TimeUnit.SECONDS);
+        }
+        executorService.shutdown();
+        Session session = repository.login();
+        // don't count jcr:system
+        assertEquals(threadsCount, session.getNode("/").getNodes().getSize() - 1);
+        session.logout();
     }
 
     protected void startTransaction() throws NotSupportedException, SystemException {
