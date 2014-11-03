@@ -203,14 +203,18 @@
                  with a "sample" cache (each repository assumes the cache name matches the repository name). -->
             <cache-container name="modeshape" default-cache="sample" module="org.modeshape">
                 <local-cache name="sample">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <!-- ModeShape requires transactions -->
-                    <transaction mode="NON_XA"/>
+                    <transaction mode="NON_XA" locking="PESSIMISTIC"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/store/sample" passivation="false" purge="false"/>
                 </local-cache>
                 <local-cache name="artifacts">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
                     <!-- ModeShape requires transactions -->
-                    <transaction mode="NON_XA"/>
+                    <transaction mode="NON_XA" locking="PESSIMISTIC"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store relative-to="jboss.server.data.dir" path="modeshape/store/artifacts" passivation="false" purge="false"/>
                 </local-cache>
