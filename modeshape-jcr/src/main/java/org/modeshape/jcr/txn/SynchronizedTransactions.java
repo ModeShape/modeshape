@@ -37,6 +37,8 @@ import org.infinispan.Cache;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.TransactionCompleted;
 import org.infinispan.notifications.cachelistener.event.TransactionCompletedEvent;
+import org.infinispan.transaction.TransactionTable;
+import org.infinispan.transaction.xa.GlobalTransaction;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -55,9 +57,10 @@ public final class SynchronizedTransactions extends Transactions {
 
     @SuppressWarnings( "rawtypes")
     private final Cache localCache;
+    private final TransactionTable transactionTable;
 
     /**
-     * Creates a new instance which wrapps a transaction manager and monitor factory
+     * Creates a new instance which wraps a transaction manager and monitor factory
      *
      * @param monitorFactory a {@link org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory} instance; never null
      * @param txnMgr a {@link javax.transaction.TransactionManager} instance; never null
@@ -65,12 +68,16 @@ public final class SynchronizedTransactions extends Transactions {
      */
     @SuppressWarnings( "rawtypes")
     public SynchronizedTransactions( SessionEnvironment.MonitorFactory monitorFactory,
-                                     TransactionManager txnMgr,
+                                     TransactionManager txnMgr, 
                                      Cache localCache ) {
         super(monitorFactory, txnMgr);
+        assert this.txnMgr != null;
+
         this.localCache = localCache;
-        assert txnMgr != null;
-        assert localCache != null;
+        assert this.localCache != null;
+
+        this.transactionTable = localCache.getAdvancedCache().getComponentRegistry().getComponent(TransactionTable.class);
+        assert this.transactionTable != null;
     }
 
     @Override
@@ -85,6 +92,9 @@ public final class SynchronizedTransactions extends Transactions {
         if (result != null) {
             // we have an existing transaction so depending on the type we either need to be aware of nesting
             // or return as-is
+            if (logger.isTraceEnabled()) {
+                logger.trace("Found active ModeShape transaction '{0}' ", result);
+            }
             return result instanceof NestableThreadLocalTransaction ?
                    ((NestableThreadLocalTransaction) result).begin() :
                    result;
@@ -99,11 +109,13 @@ public final class SynchronizedTransactions extends Transactions {
             result = new NestableThreadLocalTransaction(txnMgr, ACTIVE_TRANSACTION).begin();
         } else {
             // Otherwise, there's already a transaction, so wrap it with a cache listener
-            result = new ListenerTransaction(txnMgr);
+            result = new ListenerTransaction(txnMgr, txn);
+            localCache.addListener(result);
         }
         // Store it
         ACTIVE_TRANSACTION.set(result);
         if (logger.isTraceEnabled()) {
+            logger.trace("Created & stored new ModeShape synchronized transaction '{0}' ", result);
             if (txn == null) txn = txnMgr.getTransaction();
             assert txn != null;
             final String id = txn.toString();
@@ -153,7 +165,6 @@ public final class SynchronizedTransactions extends Transactions {
             }
         }
     }
-
     /**
      * A transaction implementation that is an Infinispan listener. This is the only reliable way to be able to tell, when
      * using user transactions, that ISPN has finished updating the data after a "commit" call.
@@ -161,12 +172,26 @@ public final class SynchronizedTransactions extends Transactions {
     @Listener
     @SuppressWarnings( "rawtypes")
     public final class ListenerTransaction extends Transactions.BaseTransaction {
+        private final GlobalTransaction ispnTxID;
         private final SynchronizedMonitor monitor;
 
-        protected ListenerTransaction( TransactionManager txnMgr ) {
+        protected ListenerTransaction( TransactionManager txnMgr, javax.transaction.Transaction activeTransaction ) {
             super(txnMgr);
-            localCache.addListener(this);
             this.monitor = new SynchronizedMonitor(newMonitor());
+            try {
+                assert activeTransaction != null;
+                // store a reference to the active ISPN transaction because this listener should only process events for this transaction
+                this.ispnTxID = transactionTable.getLocalTransaction(activeTransaction).getGlobalTransaction();
+                assert ispnTxID != null;
+                if (logger.isTraceEnabled()) {
+                    logger.trace(
+                            "Registered Infinispan tx listener '{0}' which will fire events after Infinispan has finished processing the '{1}' transaction",
+                            this,
+                            ispnTxID.toString());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         /**
@@ -177,33 +202,69 @@ public final class SynchronizedTransactions extends Transactions {
         public void transactionCompleted( TransactionCompletedEvent event ) {
             if (!event.isOriginLocal()) {
                 // if the event is not local, we're not interested in processing it
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Infinispan tx listener '{0}' ignoring event '{1}' because it did not originate on this cluster node",
+                                 this, event);
+                }
                 return;
             }
+
+            // only do the processing if the ISPN transaction for which this was created matches the transaction in the event
+            GlobalTransaction eventIspnTransaction = event.getGlobalTransaction();
+            if (eventIspnTransaction == null || ispnTxID.getId() != eventIspnTransaction.getId()) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Infinispan tx listener '{0}' ignoring event '{1}' because it was received for another transaction '{2}'. Our transaction is '{3}'",
+                                 this, event, eventIspnTransaction, this.ispnTxID);
+                }
+                return;
+            }
+
             try {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Infinispan tx listener '{0}' received event '{1}'", this, event);
+                }
                 if (event.isTransactionSuccessful()) {
                     // run the functions for a successful commit
                     executeFunctionsUponCommit();
                     // Update the statistics about the changed number of nodes
                     monitor.dispatchRecordedChanges();
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Infinispan tx listener '{0}' executed commit functions for transaction '{1}'", this,
+                                     ispnTxID);
+                    }
                 }
                 // run all the other (both commit & rollback) functions
                 executeFunctionsUponCompletion();
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Infinispan tx listener '{0}' executed completion functions for transaction '{1}'", this,
+                                 ispnTxID);
+                }
             } finally {
-                // always remove the active transaction
-                ACTIVE_TRANSACTION.remove();
                 // after we've been invoked, it means that ISPN has finished processing the transaction, we need to always
                 // remove ourselves from the cache
                 localCache.removeListener(this);
+                // clear the active ModeShape transaction for this thread
+                ACTIVE_TRANSACTION.remove();
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Infinispan tx listener '{0}' has finished and has been unregistered for transaction '{1}'", this,
+                                 ispnTxID);
+                }
             }
         }
 
         @Override
         public void commit()  {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Infinispan tx listener '{0}' ignoring commit call coming from ModeShape. Waiting to be notified by Infinispan'", this);
+            }
             //nothing by default
         }
 
         @Override
         public void rollback() {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Infinispan tx listener '{0}' ignoring rollback call coming from ModeShape. Waiting to be notified by Infinispan'", this);
+            }
             // nothing by default
         }
 
