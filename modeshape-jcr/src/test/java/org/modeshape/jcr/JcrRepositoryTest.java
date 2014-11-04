@@ -1526,6 +1526,8 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
             // this will spawn a new thread for the listener
             addListener(newSession, 0, 0, Event.NODE_ADDED, "/", true, null, null, false);
             newSession.logout();
+            // wait a bit to make sure threads have been released
+            Thread.sleep(100);
         }
         // each iteration creates and should release 1 new thread, but activeThreadCount is not accurate, since a thread may
         // have finished its work but is being kept alive in the thread pool. So we're only approximating the next assert

@@ -25,7 +25,6 @@
 package org.modeshape.jcr.bus;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -38,8 +37,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * A standard {@link ChangeBus} implementation.
@@ -56,7 +59,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     private final ExecutorService executor;
     private final Set<ChangeSetDispatcher> dispatchers;
-    private final Map<Integer, Future<?>> workers;
+    private final ConcurrentHashMap<Integer, Future<?>> workers;
 
     private final String systemWorkspaceName;
 
@@ -71,7 +74,7 @@ public final class RepositoryChangeBus implements ChangeBus {
     public RepositoryChangeBus( ExecutorService executor,
                                 String systemWorkspaceName ) {
         this.systemWorkspaceName = systemWorkspaceName;
-        this.workers = new HashMap<Integer, Future<?>>();
+        this.workers = new ConcurrentHashMap<Integer, Future<?>>();
         this.dispatchers = Collections.newSetFromMap(new ConcurrentHashMap<ChangeSetDispatcher, Boolean>());
         this.executor = executor;
         this.shutdown = false;
@@ -84,31 +87,29 @@ public final class RepositoryChangeBus implements ChangeBus {
     @Override
     public synchronized void shutdown() {
         shutdown = true;
-        dispatchers.clear();
-        stopWork();
-    }
-
-    private void stopWork() {
-        executor.shutdown();
-        for (Future<?> worker : workers.values()) {
-            if (!worker.isDone()) {
-                worker.cancel(true);
-            }
+        // add a stop marker to signal that all the internal workers should stop waiting on the queue
+        for (ChangeSetDispatcher dispatcher : dispatchers) {
+            dispatcher.submit(FinalChangeSet.INSTANCE);
         }
+        for (Future<?> worker : workers.values()) {
+            // cancel any remaining active work (best effort)
+            worker.cancel(true);
+        }
+        executor.shutdownNow();
         workers.clear();
+        dispatchers.clear();
     }
 
     @Override
     public boolean register( ChangeSetListener listener ) {
-        if (listener == null) {
+        if (listener == null || shutdown) {
             return false;
         }
         int hashCode = HashCode.compute(listener);
         if (!workers.containsKey(hashCode)) {
             ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener);
             dispatchers.add(dispatcher);
-            workers.put(hashCode, executor.submit(dispatcher));
-            return true;
+            return workers.putIfAbsent(hashCode, executor.submit(dispatcher)) == null;
         }
         return false;
     }
@@ -123,9 +124,13 @@ public final class RepositoryChangeBus implements ChangeBus {
             for (Iterator<ChangeSetDispatcher> dispatcherIterator = dispatchers.iterator(); dispatcherIterator.hasNext();) {
                 ChangeSetDispatcher dispatcher = dispatcherIterator.next();
                 if (dispatcher.listenerHashCode() == hashCode) {
+                    // add the stop marker to the queue
+                    dispatcher.submit(FinalChangeSet.INSTANCE);
                     Future<?> work = workers.remove(hashCode);
-                    // cancelling the work will call shutdown on the dispatcher
-                    work.cancel(true);
+                    if (work != null) {
+                        // cancel the work (best effort)
+                        work.cancel(true);
+                    }
                     dispatcherIterator.remove();
                     return true;
                 }
@@ -184,18 +189,23 @@ public final class RepositoryChangeBus implements ChangeBus {
 
         @Override
         public Void call() {
-            while (!shutdown) {
-                try {
+            boolean interrupted = false;
+            try {
+                while (!shutdown) {
                     ChangeSet changeSet = queue.take();
-                    if (changeSet != null) {
+                    if (changeSet == FinalChangeSet.INSTANCE) {
+                        // stop marker and stop processing immediately
+                        shutdown(true);
+                        return null;
+                    } else if (changeSet != null) {
                         listener.notify(changeSet);
                     }
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    break;
                 }
+            } catch (InterruptedException e) {
+                interrupted = true;
+                Thread.interrupted();
             }
-            shutdown();
+            shutdown(interrupted);
             return null;
         }
 
@@ -213,12 +223,99 @@ public final class RepositoryChangeBus implements ChangeBus {
             return listener;
         }
 
-        private void shutdown() {
-            while (!queue.isEmpty()) {
-                listener.notify(queue.remove());
+        private void shutdown( boolean immediately ) {
+            if (immediately) {
+                this.queue.clear();
+            } else {
+                while (!queue.isEmpty()) {
+                    ChangeSet changeSet = queue.remove();
+                    if (changeSet != FinalChangeSet.INSTANCE) {
+                        listener.notify(changeSet);
+                    }
+                }
             }
             this.listener = null;
             this.queue = null;
+        }
+    }
+
+    private static class FinalChangeSet implements ChangeSet {
+        private static final long serialVersionUID = 1L;
+        private static final FinalChangeSet INSTANCE = new FinalChangeSet();
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return true;
+        }
+
+        @Override
+        public String getUserId() {
+            return null;
+        }
+
+        @Override
+        public Map<String, String> getUserData() {
+            return null;
+        }
+
+        @Override
+        public DateTime getTimestamp() {
+            return null;
+        }
+
+        @Override
+        public String getProcessKey() {
+            return null;
+        }
+
+        @Override
+        public String getRepositoryKey() {
+            return null;
+        }
+
+        @Override
+        public String getWorkspaceName() {
+            return null;
+        }
+
+        @Override
+        public Set<NodeKey> changedNodes() {
+            return null;
+        }
+
+        @Override
+        public Set<BinaryKey> unusedBinaries() {
+            return null;
+        }
+
+        @Override
+        public Set<BinaryKey> usedBinaries() {
+            return null;
+        }
+
+        @Override
+        public boolean hasBinaryChanges() {
+            return false;
+        }
+
+        @Override
+        public String getSessionId() {
+            return null;
+        }
+
+        @Override
+        public Iterator<Change> iterator() {
+            return null;
+        }
+
+        @Override
+        public String toString() {
+            return "RepositoryChangeBus#STOP_MARKER";
         }
     }
 }
