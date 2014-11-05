@@ -102,7 +102,7 @@
 + master (git:folder) abort protected
 + * (git:folder) abort protected
 
-[git:folder] > nt:folder, git:committed, git:historical
+[git:folder] > nt:folder, git:committed, git:historical, git:detailed
 + * (nt:hierarchyNode,git:committed)
 
 [git:file] > nt:file, git:committed

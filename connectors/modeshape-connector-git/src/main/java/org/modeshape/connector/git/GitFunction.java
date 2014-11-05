@@ -271,8 +271,7 @@ public abstract class GitFunction {
             String lastCommitIdName = pageKey.getOffsetString();
             ObjectId lastCommitId = repository.resolve(lastCommitIdName);
             int pageSize = (int)pageKey.getBlockSize();
-            // int offset = pageKey.getOffsetInt();
-            // int maxCount = pageSize + offset;
+
             LogCommand command = git.log();
             command.add(lastCommitId);
             command.setMaxCount(pageSize + 1);

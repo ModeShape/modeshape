@@ -138,6 +138,10 @@ public final class Connectors {
                 FederationManager federationManager = session.getWorkspace().getFederationManager();
                 List<RepositoryConfiguration.ProjectionConfiguration> projections = current.getProjectionConfigurationsForWorkspace(workspaceName);
                 for (RepositoryConfiguration.ProjectionConfiguration projectionCfg : projections) {
+                    if (current.isUnused(projectionCfg.getSourceName())) {
+                        LOGGER.debug("Ignoring projection '{0}' because the connector for '{1}' is unused", projectionCfg, projectionCfg.getSourceName());
+                        continue;
+                    }
                     String repositoryPath = projectionCfg.getRepositoryPath();
                     String alias = projectionCfg.getAlias();
 
@@ -539,13 +543,8 @@ public final class Connectors {
             return;
         }
         Snapshot current = this.snapshot.get();
-        for (Connector connector : current.getConnectors()) {
-            try {
-                connector.shutdown();
-            } catch (Exception e) {
-                LOGGER.debug(e, "Error while stopping connector for {0}", connector.getSourceName());
-            }
-        }
+        current.shutdownConnectors();
+        current.shutdownUnusedConnectors();
         this.snapshot.set(current.withOnlyProjectionConfigurations());
     }
 
@@ -714,9 +713,24 @@ public final class Connectors {
         
         protected synchronized void shutdownUnusedConnectors() {
             for (Connector connector : unusedConnectors) {
-                connector.shutdown();
+                shutdownConnector(connector);
             }
             unusedConnectors.clear();
+        }
+
+        protected synchronized void shutdownConnectors() {
+            for (Connector connector : sourceKeyToConnectorMap.values()) {
+                shutdownConnector(connector);
+            }
+            sourceKeyToConnectorMap.clear();
+        }
+
+        private void shutdownConnector( Connector connector ) {
+            try {
+                connector.shutdown();
+            } catch (Throwable t) {
+                LOGGER.debug(t, "Error while stopping connector for {0}", connector.getSourceName());
+            }
         }
 
         private void registerConnectors( Collection<Component> components ) {
@@ -1093,6 +1107,15 @@ public final class Connectors {
 
         protected boolean hasReadonlyConnectors() {
             return hasReadonlyConnectors;
+        }
+
+        protected synchronized boolean isUnused(String sourceName) {
+            for (Connector connector : unusedConnectors) {
+                if (connector.getSourceName().equals(sourceName)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 

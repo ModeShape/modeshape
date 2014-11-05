@@ -17,7 +17,6 @@ package org.modeshape.connector.git;
 
 import java.io.IOException;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
@@ -78,26 +77,7 @@ public class GitHistory extends GitFunction implements PageableGitFunction {
         } else if (spec.parameterCount() == 1) {
             // This is the top-level "/commits/{branchOrTagNameOrObjectId}" node
             writer.setPrimaryType(GitLexicon.OBJECT);
-
-            // Generate the child references to the (latest) commits on this branch/tag ...
-            String branchOrTagNameOrObjectId = spec.parameter(0);
-            ObjectId objId = resolveBranchOrTagOrCommitId(repository, branchOrTagNameOrObjectId);
-            RevWalk walker = new RevWalk(repository);
-            try {
-                RevCommit commit = walker.parseCommit(objId);
-                LogCommand command = git.log();
-                command.add(commit.getId());
-                command.setMaxCount(pageSize);
-                for (RevCommit rev : command.call()) {
-                    String commitId = rev.getId().getName();
-                    writer.addChild(spec.childId(commitId), commitId);
-                }
-                // Handle paging ...
-                writer.addPage(spec.getParentId(), pageSize, pageSize, PageWriter.UNKNOWN_TOTAL_SIZE);
-            } finally {
-                walker.dispose();
-            }
-
+            addCommitsAsChildren(git, spec, writer, pageSize);
         } else if (spec.parameterCount() == 2) {
             // This is a specific commit in the history, via "/commits/{branchOrTagNameOrObjectId}/{objectId}"
             writer.setPrimaryType(GitLexicon.COMMIT);
@@ -133,33 +113,8 @@ public class GitHistory extends GitFunction implements PageableGitFunction {
                              PageWriter writer,
                              Values values,
                              PageKey pageKey ) throws GitAPIException, IOException {
-        if (spec.parameterCount() == 0) {
-            // List the next page of commits ...
-            addCommitsAsPageOfChildren(git, repository, spec, writer, pageKey);
-        } else {
-            // We know the branch, tag, or commit for the history ...
-            String branchOrTagNameOrObjectId = spec.parameter(0);
-            ObjectId objId = repository.resolve(branchOrTagNameOrObjectId);
-            RevWalk walker = new RevWalk(repository);
-            try {
-                int offset = pageKey.getOffsetInt();
-                RevCommit commit = walker.parseCommit(objId);
-                LogCommand command = git.log();
-                command.add(commit.getId());
-                command.setSkip(offset);
-                command.setMaxCount(pageSize);
-                for (RevCommit rev : command.call()) {
-                    String commitId = rev.getId().toString();
-                    writer.addChild(spec.childId(commitId), commitId);
-                }
-
-                // Handle paging ...
-                int nextOffset = offset + pageSize;
-                writer.addPage(pageKey.getParentId(), nextOffset, pageSize, PageWriter.UNKNOWN_TOTAL_SIZE);
-            } finally {
-                walker.dispose();
-            }
-        }
+        // List the next page of commits ...
+        addCommitsAsPageOfChildren(git, repository, spec, writer, pageKey);
         return writer.document();
     }
 }

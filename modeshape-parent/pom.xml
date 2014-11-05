@@ -282,8 +282,8 @@
         <embedmongo.version>1.28</embedmongo.version>
         <json.simple.version>1.1</json.simple.version>
         <logback.version>0.9.29</logback.version>
-        <jgit.version>2.1.0.201209190230-r</jgit.version>
-        <jgit.jsch.version>0.1.44-1</jgit.jsch.version>
+        <jgit.version>3.5.1.201410131835-r</jgit.version>
+        <jgit.jsch.version>0.1.50</jgit.jsch.version>
         <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
         <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
         <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
