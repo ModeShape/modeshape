@@ -687,7 +687,9 @@
                     </source>
                     <source name="git" classname="org.modeshape.connector.git.GitConnector" module="org.modeshape.connector.git"
                             directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1"
-                            readonly="true"/>
+                            readonly="true">
+                        <projection>default:/modeshape_git => /</projection>
+                    </source>
                     <source name="jdbc-metadata" classname="org.modeshape.connector.meta.jdbc.JdbcMetadataConnector"
                             module="org.modeshape.connector.jdbc.metadata" dataSourceJndiName="java:jboss/datasources/ExampleDS">
                         <projection>default:/ModeShapeTestDb => /</projection>

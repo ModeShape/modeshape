@@ -19,9 +19,13 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import javax.jcr.Item;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.Value;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -44,8 +48,6 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     public static void beforeAll() throws Exception {
         RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-git-federation.json");
         startRepository(config);
-
-        // registerNodeTypes("cnd/flex.cnd");
 
         Session session = getSession();
         Node testRoot = session.getRootNode().addNode("repos");
@@ -240,6 +242,42 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         }
         assertThat(commit.getProperty("git:diff").getString(), is(notNullValue()));
         assertThat(commit.getProperty("git:tree").getNode().getPath(), is(treePathFor(commit)));
+    }
+
+    @Test
+    @FixFor( "MODE-2352" )
+    public void shouldReadTreeObjectProperties() throws Exception {
+        Node tree = session.getNode("/repos/git-modeshape/tree/72ea74be3b3a50345a1b2f543f78fd6be00caa35");
+        assertNotNull(tree);
+        PropertyIterator propertyIterator = tree.getProperties();
+        while (propertyIterator.hasNext()) {
+            Property property = propertyIterator.nextProperty();
+            assertNotNull(property.getName());
+            assertNotNull(property.getValue());
+        }
+    }
+    @Test
+    @FixFor( "MODE-2352" )
+    public void shouldReadBranchObjectProperties() throws Exception {
+        Node branch = session.getNode("/repos/git-modeshape/branches/master");
+        assertNotNull(branch);
+        PropertyIterator propertyIterator = branch.getProperties();
+        while (propertyIterator.hasNext()) {
+            Property property = propertyIterator.nextProperty();
+            assertNotNull(property.getName());
+            assertNotNull(property.getValue());
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2352" )
+    public void shouldNavigateCommitWithMultiplePages() throws Exception {
+        Node commit = session.getNode("/repos/git-modeshape/commits/d1f7daf32bd67edded7545221cd5c79d94813310");
+        assertNotNull(commit);
+        NodeIterator childrenIterator = commit.getNodes();
+        while (childrenIterator.hasNext()) {
+            childrenIterator.nextNode();
+        }
     }
 
     protected void assertNodeHasObjectIdProperty( Node node ) throws Exception {

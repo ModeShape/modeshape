@@ -38,7 +38,6 @@ import org.modeshape.connector.meta.jdbc.JdbcMetadataLexicon;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Session;
-import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
 
 /**
@@ -135,23 +134,10 @@ public class FederationIntegrationTest {
     @Test
     public void shouldHaveGitSourceConfigured() throws Exception {
         Session session = repository.login();
-        Node testRoot = session.getRootNode().addNode("repos");
-        session.save();
-
-        try {
-            Workspace workspace = session.getWorkspace();
-
-            FederationManager fedMgr = workspace.getFederationManager();
-            // check that the projection is created correctly
-            fedMgr.createProjection(testRoot.getPath(), "git", "/", "git-modeshape");
-            Node gitNode = session.getNode("/repos/git-modeshape");
-            assertNotNull(gitNode);
-            assertNotNull(gitNode.getNode("branches"));
-            assertNotNull(gitNode.getNode("tags"));
-        } finally {
-            testRoot.remove();
-            session.save();
-        }
+        assertNotNull(session.getNode("/modeshape_git"));
+        assertNotNull(session.getNode("/modeshape_git/branches"));
+        assertNotNull(session.getNode("/modeshape_git/tags"));
+        assertNotNull(session.getNode("/modeshape_git/commits"));
     }
 
     @Test
