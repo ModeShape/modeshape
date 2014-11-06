@@ -1,0 +1,19 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:2.0">
+    <repository name="sample">
+        <index-providers>
+            <index-provider name="local" classname="local"
+                            path="modeshape/artifacts/indexes/"
+                            relative-to="jboss.server.data.dir"/>
+        </index-providers>
+        <indexes>
+            <index name="defaultValuesIndex" provider-name="local" columns="test:col(NAME)"/>
+            <index name="valueIndex" provider-name="local" kind="value" node-type="nt:unstructured" columns="test:value(NAME)"/>
+            <index name="enumIndex" provider-name="local" kind="enumerated" node-type="nt:unstructured"
+                   columns="test:enum(STRING)"/>
+            <index name="uniqueIndex" provider-name="local" kind="unique" node-type="nt:unstructured"
+                   columns="test:unique(STRING)"/>
+            <index name="textIndex" provider-name="local" kind="text" node-type="nt:unstructured" columns="test:text(STRING)"/>
+            <index name="typeIndex" provider-name="local" kind="text" node-type="nt:unstructured" columns="test:type(STRING)"/>
+        </indexes>
+    </repository>
+</subsystem>

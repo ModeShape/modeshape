@@ -618,7 +618,7 @@ public class RepositoryConfiguration {
         public static final String KIND_UNIQUE = "unique";
         public static final String KIND_ENUMERATED = "enumerated";
         public static final String KIND_TEXT = "text";
-        public static final String KIND_NODE_TYPE = "nodeType";
+        public static final String KIND_NODE_TYPE = "nodetype";
     }
 
     protected static final Set<List<String>> DEPRECATED_FIELDS;

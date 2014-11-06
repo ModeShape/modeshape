@@ -18,19 +18,17 @@ package org.modeshape.jboss.subsystem;
 import static org.modeshape.jboss.subsystem.ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
-import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ModeShapeRoles;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 
@@ -39,20 +37,12 @@ import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
  */
 public class ModelAttributes {
 
-    private static final ParameterValidator ROLE_NAME_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false, true) {
-        @Override
-        public void validateParameter( String parameterName,
-                                       ModelNode value ) throws OperationFailedException {
-            super.validateParameter(parameterName, value); // checks null
-            String str = value.asString().toLowerCase();
-            if (!StringUtil.isBlank(str) &&
-                !ModeShapeRoles.ADMIN.equals(str) &&
-                !ModeShapeRoles.READONLY.equals(str) &&
-                !ModeShapeRoles.READWRITE.equals(str)) {
-                throw new OperationFailedException("Invalid anonymous role name: '" + str + "'");
-            }
-        }
-    };
+    private static final ParameterValidator ROLE_NAME_VALIDATOR = new StringSetValidator(false,
+                                                                                         false,
+                                                                                         "",
+                                                                                         ModeShapeRoles.ADMIN,
+                                                                                         ModeShapeRoles.READONLY,
+                                                                                         ModeShapeRoles.READWRITE);
     private static final ParameterValidator WORKSPACE_NAME_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false,
                                                                                               true);
     private static final ParameterValidator NODE_TYPE_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false, true);
@@ -66,7 +56,13 @@ public class ModelAttributes {
 
     private static final ParameterValidator COLUMNS_VALIDATOR = new IndexColumnsValidator(false);
 
-    private static final ParameterValidator INDEX_KIND_VALIDATOR = new EnumValidator<>(IndexKind.class, false, true);
+    private static final ParameterValidator INDEX_KIND_VALIDATOR = new StringSetValidator(true,
+                                                                                          true,
+                                                                                          RepositoryConfiguration.FieldValue.KIND_ENUMERATED,
+                                                                                          RepositoryConfiguration.FieldValue.KIND_NODE_TYPE,
+                                                                                          RepositoryConfiguration.FieldValue.KIND_TEXT,
+                                                                                          RepositoryConfiguration.FieldValue.KIND_UNIQUE,
+                                                                                          RepositoryConfiguration.FieldValue.KIND_VALUE);
 
     public static final SimpleAttributeDefinition ALLOW_WORKSPACE_CREATION = new MappedAttributeDefinitionBuilder(
                                                                                                                   ModelKeys.ALLOW_WORKSPACE_CREATION,
