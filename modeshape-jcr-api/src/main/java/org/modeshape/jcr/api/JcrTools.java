@@ -404,16 +404,30 @@ public class JcrTools {
             // continue
         }
         // Create the node, which has to be done segment by segment ...
+        // Tracking existing ancestor nodes in existingNodePath instead of traversing from the
+        // current parent (possibly root node) to the closest existing parent via node.getNode(),
+        // because when ACL is enabled, AccessDeniedException would be thrown if the user
+        // doesn't have read access to any of those ancestors.
         String[] pathSegments = relPath.split("/");
-        Node node = parentNode;
+        final String parentPath = parentNode.getPath();
+        final StringBuilder existingNodePath = new StringBuilder(parentPath.length() + relPath.length());
+        Node node;
+        boolean isRootParent = true;
+        if(parentNode.getPath().length() > 1) isRootParent = false;
+        Session session = parentNode.getSession();
+        existingNodePath.append(parentPath);
         for (int i = 0, len = pathSegments.length; i != len; ++i) {
             String pathSegment = pathSegments[i];
             pathSegment = pathSegment.trim();
             if (pathSegment.length() == 0) continue;
-            if (node.hasNode(pathSegment)) {
-                // Find the existing node ...
-                node = node.getNode(pathSegment);
+            if (session.nodeExists(existingNodePath.toString() + "/" + pathSegment)) {
+                if(!isRootParent || i > 0) {
+                    existingNodePath.append("/");
+                }
+                existingNodePath.append(pathSegment);
+
             } else {
+                node = session.getNode(existingNodePath.toString());
                 // Make sure there is no index on the final segment ...
                 String pathSegmentWithNoIndex = pathSegment.replaceAll("(\\[\\d+\\])+$", "");
                 // Create the node ...
@@ -424,8 +438,13 @@ public class JcrTools {
                 } else {
                     node = node.addNode(pathSegmentWithNoIndex);
                 }
+                if(!isRootParent || i > 0) {
+                    existingNodePath.append("/");
+                }
+                existingNodePath.append(pathSegmentWithNoIndex);
             }
         }
+        node = session.getNode(existingNodePath.toString());
         return node;
     }
 

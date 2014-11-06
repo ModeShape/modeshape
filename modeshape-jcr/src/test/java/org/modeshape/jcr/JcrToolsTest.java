@@ -19,15 +19,21 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.Privilege;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.jcr.api.JcrTools;
+import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
  *
@@ -302,5 +308,34 @@ public class JcrToolsTest extends SingleUseAbstractTest {
         } catch (Exception e) {
             assertTrue(e instanceof IllegalArgumentException);
         }
+    }
+
+    @Test
+    public void testCreateChildNodeWithoutAncestorAccess() throws Exception {
+
+        // Set privileges for node where child node needs to be added
+        setPolicy("/Person/Address/", Privilege.JCR_ALL);
+        // Set a NON JCR.READ privilege to ancestoral parent
+        setPolicy("/Person", Privilege.JCR_ADD_CHILD_NODES);
+
+        Node childNode = tools.findOrCreateChild(session.getRootNode(), "/Person/Address/County", DEF_TYPE);
+        assertNotNull(childNode);
+        assertThat(childNode.getName(), is("County"));
+    }
+
+    private void setPolicy( String path,
+                                   String... privileges ) throws Exception {
+        AccessControlManager acm = session.getAccessControlManager();
+
+        Privilege[] permissions = new Privilege[privileges.length];
+        for (int i = 0; i < privileges.length; i++) {
+            permissions[i] = acm.privilegeFromName(privileges[i]);
+        }
+
+        AccessControlList acl = acl(path);
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"), permissions);
+
+        acm.setPolicy(path, acl);
+        session.save();
     }
 }
