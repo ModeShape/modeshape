@@ -99,6 +99,12 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
+    public void testOutputPersistenceOfConfigurationWithAllIndexTypes() throws Exception {
+        // fix for MODE-2348
+        parse(readResource("modeshape-index-types.xml"));
+    }
+
+    @Test
     public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
         parse(readResource("modeshape-file-binary-storage.xml"));
     }
