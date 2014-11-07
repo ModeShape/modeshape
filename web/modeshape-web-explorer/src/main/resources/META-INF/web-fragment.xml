@@ -17,6 +17,11 @@
         <servlet-name>jcrServlet</servlet-name>        
     </filter-mapping>
     
+    <context-param>
+        <param-name>connector-class</param-name>
+        <param-value>org.modeshape.web.server.impl.ConnectorImpl</param-value>
+    </context-param>
+    
     <servlet>
         <servlet-name>jcrServlet</servlet-name>
         <servlet-class>org.modeshape.web.server.JcrServiceImpl</servlet-class>

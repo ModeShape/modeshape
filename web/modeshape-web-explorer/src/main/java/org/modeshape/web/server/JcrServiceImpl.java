@@ -50,7 +50,6 @@ import javax.jcr.security.Privilege;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.web.client.JcrService;
 import org.modeshape.web.client.RemoteException;
-import org.modeshape.web.server.impl.ConnectorImpl;
 import org.modeshape.web.shared.Acl;
 import org.modeshape.web.shared.JcrAccessControlList;
 import org.modeshape.web.shared.JcrNode;
@@ -66,6 +65,7 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import java.util.Arrays;
 import java.util.Date;
 import javax.jcr.AccessDeniedException;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -74,17 +74,29 @@ import javax.servlet.http.HttpServletRequest;
 @SuppressWarnings( "serial" )
 public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
+    private final static String CONNECTOR_CLASS_PARAMETER = "connector-class";    
+    private final static String DEFAULT_CONNECTOR_CLASS = 
+            "org.modeshape.web.server.impl.ConnectorImpl";    
+    
     private final static Logger logger = Logger.getLogger(JcrServiceImpl.class);
 
     private Connector connector() throws RemoteException {
         Connector connector = (Connector)getThreadLocalRequest().getSession(true).getAttribute("connector");
-        if (connector == null) {
-            connector = new ConnectorImpl();
+        if (isUnknown(connector)) {
+            String clsName = getConnectorClassName();
+            if (isUnknown(clsName)) {
+                clsName = DEFAULT_CONNECTOR_CLASS;
+            }
+            connector = loadConnector(clsName, getServletContext());
             getThreadLocalRequest().getSession(true).setAttribute("connector", connector);
         }
         return connector;
     }
 
+    private String getConnectorClassName() {
+        return getServletContext().getInitParameter(CONNECTOR_CLASS_PARAMETER);
+    }
+    
     @Override
     public String getRequestedURI() {
         String uri = (String)getThreadLocalRequest().getSession(true).getAttribute("initial.uri");
@@ -911,5 +923,20 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         public String getName() {
             return name;
         }
+    }
+    
+    private Connector loadConnector(String clsName, ServletContext context) throws RemoteException {
+        try {
+            Class cls = getClass().getClassLoader().loadClass(clsName);
+            Connector connector = (Connector) cls.newInstance();
+            connector.start(context);
+            return connector;
+        } catch (Exception e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
+    
+    private boolean isUnknown(Object o) {
+        return o == null;
     }
 }

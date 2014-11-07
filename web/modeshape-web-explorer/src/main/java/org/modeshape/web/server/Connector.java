@@ -17,6 +17,7 @@ package org.modeshape.web.server;
 
 import java.io.Serializable;
 import java.util.Collection;
+import javax.servlet.ServletContext;
 import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.shared.RepositoryName;
 
@@ -24,6 +25,13 @@ import org.modeshape.web.shared.RepositoryName;
  * @author kulikov
  */
 public interface Connector extends Serializable {
+    /**
+     * Starts this connector using given context.
+     * 
+     * @param config 
+     */
+    public void start(ServletContext context) throws RemoteException;
+    
     /**
      * Logs in with given credentials.
      * 

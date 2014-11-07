@@ -21,10 +21,10 @@ import java.util.HashMap;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.SimpleCredentials;
-import javax.naming.InitialContext;
 import javax.servlet.ServletContext;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.web.client.RemoteException;
 import org.modeshape.web.server.Connector;
 import org.modeshape.web.server.LRepository;
@@ -34,9 +34,8 @@ import org.modeshape.web.shared.RepositoryName;
  *
  * @author kulikov
  */
-public class ConnectorImpl implements Connector {
-    private final static String JNDI_PREFIX_PARAM = "jndi-prefix";
-    private final static String DEFAULT_JNDI_PREFIX = "jcr";
+public class JsonConfigConnectorImpl implements Connector {
+    private final static String ENGINE = "modeshape-engine";
     
     //this object will be serialized by user session but 
     //we do not want to serialize any data so mark everything as transient
@@ -51,23 +50,24 @@ public class ConnectorImpl implements Connector {
     private transient Credentials credentials;
     private transient String userName;
     
-    private transient ModeShapeEngine engine;
-    private final static Logger logger = Logger.getLogger(ConnectorImpl.class);
+    private transient ModeShapeEngine engine; 
+    private final static Logger logger = Logger.getLogger(JsonConfigConnectorImpl.class);
     
-    public ConnectorImpl() throws RemoteException {
+    public JsonConfigConnectorImpl() throws RemoteException {
     }
     
     @Override
     public void start(ServletContext context) throws RemoteException {
+        String url = context.getInitParameter("config-url");
+        
         repositoryNames = new ArrayList<>();
         
-        String jndiPrefix = context.getInitParameter(JNDI_PREFIX_PARAM);
-        if (jndiPrefix == null) jndiPrefix = DEFAULT_JNDI_PREFIX;
-        
+        engine = new ModeShapeEngine();
+        engine.start();
         
         try {
-            InitialContext ic = new InitialContext();
-            engine = (ModeShapeEngine) ic.lookup(jndiPrefix);
+            RepositoryConfiguration config = RepositoryConfiguration.read(context.getResource(url));
+            engine.deploy(config);
             
             for (String name : engine.getRepositoryNames()) {                
                 Repository repo = engine.getRepository(name);
