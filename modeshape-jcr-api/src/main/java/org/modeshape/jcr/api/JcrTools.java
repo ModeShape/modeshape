@@ -406,24 +406,38 @@ public class JcrTools {
         // Create the node, which has to be done segment by segment ...
         String[] pathSegments = relPath.split("/");
         Node node = parentNode;
-        for (int i = 0, len = pathSegments.length; i != len; ++i) {
+
+        // Find the closest existing parent node
+        String ancestorPath = "/" + relPath;
+        int closestAncestorIndex = pathSegments.length;
+        Session session = parentNode.getSession();
+
+        while(!session.nodeExists(ancestorPath)) {
+            closestAncestorIndex--;
+            if(ancestorPath.indexOf('/', 1) == -1) {
+                break;
+            }
+            ancestorPath = ancestorPath.substring(0, ancestorPath.lastIndexOf('/'));
+        }
+
+        if(session.nodeExists(ancestorPath)) {
+            node = session.getNode(ancestorPath);
+        }
+
+
+        for (int i = closestAncestorIndex, len = pathSegments.length; i != len; ++i) {
             String pathSegment = pathSegments[i];
             pathSegment = pathSegment.trim();
             if (pathSegment.length() == 0) continue;
-            if (node.hasNode(pathSegment)) {
-                // Find the existing node ...
-                node = node.getNode(pathSegment);
+            // Make sure there is no index on the final segment ...
+            String pathSegmentWithNoIndex = pathSegment.replaceAll("(\\[\\d+\\])+$", "");
+            // Create the node ...
+            String nodeType = defaultNodeType;
+            if (i == len - 1 && finalNodeType != null) nodeType = finalNodeType;
+            if (nodeType != null) {
+                node = node.addNode(pathSegmentWithNoIndex, nodeType);
             } else {
-                // Make sure there is no index on the final segment ...
-                String pathSegmentWithNoIndex = pathSegment.replaceAll("(\\[\\d+\\])+$", "");
-                // Create the node ...
-                String nodeType = defaultNodeType;
-                if (i == len - 1 && finalNodeType != null) nodeType = finalNodeType;
-                if (nodeType != null) {
-                    node = node.addNode(pathSegmentWithNoIndex, nodeType);
-                } else {
-                    node = node.addNode(pathSegmentWithNoIndex);
-                }
+                node = node.addNode(pathSegmentWithNoIndex);
             }
         }
         return node;
