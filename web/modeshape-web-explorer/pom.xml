@@ -43,17 +43,21 @@
             <scope>provided</scope>		
         </dependency>
 
+        <!-- gwt-user.jar contains old servlet classes and we need 
+             this artefact in front of it to have newer classes in the classpath 
+             first
+        -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-user</artifactId>
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.gwt</groupId>
-            <artifactId>gwt-servlet</artifactId>
-            <scope>runtime</scope>
-        </dependency>
 
         <dependency>
             <groupId>smartgwt</groupId>
@@ -63,10 +67,6 @@
         <dependency>
             <groupId>com.smartgwt</groupId>
             <artifactId>smartgwt-skins</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>

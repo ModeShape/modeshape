@@ -11,7 +11,7 @@
     <filter>
         <filter-name>ConnectFilter</filter-name>
         <filter-class>org.modeshape.web.AuthFilter</filter-class>
-    </filter>       
+    </filter> 
     <filter-mapping>
         <filter-name>ConnectFilter</filter-name>
         <servlet-name>jcrServlet</servlet-name>        
@@ -26,9 +26,14 @@
         <servlet-name>jcrServlet</servlet-name>
         <servlet-class>org.modeshape.web.server.JcrServiceImpl</servlet-class>
     </servlet>
+
     <servlet>
         <servlet-name>InitialServlet</servlet-name>
         <servlet-class>org.modeshape.web.InitialServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>org.modeshape.web.LoginServlet</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>BackupExportServlet</servlet-name>
@@ -50,6 +55,10 @@
     <servlet-mapping>
         <servlet-name>InitialServlet</servlet-name>
         <url-pattern>/tree/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/security-check/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>BackupExportServlet</servlet-name>

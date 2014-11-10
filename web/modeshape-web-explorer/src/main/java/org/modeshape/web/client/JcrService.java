@@ -88,7 +88,7 @@ public interface JcrService extends RemoteService {
     /**
      * Logs out from all repositories.
      */
-    public void logout();
+    public String logout();
     
     public JcrNode node(String repository, String workspace, String path) throws RemoteException;
 

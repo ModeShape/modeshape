@@ -152,13 +152,17 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
         if (jcrURL.getRepository() != null && jcrURL.getRepository().length() > 0) {
             init();
         } else {
-            repos.load();
+            loadRepositories();
         }
         
         htmlHistory.addValueChangeHandler(this);
         mainForm.draw();        
     }
 
+    protected void loadRepositories() {
+        repos.load();
+    }
+    
     public void save() {
         jcrService.save(contents.repository(), contents.workspace(), new AsyncCallback<Object>() {
 

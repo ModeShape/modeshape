@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import javax.jcr.Credentials;
-import javax.jcr.Repository;
 import javax.jcr.SimpleCredentials;
 import javax.servlet.ServletContext;
 import org.modeshape.common.logging.Logger;
@@ -50,6 +49,8 @@ public class JsonConfigConnectorImpl implements Connector {
     private transient String userName;
     
     private transient ModeShapeEngine engine; 
+    private RepositoryList repoList;
+    
     private final static Logger logger = Logger.getLogger(JsonConfigConnectorImpl.class);
     
     public JsonConfigConnectorImpl() {
@@ -67,32 +68,16 @@ public class JsonConfigConnectorImpl implements Connector {
         try {
             RepositoryConfiguration config = RepositoryConfiguration.read(context.getResource(url));
             engine.deploy(config);
-            
-            for (String name : engine.getRepositoryNames()) {                
-                Repository repo = engine.getRepository(name);
-                
-                StringBuilder builder = new StringBuilder();
-                builder.append("<b>Vendor: </b>");
-                builder.append(repo.getDescriptor(Repository.REP_VENDOR_DESC));
-                builder.append("</br>");
-
-                builder.append("<b>Version: </b>");
-                builder.append(repo.getDescriptor(Repository.REP_VERSION_DESC));
-                builder.append("</br>");
-
-                builder.append(repo.getDescriptor(Repository.REP_VENDOR_URL_DESC));
-                builder.append("</br>");
-                
-                String descriptor = builder.toString();
-                repositoryNames.add(new RepositoryName(name, descriptor));
-            }
+            repoList = new RepositoryList(engine);
+            repositoryNames = repoList.getRepositories(null);
         } catch (Exception e) {
             throw new RemoteException(e.getMessage());
         }
     }
     
     @Override
-    public void login( String username, String password ) {        
+    public void login( String username, String password ) throws RemoteException {        
+        this.userName = username;
         if (username == null) {
             credentials = null;
         }
@@ -102,13 +87,18 @@ public class JsonConfigConnectorImpl implements Connector {
         } else {
             credentials = new SimpleCredentials(username, password.toCharArray());
         }
-        this.userName = username;
+        repositoryNames = repoList.getRepositories(credentials);        
     }
 
     @Override
     public void logout() {
         credentials = null;
         userName = null;
+        try {
+            repositoryNames = repoList.getRepositories(null);
+        } catch (RemoteException e) {
+            repositoryNames.clear();
+        }
     }
     
     @Override

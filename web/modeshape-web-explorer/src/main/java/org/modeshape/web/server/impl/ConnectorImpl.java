@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import javax.jcr.Credentials;
-import javax.jcr.Repository;
 import javax.jcr.SimpleCredentials;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.servlet.ServletContext;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine;
@@ -52,6 +52,8 @@ public class ConnectorImpl implements Connector {
     private transient String userName;
     
     private transient ModeShapeEngine engine;
+    private RepositoryList repoList;
+    
     private final static Logger logger = Logger.getLogger(ConnectorImpl.class);
     
     public ConnectorImpl() {
@@ -59,41 +61,21 @@ public class ConnectorImpl implements Connector {
     
     @Override
     public void start(ServletContext context) throws RemoteException {
-        repositoryNames = new ArrayList<>();
-        
         String jndiPrefix = context.getInitParameter(JNDI_PREFIX_PARAM);
         if (jndiPrefix == null) jndiPrefix = DEFAULT_JNDI_PREFIX;
-        
-        
         try {
             InitialContext ic = new InitialContext();
-            engine = (ModeShapeEngine) ic.lookup(jndiPrefix);
-            
-            for (String name : engine.getRepositoryNames()) {                
-                Repository repo = engine.getRepository(name);
-                
-                StringBuilder builder = new StringBuilder();
-                builder.append("<b>Vendor: </b>");
-                builder.append(repo.getDescriptor(Repository.REP_VENDOR_DESC));
-                builder.append("</br>");
-
-                builder.append("<b>Version: </b>");
-                builder.append(repo.getDescriptor(Repository.REP_VERSION_DESC));
-                builder.append("</br>");
-
-                builder.append(repo.getDescriptor(Repository.REP_VENDOR_URL_DESC));
-                builder.append("</br>");
-                
-                String descriptor = builder.toString();
-                repositoryNames.add(new RepositoryName(name, descriptor));
-            }
-        } catch (Exception e) {
+            engine = (ModeShapeEngine) ic.lookup(jndiPrefix);            
+            repoList = new RepositoryList(engine);
+            repositoryNames = repoList.getRepositories(null);
+        } catch (NamingException | RemoteException e) {
             throw new RemoteException(e.getMessage());
         }
     }
     
     @Override
-    public void login( String username, String password ) {        
+    public void login( String username, String password ) throws RemoteException {        
+        this.userName = username;
         if (username == null) {
             credentials = null;
         }
@@ -103,13 +85,23 @@ public class ConnectorImpl implements Connector {
         } else {
             credentials = new SimpleCredentials(username, password.toCharArray());
         }
-        this.userName = username;
+        
+        try {
+            repositoryNames = repoList.getRepositories(credentials);
+        } catch (Exception e) {
+            throw new RemoteException(e.getMessage());
+        }
     }
 
     @Override
     public void logout() {
         credentials = null;
         userName = null;
+        try {
+            repositoryNames = repoList.getRepositories(null);
+        } catch (RemoteException e) {
+            repositoryNames.clear();
+        }
     }
     
     @Override

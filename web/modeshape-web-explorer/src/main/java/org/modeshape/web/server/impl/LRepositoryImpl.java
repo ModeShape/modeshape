@@ -18,6 +18,7 @@ package org.modeshape.web.server.impl;
 import java.io.File;
 import java.util.HashMap;
 import javax.jcr.Credentials;
+import javax.jcr.LoginException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -39,7 +40,7 @@ public class LRepositoryImpl implements LRepository {
     private final static Logger logger = Logger.getLogger(LRepositoryImpl.class);
 
     public LRepositoryImpl( JcrRepository repository,
-                            Credentials creds ) throws RepositoryException {
+                            Credentials creds ) throws LoginException, RepositoryException {
         this.creds = creds;
         assert repository != null;
         this.repository = repository;

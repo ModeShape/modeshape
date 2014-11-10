@@ -13,7 +13,8 @@
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>Web-Explorer</web-resource-name>
-            <url-pattern>/*</url-pattern>
+            <url-pattern>/console/*</url-pattern>
+            <url-pattern>/Console.html</url-pattern>
         </web-resource-collection>
         <!--
             A user must be assigned this role to connect to this web application, 
@@ -30,7 +31,11 @@
         BASIC is only allowed method.
     -->
     <login-config>
-        <auth-method>BASIC</auth-method>
+        <auth-method>FORM</auth-method>
+        <form-login-config>
+            <form-login-page>/loginform.html</form-login-page>
+            <form-error-page>/loginform.html</form-error-page>
+        </form-login-config>
     </login-config>
 
     <!--
