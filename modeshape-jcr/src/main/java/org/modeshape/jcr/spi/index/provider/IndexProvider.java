@@ -130,7 +130,7 @@ public abstract class IndexProvider {
     private String name;
 
     /**
-     * The execution context, seet via reflection
+     * The execution context, set via reflection
      */
     private ExecutionContext context;
 

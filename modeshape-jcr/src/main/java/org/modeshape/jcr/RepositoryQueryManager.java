@@ -93,10 +93,12 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     @Override
     public synchronized void notify( ChangeSet changeSet ) {
-        boolean scanRequired = this.toBeScanned.add(this.indexManager.notify(changeSet));
-        if (scanRequired && initialized.get()) {
-            // It's initialized, so we have to call it ...
-            reindexIfNeeded();
+        if (initialized.get()) {
+            boolean scanRequired = this.toBeScanned.add(this.indexManager.notify(changeSet));
+            if (scanRequired) {
+                // It's initialized, so we have to call it ...
+                reindexIfNeeded();
+            }
         }
         // If not yet initialized, the "reindexIfNeeded" method will be called by the JcrRepository.
     }

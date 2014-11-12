@@ -26,6 +26,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.concurrent.atomic.AtomicLong;
 import org.modeshape.common.annotation.Immutable;
 
 /**
@@ -158,6 +165,41 @@ public class FileUtil {
         CheckArg.isNotEmpty(filePath, "filePath");
         File file = new File(filePath.trim());
         return file.toURI().toURL();
+    }
+
+    /**
+     * Determines the size (in bytes) of the file or directory at the given path.
+     *
+     * @param filePath the path of the file; may not be {@code null}
+     * @return the size in bytes of the file or the total computed size of the folder. If the given path is not a valid file or
+     * folder, this will return 0.
+     * @throws IOException if anything unexpected fails.
+     */
+    public static long size(String filePath) throws IOException {
+        CheckArg.isNotEmpty(filePath, "filePath");
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return 0;
+        }
+        if (file.isFile()) {
+            return file.length();
+        }
+        else {
+            final AtomicLong size = new AtomicLong();
+            Files.walkFileTree(Paths.get(filePath), new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) {
+                    size.addAndGet(attrs.size());
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed( Path file, IOException exc ) {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            return size.get();
+        }
     }
 
     private FileUtil() {

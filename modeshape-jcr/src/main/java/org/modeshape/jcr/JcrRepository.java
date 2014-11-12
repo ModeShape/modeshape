@@ -1293,7 +1293,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             try {
                 refreshWorkspaces();
 
-                this.repositoryQueryManager.initialize();
                 this.sequencers.initialize();
 
                 // import the preconfigured node types before the initial content, in case the latter use custom types
@@ -1317,6 +1316,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 // connectors must be initialized after initial content because that can have an influence on projections
                 this.connectors.initialize();
+
+                // only mark the query manager as initialed *after* all the other components have finished initializing
+                // otherwise we risk getting indexing/scanning events for components which have not finished initializing (e.g. connectors)
+                this.repositoryQueryManager.initialize();
 
                 // Now record in the content that we're finished initializing the repository.
                 // This will commit the startup transaction.

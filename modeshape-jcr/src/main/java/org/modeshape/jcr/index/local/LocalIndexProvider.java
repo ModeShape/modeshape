@@ -173,26 +173,26 @@ public class LocalIndexProvider extends IndexProvider {
         ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), defn, nodeTypesSupplier, matcher);
         logger().debug("Index provider '{0}' is creating index in workspace '{1}': {2}", getName(), workspaceName, defn);
         final ManagedLocalIndex index = builder.build(workspaceName, db);
-        if (index.isNew()) {
-            feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
+        // this is a new [index definition, workspace] pair so we should always scan
+        feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
 
-                @SuppressWarnings( "synthetic-access" )
-                @Override
-                public void beforeIndexing() {
-                    logger().debug("Disabling index '{0}' from provider '{1}' in workspace '{2}' while it is reindexed. It will not be used in queries until reindexing has completed",
-                                   defn.getName(), defn.getProviderName(), workspaceName);
-                    index.enable(false);
-                }
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void beforeIndexing() {
+                logger().debug(
+                        "Disabling index '{0}' from provider '{1}' in workspace '{2}' while it is reindexed. It will not be used in queries until reindexing has completed",
+                        defn.getName(), defn.getProviderName(), workspaceName);
+                index.enable(false);
+            }
 
-                @SuppressWarnings( "synthetic-access" )
-                @Override
-                public void afterIndexing() {
-                    index.enable(true);
-                    logger().debug("Enabled index '{0}' from provider '{1}' in workspace '{2}' after reindexing has completed",
-                                   defn.getName(), defn.getProviderName(), workspaceName);
-                }
-            });
-        }
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void afterIndexing() {
+                index.enable(true);
+                logger().debug("Enabled index '{0}' from provider '{1}' in workspace '{2}' after reindexing has completed",
+                               defn.getName(), defn.getProviderName(), workspaceName);
+            }
+        });
         return index;
     }
 
