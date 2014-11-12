@@ -38,6 +38,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.query.Query;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicyIterator;
@@ -58,6 +59,7 @@ import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.document.DocumentStore;
+import org.modeshape.jcr.query.JcrQuery;
 import org.modeshape.jcr.security.SimplePrincipal;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.Property;
@@ -845,6 +847,65 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, config);
+    }
+
+    @Test
+    @FixFor( "MODE-2341" )
+    public void shouldAllowReindexingWithLocalProviderBetweenRestarts() throws Exception {
+        // clean the main repo data
+        FileUtil.delete("target/persistent_repository");
+
+        // clean the indexes
+        FileUtil.delete("target/startup_test_indexes");
+
+        // setup the external content
+        prepareExternalDirectory("target/federation_persistent_2");
+
+        RepositoryOperation reindexingExternalContentOperation = reindexingExternalContentOperation();
+
+        // run 1
+        startRunStop(reindexingExternalContentOperation, "config/repo-config-persistent-cache-fs-connector2.json");
+        long indexFolderSize1 = FileUtil.size("target/startup_test_indexes");
+
+        // clean the indexes
+        assertTrue(FileUtil.delete("target/startup_test_indexes"));
+
+        // run 2
+        startRunStop(reindexingExternalContentOperation, "config/repo-config-persistent-cache-fs-connector2.json");
+        long indexFolderSize2 = FileUtil.size("target/startup_test_indexes");
+
+        assertEquals("The sizes of the index folder are different between 2 identical reindex runs", indexFolderSize1, indexFolderSize2);
+    }
+
+    private RepositoryOperation reindexingExternalContentOperation() {
+        return new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                try {
+                    AbstractJcrNode node = session.getNode("/fs2/file.txt");
+                    String createdBy = node.getProperty("jcr:createdBy").getString();
+                    assertNotNull(createdBy);
+                    JcrQueryManager jcrQueryManager = session.getWorkspace().getQueryManager();
+                    Query query = jcrQueryManager.createQuery("select file.[jcr:path] from [nt:file] as file where file.[jcr:createdBy]='" +
+                                                              createdBy + "'",
+                                                              JcrQuery.JCR_SQL2);
+                    ValidateQuery.validateQuery()
+                                 .useIndex("nodesByAuthor")
+                                 .hasNodesAtPaths("/fs2/file.txt")
+                                 .validate(query, query.execute());
+
+                    session.getWorkspace().reindex();
+                    ValidateQuery.validateQuery()
+                                 .useIndex("nodesByAuthor")
+                                 .hasNodesAtPaths("/fs2/file.txt")
+                                 .validate(query, query.execute());
+                } finally {
+                    session.logout();
+                }
+                return null;
+            }
+        };
     }
 
     private void prepareExternalDirectory( String dirpath ) throws IOException {

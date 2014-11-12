@@ -24,5 +24,20 @@
                 "default:/fs2 => /"
             ]
         }
+    },
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/startup_test_indexes"
+        }
+    },
+    "indexes" : {
+        "nodesByAuthor": {
+            "kind": "value",
+            "provider": "local",
+            "nodeType": "nt:hierarchyNode",
+            "columns": "jcr:createdBy(STRING)",
+            "description": "Indexing nodes by user name"
+        }
     }
 }
