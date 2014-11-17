@@ -28,6 +28,7 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.teiid.TeiidI18n;
 import org.modeshape.sequencer.teiid.VdbModel;
+import org.modeshape.sequencer.teiid.VdbSequencer;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.DiagramLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
@@ -112,22 +113,23 @@ public class ModelSequencer extends Sequencer {
                             final NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         LOGGER.debug("enter initialize");
 
-        super.registerNodeTypes("../xmi.cnd", nodeTypeManager, true);
+        Class<?> vdbSeqClass = VdbSequencer.class;
+        super.registerNodeTypes(vdbSeqClass.getResourceAsStream("xmi.cnd"), nodeTypeManager, true);
         LOGGER.debug("xmi.cnd loaded");
 
-        super.registerNodeTypes("../med.cnd", nodeTypeManager, true);
+        super.registerNodeTypes(vdbSeqClass.getResourceAsStream("med.cnd"), nodeTypeManager, true);
         LOGGER.debug("med.cnd loaded");
 
-        super.registerNodeTypes("../mmcore.cnd", nodeTypeManager, true);
+        super.registerNodeTypes(vdbSeqClass.getResourceAsStream("mmcore.cnd"), nodeTypeManager, true);
         LOGGER.debug("mmcore.cnd loaded");
 
-        super.registerNodeTypes("../jdbc.cnd", nodeTypeManager, true);
+        super.registerNodeTypes(vdbSeqClass.getResourceAsStream("jdbc.cnd"), nodeTypeManager, true);
         LOGGER.debug("jdbc.cnd loaded");
 
-        super.registerNodeTypes("../relational.cnd", nodeTypeManager, true);
+        super.registerNodeTypes(vdbSeqClass.getResourceAsStream("relational.cnd"), nodeTypeManager, true);
         LOGGER.debug("relational.cnd loaded");
 
-        super.registerNodeTypes("../transformation.cnd", nodeTypeManager, true);
+        super.registerNodeTypes(vdbSeqClass.getResourceAsStream("transformation.cnd"), nodeTypeManager, true);
         LOGGER.debug("transformation.cnd loaded");
 
         // Register some of the namespaces we'll need ...
