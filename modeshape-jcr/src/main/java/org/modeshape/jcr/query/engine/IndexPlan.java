@@ -16,6 +16,7 @@
 
 package org.modeshape.jcr.query.engine;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -47,7 +48,7 @@ public final class IndexPlan implements Comparable<IndexPlan> {
                       Collection<JoinCondition> joinConditions,
                       int costEstimate,
                       long cardinalityEstimate,
-                      float selectivityEstimate,
+                      Float selectivityEstimate,
                       Map<String, Object> parameters ) {
         CheckArg.isNotEmpty(name, "name");
         CheckArg.isNonNegative(costEstimate, "costEstimate");
@@ -59,16 +60,17 @@ public final class IndexPlan implements Comparable<IndexPlan> {
         this.joinConditions = joinConditions != null ? joinConditions : Collections.<JoinCondition>emptyList();
         this.costEstimate = costEstimate;
         this.cardinalityEstimate = cardinalityEstimate;
-        this.selectivityEstimate = selectivityEstimate < 0 ? null : selectivityEstimate;
+        this.selectivityEstimate = (selectivityEstimate == null || selectivityEstimate < 0) ? null : selectivityEstimate;
         this.parameters = parameters == null ? NO_PARAMETERS : parameters;
     }
 
     /**
-     * Return an esimate of the number of nodes that will be returned by this index given the constraints. For example, an index
+     * Return an estimate of the number of nodes that will be returned by this index given the constraints. For example, an index
      * that will return one node should have a cardinality of 1.
      * <p>
      * When possible, the actual cardinality should be used. However, since an accurate number is often expensive or impossible to
-     * determine in the planning phase, the cardinality can instead represent a rough order of magnitude.
+     * determine in the planning phase, the cardinality can instead represent a rough order of magnitude. A value of {@link Long#MAX_VALUE}
+     * indicates that the cardinality is unknown.
      * </p>
      * <p>
      * Indexes with lower costs and lower {@link #getCardinalityEstimate() cardinalities} will be favored over other indexes.
@@ -196,18 +198,38 @@ public final class IndexPlan implements Comparable<IndexPlan> {
     public int compareTo( IndexPlan that ) {
         if (that == this) return 0;
         if (that == null) return 1;
-        // First, any index whose cardinality is >0 is better than <=0 ...
-        if (this.getCardinalityEstimate() <= 0L) {
-            if (that.getCardinalityEstimate() != 0L) {
-                // 'that' is better (lower), so return positive 1 ...
-                return 1;
-            }
-        } else if (that.getCardinalityEstimate() <= 0L) {
-            // 'this' is better (lower), so return negative ...
-            assert this.getCardinalityEstimate() > 0L;
+
+        int thisCostEstimate = this.getCostEstimate();
+        long thisCardinalityEstimate = this.getCardinalityEstimate();
+
+        int thatCostEstimate = that.getCostEstimate();
+        long thatCardinalityEstimate = that.getCardinalityEstimate();
+
+        // first take care of the cases when the cardinality is unknown
+        if (thisCardinalityEstimate == Long.MAX_VALUE && thatCardinalityEstimate == Long.MAX_VALUE) {
+            // if both have unknown cardinality, we favor the one with the lowest cost and if those are equal as well, we
+            // compare lexicographically the names
+            return thisCostEstimate != thatCostEstimate ? Integer.compare(thisCostEstimate, thatCostEstimate) :
+                                                          this.name.compareTo(that.name);
+        } else if (thatCardinalityEstimate == Long.MAX_VALUE) {
+            // "that" index has unknown cardinality, so we always favor "this" which has a known cardinality
             return -1;
+        } else if (thisCardinalityEstimate == Long.MAX_VALUE) {
+            // "this" index has unknown cardinality, so we always favor "that" which has a known cardinality
+            return 1;
         }
-        // Then base it upon the cost ...
-        return this.getCostEstimate() - that.costEstimate;
+
+        // both indexes have a known cardinality
+        if (thisCostEstimate == thatCostEstimate) {
+            // both indexes have the same cost (meaning that they likely belong to the same provider), so favor the index with more results (i.e. higher cardinality)
+            // we're favoring false-positives over false-negatives. If they have the same cardinality we compare lexicographically the names
+            return thisCardinalityEstimate != thatCardinalityEstimate ? Long.compare(thatCardinalityEstimate,
+                                                                                     thisCardinalityEstimate) :
+                                                                        this.name.compareTo(that.name);
+        }
+        // we have different costs for the 2 indexes (meaning likely 2 different providers), so favor the lowest (cost * cardinality)
+        BigDecimal thisCostByCardinality = BigDecimal.valueOf(thisCostEstimate).multiply(BigDecimal.valueOf(thisCardinalityEstimate));
+        BigDecimal thatCostByCardinality = BigDecimal.valueOf(thatCostEstimate).multiply(BigDecimal.valueOf(thatCardinalityEstimate));
+        return thisCostByCardinality.compareTo(thatCostByCardinality);
     }
 }

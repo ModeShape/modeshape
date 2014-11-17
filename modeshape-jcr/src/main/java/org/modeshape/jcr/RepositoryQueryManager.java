@@ -75,7 +75,7 @@ class RepositoryQueryManager implements ChangeSetListener {
     private volatile QueryEngine queryEngine;
     private volatile Future<Void> asyncReindexingResult;
     private volatile ScanningTasks toBeScanned = new ScanningTasks();
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
     RepositoryQueryManager( RunningState runningState,
                             ExecutorService indexingExecutorService,
@@ -88,12 +88,12 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     synchronized void initialize() {
         this.toBeScanned.add(indexManager.initialize());
-        initialized.set(true);
+        started.set(true);
     }
 
     @Override
     public synchronized void notify( ChangeSet changeSet ) {
-        if (initialized.get()) {
+        if (started.get()) {
             boolean scanRequired = this.toBeScanned.add(this.indexManager.notify(changeSet));
             if (scanRequired) {
                 // It's initialized, so we have to call it ...
@@ -108,6 +108,7 @@ class RepositoryQueryManager implements ChangeSetListener {
     }
 
     void shutdown() {
+        started.compareAndSet(true, false);
         indexingExecutorService.shutdown();
         if (queryEngine != null) {
             try {

@@ -494,7 +494,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
 
     /**
      * Get an immutable snapshot of the index definitions. This can be used by the query engine to determine which indexes might
-     * be usable when quering a specific selector (node type).
+     * be usable when querying a specific selector (node type).
      *
      * @return a snapshot of the index definitions at this moment; never null
      */

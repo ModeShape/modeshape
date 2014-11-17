@@ -29,7 +29,7 @@ import org.modeshape.jcr.spi.index.provider.IndexProvider;
  * A collector implemented by ModeShape and supplied to the {@link IndexPlanner#applyIndexes} method so that the
  * {@link IndexPlanner} can add indexes to the query plan.
  * <p>
- * The cardinality estimate is an esimate of the number of nodes that will be returned by this index given the constraints. For
+ * The cardinality estimate is an estimate of the number of nodes that will be returned by this index given the constraints. For
  * example, an index that will return one node should have a cardinality of 1. When possible, the actual cardinality should be
  * used. However, since an accurate number is often expensive or impossible to determine in the planning phase, the cardinality
  * can instead represent a rough order of magnitude.
@@ -90,7 +90,7 @@ public interface IndexCostCalculator {
      * @param providerName the name of the provider; may be null if the index is built-in
      * @param joinConditions the join conditions that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
-     * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index, which for join
+     * @param cardinalityEstimate an estimate of the number of nodes that will be returned by this index, which for join
      *        constraints is generally equal to the total number of nodes known to the index; must be non-negative
      */
     void addIndex( String name,
@@ -108,9 +108,9 @@ public interface IndexCostCalculator {
      * @param providerName the name of the provider; may be null if the index is built-in
      * @param constraints the constraints that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
-     * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
+     * @param cardinalityEstimate an estimate of the number of nodes that will be returned by this index given the constraints;
      *        must be non-negative
-     * @param selectivityEstimate an esimate of the number of rows that are selected by the constraints divided by the total
+     * @param selectivityEstimate an estimate of the number of rows that are selected by the constraints divided by the total
      *        number rows; must be >= 0 and <= 1.0, or null if the total number of nodes is not known
      */
     void addIndex( String name,
@@ -129,9 +129,9 @@ public interface IndexCostCalculator {
      * @param providerName the name of the provider; may be null if the index is built-in
      * @param constraints the constraints that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
-     * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
+     * @param cardinalityEstimate an estimate of the number of nodes that will be returned by this index given the constraints;
      *        must be non-negative
-     * @param selectivityEstimate an esimate of the number of rows that are selected by the constraints divided by the total
+     * @param selectivityEstimate an estimate of the number of rows that are selected by the constraints divided by the total
      *        number rows; must be >= 0 and <= 1.0, or null if the total number of nodes is not known
      * @param parameterName the name of a parameter that is to be supplied back to the {@link Index} if/when this index is
      *        {@link Index#filter} called; may not be null
@@ -156,9 +156,9 @@ public interface IndexCostCalculator {
      * @param providerName the name of the provider; may be null if the index is built-in
      * @param constraints the constraints that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
-     * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
+     * @param cardinalityEstimate an estimate of the number of nodes that will be returned by this index given the constraints;
      *        must be non-negative
-     * @param selectivityEstimate an esimate of the number of rows that are selected by the constraints divided by the total
+     * @param selectivityEstimate an estimate of the number of rows that are selected by the constraints divided by the total
      *        number rows; must be >= 0 and <= 1.0, or null if the total number of nodes is not known
      * @param parameterName1 the name of the first parameter; may not be null
      * @param parameterValue1 the value of the first parameter
@@ -185,9 +185,9 @@ public interface IndexCostCalculator {
      * @param providerName the name of the provider; may be null if the index is built-in
      * @param constraints the constraints that should be applied to the index if/when it is used
      * @param costEstimate an estimate of the cost of using the index for the query in question; must be non-negative
-     * @param cardinalityEstimate an esimate of the number of nodes that will be returned by this index given the constraints;
+     * @param cardinalityEstimate an estimate of the number of nodes that will be returned by this index given the constraints;
      *        must be non-negative
-     * @param selectivityEstimate an esimate of the number of rows that are selected by the constraints divided by the total
+     * @param selectivityEstimate an estimate of the number of rows that are selected by the constraints divided by the total
      *        number rows; must be >= 0 and <= 1.0, or null if the total number of nodes is not known
      * @param parameters the parameter values by name; may be null or empty
      */

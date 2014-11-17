@@ -882,6 +882,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             @Override
             public Void call() throws Exception {
                 JcrSession session = repository.login();
+                // sleep a bit to make sure reindexing completes
+                Thread.sleep(100);
                 try {
                     AbstractJcrNode node = session.getNode("/fs2/file.txt");
                     String createdBy = node.getProperty("jcr:createdBy").getString();

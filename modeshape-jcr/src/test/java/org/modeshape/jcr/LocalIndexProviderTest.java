@@ -943,4 +943,68 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         // Wait for the threads to complete ...
         stopLatch.await();
     }
+
+    @FixFor( "MODE-2346" )
+    @Test
+    public void shouldUseImplicitIndexesWithLowerCardinalityOverExplicitIndexes() throws Exception {
+        String explicitNodesById = "explicitNodesById";
+        registerValueIndex(explicitNodesById, "nt:unstructured", "Nodes by id explicit index", "*", "jcr:uuid",
+                           PropertyType.STRING);
+
+        String explicitNodesByPath = "explicitNodesByPath";
+        registerValueIndex(explicitNodesByPath, "nt:unstructured", "Nodes by path explicit index", "*", "jcr:path",
+                           PropertyType.PATH);
+        // wait a bit to make sure the index definitions have been updated
+        waitForIndexes();
+
+        Node root = session().getRootNode();
+        Node nodeA = root.addNode("nodeA");
+        nodeA.addMixin("mix:referenceable");
+        session().save();
+
+        // print = true;
+
+        // Compute a query plan that should use this index ...
+        final String uuid = nodeA.getIdentifier();
+        Query query = jcrSql2Query("SELECT [jcr:path] FROM [nt:unstructured] WHERE [jcr:uuid] = '" + uuid + "'");
+        validateQuery()
+                .rowCount(1L)
+                .considerIndexes(IndexPlanners.NODE_BY_ID_INDEX_NAME, explicitNodesById)
+                .useIndex(IndexPlanners.NODE_BY_ID_INDEX_NAME)
+                .validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT [jcr:path] FROM [nt:unstructured] WHERE [jcr:path] = '/nodeA'");
+        validateQuery()
+                .rowCount(1L)
+                .considerIndexes(IndexPlanners.NODE_BY_PATH_INDEX_NAME, explicitNodesByPath)
+                .useIndex(IndexPlanners.NODE_BY_PATH_INDEX_NAME)
+                .validate(query, query.execute());
+
+    }
+
+    @FixFor( "MODE-2346" )
+    @Test
+    public void shouldUseExplicitIndexesWithLowerCardinalityOverImplicitIndexes() throws Exception {
+        String explicitIndex = "explicitIndex";
+        registerValueIndex(explicitIndex, "nt:unstructured", "Foo index", "*", "foo", PropertyType.STRING);
+
+        // wait a bit to make sure the index definitions have been updated
+        waitForIndexes();
+
+        Node root = session().getRootNode();
+        Node nodeA = root.addNode("nodeA");
+        Node nodeB = nodeA.addNode("nodeB");
+        nodeB.setProperty("foo", "X");
+        session().save();
+
+        // print = true;
+
+        // Compute a query plan that should use this index ...
+        Query query = jcrSql2Query("SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE ISDESCENDANTNODE(node, '/nodeA') AND node.[foo]='X'");
+        validateQuery()
+                .rowCount(1L)
+                .considerIndexes(IndexPlanners.DESCENDANTS_BY_PATH_INDEX_NAME, explicitIndex)
+                .useIndex(explicitIndex)
+                .validate(query, query.execute());
+    }
 }
