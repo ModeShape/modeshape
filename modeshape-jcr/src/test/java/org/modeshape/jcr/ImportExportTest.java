@@ -1246,6 +1246,39 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertNoNode("/a/b/Cars/Sports[2]");
     }
 
+    @Test
+    @FixFor( "MODE-2359" )
+    public void importingMultipleTimeWithReplaceExistingShouldNotIncreaseReferencesCount() throws Exception {
+        registerNodeTypes("cnd/ab-references.cnd");
+        session.getNode("/").addNode("testRoot");
+        session.save();
+
+        // A - this is a simple referenceable node
+        // [test:a] > mix:referenceable
+        session.importXML("/testRoot", resourceStream("io/a-references.xml"), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+        session.save();
+
+        int repeatCount = 2;
+        for (int i = 0; i < repeatCount; i++) {
+            // B - this is a simple node that refers to the node A
+            // [test:b] > mix:referenceable
+            // - test:prop_ref_a (reference) < test:a
+            session.importXML("/testRoot", resourceStream("io/b-references.xml"), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+            session.save();
+        }
+
+        // make sure we only have 2 nodes (i.e. replace_existing worked)
+        assertEquals(2, session.getNode("/testRoot").getNodes().getSize());
+
+        // Remove node B.
+        session.getNode("/testRoot/b").remove();
+        session.save();
+
+        // After remove node B, node A should have zero referrers
+        session.getNode("/testRoot/a").remove();
+        session.save();
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utilities
     // ----------------------------------------------------------------------------------------------------------------

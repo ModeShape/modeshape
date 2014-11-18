@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sv:node xmlns:sv="http://www.jcp.org/jcr/sv/1.0" sv:name="b">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>test:b</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:uuid" sv:type="String">
+        <sv:value>bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb</sv:value>
+    </sv:property>
+    <sv:property sv:name="test:prop_ref_a" sv:type="Reference">
+        <sv:value>aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa</sv:value>
+    </sv:property>
+</sv:node>

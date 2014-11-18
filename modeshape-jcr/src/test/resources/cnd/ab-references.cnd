@@ -1,0 +1,9 @@
+<jcr = 'http://www.jcp.org/jcr/1.0'>
+<nt = 'http://www.jcp.org/jcr/nt/1.0'>
+<mix = 'http://www.jcp.org/jcr/mix/1.0'>
+<test = 'http://www.krista.ru/jcr/test/1.0'>
+
+[test:a] > mix:referenceable
+
+[test:b] > mix:referenceable
+- test:prop_ref_a (reference) < test:a
