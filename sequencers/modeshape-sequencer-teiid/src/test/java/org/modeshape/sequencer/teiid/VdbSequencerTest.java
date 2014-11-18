@@ -19,11 +19,14 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Value;
+
 import org.junit.Test;
 import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
@@ -516,6 +519,50 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     public void shouldSequenceVdbTwitterVdb() throws Exception {
         createNodeWithContentFromFile("vdb/twitter.vdb", "vdb/twitter.vdb");
         Node outputNode = getOutputNode(this.rootNode, "vdbs/twitter.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes().getSize(), is(3L)); // 2 models and 1 translator
+
+        { // declarative source model
+            final Node declarativeModelNode = outputNode.getNode("twitter");
+            assertNotNull(declarativeModelNode);
+            assertThat(declarativeModelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.DECLARATIVE_MODEL));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("rest"));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("java:/twitterDS"));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_NAME).getString(), is("twitter"));
+            assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(),
+                       is(CoreLexicon.ModelType.PHYSICAL));
+        }
+
+        { // declarative virtual model
+            final Node declarativeModelNode = outputNode.getNode("twitterview");
+            assertNotNull(declarativeModelNode);
+            assertThat(declarativeModelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.DECLARATIVE_MODEL));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.METADATA_TYPE).getString(),
+                       is(VdbModel.DEFAULT_METADATA_TYPE));
+            assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(),
+                       is(CoreLexicon.ModelType.VIRTUAL));
+
+            final String metadata = "CREATE VIRTUAL PROCEDURE getTweets(query varchar) RETURNS (created_on varchar(25),"
+                                    + " from_user varchar(25), to_user varchar(25),"
+                                    + " profile_image_url varchar(25), source varchar(25), text varchar(140)) AS"
+                                    + " select tweet.* from"
+                                    + " (call twitter.invokeHTTP(action => 'GET', endpoint =>querystring('',query as \"q\"))) w,"
+                                    + " XMLTABLE('results' passing JSONTOXML('myxml', w.result) columns"
+                                    + " created_on string PATH 'created_at'," + " from_user string PATH 'from_user',"
+                                    + " to_user string PATH 'to_user'," + " profile_image_url string PATH 'profile_image_url',"
+                                    + " source string PATH 'source'," + " text string PATH 'text') tweet;"
+                                    + " CREATE VIEW Tweet AS select * FROM twitterview.getTweets;";
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.MODEL_DEFINITION).getString(), is(metadata));
+        }
+    }
+
+    @Test
+    public void shouldSequenceDynamicTwitterVdb() throws Exception {
+        createNodeWithContentFromFile("vdb/declarativeModels-vdb.xml", "vdb/declarativeModels-vdb.xml");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/declarativeModels-vdb.xml", 100);
         assertNotNull(outputNode);
         assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
         assertThat(outputNode.getNodes().getSize(), is(3L)); // 2 models and 1 translator
