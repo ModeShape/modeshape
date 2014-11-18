@@ -16,6 +16,7 @@
 package org.modeshape.sequencer.teiid;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,7 +46,7 @@ import org.modeshape.sequencer.teiid.model.ReferenceResolver;
  */
 public class VdbSequencer extends Sequencer {
 
-    private static final Logger LOGGER = Logger.getLogger(VdbSequencer.class);
+    protected static final Logger LOGGER = Logger.getLogger(VdbSequencer.class);
     private static final String MANIFEST_FILE = "META-INF/vdb.xml";
     private static final Pattern VERSION_REGEX = Pattern.compile("(.*)[.]\\s*[+-]?([0-9]+)\\s*$");
 
@@ -95,39 +96,7 @@ public class VdbSequencer extends Sequencer {
                 String entryName = entry.getName();
 
                 if (entryName.endsWith(MANIFEST_FILE)) {
-                    LOGGER.debug("----before reading vdb.xml");
-
-                    manifest = VdbManifest.read(vdbStream, context);
-                    assert (manifest != null) : "manifest is null";
-
-                    // Create the output node for the VDB ...
-                    // Path vdbPath = pathFactory.createRelativePath(zipFileName);
-                    outputNode.setPrimaryType(VdbLexicon.Vdb.VIRTUAL_DATABASE);
-                    outputNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
-                    outputNode.setProperty(VdbLexicon.Vdb.VERSION, manifest.getVersion());
-                    outputNode.setProperty(VdbLexicon.Vdb.ORIGINAL_FILE, outputNode.getPath());
-                    outputNode.setProperty(JcrConstants.MODE_SHA1, ((org.modeshape.jcr.api.Binary)binaryValue).getHexHash());
-                    setProperty(outputNode, VdbLexicon.Vdb.DESCRIPTION, manifest.getDescription());
-
-                    // create imported VDBs child nodes
-                    sequenceImportVdbs(manifest, outputNode);
-
-                    // create translator child nodes
-                    sequenceTranslators(manifest, outputNode);
-
-                    // create data role child nodes
-                    sequenceDataRoles(manifest, outputNode);
-
-                    // create entry child nodes
-                    sequenceEntries(manifest, outputNode);
-
-                    // create properties child nodes
-                    sequenceProperties(manifest, outputNode);
-
-                    // create child nodes for declarative models
-                    sequenceDeclarativeModels(manifest, outputNode);
-
-                    LOGGER.debug(">>>>done reading vdb.xml\n\n");
+                    manifest = readManifest(binaryValue, vdbStream, outputNode, context);
                 } else if (!entry.isDirectory() && this.modelSequencer.hasModelFileExtension(entryName)) {
                     LOGGER.debug("----before reading model '{0}'", entryName);
 
@@ -167,6 +136,43 @@ public class VdbSequencer extends Sequencer {
         } catch (final Exception e) {
             throw new RuntimeException(TeiidI18n.errorReadingVdbFile.text(inputProperty.getPath(), e.getMessage()), e);
         }
+    }
+
+    protected VdbManifest readManifest(Binary binaryValue, InputStream inputStream, Node outputNode, Context context) throws Exception {
+        VdbManifest manifest;
+        LOGGER.debug("----before reading vdb.xml");
+
+        manifest = VdbManifest.read(inputStream, context);
+        assert (manifest != null) : "manifest is null";
+
+        // Create the output node for the VDB ...
+        outputNode.setPrimaryType(VdbLexicon.Vdb.VIRTUAL_DATABASE);
+        outputNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
+        outputNode.setProperty(VdbLexicon.Vdb.VERSION, manifest.getVersion());
+        outputNode.setProperty(VdbLexicon.Vdb.ORIGINAL_FILE, outputNode.getPath());
+        outputNode.setProperty(JcrConstants.MODE_SHA1, ((org.modeshape.jcr.api.Binary)binaryValue).getHexHash());
+        setProperty(outputNode, VdbLexicon.Vdb.DESCRIPTION, manifest.getDescription());
+
+        // create imported VDBs child nodes
+        sequenceImportVdbs(manifest, outputNode);
+
+        // create translator child nodes
+        sequenceTranslators(manifest, outputNode);
+
+        // create data role child nodes
+        sequenceDataRoles(manifest, outputNode);
+
+        // create entry child nodes
+        sequenceEntries(manifest, outputNode);
+
+        // create properties child nodes
+        sequenceProperties(manifest, outputNode);
+
+        // create child nodes for declarative models
+        sequenceDeclarativeModels(manifest, outputNode);
+
+        LOGGER.debug(">>>>done reading vdb.xml\n\n");
+        return manifest;
     }
 
     /**
