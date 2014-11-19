@@ -941,12 +941,15 @@ public class SessionNode implements MutableCachedNode {
             }
 
             SessionNode referredNode = null;
+            WritableSessionCache writableSessionCache = null;
             // first search for a referred node in the cache of the current session and if nothing is found, look in the system
             // session
             if (cache.getNode(referredKey) != null) {
-                referredNode = writableSession(cache).mutable(referredKey);
+                writableSessionCache = writableSession(cache);
+                referredNode = writableSessionCache.mutable(referredKey);
             } else if (systemCache != null && systemCache.getNode(referredKey) != null) {
-                referredNode = writableSession(systemCache).mutable(referredKey);
+                writableSessionCache = writableSession(systemCache);
+                referredNode = writableSessionCache.mutable(referredKey);
             }
 
             if (referredNode == null) {
@@ -958,6 +961,12 @@ public class SessionNode implements MutableCachedNode {
                 referredNode.addReferrer(cache, property, key, referenceType);
             } else {
                 referredNode.removeReferrer(cache, property, key, referenceType);
+            }
+
+            // we may have updated the references multiple times for this node (added/removed) resulting in a no-op in the end
+            // so we should clear this node from the cache
+            if (!referredNode.hasChanges()) {
+                writableSessionCache.clear(referredNode);
             }
         }
     }
@@ -2338,52 +2347,58 @@ public class SessionNode implements MutableCachedNode {
 
     protected static class ReferrerChanges {
         // we need to be able to have multiple references from the same referrer and also multiple references from the same
-        // property of differet referrers
+        // property of different referrers
         private final Map<String, Set<NodeKey>> addedWeak = new HashMap<>();
         private final Map<String, Set<NodeKey>> removedWeak = new HashMap<>();
         private final Map<String, Set<NodeKey>> addedStrong = new HashMap<>();
         private final Map<String, Set<NodeKey>> removedStrong = new HashMap<>();
 
-        public void addWeakReferrer( Property property,
-                                     NodeKey nodeKey ) {
-            putInFirstAndRemoveFromSecond(property, nodeKey, addedWeak, removedWeak);
+        public void addWeakReferrer( Property referenceProperty,
+                                     NodeKey referrerKey ) {
+            processReferrerChange(referenceProperty, referrerKey, addedWeak, removedWeak);
         }
 
-        public void removeWeakReferrer( Property property,
-                                        NodeKey nodeKey ) {
-            putInFirstAndRemoveFromSecond(property, nodeKey, removedWeak, addedWeak);
+        public void removeWeakReferrer( Property referenceProperty,
+                                        NodeKey referrerKey ) {
+            processReferrerChange(referenceProperty, referrerKey, removedWeak, addedWeak);
         }
 
-        public void addStrongReferrer( Property property,
-                                       NodeKey nodeKey ) {
-            putInFirstAndRemoveFromSecond(property, nodeKey, addedStrong, removedStrong);
+        public void addStrongReferrer( Property referenceProperty,
+                                       NodeKey referrerKey ) {
+            processReferrerChange(referenceProperty, referrerKey, addedStrong, removedStrong);
         }
 
-        public void removeStrongReferrer( Property property,
-                                          NodeKey nodeKey ) {
-            putInFirstAndRemoveFromSecond(property, nodeKey, removedStrong, addedStrong);
+        public void removeStrongReferrer( Property referenceProperty,
+                                          NodeKey referrerKey ) {
+            processReferrerChange(referenceProperty, referrerKey, removedStrong, addedStrong);
         }
 
-        private void putInFirstAndRemoveFromSecond( Property property,
-                                                    NodeKey nodeKey,
-                                                    Map<String, Set<NodeKey>> firstMap,
-                                                    Map<String, Set<NodeKey>> secondMap ) {
-            String propertyKey = keyFromProperty(property);
+        private void processReferrerChange( Property referenceProperty,
+                                            NodeKey referrerKey,
+                                            Map<String, Set<NodeKey>> addToMap,
+                                            Map<String, Set<NodeKey>> removeFromMap ) {
+            String propertyKey = keyFromProperty(referenceProperty);
 
-            Set<NodeKey> toAdd = firstMap.get(propertyKey);
-            if (toAdd == null) {
-                toAdd = new HashSet<>();
-                firstMap.put(propertyKey, toAdd);
-            }
-            toAdd.add(nodeKey);
-
-            Set<NodeKey> toRemove = secondMap.get(propertyKey);
+            boolean shouldAdd = true;
+            Set<NodeKey> toRemove = removeFromMap.get(propertyKey);
             if (toRemove != null) {
-                toRemove.remove(nodeKey);
+                shouldAdd = !toRemove.remove(referrerKey);
                 if (toRemove.isEmpty()) {
-                    secondMap.remove(propertyKey);
+                    removeFromMap.remove(propertyKey);
                 }
             }
+            if (!shouldAdd) {
+                // we're trying to add the same referrer that has already been removed, so this should be a no-op for that referrer
+                // i.e. both maps should not contain that referrer
+                return;
+            }
+            Set<NodeKey> toAdd = addToMap.get(propertyKey);
+            if (toAdd == null) {
+                toAdd = new HashSet<>();
+                addToMap.put(propertyKey, toAdd);
+            }
+            toAdd.add(referrerKey);
+
         }
 
         private String keyFromProperty( Property property ) {
