@@ -719,7 +719,7 @@
             "additionalProperties" : {
                 "type" : "object",
                 "additionalProperties" : true,
-                "description" : "Specification of a sequencer configuration.",
+                "description" : "Specification of an index provider configuration.",
                 "properties" : {
                     "classname" : {
                         "type" : "string",

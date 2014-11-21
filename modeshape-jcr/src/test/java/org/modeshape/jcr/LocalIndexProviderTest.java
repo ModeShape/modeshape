@@ -18,8 +18,12 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -431,7 +435,7 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
 
         // Issue a query that does not use this index ...
         query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [notion:longProperty] > 10");
-        validateQuery().rowCount(2L).validate(query, query.execute());
+        validateQuery().useNoIndexes().rowCount(3L).validate(query, query.execute());
     }
 
     @Test
@@ -814,7 +818,7 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         throws RepositoryException, InterruptedException {
         String typeName = "nt:someType2";
         registerNodeType(typeName);
-        registerValueIndex("ntsome2sysname", typeName, null, "*", "sysName", PropertyType.STRING);
+        registerValueIndex("nt_someType2", typeName, null, "*", "sysName", PropertyType.STRING);
 
         waitForIndexes();
 
@@ -829,7 +833,7 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         // Now issue a query that will use the index. The query should not see the transient node...
         queryStr = "select BASE.* FROM [" + typeName + "] as BASE WHERE BASE.sysName='X'";
         query = jcrSql2Query(queryStr);
-        validateQuery().rowCount(0L).useIndex("ntsome2sysname").validate(query, query.execute());
+        validateQuery().rowCount(0L).useIndex("nt_someType2").validate(query, query.execute());
 
         // Save the transient data ...
         session.save();
@@ -844,9 +848,9 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         // Now issue a query that will use the index.
         queryStr = "select BASE.* FROM [" + typeName + "] as BASE WHERE BASE.sysName='X'";
         query = jcrSql2Query(queryStr);
-        validateQuery().rowCount(1L).useIndex("ntsome2sysname").validate(query, query.execute());
+        validateQuery().rowCount(1L).useIndex("nt_someType2").validate(query, query.execute());
 
-        registerValueIndex("ntusysname", "nt:unstructured", null, "*", "sysName", PropertyType.STRING);
+        registerValueIndex("nt_unstructured", "nt:unstructured", null, "*", "sysName", PropertyType.STRING);
 
         waitForIndexes();
 
@@ -860,7 +864,7 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
 
         queryStr = "select BASE.* FROM [nt:unstructured] as BASE WHERE BASE.sysName='X'";
         query = jcrSql2Query(queryStr);
-        validateQuery().rowCount(2L).validate(query, query.execute());
+        validateQuery().useIndex("nt_unstructured").rowCount(2L).validate(query, query.execute());
     }
 
     @FixFor( "MODE-2313" )
@@ -1006,5 +1010,53 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
                 .considerIndexes(IndexPlanners.DESCENDANTS_BY_PATH_INDEX_NAME, explicitIndex)
                 .useIndex(explicitIndex)
                 .validate(query, query.execute());
+    }
+
+    @Test
+    @FixFor( "MODE-2355" )
+    public void shouldUseNoIndexesWhenIndexDoesntApplyToBothSidesOfOR() throws Exception {
+        registerNodeTypes("cnd/authors.cnd");
+        registerValueIndex("index1", "my:authored", "Authors index", "*", "author", PropertyType.STRING);
+        registerValueIndex("index2", "my:authored", "Coauthors index", "*", "coAuthors", PropertyType.STRING);
+
+        // wait a bit to make sure the index definitions have been updated
+        waitForIndexes();
+
+        Node root = session.getRootNode();
+
+        Node book1 = root.addNode("book1");
+        book1.setPrimaryType("my:content");
+        book1.setProperty("content", "book content 1");
+        book1.setProperty("author", "author1");
+        book1.setProperty("coAuthors", new String[] { "author2", "author3" });
+
+        Node book2 = root.addNode("book2");
+        book2.setPrimaryType("my:content");
+        book2.setProperty("content", "book content 2");
+        book2.setProperty("author", "author2");
+
+        session.save();
+
+        Query query = jcrSql2Query("select * from [my:content] where author in ($author) or coAuthors in ($author)");
+        query.bindValue("author", session.getValueFactory().createValue("author1"));
+        validateQuery()
+                .useNoIndexes()
+                .rowCount(1)
+                .hasNodesAtPaths("/book1")
+                .validate(query, query.execute());
+
+        query.bindValue("author", session.getValueFactory().createValue("author2"));
+        final List<String> expectedPaths = new ArrayList<>(Arrays.asList("/book1", "/book2"));
+        validateQuery()
+                .useNoIndexes()
+                .rowCount(2)
+                .onEachRow(new ValidateQuery.Predicate() {
+                    @Override
+                    public void validate( int rowNumber, Row row ) throws RepositoryException {
+                        assertTrue("Path not found", expectedPaths.remove(row.getPath()));
+                    }
+                })
+                .validate(query, query.execute());
+        assertTrue("Not all paths found: " + expectedPaths, expectedPaths.isEmpty());
     }
 }
