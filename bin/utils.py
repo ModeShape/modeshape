@@ -3,7 +3,10 @@ import fnmatch
 import re
 import subprocess
 import sys
-import readline
+try:
+  import readline
+except ImportError:
+  import pyreadline as readline
 import shutil
 import random
 import urllib
