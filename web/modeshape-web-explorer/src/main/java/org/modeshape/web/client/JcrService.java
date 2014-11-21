@@ -143,7 +143,7 @@ public interface JcrService extends RemoteService {
      * @param primaryType the primary type of the node to add.
      * @throws RemoteException if there is a problem using the repository
      */
-    public void addNode(String repository,
+    public JcrNode addNode(String repository,
             String workspace,
             String path,
             String name,
@@ -228,11 +228,14 @@ public interface JcrService extends RemoteService {
      *
      * @param repository
      * @param workspace
+     * @param superType 
      * @param allowAbstract true if allow to load abstract node types.
      * @return list of type names.
      * @throws RemoteException
      */
-    public String[] getPrimaryTypes(String repository, String workspace, boolean allowAbstract) throws RemoteException;
+    public String[] getPrimaryTypes(String repository, String workspace, 
+            String superType,
+            boolean allowAbstract) throws RemoteException;
 
     /**
      * Reads list of mixin types.

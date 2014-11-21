@@ -60,13 +60,7 @@ public class NewNodeDialog extends ModalDialog {
         setControls(description, name, primaryType);
     }
 
-    @Override
-    public void showModal() {
-        contents.updatePrimaryTypes();
-        super.showModal();
-    }
-
-    protected void updatePrimaryTypes(String[] primaryTypes) {
+    public void setPrimaryTypes(String[] primaryTypes) {
         primaryType.setValueMap(primaryTypes);
     }
     

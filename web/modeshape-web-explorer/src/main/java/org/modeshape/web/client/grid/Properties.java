@@ -15,14 +15,18 @@
  */
 package org.modeshape.web.client.grid;
 
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.Alignment;
 import com.smartgwt.client.types.VerticalAlignment;
+import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Button;
 import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
+import org.modeshape.web.client.AddMixinDialog;
 import org.modeshape.web.client.Contents;
+import org.modeshape.web.client.RemoveMixinDialog;
 import org.modeshape.web.client.grid.Properties.PropertyRecord;
 import org.modeshape.web.client.peditor.BaseEditor;
 import org.modeshape.web.client.peditor.ValueEditor;
@@ -36,12 +40,16 @@ import org.modeshape.web.shared.JcrProperty;
 @SuppressWarnings("synthetic-access")
 public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
 
-    private final Contents contents;
     private JcrNode node;
+    private final Contents contents;
+    private final AddMixinDialog addMixinDialog;
+    private final RemoveMixinDialog removeMixinDialog;
     
     public Properties(Contents contents) {
         super("Properties");
         this.contents = contents;
+        addMixinDialog = new AddMixinDialog(contents);
+        removeMixinDialog = new RemoveMixinDialog(contents);
     }
 
     public void show(JcrNode node) {
@@ -113,7 +121,7 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
         addMixinButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                contents.addMixin();
+                getMixinTypes(true);
             }
         });
 
@@ -122,7 +130,7 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
         removeMixinButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                contents.removeMixin();
+                removeMixinDialog.showModal();
             }
         });
 
@@ -137,6 +145,23 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
         return header;
     }
 
+    private void getMixinTypes(final boolean showDialog) {
+        contents.jcrService().getMixinTypes(node.getRepository(), node.getWorkspace(), false, new AsyncCallback<String[]>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+
+            @Override
+            public void onSuccess(String[] result) {
+                addMixinDialog.updateMixinTypes(result);
+                removeMixinDialog.updateMixinTypes(result);
+                if (showDialog) addMixinDialog.showModal();
+            }
+        });
+    }
+    
+    
     @Override
     protected void updateRecord(int pos, PropertyRecord record, JcrProperty value) {
         record.setValue(value);

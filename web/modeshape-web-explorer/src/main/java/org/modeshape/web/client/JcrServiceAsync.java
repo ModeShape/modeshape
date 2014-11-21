@@ -55,7 +55,7 @@ public interface JcrServiceAsync {
 
     public void supportedQueryLanguages(String repository, String worspace, AsyncCallback<String[]> result);
 
-    public void addNode(String repository, String workspace, String path, String name, String primaryType, AsyncCallback<?> cb);
+    public void addNode(String repository, String workspace, String path, String name, String primaryType, AsyncCallback<JcrNode> cb);
 
     public void removeNode(String repository, String workspace, String path, AsyncCallback<?> cb);
 
@@ -76,7 +76,8 @@ public interface JcrServiceAsync {
     public void updateAccessList(String repository, String workspace, String path, String principal,
             JcrPermission permission, boolean enabled, AsyncCallback<?> cb);
 
-    public void getPrimaryTypes(String repository, String workspace, boolean allowAbstract, AsyncCallback<String[]> cb);
+    public void getPrimaryTypes(String repository, String workspace, 
+            String superType, boolean allowAbstract, AsyncCallback<String[]> cb);
 
     public void getMixinTypes(String repository, String workspace, boolean allowAbstract, AsyncCallback<String[]> cb);
 

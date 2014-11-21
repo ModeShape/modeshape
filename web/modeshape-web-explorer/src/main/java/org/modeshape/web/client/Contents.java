@@ -46,6 +46,10 @@ import org.modeshape.web.shared.Policy;
  */
 @SuppressWarnings( "synthetic-access" )
 public class Contents extends View {
+    public final static int CHILDREN_PAGE = 0;
+    public final static int PROPERTIES_PAGE = 1;
+    public final static int ACL_PAGE = 2;
+    
     private final static String ROOT_PATH = "/";
     
     private Console console;
@@ -55,24 +59,17 @@ public class Contents extends View {
     private JcrNode node;
     private String path;
     
-    private ComboBoxItem workspaces = new ComboBoxItem();
+    private ComboBoxItem workspaceComboBox = new ComboBoxItem();
     private PathLabel pathLabel = new PathLabel();
     
-    private Children children = new Children(this);
+    private Children    children  = new Children(this);
     private Properties properties = new Properties(this);
     private AccessList accessList = new AccessList(this);
     
-    private TabsetGrid mainGrid = new TabsetGrid(new String[]{"Children", "Properties", "Access list"},
-            new TabGrid[]{children, properties, accessList});
-    
-    private NewNodeDialog newNodeDialog = new NewNodeDialog(this);
-    private RenameNodeDialog renameNodeDialog = new RenameNodeDialog(this);
-    private AddMixinDialog addMixinDialog = new AddMixinDialog(this);
-    private RemoveMixinDialog removeMixinDialog = new RemoveMixinDialog(this);
-    private AddPrincipalDialog addAccessListDialog = new AddPrincipalDialog(this);
-    
-    private ExportDialog exportDialog = new ExportDialog(this);
-    private ImportDialog importDialog = new ImportDialog(this);
+    private TabsetGrid mainGrid = new TabsetGrid(
+            new String[]{"Children", "Properties", "Access list"},
+            new TabGrid[]{children, properties, accessList}
+            );
     
     private Button saveButton;
     
@@ -92,13 +89,13 @@ public class Contents extends View {
         addMember(new Spacer(20));
 
         final DynamicForm form = new DynamicForm();
-        form.setFields(workspaces);
+        form.setFields(workspaceComboBox);
         
-        workspaces.setTitle("Workspace");
-        workspaces.addChangedHandler(new ChangedHandler() {
+        workspaceComboBox.setTitle("Workspace");
+        workspaceComboBox.addChangedHandler(new ChangedHandler() {
             @Override
             public void onChanged(ChangedEvent event) {
-                select(repository(), (String)event.getValue(), ROOT_PATH, true);
+                show(repository(), (String)event.getValue(), ROOT_PATH, true);
             }
         });
         
@@ -148,6 +145,15 @@ public class Contents extends View {
         addMember(mainGrid);        
     }
 
+    /**
+     * Expose interface to the server side.
+     * 
+     * @return 
+     */
+    public JcrServiceAsync jcrService() {
+        return this.jcrService;
+    }
+    
     private void showLoadIcon() {
         pathLabel.setVisible(false);
         mainGrid.setVisible(false);
@@ -160,28 +166,42 @@ public class Contents extends View {
         console.hideLoadingIcon();
     }
     
+    /**
+     * Shows content of the root node of the first reachable workspace of the 
+     * given repository.
+     * 
+     * @param repository the name of the given repository.
+     * @param changeHistory if true then this action of navigation will be 
+     * reflected in the browser URL and will don't touch URL in case of false 
+     * value.
+     */
     public void show(String repository, final boolean changeHistory) {
         this.repository = repository;
-        jcrService.getWorkspaces(repository, new AsyncCallback<String[]>() {
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess(String[] result) {
-                workspaces.setValueMap(result);
-                if (result.length > 0) {
-                    workspaces.setValue(result[0]);
-                }
-                select(ROOT_PATH, changeHistory);
-            }
-        });
+        this.refreshWorkspacesAndReloadNode(null, ROOT_PATH, changeHistory);
     }
 
-    public void select(final String repository, final String workspace, 
+    /**
+     * Shows nodes identified by repository, workspace and path to node.
+     * 
+     * @param repository the name of the repository
+     * @param workspace the name of the workspace
+     * @param path the path to node
+     * @param changeHistory true if this action should be reflected in browser history.
+     */
+    public void show(final String repository, final String workspace, 
             final String path, final boolean changeHistory) {
         this.repository = repository;
+        this.refreshWorkspacesAndReloadNode(null, path, changeHistory);
+    }
+    
+    /**
+     * Reloads values of the combo box with workspace names.
+     * 
+     * Gets values from server side, assigns to combo box and select given name.
+     * @param name the name to be selected. 
+     */
+    private void refreshWorkspacesAndReloadNode(final String name, final String path, 
+            final boolean changeHistory) {
         showLoadIcon();
         jcrService.getWorkspaces(repository, new AsyncCallback<String[]>() {
             @Override
@@ -195,18 +215,28 @@ public class Contents extends View {
             }
 
             @Override
-            public void onSuccess(String[] result) {
-                workspaces.setValueMap(result);
-                workspaces.setValue(workspace);
-                select(path, changeHistory);
+            public void onSuccess(String[] workspaces) {
+                workspaceComboBox.setValueMap(workspaces);
+                if (name != null) {
+                    workspaceComboBox.setValue(name);
+                } else if (workspaces.length > 0) {
+                    workspaceComboBox.setValue(workspaces[0]);
+                }
+                
+                getAndDisplayNode(path, changeHistory);
                 hideLoadIcon();
             }
         });        
     }
     
-    public void select(final String path, final boolean changeHistory) {
+    /**
+     * Reads node with given path and selected repository and workspace.
+     * 
+     * @param path the path to the node.
+     * @param changeHistory if true then path will be reflected in browser history.
+     */
+    public void getAndDisplayNode(final String path, final boolean changeHistory) {
         showLoadIcon();
-        this.path = path;
         jcrService.node(repository(), workspace(), path, new AsyncCallback<JcrNode>() {
             @Override
             public void onFailure(Throwable caught) {
@@ -215,34 +245,43 @@ public class Contents extends View {
             }
 
             @Override
-            public void onSuccess(JcrNode result) {
-                node = result;
-                
-                Contents.this.path = result.getPath();
-                pathLabel.display(result.getPath());
-                
+            public void onSuccess(JcrNode node) {
+                displayNode(node, CHILDREN_PAGE);
                 console.updateWorkspace(workspace(), changeHistory);
                 console.updatePath(path, changeHistory);
-                
-                children.show(node);
-                properties.show(node);
-                accessList.show(node);
-                
-                viewPort().display(Contents.this);
                 hideLoadIcon();
             }
         });
     }
     
     
-    public void export() {
-        exportDialog.showModal();
+    /**
+     * Displays specified node.
+     * 
+     * @param node the node being displayed.
+     */
+    private void displayNode(JcrNode node, int page) {
+        this.node = node;
+        this.path = node.getPath();
+        pathLabel.display(node.getPath());
+        
+        //display childs, properties and ACLs
+        children.show(node);
+        properties.show(node);
+        accessList.show(node);
+        
+        //bring this page on top
+        viewPort().display(Contents.this);
+        mainGrid.showTab(page);
     }
-    
-    public void importXML() {
-        importDialog.showModal();
-    }
-    
+
+    /**
+     * Exports contents to the given file.
+     * 
+     * @param name the name of the file.
+     * @param skipBinary
+     * @param noRecurse 
+     */
     public void export(String name, boolean skipBinary, boolean noRecurse) {
         jcrService.export(repository, workspace(), path(), name, true, true, new AsyncCallback<Object>() {
             @Override
@@ -257,6 +296,12 @@ public class Contents extends View {
         });
     }
 
+    /**
+     * Imports contents from the given file.
+     * 
+     * @param name
+     * @param option 
+     */
     public void importXML(String name, int option) {
         jcrService.importXML(repository, workspace(), path(), name, 
                 option, new AsyncCallback<Object>() {
@@ -274,7 +319,7 @@ public class Contents extends View {
     
     
     public void removeNode() {
-        final String path = parent(path());
+        final String parent = parent(path());
         jcrService.removeNode(repository(), workspace(), path(), new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
@@ -284,39 +329,11 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 saveButton.enable();
-                select(path, true);
+                getAndDisplayNode(parent, true);
             }
         });
     }
 
-    public void addNode() {
-        newNodeDialog.showModal();
-    }
-    
-    public void renameNode() {
-        renameNodeDialog.showModal();
-    }
-    
-    public void updateMixinTypes() {
-        jcrService.getMixinTypes(repository(), workspace(), false, new AsyncCallback<String[]>() {
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess(String[] result) {
-                addMixinDialog.updateMixinTypes(result);
-                removeMixinDialog.updateMixinTypes(result);
-                saveButton.enable();
-            }
-        });
-    }
-    
-    public void addMixin() {
-        addMixinDialog.showModal();
-    }
-    
     public void addMixin(String name) {
         jcrService.addMixin(repository(), workspace(), path(), name, new AsyncCallback<Object>() {
             @Override
@@ -330,10 +347,6 @@ public class Contents extends View {
                 saveButton.enable();
             }
         });
-    }
-    
-    public void removeMixin() {
-        removeMixinDialog.showModal();
     }
     
     public void removeMixin(String name) {
@@ -351,22 +364,6 @@ public class Contents extends View {
         });
     }
     
-    public void setNodeProperty(JcrNode node, String name, String value) {
-        jcrService.setProperty(node, name, value, new AsyncCallback<Object>() {
-
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess(Object result) {
-                show();
-                saveButton.enable();
-            }
-        });
-    }
-
     public void setNodeProperty(JcrNode node, String name, Boolean value) {
         jcrService.setProperty(node, name, value, new AsyncCallback<Object>() {
 
@@ -398,9 +395,10 @@ public class Contents extends View {
             }
         });
     }
-    
-    protected void addNode(String name, String primaryType) {
-        jcrService.addNode(repository(), workspace(), path(), name, primaryType, new AsyncCallback<Object>() {
+
+    public void setNodeProperty(JcrNode node, String name, String value) {
+        jcrService.setProperty(node, name, value, new AsyncCallback<Object>() {
+
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -409,6 +407,21 @@ public class Contents extends View {
             @Override
             public void onSuccess(Object result) {
                 show();
+                saveButton.enable();
+            }
+        });
+    }
+    
+    protected void addNode(String name, String primaryType) {
+        jcrService.addNode(repository(), workspace(), path(), name, primaryType, new AsyncCallback<JcrNode>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+
+            @Override
+            public void onSuccess(JcrNode node) {
+                displayNode(node, PROPERTIES_PAGE);
                 saveButton.enable();
             }
         });
@@ -423,31 +436,12 @@ public class Contents extends View {
 
             @Override
             public void onSuccess(Object result) {
-                show();
+                getAndDisplayNode(path(), false);
                 saveButton.enable();
             }
         });
     }
-    
-    protected void updatePrimaryTypes() {
-        jcrService.getPrimaryTypes(repository(), workspace(), true, new AsyncCallback<String[]>() {
-            @Override
-            public void onFailure(Throwable caught) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess(String[] result) {
-                newNodeDialog.updatePrimaryTypes(result);
-                saveButton.enable();
-            }
-        });
-    }
-    
-    public void addAccessList() {
-        addAccessListDialog.showModal();
-    }
-    
+        
     public void addAccessList(String name) {
         Acl acl = node.getAcl();
         if (acl == null) {
@@ -460,7 +454,7 @@ public class Contents extends View {
         policy.add(JcrPermission.ALL);
         
         acl.addPolicy(policy);
-        accessList.show(node);
+        accessList.show();
         saveButton.enable();
     }
 
@@ -482,7 +476,7 @@ public class Contents extends View {
     
     public void removeAccessList(String name) {
         node.getAccessList().remove(name);
-        accessList.show(node);
+        accessList.show();
     }
     
     public void applyAccessList() {
@@ -500,17 +494,12 @@ public class Contents extends View {
         });
     }
     
-    public void setNode(JcrNode node) {
-        this.node = node;
-        this.pathLabel.display(node.getPath());
-    }
-    
     public String repository() {
         return repository;
     }
 
     public String workspace() {
-        return workspaces.getValueAsString();
+        return workspaceComboBox.getValueAsString();
     }
 
     public JcrNode node() {
@@ -559,7 +548,7 @@ public class Contents extends View {
                     @Override
                     public void onClick(ClickEvent event) {
                         Label label = (Label) event.getSource();
-                        select(label.getDataPath(), true);
+                        getAndDisplayNode(label.getDataPath(), true);
                     }
                 });
                 

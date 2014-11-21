@@ -284,7 +284,7 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
     
     protected void showContent(String repository, String workspace, String path,
             boolean changeHistory) {
-        contents.select(repository, workspace, path, changeHistory);
+        contents.show(repository, workspace, path, changeHistory);
 //        contents.select(workspace, path);
         showRepo(repository);
         viewPort.display(contents);

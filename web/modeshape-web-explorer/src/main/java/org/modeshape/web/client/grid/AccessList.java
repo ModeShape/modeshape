@@ -26,6 +26,7 @@ import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.layout.HLayout;
+import org.modeshape.web.client.AddPrincipalDialog;
 import org.modeshape.web.client.Contents;
 import org.modeshape.web.client.grid.AccessList.AclRecord;
 import org.modeshape.web.shared.JcrNode;
@@ -53,43 +54,15 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
         new AclRecord(JcrPermission.WRITE)
     };
     
-    //private final EmptyRecord emptyRecord = new EmptyRecord();
-    
-    //private VLayout viewPort = new VLayout();
     private JcrNode node;
     protected final Contents contents;
     private ComboBoxItem principal;
+    private final AddPrincipalDialog addAccessListDialog;
     
     public AccessList(Contents contents) {
         super("Access list");
         this.contents = contents;
-/*
-        HLayout topPanel = new HLayout();
-        topPanel.setAlign(VerticalAlignment.CENTER);
-        topPanel.setLayoutMargin(3);        
-        topPanel.setHeight(30);
-        topPanel.setBackgroundColor("#e6f1f6");
-        topPanel.setContents("<b><i>Access control list</i></b>");
-        
-        addMember(topPanel);
-        addMember(new Header());
-        addMember(new GridHeader());
-        
-        setBorder("3px ridge #d3d3d3");
-        setAutoHeight();
-
-        HLayout bottomPanel = new HLayout();
-        bottomPanel.setHeight(30);
-        bottomPanel.setBackgroundColor("#e6f1f6");
-
-        viewPort.setAutoHeight();
-        addMember(viewPort);
-        addMember(bottomPanel);
-
-        for (int i = 0; i < records.length; i++) {
-            viewPort.addMember(records[i]);
-        }
-        */ 
+        addAccessListDialog = new AddPrincipalDialog(contents);        
     }
 
     public void show(JcrNode node) {
@@ -169,7 +142,6 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
     protected HLayout toolBar() {
         HLayout layout = new HLayout();
         layout.setBackgroundColor("#ffffff");
-//        layout.setMargin(5);
         layout.setAlign(Alignment.LEFT);
         layout.setDefaultLayoutAlign(Alignment.LEFT);
         layout.setLayoutAlign(Alignment.LEFT);
@@ -207,7 +179,7 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
         addButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                contents.addAccessList();
+                addAccessListDialog.showModal();
             }
         });
 
@@ -272,29 +244,6 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
     }
     
     
-//    private class EmptyRecord extends HLayout {
-//        private Label label = new Label();
-//        public EmptyRecord() {
-//            super();
-//
-//            setStyleName("grid");
-//            setHeight(30);
-//            setWidth100();
-//            setDefaultLayoutAlign(VerticalAlignment.CENTER);
-//            setDefaultLayoutAlign(Alignment.CENTER);
-//
-//            setLayoutAlign(VerticalAlignment.CENTER);
-//            setLayoutAlign(Alignment.CENTER);
-//
-//            setAlign(VerticalAlignment.CENTER);
-//            setAlign(Alignment.CENTER);
-//            label.setContents("No access list defined");
-//            label.setWidth100();
-//            label.setAlign(Alignment.CENTER);
-//            addMember(label);
-//        }
-//    }
-    
     @SuppressWarnings( "synthetic-access" )
     public class AclRecord extends HLayout {
 
@@ -332,7 +281,6 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
                 @Override
                 public void onClick(ClickEvent event) {
                     node.getAcl().modify(principal.getValueAsString(), permission, !value.getValue());
-                    AccessList.this.show(node);
                 }
             });
             
@@ -347,24 +295,6 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
             value.setValue(val);
             return val;
         }
-        
-//        private void test(String principal, JcrAccessControlList acl) {
-//            Collection<JcrPolicy> entries = acl.entries();
-//            for (JcrPolicy policy : entries) {
-//                if (policy.getPrincipal().equals(principal)) {
-////                    SC.say("Principal=" + policy.getPrincipal());
-//                    Collection<JcrPermission> permissions = policy.getPermissions();
-//                    for (JcrPermission p : permissions) {
-//                       if (p.matches(permission)) {
-//                           value.setValue(true);
-//                           return;
-//                       } 
-//                    }
-//                }
-////                SC.say("Set false");
-//                value.setValue(false);
-//            }
-//        }
         
     }
         

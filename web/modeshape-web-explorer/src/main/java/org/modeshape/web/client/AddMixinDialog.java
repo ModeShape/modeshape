@@ -51,13 +51,7 @@ public class AddMixinDialog extends ModalDialog {
         name.focusInItem();
     }
 
-    @Override
-    public void showModal() {
-        contents.updateMixinTypes();
-        super.showModal();
-    }
-    
-    protected void updateMixinTypes(String[] mixins) {
+    public void updateMixinTypes(String[] mixins) {
         name.setValueMap(mixins);
     }
     

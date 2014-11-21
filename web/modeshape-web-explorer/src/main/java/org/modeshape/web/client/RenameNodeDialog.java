@@ -51,12 +51,6 @@ public class RenameNodeDialog extends ModalDialog {
     }
 
     @Override
-    public void showModal() {
-        contents.updatePrimaryTypes();
-        super.showModal();
-    }
-
-    @Override
     public void onConfirm(com.smartgwt.client.widgets.form.fields.events.ClickEvent event) {
         contents.renameNode(name.getValueAsString());
     }
