@@ -34,6 +34,7 @@ import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
+import javax.jcr.version.LabelExistsVersionException;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -317,7 +318,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
         try {
             // This throws a PNFE if the named property doesn't already exist
             versionLabels.getProperty(label);
-            if (!moveLabel) throw new VersionException(JcrI18n.versionLabelAlreadyExists.text(label));
+            if (!moveLabel) throw new LabelExistsVersionException(JcrI18n.versionLabelAlreadyExists.text(label));
 
         } catch (PathNotFoundException pnfe) {
             // This gets thrown if the label doesn't already exist
