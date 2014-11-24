@@ -1,6 +1,8 @@
 import os
 import fnmatch
 import re
+import platform
+is_windows = platform.system().lower().startswith("win")
 import subprocess
 import sys
 try:
@@ -381,8 +383,11 @@ class Uploader(object):
       cmd.append(e)
     cmd.append(fr)
     cmd.append(to)
-    subprocess.check_call(cmd)    
-  
+    if is_windows:
+      subprocess.check_call(cmd, shell=True)
+    else:
+      subprocess.check_call(cmd)
+          
 
 
 class DryRunUploader(DryRun):
@@ -398,7 +403,10 @@ class DryRunUploader(DryRun):
 def maven_clean():
   """Cleans the distribution in the current working dir"""
   mvn_command = ["mvn","-Passembly","clean"]
-  subprocess.check_call(mvn_command)
+  if is_windows:
+    subprocess.check_call(mvn_command, shell=True)
+  else:
+    subprocess.check_call(mvn_command)
 
 def maven_build_distribution(version):
   """Builds the distribution in the current working dir"""
@@ -408,11 +416,14 @@ def maven_build_distribution(version):
     if settings['dry_run']:
       c.append("-Dmaven.deploy.skip=true")
     if settings['skip_tests']:
-      c.append("-Dmaven.deploy.skip=true")
+      c.append("-Dmaven.test.skip=true")
     if not settings['verbose']:
       c.insert(0, '-q')
     c.insert(0, 'mvn')
-    subprocess.check_call(c)
+    if is_windows:
+      subprocess.check_call(c, shell=True)
+    else:
+      subprocess.check_call(c)
   
   print "Verifying build"
   # Check an assembly files ...

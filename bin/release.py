@@ -2,6 +2,8 @@
 import re
 import sys
 import os
+import platform
+is_windows = platform.system().lower().startswith("win")
 import subprocess
 import shutil
 from markdown2 import *
@@ -261,7 +263,10 @@ def upload_artifacts(base_dir, version):
 
   # rsync this stuff to filemgmt.jboss.org
   os.chdir("%s/target/downloads" % (base_dir))
-  uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape", flags = ['--protocol=28'])
+  if is_windows:
+    uploader.upload_scp(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape")
+  else:
+    uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape", flags = ['--protocol=28'])
   
   # We're done, so go back to where we were ...
   os.chdir(base_dir)
@@ -284,7 +289,10 @@ def upload_documentation(base_dir, version):
 
   # rsync this stuff to filemgmt.jboss.org
   os.chdir("%s/target/docs" % (base_dir))
-  uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape", flags = ['--protocol=28'])
+  if is_windows:
+    uploader.upload_scp(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape")
+  else:
+    uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape", flags = ['--protocol=28'])
   
   # We're done, so go back to where we were ...
   os.chdir(base_dir)
@@ -313,6 +321,8 @@ def release():
         settings['verbose'] = True
       elif arg == '--dry-run':
         settings['dry_run'] = True
+      elif arg == '--skip-tests':
+        settings['skip_tests'] = True
       elif arg == '--multi-threaded':
         settings['multi_threaded'] = True
       elif arg == '--single-threaded':
@@ -416,6 +426,10 @@ def release():
   else:
     prettyprint("In dry-run mode.  Not pushing tag to remote origin and not removing temp release branch '%s'." % git.working_branch, Levels.DEBUG)
   prettyprint("Step 7: Complete", Levels.INFO)
+
+  if is_windows and settings['dry_run']:
+    prettyprint("\n\n\nOn Windows in dry-run mode no file uploading will be performed, so all done.", Levels.INFO)
+    return
 
   async_processes = []
 
