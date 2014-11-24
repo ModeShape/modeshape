@@ -1,0 +1,15 @@
+<my  = 'http://www.test.org/schema/my/'>
+<jcr = 'http://www.jcp.org/jcr/1.0'>
+<nt  = 'http://www.jcp.org/jcr/nt/1.0'>
+<mix = 'http://www.jcp.org/jcr/mix/1.0'>
+
+/*
+ * mixin definitions
+ */
+[my:authored] mixin
+- author (STRING) COPY
+- coAuthors (STRING) multiple COPY
+
+[my:content] > my:authored
+- content (STRING) mandatory COPY
+

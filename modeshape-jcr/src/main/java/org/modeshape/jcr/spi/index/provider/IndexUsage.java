@@ -144,12 +144,10 @@ public class IndexUsage {
             return indexAppliesTo((And)constraint);
         }
         if (constraint instanceof Or) {
-            Or or = (Or)constraint;
-            return indexAppliesTo(or.getConstraint1()) || indexAppliesTo(or.getConstraint2());
+            return indexAppliesTo((Or)constraint);
         }
         if (constraint instanceof Not) {
-            Not not = (Not)constraint;
-            return indexAppliesTo(not.getConstraint());
+            return indexAppliesTo((Not)constraint);
         }
         if (constraint instanceof Between) {
             return indexAppliesTo((Between)constraint);
@@ -171,11 +169,13 @@ public class IndexUsage {
     }
 
     protected boolean indexAppliesTo( And and ) {
+        // look if the index applies to any part of the AND
         return indexAppliesTo(and.getConstraint1()) || indexAppliesTo(and.getConstraint2());
     }
 
     protected boolean indexAppliesTo( Or or ) {
-        return indexAppliesTo(or.getConstraint1()) || indexAppliesTo(or.getConstraint2());
+        // the index has to apply to *all* parts of the OR constraint for it to be taken into account
+        return indexAppliesTo(or.getConstraint1()) && indexAppliesTo(or.getConstraint2());
     }
 
     protected boolean indexAppliesTo( Not not ) {

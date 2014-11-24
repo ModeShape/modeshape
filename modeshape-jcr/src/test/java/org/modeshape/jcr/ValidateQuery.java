@@ -376,7 +376,7 @@ public class ValidateQuery {
                                 fail("Index '" + name + "' was included in plan but not expected");
                             }
                             boolean isUsed = INDEX_USED_PATTERN.matcher(line).find();
-                            if (isUsed) {
+                            if (isUsed && nameOfIndexToUse != null) {
                                 assertEquals("Index '" + name + "' was used, but '" + nameOfIndexToUse
                                              + "' was expected to be used", nameOfIndexToUse, name);
                                 foundUsed = true;
@@ -388,7 +388,7 @@ public class ValidateQuery {
                     fail("Index '" + nameOfIndexToUse + "' was not used in query as expected");
                 }
                 if (!allIndexNamesCopy.isEmpty()) {
-                    fail("Indexes " + allIndexNames + " were found in query plan but not expected");
+                    fail("Indexes " + allIndexNames + " were not found in query plan but expected");
                 }
             }
         }

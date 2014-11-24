@@ -219,15 +219,14 @@ public final class IndexPlan implements Comparable<IndexPlan> {
             return 1;
         }
 
-        // both indexes have a known cardinality
-        if (thisCostEstimate == thatCostEstimate) {
-            // both indexes have the same cost (meaning that they likely belong to the same provider), so favor the index with more results (i.e. higher cardinality)
-            // we're favoring false-positives over false-negatives. If they have the same cardinality we compare lexicographically the names
-            return thisCardinalityEstimate != thatCardinalityEstimate ? Long.compare(thatCardinalityEstimate,
-                                                                                     thisCardinalityEstimate) :
-                                                                        this.name.compareTo(that.name);
+        if (thisCostEstimate == thatCostEstimate && thisCardinalityEstimate == thatCardinalityEstimate) {
+            // in case both the costs and the cardinalities are the same, we compare lexicographically the names so that we're
+            // consistently selecting the same index
+            return this.name.compareTo(that.name);
         }
-        // we have different costs for the 2 indexes (meaning likely 2 different providers), so favor the lowest (cost * cardinality)
+
+        // by default we always favor the lowest (cost * cardinality) value
+        // this means that if 2 indexes have the same cost (i.e. are from the same provider) we'll use the one which gives us fewer nodes
         BigDecimal thisCostByCardinality = BigDecimal.valueOf(thisCostEstimate).multiply(BigDecimal.valueOf(thisCardinalityEstimate));
         BigDecimal thatCostByCardinality = BigDecimal.valueOf(thatCostEstimate).multiply(BigDecimal.valueOf(thatCardinalityEstimate));
         return thisCostByCardinality.compareTo(thatCostByCardinality);

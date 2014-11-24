@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import javax.jcr.query.qom.JoinCondition;
 import javax.jcr.query.qom.PropertyValue;
 import javax.jcr.query.qom.StaticOperand;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.engine.IndexPlan;
@@ -43,6 +45,8 @@ import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
 import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.spi.index.provider.IndexPlanner;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.StringFactory;
 
 /**
@@ -97,6 +101,10 @@ public class AddIndexes implements OptimizerRule {
             final List<Constraint> constraints = new LinkedList<>();
             final List<JoinCondition> joinConditions = new LinkedList<>();
             final Set<String> nodeTypeNames = new HashSet<>();
+            final NodeTypes nodeTypes = context.getNodeTypes();
+            final NameFactory nameFactory = context.getExecutionContext().getValueFactories().getNameFactory();
+            final StringFactory strings = context.getExecutionContext().getValueFactories().getStringFactory();
+
             source.applyToAncestors(new Operation() {
                 @Override
                 public void apply( PlanNode node ) {
@@ -110,14 +118,14 @@ public class AddIndexes implements OptimizerRule {
                                 if (constraint instanceof Comparison) {
                                     Comparison comparison = (Comparison)constraint;
                                     if (isPrimaryTypeConstraint(comparison.getOperand1())) {
-                                        addLiteral(comparison.getOperand2(), nodeTypeNames);
+                                        collectNodeType(comparison.getOperand2());
                                     }
                                 } else if (constraint instanceof SetCriteria) {
                                     SetCriteria criteria = (SetCriteria)constraint;
                                     if (isPrimaryTypeConstraint(criteria.getOperand())) {
-                                        // Look for literal values and collect them as the node type names ...
+                                        // Look for literal values and collect them
                                         for (StaticOperand operand : criteria.getValues()) {
-                                            addLiteral(operand, nodeTypeNames);
+                                            collectNodeType(operand);
                                         }
                                     }
                                 }
@@ -152,13 +160,31 @@ public class AddIndexes implements OptimizerRule {
                     return false;
                 }
 
-                private void addLiteral( StaticOperand operand,
-                                         Set<String> collector ) {
+                private void collectNodeType( StaticOperand operand ) {
                     if (operand instanceof Literal) {
                         // Get the literal value, which should be a node type ...
                         Literal literal = (Literal)operand;
-                        StringFactory strings = context.getExecutionContext().getValueFactories().getStringFactory();
-                        nodeTypeNames.add(strings.create(literal.value()));
+                        String nodeType = strings.create(literal.value());
+                        Name nodeTypeName = nameFactory.create(nodeType);
+                        boolean shouldAddNodeType = true;
+                        // we should only keep the type if it's a super-type because the ReplaceViews rule could have added all
+                        // subtypes in the types constraints as well and index matching should be done based on strict type matching
+                        for (Iterator<String> nodeTypesIterator = nodeTypeNames.iterator(); nodeTypesIterator.hasNext();) {
+                            String collectedType = nodeTypesIterator.next();
+                            Name collectedNodeTypeName = nameFactory.create(collectedType);
+                            // check if we haven't already added a super type, in which case we won't be adding the sub type
+                            if (nodeTypes.isTypeOrSubtype(nodeTypeName, collectedNodeTypeName)) {
+                                shouldAddNodeType = false;
+                                break;
+                            } else if (nodeTypes.isTypeOrSubtype(collectedNodeTypeName, nodeTypeName)) {
+                                // we've already collected a subtype of the type so we'll remove it from the list because
+                                // we should only be keeping super-types
+                                nodeTypesIterator.remove();
+                            }
+                        }
+                        if (shouldAddNodeType) {
+                            nodeTypeNames.add(nodeType);
+                        }
                     }
                 }
             });
