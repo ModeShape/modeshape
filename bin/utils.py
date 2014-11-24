@@ -1,6 +1,8 @@
 import os
 import fnmatch
 import re
+import platform
+is_windows = platform.system().lower().startswith("win")
 import subprocess
 import sys
 try:
@@ -348,8 +350,11 @@ class DryRun(object):
   
   def __init__(self):
     if settings['verbose']:
-      self.flags = "-rv"
-  
+      if is_windows:
+        self.flags = "-r -v"
+      else:
+        self.flags = "-rv"
+
   def find_version(self, url):
     return os.path.split(url)[1]
       
@@ -374,16 +379,17 @@ class Uploader(object):
     self.upload(fr, to, flags, list(self.scp_cmd))
   
   def upload_rsync(self, fr, to, flags = []):
-    self.upload(fr, to, flags, list(self.rsync_cmd))    
-  
+    self.upload(fr, to, flags, list(self.rsync_cmd))
+
   def upload(self, fr, to, flags, cmd):
     for e in flags:
       cmd.append(e)
     cmd.append(fr)
     cmd.append(to)
-    subprocess.check_call(cmd)    
-  
-
+    if is_windows:
+      subprocess.check_call(cmd, shell=True)
+    else:
+      subprocess.check_call(cmd)
 
 class DryRunUploader(DryRun):
   def upload_scp(self, fr, to, flags = []):
@@ -393,12 +399,15 @@ class DryRunUploader(DryRun):
     self.upload(fr, to.replace(':', '____').replace('@', "__"), "rsync")
   
   def upload(self, fr, to, type):
-    self.copy(fr, "%s/%s/%s" % (self.location_root, type, to))    
+    self.copy(fr, "%s/%s/%s" % (self.location_root, type, to))
 
 def maven_clean():
   """Cleans the distribution in the current working dir"""
   mvn_command = ["mvn","-Passembly","clean"]
-  subprocess.check_call(mvn_command)
+  if is_windows:
+    subprocess.check_call(mvn_command, shell=True)
+  else:
+    subprocess.check_call(mvn_command)
 
 def maven_build_distribution(version):
   """Builds the distribution in the current working dir"""
@@ -408,11 +417,14 @@ def maven_build_distribution(version):
     if settings['dry_run']:
       c.append("-Dmaven.deploy.skip=true")
     if settings['skip_tests']:
-      c.append("-Dmaven.deploy.skip=true")
+      c.append("-Dmaven.test.skip=true")
     if not settings['verbose']:
       c.insert(0, '-q')
     c.insert(0, 'mvn')
-    subprocess.check_call(c)
+    if is_windows:
+      subprocess.check_call(c, shell=True)
+    else:
+      subprocess.check_call(c)
   
   print "Verifying build"
   # Check an assembly files ...
