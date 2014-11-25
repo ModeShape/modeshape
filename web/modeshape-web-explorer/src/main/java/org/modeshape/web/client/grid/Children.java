@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.client.grid;
 
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.Alignment;
 import com.smartgwt.client.types.VerticalAlignment;
 import com.smartgwt.client.util.BooleanCallback;
@@ -25,6 +26,10 @@ import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
 import org.modeshape.web.client.Contents;
+import org.modeshape.web.client.ExportDialog;
+import org.modeshape.web.client.ImportDialog;
+import org.modeshape.web.client.NewNodeDialog;
+import org.modeshape.web.client.RenameNodeDialog;
 import org.modeshape.web.client.grid.Children.NodeRecord;
 import org.modeshape.web.shared.JcrNode;
 
@@ -34,20 +39,27 @@ import org.modeshape.web.shared.JcrNode;
  */
 public class Children extends TabGrid<NodeRecord, JcrNode> {
 
-    
     private JcrNode node;
-    protected final Contents contents;
-    
+    private final Contents contents;
+    private final ExportDialog exportDialog;
+    private final ImportDialog importDialog;
+    private final NewNodeDialog newNodeDialog;
+    private final RenameNodeDialog renameNodeDialog;
+
     public Children(Contents contents) {
         super("Child nodes");
         this.contents = contents;
+        exportDialog = new ExportDialog(contents);
+        importDialog = new ImportDialog(contents);
+        newNodeDialog = new NewNodeDialog(contents);
+        renameNodeDialog = new RenameNodeDialog(contents);
     }
 
     public void show(JcrNode node) {
         this.node = node;
         setValues(node.children());
     }
-    
+
     @Override
     protected HLayout tableHeader() {
         HLayout header = new HLayout();
@@ -70,7 +82,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         header.addMember(name);
         header.addMember(type);
         header.addMember(path);
-        
+
         return header;
     }
 
@@ -101,7 +113,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         addButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                contents.addNode();
+                getPrimaryTypesAndShowDialog();
             }
         });
 
@@ -126,7 +138,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         renameButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                contents.renameNode();
+                renameNodeDialog.showModal();
             }
         });
 
@@ -135,7 +147,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         exportButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                contents.export();
+                exportDialog.showModal();
             }
         });
 
@@ -144,10 +156,10 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         importButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                contents.importXML();
+                importDialog.showModal();
             }
         });
-        
+
         HLayout strut = new HLayout();
         strut.setWidth(5);
 
@@ -168,6 +180,24 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         return header;
     }
 
+    protected void getPrimaryTypesAndShowDialog() {
+        contents.jcrService().getPrimaryTypes(node.getRepository(), 
+                node.getWorkspace(), 
+                null,
+                false, new AsyncCallback<String[]>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+
+            @Override
+            public void onSuccess(String[] result) {
+                newNodeDialog.setPrimaryTypes(result);
+                newNodeDialog.showModal();
+            }
+        });
+    }
+    
     @Override
     protected NodeRecord[] records() {
         NodeRecord[] recs = new NodeRecord[100];
@@ -176,8 +206,8 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         }
         return recs;
     }
-
-    @SuppressWarnings( "synthetic-access" )
+    
+    @SuppressWarnings("synthetic-access")
     @Override
     protected void updateRecord(int pos, NodeRecord record, JcrNode value) {
         if (node.getPath().equals("/")) {
@@ -196,7 +226,6 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         private Label name = new Label();
         private Label path = new Label();
         private Label primaryType = new Label();
-        
         private JcrNode node;
 
         public NodeRecord() {
@@ -216,21 +245,21 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
             name.setStyleName("node-name");
             name.setIcon("icons/folder.png");
             name.addClickHandler(new ClickHandler() {
-                @SuppressWarnings( "synthetic-access" )
+                @SuppressWarnings("synthetic-access")
                 @Override
                 public void onClick(ClickEvent event) {
-                    contents.select(path(), true);
+                    contents.getAndDisplayNode(path(), true);
                 }
             });
 
             name.setWidth(150);
             primaryType.setWidth(150);
             primaryType.setStyleName("text");
-            
+
             path.setWidth100();
             path.setStyleName("text");
-                    
-            
+
+
             addMember(name);
             addMember(primaryType);
             addMember(path);
@@ -239,7 +268,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         private String path() {
             return node == null ? "/" : path.getContents();
         }
-        
+
         private void setNode(JcrNode node) {
             this.node = node;
             this.name.setContents(node.getName());
@@ -255,7 +284,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
             this.path.setVisible(false);
             this.primaryType.setContents("");
         }
-        
+
         private String parent(String path) {
             if (path == null) {
                 return "/";
@@ -268,8 +297,5 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
 
             return path;
         }
-
     }
-        
 }
-

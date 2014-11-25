@@ -95,7 +95,7 @@ public class TabsetGrid extends VLayout {
         showTab(0);
     }
     
-    protected void showTab(int k) {
+    public void showTab(int k) {
         for (int i = 0; i < tabs.length; i++) {
             tabs[i].setVisible(i == k);
         }

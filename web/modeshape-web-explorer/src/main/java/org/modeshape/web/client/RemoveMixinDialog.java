@@ -41,13 +41,7 @@ public class RemoveMixinDialog extends ModalDialog {
         setControls(description, mixins);
     }
     
-    @Override
-    public void showModal() {
-        contents.updateMixinTypes();
-        super.showModal();
-    }
-    
-    protected void updateMixinTypes(String[] mixins) {
+    public void updateMixinTypes(String[] mixins) {
         this.mixins.setValueMap(mixins);
     }
     

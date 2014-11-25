@@ -445,16 +445,22 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
 
     @Override
-    public void addNode( String repository,
+    public JcrNode addNode( String repository,
                          String workspace,
                          String path,
                          String name,
                          String primaryType ) throws RemoteException {
         Session session = connector().find(repository).session(workspace);
         try {
-            Node node = (Node)session.getItem(path);
-            node.addNode(name, primaryType);
+            Node parent = (Node)session.getItem(path);
+            Node n = parent.addNode(name, primaryType);
+            JcrNode node = new JcrNode(repository, workspace, n.getName(), n.getPath(), n.getPrimaryNodeType().getName());
+            node.setMixins(mixinTypes(n));
+            node.setProperties(getProperties(repository, workspace, path, n));
+            node.setPropertyDefs(propertyDefs(n));
+            return node;
         } catch (RepositoryException e) {
+            logger.debug("Could not add node: " + e.getMessage());
             throw new RemoteException(e.getMessage());
         }
     }
@@ -632,7 +638,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public String[] getPrimaryTypes( String repository,
-                                     String workspace,
+                                     String workspace, String superType,
                                      boolean allowAbstract ) throws RemoteException {
         Session session = connector().find(repository).session(workspace);
         ArrayList<String> list = new ArrayList<>();
@@ -641,9 +647,14 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             NodeTypeIterator it = mgr.getPrimaryNodeTypes();
             while (it.hasNext()) {
                 NodeType nodeType = it.nextNodeType();
-                if (!nodeType.isAbstract() || allowAbstract) {
-                    list.add(nodeType.getName());
+                if (nodeType.isAbstract() && !allowAbstract) {
+                    continue;
                 }
+                if (superType != null 
+                        && !isInset(superType, nodeType.getDeclaredSupertypeNames())) {
+                    continue;
+                }
+                list.add(nodeType.getName());
             }
             String[] res = new String[list.size()];
             list.toArray(res);
@@ -653,6 +664,13 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         }
     }
 
+    private boolean isInset(String name, String[] list) {
+        for (int i = 0; i < list.length; i++) {
+            if (name.equals(list[i])) return true;
+        }
+        return false;
+    }
+    
     @Override
     public String[] getMixinTypes( String repository,
                                    String workspace,
