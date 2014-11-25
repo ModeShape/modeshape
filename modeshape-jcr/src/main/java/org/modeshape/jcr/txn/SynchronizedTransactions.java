@@ -105,10 +105,30 @@ public final class SynchronizedTransactions extends Transactions {
             // find the ISPN tx id for the current transaction
             LocalTransaction localTransaction = transactionTable.getLocalTransaction(txn);
             if (localTransaction == null) {
-                throw new IllegalStateException("Active transaction detected, but the Infinispan cache isn't aware of it");
+                // there's an existing user transaction which hasn't enrolled the ISPN cache. So we'll suspend it and start a 
+                // regular transaction instead
+                logger.debug("Active transaction detected, but the Infinispan cache isn't aware of it. Suspending it for the duration of the ModeShape transaction..." );
+
+                final javax.transaction.Transaction suspended = txnMgr.suspend();
+                assert suspended != null;
+                // start a new local (regular) transaction
+                txnMgr.begin();
+                result = new NestableThreadLocalTransaction(txnMgr, ACTIVE_TRANSACTION).begin();
+                // we'll resume the original transaction once we've completed (regardless whether successfully or not)
+                result.uponCompletion(new TransactionFunction() {
+                    @Override
+                    public void execute() {
+                        try {
+                            txnMgr.resume(suspended);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        } 
+                    }
+                });
+            } else {
+                // create our internal wrapper which will be set thread-local active
+                result = new SynchronizedTransaction(txnMgr, localTransaction.getGlobalTransaction());
             }
-            // create our internal wrapper which will be set thread-local active
-            result = new SynchronizedTransaction(txnMgr, localTransaction.getGlobalTransaction());
         }
         // Store it
         ACTIVE_TRANSACTION.set(result);

@@ -6,6 +6,7 @@
     },
     "workspaces" : {
         "default" : "default",
+        "predefined" : ["otherWorkspace"],
         "allowCreation" : true
     },
     "security" : {
