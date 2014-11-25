@@ -393,6 +393,35 @@ public class TransactionsTest extends SingleUseAbstractTest {
         session.logout();
     }
 
+    @FixFor( "MODE-2371" )
+    @Test
+    public void shouldInitializeWorkspacesWithOngoingUserTransaction() throws Exception {
+        InputStream configStream = getClass().getClassLoader().getResourceAsStream(
+                "config/repo-config-inmemory-jbosstxn.json");
+        startRepositoryWithConfiguration(configStream);
+
+        startTransaction();
+        // the active tx should be suspended for the next call
+        Session otherSession = repository.login("otherWorkspace");
+        otherSession.logout();
+        commitTransaction();
+        
+        startTransaction();
+        session.getWorkspace().createWorkspace("newWS");
+        session.logout();
+        commitTransaction();
+        otherSession = repository.login("newWS");
+        otherSession.logout();
+
+        startTransaction();
+        session = repository.login();
+        session.getWorkspace().createWorkspace("newWS1");
+        session.logout();
+        otherSession = repository.login("newWS1");
+        otherSession.logout();
+        commitTransaction();
+    }
+    
     protected void startTransaction() throws NotSupportedException, SystemException {
         TransactionManager txnMgr = transactionManager();
         // Change this to true if/when debugging ...
