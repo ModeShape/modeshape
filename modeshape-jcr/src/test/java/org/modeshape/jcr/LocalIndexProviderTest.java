@@ -165,6 +165,16 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         validateQuery().rowCount(1L).validate(query, query.execute());
 
     }
+	
+    @FixFor( "MODE-2377" )
+    @Test
+    public void shouldUseImplicitPathIndexWhenJoiningSubnodes() throws Exception {
+		registerValueIndex("sysNodes", "mode:system", null, "*", "jcr:primaryType", PropertyType.NAME);
+        Query query = jcrSql2Query("select sys.* from [mode:system] as sys\n" +
+        "join [nt:nodeType] as ntx on ISDESCENDANTNODE(ntx,sys)\n" +
+        "join [nt:propertyDefinition] as pd on ISCHILDNODE(pd,ntx)");
+        validateQuery().rowCount(1L).useIndex("sysNodes").useIndex(IndexPlanners.DESCENDANTS_BY_PATH_INDEX_NAME).validate(query, query.execute());
+    }
 
     @FixFor( "MODE-2312" )
     @Test
