@@ -23,7 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -38,6 +37,7 @@ import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -46,12 +46,9 @@ import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.Privilege;
 import javax.jcr.version.Version;
-import javax.jcr.version.VersionIterator;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
-import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Workspace;
@@ -1044,61 +1041,6 @@ public class ImportExportTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-1864" )
-    @Ignore( "Ignoring until feature is implemented")
-    public void shouldImportBackVersionHistory() throws Exception {
-        Node node1 = session.getRootNode().addNode("node1");
-        node1.addMixin("mix:versionable");
-        session.save();
-
-        JcrVersionManager versionManager = session.getWorkspace().getVersionManager();
-        versionManager.checkpoint("/node1");
-        session.getNode("/node1").setProperty("11", "some string");
-        session.save();
-        versionManager.checkin("/node1");
-
-        JcrVersionHistoryNode versionHistory = versionManager.getVersionHistory("/node1");
-        String versionHistoryId = versionHistory.getIdentifier();
-        long versionsCount = versionHistory.getAllVersions().getSize();
-
-        //export the data
-        File file = new File("target/version_export.xml");
-        FileOutputStream fileOutputStream = new FileOutputStream(file);
-        //ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        session.exportSystemView("/", fileOutputStream, false, false);
-
-
-        //remove all the versioning information
-        versionHistory = versionManager.getVersionHistory("/node1");
-        VersionIterator versionIterator = versionHistory.getAllVersions();
-        while (versionIterator.hasNext()) {
-            versionHistory.removeVersion(versionIterator.nextVersion().getName());
-        }
-        versionManager.remove("/node1");
-        assertNoNode("/node1");
-
-        //import the data
-        session.getWorkspace().importXML("/", new ByteArrayInputStream(IoUtil.readBytes(file)),
-                                         ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
-
-        //verify versioning information
-        AbstractJcrNode node = session.getNode("/node1");
-        assertNotNull(node);
-        assertEquals("some string", node.getProperty("11").getString());
-        versionHistory = versionManager.getVersionHistory("/node1");
-        assertEquals(versionHistoryId, versionHistory.getIdentifier());
-
-        assertEquals(versionsCount, versionManager.getVersionHistory("/node1").getAllVersions().getSize());
-        versionManager.restore("/node1", "1.0", true);
-        try {
-            session.getItem("/node1/11");
-            fail("Version non restored correctly");
-        } catch (PathNotFoundException e) {
-            //expected
-        }
-    }
-
-    @Test
     @FixFor( "MODE-2035" )
     public void shouldExportViewsWithLocks() throws Exception {
         Node node1 = session.getRootNode().addNode("node1");
@@ -1246,6 +1188,32 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertNoNode("/a/b/Cars/Sports[2]");
     }
 
+    @FixFor( "MODE-2284" )
+    @Test
+    public void shouldRestoreBackreferencePropertiesAterImport() throws Exception {
+        Node referenceableNode = session.getRootNode().addNode("referenceable");
+        referenceableNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+        Value strongRefValue = session.getValueFactory().createValue(referenceableNode, false);
+
+        Node node1 = session.getRootNode().addNode("node1");
+        node1.setProperty("prop1", strongRefValue);
+
+        session.save();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        session.exportSystemView("/referenceable", outputStream, false, false);
+
+        // Import node tree. This lose backreferences for all nodes in the imported tree
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        session.importXML("/referenceable", inputStream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+
+        // Now save the changes
+        session.save();
+
+        PropertyIterator propertyIterator = referenceableNode.getReferences();
+        assertEquals(1, propertyIterator.getSize());
+    }
+    
     @Test
     @FixFor( "MODE-2359" )
     public void importingMultipleTimeWithReplaceExistingShouldNotIncreaseReferencesCount() throws Exception {
@@ -1270,13 +1238,62 @@ public class ImportExportTest extends SingleUseAbstractTest {
         // make sure we only have 2 nodes (i.e. replace_existing worked)
         assertEquals(2, session.getNode("/testRoot").getNodes().getSize());
 
+        AbstractJcrNode a = session.getNode("/testRoot/a");
+        AbstractJcrNode b = session.getNode("/testRoot/b");
+
+        // make sure "a' has only referrer
+        assertEquals(1, a.getReferences().getSize());
+        
         // Remove node B.
-        session.getNode("/testRoot/b").remove();
+        b.remove();
         session.save();
 
         // After remove node B, node A should have zero referrers
-        session.getNode("/testRoot/a").remove();
+        a.remove();
         session.save();
+    }
+    
+    @Test
+    @FixFor( "MODE-2375" )
+    public void importingShouldKeepCorrectReferrerCount() throws Exception {
+        Node testRoot = session.getRootNode().addNode("testRoot");
+
+        //create the firt referrer first, so that it's exported before the referenceable node
+        Node referrerOne = testRoot.addNode("referrerOne");
+
+        // Create referenceable node
+        Node referenceableNode = testRoot.addNode("referenceable");
+        referenceableNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+        Value strongRefValue = session.getValueFactory().createValue(referenceableNode, false);
+
+        // Create second referrer
+        Node referrerTwo = testRoot.addNode("referrerTwo");
+        referrerTwo.setProperty("prop1", strongRefValue);
+
+        // Set strong reference for the first referrer to referenceable node
+        referrerOne.setProperty("prop1", strongRefValue);
+
+        session.save();
+
+        // Check that we have two referrers
+        assertEquals(2, session.getNode("/testRoot/referenceable").getReferences().getSize());
+
+        // Export nodes will be in the following order: referrerOne, referenceable, referrerTwo
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        session.exportSystemView("/testRoot", outputStream, false, false);
+
+        // Cleanup
+        session.getNode("/testRoot").remove();
+        session.save();
+
+        // Import nodes.
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        session.importXML("/", inputStream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+        session.save();
+
+        // Check that we have two referrers.
+        // We must not lose the referrer from node referrerOne.
+        assertEquals(2, session.getNode("/testRoot/referenceable").getReferences().getSize());
     }
 
     // ----------------------------------------------------------------------------------------------------------------

@@ -42,6 +42,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.common.collection.LinkedHashMultimap;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
@@ -94,12 +95,12 @@ class JcrContentHandler extends DefaultHandler {
     protected final int uuidBehavior;
     protected final boolean retentionInfoRetained;
     protected final boolean lifecycleInfoRetained;
-    protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<>();
     protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<>();
     protected final Map<String, NodeKey> uuidToNodeKeyMapping = new HashMap<>();
     protected final Set<NodeKey> importedNodeKeys = new HashSet<>();
     protected final Map<NodeKey, String> shareIdsToUUIDMap = new HashMap<>();
     protected final Map<NodeKey, ReferrerCounts> referrersByNodeKey = new HashMap<>();
+    protected final LinkedHashMultimap<NodeKey, ReferenceProperty> allReferenceProperties = LinkedHashMultimap.create();
     protected SessionCache cache;
     protected final String primaryTypeName;
     protected final String mixinTypesName;
@@ -228,6 +229,9 @@ class JcrContentHandler extends DefaultHandler {
 
     protected void postProcessNodes() throws SAXException {
         try {
+            // first make sure all the necessary reference properties have been set
+            processReferences();
+            
             for (AbstractJcrNode node : nodesForPostProcessing) {
                 MutableCachedNode mutable = node.mutable();
 
@@ -306,36 +310,64 @@ class JcrContentHandler extends DefaultHandler {
                     parent.linkChild(cache, shareableNodeKey, node.name());
                 }
             }
+        } catch (RepositoryException e) {
+            throw new EnclosingSAXException(e);
+        }
+    }
 
-            // Restore the back references ...
-            if (!referrersByNodeKey.isEmpty()) {
-                for (Map.Entry<NodeKey, ReferrerCounts> entry : referrersByNodeKey.entrySet()) {
-                    PropertyFactory propFactory = context.getPropertyFactory();
-                    MutableCachedNode referred = cache.mutable(entry.getKey());
-                    ReferrerCounts counts = entry.getValue();
-                    if (referred != null && counts != null) {
-                        // Add in the strong and weak referrers (that are outside the import scope) that used to be in the node
-                        // before it was replaced ...
-                        for (NodeKey key : counts.getStrongReferrers()) {
-                            int count = counts.countStrongReferencesFrom(key);
-                            for (int i = 0; i != count; ++i) {
-                                Property prop = propFactory.create(nameFor(key.toString() + i));
-                                referred.addReferrer(cache, prop, key, ReferenceType.STRONG);
-                            }
-                        }
-                        for (NodeKey key : counts.getWeakReferrers()) {
-                            int count = counts.countWeakReferencesFrom(key);
-                            for (int i = 0; i != count; ++i) {
-                                Property prop = propFactory.create(nameFor(key.toString() + i));
-                                referred.addReferrer(cache, prop, key, ReferenceType.WEAK);
-                            }
-                        }
+    private void processReferences() throws RepositoryException {
+        // if there were any reference properties imported, they can only be set on the corresponding nodes *after* all
+        // the graph has been imported
+        for (Map.Entry<NodeKey, ReferenceProperty> entry : this.allReferenceProperties.entries()) {
+            AbstractJcrNode node = session.node(entry.getKey(), null);
+            ReferenceProperty referenceProperty = entry.getValue();
+            AbstractJcrProperty property = null;
+            // set the reference property without validating it first
+            if (!referenceProperty.isMultiple()) {
+                property = node.setProperty(referenceProperty.name(), referenceProperty.value(), true, true, true,
+                                            false);
+            } else {
+                property = node.setProperty(referenceProperty.name(), referenceProperty.values(),
+                                            referenceProperty.type(), true, true, false, true);
+            }
+            // check if there are any public hard references with constraints in which case we should validate them
+            // this should not look at any internal (protected) references as they may be changed later on
+            if (property.getType() == PropertyType.REFERENCE &&
+                property.getDefinition().getValueConstraints().length != 0 &&
+                !property.getDefinition().isProtected()) {   
+                if (!isValidReference(property)) {
+                    JcrPropertyDefinition defn = property.getDefinition();
+                    String name = stringFor(property.name());
+                    String path = property.getParent().getPath();
+                    throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, path, defn));
+                }
+            }
+        }
+        
+        // Restore the back references on the nodes which have been removed/replaced by the import and which have referrers
+        // outside the graph of nodes that was imported
+        for (Map.Entry<NodeKey, ReferrerCounts> entry : referrersByNodeKey.entrySet()) {
+            PropertyFactory propFactory = context.getPropertyFactory();
+            MutableCachedNode referred = cache.mutable(entry.getKey());
+            ReferrerCounts counts = entry.getValue();
+            if (referred != null && counts != null) {
+                // Add in the strong and weak referrers (that are outside the import scope) that used to be in the node
+                // before it was replaced ...
+                for (NodeKey key : counts.getStrongReferrers()) {
+                    int count = counts.countStrongReferencesFrom(key);
+                    for (int i = 0; i != count; ++i) {
+                        Property prop = propFactory.create(nameFor(key.toString() + i));
+                        referred.addReferrer(cache, prop, key, ReferenceType.STRONG);
+                    }
+                }
+                for (NodeKey key : counts.getWeakReferrers()) {
+                    int count = counts.countWeakReferencesFrom(key);
+                    for (int i = 0; i != count; ++i) {
+                        Property prop = propFactory.create(nameFor(key.toString() + i));
+                        referred.addReferrer(cache, prop, key, ReferenceType.WEAK);
                     }
                 }
             }
-
-        } catch (RepositoryException e) {
-            throw new EnclosingSAXException(e);
         }
     }
 
@@ -363,25 +395,6 @@ class JcrContentHandler extends DefaultHandler {
         return defn.canCastToTypeAndSatisfyConstraints(property.getValue(), session);
     }
 
-    protected void validateReferenceConstraints() throws SAXException {
-        if (refPropsRequiringConstraintValidation.isEmpty()) return;
-        try {
-            for (AbstractJcrProperty refProp : refPropsRequiringConstraintValidation) {
-                // Make sure the reference is still there ...
-                if (refProp.property() == null) continue;
-                // It is still there, so validate it ...
-                if (!isValidReference(refProp)) {
-                    JcrPropertyDefinition defn = refProp.getDefinition();
-                    String name = stringFor(refProp.name());
-                    String path = refProp.getParent().getPath();
-                    throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, path, defn));
-                }
-            }
-        } catch (RepositoryException e) {
-            throw new EnclosingSAXException(e);
-        }
-    }
-
     @Override
     public void characters( char[] ch,
                             int start,
@@ -393,7 +406,6 @@ class JcrContentHandler extends DefaultHandler {
     @Override
     public void endDocument() throws SAXException {
         postProcessNodes();
-        validateReferenceConstraints();
         if (saveWhenCompleted) {
             try {
                 session.save();
@@ -664,10 +676,7 @@ class JcrContentHandler extends DefaultHandler {
                         if (value != null && propertyType == PropertyType.STRING) {
                             // Strings and binaries can be empty -- other data types cannot
                             values.add(valueFor(value, propertyType));
-                        } else if (!StringUtil.isBlank(value)
-                                   && (propertyType == PropertyType.REFERENCE ||
-                                       propertyType == PropertyType.WEAKREFERENCE ||
-                                       propertyType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE)) {
+                        } else if (!StringUtil.isBlank(value) && isReference(propertyType)) {
                             try {
                                 boolean isInternalReference = isInternal(name);
                                 if (!isInternalReference) {
@@ -844,7 +853,6 @@ class JcrContentHandler extends DefaultHandler {
                     }
 
                     List<Value> values = entry.getValue();
-                    AbstractJcrProperty prop = null;
 
                     boolean allowEmptyValues = !isInternal(propertyName) || JcrLexicon.DATA.equals(propertyName);
                     if (values.size() == 1 && !this.multiValuedPropertyNames.contains(propertyName)) {
@@ -853,8 +861,15 @@ class JcrContentHandler extends DefaultHandler {
                             //if an empty value has creeped here it means we weren't able to perform proper type validation earlier
                             continue;
                         }
-                        // Don't check references or the protected status ...
-                        prop = child.setProperty(propertyName, value, true, true, true, false);
+                        if (isReference(value.getType())) {
+                            // if this is a reference, we won't set it on the node until we've finished loading all the nodes
+                            ReferenceProperty referenceProperty = new ReferenceProperty(propertyName, value);
+                            allReferenceProperties.put(child.key(), referenceProperty);
+                            nodesForPostProcessing.add(child);
+                        } else {
+                            // Don't check references or the protected status ...
+                            child.setProperty(propertyName, value, true, true, true, false);
+                        }
                     } else {
                         if (!allowEmptyValues) {
                             for (Iterator<Value> iterator = values.iterator(); iterator.hasNext();) {
@@ -864,24 +879,19 @@ class JcrContentHandler extends DefaultHandler {
                             }
                         }
                         if (!values.isEmpty()) {
-                            prop = child.setProperty(propertyName,
-                                                     values.toArray(new Value[values.size()]),
-                                                     PropertyType.UNDEFINED,
-                                                     true,
-                                                     true,
-                                                     false,
-                                                     true);
+                            Value[] processedValues = values.toArray(new Value[values.size()]);
+                            if (isReference(processedValues[0].getType())) {
+                                // if this is a reference, we won't set it on the node until we've finished loading all the nodes
+                                ReferenceProperty referenceProperty = new ReferenceProperty(propertyName, processedValues);
+                                allReferenceProperties.put(child.key(), referenceProperty);
+                                nodesForPostProcessing.add(child);
+                            } else {
+                                // Don't check references or the protected status ...
+                                child.setProperty(propertyName, processedValues, PropertyType.UNDEFINED, true, true, false,
+                                                  true);
+                            }
                         }
                     }
-
-                    if (prop != null &&
-                        prop.getType() == PropertyType.REFERENCE &&
-                        prop.getDefinition().getValueConstraints().length != 0 &&
-                        !prop.getDefinition().isProtected()) {
-                        // This reference needs to be validated after all nodes have been imported ...
-                        refPropsRequiringConstraintValidation.add(prop);
-                    }
-
                 }
 
                 node = child;
@@ -913,6 +923,12 @@ class JcrContentHandler extends DefaultHandler {
                 // do nothing ...
             }
         }
+    }
+
+    private boolean isReference( int propertyType ) {
+        return (propertyType == PropertyType.REFERENCE ||
+            propertyType == PropertyType.WEAKREFERENCE ||
+            propertyType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE);
     }
 
     protected class ExistingNodeHandler extends NodeHandler {
@@ -1188,6 +1204,49 @@ class JcrContentHandler extends DefaultHandler {
             current.finish();
             // Pop the stack ...
             current = current.parentHandler();
+        }
+    }
+    
+    private class ReferenceProperty {
+        private final Name name;
+        private final Value[] values;
+        private final boolean singleValued;
+
+        protected ReferenceProperty(Name name, Value value) {
+            assert name != null;
+            this.name = name;
+
+            assert value != null;
+            this.values = new Value[] {value};
+            this.singleValued = true;
+        } 
+        
+        protected ReferenceProperty( Name name, Value[] values ) {
+            assert name != null;
+            this.name = name;
+            assert values != null && values.length > 0;
+            this.values = values;
+            this.singleValued = false;
+        }
+        
+        protected int type() {
+            return value().getType();
+        }
+        
+        protected Name name() {
+            return name;
+        }
+        
+        protected boolean isMultiple() {
+            return !singleValued;
+        }
+        
+        protected JcrValue value() {
+            return (JcrValue)values[0];
+        }
+        
+        protected Value[] values() {
+            return values;
         }
     }
 }
