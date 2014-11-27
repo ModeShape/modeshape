@@ -42,12 +42,12 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.observation.Event;
 
 /**
@@ -112,7 +112,7 @@ public class ClusteredRepositoryTest {
      * Each Infinispan configuration persists data in a separate location, and we use replication mode.
      */
     @Test
-    @FixFor( {"MODE-1733", "MODE-1943", "MODE-2051"} )
+    @FixFor( {"MODE-1733", "MODE-1943", "MODE-2051", "MODE-2369"} )
     public void shouldClusterWithReplicatedCachePersistedToSeparateAreasForEachProcess() throws Exception {
         FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
@@ -198,36 +198,6 @@ public class ClusteredRepositoryTest {
         }
     }
 
-    /*
-     * Each Infinispan configuration persists data to the SAME location, including indexes. This is NOT a valid option because the
-     * indexes get corrupted, so we will ignore this
-     */
-    @Ignore
-    @Test
-    @FixFor( "MODE-1733" )
-    public void shouldStartClusterWithReplicatedCachePersistedToSameAreaForBothProcesses() throws Exception {
-        FileUtil.delete("target/clustered");
-        JcrRepository repository1 = null;
-        JcrRepository repository2 = null;
-        try {
-            // Start the first process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig("config/repo-config-clustered-persistent-1.json");
-            Session session1 = repository1.login();
-            assertThat(session1.getRootNode(), is(notNullValue()));
-
-            // Start the second process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig("config/repo-config-clustered-persistent-1.json");
-            Session session2 = repository2.login();
-            assertThat(session2.getRootNode(), is(notNullValue()));
-
-            session1.logout();
-            session2.logout();
-        } finally {
-            TestingUtil.killRepositories(repository1, repository2);
-            FileUtil.delete("target/clustered");
-        }
-    }
-
     private void assertChangesArePropagatedInCluster( Session process1Session,
                                                       Session process2Session,
                                                       String nodeName )
@@ -248,7 +218,8 @@ public class ClusteredRepositoryTest {
         queryAndExpectResults(process2Session, pathQuery, 1);
 
         // set a property of that node and check it's send through the cluster
-        byte[] binaryData = new byte[4096 * 2];
+        int minBinarySize = 4096;
+        byte[] binaryData = new byte[minBinarySize + 2];
         RANDOM.nextBytes(binaryData);
 
         nodeProcess1 = process1Session.getNode(nodeAbsPath);
@@ -256,6 +227,9 @@ public class ClusteredRepositoryTest {
         nodeProcess1.setProperty("testProp", "test value");
         //create a binary property
         nodeProcess1.setProperty("binaryProp", process1Session.getValueFactory().createBinary(new ByteArrayInputStream(binaryData)));
+        //create a large string which should be stored as a binary
+        String largeString = StringUtil.createString('a', minBinarySize + 2);
+        nodeProcess1.setProperty("largeString", largeString);
         process1Session.save();
         String propertyQuery = "select * from [nt:unstructured] as n where n.[testProp]='test value'";
         queryAndExpectResults(process1Session, propertyQuery, 1);
@@ -271,6 +245,8 @@ public class ClusteredRepositoryTest {
         Binary binary = nodeProcess2.getProperty("binaryProp").getBinary();
         byte[] process2Data = IoUtil.readBytes(binary.getStream());
         assertArrayEquals("Binary data not propagated in cluster", binaryData, process2Data);
+        String process2LargeString = nodeProcess2.getProperty("largeString").getString();
+        assertEquals(largeString, process2LargeString);
 
         // Remove the node in the first process and check it's removed from the indexes across the cluster
         nodeProcess1 = process1Session.getNode(nodeAbsPath);

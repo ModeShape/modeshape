@@ -30,8 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.transaction.TransactionManager;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.StoreConfiguration;
+import org.infinispan.configuration.cache.TransactionConfiguration;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
@@ -612,7 +615,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
     /**
      * Locks are created based upon metadata cache configuration
      */
-    static class LockFactory {
+    class LockFactory {
 
         private final NamedLocks namedLocks;
         private final boolean infinispanLocks;
@@ -626,12 +629,20 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
         public LockFactory( Cache<String, Metadata> metadataCache ) {
             this.metadataCache = metadataCache;
             if (this.metadataCache != null) {
-                infinispanLocks = metadataCache.getCacheConfiguration().transaction().transactionMode() != TransactionMode.NON_TRANSACTIONAL
-                                  && metadataCache.getCacheConfiguration().transaction().lockingMode() == LockingMode.PESSIMISTIC;
+                TransactionConfiguration txCfg = metadataCache.getCacheConfiguration().transaction();
+                infinispanLocks = txCfg.transactionMode() != TransactionMode.NON_TRANSACTIONAL && txCfg.lockingMode() == LockingMode.PESSIMISTIC;
                 namedLocks = !infinispanLocks && !metadataCache.getCacheConfiguration().clustering().cacheMode().isClustered() ? new NamedLocks() : null;
+                if (infinispanLocks && logger.isTraceEnabled()) {
+                    logger.trace("Detected PESSIMISTIC & TRANSACTIONAL binary cache configuration. ISPN locks will be used when storing binaries");
+                } else if (!infinispanLocks && logger.isTraceEnabled()) {
+                    logger.trace("Binary cache is not configured as PESSIMISTIC & TRANSACTIONAL. Will use JDK locks for storing binaries.");
+                }
             } else {
                 namedLocks = null;
                 infinispanLocks = false;
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Not metadata cache configuration found. No locking will be used for storing binaries.");
+                }
             }
         }
 
@@ -671,16 +682,32 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
 
         private class ISPNLock implements Lock {
 
-            private final Cache<String, Metadata> cache;
+            private final AdvancedCache<String, Metadata> cache;
             private final String key;
+            private final boolean transactionStarted;
 
             public ISPNLock( Cache<String, Metadata> cache,
                              String key ) throws BinaryStoreException {
-                this.cache = cache;
+                this.cache = cache.getAdvancedCache().withFlags(Flag.FAIL_SILENTLY);
                 this.key = key;
                 try {
-                    cache.getAdvancedCache().getTransactionManager().begin();
-                    boolean lockObtained = cache.getAdvancedCache().withFlags(Flag.FAIL_SILENTLY).lock(key);
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Attempting to lock binary key {0} via the ISPN cache", key);
+                    }
+                    TransactionManager transactionManager = this.cache.getTransactionManager();
+                    if (transactionManager.getTransaction() == null) {
+                        transactionManager.begin();
+                        transactionStarted = true;
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Started new transaction in order to be able to lock binary value");
+                        }
+                    } else {
+                        transactionStarted = false;
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Detected ongoing transaction which will be used for locking");
+                        }
+                    }
+                    boolean lockObtained = this.cache.lock(key);
                     if (!lockObtained) {
                         throw new BinaryStoreException(JcrI18n.errorLockingBinaryValue.text(key));
                     }
@@ -693,8 +720,14 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
 
             @Override
             public void unlock() throws BinaryStoreException {
+                if (!transactionStarted) {
+                    return;
+                }
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Unlocking binary {0}", key);
+                }
                 try {
-                    cache.getAdvancedCache().getTransactionManager().commit();
+                    this.cache.getTransactionManager().commit();
                 } catch (Exception ex) {
                     throw new BinaryStoreException(JcrI18n.errorStoringBinaryValue.text(key), ex);
                 }
