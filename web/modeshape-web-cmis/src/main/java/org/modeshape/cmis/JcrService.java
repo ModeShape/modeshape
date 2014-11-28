@@ -60,14 +60,13 @@ import org.modeshape.web.jcr.WebLogger;
  * @author kulikov
  */
 public class JcrService extends AbstractCmisService {
+
     private final static org.modeshape.jcr.api.Logger LOGGER = WebLogger.getLogger(JcrService.class);
-
-    private final Map<String,JcrRepository> jcrRepositories;
+    private final Map<String, JcrRepository> jcrRepositories;
     private final Map<String, Session> sessions = new HashMap<String, Session>();
-
     private CallContext context;
 
-    public JcrService(Map<String,JcrRepository> jcrRepositories) {
+    public JcrService(Map<String, JcrRepository> jcrRepositories) {
         this.jcrRepositories = jcrRepositories;
     }
 
@@ -85,7 +84,6 @@ public class JcrService extends AbstractCmisService {
     }
 
     //------------------------------------------< repository service >---
-
     @Override
     public RepositoryInfo getRepositoryInfo(String repositoryId, ExtensionsData extension) {
         LOGGER.debug("-- getting repository info");
@@ -95,11 +93,14 @@ public class JcrService extends AbstractCmisService {
 
     @Override
     public List<RepositoryInfo> getRepositoryInfos(ExtensionsData extension) {
-        ArrayList<RepositoryInfo> info = new ArrayList<RepositoryInfo>();
+        ArrayList<RepositoryInfo> info = new ArrayList<>();
         Set<String> IDs = jcrRepositories.keySet();
         for (String Id : IDs) {
             JcrRepository repo = jcrRepositories.get(Id);
-            info.addAll(repo.getRepositoryInfos(login(Id)));
+            List<RepositoryInfo> infos = repo.getRepositoryInfos(login(Id));
+            for (RepositoryInfo i : infos) {
+                info.add(new RepositoryInfoLocal(Id, i));
+            }
         }
         return info;
     }
@@ -124,7 +125,6 @@ public class JcrService extends AbstractCmisService {
     }
 
     //------------------------------------------< navigation service >---
-
     @Override
     public ObjectInFolderList getChildren(String repositoryId, String folderId, String filter, String orderBy,
             Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
@@ -176,7 +176,6 @@ public class JcrService extends AbstractCmisService {
     }
 
     //------------------------------------------< object service >---
-
     @Override
     public String createDocument(String repositoryId, Properties properties, String folderId,
             ContentStream contentStream, VersioningState versioningState, List<String> policies, Acl addAces,
@@ -279,7 +278,6 @@ public class JcrService extends AbstractCmisService {
     }
 
     //------------------------------------------< versioning service >---
-
     @Override
     public void checkOut(String repositoryId, Holder<String> objectId, ExtensionsData extension,
             Holder<Boolean> contentCopied) {
@@ -328,7 +326,6 @@ public class JcrService extends AbstractCmisService {
     }
 
     // --- discovery service ---
-
     @Override
     public ObjectList query(String repositoryId, String statement, Boolean searchAllVersions,
             Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
@@ -339,7 +336,6 @@ public class JcrService extends AbstractCmisService {
     }
 
     //------------------------------------------< protected >---
-
     protected Session login(String repositoryId) {
         LOGGER.debug("--- login: " + repositoryId);
 
@@ -349,7 +345,7 @@ public class JcrService extends AbstractCmisService {
 
         Session session = sessions.get(repositoryId);
         if (session == null) {
-            HttpServletRequest request = (HttpServletRequest)context.get(CallContext.HTTP_SERVLET_REQUEST);
+            HttpServletRequest request = (HttpServletRequest) context.get(CallContext.HTTP_SERVLET_REQUEST);
             if (request != null) {
                 //try via http authentication
                 try {
@@ -363,8 +359,8 @@ public class JcrService extends AbstractCmisService {
             //http authentication didn't work, try std authentication
             String userName = context.getUsername();
             String password = context.getPassword();
-            Credentials credentials = (userName == null) ?
-                null : new SimpleCredentials(userName, password == null ? "".toCharArray() : password.toCharArray());
+            Credentials credentials = (userName == null)
+                    ? null : new SimpleCredentials(userName, password == null ? "".toCharArray() : password.toCharArray());
 
             try {
                 session = jcrRepository(repositoryId).login(credentials, workspace(repositoryId));
@@ -398,13 +394,12 @@ public class JcrService extends AbstractCmisService {
     }
 
     /**
-     * 
+     *
      * @param repositoryId The repositoryId
-     * @return The workspace.
-     * If {@code repositoryId} is a single word (i.e. not colon-separated), then 
-     * it is assumed that the {@code repositoryId} argument only represents the 
-     * repository name and this method will return {@code null} for the 
-     * workspace.
+     * @return The workspace. If {@code repositoryId} is a single word (i.e. not
+     * colon-separated), then it is assumed that the {@code repositoryId}
+     * argument only represents the repository name and this method will return
+     * {@code null} for the workspace.
      */
     private String workspace(String repositoryId) {
         CheckArg.isNotNull(repositoryId, "repositoryId"); // if can be user-supplied, or 'assert repositoryId != null' if not user supplied
