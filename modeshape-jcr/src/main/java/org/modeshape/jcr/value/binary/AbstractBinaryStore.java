@@ -55,7 +55,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     private static final int SMALL_BUFFER_SIZE = 1 << 12; // 4K
     private static final int TINY_BUFFER_SIZE = 1 << 11; // 2K
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected final Logger logger = Logger.getLogger(getClass());
     private final AtomicLong minBinarySizeInBytes = new AtomicLong(DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES);
 
     private volatile TextExtractors extractors;

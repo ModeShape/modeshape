@@ -85,6 +85,7 @@ public class BinaryValueEditor implements ValueEditor<String> {
         
         Button submitButton = new Button("Submit");
         submitButton.addClickHandler(new ClickHandler() {
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public void onClick(ClickEvent event) {
                 form.submitForm();

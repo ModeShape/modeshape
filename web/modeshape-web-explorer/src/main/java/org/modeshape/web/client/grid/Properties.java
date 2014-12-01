@@ -174,7 +174,7 @@ public class Properties extends TabGrid<PropertyRecord, JcrProperty> {
         private BooleanField isProtected = new BooleanField();
         private BooleanField isMultiple = new BooleanField();
         private Label value = new Label();
-        private ValueEditor editor;
+        private ValueEditor<String> editor;
         
         public PropertyRecord() {
             super();

@@ -45,6 +45,7 @@ import org.modeshape.web.jcr.RepositoryManager;
  * 
  * @author kulikov
  */
+@SuppressWarnings( "deprecation" )
 public class JcrServiceFactory extends AbstractServiceFactory {
 
     private static final Logger log = Logger.getLogger(JcrServiceFactory.class);

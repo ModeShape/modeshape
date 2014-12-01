@@ -27,7 +27,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.web.server.Connector;
 
 /**
@@ -36,8 +35,8 @@ import org.modeshape.web.server.Connector;
  */
 public class BinaryContentServlet extends HttpServlet {
     
-    private final Logger logger = Logger.getLogger(BinaryContentServlet.class);
-    
+    private static final long serialVersionUID = 1L;
+
     /**
      * Processes requests for both HTTP
      * <code>GET</code> and

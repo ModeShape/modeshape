@@ -243,7 +243,7 @@ final class JcrObservationManager implements ObservationManager {
         /**
          * The JCR event listener.
          */
-        private final EventListener delegate;
+        protected final EventListener delegate;
 
         private final ChangeSetConverter changeSetConverter;
 

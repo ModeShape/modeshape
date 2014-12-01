@@ -148,7 +148,7 @@ public class Contents extends View {
     /**
      * Expose interface to the server side.
      * 
-     * @return 
+     * @return the service
      */
     public JcrServiceAsync jcrService() {
         return this.jcrService;
@@ -199,6 +199,8 @@ public class Contents extends View {
      * 
      * Gets values from server side, assigns to combo box and select given name.
      * @param name the name to be selected. 
+     * @param path the path
+     * @param changeHistory true if the history is to 
      */
     private void refreshWorkspacesAndReloadNode(final String name, final String path, 
             final boolean changeHistory) {
@@ -259,6 +261,7 @@ public class Contents extends View {
      * Displays specified node.
      * 
      * @param node the node being displayed.
+     * @param page the page number
      */
     private void displayNode(JcrNode node, int page) {
         this.node = node;

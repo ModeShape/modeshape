@@ -288,12 +288,15 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     /**
      * Reads properties of the given node.
      * 
+     * @param repository the repository name
+     * @param workspace the workspace name
+     * @param path the path to the node
      * @param node the node instance
      * @return list of node's properties.
      * @throws RepositoryException
      */
     private Collection<JcrProperty> getProperties( String repository, String workspace, String path, Node node ) throws RepositoryException {
-        ArrayList<PropertyDefinition> names = new ArrayList();
+        ArrayList<PropertyDefinition> names = new ArrayList<>();
         
         NodeType primaryType = node.getPrimaryNodeType();
         PropertyDefinition[] defs = primaryType.getPropertyDefinitions();
@@ -308,7 +311,6 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
         ArrayList<JcrProperty> list = new ArrayList<>();
         for (PropertyDefinition def :  names) {
-            JcrProperty prop = null;
             
             String name = def.getName();
             String type = PropertyType.nameFromValue(def.getRequiredType());
@@ -343,6 +345,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     /**
      * Displays property value as string
      * 
+     * @param pd the property definition
      * @param p the property to display
      * @return property value as text string
      * @throws RepositoryException
@@ -945,7 +948,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     
     private Connector loadConnector(String clsName, ServletContext context) throws RemoteException {
         try {
-            Class cls = getClass().getClassLoader().loadClass(clsName);
+            Class<?> cls = getClass().getClassLoader().loadClass(clsName);
             Connector connector = (Connector) cls.newInstance();
             connector.start(context);
             return connector;

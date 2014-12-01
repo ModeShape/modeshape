@@ -189,7 +189,7 @@ public abstract class Transactions {
          *
          * @return an {@code int} code representing a transaction status.
          * @throws SystemException - If the transaction service fails in an unexpected way.
-         * @see {@link javax.transaction.Status}
+         * @see javax.transaction.Status
          */
         int status() throws SystemException;
 

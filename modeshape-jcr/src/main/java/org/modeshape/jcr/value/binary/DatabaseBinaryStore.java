@@ -284,6 +284,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public String getExtractedText( final BinaryValue source ) throws BinaryStoreException {
         return dbCall(new DBCallable<String>() {
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public String execute( Connection connection ) throws Exception {
                 BinaryKey key = source.getKey();

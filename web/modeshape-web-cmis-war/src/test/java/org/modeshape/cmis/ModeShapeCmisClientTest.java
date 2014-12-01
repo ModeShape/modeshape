@@ -35,6 +35,7 @@ public class ModeShapeCmisClientTest {
 
     private Session session;
 
+    @SuppressWarnings( "deprecation" )
     @Before
     public void setUp() {
         // default factory implementation

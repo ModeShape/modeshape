@@ -43,7 +43,7 @@ public interface JcrServiceAsync {
     
     public void login(String userName, String password, AsyncCallback<?> cb);
     
-    public void logout(AsyncCallback cb);
+    public void logout(AsyncCallback<?> cb);
     
     public void node(String repository, String workspace, String path, AsyncCallback<JcrNode> result);
 

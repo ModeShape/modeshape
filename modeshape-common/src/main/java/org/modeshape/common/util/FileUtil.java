@@ -184,22 +184,20 @@ public class FileUtil {
         if (file.isFile()) {
             return file.length();
         }
-        else {
-            final AtomicLong size = new AtomicLong();
-            Files.walkFileTree(Paths.get(filePath), new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) {
-                    size.addAndGet(attrs.size());
-                    return FileVisitResult.CONTINUE;
-                }
+        final AtomicLong size = new AtomicLong();
+        Files.walkFileTree(Paths.get(filePath), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) {
+                size.addAndGet(attrs.size());
+                return FileVisitResult.CONTINUE;
+            }
 
-                @Override
-                public FileVisitResult visitFileFailed( Path file, IOException exc ) {
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-            return size.get();
-        }
+            @Override
+            public FileVisitResult visitFileFailed( Path file, IOException exc ) {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return size.get();
     }
 
     private FileUtil() {

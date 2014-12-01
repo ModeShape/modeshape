@@ -82,7 +82,7 @@ import org.modeshape.jcr.value.WorkspaceAndPath;
 @ThreadSafe
 public final class Connectors {
 
-    private static final Logger LOGGER = Logger.getLogger(Connectors.class);
+    protected static final Logger LOGGER = Logger.getLogger(Connectors.class);
 
     private final JcrRepository.RunningState repository;
     private final Logger logger;
@@ -707,7 +707,7 @@ public final class Connectors {
             this.hasReadonlyConnectors = original.hasReadonlyConnectors;
         }
 
-        private Set<String> externalSources() {
+        protected Set<String> externalSources() {
             return externalSources;
         }        
         

@@ -41,6 +41,8 @@ import org.modeshape.web.server.Connector;
  */
 public class BinaryContentUploadServlet extends HttpServlet {
 
+    private static final long serialVersionUID = 1505304380334878522L;
+
     private final static String CONTENT_PARAMETER = "Upload content";
     private final static String REPOSITORY_NAME_PARAMETER = "repository";
     private final static String WORKSPACE_NAME_PARAMETER = "workspace";
@@ -125,7 +127,7 @@ public class BinaryContentUploadServlet extends HttpServlet {
      * Gets uploaded file as stream.
      * 
      * @param items
-     * @return
+     * @return the stream
      * @throws IOException 
      */
     private InputStream getStream(List<FileItem> items) throws IOException {
@@ -141,7 +143,7 @@ public class BinaryContentUploadServlet extends HttpServlet {
      * Determines content-type of the uploaded file.
      * 
      * @param items
-     * @return 
+     * @return the content type
      */
     private String getContentType(List<FileItem> items) {
         for (FileItem i : items) {

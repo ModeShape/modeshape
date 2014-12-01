@@ -2235,6 +2235,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // register listener for PropertyEvent with nodeType restriction
         Session listenerSession = newSession();
         EventListener listener = new EventListener() {
+            @Override
             public void onEvent(EventIterator events) {
                 while (events.hasNext()) {
                     events.nextEvent();

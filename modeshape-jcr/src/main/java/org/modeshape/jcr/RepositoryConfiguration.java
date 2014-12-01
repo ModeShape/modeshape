@@ -2218,7 +2218,7 @@ public class RepositoryConfiguration {
          */
         public Set<String> getExternalSources() {
             Document externalSources = federation.getDocument(FieldName.EXTERNAL_SOURCES);
-            Set<String> list = new HashSet();
+            Set<String> list = new HashSet<>();
             
             //no external sources? nothing to do
             if (externalSources == null) {
