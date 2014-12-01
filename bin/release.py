@@ -82,6 +82,9 @@ def help_and_exit():
       --skip-tests        Do not run the unit or integration tests when building the software
       --single-threaded   Perform all operations sequentially without using multiple threads
       --multi-threaded    Perform some operations in parallel to reduce the overall run time.
+      --key-file=file     A fully qualified path to a private key file that should be used when copying remote files via SCP or RSYNC. 
+                          If provided, is the equivalent of using the '-i' switch for 'scp' or 'rsync'. If not, these commands are 
+                          invoked without this switch.
                           This option is not available with '--dry-run'
       --help|?            Display this usage message
             
@@ -263,10 +266,15 @@ def upload_artifacts(base_dir, version):
 
   # rsync this stuff to filemgmt.jboss.org
   os.chdir("%s/target/downloads" % (base_dir))
+  flags=[]
+  if ('key_file' in settings):
+    flags=['-i ' + settings['key_file']]
+
   if is_windows:
-    uploader.upload_scp(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape")
+    uploader.upload_scp(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape", flags)
   else:
-    uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape", flags = ['--protocol=28'])
+    flags = flags + ['--protocol=28']
+    uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape", flags)
   
   # We're done, so go back to where we were ...
   os.chdir(base_dir)
@@ -289,10 +297,15 @@ def upload_documentation(base_dir, version):
 
   # rsync this stuff to filemgmt.jboss.org
   os.chdir("%s/target/docs" % (base_dir))
+  flags=[]
+  if ('key_file' in settings):
+    flags=['-i ' + settings['key_file']]
+
   if is_windows:
-    uploader.upload_scp(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape")
+    uploader.upload_scp(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape", flags)
   else:
-    uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape", flags = ['--protocol=28'])
+    flags = flags + ['--protocol=28']
+    uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape", flags)
   
   # We're done, so go back to where we were ...
   os.chdir(base_dir)
@@ -327,6 +340,13 @@ def release():
         settings['multi_threaded'] = True
       elif arg == '--single-threaded':
         settings['multi_threaded'] = False
+      elif arg.startswith('--key-file'):
+        pair = arg.split('=')
+        if (len(pair) < 2):
+          prettyprint("When using --key-file you must supply a file using --key-file=your_file")
+          sys.exit(0)
+        else:
+          settings['key_file'] = pair[1]
       elif arg == '--help' or arg == '?':
         help_and_exit()
       else:
