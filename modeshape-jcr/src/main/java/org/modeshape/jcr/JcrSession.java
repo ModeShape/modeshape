@@ -109,6 +109,7 @@ import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
+import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 import org.modeshape.jcr.value.basic.NodeIdentifierReferenceFactory;
@@ -329,7 +330,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return context.getNamespaceRegistry();
     }
 
-    final org.modeshape.jcr.value.ValueFactory<String> stringFactory() {
+    final StringFactory stringFactory() {
         return context.getValueFactories().getStringFactory();
     }
 

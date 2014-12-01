@@ -28,15 +28,21 @@ public class NodeRemoved extends AbstractNodeChange {
     private static final long serialVersionUID = 1L;
 
     private final NodeKey parentKey;
+    private final Name parentPrimaryType;
+    private final Set<Name> parentMixinTypes;
 
     public NodeRemoved( NodeKey key,
                         NodeKey parentKey,
                         Path path,
                         Name primaryType,
                         Set<Name> mixinTypes,
-                        boolean queryable ) {
+                        boolean queryable, 
+                        Name parentPrimaryType, 
+                        Set<Name> parentMixinTypes ) {
         super(key, path, primaryType, mixinTypes, queryable);
         this.parentKey = parentKey;
+        this.parentPrimaryType = parentPrimaryType;
+        this.parentMixinTypes = parentMixinTypes;
     }
 
     /**
@@ -46,6 +52,24 @@ public class NodeRemoved extends AbstractNodeChange {
      */
     public NodeKey getParentKey() {
         return parentKey;
+    }
+
+    /**
+     * Get the name of the primary type of the parent node.
+     * 
+     * @return either the {@link Name} of the parent node or {@code null} if this information was not available.
+     */
+    public Name getParentPrimaryType() {
+        return parentPrimaryType;
+    }
+
+    /**
+     * Get the mixin names of the parent node.
+     *
+     * @return either the {@link Set} of mixins or {@code null} if this information was not available.
+     */
+    public Set<Name> getParentMixinTypes() {
+        return parentMixinTypes;
     }
 
     @Override

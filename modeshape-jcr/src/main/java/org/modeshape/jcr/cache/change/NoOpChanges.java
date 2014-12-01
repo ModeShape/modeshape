@@ -64,7 +64,9 @@ public final class NoOpChanges implements Changes {
                              Path path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             boolean queryable ) {
+                             boolean queryable, 
+                             Name parentPrimaryType, 
+                             Set<Name> parentMixinTypes ) {
     }
 
     @Override

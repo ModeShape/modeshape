@@ -83,13 +83,17 @@ public interface ConnectorChangeSet {
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
      * @param queryable true if this node is queryable, or false otherwise
+     * @param parentPrimaryType the primary type of the parent node; may be null if the information is not available.
+     * @param parentMixinTypes the mixin types of the parent node; may be null if the information is not available 
      */
     void nodeRemoved( String docId,
                       String parentDocId,
                       String path,
                       Name primaryType,
                       Set<Name> mixinTypes,
-                      boolean queryable );
+                      boolean queryable, 
+                      Name parentPrimaryType, 
+                      Set<Name> parentMixinTypes );
 
     /**
      * Signal that a node resource (and all descendants) was moved from one parent to another.

@@ -2264,6 +2264,33 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         listenerSession.logout();
     }
 
+    @Test
+    @FixFor( "MODE-2379" )
+    public void shouldReceiveEventsWhenFilteringBasedOnNodeTypeAndParentsRemoved() throws Exception {
+        // register listener
+        SimpleListener listener = addListener(2, Event.NODE_REMOVED, null, false, null, new String[]{UNSTRUCTURED}, false);
+
+        // add nodes to be removed
+        Node parent = getRoot().addNode("parent", UNSTRUCTURED);
+        Node child = parent.addNode("child", UNSTRUCTURED);
+        save();
+
+        // remove parent node which removes child node
+        String parentPath = parent.getPath();
+        String childPath = child.getPath();
+        parent.remove();
+        save();
+
+        // event handling
+        listener.waitForEvents();
+        removeListener(listener);
+
+        // tests
+        checkResults(listener);
+        assertTrue("Path for removed node is wrong", containsPath(listener, parentPath));
+        assertTrue("Path for removed child node is wrong", containsPath(listener, childPath));
+    }
+
     protected void assertPathsInJournal(EventJournal journal, boolean assertSize, String...expectedPaths) throws RepositoryException {
         assertNotNull("Event journal not configured", journal);
         assertEquals("Event journal size not known upfront", -1, journal.getSize());

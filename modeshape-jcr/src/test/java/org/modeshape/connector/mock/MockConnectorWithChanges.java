@@ -186,7 +186,7 @@ public class MockConnectorWithChanges extends MockConnector {
             // Remove the document at '/doc{n}/generate-out/{name}' ...
             removeDocument(oldId);
             changes.nodeRemoved(oldId, documentId, oldPath, JcrNtLexicon.UNSTRUCTURED, Collections.<Name>emptySet(),
-                                isQueryable());
+                                isQueryable(), JcrNtLexicon.UNSTRUCTURED, Collections.<Name>emptySet());
 
             // Remove the child documents, but we don't need to fire events for the subnodes of a deleted node ...
             DocumentReader reader = readDocument(oldDoc);
