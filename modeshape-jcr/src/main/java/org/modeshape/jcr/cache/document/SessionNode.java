@@ -955,6 +955,7 @@ public class SessionNode implements MutableCachedNode {
             if (referredNode == null) {
                 continue;
             }
+            assert writableSessionCache != null;
 
             ReferenceType referenceType = isWeak ? ReferenceType.WEAK : ReferenceType.STRONG;
             if (add) {

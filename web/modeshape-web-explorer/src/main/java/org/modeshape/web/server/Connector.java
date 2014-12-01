@@ -28,7 +28,8 @@ public interface Connector extends Serializable {
     /**
      * Starts this connector using given context.
      * 
-     * @param config 
+     * @param context the context 
+     * @throws RemoteException if there is an error with the connector
      */
     public void start(ServletContext context) throws RemoteException;
     

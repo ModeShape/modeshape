@@ -152,6 +152,7 @@ public class CmisConnector extends Connector {
         super();
     }
 
+    @SuppressWarnings( "deprecation" )
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {

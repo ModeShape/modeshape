@@ -615,6 +615,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
     /**
      * Locks are created based upon metadata cache configuration
      */
+    @SuppressWarnings( "synthetic-access" )
     class LockFactory {
 
         private final NamedLocks namedLocks;

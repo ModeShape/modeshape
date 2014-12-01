@@ -86,6 +86,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         return header;
     }
 
+    @SuppressWarnings( "synthetic-access" )
     @Override
     protected HLayout toolBar() {
         HLayout header = new HLayout();
@@ -180,6 +181,7 @@ public class Children extends TabGrid<NodeRecord, JcrNode> {
         return header;
     }
 
+    @SuppressWarnings( "synthetic-access" )
     protected void getPrimaryTypesAndShowDialog() {
         contents.jcrService().getPrimaryTypes(node.getRepository(), 
                 node.getWorkspace(), 

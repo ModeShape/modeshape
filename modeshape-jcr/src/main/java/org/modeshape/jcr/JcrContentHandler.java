@@ -925,7 +925,7 @@ class JcrContentHandler extends DefaultHandler {
         }
     }
 
-    private boolean isReference( int propertyType ) {
+    protected boolean isReference( int propertyType ) {
         return (propertyType == PropertyType.REFERENCE ||
             propertyType == PropertyType.WEAKREFERENCE ||
             propertyType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE);

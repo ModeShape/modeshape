@@ -20,6 +20,7 @@ import org.modeshape.web.shared.JcrNode;
 /**
  *
  * @author kulikov
+ * @param <T> the value type
  */
 public interface ValueEditor<T> {
     /**

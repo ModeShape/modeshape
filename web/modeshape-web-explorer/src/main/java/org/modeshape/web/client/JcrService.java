@@ -141,6 +141,7 @@ public interface JcrService extends RemoteService {
      * @param path the path to the parent node
      * @param name the name of node to add
      * @param primaryType the primary type of the node to add.
+     * @return the node
      * @throws RemoteException if there is a problem using the repository
      */
     public JcrNode addNode(String repository,

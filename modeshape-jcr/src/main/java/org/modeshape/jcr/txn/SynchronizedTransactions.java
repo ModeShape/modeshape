@@ -232,6 +232,7 @@ public final class SynchronizedTransactions extends Transactions {
          * Method which will be invoked by Infinispan once a tx.commit or tx.rollback has finished processing at a cache-level.
          * @param event a {@link TransactionCompletedEvent} instance.
          */
+        @SuppressWarnings( "synthetic-access" )
         @TransactionCompleted
         public void transactionCompleted( TransactionCompletedEvent event ) {
             if (logger.isTraceEnabled()) {
@@ -281,7 +282,7 @@ public final class SynchronizedTransactions extends Transactions {
         }
 
         @Override
-        public int status() throws SystemException {
+        public int status() {
             return Status.STATUS_UNKNOWN;
         }
 

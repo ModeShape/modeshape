@@ -58,13 +58,13 @@ public class TransactionsTest {
     }
 
     @Inject
-    private TransactionalOperationExecutor<Void> operationExecutor;
+    protected TransactionalOperationExecutor<Void> operationExecutor;
 
     @Resource(mappedName = "java:jboss/ee/concurrency/executor/default")
     private ManagedExecutorService managedExecutorService;
 
     @Resource( mappedName = "java:/jcr/sample" )
-    private JcrRepository repository;
+    protected JcrRepository repository;
 
     @Test
     @FixFor( "MODE-2352" )

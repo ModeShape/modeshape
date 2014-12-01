@@ -88,7 +88,7 @@ public abstract class BaseEditor {
         });
     }
 
-    public static ValueEditor getValueEditor(String type, Contents contents) {
+    public static ValueEditor<String> getValueEditor(String type, Contents contents ) {
         if (type.equals("Boolean")) {
             return new BooleanValueEditor(contents);
         }

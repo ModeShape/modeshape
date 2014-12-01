@@ -57,7 +57,7 @@ public class AccessList extends TabGrid<AclRecord, Policy> {
     private JcrNode node;
     protected final Contents contents;
     private ComboBoxItem principal;
-    private final AddPrincipalDialog addAccessListDialog;
+    protected final AddPrincipalDialog addAccessListDialog;
     
     public AccessList(Contents contents) {
         super("Access list");

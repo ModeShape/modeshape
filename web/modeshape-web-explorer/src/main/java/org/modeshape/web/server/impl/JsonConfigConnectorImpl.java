@@ -35,7 +35,6 @@ import org.modeshape.web.shared.RepositoryName;
  * @author kulikov
  */
 public class JsonConfigConnectorImpl implements Connector {
-    private final static String ENGINE = "modeshape-engine";
     
     //this object will be serialized by user session but 
     //we do not want to serialize any data so mark everything as transient
@@ -53,7 +52,7 @@ public class JsonConfigConnectorImpl implements Connector {
     private transient ModeShapeEngine engine; 
     private final static Logger logger = Logger.getLogger(JsonConfigConnectorImpl.class);
     
-    public JsonConfigConnectorImpl() throws RemoteException {
+    public JsonConfigConnectorImpl() {
     }
     
     @Override

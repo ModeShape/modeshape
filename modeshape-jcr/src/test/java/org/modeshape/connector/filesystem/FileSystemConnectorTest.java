@@ -147,7 +147,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
 //        System.out.println("Level1------------");
         NodeIterator it = node.getNodes();
         
-        ArrayList<String> dirs = new ArrayList();
+        ArrayList<String> dirs = new ArrayList<>();
         dirs.add("dir1");
         dirs.add("dir2");
         dirs.add("dir3");

@@ -215,6 +215,7 @@ public class RepositoryStatistics implements RepositoryMonitor, ChangeSetListene
         for (ValueHistory history : values.values()) {
             largest = history.rollup();
         }
+        if ( largest == null ) return;
         // Note that we do expect to fall through, as the 'largest' represents the largest window that was changed,
         // while all smaller windows were also changed ...
         switch (largest) {

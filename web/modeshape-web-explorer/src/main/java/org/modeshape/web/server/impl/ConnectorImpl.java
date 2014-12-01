@@ -54,7 +54,7 @@ public class ConnectorImpl implements Connector {
     private transient ModeShapeEngine engine;
     private final static Logger logger = Logger.getLogger(ConnectorImpl.class);
     
-    public ConnectorImpl() throws RemoteException {
+    public ConnectorImpl() {
     }
     
     @Override

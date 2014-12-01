@@ -40,6 +40,7 @@ public class JcrProperty implements Serializable {
      * @param name the name of the property.
      * @param type text description for the type
      * @param value text view of the value.
+     * @param displayValue the value to display
      */
     public JcrProperty( String name,
                         String type,

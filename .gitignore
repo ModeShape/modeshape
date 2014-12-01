@@ -9,6 +9,7 @@ target
 .scala_dependencies
 .externalToolBuilders
 /.metadata
+/.recommenders
 /RemoteSystemsTempFiles
 
 # ignore overlay folders

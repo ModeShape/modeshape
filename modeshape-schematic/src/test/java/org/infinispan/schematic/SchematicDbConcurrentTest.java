@@ -45,6 +45,7 @@ import org.junit.Test;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@SuppressWarnings( "synthetic-access" )
 @Ignore("This shouldn't be normally run and is only present to validate MODE-2280")
 public class SchematicDbConcurrentTest extends AbstractSchematicDbTest {
 
@@ -150,6 +151,7 @@ public class SchematicDbConcurrentTest extends AbstractSchematicDbTest {
         }
     }
 
+    @SuppressWarnings( "unchecked" )
     private void storeList( Iterable<String> ids ) throws Exception {
         tm.begin();
         List<String> oldList = (List<String>)rawCache.get("list");
