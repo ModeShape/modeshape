@@ -888,7 +888,21 @@ public class WritableSessionCache extends AbstractSessionCache {
                     Set<Name> mixinTypes = persisted.getMixinTypes(this);
                     Path path = workspacePaths.getPath(persisted);
                     boolean queryable = persisted.isQueryable(this);
-                    changes.nodeRemoved(key, persisted.getParentKey(persistedCache), path, primaryType, mixinTypes, queryable);
+                    NodeKey parentKey = persisted.getParentKey(persistedCache);
+                    CachedNode parent = getNode(parentKey);
+                    Name parentPrimaryType;
+                    Set<Name> parentMixinTypes;
+                    if (parent != null) {
+                        // the parent is loaded in this session
+                        parentPrimaryType = parent.getPrimaryType(this);
+                        parentMixinTypes = parent.getMixinTypes(this);
+                    } else {
+                        // the parent has been removed
+                        parent = persistedCache.getNode(parentKey);
+                        parentPrimaryType = parent.getPrimaryType(persistedCache);
+                        parentMixinTypes = parent.getMixinTypes(persistedCache);
+                    }
+                    changes.nodeRemoved(key, parentKey, path, primaryType, mixinTypes, queryable, parentPrimaryType, parentMixinTypes);
                     removedNodes.add(key);
 
                     // if there were any referrer changes for the removed nodes, we need to process them
@@ -919,7 +933,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 boolean queryable = node.isQueryable(this);
 
                 CachedNode persisted = null;
-                Path newPath = sessionPaths.getPath(node);
+                // when editing existing nodes delay the loading of the session path because for some external nodes/connectors 
+                // this may not be available (see below)
+                Path newPath = node.isNew() ? sessionPaths.getPath(node) : null;
                 NodeKey newParent = node.newParent();
                 EditableDocument doc = null;
                 ChangedAdditionalParents additionalParents = node.additionalParents();
@@ -941,6 +957,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // just moments before we got our transaction to save ...
                         throw new DocumentNotFoundException(keyStr);
                     }
+                    // only after we're certain the document exists in the store can we safely compute this path
+                    newPath = sessionPaths.getPath(node);
                     if (newParent != null) {
                         persisted = persistedCache.getNode(key);
                         // The node has moved (either within the same parent or to another parent) ...
@@ -1070,10 +1088,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 if (appended != null && appended.hasChild(persistent.getKey())) {
                                     // the same node has been both removed and appended => reordered at the end
                                     ChildReference appendedChildRef = node.getChildReferences(this).getChild(persistent.getKey());
-                                    newPath = pathFactory().create(sessionPaths.getPath(node), appendedChildRef.getSegment());
-                                    Path oldPath = workspacePaths.getPath(persistent);
-                                    changes.nodeReordered(persistent.getKey(), primaryType, mixinTypes, node.getKey(), newPath,
-                                                          oldPath, null, queryable);
+                                    Path newNodePath = pathFactory().create(newPath, appendedChildRef.getSegment());
+                                    Path oldNodePath = workspacePaths.getPath(persistent);
+                                    changes.nodeReordered(persistent.getKey(), primaryType, mixinTypes, node.getKey(), newNodePath,
+                                                          oldNodePath, null, queryable);
                                 }
                             }
 
@@ -1230,7 +1248,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                             if (ref != null) {
                                 Path parentPath = workspacePaths.getPath(persistedParent);
                                 Path childPath = pathFactory().create(parentPath, ref.getSegment());
-                                changes.nodeRemoved(key, parentKey, childPath, primaryType, mixinTypes, queryable);
+                                Name parentPrimaryType = persistedParent.getPrimaryType(persistedCache);
+                                Set<Name> parentMixinTypes = persistedParent.getMixinTypes(persistedCache);
+                                changes.nodeRemoved(key, parentKey, childPath, primaryType, mixinTypes, queryable, 
+                                                    parentPrimaryType, parentMixinTypes);
                             }
                         }
                     }

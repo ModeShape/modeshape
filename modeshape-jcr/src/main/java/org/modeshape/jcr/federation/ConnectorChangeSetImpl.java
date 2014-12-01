@@ -112,13 +112,16 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
                              String path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             boolean queryable ) {
+                             boolean queryable, 
+                             Name parentPrimaryType, 
+                             Set<Name> parentMixinTypes ) {
         NodeKey key = nodeKey(docId);
         NodeKey parentKey = nodeKey(parentDocId);
         Path externalPath = pathMappings.getPathFactory().create(path);
         // This external path in the connector may be projected into *multiple* nodes in the same or different workspaces ...
         for (WorkspaceAndPath wsAndPath : pathMappings.resolveExternalPathToInternal(externalPath)) {
-            changesFor(wsAndPath).nodeRemoved(key, parentKey, wsAndPath.getPath(), primaryType, mixinTypes, queryable);
+            changesFor(wsAndPath).nodeRemoved(key, parentKey, wsAndPath.getPath(), primaryType, mixinTypes, queryable, parentPrimaryType, 
+                                              parentMixinTypes);
         }
         // Signal to the manager of the Connector instances that an external node was removed. If this external
         // node is used in a projection, that projection will be removed...
@@ -165,7 +168,7 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
             // There are only old locations, so treat as NODE_REMOVED.
             for (WorkspaceAndPath wsAndOldPath : oldWsAndPaths) {
                 changesFor(wsAndOldPath.getWorkspaceName()).nodeRemoved(key, oldParentKey, wsAndOldPath.getPath(), primaryType,
-                                                                        mixinTypes, queryable);
+                                                                        mixinTypes, queryable, null, null);
             }
             return;
         } else if (numOld == 0) {
@@ -196,7 +199,7 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
             }
             // The workspace names don't match, so treat the old as a NODE_REMOVED ...
             changesFor(oldWsAndPath.getWorkspaceName()).nodeRemoved(key, oldParentKey, oldWsAndPath.getPath(), primaryType,
-                                                                    mixinTypes, queryable);
+                                                                    mixinTypes, queryable, null, null);
             // And the new as NODE_CREATED (in a separate workspace) ...
             // Note that we do not know the properties ...
             Map<Name, Property> properties = Collections.emptyMap();
@@ -238,7 +241,8 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
 
         // If there are any old paths left, we need to treat them as NODE_REMOVED ...
         for (WorkspaceAndPath oldWsAndPath : oldWsAndPaths) {
-            changesFor(oldWsAndPath).nodeRemoved(key, oldParentKey, oldWsAndPath.getPath(), primaryType, mixinTypes, queryable);
+            changesFor(oldWsAndPath).nodeRemoved(key, oldParentKey, oldWsAndPath.getPath(), primaryType, mixinTypes, queryable, 
+                    null, null);
         }
     }
 

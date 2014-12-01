@@ -973,8 +973,17 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             }
             File deletedFile = resolvedPath.toFile();
             String id = connector.idFor(deletedFile);
-            connectorChangeSet.nodeRemoved(id, connector.idFor(resolvedPath.getParent().toFile()), id, primaryType,
-                                           Collections.<Name>emptySet(), queryable);
+            Path parentPath = resolvedPath.getParent();
+            Name parentPrimaryType = primaryTypeFor(parentPath);
+            if (parentPrimaryType == null) {
+                // Atm when a deleted event is received, because the item is no longer accessible on the FS.
+                // it's neither a file nor a folder. So we do a "best effort" and use the base type
+                parentPrimaryType = JcrNtLexicon.HIERARCHY_NODE;
+            }
+
+            connectorChangeSet.nodeRemoved(id, connector.idFor(parentPath.toFile()), id, primaryType,
+                                           Collections.<Name>emptySet(), queryable, parentPrimaryType, 
+                                           Collections.<Name>emptySet());
         }
 
         @SuppressWarnings( "synthetic-access" )

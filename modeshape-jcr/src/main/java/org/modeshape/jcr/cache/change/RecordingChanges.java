@@ -118,8 +118,11 @@ public class RecordingChanges implements Changes, ChangeSet {
                              Path path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             boolean queryable ) {
-        events.add(new NodeRemoved(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), queryable));
+                             boolean queryable, 
+                             Name parentPrimaryType, 
+                             Set<Name> parentMixinTypes ) {
+        events.add(new NodeRemoved(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), queryable, parentPrimaryType, 
+                                   parentMixinTypes));
     }
 
     @Override

@@ -75,13 +75,17 @@ public interface Changes {
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
      * @param queryable true if this node is queryable, or false otherwise
+     * @param parentPrimaryType the primary type of the parent of the node; may be null if this information is not available
+     * @param parentMixinTypes the mixin types of the parent of the node; may be null if this information is not available
      */
     void nodeRemoved( NodeKey key,
                       NodeKey parentKey,
                       Path path,
                       Name primaryType,
                       Set<Name> mixinTypes,
-                      boolean queryable );
+                      boolean queryable, 
+                      Name parentPrimaryType, 
+                      Set<Name> parentMixinTypes );
 
     /**
      * Signal that a node was renamed (but still has the same parent)

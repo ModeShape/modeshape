@@ -52,7 +52,6 @@ import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.ChildReferences.BasicContext;
 import org.modeshape.jcr.cache.ChildReferences.ChildInsertions;
-import org.modeshape.jcr.cache.ReferrerCounts.MutableReferrerCounts;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
@@ -60,6 +59,7 @@ import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferrerCounts;
+import org.modeshape.jcr.cache.ReferrerCounts.MutableReferrerCounts;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.value.BinaryValue;
@@ -1981,12 +1981,19 @@ public class SessionNode implements MutableCachedNode {
         public StringBuilder getString( StringBuilder sb ) {
             InsertedChildReferences insertions = this.insertions.get();
             Set<NodeKey> removals = this.removals.get();
+            Map<NodeKey, Name> renames = this.newNames.get();
             if (insertions != null) {
                 insertions.toString(sb);
                 if (removals != null && !removals.isEmpty()) sb.append("; ");
             }
-            if (removals != null) {
-                sb.append("removals: " + removals);
+            if (removals != null && !removals.isEmpty()) {
+                sb.append("removals: ").append(removals);
+                if (renames != null && !renames.isEmpty()) {
+                    sb.append("; ");
+                }
+            }
+            if (renames != null && !renames.isEmpty()) {
+                sb.append("renames: ").append(renames);
             }
             return sb;
         }
