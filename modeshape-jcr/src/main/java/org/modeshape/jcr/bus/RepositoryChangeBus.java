@@ -86,11 +86,11 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     @Override
     public synchronized void shutdown() {
-        shutdown = true;
         // add a stop marker to signal that all the internal workers should stop waiting on the queue
         for (ChangeSetDispatcher dispatcher : dispatchers) {
             dispatcher.submit(FinalChangeSet.INSTANCE);
         }
+        shutdown = true;
         for (Future<?> worker : workers.values()) {
             // cancel any remaining active work (best effort)
             worker.cancel(true);
