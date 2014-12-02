@@ -711,28 +711,21 @@ public class ModelExtensionDefinitionHelper {
             registeredUri = registry.getURI(medPrefix);
         }
 
-        final boolean prefixMatch = !StringUtil.isBlank(registeredUri);
-        final boolean uriMatch = !StringUtil.isBlank(registeredPrefix);
-
-        if (prefixMatch) {
-            // if prefixes and URIs match then namespace is already registered
-            if (uriMatch) {
-                this.medPrefixMap.put(medPrefix, medPrefix);
-            } else {
-                // if prefixes are equal but URIs are not, need to change prefix
-                final String newPrefix = createMedPrefix(registry, medPrefix, medVersion);
-                registry.registerNamespace(newPrefix, medUri);
-                this.medPrefixMap.put(medPrefix, newPrefix);
-                LOGGER.debug("registered namespace '{0}':'{1}'", newPrefix, medUri);
-            }
-        } else if (uriMatch) {
-            // prefixes don't match, URIs match, use registry prefix
-            this.medPrefixMap.put(medPrefix, registeredPrefix);
-        } else {
-            // neither prefix or URIs match so register namespace
+        if (StringUtil.isBlank(registeredUri) && StringUtil.isBlank(registeredPrefix)) {
+            // neither MED prefix or MED URI is registered so just register
             registry.registerNamespace(medPrefix, medUri);
             this.medPrefixMap.put(medPrefix, medPrefix);
-            LOGGER.debug("registered namespace '{0}':'{1}'", medPrefix, medUri);
+            LOGGER.debug("registering MED namespace '{0}':'{1}'", medPrefix, medUri);
+        } else if (!StringUtil.isBlank(registeredPrefix)) {
+            // uri is registered, use registered prefix
+            this.medPrefixMap.put(medPrefix, registeredPrefix);
+            LOGGER.debug("using registered prefix '{0}' for MED prefix '{1}'", registeredPrefix, medPrefix);
+        } else {
+            // prefix exists but uri different so register with new prefix
+            final String newPrefix = createMedPrefix(registry, medPrefix, medVersion);
+            registry.registerNamespace(newPrefix, medUri);
+            this.medPrefixMap.put(medPrefix, newPrefix);
+            LOGGER.debug("registered MED namespace '{0}':'{1}' for MED prefix '{2}'", newPrefix, medUri, medPrefix);
         }
     }
 }

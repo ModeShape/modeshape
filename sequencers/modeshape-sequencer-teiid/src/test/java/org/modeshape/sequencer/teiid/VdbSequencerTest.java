@@ -76,8 +76,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         { // child node models
             Node modelNode = outputNode.getNode("BooksProcedures.xmi");
             assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Model.MODEL));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is(
-                    "TestRESTWarGen/BooksProcedures.xmi"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("TestRESTWarGen/BooksProcedures.xmi"));
             assertThat(modelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(false));
             assertThat(modelNode.getProperty(VdbLexicon.Model.BUILT_IN).getBoolean(), is(false));
             assertThat(modelNode.getProperty(VdbLexicon.Model.CHECKSUM).getLong(), is(1855484649L));
@@ -165,15 +164,13 @@ public class VdbSequencerTest extends AbstractSequencerTest {
 
                 if (!entry1Found && "path1".equals(entryNode.getProperty(VdbLexicon.Entry.PATH).getString())) {
                     entry1Found = true;
-                    assertThat(entryNode.getProperty(VdbLexicon.Entry.DESCRIPTION).getString(), is(
-                            "This is entry 1 description"));
+                    assertThat(entryNode.getProperty(VdbLexicon.Entry.DESCRIPTION).getString(), is("This is entry 1 description"));
                     assertThat(entryNode.getProperty("drummer").getString(), is("Ringo"));
                     assertThat(entryNode.getProperty("guitar").getString(), is("John"));
                 } else if (!entry2Found && "path2".equals(entryNode.getProperty(VdbLexicon.Entry.PATH).getString())) {
                     entry2Found = true;
                     assertThat(entryNode.getProperty(VdbLexicon.Entry.PATH).getString(), is("path2"));
-                    assertThat(entryNode.getProperty(VdbLexicon.Entry.DESCRIPTION).getString(), is(
-                            "This is entry 2 description"));
+                    assertThat(entryNode.getProperty(VdbLexicon.Entry.DESCRIPTION).getString(), is("This is entry 2 description"));
                     assertThat(entryNode.getProperty("bass").getString(), is("Paul"));
                     assertThat(entryNode.getProperty("leadGuitar").getString(), is("George"));
                 } else {
@@ -343,8 +340,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertNotNull(modelImport);
             assertThat(modelImport.getPrimaryNodeType().getName(), is(CoreLexicon.JcrId.IMPORT));
             assertThat(modelImport.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
-            assertThat(modelImport.getProperty(CoreLexicon.JcrId.PRIMARY_METAMODEL_URI).getString(), is(
-                    RelationalLexicon.Namespace.URI));
+            assertThat(modelImport.getProperty(CoreLexicon.JcrId.PRIMARY_METAMODEL_URI).getString(),
+                       is(RelationalLexicon.Namespace.URI));
             assertThat(modelImport.getProperty(CoreLexicon.JcrId.MODEL_LOCATION).getString(), is("Books_Oracle.xmi"));
             assertThat(modelImport.getProperty(CoreLexicon.JcrId.PATH).getString(), is("/BooksProject/Books_Oracle.xmi"));
         }
@@ -368,7 +365,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
                     assertThat("Role name 1".equals(roleNames[0].getString()) || "Role name 1".equals(roleNames[1].getString()),
                                is(true));
                     assertThat("Another role name".equals(roleNames[0].getString())
-                                       || "Another role name".equals(roleNames[1].getString()),
+                               || "Another role name".equals(roleNames[1].getString()),
                                is(true));
                 }
 
@@ -394,8 +391,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
                 Node dataRoleNode = dataRolesGroupNode.getNode("MyDataRole");
                 assertNotNull(dataRoleNode);
                 assertThat(dataRoleNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.DATA_ROLE));
-                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.DESCRIPTION).getString(), is(
-                        "This is a data role description"));
+                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.DESCRIPTION).getString(),
+                           is("This is a data role description"));
                 assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.ALLOW_CREATE_TEMP_TABLES).getBoolean(), is(false));
                 assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.ANY_AUTHENTICATED).getBoolean(), is(false));
 
@@ -483,6 +480,34 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    public void shouldSequenceVdbPortfolioVdb2() throws Exception {
+        createNodeWithContentFromFile("vdb/Portfolio2.vdb", "vdb/Portfolio2.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/Portfolio2.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes().getSize(), is(4L)); // vdb:entries, Accounts.xmi, MarketData.xmi, Stocks.xmi
+
+        final Node modelNode = outputNode.getNode("MarketData.xmi");
+        assertNotNull(modelNode);
+
+        { // MED
+            final Node medGroupNode = modelNode.getNode("mmcore:modelExtensionDefinitions");
+            assertNotNull(modelNode);
+
+            final Node relationalMedNode = medGroupNode.getNode("relational");
+            assertNotNull(modelNode);
+            assertThat(relationalMedNode.hasProperty("modelExtensionDefinition:version"), is(true));
+            assertThat(relationalMedNode.getProperty("modelExtensionDefinition:version").getLong(), is(4L));
+
+            assertThat(session.getNamespacePrefix("http://www.teiid.org/ext/relational/2012/4"), is("relational4"));
+        }
+
+        final Node procedureNode = modelNode.getNode("getFiles");
+        assertNotNull(procedureNode);
+        assertThat(procedureNode.hasProperty("relational4:aggregate"), is(true));
+    }
+
+    @Test
     public void shouldSequenceVdbGatewayVDBVdb() throws Exception {
         // GatewayVDB.vdb is a 7.7 VDB
         createNodeWithContentFromFile("vdb/GatewayVDB.vdb", "vdb/GatewayVDB.vdb");
@@ -519,8 +544,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         Node modelNode = outputNode.getNode("US_CustomerAccounts_VBL.xmi");
         assertNotNull(modelNode);
         assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.MODEL));
-        assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is(
-                "Financials/VirtualBaseLayer/US_CustomerAccounts_VBL.xmi"));
+        assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(),
+                   is("Financials/VirtualBaseLayer/US_CustomerAccounts_VBL.xmi"));
     }
 
     @Test
