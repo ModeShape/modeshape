@@ -19,14 +19,11 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Value;
-
 import org.junit.Test;
 import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
@@ -472,6 +469,34 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
         assertThat(outputNode.getNodes().getSize(), is(4L));
+    }
+
+    @Test
+    public void shouldSequenceVdbPortfolioVdb2() throws Exception {
+        createNodeWithContentFromFile("vdb/Portfolio2.vdb", "vdb/Portfolio2.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/Portfolio2.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes().getSize(), is(4L)); // vdb:entries, Accounts.xmi, MarketData.xmi, Stocks.xmi
+
+        final Node modelNode = outputNode.getNode("MarketData.xmi");
+        assertNotNull(modelNode);
+
+        { // MED
+            final Node medGroupNode = modelNode.getNode("mmcore:modelExtensionDefinitions");
+            assertNotNull(modelNode);
+
+            final Node relationalMedNode = medGroupNode.getNode("relational");
+            assertNotNull(modelNode);
+            assertThat(relationalMedNode.hasProperty("modelExtensionDefinition:version"), is(true));
+            assertThat(relationalMedNode.getProperty("modelExtensionDefinition:version").getLong(), is(4L));
+
+            assertThat(session.getNamespacePrefix("http://www.teiid.org/ext/relational/2012/4"), is("relational4"));
+        }
+
+        final Node procedureNode = modelNode.getNode("getFiles");
+        assertNotNull(procedureNode);
+        assertThat(procedureNode.hasProperty("relational4:aggregate"), is(true));
     }
 
     @Test
