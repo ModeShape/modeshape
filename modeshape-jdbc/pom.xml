@@ -219,6 +219,7 @@
                                     <descriptors>
                                         <descriptor>src/assembly/kit.xml</descriptor>
                                     </descriptors>
+                                    <attach>true</attach>
                                 </configuration>
                             </execution>
                             <!--Creates an assembly which will be included in the binary distribution -->
@@ -237,7 +238,7 @@
                                             <addClasspath>true</addClasspath>
                                         </manifest>
                                     </archive>
-                                    <attach>true</attach>
+                                    <attach>false</attach>
                                 </configuration>
                             </execution>
                         </executions>

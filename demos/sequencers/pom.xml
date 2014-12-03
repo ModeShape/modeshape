@@ -92,6 +92,7 @@
                             <descriptorRefs>
                                 <descriptorRef>example-with-dependencies</descriptorRef>
                             </descriptorRefs>
+                            <attach>false</attach>
                         </configuration>
                     </plugin>
                 </plugins>

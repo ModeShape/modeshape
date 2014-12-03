@@ -76,6 +76,7 @@
                             <descriptorRefs>
                                 <descriptorRef>module-with-dependencies</descriptorRef>
                             </descriptorRefs>
+                            <attach>false</attach>
                         </configuration>
                     </plugin>
                 </plugins>

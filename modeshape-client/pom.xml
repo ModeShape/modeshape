@@ -172,6 +172,7 @@
                                         <descriptor>src/assembly/kit.xml</descriptor>
                                     </descriptors>
                                     <appendAssemblyId>false</appendAssemblyId>
+                                    <attach>true</attach>
                                 </configuration>
                             </execution>
                         </executions>

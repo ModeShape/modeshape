@@ -37,6 +37,17 @@
                 <include>*:*:*:module-with-dependencies</include>
             </includes>
         </dependencySet>
+        <!--Examples-->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <useTransitiveDependencies>false</useTransitiveDependencies>
+            <scope>compile</scope>
+            <unpack>true</unpack>
+            <outputDirectory>examples</outputDirectory>
+            <includes>
+                <include>*:*:*:example-with-dependencies</include>
+            </includes>
+        </dependencySet>
         <!--JDBC jar renamed to client-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

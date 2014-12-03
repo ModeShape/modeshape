@@ -533,6 +533,7 @@
                             <descriptors>
                                 <descriptor>src/assembly/javadoc.xml</descriptor>
                             </descriptors>
+                            <attach>false</attach>
                         </configuration>
                     </plugin>
 
@@ -557,6 +558,7 @@
                             <descriptorRefs>
                                 <descriptorRef>${jboss.kit.distribution.id}</descriptorRef>
                             </descriptorRefs>
+                            <attach>false</attach>
                         </configuration>
                     </plugin>
                 </plugins>
