@@ -447,9 +447,12 @@ def release():
     prettyprint("In dry-run mode.  Not pushing tag to remote origin and not removing temp release branch '%s'." % git.working_branch, Levels.DEBUG)
   prettyprint("Step 7: Complete", Levels.INFO)
 
-  if is_windows and settings['dry_run']:
-    prettyprint("\n\n\nOn Windows in dry-run mode no file uploading will be performed, so all done.", Levels.INFO)
-    return
+  if is_windows: 
+    if settings['dry_run']:
+      prettyprint("\n\n\nWindows detected; In dry-run mode no file uploading will be performed, so all done.", Levels.INFO)
+    else:
+      prettyprint("\n\n\nWindows detected; Make sure you upload the files & documentation manually.", Levels.INFO)
+  return
 
   async_processes = []
 

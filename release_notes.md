@@ -14,48 +14,9 @@ by ModeShape's service.
 
 ModeShape &version; is licensed under the Apache Software License, 2.0.
 
-This version incorporates many new features and bug fixes. Some of these include:
-
-* A new query engine with explicit index definitions and buffered results stored
-off-heap that make it possible to handle very large results. All queries will work
-whether or not indexes are defined, but without indexes they will be slow. Simply
-look at the query plans for your queries, and define indexes that match your queries'
-needs. When proper indexes are available, query execution is very fast. The query plan
-will even show which indexes were considered for each part of the query. All of this is more
-like how traditional databases are used, and it allows ModeShape to update only the indexes
-(rather than indexing everything like in 3.x). Indexes can be defined as part of the configuration 
-or programmatically via new API methods. New indexes are automatically populated 
-with the repository contents, but this is an asynchronous process that make take
-some time if the repository contents are large. Each index can be marked as updated
-synchronously as part of the 'save' operation, or asynchronously in the background
-after the 'save' call. Indexes are assigned to a single 'index provider'.
-* An SPI for index providers, allowing customization of all indexing behavior.
-A local index provider is included in 4.0, and it stores a complete copy of its indexes 
-on each process in the cluster, making it very fast to query.
-* More extensions to the JCR-SQL2 query language, including a new `mode:id` pseudocolumn
-that provides access to exactly the same value as "Node.getIndentifier()" would via the 
-API. There is also a new `CHILDCOUNT` dynamic operand that makes it very easy to find
-nodes that have no children or to find nodes that have child counts within some range.
-* New support for the JCR event journal feature, allowing applications to poll for changes
-that occurred during specific time ranges. This is a useful alternative to listeners for 
-operations may be expensive or time-consuming. Note that journaling is disabled by default.
-* The internal event bus is vastly improved and substantially faster than in 3.x. 
-Of course, there's no change in the event APIs so your listener implementations will 
-continue to work unchanged. 
-* The Repository Explorer web application was completely rewritten and is much more
-dynamic. It's useful for developers of appliations that use the JCR API, allowing you
-to visualize, navigate, and query repository content.
-* Support for deploying ModeShape as a subsystem in Wildfly 8.x
-* ModeShape now requires JDK 7. We don't expect any issues using Java 8, but let us know
-if you have any problems.
-* Clustering - ModeShape no longer has a clustering section in its configuration, since
-we simply piggyback on top of Infinispan's clustering setup. So it's much easier to configure
-clustering. We've also upgraded to a newer version of JGroups.
-* Infinispan - We've moved to Infinispan 6.0.1.Final, which is faster and has new cache stores.
-Some older and poorly-performaing cache stores are no longer valid, so check out the new
-file-based cache stores. Also, the LevelDB cache store is supposedly very fast.
-
-
+This release addresses 36 issues and 6 enhancements, including several related to the new indexing & query functionality 
+and some significant ones around the Repository Explorer application. Our Teiid VDB sequencer now supports dynamic VDB parsing
+and Text Extraction uses Apache Tika 1.6. 
 
 ## Features
 
@@ -99,8 +60,8 @@ system, in Infinispan caches, in relational DBMSes (via JDBC), and in MongoDB. C
 possible.
 - Public API interfaces and methods that were deprecated in 2.7.0.Final (or later) have been removed.
 There weren't many of these; most of the ModeShape API remains the same as 2.x.
-- Integration with JBoss AS 7. ModeShape runs as an integrated subsystem within AS7, and
-the AS7 tooling can be used to define and manage repositories independently of each other
+- Integration with JBoss Wildfly 8. ModeShape runs as an integrated subsystem within Wildfly, and
+the Wildfly tooling can be used to define and manage repositories independently of each other
 and while the server is running.
 - Local and remote JDBC drivers for issuing JCR-SQL2 queries and getting database metadata via the JDBC API
 - Use the RESTful API to talk to ModeShape repositories from non-Java and non-local applications
@@ -213,7 +174,7 @@ ModeShape also has features that go beyond the JCR API:
 
 ### ModeShape Deployment/Access Models
 - JNDI-Based Deployment
-- Deploy as a subsystem in JBoss AS7, with access to repositories via @Resource injection
+- Deploy as a subsystem in JBoss Wildfly, with access to repositories via @Resource injection
 - Deploy to other containers using ModeShape's JCA adapter
 - Access through two RESTful Services (the 2.x-compatible API and a new improved API)
 - Access through WebDAV Service
