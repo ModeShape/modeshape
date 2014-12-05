@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -867,6 +868,58 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         validateQuery().useIndex("nt_unstructured").rowCount(2L).validate(query, query.execute());
     }
 
+	@Test
+    public void mapDbPerformanceTest() throws Exception {
+		
+		int NUM_NODETYPES = 10;
+		int NUM_INDEXED_PROPERTIES = 10;
+		int NUM_ITERATIONS = 500;
+		int QUERIES_PER_ITERATION = 2;
+		
+		
+		for (int i = 0; i != NUM_NODETYPES; ++i) {
+			registerNodeType("nt:performance"+i);
+			for (int j = 0; j != NUM_INDEXED_PROPERTIES; ++j) {
+				registerValueIndex("a"+i+"-"+j, "nt:performance"+i, null, "*", "a"+j, PropertyType.STRING);
+			}
+		}
+		
+		waitForIndexes();
+		
+		System.err.println("");
+		System.err.println("Starting...");
+		
+		long start = System.currentTimeMillis();
+
+        for (int i = 0; i != NUM_ITERATIONS; ++i) {
+			
+			Node root = session().getRootNode();
+			Node perf = root.addNode("perf"+UUID.randomUUID().toString(),"nt:performance"+((int)(Math.random()*(NUM_NODETYPES-1))));
+			for (int j = 0; j != NUM_INDEXED_PROPERTIES; ++j) {
+				
+				perf.setProperty("a"+((int)(Math.random()*(NUM_INDEXED_PROPERTIES-1))), UUID.randomUUID().toString());
+			}
+			
+			session.save();
+            
+            for (int j = 0; j != QUERIES_PER_ITERATION; ++j) {
+				int propertyQueried= ((int)(Math.random()*(NUM_INDEXED_PROPERTIES-1)));
+				int nodeTypeQueried= ((int)(Math.random()*(NUM_NODETYPES-1)));
+				Query query = jcrSql2Query("SELECT * FROM [nt:performance"+nodeTypeQueried+"] WHERE a"+propertyQueried+"='"+UUID.randomUUID().toString()+"'");
+                validateQuery().useIndex("a"+nodeTypeQueried+"-"+propertyQueried).validate(query, query.execute());
+            }
+		
+			perf.remove();
+			session.save();
+			
+			if (i%100==99) System.err.print(1+i+"-");
+        }
+	
+		long time = System.currentTimeMillis()-start;
+		System.err.println("");
+		System.err.println("OPS: "+(1000f*NUM_ITERATIONS*(2f+QUERIES_PER_ITERATION))/(time*1f));
+	}
+	
     @FixFor( "MODE-2313" )
     @Test
     public void shouldAllowAddingIndexWhileSessionsAreQuerying() throws Exception {
