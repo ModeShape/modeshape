@@ -45,6 +45,7 @@ class TeiidDataTypeParser extends DataTypeParser {
         TeiidDataType teiidType = null;
         long length = DataType.DEFAULT_LENGTH;
         int[] precisionScale = DEFAULT_PRECISION_SCALE;
+        int arrayDimensions = DataType.DEFAULT_ARRAY_DIMENSIONS;
 
         for (final TeiidDataType teiidDataType : TeiidDataType.values()) {
             if (tokens.canConsume(teiidDataType.toDdl())) {
@@ -106,6 +107,12 @@ class TeiidDataTypeParser extends DataTypeParser {
                     type.setScale(precisionScale[1]);
                 }
             }
+            // Array dimensions of the data type
+            while (tokens.canConsume(LS_BRACE)) {
+                tokens.consume(RS_BRACE);
+                arrayDimensions++;
+            }
+            type.setArrayDimensions(arrayDimensions);
 
             return type;
         }

@@ -53,6 +53,7 @@
 
 [teiidddl:tableElement] > ddl:columnDefinition, mix:referenceable mixin
 - teiidddl:autoIncrement (boolean) = 'false'
+- teiidddl:arrayDimensions (long)
 - ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
 + * (ddl:statementOption) = ddl:statementOption 
 

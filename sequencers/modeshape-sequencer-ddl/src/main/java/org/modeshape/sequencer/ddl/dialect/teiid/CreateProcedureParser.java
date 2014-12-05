@@ -15,6 +15,7 @@
  */
 package org.modeshape.sequencer.ddl.dialect.teiid;
 
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_ARRAY_DIMENSIONS;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
@@ -316,6 +317,10 @@ final class CreateProcedureParser extends StatementParser {
 
                 if (dataType.getScale() != DataType.DEFAULT_SCALE) {
                     resultNode.setProperty(DATATYPE_SCALE, dataType.getScale());
+                }
+
+                if (dataType.getArrayDimensions() != DataType.DEFAULT_ARRAY_DIMENSIONS) {
+                    resultNode.setProperty(DATATYPE_ARRAY_DIMENSIONS, dataType.getArrayDimensions());
                 }
             }
 
