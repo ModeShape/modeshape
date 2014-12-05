@@ -2,7 +2,7 @@
     <id>example-with-dependencies</id>
     <includeBaseDirectory>false</includeBaseDirectory>
     <formats>
-        <format>zip</format>
+        <format>dir</format>
     </formats>
     <dependencySets>
         <dependencySet>

@@ -219,7 +219,6 @@
                                     <descriptors>
                                         <descriptor>src/assembly/kit.xml</descriptor>
                                     </descriptors>
-                                    <attach>true</attach>
                                 </configuration>
                             </execution>
                             <!--Creates an assembly which will be included in the binary distribution -->
@@ -230,6 +229,8 @@
                                     <goal>single</goal>
                                 </goals>
                                 <configuration>
+                                    <attach>false</attach>
+                                    <appendAssemblyId>false</appendAssemblyId>
                                     <descriptorRefs>
                                         <descriptorRef>module-with-dependencies</descriptorRef>
                                     </descriptorRefs>
@@ -238,7 +239,7 @@
                                             <addClasspath>true</addClasspath>
                                         </manifest>
                                     </archive>
-                                    <attach>false</attach>
+                                    <finalName>${binary.dist.name}</finalName>
                                 </configuration>
                             </execution>
                         </executions>
