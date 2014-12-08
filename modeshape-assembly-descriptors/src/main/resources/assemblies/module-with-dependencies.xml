@@ -2,21 +2,20 @@
     <id>module-with-dependencies</id>
     <includeBaseDirectory>false</includeBaseDirectory>
     <formats>
-        <format>zip</format>
+        <format>dir</format>
     </formats>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>${project.artifactId}/lib</outputDirectory>
+            <outputDirectory>lib</outputDirectory>
             <unpack>false</unpack>
             <scope>runtime</scope>
             <useProjectArtifact>false</useProjectArtifact>
             <excludes>
                 <exclude>${project.groupId}:*</exclude>
-                <!--<exclude>javax.jcr:jcr</exclude>-->
             </excludes>
         </dependencySet>
         <dependencySet>
-            <outputDirectory>${project.artifactId}</outputDirectory>
+            <outputDirectory>/</outputDirectory>
             <unpack>false</unpack>
             <includes>
                 <include>${project.groupId}:${project.artifactId}:*</include>
@@ -26,14 +25,14 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}</directory>
-            <outputDirectory>${project.artifactId}/tests</outputDirectory>
+            <outputDirectory>/tests</outputDirectory>
             <includes>
                 <include>${project.artifactId}-${project.version}-tests.jar</include>
             </includes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}</directory>
-            <outputDirectory>${project.artifactId}/sources</outputDirectory>
+            <outputDirectory>/sources</outputDirectory>
             <includes>
                 <include>${project.artifactId}-${project.version}-sources.jar</include>
                 <include>${project.artifactId}-${project.version}-test-sources.jar</include>
@@ -44,7 +43,7 @@
         -->
         <fileSet>
             <directory>src/main/resources</directory>
-            <outputDirectory>${project.artifactId}</outputDirectory>
+            <outputDirectory>/</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>
@@ -56,7 +55,7 @@
         </fileSet>
         <fileSet>
             <directory>src/main/assembly</directory>
-            <outputDirectory>${project.artifactId}</outputDirectory>
+            <outputDirectory>/</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>

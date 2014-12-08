@@ -4,64 +4,160 @@
         <format>zip</format>
     </formats>
     <includeBaseDirectory>true</includeBaseDirectory>
-    <dependencySets>
-        <!--Core components, which will be placed in the root folder-->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <useTransitiveDependencies>false</useTransitiveDependencies>
-            <unpack>true</unpack>
-            <unpackOptions>
-                <excludes>
-                    <exclude>**/META-INF/**</exclude>
-                </excludes>
-            </unpackOptions>
-            <scope>compile</scope>
-            <includes>
-                <include>*:*:*:component-with-dependencies</include>
-            </includes>
-            <outputDirectory>/</outputDirectory>
-        </dependencySet>
-        <!--Additional modules-->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <useTransitiveDependencies>false</useTransitiveDependencies>
-            <scope>compile</scope>
-            <unpack>true</unpack>
-            <unpackOptions>
-                <excludes>
-                    <exclude>**/META-INF/**</exclude>
-                </excludes>
-            </unpackOptions>
-            <outputDirectory>modules</outputDirectory>
-            <includes>
-                <include>*:*:*:module-with-dependencies</include>
-            </includes>
-        </dependencySet>
-        <!--Examples-->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <useTransitiveDependencies>false</useTransitiveDependencies>
-            <scope>compile</scope>
-            <unpack>true</unpack>
-            <outputDirectory>examples</outputDirectory>
-            <includes>
-                <include>*:*:*:example-with-dependencies</include>
-            </includes>
-        </dependencySet>
-        <!--JDBC jar renamed to client-->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <useTransitiveDependencies>false</useTransitiveDependencies>
-            <scope>compile</scope>
-            <unpack>false</unpack>
-            <includes>
-                <include>*:modeshape-client:*</include>
-            </includes>
-            <outputDirectory>/client</outputDirectory>
-        </dependencySet>
-    </dependencySets>
-
+   
     <fileSets>
+        <!-- Core Modules (included in the root of the dist) -->
+        <fileSet>
+            <directory>../modeshape-common/target/${binary.dist.name}</directory>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../modeshape-jcr/target/${binary.dist.name}</directory>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../modeshape-jcr-api/target/${binary.dist.name}</directory>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../modeshape-schematic/target/${binary.dist.name}</directory>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+        
+        <!-- Additional Modules (included in the modules dir) -->
+        <fileSet>
+            <directory>../connectors/modeshape-connector-cmis/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-connector-cmis</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../connectors/modeshape-connector-git/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-connector-git</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../connectors/modeshape-connector-jdbc-metadata/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-connector-jdbc-metadata</outputDirectory>
+        </fileSet> 
+        <fileSet>
+            <directory>../extractors/modeshape-extractor-tika/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-extractor-tika</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../modeshape-jca/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-jca</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../modeshape-jdbc/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-jdbc</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../modeshape-jdbc-local/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-jdbc-local</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-ddl/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-ddl</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-images/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-images</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-java/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-java</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-mp3/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-mp3</outputDirectory>
+        </fileSet>  
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-msoffice/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-msoffice</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-sramp/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-sramp</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-teiid/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-teiid</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-text/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-text</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-wsdl/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-wsdl</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-xml/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-xml</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-xsd/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-xsd</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-zip/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-zip</outputDirectory>
+        </fileSet>   
+        <fileSet>
+            <directory>../modeshape-unit-test/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-unit-test</outputDirectory>
+        </fileSet> 
+        <fileSet>
+            <directory>../web/modeshape-web-cmis/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-web-cmis</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../web/modeshape-web-explorer/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-web-explorer</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../web/modeshape-web-jcr/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-web-jcr</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../web/modeshape-web-jcr-rest/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-web-jcr-rest</outputDirectory>
+        </fileSet>    
+        <fileSet>
+            <directory>../web/modeshape-web-jcr-webdav/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-web-jcr-webdav</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../web/modeshape-webdav/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-webdav</outputDirectory>
+        </fileSet>
+        
+        <!--Examples-->
+        <fileSet>
+            <directory>../demos/embedded-repo/target/${binary.dist.name}</directory>
+            <outputDirectory>/examples</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../demos/sequencers/target/${binary.dist.name}</directory>
+            <outputDirectory>/examples</outputDirectory>
+        </fileSet>
+        
+        <!--Client-->
+        <fileSet>
+            <directory>../modeshape-client/target</directory>
+            <outputDirectory>/client</outputDirectory>
+            <includes>
+                <include>modeshape-client*.jar</include>
+            </includes>
+        </fileSet>
+
+        <!-- JCA adapter-->
+        <fileSet>
+            <directory>../modeshape-jca-rar/target</directory>
+            <includes>
+                <include>*.rar</include>
+            </includes>
+            <outputDirectory>jca</outputDirectory>
+        </fileSet>
+        <!--Various other resources-->
         <fileSet>
             <!--
                Gather into the distribution the various text files for inclusion
@@ -83,16 +179,6 @@
              -->
             <directory>target/api</directory>
             <outputDirectory>doc/api</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <!--
-               JCA adaptor
-             -->
-            <directory>../modeshape-jca-rar/target</directory>
-            <includes>
-                <include>*.rar</include>
-            </includes>
-            <outputDirectory>jca</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

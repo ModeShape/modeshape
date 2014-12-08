@@ -67,9 +67,11 @@
                         <artifactId>maven-assembly-plugin</artifactId>
                         <configuration>
                             <descriptorRefs>
-                                <descriptorRef>component-with-dependencies</descriptorRef>
+                                <descriptorRef>module-with-dependencies</descriptorRef>
                             </descriptorRefs>
                             <attach>false</attach>
+                            <finalName>${binary.dist.name}</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </plugin>
                 </plugins>

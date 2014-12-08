@@ -333,6 +333,9 @@
 
         <!-- The id of the maven distribution which is building the current kit -->
         <jboss.kit.distribution.id>jboss-wf8-dist</jboss.kit.distribution.id>
+        
+        <!--The name of binary distribution folder-->
+        <binary.dist.name>binary-dist</binary.dist.name>
 
         <!--
           Maven plugin versions
