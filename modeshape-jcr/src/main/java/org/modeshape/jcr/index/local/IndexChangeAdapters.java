@@ -468,10 +468,6 @@ public class IndexChangeAdapters {
                                 Properties properties,
                                 boolean queryable ) {
             // Properties on new nodes are always represented as 'PropertyAdded' events, and handled via 'modifyProperties' ...
-            // Property prop = properties.getProperty(propertyName);
-            // if (prop != null) {
-            // addValues(key, prop);
-            // }
         }
 
         @Override
@@ -829,6 +825,18 @@ public class IndexChangeAdapters {
                                    Set<Name> mixinTypes,
                                    boolean queryable ) {
             removeValues(key);
+        }
+
+        @Override
+        protected void reindexNode( String workspaceName, NodeKey key, Path path, Name primaryType, Set<Name> mixinTypes,
+                                    Properties properties, boolean queryable ) {
+            removeValues(key);
+            addValue(key, primaryType);
+            if (!mixinTypes.isEmpty()) {
+                for (Name mixinType : mixinTypes) {
+                    addValue(key, mixinType);
+                }
+            }
         }
     }
 
