@@ -163,6 +163,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testOutputPersistenceOfConfigurationWithJournaling() throws Exception {
         parse(readResource("modeshape-journaling.xml"));
     }
+    
+    @Test
+    public void testOutputPersistenceOfConfigurationWithOptimization() throws Exception {
+        parse(readResource("modeshape-optimiziation-config.xml"));
+    }
 
     @Test
     public void testSampleConfigurationModel() throws Exception {

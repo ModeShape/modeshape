@@ -59,6 +59,9 @@ public class PreconfiguredRepositoryIntegrationTest {
     @Resource( mappedName = "java:/jcr/journalingRepository" )
     private JcrRepository journalingRepository;
 
+    @Resource( mappedName = "java:/jcr/optimizationRepository" )
+    private JcrRepository optimizationRepository;
+
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class, "preconfiguredRepository-test.war");
@@ -156,6 +159,14 @@ public class PreconfiguredRepositoryIntegrationTest {
         assertTrue("Entry not found in journal", paths.remove("/testNode"));
         //check the node-removed event is there
         assertTrue("Entry not found in journal", paths.remove("/testNode"));
+        session.logout();
+    }
+    
+    @Test
+    @FixFor( "MODE-2391" )
+    public void shouldEnableDocumentOptimization() throws Exception {
+        assertTrue(optimizationRepository.getConfiguration().getDocumentOptimization().isEnabled());
+        Session session = optimizationRepository.login();
         session.logout();
     }
 }

@@ -454,7 +454,7 @@ public class RepositoryConfiguration {
         public static final String INITIAL_TIME = "initialTime";
         public static final String INTERVAL_IN_HOURS = "intervalInHours";
 
-        public static final String DOCUMENT_OPTIMIZATION = "optimization";
+        public static final String DOCUMENT_OPTIMIZATION = "documentOptimization";
         public static final String OPTIMIZATION_CHILD_COUNT_TARGET = "childCountTarget";
         public static final String OPTIMIZATION_CHILD_COUNT_TOLERANCE = "childCountTolerance";
 
