@@ -436,6 +436,11 @@
                     <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
                     <locking isolation="READ_COMMITTED"/>
                     <transaction mode="NON_XA"/>
+                </local-cache> 
+                <local-cache name="optimizationRepository">
+                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
+                    <locking isolation="READ_COMMITTED"/>
+                    <transaction mode="NON_XA"/>
                 </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
@@ -752,6 +757,14 @@
             </repository>
             <repository name="anonymousRepository" cache-container="modeshape" anonymous-roles=""/>
             <repository name="defaultAnonymousRepository" cache-container="modeshape"/>
+            <repository name="optimizationRepository" 
+                        cache-container="modeshape"
+                        document-optimization-child-count-target="10"
+                        document-optimization-child-count-tolerance="10"
+                        document-optimization-initial-time="02:00"
+                        document-optimization-interval="24"
+                        document-optimization-thread-pool="modeshape-opt"/>
+            
             <!--These should be deployed after the repositories, because they use servlet context listeners to load all repositories-->
             <webapp name="modeshape-cmis.war"/>
             <webapp name="modeshape-explorer.war"/>

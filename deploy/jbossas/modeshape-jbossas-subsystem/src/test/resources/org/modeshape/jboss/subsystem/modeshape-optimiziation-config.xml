@@ -1,0 +1,8 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:2.0">
+    <repository name="sample"
+                document-optimization-child-count-target="10"
+                document-optimization-child-count-tolerance="10"
+                document-optimization-initial-time="02:00"
+                document-optimization-interval="24"
+                document-optimization-thread-pool="modeshape-opt"/>
+</subsystem>
