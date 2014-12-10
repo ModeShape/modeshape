@@ -1,0 +1,32 @@
+{
+    "name": "Persistent repo with local indexes",
+    "storage": {
+        "cacheName": "persistentRepository",
+        "cacheConfiguration": "config/infinispan-persistent.xml",
+        "binaryStorage": {
+            "type": "file",
+            "directory": "target/persistent_repository/binaries",
+            "minimumBinarySizeInBytes": 40
+        }
+    },
+    "workspaces": {
+        "default": "default",
+        "allowCreation": true
+    },
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/startup_test_indexes"
+        }
+    },
+    "indexes" : {
+        // it's important that this is an index which can hold duplicate values        
+        "nodesByName": {
+            "kind": "value",
+            "provider": "local",
+            "nodeType": "nt:unstructured",
+            "columns" : "jcr:name(NAME)",
+            "description": "Name index"
+        }
+    }
+}

@@ -173,7 +173,10 @@ public class LocalIndexProvider extends IndexProvider {
         ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), defn, nodeTypesSupplier, matcher);
         logger().debug("Index provider '{0}' is creating index in workspace '{1}': {2}", getName(), workspaceName, defn);
         final ManagedLocalIndex index = builder.build(workspaceName, db);
-        // this is a new [index definition, workspace] pair so we should always scan
+        if (!index.isNew()) {
+            // the index already exists, so we should not scan anything
+            return index;
+        }
         feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
 
             @SuppressWarnings( "synthetic-access" )

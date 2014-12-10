@@ -799,7 +799,7 @@ public abstract class IndexProvider {
                     // There are adapters for this workspace ...
                     for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
                         if (adapter != null) {
-                            adapter.index(workspace, key, path, primaryType, mixinTypes, properties, true);
+                            adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, true);
                         }
                     }
                 }

@@ -45,7 +45,7 @@ public class IndexChangeAdapter extends ChangeSetAdapter {
     }
 
     /**
-     * Index the specific node. This is called only by the reindexing operations.
+     * Reindex the specific node.
      *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
@@ -55,13 +55,13 @@ public class IndexChangeAdapter extends ChangeSetAdapter {
      * @param properties the properties of the node; may not be null but may be empty
      * @param queryable true if the node is queryable, false otherwise
      */
-    protected final void index( String workspaceName,
-                                NodeKey key,
-                                Path path,
-                                Name primaryType,
-                                Set<Name> mixinTypes,
-                                Properties properties,
-                                boolean queryable ) {
+    protected final void reindex( String workspaceName,
+                                  NodeKey key,
+                                  Path path,
+                                  Name primaryType,
+                                  Set<Name> mixinTypes,
+                                  Properties properties,
+                                  boolean queryable ) {
         if (predicate.matchesType(primaryType, mixinTypes)) {
             reindexNode(workspaceName, key, path, primaryType, mixinTypes, properties, queryable);
         }
