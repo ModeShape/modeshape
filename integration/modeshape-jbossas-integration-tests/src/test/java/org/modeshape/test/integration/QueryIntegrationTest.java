@@ -87,7 +87,9 @@ public class QueryIntegrationTest {
 
     @Test
     public void shouldQueryForAllUnstructuredNodes() throws Exception {
-        String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'files'";
+        session.getRootNode().addNode("query_test");
+        session.save();
+        String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'query_test'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         validateQuery().rowCount(1).useIndex("names").validate(query, query.execute());
     }

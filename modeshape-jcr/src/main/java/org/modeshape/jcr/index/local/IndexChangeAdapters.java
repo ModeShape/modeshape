@@ -117,7 +117,7 @@ public class IndexChangeAdapters {
                                                      NodeTypePredicate matcher,
                                                      String workspaceName,
                                                      LocalDuplicateIndex<Name> index ) {
-        return new PrimaryTypeChangeAdatper(context, matcher, workspaceName, index);
+        return new PrimaryTypeChangeAdapter(context, matcher, workspaceName, index);
     }
 
     /**
@@ -133,7 +133,7 @@ public class IndexChangeAdapters {
                                                     NodeTypePredicate matcher,
                                                     String workspaceName,
                                                     LocalDuplicateIndex<Name> index ) {
-        return new MixinTypesChangeAdatper(context, matcher, workspaceName, index);
+        return new MixinTypesChangeAdapter(context, matcher, workspaceName, index);
     }
 
     /**
@@ -295,10 +295,13 @@ public class IndexChangeAdapters {
                                     Set<Name> mixinTypes,
                                     Properties properties,
                                     boolean queryable ) {
+            String nodeKey = nodeKey(key);
             if (path.isRoot() && includeRoot) {
-                index.add(nodeKey(key), convertRoot(path));
+                index.remove(nodeKey);
+                index.add(nodeKey, convertRoot(path));
             } else {
-                index.add(nodeKey(key), convert(path));
+                index.remove(nodeKey);
+                index.add(nodeKey, convert(path));
             }
         }
 
@@ -595,8 +598,8 @@ public class IndexChangeAdapters {
         }
     }
 
-    protected static final class PrimaryTypeChangeAdatper extends PropertyChangeAdapter<Name> {
-        public PrimaryTypeChangeAdatper( ExecutionContext context,
+    protected static final class PrimaryTypeChangeAdapter extends PropertyChangeAdapter<Name> {
+        public PrimaryTypeChangeAdapter( ExecutionContext context,
                                          NodeTypePredicate matcher,
                                          String workspaceName,
                                          LocalDuplicateIndex<Name> index ) {
@@ -615,8 +618,8 @@ public class IndexChangeAdapters {
         }
     }
 
-    protected static final class MixinTypesChangeAdatper extends PropertyChangeAdapter<Name> {
-        public MixinTypesChangeAdatper( ExecutionContext context,
+    protected static final class MixinTypesChangeAdapter extends PropertyChangeAdapter<Name> {
+        public MixinTypesChangeAdapter( ExecutionContext context,
                                         NodeTypePredicate matcher,
                                         String workspaceName,
                                         LocalDuplicateIndex<Name> index ) {

@@ -923,7 +923,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             public Void call() throws Exception {
                 long initialSize = FileUtil.size("target/startup_test_indexes");
                 JcrSession session = repository.login();
-                int nodeCount = 1000;
+                int nodeCount = 100;
                 for (int i = 0; i < nodeCount; i++) {
                     session.getRootNode().addNode("node_" + i);
                 }
@@ -940,11 +940,56 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
+                // wait a bit so that if reindexing was happening it would be finished before shutting down
+                Thread.sleep(200);
                 repository.login().logout();
                 return null;
             }
         }, "config/repo-config-persistent-local-indexes.json");
         // if reindexing was happening, it would be async so the next assert would normally fail
+        assertEquals("Re-indexing should not be happening", indexFolderSize, FileUtil.size("target/startup_test_indexes"));
+    }
+
+    @Test
+    @FixFor( "MODE-2393 ")
+    public void reindexingLocalProviderShouldRemoveExistingDataFirst() throws Exception {
+        // clean the main repo data
+        FileUtil.delete("target/persistent_repository");
+        // clean the indexes
+        FileUtil.delete("target/startup_test_indexes");
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                long initialSize = FileUtil.size("target/startup_test_indexes");
+                JcrSession session = repository.login();
+                Node testRoot = session.getRootNode().addNode("testRoot");
+                int nodeCount = 100;
+                for (int i = 0; i < nodeCount; i++) {
+                    testRoot.addNode("node_" + i);
+                }
+                session.save();
+                session.logout();
+                // the indexes are sync, so the FS size should've increased because of the new nodes
+                assertTrue(initialSize < FileUtil.size("target/startup_test_indexes"));
+                return null;
+            }
+        }, "config/repo-config-persistent-local-indexes.json");
+        // we can only look at this size once the repo is shutdown, otherwise there may be uncommitted data (MapDB)
+        long indexFolderSize = FileUtil.size("target/startup_test_indexes");
+        assertTrue(indexFolderSize > 0);
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession session = repository.login();
+                // force a re-index of the entire workspace - this should clear the existing indexes first
+                session.getWorkspace().reindex();
+                // then force a reindex of a certain path 
+                session.getWorkspace().reindex("/testRoot");
+                return null;
+            }
+        }, "config/repo-config-persistent-local-indexes.json");
+        // we can only look at this size once the repo is shutdown, otherwise there may be uncommitted data (MapDB)
+        // check that after reindexing we have the exact same folder size
         assertEquals(indexFolderSize, FileUtil.size("target/startup_test_indexes"));
     }
 

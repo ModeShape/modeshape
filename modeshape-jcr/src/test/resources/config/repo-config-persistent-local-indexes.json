@@ -20,12 +20,13 @@
         }
     },
     "indexes" : {
-        "baseNodes": {
-            "kind": "nodetype",
+        // it's important that this is an index which can hold duplicate values        
+        "nodesByName": {
+            "kind": "value",
             "provider": "local",
             "nodeType": "nt:unstructured",
-            "columns" : "jcr:primaryType(STRING)",
-            "description": "Indexing all node types"
+            "columns" : "jcr:name(NAME)",
+            "description": "Name index"
         }
     }
 }
