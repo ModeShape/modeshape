@@ -25,11 +25,13 @@ public class DataType {
     public static final long DEFAULT_LENGTH = -1;
     public static final int DEFAULT_PRECISION = -1;
     public static final int DEFAULT_SCALE = -1;
+    public static final int DEFAULT_ARRAY_DIMENSIONS = 0;
 
     private String name;
     private long length = DEFAULT_LENGTH;
     private int precision = DEFAULT_PRECISION;
     private int scale = DEFAULT_SCALE;
+    private int arrayDimensions = DEFAULT_ARRAY_DIMENSIONS;
 
     /**
      * The statement source.
@@ -93,6 +95,19 @@ public class DataType {
         this.scale = value;
     }
 
+    /**
+     * @return array dimensions
+     */
+    public int getArrayDimensions() {
+        return arrayDimensions;
+    }
+
+    /**
+     * @param arrayDimensions
+     */
+    public void setArrayDimensions(int arrayDimensions) {
+        this.arrayDimensions = arrayDimensions;
+    }
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder(100);

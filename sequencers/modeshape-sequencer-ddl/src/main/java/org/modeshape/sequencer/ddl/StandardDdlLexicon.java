@@ -151,6 +151,7 @@ public class StandardDdlLexicon {
     public static final String DATATYPE_LENGTH = PREFIX + ":datatypeLength";
     public static final String DATATYPE_PRECISION = PREFIX + ":datatypePrecision";
     public static final String DATATYPE_SCALE = PREFIX + ":datatypeScale";
+    public static final String DATATYPE_ARRAY_DIMENSIONS = PREFIX + ":datatypeArrayDimensions";
     public static final String DEFAULT_VALUE = PREFIX + ":defaultValue";
     public static final String DEFAULT_PRECISION = PREFIX + ":defaultprecision";
     public static final String VALUE = PREFIX + ":value";

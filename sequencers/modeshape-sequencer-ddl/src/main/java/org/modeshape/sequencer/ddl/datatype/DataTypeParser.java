@@ -15,6 +15,7 @@
  */
 package org.modeshape.sequencer.ddl.datatype;
 
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_ARRAY_DIMENSIONS;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
@@ -938,6 +939,9 @@ public class DataTypeParser implements DdlConstants {
         }
         if (datatype.getScale() >= 0) {
             columnNode.setProperty(DATATYPE_SCALE, datatype.getScale());
+        }
+        if (datatype.getArrayDimensions() >= 0) {
+            columnNode.setProperty(DATATYPE_ARRAY_DIMENSIONS, datatype.getArrayDimensions());
         }
     }
 }

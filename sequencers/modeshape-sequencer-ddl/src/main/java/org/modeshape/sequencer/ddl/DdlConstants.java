@@ -36,6 +36,8 @@ public interface DdlConstants {
     public static final String L_PAREN = "(";
     public static final String R_PAREN = ")";
     public static final String L_SQUOTE = "’";
+    public static final String LS_BRACE = "[";
+    public static final String RS_BRACE = "]";
 
     /*
      * Table Constraint ID's
