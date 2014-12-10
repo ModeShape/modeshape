@@ -29,9 +29,11 @@
 //------------------------------------------------------------------------------
 
 [vdb:virtualDatabase] > nt:unstructured, mode:hashed
+ - vdb:name (string)
  - vdb:description (string) 
  - vdb:version (long) = '1' autocreated
  - vdb:preview (boolean) = 'false' autocreated
+ - vdb:connectionType (string)
  - vdb:originalFile (string) mandatory
  + vdb:translators (vdb:translators) copy
  + vdb:dataRoles (vdb:dataRoles) copy
@@ -42,9 +44,7 @@
  - vdb:description (string)
  - vdb:visible (boolean) = 'true' autocreated
  - vdb:pathInVdb (string)
- - vdb:sourceTranslator (string)
- - vdb:sourceJndiName (string)
- - vdb:sourceName (string)
+ + vdb:sources (vdb:sources) = vdb:sources copy
 
 // name is the node name (xmi models)
 [vdb:model] > vdb:abstractModel, mmcore:model
@@ -57,6 +57,14 @@
  - mmcore:modelType (string) = 'PHYSICAL' autocreated < 'PHYSICAL','VIRTUAL'
  - vdb:metadataType (string) = 'DDL' autocreated
  - vdb:modelDefinition (string)
+
+[vdb:sources] > nt:unstructured
+ + vdb:source (vdb:source) = vdb:source copy sns
+
+// source name is the node name
+[vdb:source] > nt:unstructured
+ - vdb:sourceTranslator (string)
+ - vdb:sourceJndiName (string)
 
 [vdb:markers] > nt:unstructured
  + vdb:marker (vdb:marker) = vdb:marker copy sns
@@ -82,8 +90,9 @@
  - vdb:description (string)
  - vdb:anyAuthenticated (boolean) = 'false' autocreated
  - vdb:allowCreateTemporaryTables (boolean) = 'false' autocreated
+ - vdb:grantAll (boolean) = 'false' autocreated
  - vdb:mappedRoleNames (string) multiple
- + vdb:permission (vdb:permission) = vdb:permission sns copy
+ + vdb:permissions (vdb:permissions) = vdb:permissions copy
 
 [vdb:entries] > nt:unstructured
  + vdb:vdbEntry (vdb:entry) copy sns
@@ -103,6 +112,21 @@
  - vdb:allowDelete (boolean) = 'false' autocreated
  - vdb:allowExecute (boolean) = 'false' autocreated
  - vdb:allowAlter (boolean) = 'false' autocreated
+ - vdb:allowLanguage (boolean) = 'false' autocreated
+ + vdb:conditions (vdb:conditions) = vdb:conditions copy
+ + vdb:masks (vdb:masks) = vdb:masks copy
+
+[vdb:conditions] > nt:unstructured
+ + vdb:condition (vdb:condition) copy
+
+[vdb:condition] > nt:unstructured
+ - vdb:constraint (boolean) = 'true' autocreated
+
+[vdb:masks] > nt:unstructured
+ + vdb:mask (vdb:mask) copy
+
+[vdb:mask] > nt:unstructured
+ - vdb:order (string)
 
 // group node for the VDBs that are imported by a VDB
 [vdb:importVdbs] > nt:unstructured
