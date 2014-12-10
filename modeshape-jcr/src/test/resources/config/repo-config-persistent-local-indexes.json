@@ -1,0 +1,31 @@
+{
+    "name": "Persistent repo with local indexes",
+    "storage": {
+        "cacheName": "persistentRepository",
+        "cacheConfiguration": "config/infinispan-persistent.xml",
+        "binaryStorage": {
+            "type": "file",
+            "directory": "target/persistent_repository/binaries",
+            "minimumBinarySizeInBytes": 40
+        }
+    },
+    "workspaces": {
+        "default": "default",
+        "allowCreation": true
+    },
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/startup_test_indexes"
+        }
+    },
+    "indexes" : {
+        "baseNodes": {
+            "kind": "nodetype",
+            "provider": "local",
+            "nodeType": "nt:unstructured",
+            "columns" : "jcr:primaryType(STRING)",
+            "description": "Indexing all node types"
+        }
+    }
+}

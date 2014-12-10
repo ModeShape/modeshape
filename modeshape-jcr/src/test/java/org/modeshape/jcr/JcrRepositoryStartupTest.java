@@ -851,7 +851,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
     @Test
     @FixFor( "MODE-2341" )
-    public void shouldAllowReindexingWithLocalProviderBetweenRestarts() throws Exception {
+    public void shouldAllowReindexingWithLocalProviderBetweenRestartsWhenMissing() throws Exception {
         // clean the main repo data
         FileUtil.delete("target/persistent_repository");
 
@@ -874,7 +874,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop(reindexingExternalContentOperation, "config/repo-config-persistent-cache-fs-connector2.json");
         long indexFolderSize2 = FileUtil.size("target/startup_test_indexes");
 
-        assertEquals("The sizes of the index folder are different between 2 identical reindex runs", indexFolderSize1, indexFolderSize2);
+        assertEquals("The sizes of the index folder are different between 2 identical reindex runs", indexFolderSize1,
+                     indexFolderSize2);
     }
 
     private RepositoryOperation reindexingExternalContentOperation() {
@@ -908,6 +909,43 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         };
+    }
+
+    @Test
+    @FixFor( "MODE-2391" )
+    public void shouldNotReindexBetweenRestartsLocalProviderIfExists() throws Exception {
+        // clean the main repo data
+        FileUtil.delete("target/persistent_repository");
+        // clean the indexes
+        FileUtil.delete("target/startup_test_indexes");
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                long initialSize = FileUtil.size("target/startup_test_indexes");
+                JcrSession session = repository.login();
+                int nodeCount = 1000;
+                for (int i = 0; i < nodeCount; i++) {
+                    session.getRootNode().addNode("node_" + i);
+                }
+                session.save();  
+                session.logout();
+                // the indexes are sync, so the FS size should've increased because of the new nodes
+                assertTrue(initialSize < FileUtil.size("target/startup_test_indexes"));
+                return null;  
+            }
+        }, "config/repo-config-persistent-local-indexes.json");
+       
+        long indexFolderSize = FileUtil.size("target/startup_test_indexes"); 
+        assertTrue(indexFolderSize > 0);
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                repository.login().logout();
+                return null;
+            }
+        }, "config/repo-config-persistent-local-indexes.json");
+        // if reindexing was happening, it would be async so the next assert would normally fail
+        assertEquals(indexFolderSize, FileUtil.size("target/startup_test_indexes"));
     }
 
     private void prepareExternalDirectory( String dirpath ) throws IOException {
