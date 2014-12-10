@@ -167,17 +167,15 @@ final class CreateTableParser extends StatementParser {
             stmt = DdlStatement.CREATE_FOREIGN_TABLE;
             view = false;
             schemaElementType = SchemaElementType.FOREIGN;
-        } else if (tokens.canConsume(DdlStatement.CREATE_VIRTUAL_VIEW.tokens())) {
-            stmt = DdlStatement.CREATE_VIRTUAL_VIEW;
-            schemaElementType = SchemaElementType.VIRTUAL;
-        } else if (tokens.canConsume(DdlStatement.CREATE_VIEW.tokens())) {
+        } else if (tokens.canConsume(DdlStatement.CREATE_VIEW.tokens()) ||
+                        tokens.canConsume(DdlStatement.CREATE_VIRTUAL_VIEW.tokens())) {
             stmt = DdlStatement.CREATE_VIEW;
-            schemaElementType = SchemaElementType.FOREIGN;
+            schemaElementType = SchemaElementType.VIRTUAL;
         } else {
-            throw new TeiidDdlParsingException(tokens, "Unparsable create table statement");
+            throw new TeiidDdlParsingException(tokens, "Unparsable create table or view statement");
         }
 
-        assert (stmt != null) : "Create table statement is null";
+        assert (stmt != null) : "Create table or view statement is null";
 
         // parse identifier
         final String id = parseIdentifier(tokens);
