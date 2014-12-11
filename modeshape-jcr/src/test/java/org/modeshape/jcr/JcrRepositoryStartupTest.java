@@ -960,23 +960,16 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
-                long initialSize = FileUtil.size("target/startup_test_indexes");
                 JcrSession session = repository.login();
-                Node testRoot = session.getRootNode().addNode("testRoot");
-                int nodeCount = 100;
-                for (int i = 0; i < nodeCount; i++) {
-                    testRoot.addNode("node_" + i);
-                }
+                session.getRootNode().addNode("testRoot");
                 session.save();
+                String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'testRoot'";
+                Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+                ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
                 session.logout();
-                // the indexes are sync, so the FS size should've increased because of the new nodes
-                assertTrue(initialSize < FileUtil.size("target/startup_test_indexes"));
                 return null;
             }
         }, "config/repo-config-persistent-local-indexes.json");
-        // we can only look at this size once the repo is shutdown, otherwise there may be uncommitted data (MapDB)
-        long indexFolderSize = FileUtil.size("target/startup_test_indexes");
-        assertTrue(indexFolderSize > 0);
         startRunStop(new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
@@ -985,12 +978,13 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 session.getWorkspace().reindex();
                 // then force a reindex of a certain path 
                 session.getWorkspace().reindex("/testRoot");
+                //then check that still only 1 node is returned
+                String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'testRoot'";
+                Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+                ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
                 return null;
             }
         }, "config/repo-config-persistent-local-indexes.json");
-        // we can only look at this size once the repo is shutdown, otherwise there may be uncommitted data (MapDB)
-        // check that after reindexing we have the exact same folder size
-        assertEquals(indexFolderSize, FileUtil.size("target/startup_test_indexes"));
     }
 
     private void prepareExternalDirectory( String dirpath ) throws IOException {
