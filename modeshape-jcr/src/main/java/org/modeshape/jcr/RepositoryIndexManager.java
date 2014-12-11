@@ -787,10 +787,18 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
                 NameFactory names = context.getValueFactories().getNameFactory();
                 Set<Name> nodeTypeNames = new HashSet<>();
                 for (IndexDefinition defn : defns) {
-                    indexByName.put(defn.getName(), defn);
+
                     // Determine all of the node types that are subtypes of any columns
                     nodeTypeNames.clear();
                     Name nodeTypeName = names.create(defn.getNodeTypeName());
+
+                    if (!subtypesByName.containsKey(nodeTypeName)){
+                        Logger.getLogger(getClass()).warn(JcrI18n.errorIndexing,"not creating index "+ defn.getName() +" because of unknown nodeType " + nodeTypeName.getString());
+                        continue;
+                    }
+
+                    indexByName.put(defn.getName(), defn);
+
                     // Now find out all of the node types that are or subtype the named node types ...
                     for (String typeAndSubtype : subtypesByName.get(nodeTypeName)) {
                         Map<String, Collection<IndexDefinition>> byProvider = indexesByProviderByNodeTypeName.get(typeAndSubtype);
