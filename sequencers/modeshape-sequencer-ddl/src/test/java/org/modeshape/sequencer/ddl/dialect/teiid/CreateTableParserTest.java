@@ -621,7 +621,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final AstNode viewNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(viewNode.getName(), is("V1"));
         assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
-        assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
+        assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "SELECT * FROM PM1.G1");
 
         // columns
@@ -641,7 +641,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final AstNode viewNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(viewNode.getName(), is("G1"));
         assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
-        assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
+        assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "select e1, e2 from foo.bar");
 
         // columns
@@ -691,7 +691,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final AstNode viewNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(viewNode.getName(), is("FOO"));
         assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
-        assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
+        assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
 
         // columns
         assertThat(viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(0));
