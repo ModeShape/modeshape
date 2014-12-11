@@ -40,9 +40,7 @@ public class VdbModel implements Comparable<VdbModel> {
     private String name;
     private String type;
     private String pathInVdb;
-    private String sourceTranslator;
-    private String sourceJndiName;
-    private String sourceName;
+    private List<Source> sources = new ArrayList<Source>();
     private boolean visible = true;
     private boolean builtIn = false;
     private long checksum;
@@ -196,48 +194,6 @@ public class VdbModel implements Comparable<VdbModel> {
     }
 
     /**
-     * @return sourceTranslator
-     */
-    public String getSourceTranslator() {
-        return sourceTranslator;
-    }
-
-    /**
-     * @param sourceTranslator Sets sourceTranslator to the specified value.
-     */
-    public void setSourceTranslator( String sourceTranslator ) {
-        this.sourceTranslator = sourceTranslator;
-    }
-
-    /**
-     * @return sourceJndiName
-     */
-    public String getSourceJndiName() {
-        return sourceJndiName;
-    }
-
-    /**
-     * @param sourceJndiName Sets sourceJndiName to the specified value.
-     */
-    public void setSourceJndiName( String sourceJndiName ) {
-        this.sourceJndiName = sourceJndiName;
-    }
-
-    /**
-     * @return the source name
-     */
-    public String getSourceName() {
-        return sourceName;
-    }
-
-    /**
-     * @param sourceName Sets sourceName to the specified value.
-     */
-    public void setSourceName( String sourceName ) {
-        this.sourceName = sourceName;
-    }
-
-    /**
      * @return the paths of the imported models (never <code>null</code> but can be empty)
      */
     public Set<String> getImports() {
@@ -250,6 +206,21 @@ public class VdbModel implements Comparable<VdbModel> {
     public void addImport( final String newImport ) {
         CheckArg.isNotEmpty(newImport, "newImport");
         this.imports.add(newImport);
+    }
+
+    /**
+     * @return the sources of this models
+     */
+    public List<Source> getSources() {
+        return this.sources;
+    }
+
+    /**
+     * @param source a source of this model
+     */
+    public void addSource(Source source) {
+        CheckArg.isNotNull(source, "source");
+        this.sources.add(source);
     }
 
     /**
@@ -297,6 +268,58 @@ public class VdbModel implements Comparable<VdbModel> {
         }
         // Otherwise, neither model depends upon each other, so base the order upon the number of models ...
         return this.getImports().size() - that.getImports().size();
+    }
+
+    /**
+     * A simple POJO that is used to represent the information for a model's source
+     * read in from a VDB manifest ("vdb.xml").
+     */
+    public class Source {
+        private String name;
+        private String translator;
+        private String jndiName;
+
+        /**
+         * Create a new source with the given name and translator
+         *
+         * @param name the source name (cannot be <code>null</code> or empty)
+         * @param translator the source translator (can be <code>null</code>)
+         */
+        public Source(String name, String translator) {
+            CheckArg.isNotEmpty(name, "name");
+            CheckArg.isNotNull(translator, "translator");
+
+            this.name = name;
+            this.translator = translator;
+        }
+
+        /**
+         * @return the name
+         */
+        public String getName() {
+            return this.name;
+        }
+
+        /**
+         * @return the translator
+         */
+        public String getTranslator() {
+            return this.translator;
+        }
+
+        /**
+         * @return the jndiName
+         */
+        public String getJndiName() {
+            return this.jndiName;
+        }
+
+        /**
+         * @param jndiName the jndiName to set
+         */
+        public void setJndiName(String jndiName) {
+            this.jndiName = jndiName;
+        }
     }
 
     /** The 'vdb.cnd' and 'teiid.cnd' files contain a property definition for 'vdb:severity' with these literal values. */

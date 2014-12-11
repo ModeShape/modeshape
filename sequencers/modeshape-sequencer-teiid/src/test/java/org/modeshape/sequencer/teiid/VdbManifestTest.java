@@ -17,6 +17,7 @@ package org.modeshape.sequencer.teiid;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -29,6 +30,7 @@ import java.util.Set;
 import org.junit.Test;
 import org.modeshape.sequencer.teiid.VdbDataRole.Permission;
 import org.modeshape.sequencer.teiid.VdbModel.Severity;
+import org.modeshape.sequencer.teiid.VdbModel.Source;
 import org.modeshape.sequencer.teiid.VdbModel.ValidationMarker;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 
@@ -86,9 +88,11 @@ public class VdbManifestTest {
                 }
 
                 { // source
-                    assertThat(model2.getSourceTranslator(), is("MyBooks_mysql5"));
-                    assertThat(model2.getSourceJndiName(), is("MyBooks"));
-                    assertThat(model2.getSourceName(), is("MyBooks"));
+                    assertEquals(1, model2.getSources().size());
+                    Source source = model2.getSources().iterator().next();
+                    assertThat(source.getTranslator(), is("MyBooks_mysql5"));
+                    assertThat(source.getJndiName(), is("MyBooks"));
+                    assertThat(source.getName(), is("MyBooks"));
                 }
             }
 
@@ -297,9 +301,11 @@ public class VdbManifestTest {
         for (VdbModel model : models) {
             if (!foundSource && "twitter".equals(model.getName())) {
                 assertThat(model.getType(), is(CoreLexicon.ModelType.PHYSICAL));
-                assertThat(model.getSourceTranslator(), is("rest"));
-                assertThat(model.getSourceJndiName(), is("java:/twitterDS"));
-                assertThat(model.getSourceName(), is("twitter"));
+                assertEquals(1, model.getSources().size());
+                Source source = model.getSources().iterator().next();
+                assertThat(source.getTranslator(), is("rest"));
+                assertThat(source.getJndiName(), is("java:/twitterDS"));
+                assertThat(source.getName(), is("twitter"));
                 foundSource = true;
             } else if (!foundVirtual && "twitterview".equals(model.getName())) {
                 assertThat(model.getType(), is(CoreLexicon.ModelType.VIRTUAL));

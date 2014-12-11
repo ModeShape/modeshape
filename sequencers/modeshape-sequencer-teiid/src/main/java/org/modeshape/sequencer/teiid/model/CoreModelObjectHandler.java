@@ -97,13 +97,27 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                 modelNode.setProperty(VdbLexicon.Model.BUILT_IN, vdbModel.isBuiltIn());
                 setProperty(modelNode, VdbLexicon.Model.DESCRIPTION, vdbModel.getDescription());
                 setProperty(modelNode, VdbLexicon.Model.PATH_IN_VDB, vdbModel.getPathInVdb());
-                setProperty(modelNode, VdbLexicon.Model.SOURCE_TRANSLATOR, vdbModel.getSourceTranslator());
-                setProperty(modelNode, VdbLexicon.Model.SOURCE_NAME, vdbModel.getSourceName());
-                setProperty(modelNode, VdbLexicon.Model.SOURCE_JNDI_NAME, vdbModel.getSourceJndiName());
 
                 // write out any model properties from vdb.xml file
                 for (final Entry<String, String> entry : vdbModel.getProperties().entrySet()) {
                     setProperty(modelNode, entry.getKey(), entry.getValue());
+                }
+
+                // write out the model sources
+                if (! vdbModel.getSources().isEmpty()) {
+                    final Node modelSourcesGroupNode = modelNode.addNode(VdbLexicon.Vdb.SOURCES, VdbLexicon.Vdb.SOURCES);
+
+                    for (final VdbModel.Source source : vdbModel.getSources()) {
+                        Node sourceNode = modelSourcesGroupNode.addNode(source.getName(), VdbLexicon.Source.SOURCE);
+                        sourceNode.setProperty(VdbLexicon.Source.TRANSLATOR, source.getTranslator());
+                        sourceNode.setProperty(VdbLexicon.Source.JNDI_NAME, source.getJndiName());
+
+                        LOGGER.debug("added source to model {0} with values [name=>{1}, translator=>{2}, jndiname=>{3}",
+                                     vdbModel.getName(),
+                                     source.getName(),
+                                     source.getTranslator(),
+                                     source.getJndiName());
+                    }
                 }
 
                 // write out and validation markers

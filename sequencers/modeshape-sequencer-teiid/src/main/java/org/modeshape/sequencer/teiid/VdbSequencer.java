@@ -35,7 +35,10 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.sequencer.teiid.VdbDataRole.Condition;
+import org.modeshape.sequencer.teiid.VdbDataRole.Mask;
 import org.modeshape.sequencer.teiid.VdbDataRole.Permission;
+import org.modeshape.sequencer.teiid.VdbModel.Source;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 import org.modeshape.sequencer.teiid.model.ModelSequencer;
@@ -151,7 +154,9 @@ public class VdbSequencer extends Sequencer {
         outputNode.setProperty(VdbLexicon.Vdb.VERSION, manifest.getVersion());
         outputNode.setProperty(VdbLexicon.Vdb.ORIGINAL_FILE, outputNode.getPath());
         outputNode.setProperty(JcrConstants.MODE_SHA1, ((org.modeshape.jcr.api.Binary)binaryValue).getHexHash());
+        setProperty(outputNode, VdbLexicon.Vdb.NAME, manifest.getName());
         setProperty(outputNode, VdbLexicon.Vdb.DESCRIPTION, manifest.getDescription());
+        setProperty(outputNode, VdbLexicon.Vdb.CONNECTION_TYPE, manifest.getConnectionType());
 
         // create imported VDBs child nodes
         sequenceImportVdbs(manifest, outputNode);
@@ -226,6 +231,7 @@ public class VdbSequencer extends Sequencer {
                 setProperty(dataRoleNode, VdbLexicon.DataRole.DESCRIPTION, dataRole.getDescription());
                 dataRoleNode.setProperty(VdbLexicon.DataRole.ANY_AUTHENTICATED, dataRole.isAnyAuthenticated());
                 dataRoleNode.setProperty(VdbLexicon.DataRole.ALLOW_CREATE_TEMP_TABLES, dataRole.isAllowCreateTempTables());
+                dataRoleNode.setProperty(VdbLexicon.DataRole.GRANT_ALL, dataRole.isGrantAll());
 
                 // set role names
                 final List<String> roleNames = dataRole.getMappedRoleNames();
@@ -251,6 +257,34 @@ public class VdbSequencer extends Sequencer {
                         permissionNode.setProperty(VdbLexicon.DataRole.Permission.ALLOW_EXECUTE, permission.canExecute());
                         permissionNode.setProperty(VdbLexicon.DataRole.Permission.ALLOW_READ, permission.canRead());
                         permissionNode.setProperty(VdbLexicon.DataRole.Permission.ALLOW_UPDATE, permission.canUpdate());
+                        permissionNode.setProperty(VdbLexicon.DataRole.Permission.ALLOW_LANGUAGE, permission.useLanguage());
+
+                        // add permission's conditions
+                        List<Condition> conditions = permission.getConditions();
+                        if (! conditions.isEmpty()) {
+                            final Node conditionsGroupNode = permissionNode.addNode(VdbLexicon.DataRole.Permission.CONDITIONS,
+                                                                                    VdbLexicon.DataRole.Permission.CONDITIONS);
+
+                            for (final Condition condition : conditions) {
+                                Node conditionNode = conditionsGroupNode.addNode(condition.getRule(),
+                                                                                 VdbLexicon.DataRole.Permission.Condition.CONDITION);
+                                conditionNode.setProperty(VdbLexicon.DataRole.Permission.Condition.CONSTRAINT, condition.isConstraint());
+                            }
+                        }
+
+                        // add add permission's masks
+                        List<Mask> masks = permission.getMasks();
+                        if (! masks.isEmpty()) {
+                            final Node masksGroupNode = permissionNode.addNode(VdbLexicon.DataRole.Permission.MASKS,
+                                                                                    VdbLexicon.DataRole.Permission.MASKS);
+
+                            for (final Mask mask : masks) {
+                                Node maskNode = masksGroupNode.addNode(mask.getRule(),
+                                                                                 VdbLexicon.DataRole.Permission.Mask.MASK);
+                                maskNode.setProperty(VdbLexicon.DataRole.Permission.Mask.ORDER, mask.getOrder());
+                            }
+                        }
+
                     }
                 }
             }
@@ -278,14 +312,23 @@ public class VdbSequencer extends Sequencer {
                 setProperty(modelNode, VdbLexicon.Model.DESCRIPTION, model.getDescription());
                 modelNode.setProperty(VdbLexicon.Model.VISIBLE, model.isVisible());
                 setProperty(modelNode, VdbLexicon.Model.PATH_IN_VDB, model.getPathInVdb());
-                setProperty(modelNode, VdbLexicon.Model.SOURCE_TRANSLATOR, model.getSourceTranslator());
-                setProperty(modelNode, VdbLexicon.Model.SOURCE_JNDI_NAME, model.getSourceJndiName());
-                setProperty(modelNode, VdbLexicon.Model.SOURCE_NAME, model.getSourceName());
 
                 // set vdb:declarativeModel properties
                 setProperty(modelNode, CoreLexicon.JcrId.MODEL_TYPE, model.getType());
                 setProperty(modelNode, VdbLexicon.Model.METADATA_TYPE, model.getMetadataType());
-                setProperty(modelNode, VdbLexicon.Model.MODEL_DEFINITION, model.getModelDefinition());                
+                setProperty(modelNode, VdbLexicon.Model.MODEL_DEFINITION, model.getModelDefinition());
+
+                // set model sources
+                List<Source> sources = model.getSources();
+                if (! sources.isEmpty()) {
+                    Node modelSourcesGroupNode = modelNode.addNode(VdbLexicon.Vdb.SOURCES, VdbLexicon.Vdb.SOURCES);
+
+                    for (final VdbModel.Source source : sources) {
+                        Node sourceNode = modelSourcesGroupNode.addNode(source.getName(), VdbLexicon.Source.SOURCE);
+                        sourceNode.setProperty(VdbLexicon.Source.TRANSLATOR, source.getTranslator());
+                        sourceNode.setProperty(VdbLexicon.Source.JNDI_NAME, source.getJndiName());
+                    }
+                }
             }
         }
     }

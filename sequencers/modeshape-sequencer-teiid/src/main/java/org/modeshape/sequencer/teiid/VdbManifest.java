@@ -30,7 +30,10 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.sequencer.Sequencer.Context;
+import org.modeshape.sequencer.teiid.VdbDataRole.Condition;
+import org.modeshape.sequencer.teiid.VdbDataRole.Mask;
 import org.modeshape.sequencer.teiid.VdbDataRole.Permission;
+import org.modeshape.sequencer.teiid.VdbModel.Source;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 
 /**
@@ -124,6 +127,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
 
     private final String name;
     private String description;
+    private String connectionType = "BY_VERSION";
     private final Map<String, String> properties = new HashMap<String, String>();
     private int version = 1;
 
@@ -235,6 +239,13 @@ public class VdbManifest implements Comparable<VdbManifest> {
         return this.version;
     }
 
+    /**
+     * @return the connectionType
+     */
+    public String getConnectionType() {
+        return this.connectionType;
+    }
+
     public Iterable<VdbModel> modelsInDependencyOrder() {
         if (!this.models.isEmpty()) {
             Collections.sort(this.models);
@@ -254,6 +265,13 @@ public class VdbManifest implements Comparable<VdbManifest> {
      */
     public void setVersion( final int version ) {
         this.version = version;
+    }
+
+    /**
+     * @param connectionType Sets connection type to the specified value
+     */
+    public void setConnectionType(String connectionType) {
+        this.connectionType = connectionType;
     }
 
     /**
@@ -416,6 +434,76 @@ public class VdbManifest implements Comparable<VdbManifest> {
             return model;
         }
 
+        private Mask parseMask( final XMLStreamReader streamReader,
+                                          final VdbDataRole dataRole) throws Exception {
+            assert VdbLexicon.ManifestIds.MASK.equals(streamReader.getLocalName());
+            assert (dataRole != null) : "data role is null";
+
+            Mask mask = dataRole.new Mask();
+
+            final Map<String, String> attributes = new HashMap<String, String>();
+
+            for (int i = 0, size = streamReader.getAttributeCount(); i < size; ++i) {
+                final QName name = streamReader.getAttributeName(i);
+                final String value = streamReader.getAttributeValue(i);
+                attributes.put(name.getLocalPart(), value);
+                LOGGER.debug("mask attribute name={0}, value={1}", name.getLocalPart(), value);
+            }
+
+            // Set the constraint
+            final String order = attributes.get(VdbLexicon.ManifestIds.ORDER);
+            if (!StringUtil.isBlank(order))
+                mask.setOrder(Integer.parseInt(order));
+
+            attributes.remove(VdbLexicon.ManifestIds.ORDER);
+
+            // look for unhandled attributes
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected data role permission mask attribute:name={0}", entry.getKey());
+                }
+            }
+
+            mask.setRule(streamReader.getElementText());
+
+            return mask;
+        }
+
+        private Condition parseCondition( final XMLStreamReader streamReader,
+                                          final VdbDataRole dataRole) throws Exception {
+            assert VdbLexicon.ManifestIds.CONDITION.equals(streamReader.getLocalName());
+            assert (dataRole != null) : "data role is null";
+
+            Condition condition = dataRole.new Condition();
+
+            final Map<String, String> attributes = new HashMap<String, String>();
+
+            for (int i = 0, size = streamReader.getAttributeCount(); i < size; ++i) {
+                final QName name = streamReader.getAttributeName(i);
+                final String value = streamReader.getAttributeValue(i);
+                attributes.put(name.getLocalPart(), value);
+                LOGGER.debug("condition attribute name={0}, value={1}", name.getLocalPart(), value);
+            }
+
+            // Set the constraint
+            final String constraint = attributes.get(VdbLexicon.ManifestIds.CONSTRAINT);
+            if (!StringUtil.isBlank(constraint))
+                condition.setConstraint(Boolean.parseBoolean(constraint));
+
+            attributes.remove(VdbLexicon.ManifestIds.CONSTRAINT);
+
+            // look for unhandled attributes
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected data role permission condition attribute:name={0}", entry.getKey());
+                }
+            }
+
+            condition.setRule(streamReader.getElementText());
+
+            return condition;
+        }
+
         private Permission parsePermission( final XMLStreamReader streamReader,
                                             final VdbDataRole dataRole ) throws Exception {
             assert VdbLexicon.ManifestIds.PERMISSION.equals(streamReader.getLocalName());
@@ -438,6 +526,9 @@ public class VdbManifest implements Comparable<VdbManifest> {
             boolean read = false;
             String resourceName = null;
             boolean update = false;
+            boolean language = false;
+            List<Condition> conditions = new ArrayList<Condition>();
+            List<Mask> masks = new ArrayList<Mask>();
 
             while (streamReader.hasNext()) {
                 final int eventType = streamReader.next();
@@ -459,6 +550,16 @@ public class VdbManifest implements Comparable<VdbManifest> {
                         read = Boolean.parseBoolean(streamReader.getElementText());
                     } else if (VdbLexicon.ManifestIds.ALLOW_UPDATE.equals(elementName)) {
                         update = Boolean.parseBoolean(streamReader.getElementText());
+                    } else if (VdbLexicon.ManifestIds.ALLOW_LANGUAGE.equals(elementName)) {
+                        language = Boolean.parseBoolean(streamReader.getElementText());
+                    } else if (VdbLexicon.ManifestIds.CONDITION.equals(elementName)) {
+                        Condition condition = parseCondition(streamReader, dataRole);
+                        assert (condition != null) : "condition is null";
+                        conditions.add(condition);
+                    } else if (VdbLexicon.ManifestIds.MASK.equals(elementName)) {
+                        Mask mask = parseMask(streamReader, dataRole);
+                        assert (mask != null) : "mask is null";
+                        masks.add(mask);
                     } else {
                         LOGGER.debug("**** unexpected data role permission element={0}", elementName);
                     }
@@ -475,6 +576,9 @@ public class VdbManifest implements Comparable<VdbManifest> {
                     permission.allowExecute(execute);
                     permission.allowRead(read);
                     permission.allowUpdate(update);
+                    permission.allowLanguage(language);
+                    permission.setConditions(conditions);
+                    permission.setMasks(masks);
 
                     break;
                 } else {
@@ -623,6 +727,15 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 }
             }
 
+            { // set grant-all
+                final String grantAll = attributes.get(VdbLexicon.ManifestIds.GRANT_ALL);
+
+                if (!StringUtil.isBlank(grantAll)) {
+                    dataRole.setGrantAll(Boolean.parseBoolean(grantAll));
+                    attributes.remove(VdbLexicon.ManifestIds.GRANT_ALL);
+                }
+            }
+
             // look for unhandled attributes
             if (LOGGER.isDebugEnabled()) {
                 for (final Map.Entry<String, String> entry : attributes.entrySet()) {
@@ -761,6 +874,8 @@ public class VdbManifest implements Comparable<VdbManifest> {
             assert VdbLexicon.ManifestIds.SOURCE.equals(streamReader.getLocalName());
 
             final Map<String, String> attributes = new HashMap<String, String>();
+            String sourceName;
+            String sourceTranslator;
 
             for (int i = 0, size = streamReader.getAttributeCount(); i < size; ++i) {
                 final QName name = streamReader.getAttributeName(i);
@@ -769,32 +884,23 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 LOGGER.debug("model source attribute name={0}, value={1}", name.getLocalPart(), value);
             }
 
-            { // set model source name
-                final String name = attributes.get(VdbLexicon.ManifestIds.NAME);
+            sourceName = attributes.get(VdbLexicon.ManifestIds.NAME);
+            sourceTranslator = attributes.get(VdbLexicon.ManifestIds.TRANSLATOR_NAME);
+            Source source = model.new Source(sourceName, sourceTranslator);
 
-                if (!StringUtil.isBlank(name)) {
-                    model.setSourceName(name);
-                    attributes.remove(VdbLexicon.ManifestIds.NAME);
-                }
-            }
-
-            { // set model translator name
-                final String translatorName = attributes.get(VdbLexicon.ManifestIds.TRANSLATOR_NAME);
-
-                if (!StringUtil.isBlank(translatorName)) {
-                    model.setSourceTranslator(translatorName);
-                    attributes.remove(VdbLexicon.ManifestIds.TRANSLATOR_NAME);
-                }
-            }
+            attributes.remove(VdbLexicon.ManifestIds.NAME);
+            attributes.remove(VdbLexicon.ManifestIds.TRANSLATOR_NAME);
 
             { // set model connection JNDI name
                 final String jndiName = attributes.get(VdbLexicon.ManifestIds.JNDI_NAME);
 
                 if (!StringUtil.isBlank(jndiName)) {
-                    model.setSourceJndiName(jndiName);
+                    source.setJndiName(jndiName);
                     attributes.remove(VdbLexicon.ManifestIds.JNDI_NAME);
                 }
             }
+
+            model.addSource(source);
 
             // look for unhandled attributes
             if (LOGGER.isDebugEnabled()) {
@@ -957,6 +1063,17 @@ public class VdbManifest implements Comparable<VdbManifest> {
                     }
 
                     attributes.remove(VdbLexicon.ManifestIds.VERSION);
+                }
+            }
+
+            {
+                // set Connection Type
+                final String connectionType = attributes.get(VdbLexicon.ManifestIds.CONNECTION_TYPE);
+
+                if (!StringUtil.isBlank(connectionType)) {
+                    manifest.setConnectionType(connectionType);
+
+                    attributes.remove(VdbLexicon.ManifestIds.CONNECTION_TYPE);
                 }
             }
 
