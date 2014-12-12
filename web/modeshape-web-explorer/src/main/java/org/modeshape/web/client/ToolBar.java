@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.client;
 
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.VerticalAlignment;
 import com.smartgwt.client.util.SC;
@@ -123,36 +124,26 @@ public class ToolBar extends HLayout {
         strip.addMember(userName);
         strip.addSeparator();
 
-        ToolStripButton loging = new ToolStripButton();
-        loging.setTitle("Log in");
-        loging.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                new LoginDialog(console);
-            }
-        });
-        
         ToolStripButton logout = new ToolStripButton();
         logout.setTitle("Log out");
         logout.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                console.jcrService.logout(new AsyncCallback<Object>() {
+                console.jcrService.logout(new AsyncCallback<String>() {
                     @Override
                     public void onFailure(Throwable caught) {
                         SC.say(caught.getMessage());
                     }
 
                     @Override
-                    public void onSuccess(Object result) {
+                    public void onSuccess(String result) {
                         console.updateUserName(null);
-                        console.showContent();
+                        Window.Location.replace(result);
                     }
                 });
             }
         });
         
-        strip.addButton(loging);
         strip.addButton(logout);
         
         addMember(strip);

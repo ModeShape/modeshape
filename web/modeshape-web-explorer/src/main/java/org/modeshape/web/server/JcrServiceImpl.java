@@ -99,7 +99,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     
     @Override
     public String getRequestedURI() {
-        String uri = (String)getThreadLocalRequest().getSession(true).getAttribute("initial.uri");
+        String uri = (String)getThreadLocalRequest().getSession().getAttribute("initial.uri");
         if (uri != null) {
             logger.debug("Requested URI " + uri);
             return uri;
@@ -115,11 +115,18 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public String getUserName() throws RemoteException {
-        String uname = (String)getThreadLocalRequest().getSession().getAttribute("uname");
-        String passwd = (String)getThreadLocalRequest().getSession().getAttribute("password");
+        ServletContext context = getServletContext();
+        
+        //get user's credentials from servlet context
+        String uname = (String)context.getAttribute("uname");
+        String passwd = (String)context.getAttribute("password");
+        
+        //login to the repositories
         if (uname != null) {
             connector().login(uname, passwd);
         }
+        
+        //return user's name
         String res = connector().userName();
         return res;
     }
@@ -146,13 +153,21 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
 
     @Override
-    public void logout() {
+    public String logout() {
         try {
             connector().logout();
         } catch (RemoteException e) {
             //nothing to do here in case of the exception
         } finally {
-            getThreadLocalRequest().getSession(true).invalidate();
+            //clean up session
+            getThreadLocalRequest().getSession().invalidate();
+            
+            //clean up context
+            getServletContext().removeAttribute("uname");
+            getServletContext().removeAttribute("password");
+            
+            //redirect to initial page. it will trigger login form
+            return getThreadLocalRequest().getContextPath() + "/Console.html";
         }
     }
     

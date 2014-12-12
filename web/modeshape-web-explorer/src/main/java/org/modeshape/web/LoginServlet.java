@@ -16,89 +16,88 @@
 package org.modeshape.web;
 
 import java.io.IOException;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.modeshape.common.logging.Logger;
 
 /**
  * @author kulikov
  */
-public class InitialServlet extends HttpServlet {
+public class LoginServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private Logger logger = Logger.getLogger(InitialServlet.class);
-    
+
     /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
-     * 
+     * Processes requests for both HTTP
+     * <code>GET</code> and
+     * <code>POST</code> methods.
+     *
      * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
-    protected void processRequest( HttpServletRequest request,
-                                   HttpServletResponse response ) throws ServletException, IOException {
-        String authHeader = ((HttpServletRequest)request).getHeader("Authorization");
-        String pathInfo= request.getPathInfo();
-        
-        Object marker = request.getSession().getAttribute("login-required-marker");
-        
-        if (marker == null && pathInfo.equals("login.do")) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.addHeader("WWW-Authenticate", "Basic realm =\"Realm\"");
-            request.getSession().setAttribute("login-required-marker", Boolean.FALSE);
-            return;
-        }
+    protected void processRequest(HttpServletRequest request,
+            HttpServletResponse response) throws ServletException, IOException {
 
-        if (pathInfo.equals("login.do")) {
+        //get user's credentials from the request
+        String uname = request.getParameter("j_username");
+        String pass = request.getParameter("j_password");
+
+        try {
+            //validate given user using container's login mechanism
+            request.login(uname, pass);
+
+            ServletContext context = getServletConfig().getServletContext();
+            
+            //put user's credentials in the servlet context
+            context.setAttribute("uname", uname);
+            context.setAttribute("password", pass);
+            
+            //forward request to the initial page
             response.sendRedirect(request.getContextPath() + "/Console.html");
-            return;
+        } catch (ServletException e) {
+            //login failed to forward user to the login form
+            response.sendRedirect(request.getContextPath() + "/loginform.html");
         }
-        
-        String url = request.getRequestURI();
-        String servletPath = request.getServletPath();
-
-        request.getSession(true).setAttribute("initial.uri", url);
-        logger.debug("Store requested uri " + url);
-        
-        String dest = url.substring(0, url.indexOf(servletPath));
-        response.sendRedirect(dest);
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
-     * Handles the HTTP <code>GET</code> method.
-     * 
+     * Handles the HTTP
+     * <code>GET</code> method.
+     *
      * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
     @Override
-    protected void doGet( HttpServletRequest request,
-                          HttpServletResponse response ) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request,
+            HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
     }
 
     /**
-     * Handles the HTTP <code>POST</code> method.
-     * 
+     * Handles the HTTP
+     * <code>POST</code> method.
+     *
      * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
     @Override
-    protected void doPost( HttpServletRequest request,
-                           HttpServletResponse response ) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request,
+            HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
     }
 
     /**
      * Returns a short description of the servlet.
-     * 
+     *
      * @return a String containing servlet description
      */
     @Override

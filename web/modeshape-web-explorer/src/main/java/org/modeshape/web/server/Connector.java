@@ -39,7 +39,7 @@ public interface Connector extends Serializable {
      * @param username the user name
      * @param password user's password.
      */
-    public void login( String username, String password );
+    public void login( String username, String password ) throws RemoteException;
 
     /**
      * Logs out.
