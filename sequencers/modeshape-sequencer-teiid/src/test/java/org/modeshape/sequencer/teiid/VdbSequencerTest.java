@@ -83,9 +83,17 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertThat(modelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
             assertThat(modelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
             assertThat(modelNode.getProperty(VdbLexicon.Model.BUILT_IN).getBoolean(), is(false));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("MyBooks_mysql5"));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("MyBooks"));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_NAME).getString(), is("MyBooks"));
+
+            Node sourcesNode = modelNode.getNode(VdbLexicon.Vdb.SOURCES);
+            assertNotNull(sourcesNode);
+            assertThat(sourcesNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.SOURCES));
+
+            Node sourceNode = sourcesNode.getNode("MyBooks");
+            assertNotNull(sourceNode);
+            assertThat(sourceNode.getPrimaryNodeType().getName(), is(VdbLexicon.Source.SOURCE));
+            assertThat(sourceNode.getProperty(VdbLexicon.Source.TRANSLATOR).getString(), is("MyBooks_mysql5"));
+            assertThat(sourceNode.getProperty(VdbLexicon.Source.JNDI_NAME).getString(), is("MyBooks"));
+
             assertThat(modelNode.getProperty("modelClass").getString(), is("Relational"));
             assertThat(modelNode.getProperty("indexName").getString(), is("718925066.INDEX"));
 
@@ -312,9 +320,16 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertThat(modelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
             assertThat(modelNode.getProperty("modelClass").getString(), is("Relational"));
             assertThat(modelNode.getProperty("indexName").getString(), is("1388555674.INDEX"));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("oracle"));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("Books_Oracle"));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_NAME).getString(), is("Books_Oracle"));
+
+            Node sourcesNode = modelNode.getNode(VdbLexicon.Vdb.SOURCES);
+            assertNotNull(sourcesNode);
+            assertThat(sourcesNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.SOURCES));
+
+            Node sourceNode = sourcesNode.getNode("Books_Oracle");
+            assertNotNull(sourceNode);
+            assertThat(sourceNode.getPrimaryNodeType().getName(), is(VdbLexicon.Source.SOURCE));
+            assertThat(sourceNode.getProperty(VdbLexicon.Source.TRANSLATOR).getString(), is("oracle"));
+            assertThat(sourceNode.getProperty(VdbLexicon.Source.JNDI_NAME).getString(), is("Books_Oracle"));
         }
 
         { // BooksView model child node
@@ -553,9 +568,17 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertNotNull(declarativeModelNode);
             assertThat(declarativeModelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.DECLARATIVE_MODEL));
             assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
-            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("rest"));
-            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("java:/twitterDS"));
-            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_NAME).getString(), is("twitter"));
+
+            Node sourcesNode = declarativeModelNode.getNode(VdbLexicon.Vdb.SOURCES);
+            assertNotNull(sourcesNode);
+            assertThat(sourcesNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.SOURCES));
+
+            Node sourceNode = sourcesNode.getNode("twitter");
+            assertNotNull(sourceNode);
+            assertThat(sourceNode.getPrimaryNodeType().getName(), is(VdbLexicon.Source.SOURCE));
+            assertThat(sourceNode.getProperty(VdbLexicon.Source.TRANSLATOR).getString(), is("rest"));
+            assertThat(sourceNode.getProperty(VdbLexicon.Source.JNDI_NAME).getString(), is("java:/twitterDS"));
+
             assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(),
                        is(CoreLexicon.ModelType.PHYSICAL));
         }
@@ -597,9 +620,17 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertNotNull(declarativeModelNode);
             assertThat(declarativeModelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.DECLARATIVE_MODEL));
             assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
-            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("rest"));
-            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("java:/twitterDS"));
-            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_NAME).getString(), is("twitter"));
+
+            Node sourcesNode = declarativeModelNode.getNode(VdbLexicon.Vdb.SOURCES);
+            assertNotNull(sourcesNode);
+            assertThat(sourcesNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.SOURCES));
+
+            Node sourceNode = sourcesNode.getNode("twitter");
+            assertNotNull(sourceNode);
+            assertThat(sourceNode.getPrimaryNodeType().getName(), is(VdbLexicon.Source.SOURCE));
+            assertThat(sourceNode.getProperty(VdbLexicon.Source.TRANSLATOR).getString(), is("rest"));
+            assertThat(sourceNode.getProperty(VdbLexicon.Source.JNDI_NAME).getString(), is("java:/twitterDS"));
+
             assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(),
                        is(CoreLexicon.ModelType.PHYSICAL));
         }

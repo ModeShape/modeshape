@@ -16,6 +16,7 @@
 package org.modeshape.sequencer.teiid;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
@@ -28,6 +29,7 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
     private final String name;
     private boolean anyAuthenticated;
     private boolean allowCreateTempTables;
+    private boolean grantAll;
     private String description;
     private final List<Permission> permissions = new ArrayList<VdbDataRole.Permission>();
     private final List<String> roleNames = new ArrayList<String>();
@@ -98,6 +100,13 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
     }
 
     /**
+     * @return <code>true</code> if data role has grant all
+     */
+    public boolean isGrantAll() {
+        return this.grantAll;
+    }
+
+    /**
      * @param newValue the new value for allowCreateTempTables
      */
     public void setAllowCreateTempTables( final boolean newValue ) {
@@ -119,6 +128,13 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
     }
 
     /**
+     * @param grantAll
+     */
+    public void setGrantAll(boolean grantAll) {
+        this.grantAll = grantAll;
+    }
+
+    /**
      * A simple POJO that is used to represent one data role permission found in the VDB manifest ("vdb.xml").
      */
     public class Permission {
@@ -130,6 +146,9 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
         private boolean read;
         private final String resourceName;
         private boolean update;
+        private boolean language;
+        private List<Condition> conditions = Collections.emptyList();
+        private List<Mask> masks = Collections.emptyList();
 
         /**
          * @param resourceName the resource name associated with the permission (cannot be <code>null</code> or empty)
@@ -182,6 +201,13 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
         }
 
         /**
+         * @param language
+         */
+        public void allowLanguage(boolean language) {
+            this.language = language;
+        }
+
+        /**
          * @return <code>true</code> if the permission can alter
          */
         public boolean canAlter() {
@@ -224,10 +250,123 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
         }
 
         /**
+         * @return <code>true</code> if the permission allows languages
+         */
+        public boolean useLanguage() {
+            return this.language;
+        }
+
+        /**
          * @return the resource name associated with the permission (never <code>null</code> or empty)
          */
         public String getResourceName() {
             return this.resourceName;
+        }
+
+        /**
+         * @return the conditions
+         */
+        public List<Condition> getConditions() {
+            return this.conditions;
+        }
+
+        /**
+         * @param conditions associated with the permission
+         */
+        public void setConditions(List<Condition> conditions) {
+            this.conditions = conditions;
+        }
+
+        /**
+         * @return the masks
+         */
+        public List<Mask> getMasks() {
+            return this.masks;
+        }
+
+        /**
+         * @param masks associated with the permission
+         */
+        public void setMasks(List<Mask> masks) {
+            this.masks = masks;
+        }
+    }
+
+    /**
+     * A simple POJO that is used to represent a data role permission's single condition found in the
+     * VDB manifest ("vdb.xml").
+     */
+    public class Condition {
+
+        private boolean constraint = true;
+
+        private String rule;
+
+        /**
+         * @return constraint flag
+         */
+        public boolean isConstraint() {
+            return constraint;
+        }
+
+        /**
+         * @param the constraint flag
+         */
+        public void setConstraint(boolean constraint) {
+            this.constraint = constraint;
+        }
+
+        /**
+         * @return the rule
+         */
+        public String getRule() {
+            return this.rule;
+        }
+
+        /**
+         * @param rule
+         */
+        public void setRule(String rule) {
+            this.rule = rule;
+        }
+    }
+
+    /**
+     * A simple POJO that is used to represent a data role permission's single mask found in the
+     * VDB manifest ("vdb.xml").
+     */
+    public class Mask {
+
+        private int order;
+
+        private String rule;
+
+        /**
+         * @return order value
+         */
+        public int getOrder() {
+            return order;
+        }
+
+        /**
+         * @param the order value
+         */
+        public void setOrder(int order) {
+            this.order = order;
+        }
+
+        /**
+         * @return the rule
+         */
+        public String getRule() {
+            return this.rule;
+        }
+
+        /**
+         * @param rule
+         */
+        public void setRule(String rule) {
+            this.rule = rule;
         }
     }
 }
