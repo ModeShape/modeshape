@@ -45,6 +45,8 @@ public interface JcrServiceAsync {
     
     public void logout(AsyncCallback<String> cb);
     
+    public void refreshSession(String repository, String workspace, boolean keepChanges, AsyncCallback<?> res);
+        
     public void node(String repository, String workspace, String path, AsyncCallback<JcrNode> result);
 
     public void repositoryInfo(String repository, AsyncCallback<JcrRepositoryDescriptor> result);
