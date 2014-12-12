@@ -64,7 +64,15 @@ import org.modeshape.web.shared.ResultSet;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.logging.Level;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.InvalidItemStateException;
+import javax.jcr.ItemExistsException;
+import javax.jcr.ReferentialIntegrityException;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.version.VersionException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
@@ -718,8 +726,24 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         Session session = connector().find(repository).session(workspace);
         try {
             session.save();
-        } catch (Exception e) {
-            throw new RemoteException(e.getMessage());
+        } catch (AccessDeniedException ex) {
+            throw new RemoteException("Access violation: " + ex.getMessage());
+        } catch (ItemExistsException ex) {
+            throw new RemoteException("Item exist: " + ex.getMessage());
+        } catch (ReferentialIntegrityException ex) {
+            throw new RemoteException("Referential integrity violation: " + ex.getMessage());
+        } catch (ConstraintViolationException ex) {
+            throw new RemoteException("Constraint violation: " + ex.getMessage());
+        } catch (InvalidItemStateException ex) {
+            throw new RemoteException("Invalid item state: " + ex.getMessage());
+        } catch (VersionException ex) {
+            throw new RemoteException("version error: " + ex.getMessage());
+        } catch (LockException ex) {
+            throw new RemoteException("Lock violation: " + ex.getMessage());
+        } catch (NoSuchNodeTypeException ex) {
+            throw new RemoteException("Node type problem: " + ex.getMessage());
+        } catch (RepositoryException ex) {
+            throw new RemoteException("Generic error: " + ex.getMessage());
         }
     }
 
@@ -942,6 +966,16 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         try {
             FileInputStream fin = new FileInputStream(file);
             connector().find(repository).session(workspace).getWorkspace().importXML(path, fin, option);
+        } catch (Exception e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void refreshSession(String repository, String workspace, 
+        boolean keepChanges) throws RemoteException {
+        try {
+            connector().find(repository).session(workspace).refresh(keepChanges);
         } catch (Exception e) {
             throw new RemoteException(e.getMessage());
         }
