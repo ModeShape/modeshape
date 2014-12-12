@@ -448,6 +448,48 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
     }
     
+    @Test
+    @FixFor( "MODE-2395 ")
+    public void shouldSupportMultipleUpdatesFromTheSameSessionWithUserTransactions() throws Exception {
+        InputStream configStream = getClass().getClassLoader().getResourceAsStream(
+                "config/repo-config-inmemory-jbosstxn.json");
+        startRepositoryWithConfiguration(configStream);
+        final JcrSession mainSession = repository.login();
+        
+        startTransaction();
+        Node node1 = mainSession.getRootNode().addNode("node1");
+        node1.setProperty("prop", "foo");
+        mainSession.save();
+        commitTransaction();
+        
+        startTransaction();
+        Node node2 = mainSession.getRootNode().addNode("node2");
+        node2.setProperty("prop", "foo");
+        mainSession.save();
+        commitTransaction();
+        // re-read the node to make sure it's in the cache
+        node2 = mainSession.getNode("/node2");
+        
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        Future<Void> updaterResult = executorService.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession updater = repository.login();
+                startTransaction();
+                AbstractJcrNode node2 = updater.getNode("/node2");
+                node2.setProperty("prop", "bar");
+                updater.save();
+                commitTransaction();
+                updater.logout();
+                return null;
+            }
+        });
+        updaterResult.get();
+        node2 = mainSession.getNode("/node2");
+        assertEquals("bar", node2.getProperty("prop").getString());
+        mainSession.logout();
+    }
+    
     protected void startTransaction() throws NotSupportedException, SystemException {
         TransactionManager txnMgr = transactionManager();
         // Change this to true if/when debugging ...

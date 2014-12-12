@@ -153,6 +153,7 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
      */
     protected void completeTransaction() {
         workspaceCache.set(sharedWorkspaceCache);
+        completeTransactionFunction.set(null);
     }
 
     @Override
