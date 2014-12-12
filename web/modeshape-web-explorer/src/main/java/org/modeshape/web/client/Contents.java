@@ -72,6 +72,9 @@ public class Contents extends View {
             );
     
     private Button saveButton;
+    private Button refreshButton;
+    
+    private RefreshSessionDialog refreshSessionDialog = new RefreshSessionDialog(this);
     
     public Contents(final Console console, final JcrServiceAsync jcrService, ViewPort viewPort) {
         super(viewPort, null);
@@ -126,11 +129,22 @@ public class Contents extends View {
             }
         });
         
+
+        refreshButton = new Button();
+        refreshButton.setTitle("Refresh");
+        refreshButton.setIcon("icons/save.png");
+        refreshButton.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                refreshSessionDialog.showModal();
+            }
+        });
         
         panel.addMember(buttonPanel);        
         addMember(panel);
 
         panel.addMember(saveButton);
+        panel.addMember(refreshButton);
         
         HLayout spacer = new HLayout();
         spacer.setWidth(5);
@@ -278,6 +292,21 @@ public class Contents extends View {
         mainGrid.showTab(page);
     }
 
+    public void refreshSession(boolean keepChanges) {
+        jcrService.refreshSession(repository(), workspace(), keepChanges, new AsyncCallback() {
+
+            @Override
+            public void onFailure(Throwable caught) {
+                SC.say(caught.getMessage());
+            }
+
+            @Override
+            public void onSuccess(Object result) {
+                getAndDisplayNode(path(), true);
+            }
+        });
+    }
+    
     /**
      * Exports contents to the given file.
      * 

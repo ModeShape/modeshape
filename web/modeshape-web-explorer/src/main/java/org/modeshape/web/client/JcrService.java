@@ -265,4 +265,16 @@ public interface JcrService extends RemoteService {
             throws RemoteException;
     public void importXML(String repository, String workspace, String path, String location, int option) 
             throws RemoteException;
+    
+    /**
+     * Reload session to the given workspace and repository.
+     * 
+     * @param repository the repository name
+     * @param workspace the workspace name
+     * @param keepChanges true if session should keep modification and false 
+     * otherwise
+     * @throws RemoteException 
+     */
+    public void refreshSession(String repository, String workspace, 
+        boolean keepChanges) throws RemoteException;
 }
