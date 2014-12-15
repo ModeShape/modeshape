@@ -168,6 +168,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             }
         }
         if (has(repository, ModelKeys.DEFAULT_INITIAL_CONTENT)) {
+            started = startIfNeeded(writer, Element.WORKSPACES, started);
             writer.writeStartElement(Element.INITIAL_CONTENT.getLocalName());
             writer.writeCharacters(repository.get(ModelKeys.DEFAULT_INITIAL_CONTENT).asString());
             writer.writeEndElement();
