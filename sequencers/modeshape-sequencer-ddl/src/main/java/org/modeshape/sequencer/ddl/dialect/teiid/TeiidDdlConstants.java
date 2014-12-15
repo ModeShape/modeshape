@@ -25,6 +25,12 @@ import org.modeshape.sequencer.ddl.DdlConstants;
  */
 public interface TeiidDdlConstants extends DdlConstants {
 
+    /*
+     * Teiid DDL Keywords
+     */
+    public static final String GLOBAL = "GLOBAL";
+    public static final String TEMPORARY = "TEMPORARY";
+
     /**
      * An object that has a DDL representation.
      */
@@ -52,6 +58,7 @@ public interface TeiidDdlConstants extends DdlConstants {
          * </code>
          */
         CREATE_FOREIGN_TABLE(CREATE, FOREIGN, TABLE),
+        CREATE_GLOBAL_TEMPORARY_TABLE(CREATE, GLOBAL, TEMPORARY, TABLE),
         CREATE_VIRTUAL_VIEW(CREATE, TeiidReservedWord.VIRTUAL.name(), VIEW),
         CREATE_VIEW(CREATE, VIEW),
 

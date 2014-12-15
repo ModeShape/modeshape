@@ -47,6 +47,10 @@ class TeiidDataTypeParser extends DataTypeParser {
         int[] precisionScale = DEFAULT_PRECISION_SCALE;
         int arrayDimensions = DataType.DEFAULT_ARRAY_DIMENSIONS;
 
+        // flags for dealing with the SERIAL pseudo data type
+        boolean autoIncrement = false;
+        boolean notNull = false;
+
         for (final TeiidDataType teiidDataType : TeiidDataType.values()) {
             if (tokens.canConsume(teiidDataType.toDdl())) {
                 teiidType = teiidDataType;
@@ -87,8 +91,21 @@ class TeiidDataTypeParser extends DataTypeParser {
             }
         }
 
+        if (teiidType == null && tokens.canConsume(TeiidDdlConstants.TeiidNonReservedWord.SERIAL.toDdl())) {
+            // SERIAL is an alias for an auto-incremented not-null integer
+            teiidType = TeiidDataType.INTEGER;
+            autoIncrement = true;
+            notNull = true;
+        }
+
         if (teiidType != null) {
             final DataType type = new DataType(teiidType.toDdl());
+
+            // set auto increment
+            type.setAutoIncrement(autoIncrement);
+
+            // set not null
+            type.setNotNull(notNull);
 
             // set length
             if (length != DataType.DEFAULT_LENGTH) {

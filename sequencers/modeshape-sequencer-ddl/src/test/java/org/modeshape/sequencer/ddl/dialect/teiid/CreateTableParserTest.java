@@ -16,6 +16,7 @@
 package org.modeshape.sequencer.ddl.dialect.teiid;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
@@ -191,6 +192,70 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertProperty(tableNode.childrenWithName("FOO").get(0), StandardDdlLexicon.VALUE, "BAR");
         assertThat(tableNode.childrenWithName("ANNOTATION").size(), is(1));
         assertProperty(tableNode.childrenWithName("ANNOTATION").get(0), StandardDdlLexicon.VALUE, "Test Table");
+    }
+
+    @Test
+    public void shouldParseGlobalTemporaryTable() {
+        final String content = "CREATE GLOBAL TEMPORARY TABLE TEMP1 ("
+                                + "e1 string,"
+                                + "e2 SERIAL,"
+                                + "PRIMARY KEY(e1))";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode.getName(), is("TEMP1"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+
+        // columns
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(2));
+
+        { // column x
+            assertThat(tableNode.childrenWithName("e1").size(), is(1));
+            final AstNode e1 = tableNode.childrenWithName("e1").get(0);
+            assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
+            assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
+        }
+
+        { // column y
+            assertThat(tableNode.childrenWithName("e2").size(), is(1));
+            final AstNode e2 = tableNode.childrenWithName("e2").get(0);
+            //
+            // SERIAL is a pseudo data type that converts to non-null auto-increment integer
+            //
+            assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
+            assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NOT NULL");
+        }
+
+        // constraints
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(1));
+
+        { // x primary key
+            assertThat(tableNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1").size(), is(1));
+            final Object temp = tableNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1").get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+            assertThat(temp, is(instanceOf(List.class)));
+
+            @SuppressWarnings( "unchecked" )
+            final List<AstNode> references = (List<AstNode>)temp;
+            assertThat(references.size(), is(1));
+            assertThat(references.get(0), is(tableNode.childrenWithName("e1").get(0)));
+        }
+    }
+
+    @Test
+    public void globalTemporaryTableDoesNotSupportAS() {
+        final String content = "CREATE GLOBAL TEMPORARY TABLE TEMP1 ("
+                                + "e1 string,"
+                                + "e2 SERIAL,"
+                                + "PRIMARY KEY(e1))"
+                                + "AS SELECT * FROM TABLE1;";
+        try {
+            this.parser.parse(getTokens(content), this.rootNode);
+            fail("Should not parse - GLOBAL TEMPORARY TABLES do not have AS statements");
+        } catch (Exception ex) {
+            assertThat(ex.getMessage(), containsString(
+                  "Unparsable create table statement: CREATE GLOBAL TEMPORARY TABLES do not have AS statements"));
+        }
     }
 
     /**

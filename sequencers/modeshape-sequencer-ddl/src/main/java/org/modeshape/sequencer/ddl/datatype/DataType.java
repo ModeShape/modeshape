@@ -32,6 +32,8 @@ public class DataType {
     private int precision = DEFAULT_PRECISION;
     private int scale = DEFAULT_SCALE;
     private int arrayDimensions = DEFAULT_ARRAY_DIMENSIONS;
+    private boolean autoIncrement = false;
+    private boolean notNull = false;
 
     /**
      * The statement source.
@@ -107,6 +109,33 @@ public class DataType {
      */
     public void setArrayDimensions(int arrayDimensions) {
         this.arrayDimensions = arrayDimensions;
+    }
+    /**
+     * @return auto increment
+     */
+    public boolean isAutoIncrement() {
+        return this.autoIncrement;
+    }
+
+    /**
+     * @param autoIncrement the autoIncrement flag to set
+     */
+    public void setAutoIncrement(boolean autoIncrement) {
+        this.autoIncrement = autoIncrement;
+    }
+
+    /**
+     * @return not null flag
+     */
+    public boolean isNotNull() {
+        return this.notNull;
+    }
+
+    /**
+     * @param notNull the notNull flag to set
+     */
+    public void setNotNull(boolean notNull) {
+        this.notNull = notNull;
     }
     @Override
     public String toString() {
