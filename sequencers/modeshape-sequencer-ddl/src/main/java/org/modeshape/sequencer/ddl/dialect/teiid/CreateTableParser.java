@@ -139,7 +139,9 @@ final class CreateTableParser extends StatementParser {
     @Override
     boolean matches( final DdlTokenStream tokens ) {
         return tokens.matches(DdlStatement.CREATE_FOREIGN_TABLE.tokens())
-               || tokens.matches(DdlStatement.CREATE_VIRTUAL_VIEW.tokens()) || tokens.matches(DdlStatement.CREATE_VIEW.tokens());
+               || tokens.matches(DdlStatement.CREATE_VIRTUAL_VIEW.tokens())
+               || tokens.matches(DdlStatement.CREATE_VIEW.tokens())
+               || tokens.matches(DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE.tokens());
     }
 
     /**
@@ -154,6 +156,7 @@ final class CreateTableParser extends StatementParser {
 
         // CREATE FOREIGN TABLE <identifier> <create table body>
         // CREATE FOREIGN TABLE <identifier> <create table body> AS <query expression>
+        // CREATE GLOBAL TEMPORARY TABLE  <identifier> <create table body>
         // CREATE VIRTUAL VIEW <identifier> <create table body>
         // CREATE VIRTUAL VIEW <identifier> <create table body> AS <query expression>
         // CREATE VIEW <identifier> <create table body>
@@ -167,6 +170,10 @@ final class CreateTableParser extends StatementParser {
             stmt = DdlStatement.CREATE_FOREIGN_TABLE;
             view = false;
             schemaElementType = SchemaElementType.FOREIGN;
+        } else if (tokens.canConsume(DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE.tokens())) {
+            stmt = DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE;
+            view = false;
+            schemaElementType = SchemaElementType.VIRTUAL;
         } else if (tokens.canConsume(DdlStatement.CREATE_VIEW.tokens()) ||
                         tokens.canConsume(DdlStatement.CREATE_VIRTUAL_VIEW.tokens())) {
             stmt = DdlStatement.CREATE_VIEW;
@@ -189,6 +196,8 @@ final class CreateTableParser extends StatementParser {
 
         // may have an AS clause
         if (tokens.hasNext() && tokens.canConsume(TeiidReservedWord.AS.toDdl())) {
+            if (DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE.equals(stmt))
+                throw new TeiidDdlParsingException(tokens, "Unparsable create table statement: CREATE GLOBAL TEMPORARY TABLES do not have AS statements");
             // must have a query expression
             if (!parseQueryExpression(tokens, tableNode)) {
                 throw new TeiidDdlParsingException(tokens, "Unparsable create table statement");
@@ -527,11 +536,17 @@ final class CreateTableParser extends StatementParser {
         final AstNode columnNode = getNodeFactory().node(id, tableNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         getDataTypeParser().setPropertiesOnNode(columnNode, datatype);
 
-        boolean foundNotNull = false;
         boolean foundDefaultClause = false;
         boolean foundOptionsClause = false;
         boolean foundConstraintType = false;
-        boolean foundAutoIncrement = false;
+
+        //
+        // AutoIncrement and NotNull will normally be false but there is an exception when
+        // SERIAL is parsed as the data type.
+        // This converts to an auto-incrementing / notnull INTEGER
+        //
+        boolean foundAutoIncrement = datatype.isAutoIncrement();
+        boolean foundNotNull = datatype.isNotNull();
 
         // look for 5 optional parts in any order
         while (tokens.hasNext()
