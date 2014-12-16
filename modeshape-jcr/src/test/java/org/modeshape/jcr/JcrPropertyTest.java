@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
@@ -30,6 +31,7 @@ import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
+import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -37,6 +39,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.Property;
 
 public class JcrPropertyTest extends MultiUseAbstractTest {
 
@@ -245,6 +249,55 @@ public class JcrPropertyTest extends MultiUseAbstractTest {
             fail("Regexp constraint not validated on property");
         } catch (ConstraintViolationException e) {
             //expected
+        }
+    }
+    
+    @Test
+    @FixFor( "MODE-2385 ")
+    public void shouldKeepOrderForMultiValuedReferenceProperties() throws Exception {
+        Node node1 = session.getRootNode().addNode("node1");
+        node1.addMixin(JcrConstants.MIX_REFERENCEABLE);
+        JcrValue refValue1 = session.valueFactory().createValue(node1);
+        Node node2 = session.getRootNode().addNode("node2");
+        node2.addMixin(JcrConstants.MIX_REFERENCEABLE);
+        JcrValue refValue2 = session.valueFactory().createValue(node2);
+        Node node3 = session.getRootNode().addNode("node3");
+        node3.addMixin(JcrConstants.MIX_REFERENCEABLE);
+        JcrValue refValue3 = session.valueFactory().createValue(node3);
+
+        Node owner = session.getRootNode().addNode("owner");
+        owner.setProperty("mv-ref", new Value[]{refValue1, refValue2, refValue3});
+        session.save();
+        assertReferencePropertyHasPaths("/owner/mv-ref", "/node1", "/node2", "/node3");
+
+        owner = session.getNode("/owner");
+        owner.setProperty("mv-ref", new Value[]{refValue3, refValue2, refValue1});
+        session.save();
+        assertReferencePropertyHasPaths("/owner/mv-ref", "/node3", "/node2", "/node1");
+
+        owner = session.getNode("/owner");
+        owner.setProperty("mv-ref", new Value[]{refValue2, refValue3, refValue1});
+        session.save();
+        assertReferencePropertyHasPaths("/owner/mv-ref", "/node2", "/node3", "/node1");
+
+        owner.setProperty("mv-ref", new Value[]{refValue3, refValue1});
+        session.save();
+        assertReferencePropertyHasPaths("/owner/mv-ref", "/node3", "/node1");
+
+        owner.setProperty("mv-ref", new Value[]{refValue1});
+        session.save();
+        assertReferencePropertyHasPaths("/owner/mv-ref", "/node1");
+    }
+    
+    private void assertReferencePropertyHasPaths(String refAbsPropertyPath, String...paths ) throws Exception {
+        Property property = (Property)session.getProperty(refAbsPropertyPath);
+        Value[] values = property.getValues();
+        assertEquals("Incorrect number of references", paths.length, values.length);
+        for (int i = 0; i < values.length; i++) {
+            Value value = values[i];
+            String nodeId = value.getString();
+            Node referredNode = session.getNodeByIdentifier(nodeId);
+            assertEquals("Incorrect referred node", paths[i], referredNode.getPath());
         }
     }
 }

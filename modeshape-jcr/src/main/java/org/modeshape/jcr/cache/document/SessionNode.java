@@ -854,17 +854,27 @@ public class SessionNode implements MutableCachedNode {
         boolean updatedPropertyIsReference = false;
         List<Reference> referencesToAdd = new ArrayList<>();
         Property property = changedProperties.get(propertyName);
+        boolean keepPropertyAsChanged = false;
         if (property != null && property.isReference()) {
             updatedPropertyIsReference = true;
             propertyWhichWasAdded = property;
-            for (Object referenceObject : property.getValuesAsArray()) {
+            Object[] valuesAsArray = property.getValuesAsArray();
+          
+            for (int i = 0; i < valuesAsArray.length; i++) {
+                Object referenceObject = valuesAsArray[i];
                 assert referenceObject instanceof Reference;
                 Reference updatedReference = (Reference)referenceObject;
-                if (referencesToRemove.contains(updatedReference)) {
+                int referenceToRemoveIdx = referencesToRemove.indexOf(updatedReference);
+                if (referenceToRemoveIdx != -1) {
                     // the reference is already present on a property with the same name, so this is a no-op for that reference
-                    // therefore we remove it from the list of references that will be removed
+                    // therefore we remove it from the list of references that will be removed,
+                    // but we need to keep in mind the fact that references may be reordered  
+                    if (referenceToRemoveIdx != i) {
+                        // the index of the updated reference differs from the index of the existing reference, meaning
+                        // that the reference has been reordered
+                        keepPropertyAsChanged = true;
+                    }
                     if (referencesToRemove.remove(updatedReference)) {
-
                         // Make sure that the referenced node is not modified to remove the back-reference to this node.
                         // See MODE-2283 for an example ...
                         NodeKey referredKey = nodeKeyFromReference(updatedReference);
@@ -887,15 +897,20 @@ public class SessionNode implements MutableCachedNode {
                         }
                     }
                 } else {
+                    keepPropertyAsChanged = true;
                     // this is a new reference (either via key or type)
                     referencesToAdd.add(updatedReference);
                 }
             }
         }
 
-        // if an existing reference property was just updated with the same value, it is a no-op so we should just remove it from
-        // the list of changed properties
-        if (referencesToRemove.isEmpty() && referencesToAdd.isEmpty() && oldPropertyWasReference && updatedPropertyIsReference) {
+        // if an existing reference property was just updated with the same value in the same order, it is a no-op so we should just 
+        // remove it from the list of changed properties
+        if (!keepPropertyAsChanged &&
+            referencesToRemove.isEmpty() &&
+            referencesToAdd.isEmpty() &&
+            oldPropertyWasReference &&
+            updatedPropertyIsReference) {
             changedProperties.remove(propertyName);
             return;
         }
