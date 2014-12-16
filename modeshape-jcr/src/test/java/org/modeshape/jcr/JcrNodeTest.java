@@ -770,4 +770,27 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             session.save();
         }
     }
+    
+    @Test
+    @FixFor( "MODE-2386 ")
+    public void shouldIterateUsingGlobsInTransientSession() throws RepositoryException {
+        try {
+            Node jcrRootNode = session.getRootNode();
+            Node rootNode = jcrRootNode.addNode("testRoot");
+            String dynOperandName = session.encode("tsql:dynamicCommand");
+            Node command = rootNode.addNode(dynOperandName);
+            String columnsName = session.encode("tsql:asColumns");
+            command.addNode(columnsName);
+            command.addNode(session.encode("tsql:intoGroup"));
+            command.addNode(session.encode("tsql:sql"));
+            
+            command = rootNode.getNode(dynOperandName);
+            NodeIterator nodeIterator = command.getNodes(columnsName);
+            assertEquals(1, nodeIterator.getSize());
+            assertEquals(columnsName, nodeIterator.nextNode().getName());
+        } finally {
+            session.getNode("/testRoot").remove();
+            session.save();
+        }
+    }
 }
