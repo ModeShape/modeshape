@@ -226,6 +226,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
             while (super.hasNext()) {
                 last = super.next();
                 if (last.getName().equals(name)) return true;
+                last = null;
             }
             return false;
         }
