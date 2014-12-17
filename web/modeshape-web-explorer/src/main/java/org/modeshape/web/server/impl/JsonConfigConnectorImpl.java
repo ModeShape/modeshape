@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.server.impl;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,15 +59,17 @@ public class JsonConfigConnectorImpl implements Connector {
     
     @Override
     public void start(ServletContext context) throws RemoteException {
-        String url = context.getInitParameter("config-url");
+        String urlString = context.getInitParameter("config-url");
         
         repositoryNames = new ArrayList<>();
         
         engine = new ModeShapeEngine();
         engine.start();
-        
+                
         try {
-            RepositoryConfiguration config = RepositoryConfiguration.read(context.getResource(url));
+            //we are using class loader to get the URL inside war
+            URL configURL = getClass().getClassLoader().getResource(urlString);
+            RepositoryConfiguration config = RepositoryConfiguration.read(configURL);
             engine.deploy(config);
             repoList = new RepositoryList(engine);
             repositoryNames = repoList.getRepositories(null);
