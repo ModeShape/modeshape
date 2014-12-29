@@ -186,6 +186,11 @@ public class NodeTypes {
      */
     private final Multimap<Name, JcrNodeDefinition> autoCreatedChildrenNodeTypes = HashMultimap.create();
 
+    /**
+     * A set of all the node types which are defined as non-queryable (noquery)
+     */
+    private final Set<Name> nonQueryableNodeTypes = new HashSet<>();
+
     protected NodeTypes( ExecutionContext context ) {
         this(context, null, 0);
     }
@@ -296,6 +301,10 @@ public class NodeTypes {
 
                 if (fullyDefined) {
                     fullyDefinedNodeTypes.add(name);
+                }
+                
+                if (!nodeType.isQueryable()) {
+                    nonQueryableNodeTypes.add(name);
                 }
             }
 
@@ -793,6 +802,16 @@ public class NodeTypes {
 
     public NodeType getJcrNodeType( Name nodeTypeName ) {
         return nodeTypes.get(nodeTypeName);
+    }
+
+    /**
+     * Check if the node type with the given name is queryable or not, based on its node type definition.
+     *
+     * @param nodeTypeName a {@link Name}, never {@code null}
+     * @return {@code true} if the node type is queryable, {@code false} otherwise.
+     */
+    public boolean isQueryable(Name nodeTypeName) {
+        return !nonQueryableNodeTypes.contains(nodeTypeName);    
     }
 
     /**

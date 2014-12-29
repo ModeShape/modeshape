@@ -162,7 +162,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     private boolean matchesType( Name primaryType,
                                  Set<Name> mixinTypes ) {
-        return predicate == null ? true : predicate.matchesType(primaryType, mixinTypes);
+        return predicate == null || predicate.matchesType(primaryType, mixinTypes);
     }
 
     /**

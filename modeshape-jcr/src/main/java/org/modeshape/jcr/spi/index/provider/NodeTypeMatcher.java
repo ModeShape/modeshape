@@ -19,6 +19,7 @@ package org.modeshape.jcr.spi.index.provider;
 import java.util.Set;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.JcrNtLexicon;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.change.ChangeSetAdapter.NodeTypePredicate;
 import org.modeshape.jcr.value.Name;
 
@@ -28,7 +29,7 @@ import org.modeshape.jcr.value.Name;
 @ThreadSafe
 public abstract class NodeTypeMatcher implements NodeTypePredicate {
 
-    public static NodeTypeMatcher create( Set<Name> nodeTypeNames ) {
+    public static NodeTypeMatcher create( Set<Name> nodeTypeNames, NodeTypes nodeTypes ) {
         NodeTypePredicate delegate = null;
         if (nodeTypeNames == null || nodeTypeNames.isEmpty()) {
             delegate = MatchNonePredicate.INSTANCE;
@@ -37,7 +38,7 @@ public abstract class NodeTypeMatcher implements NodeTypePredicate {
         } else {
             delegate = new NodeTypeSetMatcher(nodeTypeNames);
         }
-        return new MutableNodeTypeMatcher(delegate);
+        return new MutableNodeTypeMatcher(delegate, nodeTypes);
     }
 
     public abstract void use( NodeTypePredicate other );
@@ -45,15 +46,17 @@ public abstract class NodeTypeMatcher implements NodeTypePredicate {
     private static final class MutableNodeTypeMatcher extends NodeTypeMatcher {
 
         private volatile NodeTypePredicate delegate;
+        private final NodeTypes nodeTypes;
 
-        protected MutableNodeTypeMatcher( NodeTypePredicate delegate ) {
+        protected MutableNodeTypeMatcher( NodeTypePredicate delegate, NodeTypes nodeTypes ) {
             this.delegate = delegate;
+            this.nodeTypes = nodeTypes;
         }
 
         @Override
         public boolean matchesType( Name primaryType,
                                     Set<Name> mixinTypes ) {
-            return delegate.matchesType(primaryType, mixinTypes);
+            return delegate.matchesType(primaryType, mixinTypes) && nodeTypes.isQueryable(primaryType);
         }
 
         @Override
