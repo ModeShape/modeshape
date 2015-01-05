@@ -41,6 +41,7 @@ import org.modeshape.jcr.query.NodeSequence.Batch;
 import org.modeshape.jcr.spi.index.Index;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.spi.index.ResultWriter;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.ValueFactories;
@@ -69,7 +70,7 @@ public class QuerySources {
      * @param includeSystemContent true if the system content is to be included in the query results, or false otherwise
      */
     public QuerySources( RepositoryCache repository,
-                         NodeTypes nodeTypes,
+                         final NodeTypes nodeTypes,
                          String workspaceName,
                          boolean includeSystemContent ) {
         assert repository != null;
@@ -85,7 +86,8 @@ public class QuerySources {
             public final boolean includeNode( CachedNode node,
                                               NodeCache cache ) {
                 // Include only queryable nodes ...
-                return node.isQueryable(cache);
+                Name nodePrimaryType = node.getPrimaryType(cache);
+                return node.isQueryable(cache) && nodeTypes.isQueryable(nodePrimaryType);
             }
 
             @Override
@@ -100,7 +102,10 @@ public class QuerySources {
                 public final boolean includeNode( CachedNode node,
                                                   NodeCache cache ) {
                     // Include only queryable nodes that are NOT in the system workspace ...
-                    return node.isQueryable(cache) && !node.getKey().getWorkspaceKey().equals(systemWorkspaceKey);
+                    Name nodePrimaryType = node.getPrimaryType(cache);
+                    return node.isQueryable(cache) && 
+                           !node.getKey().getWorkspaceKey().equals(systemWorkspaceKey) && 
+                           nodeTypes.isQueryable(nodePrimaryType);
                 }
 
                 @Override

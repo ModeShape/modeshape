@@ -222,6 +222,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 registerNodeTypes(session, "cnd/cars.cnd");
                 registerNodeTypes(session, "cnd/validType.cnd");
                 registerNodeTypes(session, "cnd/mode-1900.cnd");
+                registerNodeTypes(session, "cnd/noquery.cnd");
 
                 InputStream stream = resourceStream("io/cars-system-view.xml");
                 try {
@@ -4639,6 +4640,20 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             node.remove();
             session.save();
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2401" )
+    public void shouldNotReturnNonQueryableNodeTypes() throws Exception {
+        session.getRootNode().addNode("folder1", "test:noQueryFolder");
+        session.getRootNode().addNode("folder2", "nt:folder"); 
+        session.save();
+
+        String sql = "SELECT folder.[jcr:name] FROM [nt:folder] AS folder";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        NodeIterator nodes = query.execute().getNodes();
+        assertEquals(1, nodes.getSize());
+        assertEquals("folder2", nodes.nextNode().getName());
     }
 
     private void registerNodeType( String typeName ) throws RepositoryException {

@@ -298,10 +298,14 @@ public class IndexChangeAdapters {
             String nodeKey = nodeKey(key);
             if (path.isRoot() && includeRoot) {
                 index.remove(nodeKey);
-                index.add(nodeKey, convertRoot(path));
+                if (queryable) {
+                    index.add(nodeKey, convertRoot(path));
+                }
             } else {
                 index.remove(nodeKey);
-                index.add(nodeKey, convert(path));
+                if (queryable) {
+                    index.add(nodeKey, convert(path));
+                }
             }
         }
 
@@ -486,7 +490,9 @@ public class IndexChangeAdapters {
                 Property prop = properties.getProperty(propertyName);
                 if (prop != null) {
                     removeValues(key);
-                    addValues(key, prop);
+                    if (queryable) {
+                        addValues(key, prop);
+                    }
                 }
             }
         }
@@ -834,6 +840,9 @@ public class IndexChangeAdapters {
         protected void reindexNode( String workspaceName, NodeKey key, Path path, Name primaryType, Set<Name> mixinTypes,
                                     Properties properties, boolean queryable ) {
             removeValues(key);
+            if (!queryable) {
+                return;
+            }
             addValue(key, primaryType);
             if (!mixinTypes.isEmpty()) {
                 for (Name mixinType : mixinTypes) {

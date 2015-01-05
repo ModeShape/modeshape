@@ -1004,7 +1004,8 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         // print = true;
 
         // Compute a query plan that should use this index ...
-        Query query = jcrSql2Query("SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE ISDESCENDANTNODE(node, '/nodeA') AND node.[foo]='X'");
+        Query query = jcrSql2Query(
+                "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE ISDESCENDANTNODE(node, '/nodeA') AND node.[foo]='X'");
         validateQuery()
                 .rowCount(1L)
                 .considerIndexes(IndexPlanners.DESCENDANTS_BY_PATH_INDEX_NAME, explicitIndex)
@@ -1058,5 +1059,28 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
                 })
                 .validate(query, query.execute());
         assertTrue("Not all paths found: " + expectedPaths, expectedPaths.isEmpty());
+    }
+
+    @FixFor( "MODE-2401" )
+    @Test
+    public void shouldNotConsiderNonQueryableNodeTypes() throws RepositoryException, InterruptedException {
+        String typeName = "nt:nonQueryableFolder";
+        registerNodeType(typeName, false, "nt:folder");
+        registerNodeTypeIndex("typesIndex", "nt:folder", null, "*", "jcr:primaryType", PropertyType.STRING);
+        
+        waitForIndexes();
+
+        session.getRootNode().addNode("nonQueryableFolder", typeName);
+        session.getRootNode().addNode("regularFolder", "nt:folder");
+        session.save();
+
+        waitForIndexes();
+
+        Query query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("typesIndex")
+                .hasNodesAtPaths("/regularFolder")
+                .validate(query, query.execute());
     }
 }

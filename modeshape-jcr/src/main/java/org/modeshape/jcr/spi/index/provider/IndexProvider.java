@@ -162,7 +162,7 @@ public abstract class IndexProvider {
     private final Map<String, Map<String, ProvidedIndex>> providedIndexesByIndexNameByWorkspaceName = new HashMap<>();
 
     /**
-     * An IndexWriter that does the work for this provider. This is {@link #refreshDelegateIndexWriter() updated} every time the
+     * An IndexWriter that does the work for this provider. This is {@link #refreshDelegateIndexWriter(org.modeshape.jcr.NodeTypes.Supplier) updated} every time the
      * {@link #providedIndexesByWorkspaceNameByIndexName provided indexes} are modified, and it is called by the
      * publicly-accessible {@link #publicWriter}. Never null.
      */
@@ -631,7 +631,7 @@ public abstract class IndexProvider {
                 return !changes.getRemovedWorkspaces().contains(index.workspaceName());
             }
         });
-        refreshDelegateIndexWriter();
+        refreshDelegateIndexWriter(nodeTypesSupplier);
     }
 
     /**
@@ -730,7 +730,7 @@ public abstract class IndexProvider {
                 return changes.getRemovedIndexDefinitions().contains(index.getName());
             }
         });
-        refreshDelegateIndexWriter();
+        refreshDelegateIndexWriter(nodeTypesSupplier);
     }
 
     @GuardedBy( "this" )
@@ -754,7 +754,7 @@ public abstract class IndexProvider {
     }
 
     @GuardedBy( "this" )
-    private void refreshDelegateIndexWriter() {
+    private void refreshDelegateIndexWriter(final NodeTypes.Supplier nodeTypesSupplier ) {
         // Go through the providers and assemble into a structure that a new IndexWriter can use ...
         final Map<String, Collection<IndexChangeAdapter>> adaptersByWorkspaceName = new HashMap<>();
         final Collection<ManagedIndex> managedIndexes = new ArrayList<>();
@@ -796,10 +796,11 @@ public abstract class IndexProvider {
                              Properties properties ) {
                 Collection<IndexChangeAdapter> adapters = adaptersByWorkspaceName.get(workspace);
                 if (adapters != null) {
+                    boolean queryable = nodeTypesSupplier.getNodeTypes().isQueryable(primaryType);
                     // There are adapters for this workspace ...
                     for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
                         if (adapter != null) {
-                            adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, true);
+                            adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, queryable);
                         }
                     }
                 }
@@ -921,11 +922,7 @@ public abstract class IndexProvider {
         Name indexedNodeTypeName = context().getValueFactories().getNameFactory().create(indexedNodeType);
         Set<Name> allNodeTypes = nodeTypes.getAllSubtypes(indexedNodeTypeName);
         assert allNodeTypes != null;
-        return nodeTypePredicate(allNodeTypes);
-    }
-
-    private NodeTypeMatcher nodeTypePredicate( Set<Name> allNodeTypes ) {
-        return NodeTypeMatcher.create(allNodeTypes);
+        return NodeTypeMatcher.create(allNodeTypes, nodeTypes);
     }
 
     /**
