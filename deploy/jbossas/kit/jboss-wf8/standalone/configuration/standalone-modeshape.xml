@@ -293,6 +293,8 @@
             <repository name="sample" anonymous-roles="admin"/>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts" anonymous-roles="admin">
+                <!--Store binary artifacts on the FS under ${jboss.data.dir}/modeshape/artifacts/binaries -->
+                <file-binary-storage/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default">

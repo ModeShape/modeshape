@@ -608,6 +608,7 @@ public class RepositoryConfiguration {
     }
 
     public static final class FieldValue {
+        public static final String BINARY_STORAGE_TYPE_TRANSIENT = "transient";
         public static final String BINARY_STORAGE_TYPE_FILE = "file";
         public static final String BINARY_STORAGE_TYPE_CACHE = "cache";
         public static final String BINARY_STORAGE_TYPE_DATABASE = "database";
@@ -1162,14 +1163,14 @@ public class RepositoryConfiguration {
         public BinaryStore getBinaryStore() throws Exception {
             String type = getType();
             BinaryStore store = null;
-            if (type.equalsIgnoreCase("transient")) {
+            if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_TRANSIENT)) {
                 store = TransientBinaryStore.get();
-            } else if (type.equalsIgnoreCase("file")) {
+            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_FILE)) {
                 String directory = binaryStorage.getString(FieldName.DIRECTORY);
                 assert directory != null;
                 File dir = new File(directory);
                 store = FileSystemBinaryStore.create(dir);
-            } else if (type.equalsIgnoreCase("database")) {
+            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_DATABASE)) {
                 String driverClass = binaryStorage.getString(FieldName.JDBC_DRIVER_CLASS);
                 String connectionURL = binaryStorage.getString(FieldName.CONNECTION_URL);
                 String username = binaryStorage.getString(FieldName.USER_NAME);
@@ -1182,7 +1183,7 @@ public class RepositoryConfiguration {
                     // Use the DataSource in JNDI ...
                     store = new DatabaseBinaryStore(dataSourceJndi);
                 }
-            } else if (type.equalsIgnoreCase("cache")) {
+            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_CACHE)) {
                 String metadataCacheName = binaryStorage.getString(FieldName.METADATA_CACHE_NAME, getName());
                 String blobCacheName = binaryStorage.getString(FieldName.DATA_CACHE_NAME, getName());
                 String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION); // may be null
@@ -1199,7 +1200,7 @@ public class RepositoryConfiguration {
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
                 store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName,
                                                   chunkSize);
-            } else if (type.equalsIgnoreCase("composite")) {
+            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_COMPOSITE)) {
 
                 Map<String, BinaryStore> binaryStores = new LinkedHashMap<String, BinaryStore>();
 
@@ -1217,7 +1218,7 @@ public class RepositoryConfiguration {
 
                 store = new CompositeBinaryStore(binaryStores);
 
-            } else if (type.equalsIgnoreCase("custom")) {
+            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_CUSTOM)) {
                 classname = binaryStorage.getString(FieldName.CLASSNAME);
                 classPath = binaryStorage.getString(FieldName.CLASSLOADER);
 
@@ -1240,7 +1241,7 @@ public class RepositoryConfiguration {
          * @return the type of the configured binary store, never {@code null}
          */
         public String getType() {
-            return binaryStorage.getString(FieldName.TYPE, "transient");
+            return binaryStorage.getString(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_TRANSIENT);
         }
 
         /*

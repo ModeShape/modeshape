@@ -88,7 +88,7 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
                                                EditableDocument binaries,
                                                ServiceName serviceName ) throws OperationFailedException {
         // Now create the new service ...
-        BinaryStorageService service = new BinaryStorageService(repositoryName, binaries);
+        BinaryStorageService service = BinaryStorageService.createWithConfiguration(binaries);
         ServiceBuilder<BinaryStorage> builder = target.addService(serviceName, service);
 
         // Add dependencies to the various data directories ...
