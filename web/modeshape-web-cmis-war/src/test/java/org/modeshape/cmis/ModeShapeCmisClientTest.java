@@ -15,27 +15,36 @@
  */
 package org.modeshape.cmis;
 
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.client.api.Folder;
+import org.apache.chemistry.opencmis.client.api.ObjectId;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.bindings.spi.StandardAuthenticationProvider;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
+import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
+import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
+import org.apache.chemistry.opencmis.commons.enums.VersioningState;
+import org.apache.tika.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit test for CMIS bridge
- * 
+ *
  * @author kulikov
  */
 public class ModeShapeCmisClientTest {
 
     private Session session;
 
-    @SuppressWarnings( "deprecation" )
+    @SuppressWarnings("deprecation")
     @Before
     public void setUp() {
         // default factory implementation
@@ -70,7 +79,66 @@ public class ModeShapeCmisClientTest {
         System.out.println("Root: " + root);
     }
 
-    private String serviceUrl( String serviceMethod ) {
+    @Test
+    public void testVersioning() throws Exception {
+        //Create test folder
+        Map<String, Object> folderProperties = new HashMap<String, Object>();
+        folderProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:folder");
+        folderProperties.put(PropertyIds.NAME, "test");
+        Folder folder = session.getRootFolder().createFolder(folderProperties);
+
+        //Create the document from the test file
+        Map<String, Object> fileProperties = new HashMap<String, Object>();
+        fileProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+        fileProperties.put(PropertyIds.NAME, "file");
+        fileProperties.put(PropertyIds.VERSION_LABEL, "initial");
+        
+        String[] contents = new String[] {"Hello World!", "Hello World", "Hello"};
+        
+        ContentStream cos = session.getObjectFactory().createContentStream("file", 
+                contents[2].length(), "text/plain", 
+                new ByteArrayInputStream(contents[2].getBytes()));
+        
+        // create a major version
+        Document file = folder.createDocument(fileProperties, cos, VersioningState.MAJOR);
+        
+        //---------------------------------
+        ObjectId nextVersion = file.checkOut();
+        Document file2 = (Document) session.getObject(nextVersion);
+        
+        cos = session.getObjectFactory().createContentStream("file", 
+                contents[1].length(), "text/plain", 
+                new ByteArrayInputStream(contents[1].getBytes()));
+        
+        file2.checkIn(true, null, cos, "version1");
+
+        //---------------------------------
+        nextVersion = file.checkOut();
+        Document file3 = (Document) session.getObject(nextVersion);
+        
+        cos = session.getObjectFactory().createContentStream("file", 
+                contents[0].length(), "text/plain", 
+                new ByteArrayInputStream(contents[0].getBytes()));
+        
+        file3.checkIn(true, null, cos, "version2");
+
+        //---------------------------------------
+        List<Document> versions = file.getAllVersions();
+        assertEquals(3, versions.size());
+        
+        int i = 0;
+        for (Document doc : versions) {
+            String verId = doc.getId();
+            Document versDoc = (Document)session.getObject(verId);
+            String s = IOUtils.toString(versDoc.getContentStream().getStream());
+            
+            assertEquals(contents[i], s);
+            i++;
+        }
+        
+    }
+
+    private String serviceUrl(String serviceMethod) {
         return "http://localhost:8090/modeshape-cmis/services/" + serviceMethod;
     }
 }
