@@ -15,6 +15,7 @@
  */
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -32,6 +33,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.connector.meta.jdbc.JdbcMetadataLexicon;
@@ -54,6 +56,7 @@ public class FederationIntegrationTest {
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class, "federatedRepository-test.war");
+        archive.addAsResource(new File("src/test/resources/sequencer/image_file.jpg"));
         // Add our custom Manifest, which has the additional Dependencies entry ...
         archive.setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF")).addClass(JdbcMetadataLexicon.class);
         return archive;
@@ -99,6 +102,7 @@ public class FederationIntegrationTest {
     }
 
     @Test
+    @FixFor( "MODE-2402" )
     public void shouldCorrectlyWriteFilesToDisk() throws Exception {
         Session session = repository.login();
 
@@ -128,12 +132,27 @@ public class FederationIntegrationTest {
 
         //now add a file
         ByteArrayInputStream bis = new ByteArrayInputStream("test string".getBytes());
-        new JcrTools().uploadFile(session, "/root/sub_folder/file", bis);
+        JcrTools tools = new JcrTools();
+        tools.uploadFile(session, "/root/sub_folder/file", bis);
         session.save();
         File file = new File(subFolder, "file");
         assertTrue(file.exists());
         assertTrue(file.isFile());
         assertEquals("test string", IoUtil.read(file));
+        
+        //add a second file with a larger binary content and make sure no binaries are written to disk
+        tools.uploadFile(session, "/root/sub_folder/image_file.jpg", getClass().getClassLoader().getResourceAsStream("image_file.jpg"));
+        session.save();
+        File image = new File(subFolder, "image_file.jpg");
+        assertTrue(file.exists());
+        assertTrue(file.isFile());
+        byte[] expectedContent = IoUtil.readBytes(getClass().getClassLoader().getResourceAsStream("image_file.jpg"));
+        byte[] actualContent = IoUtil.readBytes(image);
+        assertArrayEquals("File content not uploaded correctly", expectedContent, actualContent);
+        
+        //make sure that no binaries were persisted "by default" on the FS since there is no binary store explicitly configured
+        File defaultFsBinaryFolder = new File(System.getProperty("jboss.server.data.dir") + "/modeshape/federatedRepository/binaries");
+        assertFalse("There shouldn't be a FS binary folder", defaultFsBinaryFolder.exists());
     }
 
     @Test

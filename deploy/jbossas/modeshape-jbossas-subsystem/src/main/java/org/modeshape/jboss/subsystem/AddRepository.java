@@ -216,12 +216,7 @@ public class AddRepository extends AbstractAddStepHandler {
         repositoryServiceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER,
                                                ModuleLoader.class,
                                                repositoryService.getModuleLoaderInjector());
-
-        // Add dependency to the binaries storage service, which captures the properties for the binaries storage
-        repositoryServiceBuilder.addDependency(ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
-                                               BinaryStorage.class,
-                                               repositoryService.getBinaryStorageInjector());
-
+        
         // Set up the JNDI binder service ...
         final ReferenceFactoryService<JcrRepository> referenceFactoryService = new ReferenceFactoryService<JcrRepository>();
         ServiceName referenceFactoryServiceName = ModeShapeServiceNames.referenceFactoryServiceName(repositoryName);
@@ -259,12 +254,16 @@ public class AddRepository extends AbstractAddStepHandler {
         repositoryServiceBuilder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
 
         // Add the default binary storage service which will provide the binary configuration
-        BinaryStorageService defaultBinaryService = new BinaryStorageService(repositoryName);
-        ServiceBuilder<BinaryStorage> binaryStorageBuilder = target.addService(ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
+        BinaryStorageService defaultBinaryService = BinaryStorageService.createDefault();
+        ServiceName defaultBinaryStorageServiceName = ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName);
+        ServiceBuilder<BinaryStorage> binaryStorageBuilder = target.addService(defaultBinaryStorageServiceName,
                                                                                defaultBinaryService);
-        binaryStorageBuilder.addDependency(dataDirServiceName, String.class, defaultBinaryService.getDataDirectoryPathInjector());
         binaryStorageBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-
+        // Add dependency to the binaries storage service, which captures the properties for the binaries storage
+        repositoryServiceBuilder.addDependency(defaultBinaryStorageServiceName,
+                                               BinaryStorage.class,
+                                               repositoryService.getBinaryStorageInjector());
+        
         // Add monitor service
         final MonitorService monitorService = new MonitorService();
         final ServiceBuilder<RepositoryMonitor> monitorBuilder = target.addService(ModeShapeServiceNames.monitorServiceName(repositoryName),

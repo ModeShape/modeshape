@@ -657,6 +657,7 @@
                 <text-extractors>
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
+                <file-binary-storage/>
             </repository>
             <repository name="preconfiguredRepository" anonymous-roles="admin">
                 <workspaces>

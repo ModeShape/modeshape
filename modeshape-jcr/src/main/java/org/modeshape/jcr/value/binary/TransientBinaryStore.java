@@ -21,6 +21,7 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * A {@link BinaryStore} implementation that does not persist the binary values beyond the lifetime of the virtual machine. This
@@ -110,4 +111,10 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
         }
     }
 
+    @Override
+    protected void moveFileExclusively( File original, File destination, BinaryKey key ) throws BinaryStoreException {
+        super.moveFileExclusively(original, destination, key);
+        // on certain OSes there is no guarantee that the files from java.io.tmpdir are cleaned up, so we need to make sure of that here
+        destination.deleteOnExit();
+    }
 }

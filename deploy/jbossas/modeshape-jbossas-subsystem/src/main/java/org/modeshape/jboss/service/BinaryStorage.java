@@ -44,17 +44,14 @@ public class BinaryStorage {
         this.cacheContainer = cacheContainer;
     }
 
-    static BinaryStorage defaultStorage(String repositoryName, String dataDirPath) {
+    /**
+     * Creates a default storage configuration, which will be used whenever no specific binary store is configured.
+     * @return a {@link org.modeshape.jboss.service.BinaryStorage} instance, never {@code null}
+     */
+    static BinaryStorage defaultConfig() {
         // By default, store the binaries in the data directory ...
         EditableDocument binaries = Schematic.newDocument();
-        binaries.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_FILE);
-        binaries.set(RepositoryConfiguration.FieldName.DIRECTORY, dataDirPath + "/" + repositoryName + "/binaries");
-
+        binaries.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_TRANSIENT);
         return new BinaryStorage(binaries);
     }
-
-    public String getStoreName() {
-        return getBinaryConfiguration().getString(RepositoryConfiguration.FieldName.BINARY_STORE_NAME);
-    }
-
 }

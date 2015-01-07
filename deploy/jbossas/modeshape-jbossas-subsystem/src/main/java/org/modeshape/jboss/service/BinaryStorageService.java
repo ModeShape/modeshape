@@ -39,22 +39,21 @@ public class BinaryStorageService implements Service<BinaryStorage> {
         }
     };
     private final InjectedValue<String> binaryStorageBasePathInjector = new InjectedValue<String>();
-    private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
 
-    private final String repositoryName;
     private final BinaryStorage binaryStorage;
 
-    public BinaryStorageService( String repositoryName,
-                                 EditableDocument binaryConfig ) {
-        this.repositoryName = repositoryName;
-        this.binaryStorage = new BinaryStorage(binaryConfig);
+    public static BinaryStorageService createDefault() {
+        return new BinaryStorageService(BinaryStorage.defaultConfig());        
     }
-
-    public BinaryStorageService( String repositoryName ) {
-        this.repositoryName = repositoryName;
-        this.binaryStorage = null;
+    
+    public static BinaryStorageService createWithConfiguration( EditableDocument binaryConfig ) {
+        return new BinaryStorageService(new BinaryStorage(binaryConfig));
+    } 
+    
+    private BinaryStorageService(BinaryStorage storage) {
+        this.binaryStorage = storage;
     }
-
+    
     protected final BinaryStorage binaryStorage() {
         return binaryStorage;
     }
@@ -86,15 +85,8 @@ public class BinaryStorageService implements Service<BinaryStorage> {
 
     @Override
     public BinaryStorage getValue() throws IllegalStateException, IllegalArgumentException {
-        return binaryStorage != null ? binaryStorage : BinaryStorage.defaultStorage(repositoryName,
-                                                                                    dataDirectoryPathInjector.getValue());
-    }
-
-    /**
-     * @return the injector used to retrieve the path to the data directory
-     */
-    public InjectedValue<String> getDataDirectoryPathInjector() {
-        return dataDirectoryPathInjector;
+        assert binaryStorage != null;
+        return binaryStorage;
     }
 
     @Override

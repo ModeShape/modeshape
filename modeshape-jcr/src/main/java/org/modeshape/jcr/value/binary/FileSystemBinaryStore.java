@@ -219,9 +219,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         }
     }
 
-    protected final void moveFileExclusively( File original,
-                                              File destination,
-                                              BinaryKey key ) throws BinaryStoreException {
+    protected void moveFileExclusively( File original,
+                                        File destination,
+                                        BinaryKey key ) throws BinaryStoreException {
         try {
             // Make any missing directories, and try repeatedly (on Windows, this might fail the first few times) ...
             for (int i = 0; i != 5; ++i) {
