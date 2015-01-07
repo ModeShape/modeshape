@@ -4452,7 +4452,42 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertEquals(1, nodes.getSize());
         assertEquals("/Other/NodeA", nodes.nextNode().getPath());
     }
+    
+    @Test
+    @FixFor( "MODE-2403" )
+    public void likeOperandShouldBeCaseSensitive() throws Exception {
+        Node n = session.getRootNode().addNode("N");
+        n.setProperty("prop", "Capital0");
+        session.save();
 
+        try {
+            String sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE node.prop LIKE 'capital%'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(0, nodes.getSize());
+
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE node.prop LIKE '%capital%'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(0, nodes.getSize());
+
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE node.prop LIKE 'Capital%'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/N", nodes.nextNode().getPath());
+
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE node.prop LIKE '%Capital%'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/N", nodes.nextNode().getPath());
+        } finally {
+            n.remove();
+            session.save();
+        }
+    }
+    
     @Test
     @FixFor( "MODE-2247" )
     public void shouldBeAbleToExecuteIntersectOperationWithSimpleCriteria() throws Exception {
