@@ -72,7 +72,7 @@ class AddWebApp extends AbstractAddStepHandler {
                     "Cannot deploy ModeShape webapp {0} because it cannot be located by the main modeshape module", webappName);
             return;
         }
-        boolean exploded = attribute(context, resource.getModel(), ModelAttributes.EXPLODED).asBoolean();
+        boolean exploded = attribute(context, operation, ModelAttributes.EXPLODED).asBoolean();
         //we'll set an empty object to make sure it's defined
         resource.getModel().setEmptyObject();
 
