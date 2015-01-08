@@ -31,7 +31,6 @@ import org.apache.chemistry.opencmis.commons.server.CmisService;
 import org.apache.chemistry.opencmis.jcr.JcrRepository;
 import org.apache.chemistry.opencmis.jcr.JcrTypeManager;
 import org.apache.chemistry.opencmis.jcr.PathManager;
-import org.apache.chemistry.opencmis.jcr.impl.DefaultDocumentTypeHandler;
 import org.apache.chemistry.opencmis.jcr.impl.DefaultFolderTypeHandler;
 import org.apache.chemistry.opencmis.jcr.impl.DefaultUnversionedDocumentTypeHandler;
 import org.apache.chemistry.opencmis.jcr.type.JcrTypeHandlerManager;
@@ -102,7 +101,7 @@ public class JcrServiceFactory extends AbstractServiceFactory {
 
     private Map<String, JcrRepository> loadRepositories( PathManager pathManger,
                                                          JcrTypeHandlerManager typeHandlerManager ) {
-        Map<String, JcrRepository> list = new HashMap<String, JcrRepository>();
+        Map<String, JcrRepository> list = new HashMap<>();
         Set<String> names = RepositoryManager.getJcrRepositoryNames();
 
         for (String repositoryId : names) {
@@ -114,7 +113,6 @@ public class JcrServiceFactory extends AbstractServiceFactory {
                 log.debug("--- loaded repository " + repositoryId);
             } catch (NoSuchRepositoryException e) {
                 // should never happen;
-                e.printStackTrace();
             }
         }
 
@@ -169,7 +167,7 @@ public class JcrServiceFactory extends AbstractServiceFactory {
                                                               JcrTypeManager typeManager ) {
         JcrTypeHandlerManager typeHandlerManager = new JcrTypeHandlerManager(pathManager, typeManager);
         typeHandlerManager.addHandler(new DefaultFolderTypeHandler());
-        typeHandlerManager.addHandler(new DefaultDocumentTypeHandler());
+        typeHandlerManager.addHandler(new MsDocumentTypeHandler());
         typeHandlerManager.addHandler(new DefaultUnversionedDocumentTypeHandler());
         return typeHandlerManager;
     }
