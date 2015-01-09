@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>9</version>
+        <version>16</version>
         <relativePath></relativePath>
     </parent>
 
@@ -238,7 +238,7 @@
         <mapdb.version>1.0.6</mapdb.version>
         <jackrabbit.jcr.tck.version>2.6.0</jackrabbit.jcr.tck.version>
         <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
-        <jbossjta.version>4.16.6.Final</jbossjta.version>
+        <jbossjta.version>5.0.0.Final</jbossjta.version>
         <atomikos.version>3.8.0</atomikos.version>
         <picketbox.version>4.0.20.Beta2</picketbox.version>
         <lucene.version>3.6.2</lucene.version>
@@ -248,7 +248,7 @@
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.4.3.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>
-        <jboss.logging.version>3.1.3.GA</jboss.logging.version>
+        <jboss.logging.version>3.1.4.GA</jboss.logging.version>
 
         <sun.xml.bind.jaxbimpl.version>2.2.5</sun.xml.bind.jaxbimpl.version>
         <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
@@ -265,7 +265,7 @@
         <jdbc.mssql2008.version>4.0.2206</jdbc.mssql2008.version>
         <javax.servlet.version>3.1.0</javax.servlet.version>
         <javax.jacc.version>1.0.0.Final</javax.jacc.version>
-        <resteasy.version>3.0.8.Final</resteasy.version>
+        <resteasy.version>3.0.10.Final</resteasy.version>
         <commons.logging.version>1.1.1</commons.logging.version>
         <commons.naming.version>20031116.223527</commons.naming.version>
         <jettison.version>1.3.1</jettison.version>
@@ -323,10 +323,9 @@
         <!--Properties which must be used when installing locally a server ZIP distribution -->
         <jboss.server.groupId>org.wildfly</jboss.server.groupId>
         <jboss.server.artifactId>wildfly-dist</jboss.server.artifactId>
-        <jboss.server.artifact.type>tar.gz</jboss.server.artifact.type>
-        <jboss.server.version>8.1.0.Final</jboss.server.version>
-        <jboss.server.bom.version>8.0.0.Final</jboss.server.bom.version>
-        <jboss.server.root.folder>wildfly-8.1.0.Final</jboss.server.root.folder>
+        <jboss.server.artifact.type>zip</jboss.server.artifact.type>
+        <jboss.server.version>8.2.0.Final</jboss.server.version>
+        <jboss.server.root.folder>wildfly-8.2.0.Final</jboss.server.root.folder>
 
         <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
         <jboss.kit.modules.location>modules</jboss.kit.modules.location>
@@ -1942,9 +1941,10 @@
                 <version>${json.simple.version}</version>
                 <scope>test</scope>
             </dependency>
+            <!--Specific to ModeShape tests -->
             <dependency>
-                <groupId>org.jboss.jbossts</groupId>
-                <artifactId>jbossjta</artifactId>
+                <groupId>org.jboss.narayana.jta</groupId>
+                <artifactId>narayana-jta</artifactId>
                 <version>${jbossjta.version}</version>
                 <scope>test</scope>
                 <exclusions>
@@ -2087,6 +2087,22 @@
                     <exclusion>
                         <artifactId>jboss-transaction-api_1.1_spec</artifactId>
                         <groupId>org.jboss.spec.javax.transaction</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>byteman</artifactId>
+                        <groupId>org.jboss.byteman</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>byteman-submit</artifactId>
+                        <groupId>org.jboss.byteman</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hornetq-core</artifactId>
+                        <groupId>org.hornetq</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hornetq-commons</artifactId>
+                        <groupId>org.hornetq</groupId>
                     </exclusion>
                 </exclusions>
             </dependency>

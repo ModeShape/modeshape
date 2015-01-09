@@ -107,8 +107,8 @@
             <artifactId>mockito-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.jbossts</groupId>
-            <artifactId>jbossjta</artifactId>
+            <groupId>org.jboss.narayana.jta</groupId>
+            <artifactId>narayana-jta</artifactId>
         </dependency>
         <!--
         Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)

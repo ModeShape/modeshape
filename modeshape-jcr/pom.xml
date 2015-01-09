@@ -175,8 +175,8 @@
             <artifactId>mockito-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.jbossts</groupId>
-            <artifactId>jbossjta</artifactId>
+            <groupId>org.jboss.narayana.jta</groupId>
+            <artifactId>narayana-jta</artifactId>
         </dependency>
         <!--
         Used for Base64 testing. This may overlap or vary with the JBoss AS7 integration, so we fully-specify the version

@@ -55,7 +55,7 @@
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.17.SP2</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
-        <jbossjta.version>4.16.6.Final</jbossjta.version>
+        <jbossjta.version>5.0.0.Final</jbossjta.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <embedmongo.version>1.28</embedmongo.version>
         <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>
@@ -429,9 +429,10 @@
                 <version>${atomikos.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.jbossts</groupId>
-                <artifactId>jbossjta</artifactId>
+                <groupId>org.jboss.narayana.jta</groupId>
+                <artifactId>narayana-jta</artifactId>
                 <version>${jbossjta.version}</version>
+                <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <artifactId>commons-httpclient</artifactId>
@@ -573,9 +574,24 @@
                         <artifactId>jboss-transaction-api_1.1_spec</artifactId>
                         <groupId>org.jboss.spec.javax.transaction</groupId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>byteman</artifactId>
+                        <groupId>org.jboss.byteman</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>byteman-submit</artifactId>
+                        <groupId>org.jboss.byteman</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hornetq-core</artifactId>
+                        <groupId>org.hornetq</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hornetq-commons</artifactId>
+                        <groupId>org.hornetq</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
-
             <!--
                 Binary Stores
             -->
