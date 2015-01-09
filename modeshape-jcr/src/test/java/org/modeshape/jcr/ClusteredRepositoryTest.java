@@ -71,21 +71,21 @@ public class ClusteredRepositoryTest {
 
     @Test
     public void shouldCreateVersinableNodeInCluster() throws Exception {
-        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
-        JcrSession session1 = repository1.login();
+        JcrRepository repository = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
+        JcrSession session = repository.login();
 
         try {
 
-            Node testNode = session1.getRootNode().addNode("testNode");
+            Node testNode = session.getRootNode().addNode("testNode");
             testNode.addMixin("mix:versionable");
             String binary = "test string";
-            testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
-            session1.save();
+            testNode.setProperty("binaryProperty", session.getValueFactory().createBinary(binary.getBytes()));
+            session.save();
             final String testNodePath = testNode.getPath();
-            session1.getWorkspace().getVersionManager().checkin(testNodePath);
+            session.getWorkspace().getVersionManager().checkin(testNodePath);
 
         } finally {
-            TestingUtil.killRepositories(repository1);
+            TestingUtil.killRepositories(repository);
         }
     }
 
@@ -112,10 +112,16 @@ public class ClusteredRepositoryTest {
 
             listener.waitForEvents();
             List<String> paths = listener.getPaths();
-            assertEquals(3, paths.size());
+            assertEquals(9, paths.size());
             assertTrue(paths.contains("/testNode"));
             assertTrue(paths.contains("/testNode/binaryProperty"));
+            assertTrue(paths.contains("/testNode/jcr:uuid"));
+            assertTrue(paths.contains("/testNode/jcr:baseVersion"));
             assertTrue(paths.contains("/testNode/jcr:primaryType"));
+            assertTrue(paths.contains("/testNode/jcr:predecessors"));
+            assertTrue(paths.contains("/testNode/jcr:mixinTypes"));
+            assertTrue(paths.contains("/testNode/jcr:versionHistory"));
+            assertTrue(paths.contains("/testNode/jcr:isCheckedOut"));
 
             // check whether the node can be found in the second repository ...
             try {
