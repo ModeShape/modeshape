@@ -70,6 +70,66 @@ public class ClusteredRepositoryTest {
     }
 
     @Test
+    public void shouldCreateVersinableNodeInCluster() throws Exception {
+        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
+        JcrSession session1 = repository1.login();
+
+        try {
+
+            Node testNode = session1.getRootNode().addNode("testNode");
+            testNode.addMixin("mix:versionable");
+            String binary = "test string";
+            testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
+            session1.save();
+            final String testNodePath = testNode.getPath();
+            session1.getWorkspace().getVersionManager().checkin(testNodePath);
+
+        } finally {
+            TestingUtil.killRepositories(repository1);
+        }
+    }
+
+    @Test
+    public void shouldPropagateVersinableNodeInCluster() throws Exception {
+        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
+        JcrSession session1 = repository1.login();
+
+        JcrRepository repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
+        JcrSession session2 = repository2.login();
+
+        try {
+            int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED;
+            ClusteringEventListener listener = new ClusteringEventListener(3);
+            session2.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
+
+            Node testNode = session1.getRootNode().addNode("testNode");
+            testNode.addMixin("mix:versionable");
+            String binary = "test string";
+            testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
+            session1.save();
+            final String testNodePath = testNode.getPath();
+            session1.getWorkspace().getVersionManager().checkin(testNodePath);
+
+            listener.waitForEvents();
+            List<String> paths = listener.getPaths();
+            assertEquals(3, paths.size());
+            assertTrue(paths.contains("/testNode"));
+            assertTrue(paths.contains("/testNode/binaryProperty"));
+            assertTrue(paths.contains("/testNode/jcr:primaryType"));
+
+            // check whether the node can be found in the second repository ...
+            try {
+                session2.refresh(false);
+                session2.getNode(testNodePath);
+            } catch (PathNotFoundException e) {
+                fail("Should have found the '/testNode' created in other repository in this repository: ");
+            }
+        } finally {
+            TestingUtil.killRepositories(repository1, repository2);
+        }
+    }
+
+    @Test
     @FixFor( {"MODE-1618", "MODE-2830"} )
     public void shouldPropagateNodeChangesInCluster() throws Exception {
         JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
