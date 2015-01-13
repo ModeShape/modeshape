@@ -44,10 +44,10 @@ public class AccessControlPolicyIteratorImplTest {
     public void setUp() throws AccessControlException, RepositoryException {
 
         // acl-1
-        JcrAccessControlList alice = new JcrAccessControlList(null, "alice");
+        JcrAccessControlList alice = new JcrAccessControlList("alice");
         alice.addAccessControlEntry(SimplePrincipal.newInstance("alice"), new Privilege[] {new PrivilegeImpl()});
 
-        JcrAccessControlList bob = new JcrAccessControlList(null, "bob");
+        JcrAccessControlList bob = new JcrAccessControlList("bob");
         bob.addAccessControlEntry(SimplePrincipal.newInstance("bob"), new Privilege[] {new PrivilegeImpl()});
 
         it = new AccessControlPolicyIteratorImpl(alice, bob);

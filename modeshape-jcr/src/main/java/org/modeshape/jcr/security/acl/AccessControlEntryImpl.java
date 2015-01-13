@@ -17,10 +17,12 @@ package org.modeshape.jcr.security.acl;
 
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlException;
 import javax.jcr.security.Privilege;
+import org.modeshape.common.util.HashCode;
 
 /**
  * Implementation for the Access Control entry record. An AccessControlEntry represents the association of one or more
@@ -45,11 +47,10 @@ public class AccessControlEntryImpl implements AccessControlEntry {
         for (Privilege p : privileges) {
             if (p.getName() == null) throw new AccessControlException("Invalid privilege");
         }
+        assert principal != null;
         this.principal = principal;
         this.privileges.clear();
-        for (Privilege privilege : privileges) {
-            this.privileges.add(privilege);
-        }
+        Collections.addAll(this.privileges, privileges);
     }
 
     @Override
@@ -95,9 +96,7 @@ public class AccessControlEntryImpl implements AccessControlEntry {
      */
     protected boolean addIfNotPresent( Privilege[] privileges ) {
         ArrayList<Privilege> list = new ArrayList<Privilege>();
-        for (Privilege privilege : privileges) {
-            list.add(privilege);
-        }
+        Collections.addAll(list, privileges);
 
         boolean res = combineRecursively(list, privileges);
 
@@ -158,6 +157,14 @@ public class AccessControlEntryImpl implements AccessControlEntry {
 
     @Override
     public int hashCode() {
-        return this.principal.hashCode();
+        return HashCode.compute(principal, privileges);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ACE: ");
+        sb.append(principal.getName());
+        sb.append("=").append(privileges);
+        return sb.toString();
     }
 }
