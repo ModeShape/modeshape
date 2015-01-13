@@ -35,7 +35,7 @@ import org.modeshape.jcr.security.SimplePrincipal;
  */
 public class JcrAccessControlListTest extends MultiUseAbstractTest {
 
-    private JcrAccessControlList acl = new JcrAccessControlList(null, "root");
+    private JcrAccessControlList acl = new JcrAccessControlList("root");
     private Privilege[] rw;
     private Privileges privileges;
 

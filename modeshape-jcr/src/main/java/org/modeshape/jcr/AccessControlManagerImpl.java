@@ -131,7 +131,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         }
 
         if (!hasPrivileges(absPath, new Privilege[] {privileges.forName(Privilege.JCR_READ_ACCESS_CONTROL)})) {
-            throw new AccessDeniedException();
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath, "read access control content"));
         }
 
         AccessControlList acl = findAccessList(absPath, false);
@@ -172,7 +172,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
             return AccessControlPolicyIteratorImpl.EMPTY;
         }
         // the node doesn't have an ACL yet, so return a new, empty ACL which can be used by clients to set privileges
-        return new AccessControlPolicyIteratorImpl(new JcrAccessControlList(this, absPath));
+        return new AccessControlPolicyIteratorImpl(new JcrAccessControlList(absPath));
     }
 
     @Override
@@ -185,7 +185,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         }
 
         if (!hasPrivileges(absPath, new Privilege[] {privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
-            throw new AccessDeniedException();
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath, "modify access control content"));
         }
 
         // we support only access list then cast policy to access list
@@ -217,7 +217,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
         }
 
         if (!hasPrivileges(absPath, new Privilege[] {privileges.forName(Privilege.JCR_MODIFY_ACCESS_CONTROL)})) {
-            throw new AccessDeniedException();
+            throw new AccessDeniedException(JcrI18n.permissionDenied.text(absPath, "modify access control content"));
         }
 
         try {
@@ -246,7 +246,8 @@ public class AccessControlManagerImpl implements AccessControlManager {
     }
 
     /**
-     * Recursively searches for the available access list.
+     * Recursively searches for the available access list. If this method is invoked with the {@code searchParents} flag, it will
+     * attempt to find the first non-empty permissions set on a node in the hierarchy. 
      * 
      * @param absPath the absolute path of the node
      * @param searchParents flag specifying whether the ancestors should be searched for the access control list
@@ -261,9 +262,9 @@ public class AccessControlManagerImpl implements AccessControlManager {
         SessionCache sessionCache = session.cache();
         Map<String, Set<String>> permissions = startingNode.getPermissions(sessionCache);
         CachedNode node = startingNode;
-        if (permissions == null && searchParents) {
-            // walk up the hierarchy until we get a set of permissions or we reach the root or a missing parent
-            while (permissions == null) {
+        // walk up the hierarchy until we get a set of non-empty permissions or we reach the root or a missing parent
+        if (searchParents) {
+            while (permissions == null || permissions.isEmpty()) {
                 NodeKey parentKey = node.getParentKey(sessionCache);
                 if (parentKey == null) {
                     break;
@@ -282,7 +283,7 @@ public class AccessControlManagerImpl implements AccessControlManager {
 
         // create a new access list object
         String aclPath = startingNode.getKey().equals(node.getKey()) ? absPath : node.getPath(sessionCache).getString();
-        JcrAccessControlList acl = new JcrAccessControlList(this, aclPath);
+        JcrAccessControlList acl = new JcrAccessControlList(aclPath);
         for (String principalName : permissions.keySet()) {
             Set<String> privileges = permissions.get(principalName);
             acl.addAccessControlEntry(principal(principalName), privileges(privileges));

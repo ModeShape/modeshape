@@ -384,6 +384,38 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             ni.nextNode();
         }
     }
+    
+    @Test
+    @FixFor( "MODE-2408" )
+    public void shouldVerifyParentACLsIfChildHasEmptyACLList() throws Exception {
+        Node parent = ((Node) session.getNode("/")).addNode("parent");
+        setPolicy("/parent", Privilege.JCR_ADD_CHILD_NODES, Privilege.JCR_MODIFY_ACCESS_CONTROL, Privilege.JCR_READ_ACCESS_CONTROL);
+        session.save();
+        
+        parent.addNode("child");
+        AccessControlList childAcl = acl("/parent/child");
+        // set an empty policy on the child node
+        acm.setPolicy("/parent/child", childAcl);    
+        session.save();
+
+        // modify the parent's ACL to not allow changing of ACLs anymore
+        AccessControlList parentAcl = acl("/parent");
+        parentAcl.removeAccessControlEntry(parentAcl.getAccessControlEntries()[0]);
+        parentAcl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"), 
+                                        new Privilege[]{ acm.privilegeFromName(Privilege.JCR_ADD_CHILD_NODES),
+                                                         acm.privilegeFromName(Privilege.JCR_READ_ACCESS_CONTROL)});
+        acm.setPolicy("/parent", parentAcl);
+        session.save();
+
+        // attempt to modify the child's ACL and verify that it fails because the child has an empty ACL list so we should be really 
+        // checking the parent node
+        try {
+            setPolicy("/parent/child", Privilege.JCR_ALL);
+            fail("Should not allow changing ACLs on a node with an empty policy list for which the parent doesn't have the appropriate permissions");
+        } catch (AccessDeniedException e) {
+            // expected
+        }
+    }
 
     private static void setPolicy( String path,
                                    String... privileges ) throws UnsupportedRepositoryOperationException, RepositoryException {

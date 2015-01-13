@@ -19,6 +19,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlException;
@@ -57,7 +58,7 @@ public class JcrAccessControlList implements AccessControlList {
      * @return Access Control List with all permissions granted to everyone.
      */
     public static JcrAccessControlList defaultAcl( AccessControlManagerImpl acm ) {
-        JcrAccessControlList acl = new JcrAccessControlList(acm, "/");
+        JcrAccessControlList acl = new JcrAccessControlList("/");
         try {
             acl.principals.put(SimplePrincipal.EVERYONE, new AccessControlEntryImpl(SimplePrincipal.EVERYONE, acm.privileges()));
         } catch (AccessControlException e) {
@@ -68,12 +69,10 @@ public class JcrAccessControlList implements AccessControlList {
 
     /**
      * Creates new empty access control list.
-     * 
-     * @param acm Access Control Manager managing this access list.
+     *
      * @param path the path to which this access list is applied.
      */
-    public JcrAccessControlList( AccessControlManagerImpl acm,
-                                 String path ) {
+    public JcrAccessControlList( String path ) {
         this.path = path;
     }
 
@@ -103,13 +102,13 @@ public class JcrAccessControlList implements AccessControlList {
         if (principal.getName().equals("unknown")) {
             throw new AccessControlException("Unknown principal");
         }
-        // Jast new entry
+        // Just new entry
         if (!principals.containsKey(principal)) {
             principals.put(principal, new AccessControlEntryImpl(principal, privileges));
             return true;
         }
 
-        // there is entry for the given principal so jast add missing privileges
+        // there is entry for the given principal so just add missing privileges
         AccessControlEntryImpl ace = principals.get(principal);
         return ace.addIfNotPresent(privileges);
     }
@@ -212,6 +211,24 @@ public class JcrAccessControlList implements AccessControlList {
     @Override
     public int hashCode() {
         return this.path.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ACL[");
+        sb.append(path).append(", ");
+        if (principals.isEmpty()) {
+            sb.append(" <is empty>");
+        } else {
+            for (Iterator<AccessControlEntryImpl> entryIterator = principals.values().iterator(); entryIterator.hasNext(); ) {
+                sb.append(entryIterator.next());
+                if (entryIterator.hasNext()) {
+                    sb.append(",");
+                }
+            }
+        }
+        sb.append(']');
+        return sb.toString();
     }
 
     /**
