@@ -28,6 +28,7 @@ public final class BusI18n {
     public static I18n errorSerializingChanges;
     public static I18n errorDeserializingChanges;
     public static I18n errorProcessingEvent;
+    public static I18n loopbackMessageNotReceived;
 
     private BusI18n() {
     }

@@ -270,13 +270,20 @@ public abstract class ClusteringService {
         }
         try {
             byte[] messageData = toByteArray(payload);
-            Message jgMessage = new Message(null, null, messageData);
+            Message jgMessage = new Message(null, channel.getAddress(), messageData);
             channel.send(jgMessage);
             return true;
         } catch (Exception e) {
             // Something went wrong here
             throw new SystemFailureException(ClusteringI18n.errorSendingMessage.text(clusterName()), e);
         }
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ClusteringService[cluster_name='");
+        sb.append(clusterName()).append("', address=").append(getChannel().getAddress()).append("]");
+        return sb.toString();
     }
 
     /**

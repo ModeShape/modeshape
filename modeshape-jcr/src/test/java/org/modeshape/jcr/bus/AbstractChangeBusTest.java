@@ -241,6 +241,7 @@ public abstract class AbstractChangeBusTest {
 
         private final String workspaceName;
         private final long time;
+        private final String uuid = UUID.randomUUID().toString();
 
         public TestChangeSet() {
             this(UUID.randomUUID().toString());
@@ -332,7 +333,7 @@ public abstract class AbstractChangeBusTest {
 
         @Override
         public String getUUID() {
-            return null;
+            return uuid;
         }
 
         @Override
@@ -409,17 +410,6 @@ public abstract class AbstractChangeBusTest {
                 Thread.interrupted();
                 fail("Interrupted while waiting to verify event count");
             }
-        }
-
-        public void assertEventsSequential() {
-            assertExpectedEventsCount();
-            List<Long> actualOrder = new ArrayList<>(expectedNumberOfEvents);
-            for (ChangeSet changeSet : receivedChangeSet) {
-                actualOrder.add(changeSet.getTimestamp().getMilliseconds());
-            }
-            List<Long> expectedOrder = new ArrayList<>(actualOrder);
-            Collections.sort(expectedOrder);
-            assertEquals("Events received in incorrect order", expectedOrder, actualOrder);
         }
 
         public List<TestChangeSet> getObservedChangeSet() {

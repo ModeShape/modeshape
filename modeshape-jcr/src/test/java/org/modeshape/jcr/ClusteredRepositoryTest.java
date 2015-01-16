@@ -40,6 +40,7 @@ import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import javax.jcr.version.VersionHistory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -70,27 +71,8 @@ public class ClusteredRepositoryTest {
     }
 
     @Test
-    public void shouldCreateVersinableNodeInCluster() throws Exception {
-        JcrRepository repository = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
-        JcrSession session = repository.login();
-
-        try {
-
-            Node testNode = session.getRootNode().addNode("testNode");
-            testNode.addMixin("mix:versionable");
-            String binary = "test string";
-            testNode.setProperty("binaryProperty", session.getValueFactory().createBinary(binary.getBytes()));
-            session.save();
-            final String testNodePath = testNode.getPath();
-            session.getWorkspace().getVersionManager().checkin(testNodePath);
-
-        } finally {
-            TestingUtil.killRepositories(repository);
-        }
-    }
-
-    @Test
-    public void shouldPropagateVersinableNodeInCluster() throws Exception {
+    @FixFor( "MODE-2409" )
+    public void shouldPropagateVersionableNodeInCluster() throws Exception {
         JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
         JcrSession session1 = repository1.login();
 
@@ -107,12 +89,12 @@ public class ClusteredRepositoryTest {
             String binary = "test string";
             testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
             session1.save();
+           
             final String testNodePath = testNode.getPath();
             session1.getWorkspace().getVersionManager().checkin(testNodePath);
 
             listener.waitForEvents();
             List<String> paths = listener.getPaths();
-            assertEquals(9, paths.size());
             assertTrue(paths.contains("/testNode"));
             assertTrue(paths.contains("/testNode/binaryProperty"));
             assertTrue(paths.contains("/testNode/jcr:uuid"));
@@ -127,6 +109,9 @@ public class ClusteredRepositoryTest {
             try {
                 session2.refresh(false);
                 session2.getNode(testNodePath);
+                // check that there are 2 versions (base & 1.0)
+                VersionHistory versionHistory = session2.getWorkspace().getVersionManager().getVersionHistory("/testNode");
+                assertEquals(2, versionHistory.getAllVersions().getSize());
             } catch (PathNotFoundException e) {
                 fail("Should have found the '/testNode' created in other repository in this repository: ");
             }
