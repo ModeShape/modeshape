@@ -245,9 +245,6 @@ public class ExternalDocumentStore implements DocumentStore {
                 EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
                 editableDocument = updateCachingTtl(connector, editableDocument);
                 editableDocument = updateQueryable(connector, editableDocument);
-
-                // Extract any embedded documents ...
-                editableDocument.remove(DocumentTranslator.EMBEDDED_DOCUMENTS);
                 return new FederatedSchematicEntry(editableDocument);
             }
         }

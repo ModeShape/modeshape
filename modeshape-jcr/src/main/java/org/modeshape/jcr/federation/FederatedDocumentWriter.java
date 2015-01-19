@@ -27,7 +27,6 @@ import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.spi.federation.Connector;
 import org.modeshape.jcr.spi.federation.DocumentWriter;
 import org.modeshape.jcr.spi.federation.PageKey;
 import org.modeshape.jcr.value.Name;
@@ -308,20 +307,10 @@ public class FederatedDocumentWriter implements DocumentWriter {
         return translator;
     }
 
-    /**
-     * Some connectors may want to pre-generate additional documents when {@link Connector#getDocumentById(String)} is called. In
-     * such a case, the connector can use this method to obtain a writer for an additional document and use it in much the same
-     * was as {@link Connector#newDocument}.
-     * 
-     * @param id the identifier of the additional document; may not be null
-     * @return the writer for the additional document; never null
-     */
+  
     @Override
+    @Deprecated
     public DocumentWriter writeAdditionalDocument( String id ) {
-        EditableDocument embeddedDocs = document().getOrCreateDocument(DocumentTranslator.EMBEDDED_DOCUMENTS);
-        // Create a new nested document with the supplied ID as the field name ...
-        EditableDocument embedded = embeddedDocs.getOrCreateDocument(id);
-        return new FederatedDocumentWriter(translator, embedded);
+        throw new UnsupportedOperationException("Deprecated and should not be used.");
     }
-
 }
