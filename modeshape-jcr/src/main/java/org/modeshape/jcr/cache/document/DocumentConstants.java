@@ -48,12 +48,6 @@ public interface DocumentConstants {
     public static final String SIMPLE_REFERENCE_FIELD = "$sref";
 
     /**
-     * A constant that is used as the name for a nested document in which additional, embedded documents can be placed. Each of
-     * these documents represents a separate node and will be automatically extracted from the containing document prior to usage.
-     */
-    public static final String EMBEDDED_DOCUMENTS = "embeddedDocuments";
-
-    /**
      * A constant that can be used by a connector implementation as a supplementary document field, that indicates the maximum
      * number of seconds that particular document should be stored in the workspace cache.
      */

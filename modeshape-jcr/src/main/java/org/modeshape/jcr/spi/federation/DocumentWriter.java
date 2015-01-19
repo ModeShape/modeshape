@@ -251,7 +251,10 @@ public interface DocumentWriter extends PageWriter {
      * 
      * @param id the identifier of the additional document; may not be null
      * @return the writer for the additional document; never null
+     * 
+     * @deprecated Do Not Use 
      */
+    @Deprecated
     DocumentWriter writeAdditionalDocument( String id );
 
 }
