@@ -40,6 +40,7 @@ import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import javax.jcr.version.VersionHistory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,6 +68,56 @@ public class ClusteredRepositoryTest {
     @AfterClass
     public static void afterClass() throws Exception {
         ClusteringHelper.removeJGroupsBindings();
+    }
+
+    @Test
+    @FixFor( "MODE-2409" )
+    public void shouldPropagateVersionableNodeInCluster() throws Exception {
+        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
+        JcrSession session1 = repository1.login();
+
+        JcrRepository repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
+        JcrSession session2 = repository2.login();
+
+        try {
+            int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED;
+            ClusteringEventListener listener = new ClusteringEventListener(3);
+            session2.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
+
+            Node testNode = session1.getRootNode().addNode("testNode");
+            testNode.addMixin("mix:versionable");
+            String binary = "test string";
+            testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
+            session1.save();
+           
+            final String testNodePath = testNode.getPath();
+            session1.getWorkspace().getVersionManager().checkin(testNodePath);
+
+            listener.waitForEvents();
+            List<String> paths = listener.getPaths();
+            assertTrue(paths.contains("/testNode"));
+            assertTrue(paths.contains("/testNode/binaryProperty"));
+            assertTrue(paths.contains("/testNode/jcr:uuid"));
+            assertTrue(paths.contains("/testNode/jcr:baseVersion"));
+            assertTrue(paths.contains("/testNode/jcr:primaryType"));
+            assertTrue(paths.contains("/testNode/jcr:predecessors"));
+            assertTrue(paths.contains("/testNode/jcr:mixinTypes"));
+            assertTrue(paths.contains("/testNode/jcr:versionHistory"));
+            assertTrue(paths.contains("/testNode/jcr:isCheckedOut"));
+
+            // check whether the node can be found in the second repository ...
+            try {
+                session2.refresh(false);
+                session2.getNode(testNodePath);
+                // check that there are 2 versions (base & 1.0)
+                VersionHistory versionHistory = session2.getWorkspace().getVersionManager().getVersionHistory("/testNode");
+                assertEquals(2, versionHistory.getAllVersions().getSize());
+            } catch (PathNotFoundException e) {
+                fail("Should have found the '/testNode' created in other repository in this repository: ");
+            }
+        } finally {
+            TestingUtil.killRepositories(repository1, repository2);
+        }
     }
 
     @Test
