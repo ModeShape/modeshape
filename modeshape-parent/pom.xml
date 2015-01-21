@@ -557,7 +557,7 @@
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
-                    <version>${jdbc.postgresql9.version}</version>
+                    <version>${jdbc.postgresql8.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>

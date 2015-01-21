@@ -15,10 +15,16 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import static org.junit.Assert.assertEquals;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.store.DataSourceConfig;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * @author kulikov
@@ -55,5 +61,14 @@ public class DatabaseBinaryStoreTest extends AbstractBinaryStoreTest {
             return;
         }
         super.shouldStoreZeroLengthBinary();
+    }
+    
+    @Test
+    @FixFor( "MODE-2412" )
+    public void shouldTrimExtractedTextLargerThanDefaultColumnSize() throws Exception {
+        BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_MEDIUM_BINARY), false);
+        String largeString = StringUtil.createString('x', Database.DEFAULT_MAX_EXTRACTED_TEXT_LENGTH + 1);
+        store.storeExtractedText(res, largeString);
+        assertEquals(largeString.substring(0, Database.DEFAULT_MAX_EXTRACTED_TEXT_LENGTH), store.getExtractedText(res));
     }
 }

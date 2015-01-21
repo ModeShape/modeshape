@@ -81,6 +81,7 @@ public class Database {
     protected static final String STATEMENTS_FILENAME_SUFFIX = "_database.properties";
     protected static final String DEFAULT_STATEMENTS_FILE_PATH = STATEMENTS_FILE_PATH + STATEMENTS_FILE_PREFIX + "default"
                                                                  + STATEMENTS_FILENAME_SUFFIX;
+    protected static final int DEFAULT_MAX_EXTRACTED_TEXT_LENGTH = 1000;
 
     private static final Logger LOGGER = Logger.getLogger(Database.class);
 
@@ -97,6 +98,8 @@ public class Database {
     private static final String GET_BINARY_KEYS_STMT_KEY = "get_binary_keys";
     private static final String CREATE_TABLE_STMT_KEY = "create_table";
     private static final String TABLE_EXISTS_STMT_KEY = "table_exists_query";
+    
+    private static final String EXTRACTED_TEXT_COLUMN_NAME = "ext_text";
 
     public static enum Type {
         MYSQL,
@@ -121,6 +124,7 @@ public class Database {
     private final Type databaseType;
     private final String prefix;
     private final String tableName;
+    private final int maxExtractedTextLength;
 
     private Properties statements;
 
@@ -158,6 +162,30 @@ public class Database {
 
         initializeStatements();
         initializeStorage(connection);
+        this.maxExtractedTextLength = determineMaxExtractedTextLength(metaData);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Using max length for extracted text '{0}'", maxExtractedTextLength);
+        }
+    }
+
+    private int determineMaxExtractedTextLength( DatabaseMetaData metaData ) {
+        ResultSet resultSet = null;
+        try {
+            String tableName = this.tableName;
+            if (metaData.storesLowerCaseIdentifiers()) {
+                tableName = tableName.toLowerCase();
+            } else if (metaData.storesUpperCaseIdentifiers()) {
+                tableName = tableName.toUpperCase();
+            }
+            resultSet = metaData.getColumns(null, null, tableName,  EXTRACTED_TEXT_COLUMN_NAME);
+            return resultSet.next() ? resultSet.getInt("COLUMN_SIZE") : DEFAULT_MAX_EXTRACTED_TEXT_LENGTH;
+        } catch (SQLException e) {
+            LOGGER.debug(e, "Cannot determine the maximum size of the column which holds the extracted text. Defaulting to {0}",
+                         DEFAULT_MAX_EXTRACTED_TEXT_LENGTH);
+            return DEFAULT_MAX_EXTRACTED_TEXT_LENGTH;
+        } finally {
+            tryToClose(resultSet);
+        }
     }
 
     private void initializeStatements() throws IOException {
@@ -442,6 +470,10 @@ public class Database {
     protected void setExtractedText( BinaryKey key,
                                      String text,
                                      Connection connection ) throws SQLException {
+        if (text.length() > maxExtractedTextLength) {
+            LOGGER.warn(JcrI18n.warnExtractedTextTooLarge, EXTRACTED_TEXT_COLUMN_NAME, this.maxExtractedTextLength, tableName);
+            text = text.substring(0, maxExtractedTextLength);
+        }
         PreparedStatement setExtractedTextSql = prepareStatement(SET_EXTRACTED_TEXT_STMT_KEY, connection);
         try {
             setExtractedTextSql.setString(1, text);
@@ -550,6 +582,16 @@ public class Database {
                 statement.close();
             } catch (Throwable t) {
                 LOGGER.debug(t, "Cannot close prepared statement");
+            }
+        }
+    }  
+    
+    protected static void tryToClose( ResultSet resultSet ) {
+        if (resultSet != null) {
+            try {
+                resultSet.close();
+            } catch (Throwable t) {
+                LOGGER.debug(t, "Cannot close result set");
             }
         }
     }
