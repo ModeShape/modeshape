@@ -16,26 +16,35 @@
 package org.modeshape.cmis;
 
 import java.util.Iterator;
+import java.util.Set;
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
+import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisRuntimeException;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertiesImpl;
+import org.apache.chemistry.opencmis.commons.impl.server.ObjectInfoImpl;
 import org.apache.chemistry.opencmis.jcr.JcrTypeManager;
 import org.apache.chemistry.opencmis.jcr.JcrVersion;
 import org.apache.chemistry.opencmis.jcr.PathManager;
 import org.apache.chemistry.opencmis.jcr.type.JcrTypeHandlerManager;
+import org.modeshape.jcr.api.Binary;
 
 /**
- * Modified <code>JcrVersion</code> class.
- * 
+ * Modified
+ * <code>JcrVersion</code> class.
+ *
  * @author kulikov
  */
 public class JcrMsVersion extends JcrVersion {
+
+    private static final String HASH_ALGORITHM = "sha-1";
 
     public JcrMsVersion(Node node, Version version, JcrTypeManager typeManager, PathManager pathManager,
             JcrTypeHandlerManager typeHandlerManager) {
@@ -82,6 +91,30 @@ public class JcrMsVersion extends JcrVersion {
             throw new CmisObjectNotFoundException(e.getMessage(), e);
         } catch (RepositoryException e) {
             throw new CmisRuntimeException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    protected void compileProperties(PropertiesImpl properties, Set<String> filter, ObjectInfoImpl objectInfo)
+            throws RepositoryException {
+        super.compileProperties(properties, filter, objectInfo);
+        //append cmis:contentStreamHash  property
+        addPropertyString(properties, getTypeIdInternal(), filter, PropertyIds.CONTENT_STREAM_HASH, getHash());
+    }
+
+    /**
+     * Get the hexadecimal form of the SHA-1 hash of the contents. 
+     * 
+     * @return the hexadecimal form of hash, or a null string if the hash could not be computed or is not known
+     */
+    private String getHash() {
+        try {
+            Node contentNode = getContextNode();
+            Property data = contentNode.getProperty(Property.JCR_DATA);
+            Binary bin = (Binary) data.getBinary();
+            return String.format("{%s}%s", HASH_ALGORITHM, bin.getHexHash());
+        } catch (RepositoryException e) {
+            return "";
         }
     }
 }

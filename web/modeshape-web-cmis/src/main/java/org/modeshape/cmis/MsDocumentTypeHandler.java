@@ -20,7 +20,14 @@ import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionManager;
+import org.apache.chemistry.opencmis.commons.PropertyIds;
+import org.apache.chemistry.opencmis.commons.definitions.TypeDefinition;
+import org.apache.chemistry.opencmis.commons.enums.Cardinality;
+import org.apache.chemistry.opencmis.commons.enums.PropertyType;
+import org.apache.chemistry.opencmis.commons.enums.Updatability;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.AbstractTypeDefinition;
 import org.apache.chemistry.opencmis.jcr.JcrDocument;
+import org.apache.chemistry.opencmis.jcr.JcrTypeManager;
 import org.apache.chemistry.opencmis.jcr.impl.DefaultDocumentTypeHandler;
 
 /**
@@ -28,6 +35,22 @@ import org.apache.chemistry.opencmis.jcr.impl.DefaultDocumentTypeHandler;
  * @author kulikov
  */
 public class MsDocumentTypeHandler extends DefaultDocumentTypeHandler {
+    
+    @Override
+    public TypeDefinition getTypeDefinition() {
+        AbstractTypeDefinition def = (AbstractTypeDefinition)super.getTypeDefinition();
+        //append cmis:contentStreamHash property definition
+        def.addPropertyDefinition(JcrTypeManager.createPropDef(
+                PropertyIds.CONTENT_STREAM_HASH, 
+                "Content Stream Hash", 
+                "Content Stream Hash",
+                PropertyType.STRING, 
+                Cardinality.SINGLE, 
+                Updatability.READONLY, 
+                false, 
+                true));
+        return def;
+    }
     
     @Override
     public JcrDocument getJcrNode(Node node) throws RepositoryException {
