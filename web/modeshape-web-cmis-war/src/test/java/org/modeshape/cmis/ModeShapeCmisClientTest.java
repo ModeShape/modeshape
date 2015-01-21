@@ -80,6 +80,31 @@ public class ModeShapeCmisClientTest {
     }
 
     @Test
+    public void shouldObtainContentHashProperty() throws Exception {
+        //Create test folder
+        Map<String, Object> folderProperties = new HashMap<String, Object>();
+        folderProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:folder");
+        folderProperties.put(PropertyIds.NAME, "test");
+        Folder folder = session.getRootFolder().createFolder(folderProperties);
+
+        //Create the document from the test file
+        Map<String, Object> fileProperties = new HashMap<String, Object>();
+        fileProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+        fileProperties.put(PropertyIds.NAME, "file");
+        
+        String contents = "Hello";
+        ContentStream cos = session.getObjectFactory().createContentStream("file", 
+                contents.length(), "text/plain", 
+                new ByteArrayInputStream(contents.getBytes()));
+        
+        // create a major version
+        Document file = folder.createDocument(fileProperties, cos, VersioningState.MAJOR);
+        file.getProperties();
+        String s = file.getProperty(PropertyIds.CONTENT_STREAM_HASH).getValueAsString();
+        assertEquals("{sha-1}f7ff9e8b7bb2e09b70935a5d785e0cc5d9d0abf0", s);
+    }
+    
+    @Test
     public void testVersioning() throws Exception {
         //Create test folder
         Map<String, Object> folderProperties = new HashMap<String, Object>();
