@@ -535,6 +535,7 @@ public final class JcrI18n {
     public static I18n noIndexesExist;
 
     public static I18n errorCreatingDatabaseTable;
+    public static I18n warnExtractedTextTooLarge;
 
     public static I18n cannotLocateConnectionFactory;
     public static I18n cannotLocateQueue;
