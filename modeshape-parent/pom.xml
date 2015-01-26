@@ -240,7 +240,7 @@
         <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
         <jbossjta.version>5.0.0.Final</jbossjta.version>
         <atomikos.version>3.8.0</atomikos.version>
-        <picketbox.version>4.0.20.Beta2</picketbox.version>
+        <picketbox.version>4.0.21.Final</picketbox.version>
         <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
 
@@ -2125,6 +2125,12 @@
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-naming</artifactId>
+                <version>${jboss.server.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-security</artifactId>
                 <version>${jboss.server.version}</version>
                 <scope>provided</scope>
             </dependency>

@@ -124,6 +124,7 @@ import org.modeshape.jcr.query.xpath.XPathQueryParser;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
+import org.modeshape.jcr.security.EnvironmentAuthenticationProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.spi.index.IndexManager;
@@ -1598,6 +1599,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         if (Boolean.TRUE.equals(value)) {
                             useAnonymouOnFailedLogins.set(true);
                         }
+                    }
+                    if (provider instanceof EnvironmentAuthenticationProvider) {
+                        EnvironmentAuthenticationProvider envProvider = (EnvironmentAuthenticationProvider) provider;
+                        String securityDomain = component.getDocument().getString(FieldName.DOMAIN_NAME);
+                        envProvider.setSecurityDomain(securityDomain);
+                        envProvider.setEnvironment(environment());
+                        envProvider.initialize();
                     }
                 } catch (Throwable t) {
                     logger.error(t, JcrI18n.unableToInitializeAuthenticationProvider, component, repositoryName(), t.getMessage());

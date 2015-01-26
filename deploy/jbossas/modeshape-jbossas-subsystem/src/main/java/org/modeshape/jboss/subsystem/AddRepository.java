@@ -30,6 +30,7 @@ import org.jboss.as.naming.ManagedReferenceFactory;
 import org.jboss.as.naming.ServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.as.naming.service.BinderService;
+import org.jboss.as.security.service.SecurityManagementService;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -38,9 +39,11 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.security.ISecurityManagement;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jboss.metric.ModelMetrics;
 import org.modeshape.jboss.metric.MonitorService;
+import org.modeshape.jboss.security.JBossDomainAuthenticationProvider;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.BinaryStorageService;
 import org.modeshape.jboss.service.ReferenceFactoryService;
@@ -201,6 +204,10 @@ public class AddRepository extends AbstractAddStepHandler {
         repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("infinispan", namedContainer),
                                                CacheContainer.class,
                                                repositoryService.getCacheManagerInjector());
+        
+        // Add the dependency to the Security Manager
+        repositoryServiceBuilder.addDependency(SecurityManagementService.SERVICE_NAME, ISecurityManagement.class,
+                                               repositoryService.getSecurityManagementServiceInjector());
 
         // Add dependency, if necessary, to the workspaces cache container
         String workspacesCacheContainer = attribute(context, model, ModelAttributes.WORKSPACES_CACHE_CONTAINER, null);
@@ -284,12 +291,7 @@ public class AddRepository extends AbstractAddStepHandler {
     private void parseSecurity( OperationContext context,
                                 ModelNode model,
                                 EditableDocument configDoc ) throws OperationFailedException {
-        // JAAS ...
         EditableDocument security = configDoc.getOrCreateDocument(FieldName.SECURITY);
-
-        EditableDocument jaas = security.getOrCreateDocument(FieldName.JAAS);
-        String securityDomain = attribute(context, model, ModelAttributes.SECURITY_DOMAIN).asString();
-        jaas.set(FieldName.JAAS_POLICY_NAME, securityDomain);
 
         // Anonymous ...
         EditableDocument anon = security.getOrCreateDocument(FieldName.ANONYMOUS);
@@ -308,8 +310,16 @@ public class AddRepository extends AbstractAddStepHandler {
             }
         }
 
-        // Servlet authenticator ...
         EditableArray providers = security.getOrCreateArray(FieldName.PROVIDERS);
+        
+        // JBoss authenticator ...
+        String securityDomain = attribute(context, model, ModelAttributes.SECURITY_DOMAIN).asString();
+        EditableDocument jboss = Schematic.newDocument();
+        jboss.set(FieldName.CLASSNAME, JBossDomainAuthenticationProvider.class.getName());
+        jboss.set(FieldName.DOMAIN_NAME, securityDomain);
+        providers.add(jboss);
+
+        // Servlet authenticator ...
         EditableDocument servlet = Schematic.newDocument();
         servlet.set(FieldName.CLASSNAME, "servlet");
         providers.add(servlet);
