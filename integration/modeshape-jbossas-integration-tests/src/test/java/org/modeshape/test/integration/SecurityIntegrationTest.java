@@ -75,15 +75,18 @@ public class SecurityIntegrationTest {
     }
 
     @Test
-    public void shouldAuthenticateUsingJAASProvider() throws Exception {
+    @FixFor( "MODE-2411" )
+    public void shouldAuthenticateUsingJBossProvider() throws Exception {
         JcrSession adminSession = sampleRepo.login(new SimpleCredentials("admin", "admin".toCharArray()));
         assertNotNull(adminSession);
         assertTrue(adminSession.hasPermission("/", permissionsString(ModeShapePermissions.ALL_PERMISSIONS)));
+        adminSession.logout();
 
         JcrSession guestSession = sampleRepo.login(new SimpleCredentials("guest", "guest".toCharArray()));
         assertNotNull(guestSession);
         assertTrue(guestSession.hasPermission("/", ModeShapePermissions.READ));
         assertFalse(guestSession.hasPermission("/", permissionsString(ModeShapePermissions.ALL_CHANGE_PERMISSIONS)));
+        guestSession.logout();
 
         try {
             sampleRepo.login(new SimpleCredentials("admin", "invalid".toCharArray()));

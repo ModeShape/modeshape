@@ -92,6 +92,14 @@
                 <version>${jboss.server.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>   
+            
+            <dependency>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>jboss-javaee-7.0-with-security</artifactId>
+                <version>${jboss.server.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <dependency>

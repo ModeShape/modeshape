@@ -379,6 +379,11 @@ public class RepositoryConfiguration {
         public static final String SECURITY = "security";
 
         /**
+         * The name of the security domain used together with a {@link org.modeshape.jcr.security.EnvironmentAuthenticationProvider}
+         */
+        public static final String DOMAIN_NAME = "domainName";
+
+        /**
          * The name for the field under "security" specifying the optional JAAS configuration.
          */
         public static final String JAAS = "jaas";

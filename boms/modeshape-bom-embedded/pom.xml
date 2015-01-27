@@ -53,7 +53,7 @@
         <infinispan.version>6.0.2.Final</infinispan.version>
         <jgroups.version>3.4.3.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
-        <picketbox.version>4.0.17.SP2</picketbox.version>
+        <picketbox.version>4.0.21.Final</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
         <jbossjta.version>5.0.0.Final</jbossjta.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>

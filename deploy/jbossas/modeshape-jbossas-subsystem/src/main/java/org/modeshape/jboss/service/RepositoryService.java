@@ -36,6 +36,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.security.ISecurityManagement;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringUtil;
@@ -68,6 +69,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
     private final InjectedValue<ModuleLoader> moduleLoaderInjector = new InjectedValue<ModuleLoader>();
     private final InjectedValue<RepositoryStatistics> monitorInjector = new InjectedValue<RepositoryStatistics>();
+    private final InjectedValue<ISecurityManagement> securityManagementServiceInjector = new InjectedValue<ISecurityManagement>();
 
     private RepositoryConfiguration repositoryConfiguration;
     private String journalPath;
@@ -594,6 +596,10 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
      */
     public InjectedValue<CacheContainer> getWorkspacesCacheContainerInjector() {
         return workspacesCacheContainerInjector;
+    }
+    
+    public InjectedValue<ISecurityManagement> getSecurityManagementServiceInjector() {
+        return securityManagementServiceInjector;
     }
 
     private ModuleLoader moduleLoader() {
