@@ -706,7 +706,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotEmpty(relativePath, "relativePath");
         checkSession();
         if (relativePath.equals(".")) return true;
-        if (relativePath.equals("..")) return isRoot() ? false : true;
+        if (relativePath.equals("..")) {
+            return !isRoot() && session.hasPermission(this.getParent().getPath(), ModeShapePermissions.READ);
+        }
         int indexOfFirstSlash = relativePath.indexOf('/');
         if (indexOfFirstSlash == 0 || relativePath.startsWith("[")) {
             // Not a relative path ...
@@ -718,12 +720,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             Path path = pathFrom(relativePath).getNormalizedPath();
             if (path.size() == 1) {
                 if (path.getLastSegment().isSelfReference()) return true;
-                if (path.getLastSegment().isParentReference()) return isRoot() ? false : true;
+                if (path.getLastSegment().isParentReference()) {
+                    return !isRoot() && session.hasPermission(this.getParent().getPath(), ModeShapePermissions.READ);
+                }
             }
             // We know it's a resolved relative path with more than one segment ...
             if (path.size() > 1) {
                 try {
-                    return session().node(node(), path) != null;
+                    AbstractJcrNode node = session().node(node(), path);
+                    return node != null && session().hasPermission(node.getPath(), ModeShapePermissions.READ);
                 } catch (PathNotFoundException e) {
                     return false;
                 }
@@ -736,7 +741,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         // It's just a name, so look for a child ...
         ChildReference ref = node().getChildReferences(sessionCache()).getChild(segment);
-        return ref != null;
+        if (ref == null) {
+            return false;
+        }
+        Node node = session().node(ref.getKey(), null);
+        return session.hasPermission(node.getPath(), ModeShapePermissions.READ);
     }
 
     @Override
@@ -819,6 +828,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public NodeIterator getNodes() throws RepositoryException {
+        checkSession();
         ChildReferences childReferences = node().getChildReferences(sessionCache());
         if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
         return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences.iterator());
@@ -2231,11 +2241,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public boolean hasNodes() throws RepositoryException {
-        return !node().getChildReferences(sessionCache()).isEmpty();
+        checkSession();
+        // this should check permissions via the resolver
+        return getNodes().hasNext();
     }
 
     @Override
     public boolean hasProperties() throws RepositoryException {
+        checkSession();
         return node().hasProperties(sessionCache());
     }
 
