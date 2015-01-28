@@ -17,12 +17,17 @@ package org.modeshape.common.util;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import javax.xml.bind.DatatypeConverter;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 /**
  * @author Randall Hauch
@@ -97,5 +102,21 @@ public class Base64Test {
         assertThat(result, is(notNullValue()));
         assertThat(result.length(), is(0));
     }
-
+    
+    @Test
+    @FixFor("MODE-2413")
+    public void shouldSupportReadingFromSelfClosingInputStream() throws Exception {
+        byte[] buffer = new byte[1024];
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        URL resource = getClass().getResource("simple.json");
+        try (Base64.InputStream is = new Base64.InputStream(new SelfClosingInputStream(resource.openStream()), Base64.ENCODE)) {
+            int read;
+            while ((read = is.read(buffer, 0, buffer.length)) != -1) {
+                bos.write(buffer, 0, read);
+            }                        
+        }
+        // until Java 8, use this....
+        String expectedString = DatatypeConverter.printBase64Binary(IoUtil.readBytes(resource.openStream()));
+        assertEquals("Incorrect Base64 encoding", expectedString, new String(bos.toByteArray()));
+    }
 }

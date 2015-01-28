@@ -1608,6 +1608,7 @@ public class Base64 {
         private boolean breakLines; // Break lines at less than 80 characters
         private int options; // Record options used to create the stream.
         private byte[] decodabet; // Local copies to avoid extra method calls
+        private boolean eos; // Whether or not we've reached the end of the wrapped input stream already
 
         /**
          * Constructs a {@link Base64.InputStream} in DECODE mode.
@@ -1652,6 +1653,7 @@ public class Base64 {
             this.position = -1;
             this.lineLength = 0;
             this.decodabet = getDecodabet(options);
+            this.eos = false;
         } // end constructor
 
         /**
@@ -1677,6 +1679,7 @@ public class Base64 {
                             b3[i] = (byte)b;
                             numBinaryBytes++;
                         } else {
+                            eos = true;
                             break; // out of for loop
                         } // end else: end of stream
 
@@ -1743,7 +1746,10 @@ public class Base64 {
                 int b = buffer[position++];
 
                 if (position >= bufferLength) {
-                    position = -1;
+                    if (!eos) {
+                        // we've not yet reached the end of the stream, so continue reading by resetting the position
+                        position = -1;
+                    }
                 } // end if: end
 
                 return b & 0xFF; // This is how you "cast" a byte that's
@@ -1767,7 +1773,11 @@ public class Base64 {
         @Override
         public int read( byte[] dest,
                          int off,
-                         int len ) throws java.io.IOException {
+                         int len ) throws java.io.IOException {              
+            if (eos) {    
+                // already at EOS
+                return -1;
+            }
             int i;
             int b;
             for (i = 0; i < len; i++) {
