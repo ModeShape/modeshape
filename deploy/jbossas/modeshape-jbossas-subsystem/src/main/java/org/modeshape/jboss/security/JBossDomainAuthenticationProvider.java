@@ -69,8 +69,10 @@ public class JBossDomainAuthenticationProvider extends EnvironmentAuthentication
         if (credentials instanceof JaasCredentials) {
             return getSubjectFromJaas((JaasCredentials)credentials, repositoryContext);             
         }
-        LOGGER.warnv("Unknown {0} implementation: {1}. Please user either {2} or {3}", Credentials.class.getName(),
-                     credentials.getClass().getName(), SimpleCredentials.class.getName(), JaasCredentials.class.getName());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugv("Unknown {0} implementation: {1}. Please user either {2} or {3}", Credentials.class.getName(),
+                         credentials.getClass().getName(), SimpleCredentials.class.getName(), JaasCredentials.class.getName());
+        }
         return null;
     }
 
