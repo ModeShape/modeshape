@@ -793,4 +793,26 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             session.save();
         }
     }
+    @Test
+    @FixFor( "MODE-2414" )
+    public void hasNodeShouldCheckReadPermission() throws Exception {
+        AccessControlManager acm = session.getAccessControlManager();
+        Node parent = session.getRootNode().addNode("parent");
+        try {
+            parent.addNode("child1");
+            session.save();
+            assertTrue(parent.hasNode("child1"));
+            assertTrue(parent.hasNodes());
+            //set an ACL which doesn't have READ permissions
+            AccessControlList acl = acl("/parent/child1");
+            acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[] { acm.privilegeFromName(Privilege.JCR_READ_ACCESS_CONTROL) });
+            acm.setPolicy("/parent/child1", acl);
+            session.save();
+            assertFalse("Read permission not checked", parent.hasNode("child1"));
+            assertFalse("Read permission not checked", parent.hasNodes());
+        } finally {
+            parent.remove();
+            session.save();
+        }
+    }
 }
