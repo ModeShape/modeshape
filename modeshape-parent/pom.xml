@@ -1497,7 +1497,7 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>smartgwt</groupId>
+                <groupId>com.smartgwt</groupId>
                 <artifactId>smartgwt</artifactId>
                 <version>${smartgwt.version}</version>
                 <type>jar</type>
