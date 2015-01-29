@@ -29,7 +29,7 @@
         </dependency>
 
         <dependency>
-            <groupId>smartgwt</groupId>
+            <groupId>com.smartgwt</groupId>
             <artifactId>smartgwt</artifactId>
         </dependency>
 
