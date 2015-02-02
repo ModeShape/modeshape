@@ -17,14 +17,9 @@ package org.modeshape.cmis;
 
 import java.math.BigInteger;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import javax.imageio.spi.ServiceRegistry;
 import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
-import javax.jcr.RepositoryFactory;
-import org.apache.chemistry.opencmis.commons.exceptions.CmisConnectionException;
 import org.apache.chemistry.opencmis.commons.impl.server.AbstractServiceFactory;
 import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.server.CmisService;
@@ -50,44 +45,49 @@ public class JcrServiceFactory extends AbstractServiceFactory {
     private static final Logger log = Logger.getLogger(JcrServiceFactory.class);
 
     public static final String MOUNT_PATH_CONFIG = "mount-path";
-    public static final String PREFIX_JCR_CONFIG = "jcr.";
-
     public static final BigInteger DEFAULT_MAX_ITEMS_TYPES = BigInteger.valueOf(50);
     public static final BigInteger DEFAULT_DEPTH_TYPES = BigInteger.valueOf(-1);
     public static final BigInteger DEFAULT_MAX_ITEMS_OBJECTS = BigInteger.valueOf(200);
     public static final BigInteger DEFAULT_DEPTH_OBJECTS = BigInteger.valueOf(10);
+    
+    private static final String DEFAULT_MOUNT_PATH = "/";
 
     protected JcrTypeManager typeManager;
     protected Map<String, Map<String, String>> jcrConfig;
     protected String mountPath;
-    protected Map<String, JcrRepository> jcrRepositories;
+    
+    private PathManager pathManager;
+    private JcrTypeHandlerManager typeHandlerManager;
 
     @Override
     public void init( Map<String, String> parameters ) {
-        typeManager = createTypeManager();
         readConfiguration(parameters);
-        PathManager pathManager = new PathManager(mountPath);
-        JcrTypeHandlerManager typeHandlerManager = createTypeHandlerManager(pathManager, typeManager);
-        jcrRepositories = loadRepositories(pathManager, typeHandlerManager);
+        this.typeManager = new JcrTypeManager();
+        this.pathManager = new PathManager(mountPath);
+        this.typeHandlerManager = createTypeHandlerManager(this.pathManager, typeManager);
     }
 
-    public void init() {
-        typeManager = createTypeManager();
-        PathManager pathManager = new PathManager("/");
-        JcrTypeHandlerManager typeHandlerManager = createTypeHandlerManager(pathManager, typeManager);
-        jcrRepositories = loadRepositories(pathManager, typeHandlerManager);
+    protected void init() {
+        this.typeManager = new JcrTypeManager();
+        this.pathManager = new PathManager(DEFAULT_MOUNT_PATH);
+        this.typeHandlerManager = createTypeHandlerManager(this.pathManager, typeManager);
     }
 
     @Override
     public void destroy() {
-        jcrRepositories.clear();
-        typeManager = null;
+        this.typeManager = null;
+        this.pathManager = null;
+        this.typeHandlerManager = null;
+        if (this.jcrConfig != null) {
+            this.jcrConfig.clear();
+            this.jcrConfig = null;
+        }
     }
 
     @Override
     public CmisService getService( CallContext context ) {
-        CmisServiceWrapper<JcrService> serviceWrapper = new CmisServiceWrapper<JcrService>(createJcrService(jcrRepositories,
-                                                                                                            context),
+        JcrService jcrService = createJcrService(loadRepositories(), context);
+        CmisServiceWrapper<JcrService> serviceWrapper = new CmisServiceWrapper<JcrService>(jcrService,
                                                                                            DEFAULT_MAX_ITEMS_TYPES,
                                                                                            DEFAULT_DEPTH_TYPES,
                                                                                            DEFAULT_MAX_ITEMS_OBJECTS,
@@ -99,17 +99,14 @@ public class JcrServiceFactory extends AbstractServiceFactory {
 
     // ------------------------------------------< factories >---
 
-    private Map<String, JcrRepository> loadRepositories( PathManager pathManger,
-                                                         JcrTypeHandlerManager typeHandlerManager ) {
+    private Map<String, JcrRepository> loadRepositories() {
         Map<String, JcrRepository> list = new HashMap<>();
         Set<String> names = RepositoryManager.getJcrRepositoryNames();
 
         for (String repositoryId : names) {
-            // Map params = jcrConfig.get(repositoryId);
-            // Repository repository = acquireJcrRepository(params);
             try {
                 Repository repository = RepositoryManager.getRepository(repositoryId);
-                list.put(repositoryId, new JcrRepository(repository, pathManger, typeManager, typeHandlerManager));
+                list.put(repositoryId, new JcrRepository(repository, pathManager, typeManager, typeHandlerManager));
                 log.debug("--- loaded repository " + repositoryId);
             } catch (NoSuchRepositoryException e) {
                 // should never happen;
@@ -118,35 +115,7 @@ public class JcrServiceFactory extends AbstractServiceFactory {
 
         return list;
     }
-
-    /**
-     * Acquire the JCR repository given a configuration. This implementation used
-     * {@link javax.imageio.spi.ServiceRegistry#lookupProviders(Class)} for locating <code>RepositoryFactory</code> instances. The
-     * first instance which can handle the <code>jcrConfig</code> parameters is used to acquire the repository.
-     * 
-     * @param jcrConfig configuration determining the JCR repository to be returned
-     * @return the repository
-     */
-    protected Repository acquireJcrRepository( Map<String, String> jcrConfig ) {
-        try {
-            Iterator<RepositoryFactory> factories = ServiceRegistry.lookupProviders(RepositoryFactory.class);
-            while (factories.hasNext()) {
-                RepositoryFactory factory = factories.next();
-                log.debug("Trying to acquire JCR repository from factory " + factory);
-                Repository repository = factory.getRepository(jcrConfig);
-                if (repository != null) {
-                    log.debug("Successfully acquired JCR repository from factory " + factory);
-                    return repository;
-                }
-                log.debug("Could not acquire JCR repository from factory " + factory);
-            }
-            throw new CmisConnectionException("No JCR repository factory for configured parameters");
-        } catch (RepositoryException e) {
-            log.debug(e.getMessage(), e);
-            throw new CmisConnectionException(e.getMessage(), e);
-        }
-    }
-
+    
     /**
      * Create a <code>JcrService</code> from a <code>JcrRepository</code>JcrRepository> and <code>CallContext</code>.
      * 
@@ -157,10 +126,6 @@ public class JcrServiceFactory extends AbstractServiceFactory {
     protected JcrService createJcrService( Map<String, JcrRepository> jcrRepositories,
                                            CallContext context ) {
         return new JcrService(jcrRepositories);
-    }
-
-    protected JcrTypeManager createTypeManager() {
-        return new JcrTypeManager();
     }
 
     protected JcrTypeHandlerManager createTypeHandlerManager( PathManager pathManager,
@@ -175,15 +140,8 @@ public class JcrServiceFactory extends AbstractServiceFactory {
     // ------------------------------------------< private >---
 
     private void readConfiguration( Map<String, String> parameters ) {
-        mountPath = parameters.get(MOUNT_PATH_CONFIG);
-        jcrConfig = RepositoryConfig.load(parameters);
+        String mountPath = parameters.get(MOUNT_PATH_CONFIG);
+        this.mountPath = mountPath != null ? mountPath : DEFAULT_MOUNT_PATH;
+        this.jcrConfig = RepositoryConfig.load(parameters);
     }
-
-    public JcrTypeManager getTypeManager() {
-        return typeManager;
-    }
-
-    // public JcrRepository getJcrRepository() {
-    // return jcrRepository;
-    // }
 }
