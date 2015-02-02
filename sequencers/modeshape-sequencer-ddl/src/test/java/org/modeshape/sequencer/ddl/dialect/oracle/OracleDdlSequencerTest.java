@@ -27,9 +27,9 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_SCALE;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_COLUMN_DEFINITION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.IN_OUT_NO_COPY;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_USER_STATEMENT;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_DIRECTORY_STATEMENT;
@@ -73,7 +73,7 @@ public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyProperty(duty_pct_node, DATATYPE_PRECISION, "2");
         verifyProperty(duty_pct_node, DATATYPE_SCALE, "2");
         assertThat(verifyHasProperty(duty_pct_node, DATATYPE_LENGTH), is(false));
-        verifyMixinType(duty_pct_node, TYPE_COLUMN_DEFINITION);
+        verifyMixinType(duty_pct_node, TYPE_ADD_COLUMN_DEFINITION);
 
         Node check_1_node = countriesNode.getNode("CHECK_1");
         assertNotNull(check_1_node);
@@ -87,7 +87,7 @@ public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyPrimaryType(visa_needed_node, NT_UNSTRUCTURED);
         verifyProperty(visa_needed_node, DATATYPE_NAME, "VARCHAR2");
         verifyProperty(visa_needed_node, DATATYPE_LENGTH, "3");
-        verifyMixinType(visa_needed_node, TYPE_COLUMN_DEFINITION);
+        verifyMixinType(visa_needed_node, TYPE_ADD_COLUMN_DEFINITION);
 
         Node app_user1Node = statementsNode.getNode("app_user1");
         assertNotNull(app_user1Node);

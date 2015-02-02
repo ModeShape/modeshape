@@ -19,6 +19,7 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_E
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_OPTION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_COLUMN_DEFINITION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
@@ -1128,10 +1129,10 @@ public class OracleDdlParser extends StandardDdlParser
                             tokens.consume(R_PAREN);
                         } else if (tokens.matches(L_PAREN)) {
                             // Columns enclosed in "()"
-                            parseColumns(tokens, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
+                            parseColumns(tokens, alterTableNode, TYPE_ADD_COLUMN_DEFINITION);
                         } else {
                             // Assume single ADD COLUMN
-                            parseColumnDefinition(tokens, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
+                            parseColumnDefinition(tokens, alterTableNode, TYPE_ADD_COLUMN_DEFINITION);
                         }
                     }
 
@@ -1941,7 +1942,7 @@ public class OracleDdlParser extends StandardDdlParser
             }
         } while (localTokens.canConsume(COMMA));
 
-        if (unusedTokensSB.length() > 0 && columnMixinType == TYPE_COLUMN_DEFINITION) {
+        if (unusedTokensSB.length() > 0 && TYPE_COLUMN_DEFINITION.equals(columnMixinType)) {
             String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
@@ -1950,7 +1951,7 @@ public class OracleDdlParser extends StandardDdlParser
     }
 
     /**
-     * Overloaded version of method with default mixin type set to {@link StandardDdlLexicon.TYPE_COLUMN_DEFINITION}
+     * Overloaded version of method with default mixin type set to {@link StandardDdlLexicon#TYPE_COLUMN_DEFINITION}
      * 
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
      * @param tableNode
@@ -1985,7 +1986,9 @@ public class OracleDdlParser extends StandardDdlParser
         AstNode columnNode = nodeFactory().node(columnName, tableNode, columnMixinType);
 
         DataType datatype = getDatatypeParser().parse(tokens);
-        getDatatypeParser().setPropertiesOnNode(columnNode, datatype);
+        if (datatype != null) {
+            getDatatypeParser().setPropertiesOnNode(columnNode, datatype);
+        }
 
         // Now clauses and constraints can be defined in any order, so we need to keep parsing until we get to a comma
         StringBuilder unusedTokensSB = new StringBuilder();
