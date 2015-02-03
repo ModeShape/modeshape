@@ -138,7 +138,19 @@ public class LocalIndexProvider extends IndexProvider {
                            file.getAbsolutePath());
         }
         // Get the database ...
-        this.db = DBMaker.newFileDB(file).make();
+		DBMaker maker = DBMaker.newFileDB(file);
+		maker = maker.cacheSize(100); // ensure small cache size
+		
+//		maker = maker.asyncWriteEnable();
+//		maker = maker.asyncWriteFlushDelay(500);
+		maker = maker.cacheLRUEnable();
+//		maker = maker.freeSpaceReclaimQ(1);
+//		maker = maker.freeSpaceReclaimQ(10);
+		maker = maker.mmapFileEnable();
+		maker = maker.commitFileSyncDisable();
+//		maker = maker.transactionDisable();
+		
+        this.db = maker.make();
         logger().trace("Found the index files {0} in index database for repository '{1}' at: {2}", db.getCatalog(),
                        getRepositoryName(), file.getAbsolutePath());
     }
