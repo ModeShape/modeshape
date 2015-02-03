@@ -321,6 +321,12 @@ public class RepositoryConfigurationTest {
     public void shouldNotAllowRepositoryConfigurationWithIndexThatHasMalformedColumns() {
         assertNotValid(1, "config/invalid-index-with-malformed-columns.json");
     }
+    
+    @FixFor( "MODE-2387" )
+    @Test
+    public void shouldAllowCustomSettingsForLocalIndexProvider() {
+        assertValid("config/local-index-provider-with-custom-settings.json");        
+    }
 
     @Test
     public void shouldAlwaysReturnNonNullSequencingComponent() {

@@ -13,9 +13,14 @@
       <workspace name="predefinedWorkspace3" />
     </workspaces>
     <index-providers>
-      <index-provider name="local" classname="local" path="modeshape/artifacts/indexes/" relative-to="jboss.server.data.dir" />
-      <index-provider name="local2" classname="local" path="modeshape/artifacts/indexes2/" relative-to="jboss.server.data.dir" />
-      <index-provider name="local3" classname="local" path="modeshape/artifacts/indexes3/" relative-to="jboss.server.data.dir" />
+        <index-provider name="local" classname="local" path="modeshape/artifacts/indexes/" relative-to="jboss.server.data.dir"/>
+        <index-provider name="local2" classname="local" path="modeshape/artifacts/indexes2/"
+                        relative-to="jboss.server.data.dir"/>
+        <index-provider name="local3" classname="local" path="modeshape/artifacts/indexes3/"
+                        relative-to="jboss.server.data.dir"/>
+        <index-provider name="local4" classname="local" path="modeshape/artifacts/indexes3/" relative-to="jboss.server.data.dir"
+                        cacheLRUEnable="true" mmapFileEnable="true" commitFileSyncDisable="true" transactionDisable="true"
+                        asyncWrite="true" cacheSize="100"/>
     </index-providers>
     <indexes>
       <index name="primaryTypes" provider-name="local" index-kind="value" node-type="nt:base" columns="jcr:primaryType(NAME)" />
