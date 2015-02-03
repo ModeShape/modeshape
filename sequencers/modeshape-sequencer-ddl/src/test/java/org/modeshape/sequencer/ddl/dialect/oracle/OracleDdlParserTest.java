@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_INDEXTYPE_STATEMENT;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_INDEX_STATEMENT;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ANALYZE_STATEMENT;
@@ -57,16 +58,6 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         rootNode = parser.nodeFactory().node("ddlRootNode");
         scorer = new DdlParserScorer();
     }
-
-    // @Test
-    // public void shouldParseOracleDDL() {
-    // String content = getFileContent(DDL_FILE_PATH + "oracle_test_create.ddl");
-    //
-    // List<Statement> stmts = parser.parse(content);
-    //
-    // System.out.println("  END PARSING.  # Statements = " + stmts.size());
-    //
-    // }
 
     @Test
     public void shouldParseCreateOrReplaceTrigger() {
@@ -112,10 +103,79 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseAlterTableADDWithNESTED_TABLE() {
         // This is a one-off case where there is a custom datatype (i.e. skill_table_type)
         printTest("shouldParseAlterTableADDWithNESTED_TABLE()");
-        String content = "ALTER TABLE employees ADD (skills skill_table_type) NESTED TABLE skills STORE AS nested_skill_table;";
-        assertScoreAndParse(content, null, 2); // ALTER TABLE + 1 PROBLEM
+        String content = "ALTER TABLE employees ADD (skills VARCHAR(10)) NESTED TABLE skills STORE AS nested_skill_table;";
+        assertScoreAndParse(content, null, 1); // ALTER TABLE + NO MORE PROBLEM
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+    }
+
+    @Test
+    @FixFor( "MODE-2350" )
+    public void shouldParseAlterTableWithAddAndModify() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees ADD (add_field NUMBER) MODIFY (mod_field VARCHAR2(10));";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 2);
+    }
+
+    @Test
+    @FixFor( "MODE-2350" )
+    public void shouldParseAlterTableWithAddMultipleColumns() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees ADD (field1 NUMBER, field2 varchar2(75), field3 varchar2(75));";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 3);
+    }
+
+    @Test
+    @FixFor( "MODE-2350" )
+    public void shouldParseAlterTableWithModifyMultipleColumns() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees MODIFY (field1 NUMBER NOT NULL, field2 varchar2(75), field3 varchar2(75));";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 3);
+    } 
+    
+    @Test
+    @FixFor( "MODE-2350" )
+    public void shouldParseAlterTableWitAddAndModifyMultipleColumns() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees ADD (field1 NUMBER, field2 varchar2(75), field3 varchar2(75)) " +
+                         "MODIFY (field1 NUMBER NOT NULL, field2 varchar2(75), field3 varchar2(75));";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 6);
+    }
+    
+    @Test
+    @FixFor( "MODE-2350" )
+    public void shouldRejectAlterTableIncorrectAdd() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees ADD (add_field NUMBER MODIFY (mod_field VARCHAR2(10));";
+        assertScoreAndParse(content, null, 2);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 2);
+        assertTrue(hasMixinType(childNode.getChild(1), TYPE_PROBLEM));
+    }  
+    
+    @Test
+    @FixFor( "MODE-2350" )
+    public void shouldRejectAlterTableIncorrectAddModify() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees ADD MODIFY (mod_field VARCHAR2(10));";
+        assertScoreAndParse(content, null, 2);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 2);
+        assertTrue(hasMixinType(childNode.getChild(1), TYPE_PROBLEM));
     }
 
     @Test
