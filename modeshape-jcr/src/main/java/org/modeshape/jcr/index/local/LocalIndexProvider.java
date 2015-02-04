@@ -78,6 +78,16 @@ public class LocalIndexProvider extends IndexProvider {
     private String relativeTo;
     private DB db;
 
+    /**
+     * A bunch of MapDB specific options which can be used to further tweak this provider
+     */
+    private boolean cacheLRUEnable = false;
+    private boolean mmapFileEnable = false;
+    private boolean commitFileSyncDisable = false;
+    private boolean transactionDisable = false;
+    private boolean asyncWrite = false;
+    private Integer cacheSize;
+    
     public LocalIndexProvider() {
     }
 
@@ -138,7 +148,33 @@ public class LocalIndexProvider extends IndexProvider {
                            file.getAbsolutePath());
         }
         // Get the database ...
-        this.db = DBMaker.newFileDB(file).make();
+        DBMaker<?> dbMaker = DBMaker.newFileDB(file);
+        if (this.cacheSize != null) {
+            dbMaker.cacheSize(cacheSize);
+            logger().debug("MapDB cache size set to {0} for index provider {1}", cacheSize, getName());
+        }
+        if (this.cacheLRUEnable) {
+            dbMaker.cacheLRUEnable();
+            logger().debug("MapDB cacheLRU enabled for index provider {0}", getName());
+        }
+        if (this.mmapFileEnable) {
+            dbMaker.mmapFileEnableIfSupported();
+            logger().debug("MapDB mmapFiles enabled for index provider {0}", getName());
+        }
+        if (this.commitFileSyncDisable) {
+            dbMaker.commitFileSyncDisable();
+            logger().debug("MapDB commitFileSync enabled for index provider {0}", getName());
+        }
+        if (this.transactionDisable) {
+            dbMaker.transactionDisable();
+            logger().debug("MapDB transactions disabled for index provider {0}", getName());
+        }
+        if (this.asyncWrite) {
+            dbMaker.asyncWriteEnable();
+            logger().debug("MapDB async writes enabled for index provider {0}", getName());
+        }
+        this.db = dbMaker.make(); 
+        
         logger().trace("Found the index files {0} in index database for repository '{1}' at: {2}", db.getCatalog(),
                        getRepositoryName(), file.getAbsolutePath());
     }

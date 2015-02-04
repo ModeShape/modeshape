@@ -578,6 +578,9 @@
                 <!-- Define some indexes -->
                 <index-providers>
                   <index-provider name="local" classname="local" path="modeshape/artifacts/indexes/" relative-to="jboss.server.data.dir" />
+                  <index-provider name="local_custom_settings" classname="local" path="modeshape/artifacts/indexes_custom/" relative-to="jboss.server.data.dir"
+                                  cacheLRUEnable="true" mmapFileEnable="true" commitFileSyncDisable="true" transactionDisable="true"
+                                  asyncWrite="true" cacheSize="100"/>
                 </index-providers>
                 <indexes>
                   <index name="names" provider-name="local" synchronous="true" kind="value" node-type="nt:base" columns="jcr:name(NAME)" />

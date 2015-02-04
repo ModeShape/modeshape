@@ -1,0 +1,22 @@
+{
+    "name" : "LocalIndexProviderWithExtraSettings",
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/local_index_custom_settings_test_repository",
+            "cacheLRUEnable" : true,
+            "mmapFileEnable" : true,
+            "commitFileSyncDisable" : true,
+            "transactionDisable" : true,
+            "asyncWrite" : true,
+            "cacheSize" : 100
+        }
+    },
+    "indexes" : {
+        "index1" : {
+            "provider" : "local",
+            "nodeType" : "mix:title",
+            "columns" : "jcr:title(STRING)"
+        }
+    }
+}

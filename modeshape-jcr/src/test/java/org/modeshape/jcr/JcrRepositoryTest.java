@@ -1539,6 +1539,19 @@ public class JcrRepositoryTest {
         // have finished its work but is being kept alive in the thread pool. So we're only approximating the next assert
         assertTrue("Observation threads not released when session was logged out", Thread.activeCount() - oldCount  < sessionsCount);
     }
+    
+    @Test
+    @FixFor( "MODE-2387" )
+    public void shouldStartRepositoryWithCustomSettingsForLocalIndexProvider() throws Exception {
+        shutdownDefaultRepository();
+        FileUtil.delete("target/local_index_custom_settings_test_repository");
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
+                                                                                .getResource(
+                                                                                        "config/local-index-provider-with-custom-settings.json"));
+        repository = new JcrRepository(config);
+        repository.start();
+        repository.shutdown();
+    }
 
     protected void nodeExists( Session session,
                                String parentPath,
