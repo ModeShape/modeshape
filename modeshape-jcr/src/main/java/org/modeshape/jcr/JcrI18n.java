@@ -425,6 +425,7 @@ public final class JcrI18n {
     public static I18n versionHistoryForNewlyVersionableNodesNotAvailableUntilSave;
     public static I18n versionHistoryNotEmpty;
     public static I18n nodeIsShareable;
+    public static I18n cannotLocateBaseVersion;
 
     public static I18n creatingWorkspacesIsNotAllowedInRepository;
     public static I18n workspaceHasBeenDeleted;

@@ -362,9 +362,9 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
 
             // Now process the children of the versionable node, and add them under the frozen node ...
             MutableCachedNode frozenNode = frozen.get();
-            for (ChildReference childRef : cachedNode.getChildReferences(versionSession)) {
+            for (ChildReference childRef : versionableNode.getChildReferences(versionSession)) {
                 AbstractJcrNode child = session.node(childRef.getKey(), null, versionedKey);
-                versionNodeAt(child, frozenNode, false, versionSession, systemSession);
+                versionNodeAt(child, childRef.getName(), frozenNode, false, versionSession, systemSession);
             }
 
             // Now save all of the changes ...
@@ -380,14 +380,15 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
      * Create a version record for the given node under the given parent path with the given batch.
      * 
      * @param node the node for which the frozen version record should be created
+     * @param nodeName the name of the node which we're versioning 
      * @param parentInVersionHistory the node in the version history under which the frozen version should be recorded
      * @param forceCopy true if the OPV should be ignored and a COPY is to be performed, or false if the OPV should be used
      * @param nodeCache the session cache used to access the node information; may not be null
-     * @param versionHistoryCache the session cache used to create nodes in the version history; may not be null
-     * @throws RepositoryException if an error occurs accessing the repository
+     * @param versionHistoryCache the session cache used to create nodes in the version history; may not be null     @throws RepositoryException if an error occurs accessing the repository
      */
     @SuppressWarnings( "fallthrough" )
     private void versionNodeAt( AbstractJcrNode node,
+                                Name nodeName, 
                                 MutableCachedNode parentInVersionHistory,
                                 boolean forceCopy,
                                 SessionCache nodeCache,
@@ -403,8 +404,8 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
 
         switch (onParentVersion) {
             case OnParentVersionAction.ABORT:
-                throw new VersionException(JcrI18n.cannotCheckinNodeWithAbortChildNode.text(node.getName(), node.getParent()
-                                                                                                                .getName()));
+                throw new VersionException(JcrI18n.cannotCheckinNodeWithAbortChildNode.text(nodeName, 
+                                                                                            node.getParent().getName()));
             case OnParentVersionAction.VERSION:
                 if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
                     // The frozen node should reference the version history of the node ...
@@ -413,7 +414,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
                                                                                             JcrNtLexicon.VERSIONED_CHILD);
                     org.modeshape.jcr.value.Property childVersionHistory = propertyFactory().create(JcrLexicon.CHILD_VERSION_HISTORY,
                                                                                                     history.key().toString());
-                    parentInVersionHistory.createChild(versionHistoryCache, key, node.name(), primaryType, childVersionHistory);
+                    parentInVersionHistory.createChild(versionHistoryCache, key, nodeName, primaryType, childVersionHistory);
                     return;
                 }
 
@@ -434,7 +435,7 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
                     props.add(factory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, ModeShapeLexicon.SHARE));
                     props.add(factory.create(JcrLexicon.FROZEN_UUID, node.getIdentifier()));
                     props.add(factory.create(JcrLexicon.UUID, key));
-                    parentInVersionHistory.createChild(versionHistoryCache, key, node.name(), props);
+                    parentInVersionHistory.createChild(versionHistoryCache, key, nodeName, props);
 
                     // The proxies to shareable nodes never have children (nor versionable properties), so we're done ...
                     return;
@@ -450,13 +451,13 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
                 props.add(factory.create(JcrLexicon.FROZEN_UUID, node.getIdentifier()));
                 props.add(factory.create(JcrLexicon.UUID, key));
                 addVersionedPropertiesFor(node, forceCopy, props);
-                MutableCachedNode newCopy = parentInVersionHistory.createChild(versionHistoryCache, key, node.name(), props);
+                MutableCachedNode newCopy = parentInVersionHistory.createChild(versionHistoryCache, key, nodeName, props);
 
                 // Now process the children of the versionable node ...
                 NodeKey parentKey = node.key();
                 for (ChildReference childRef : node.node().getChildReferences(nodeCache)) {
                     AbstractJcrNode child = session.node(childRef.getKey(), null, parentKey);
-                    versionNodeAt(child, newCopy, forceCopy, nodeCache, versionHistoryCache);
+                    versionNodeAt(child, childRef.getName(), newCopy, forceCopy, nodeCache, versionHistoryCache);
                 }
                 return;
             case OnParentVersionAction.INITIALIZE:
