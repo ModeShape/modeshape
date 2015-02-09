@@ -191,7 +191,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
      */
     protected final void checkForLock() throws LockException, RepositoryException {
 
-        if (this.getParent().isLocked() && !getParent().getLock().isLockOwningSession()) {
+        if (getParent().isLockedByAnotherSession()) {
             Lock parentLock = this.getParent().getLock();
             if (parentLock != null && parentLock.getLockToken() == null) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(node.location()));
@@ -323,7 +323,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
         checkForCheckedOut();
         session.checkPermission(this, ModeShapePermissions.REMOVE);
         AbstractJcrNode parentNode = getParent();
-        if (parentNode.isLocked()) {
+        if (parentNode.isLockedByAnotherSession()) {
             Lock parentLock = parentNode.getLock();
             if (parentLock != null && !parentLock.isLockOwningSession()) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(getPath()));

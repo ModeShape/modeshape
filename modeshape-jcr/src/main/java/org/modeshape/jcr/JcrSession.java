@@ -1029,13 +1029,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         SessionCache sessionCache = cache();
 
         // Check whether these nodes are locked ...
-        if (srcNode.isLocked() && !srcNode.getLock().isLockOwningSession()) {
+        if (srcNode.isLockedByAnotherSession()) {
             javax.jcr.lock.Lock sourceLock = srcNode.getLock();
             if (sourceLock != null && sourceLock.getLockToken() == null) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
             }
         }
-        if (destParentNode.isLocked() && !destParentNode.getLock().isLockOwningSession()) {
+        if (destParentNode.isLockedByAnotherSession()) {
             javax.jcr.lock.Lock newParentLock = destParentNode.getLock();
             if (newParentLock != null && newParentLock.getLockToken() == null) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(destAbsPath));
