@@ -81,7 +81,7 @@ public class LocalDocumentStore implements DocumentStore {
     public void updateDocument( String key,
                                 Document document,
                                 SessionNode sessionNode ) {
-        // do nothing, the way the local store updates is via deltas
+        // do nothing, the way the local store updates is via editing schematic entry literals
     }
 
     @Override

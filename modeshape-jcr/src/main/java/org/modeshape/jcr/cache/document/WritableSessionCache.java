@@ -428,9 +428,20 @@ public class WritableSessionCache extends AbstractSessionCache {
                     txn = txns.begin();
                     assert txn != null;
 
-                    // Lock the nodes in Infinispan
+                    // Lock the nodes in Infinispan and bring the latest version of these nodes in the shared workspace cache
                     WorkspaceCache persistedCache = lockNodes(changedNodesInOrder);
 
+                    // We've either started our own transaction or one was already started. In either case *we must* make 
+                    // sure we're not using the shared workspace cache as the active workspace cache. This is because the
+                    // the shared workspace cache is "shared" with all others (incl readers) and we might end up placing entries in the 
+                    // shared workspace cache which are being edited by us & this can happen after we've placed in the ISPN
+                    // cache the clone for each document we're editing. Remember that for each active transaction ISPN will
+                    // see the "most recent" object reference which was placed in the cache. See SchematicEntryLiteral#edit
+                    // The shared workspace cache can become corrupted whenever methods like `node.getPrimaryType(this)` are
+                    // called from the #persistChanges method
+
+                    checkForTransaction();
+                    
                     // process after locking
                     runPreSaveAfterLocking(preSaveOperation, persistedCache);
 
@@ -583,10 +594,22 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     // Get a monitor via the transaction ...
                     try {
-                        // Lock the nodes in Infinispan
+                        // Lock the nodes in Infinispan  and bring the latest version of these nodes in the shared workspace cache
                         WorkspaceCache thisPersistedCache = lockNodes(this.changedNodesInOrder);
                         WorkspaceCache thatPersistedCache = that.lockNodes(that.changedNodesInOrder);
+                       
+                        // We've either started our own transaction or one was already started. In either case *we must* make 
+                        // sure we're not using the shared workspace cache as the active workspace cache. This is because the
+                        // the shared workspace cache is "shared" with all others (incl readers) and we might end up placing entries in the 
+                        // shared workspace cache which are being edited by us - this can happen after we've placed in the ISPN
+                        // cache the clone for each document we're editing. Remember that for each active transaction ISPN will
+                        // see the "most recent" object reference which was placed in the cache. See SchematicEntryLiteral#edit
+                        // The shared workspace cache can become corrupted whenever methods like `node.getPrimaryType(this)` are
+                        // called from the #persistChanges method
 
+                        this.checkForTransaction();
+                        that.checkForTransaction();
+                        
                         // process after locking
                         runPreSaveAfterLocking(preSaveOperation, thisPersistedCache);
 
@@ -741,10 +764,21 @@ public class WritableSessionCache extends AbstractSessionCache {
                     assert txn != null;
 
                     try {
-                        // Lock the nodes in Infinispan
+                        // Lock the nodes in Infinispan and bring the latest version of these nodes in the shared workspace cache
                         WorkspaceCache thisPersistedCache = lockNodes(savedNodesInOrder);
                         WorkspaceCache thatPersistedCache = that.lockNodes(that.changedNodesInOrder);
 
+                        // We've either started our own transaction or one was already started. In either case *we must* make 
+                        // sure we're not using the shared workspace cache as the active workspace cache. This is because the
+                        // the shared workspace cache is "shared" with all others (incl readers) and we might end up placing entries in the 
+                        // shared workspace cache which are being edited by us - this can happen after we've placed in the ISPN
+                        // cache the clone for each document we're editing. Remember that for each active transaction ISPN will
+                        // see the "most recent" object reference which was placed in the cache. See SchematicEntryLiteral#edit
+                        // The shared workspace cache can become corrupted whenever methods like `node.getPrimaryType(this)` are
+                        // called from the #persistChanges method
+                        this.checkForTransaction();
+                        that.checkForTransaction();
+                        
                         // process after locking
                         // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
                         if (preSaveOperation != null) {

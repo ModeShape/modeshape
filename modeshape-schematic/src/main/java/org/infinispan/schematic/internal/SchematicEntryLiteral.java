@@ -27,15 +27,10 @@ import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Document.Field;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Path;
-import org.infinispan.schematic.internal.delta.Operation;
 import org.infinispan.schematic.internal.document.BasicDocument;
 import org.infinispan.schematic.internal.document.DocumentEditor;
 import org.infinispan.schematic.internal.document.MutableDocument;
-import org.infinispan.schematic.internal.document.Paths;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
 
 /**
  * The primary implementation of {@link SchematicEntry}.
@@ -44,15 +39,6 @@ import org.infinispan.util.logging.LogFactory;
  */
 @SerializeWith( SchematicEntryLiteral.Externalizer.class )
 public class SchematicEntryLiteral implements SchematicEntry {
-
-    private static final Log LOGGER = LogFactory.getLog(SchematicEntryLiteral.class);
-
-    protected static class FieldPath {
-        protected static final Path ROOT = Paths.path();
-        protected static final Path METADATA = Paths.path(FieldName.METADATA);
-        protected static final Path CONTENT = Paths.path(FieldName.CONTENT);
-        protected static final Path ID = Paths.path(FieldName.METADATA, FieldName.ID);
-    }
 
     /**
      * Construction only allowed through this factory method. This factory is intended for use internally by the CacheDelegate.
@@ -186,20 +172,8 @@ public class SchematicEntryLiteral implements SchematicEntry {
         return new SchematicEntryLiteral((MutableDocument)value.clone());
     }
 
-    boolean apply( Iterable<Operation> changes ) {
-        try {
-            for (Operation o : changes) {
-                o.replay(value);
-            }
-        } catch (AssertionError e) {
-            LOGGER.debug("Assertion while applying changes to " + value + " --> " + changes);
-            throw e;
-        }
-        return true;
-    }
-
     /**
-     * The {@link org.infinispan.marshall.Externalizer Externalizer} for {@link SchematicEntryLiteral} instances.
+     * The {@link org.infinispan.commons.marshall.Externalizer} for {@link SchematicEntryLiteral} instances.
      */
     public static final class Externalizer extends SchematicExternalizer<SchematicEntryLiteral> {
         private static final long serialVersionUID = 1L;

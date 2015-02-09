@@ -3231,7 +3231,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new UnsupportedRepositoryOperationException(JcrI18n.requiresVersionable.text());
         }
         NodeKey baseVersionKey = ((NodeKeyReference)getProperty(JcrLexicon.BASE_VERSION).getValue().value()).getNodeKey();
-        return (JcrVersionNode)session().node(baseVersionKey, null);
+        try {
+            return (JcrVersionNode)session().node(baseVersionKey, null);
+        } catch (NodeNotFoundInParentException | ItemNotFoundException e) {
+            // this should only happen if multiple threads are performing non-atomic checkin/checkout flows on the same node
+            // see MODE-2418
+            throw new VersionException(JcrI18n.cannotLocateBaseVersion.text(baseVersionKey, getPath()));
+        }
     }
 
     @Override
