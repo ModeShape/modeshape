@@ -4,10 +4,15 @@
         "predefined" : ["ws1", "ws2"]
     },
     "externalSources" : {
-        "local-git-repo" : {
+        "remote-git-repo" : {  //Git repo which uses remotes
             "classname" : "org.modeshape.connector.git.GitConnector",
             "directoryPath" : "../../",
             "remoteName" : "upstream,origin",
+            "includeMimeType" : true
+        },
+        "local-git-repo" : { // Git repo which doesn't use remotes
+            "classname" : "org.modeshape.connector.git.GitConnector",
+            "directoryPath" : "../../",
             "includeMimeType" : true
         }
     }

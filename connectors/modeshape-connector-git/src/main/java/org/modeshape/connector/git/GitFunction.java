@@ -45,6 +45,7 @@ public abstract class GitFunction {
 
     protected static final String DELIMITER = "/";
     protected static final String REMOTE_BRANCH_PREFIX = "refs/remotes/";
+    protected static final String LOCAL_BRANCH_PREFIX = "refs/heads/";
     protected static final String TAG_PREFIX = "refs/tags/";
     protected static final int DEFAULT_PAGE_SIZE = 15;
 
@@ -105,7 +106,8 @@ public abstract class GitFunction {
      * @return the branch ref name
      */
     protected String branchRefForName( String branchName ) {
-        return remoteBranchPrefix(connector.remoteName()) + branchName;
+        String remoteName = connector.remoteName();
+        return remoteName != null ? remoteBranchPrefix(remoteName) + branchName : LOCAL_BRANCH_PREFIX + branchName;
     }
 
     /**
@@ -162,6 +164,7 @@ public abstract class GitFunction {
             Collections.sort(branches, REVERSE_REF_COMPARATOR);
             for (Ref ref : branches) {
                 String name = ref.getName();
+                name = name.replace(GitFunction.LOCAL_BRANCH_PREFIX, "");
                 writer.addChild(spec.childId(name), name);
             }
             return;

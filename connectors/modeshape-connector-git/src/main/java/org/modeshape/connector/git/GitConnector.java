@@ -93,7 +93,6 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 public class GitConnector extends ReadOnlyConnector implements Pageable {
 
     private static final boolean DEFAULT_INCLUDE_MIME_TYPE = false;
-    private static final String DEFAULT_REMOTE_NAME = "origin";
     private static final String GIT_DIRECTORY_NAME = ".git";
 
     private static final String GIT_CND_PATH = "org/modeshape/connector/git/git.cnd";
@@ -108,7 +107,7 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
      * The optional string value representing the name of the remote that serves as the primary remote repository. By default this
      * is "origin". This is set via reflection.
      */
-    private String remoteName = DEFAULT_REMOTE_NAME;
+    private String remoteName;
 
     /**
      * The optional string value representing the name of the remote that serves as the primary remote repository. By default this
@@ -160,21 +159,24 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
         repository = new FileRepositoryBuilder().setGitDir(gitDir).setMustExist(true).setBare().build();
         git = new Git(repository);
 
-        // Make sure the remote exists ...
-        Set<String> remoteNames = repository.getConfig().getSubsections("remote");
         parsedRemoteNames = new ArrayList<String>();
-        String remoteName = null;
-        for (String desiredName : this.remoteName.split(",")) {
-            if (remoteNames.contains(desiredName)) {
-                remoteName = desiredName;
-                parsedRemoteNames.add(desiredName);
-                break;
+        if (this.remoteName != null) {
+            // Make sure the remote exists ...
+            Set<String> remoteNames = repository.getConfig().getSubsections("remote");
+            String remoteName = null;
+            for (String desiredName : this.remoteName.split(",")) {
+                desiredName = desiredName.trim();
+                if (remoteNames.contains(desiredName)) {
+                    remoteName = desiredName;
+                    parsedRemoteNames.add(desiredName);
+                    break;
+                }
             }
+            if (remoteName == null) {
+                throw new RepositoryException(GitI18n.remoteDoesNotExist.text(this.remoteName, gitDir.getAbsolutePath()));
+            }
+            this.remoteName = remoteName;
         }
-        if (remoteName == null) {
-            throw new RepositoryException(GitI18n.remoteDoesNotExist.text(this.remoteName, gitDir.getAbsolutePath()));
-        }
-        this.remoteName = remoteName;
 
         // Register the different functions ...
         functions = new HashMap<String, GitFunction>();
