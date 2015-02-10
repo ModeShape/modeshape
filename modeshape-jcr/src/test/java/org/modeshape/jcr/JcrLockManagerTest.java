@@ -63,4 +63,17 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
         lockManager.addLockToken(token);
         Assert.assertTrue("New session should now own the lock.", lockManager.getLock(path).isLockOwningSession());
     }
+    
+    @Test
+    @FixFor( "MODE-2424" )
+    public void shouldAllowAddingMixinOnLockedNodeForLockOwner() throws  Exception {
+        final AbstractJcrNode testNode = session.getRootNode().addNode("test");
+        final String path = testNode.getPath();
+        testNode.addMixin("mix:lockable");
+        session.save();
+        session.getWorkspace().getLockManager().lock(path, false, true, Long.MAX_VALUE, session.getUserID());
+        
+        testNode.addMixin("mix:created");        
+        session.save();
+    }
 }

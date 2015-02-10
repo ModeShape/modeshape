@@ -636,6 +636,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
         }
     }
+    
+    protected final boolean isLockedByAnotherSession() throws RepositoryException {
+        try {
+            checkForLock();
+            return false;
+        } catch (LockException e) {
+            return true;
+        }
+    }
 
     /**
      * Verifies that this node is either not versionable or that it is versionable but checked out.
@@ -1095,7 +1104,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             session.checkPermission(this, ModeShapePermissions.ADD_NODE);
         }
 
-        if (isLocked() && !getLock().isLockOwningSession()) {
+        if (isLockedByAnotherSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
         }
 
@@ -2558,6 +2567,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
         }
 
+        // TCK expects that if we remove this mixin & the session owns the lock, the node is unlocked
+        // this must be done first, before we modify the node
+        if (JcrMixLexicon.LOCKABLE.equals(removedMixinName)) {
+            Lock lock = getLockIfExists();
+            if (lock != null) {
+                unlock();
+            }
+        }
+
         // Get the information from the node ...
         SessionCache cache = sessionCache();
         CachedNode cachedNode = node();
@@ -2696,7 +2714,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         JcrNodeType mixinType = session().nodeTypeManager().getNodeType(mixinName);
         if (!mixinType.isMixin()) return false;
-        if (isLocked()) return false;
+        if (isLockedByAnotherSession()) return false;
         if (!isCheckedOut()) return false;
         if (getDefinition().isProtected()) return false;
         if (mixinType.isAbstract()) return false;
@@ -2933,7 +2951,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
          * Check if the destination is locked
          */
         Path dstPath = path();
-        if (isLocked() && !session.lockManager().hasLockToken(this.getLock().getLockToken())) {
+        if (isLockedByAnotherSession()) {
             throw new LockException(dstPath.toString());
         }
 
@@ -3012,7 +3030,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         assert session == shareableNode.session;
 
         session.checkPermission(this, ModeShapePermissions.ADD_NODE);
-        if (isLocked() && !getLock().isLockOwningSession()) {
+        if (isLockedByAnotherSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
         }
 
@@ -3434,8 +3452,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return this.canAddNode(primaryNodeTypeName);
     }
 
-    private final boolean canAddNode( String primaryNodeTypeName ) throws RepositoryException {
-        if (isLocked() && !getLock().isLockOwningSession()) {
+    private boolean canAddNode( String primaryNodeTypeName ) throws RepositoryException {
+        if (isLockedByAnotherSession()) {
             return false;
         }
 
