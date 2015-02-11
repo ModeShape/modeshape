@@ -54,7 +54,8 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         session.save();
 
         FederationManager fedMgr = session.getWorkspace().getFederationManager();
-        fedMgr.createProjection(testRoot.getPath(), "local-git-repo", "/", "git-modeshape");
+        fedMgr.createProjection(testRoot.getPath(), "remote-git-repo", "/", "git-modeshape-remote");
+        fedMgr.createProjection(testRoot.getPath(), "local-git-repo", "/", "git-modeshape-local");
     }
 
     @AfterClass
@@ -67,43 +68,55 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         testRoot = getSession().getRootNode().getNode("repos");
     }
 
-    protected Node gitNode() throws Exception {
-        return testRoot.getNode("git-modeshape");
+    protected Node gitRemoteNode() throws Exception {
+        return testRoot.getNode("git-modeshape-remote");
+    } 
+    
+    protected Node gitLocalNode() throws Exception {
+        return testRoot.getNode("git-modeshape-local");
     }
 
     @Test
     public void shouldReadFederatedNodeInProjection() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         assertThat(git, is(notNullValue()));
         assertThat(git.getParent(), is(sameInstance(testRoot)));
-        assertThat(git.getPath(), is(testRoot.getPath() + "/git-modeshape"));
-        assertThat(git.getName(), is("git-modeshape"));
+        assertThat(git.getPath(), is(testRoot.getPath() + "/git-modeshape-remote"));
+        assertThat(git.getName(), is("git-modeshape-remote"));
     }
 
     @Test
     public void shouldReadTags() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node tags = git.getNode("tags");
         assertChildrenInclude("Make sure you run <git fetch --tags>", tags, expectedTagNames());
     }
 
     @Test
-    public void shouldReadBranches() throws Exception {
-        Node git = gitNode();
+    public void shouldReadRemoteBranches() throws Exception {
+        Node git = gitRemoteNode();
         Node branches = git.getNode("branches");
-        assertChildrenInclude(branches, expectedBranchNames());
+        assertChildrenInclude(branches, expectedRemoteBranchNames());
+    }
+
+    @Test
+    @FixFor( "MODE-2426" )
+    public void shouldReadLocalBranches() throws Exception {
+        Node git = gitLocalNode();
+        Node branches = git.getNode("branches");
+        assertChildrenInclude(branches, "master");
     }
 
     @Test
     public void shouldReadTreeSubgraph() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node tree = git.getNode("tree");
         navigate(tree, false, 100, 2);
     }
 
     @Test
     public void shouldReadCommitSubgraph() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node commit = git.getNode("commit");
         navigate(commit, false, 100, 2);
     }
@@ -111,7 +124,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     @FixFor( "MODE-1732" )
     @Test
     public void shouldFollowReferenceFromRecentTagToCommit() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node tag = git.getNode("tags/modeshape-3.0.0.Final");
         assertThat(tag.getProperty("git:objectId").getString(), is(notNullValue()));
         assertThat(tag.getProperty("git:tree").getString(), is(notNullValue()));
@@ -144,14 +157,14 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     }
 
     protected String treePathFor( Node node ) throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         String commitId = node.getProperty("git:objectId").getString();
         return git.getPath() + "/tree/" + commitId;
     }
 
     @Test
     public void shouldFollowReferenceFromOldTagToCommit() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node tag = git.getNode("tags/dna-0.2");
         assertThat(tag.getProperty("git:objectId").getString(), is(notNullValue()));
         assertThat(tag.getProperty("git:tree").getString(), is(notNullValue()));
@@ -163,16 +176,16 @@ public class GitConnectorTest extends MultiUseAbstractTest {
 
     @Test
     public void shouldContainTagsAndBranchNamesAndCommitsUnderTreeNode() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node tree = git.getNode("tree");
         assertThat(tree.getPrimaryNodeType().getName(), is("git:trees"));
-        assertChildrenInclude(tree, expectedBranchNames());
+        assertChildrenInclude(tree, expectedRemoteBranchNames());
         assertChildrenInclude("Make sure you run <git fetch --tags>", tree, expectedTagNames());
     }
 
     @Test
     public void shouldFindMasterBranchAsPrimaryItemUnderBranchNode() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node branches = git.getNode("branches");
         Item primaryItem = branches.getPrimaryItem();
         assertThat(primaryItem, is(notNullValue()));
@@ -185,7 +198,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
 
     @Test
     public void shouldFindMasterBranchAsPrimaryItemUnderTreeNode() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node tree = git.getNode("tree");
         Item primaryItem = tree.getPrimaryItem();
         assertThat(primaryItem, is(notNullValue()));
@@ -198,7 +211,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
 
     @Test
     public void shouldFindTreeBranchAsPrimaryItemUnderGitRoot() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node tree = git.getNode("tree");
         assertThat(tree, is(notNullValue()));
         Item primaryItem = git.getPrimaryItem();
@@ -212,7 +225,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
 
     @Test
     public void shouldFindLatestCommitInMasterBranch() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node commits = git.getNode("commits");
         Node master = commits.getNode("master");
         Node commit = master.getNodes().nextNode(); // the first commit in the history of the 'master' branch ...
@@ -227,7 +240,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
 
     @Test
     public void shouldFindLatestCommitDetailsInMasterBranch() throws Exception {
-        Node git = gitNode();
+        Node git = gitRemoteNode();
         Node commits = git.getNode("commit");
         Node commit = commits.getNodes().nextNode(); // the first commit ...
         // print = true;
@@ -247,7 +260,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     @Test
     @FixFor( "MODE-2352" )
     public void shouldReadTreeObjectProperties() throws Exception {
-        Node tree = session.getNode("/repos/git-modeshape/tree/72ea74be3b3a50345a1b2f543f78fd6be00caa35");
+        Node tree = session.getNode("/repos/git-modeshape-remote/tree/72ea74be3b3a50345a1b2f543f78fd6be00caa35");
         assertNotNull(tree);
         PropertyIterator propertyIterator = tree.getProperties();
         while (propertyIterator.hasNext()) {
@@ -259,7 +272,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     @Test
     @FixFor( "MODE-2352" )
     public void shouldReadBranchObjectProperties() throws Exception {
-        Node branch = session.getNode("/repos/git-modeshape/branches/master");
+        Node branch = session.getNode("/repos/git-modeshape-remote/branches/master");
         assertNotNull(branch);
         PropertyIterator propertyIterator = branch.getProperties();
         while (propertyIterator.hasNext()) {
@@ -272,7 +285,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     @Test
     @FixFor( "MODE-2352" )
     public void shouldNavigateCommitWithMultiplePages() throws Exception {
-        Node commit = session.getNode("/repos/git-modeshape/commits/d1f7daf32bd67edded7545221cd5c79d94813310");
+        Node commit = session.getNode("/repos/git-modeshape-remote/commits/d1f7daf32bd67edded7545221cd5c79d94813310");
         assertNotNull(commit);
         NodeIterator childrenIterator = commit.getNodes();
         while (childrenIterator.hasNext()) {
@@ -311,7 +324,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
      * 
      * @return the branch names; never null
      */
-    protected String[] expectedBranchNames() {
+    protected String[] expectedRemoteBranchNames() {
         return new String[] {"master", "2.2.x", "2.5.x", "2.8.x", "2.x", "3.0.x"};
     }
 
