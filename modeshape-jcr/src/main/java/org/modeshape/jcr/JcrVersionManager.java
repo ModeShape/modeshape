@@ -367,8 +367,10 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
                 versionNodeAt(child, childRef.getName(), frozenNode, false, versionSession, systemSession);
             }
 
-            // Now save all of the changes ...
-            versionSession.save(systemSession, null);
+            // Now save all of the changes.
+            // the system session must be saved first so that its nodes are cleared first from the shared ws cache
+            // this is required because there are references from the other session pointing towards the system session
+            systemSession.save(versionSession, null);
         } finally {
             // TODO: Versioning: may want to catch this block and retry, if the new version name couldn't be created
         }

@@ -3254,7 +3254,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         } catch (NodeNotFoundInParentException | ItemNotFoundException e) {
             // this should only happen if multiple threads are performing non-atomic checkin/checkout flows on the same node
             // see MODE-2418
-            throw new VersionException(JcrI18n.cannotLocateBaseVersion.text(baseVersionKey, getPath()));
+            throw new VersionException(JcrI18n.cannotLocateBaseVersion.text(baseVersionKey, getPath()), e);
         }
     }
 

@@ -43,10 +43,9 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.version.Version;
 import javax.jcr.version.VersionManager;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
@@ -265,7 +264,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     
     @Test
     @FixFor( "MODE-2418" )
-    @Ignore("This fails wih various exceptions which are to be expected, but can be used to track down the ConcurrentModificationException (see JIRA)")
     public void shouldVersionNodesConcurrently() throws Exception {
         shutdownDefaultRepo();
         FileUtil.delete("target/persistent_repository/store");
@@ -277,47 +275,57 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         session.save();
         session.logout();
 
-        List<Future<Boolean>> futures = new ArrayList<>();
         ExecutorService pool = Executors.newCachedThreadPool();
-        int threadCount = 40;
-        for (int i = 0; i < threadCount; i++) {
-            Future<Boolean> submit = pool.submit(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    Session session = repository.login();
+
+        final String path = "/uploads";
+        final int repeatCount = 10;
+        Future<Void> writerResult = pool.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                try {
                     VersionManager versionManager = session.getWorkspace().getVersionManager();
 
-                    // create sub node
-                    String path = "/uploads";
-                    versionManager.checkout(path);
-                    Node node = session.getNode(path);
-                    String uuid = UUID.randomUUID().toString();
-                    String name = Thread.currentThread().getName() + "_" + uuid;
-                    node.addNode(name, NodeType.NT_FOLDER);
-                    session.save();
-                    versionManager.checkin(path);
-
-                    // read existing nodes
-                    NodeIterator nodes = node.getNodes();
-                    while (nodes.hasNext()) {
-                        Node nextNode = nodes.nextNode();
-                        nextNode.getName();
+                    for (int i = 0; i < repeatCount; i++) {
+                        versionManager.checkout(path);
+                        Node node = session.getNode(path);
+                        String uuid = UUID.randomUUID().toString();
+                        String name = Thread.currentThread().getName() + "_" + uuid;
+                        node.addNode(name, NodeType.NT_FOLDER);
+                        session.save();
+                        versionManager.checkin(path);
                     }
-
+                } finally {
                     session.logout();
-                    return true;
                 }
-            });
-            futures.add(submit);
-        }
+                return null;
+            }
+        });   
         
-        // wait for all to finish
-        boolean success = true;
-        for (Future<Boolean> future : futures) {
-            success = success && future.get(2, TimeUnit.SECONDS);
+        Future<Void> readerResult = pool.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                try {
+                    VersionManager versionManager = session.getWorkspace().getVersionManager();
+                    for (int i = 0; i < repeatCount; i++) {
+                        Version baseVersion = versionManager.getBaseVersion(path);
+                        assertNotNull(baseVersion);
+                        Thread.sleep(100);
+                    }
+                    return null;
+                } finally {
+                    session.logout();                    
+                }
+            }
+        });
+
+        try {
+            writerResult.get();
+            readerResult.get();
+        } finally {
+            pool.shutdownNow();    
         }
-        pool.shutdown();
-        Assert.assertTrue(success);
     }
 
     private void shutdownDefaultRepo() {

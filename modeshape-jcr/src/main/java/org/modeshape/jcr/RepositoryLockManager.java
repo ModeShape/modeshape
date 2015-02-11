@@ -315,7 +315,8 @@ class RepositoryLockManager implements ChangeSetListener {
             lockedNode.lock(isSessionScoped);
 
             // Now save both sessions. This will fail with a LockFailureException if the locking failed ...
-            lockingSession.save(systemSession, null);
+            // save the system session first so that the system change is reflected first in the ws caches
+            systemSession.save(lockingSession, null);
         } catch (LockFailureException e) {
             // Someone must have snuck in and locked the node, and we just didn't receive notification of it yet ...
             String location = nodeKey.toString();
