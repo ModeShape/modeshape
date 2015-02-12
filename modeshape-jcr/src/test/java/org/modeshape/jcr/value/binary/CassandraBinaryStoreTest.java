@@ -93,7 +93,7 @@ public class CassandraBinaryStoreTest {
         Set<BinaryKey> unused = new HashSet<BinaryKey>();
         unused.add(unusedValue.getKey());
         store.markAsUnused(unused);
-        Thread.sleep(1000);
+        Thread.sleep(1300);
         store.removeValuesUnusedLongerThan(1, TimeUnit.SECONDS);
         try {
             store.getInputStream(unusedValue.getKey());
