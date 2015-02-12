@@ -1529,6 +1529,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             // If the set criteria contains a bind variable, then the operand filter should lazily evaluate the bind variable ...
             final ExtractFromRow operation = createExtractFromRow(operand, context, columns, sources, defaultType, true, false);
             final boolean trace = LOGGER.isTraceEnabled() && !defaultType.getTypeName().equals("NAME");
+            final PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
             return new RowFilterSupplier() {
 
                 @Override
@@ -1537,6 +1538,11 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                     return new DynamicOperandFilter(operation) {
                         @Override
                         protected boolean evaluate( Object leftHandValue ) {
+                            if (Path.class.isAssignableFrom(defaultType.getType())) {
+                                leftHandValue = leftHandValue instanceof Object[] ?
+                                                pathFactory.create((Object[])leftHandValue) : 
+                                                pathFactory.create(leftHandValue);
+                            }
                             if (leftHandValue instanceof Object[]) {
                                 for (Object leftValue : (Object[])leftHandValue) {
                                     if (values.contains(leftValue)) {
