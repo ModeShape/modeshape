@@ -2468,6 +2468,24 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(4).hasColumns(carColumnNames("car:Car")).validate(query, result);
     }
 
+    @FixFor( "MODE-2425" )
+    @Test
+    public void shouldBeAbleToUsePathOperandWithInQuery() throws RepositoryException {
+        String sql = "SELECT [car:maker] FROM [car:Car] WHERE PATH()" +
+                     " IN ('/Cars/Hybrid/Toyota Prius', '/Cars/Hybrid/Toyota Highlander', '/Cars/Hybrid/Nissan Altima')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        final List<String> expectedMakers = new ArrayList<>(Arrays.asList("Toyota", "Toyota", "Nissan"));
+        validateQuery().rowCount(3).onEachRow(new Predicate() {
+            @Override
+            public void validate( int rowNumber, Row row ) throws RepositoryException {
+                String actualValue = row.getValue("car:maker").getString();
+                expectedMakers.remove(actualValue);                
+            }
+        }).validate(query, result);
+        assertTrue("Not all expected car makers found", expectedMakers.isEmpty());
+    }
+
     @FixFor( "MODE-1873" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSubqueryInCriteriaWhenSubquerySelectsPseudoColumn()
