@@ -200,6 +200,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
+
         JcrValue jcrValue = null;
 
         if (value == null) {
@@ -289,6 +291,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
+
         internalSetValue(createValue(value, PropertyType.STRING).asType(this.getType()));
     }
 
@@ -302,6 +306,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
+
         internalSetValue(createValue(context().getValueFactories().getBinaryFactory().create(value), PropertyType.BINARY).asType(this.getType()));
     }
 
@@ -311,6 +317,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
+
         internalSetValue(createValue(value, PropertyType.LONG).asType(this.getType()));
     }
 
@@ -320,6 +328,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
+
         internalSetValue(createValue(value, PropertyType.DOUBLE).asType(this.getType()));
     }
 
@@ -333,6 +343,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
+
         internalSetValue(createValue(context().getValueFactories().getDateFactory().create(value), PropertyType.DATE).asType(this.getType()));
     }
 
@@ -342,6 +354,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
+
         internalSetValue(createValue(value, PropertyType.BOOLEAN).asType(this.getType()));
     }
 
@@ -355,6 +369,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
 
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(this.context().getNamespaceRegistry()))) {
             throw new ValueFormatException(JcrI18n.nodeNotReferenceable.text());
@@ -379,6 +394,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
 
         BinaryValue binary = null;
         if (value instanceof BinaryValue) {
@@ -400,6 +416,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
+
         internalSetValue(createValue(value, PropertyType.DECIMAL).asType(this.getType()));
     }
 

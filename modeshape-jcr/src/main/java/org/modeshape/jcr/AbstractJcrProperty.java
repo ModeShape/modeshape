@@ -20,6 +20,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
@@ -215,6 +216,10 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
                 throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
             }
         }
+    }
+    
+    protected final void checkModifyPermission() throws AccessDeniedException {
+        session.checkPermission(node, ModeShapePermissions.SET_PROPERTY);
     }
 
     @Override
