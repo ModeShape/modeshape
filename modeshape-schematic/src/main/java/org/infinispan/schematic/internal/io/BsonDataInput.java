@@ -257,6 +257,7 @@ public class BsonDataInput implements DataInput {
                 } else {
                     // We know exactly how much we should read ...
                     int amountToRead = Math.min(len, byteBuf.remaining());
+                    amountToRead = Math.min(amountToRead, charBuf.remaining());
                     int offset = byteBuf.position(); // may have already read some bytes ...
                     dis.readFully(bytes, offset, amountToRead);
                     byteBuf.limit(amountToRead);

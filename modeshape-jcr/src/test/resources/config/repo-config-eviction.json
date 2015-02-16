@@ -1,0 +1,17 @@
+{
+    "name": "Eviction-Repository",
+    "workspaces": {
+        "predefined": ["otherWorkspace"],
+        "default": "default",
+        "allowCreation": true
+    },
+    "storage": {
+        "cacheConfiguration": "config/infinispan-persistent-eviction.xml",
+        "cacheName": "persistentRepository",
+        "binaryStorage": {
+            "type": "file",
+            "directory": "target/persistent_repository/binaries",
+            "minimumBinarySizeInBytes": 1000000
+        }
+    }
+}

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,6 +55,7 @@ import org.infinispan.schematic.document.ObjectId;
 import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.document.Timestamp;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -310,6 +312,23 @@ public class BsonReadingAndWritingTest {
             result.get(1, TimeUnit.SECONDS);
         }
     }
+    
+    @Test
+    @FixFor( "MODE-2430" )
+    public void shouldRoundTripLargeStringsSuccessively() throws Exception {
+        int limit = 1048 * 8; // the default buffer size
+        int iterations = 20;
+        char letter = 'a';
+        for (int i = 0; i < iterations; i++) {
+            int size = limit + i;
+            char[] chars = new char[size];
+            Arrays.fill(chars, letter);
+            letter = (char)((byte) letter + 1);
+            String str = new String(chars);
+            Document document = new BasicDocument("largeString", str);
+            assertRoundtrip(document, false);
+        }
+    }
 
     protected String readFile(String filePath) throws IOException {
         InputStreamReader reader = new InputStreamReader(TestUtil.resource(filePath));
@@ -353,7 +372,7 @@ public class BsonReadingAndWritingTest {
             System.out.println("********************************************************************************");
             System.out.flush();
         }
-        assert input.equals(output);
+        Assert.assertEquals("Round trip failed", input, output);
     }
 
     protected Document writeThenRead( Document object,
