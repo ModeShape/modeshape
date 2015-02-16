@@ -146,6 +146,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
         internalSetValue(values);
     }
 
@@ -196,6 +197,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        checkModifyPermission();
 
         Property newProperty = null;
         if (values.length != 0) {

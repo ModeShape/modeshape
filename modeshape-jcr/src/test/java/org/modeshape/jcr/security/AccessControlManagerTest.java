@@ -21,14 +21,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import java.security.AccessControlException;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicyIterator;
@@ -146,10 +147,8 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             luxury.addNode("Cadillac Flitwood", "car:Car");
             fail("Should deny add node");
         } catch (AccessDeniedException e) {
-            System.out.println("Hide exception");
-        } catch (AccessControlException e) {
-            System.out.println("Hide exception");
-        }
+            //expected
+        } 
     }
 
     @Test
@@ -169,6 +168,29 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             car.setProperty("car:msrp", "$34,901");
             fail("Should deny modification");
         } catch (AccessDeniedException e) {
+            //expected
+        }
+    } 
+    
+    @Test
+    @FixFor( "MODE-2428" )
+    public void shouldCheckPermissionsWhenSettingPropertyValues() throws RepositoryException {
+        Node car = session.getNode("/Cars/Luxury/Lexus IS350");
+        Property maker = car.getProperty("car:maker");
+        Property rating = car.getProperty("car:userRating");
+        
+        try {
+            maker.setValue("some value");
+            fail("Should deny modification");
+        } catch (AccessDeniedException e) {
+            //expected
+        }
+
+        try {
+            rating.setValue(2);
+            fail("Should deny modification");
+        } catch (RepositoryException e) {
+            //expected
         }
     }
 
@@ -189,7 +211,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             car.remove();
             fail("Should deny remove operation");
         } catch (AccessDeniedException e) {
-        } catch (AccessControlException e) {
+            // expected
         }
     }
 
@@ -200,10 +222,8 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             car.remove();
             fail("Should deny remove operation: Parent node has no privilege to remove child node");
         } catch (AccessDeniedException e) {
-        } catch (AccessControlException e) {
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            //expected
+        } 
     }
 
     @Test
@@ -217,14 +237,8 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             setPolicy("/Cars/Utility", Privilege.JCR_ALL);
             fail("Should deny access list modification");
         } catch (AccessDeniedException e) {
+            //expected
         }
-    }
-
-    // @Test
-    public void shouldRemovePolicy() throws RepositoryException {
-        acm.removePolicy("/Cars/Utility/Ford F-150", null);
-        Privilege[] privileges = acm.getPrivileges("/Cars/Utility/Ford F-150");
-        assertEquals(Privilege.JCR_ALL, privileges[0].getName());
     }
 
     // -------------------- Testing access control api ---
@@ -235,7 +249,8 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         try {
             node.remove();
             fail("Only Access Control API allows modification");
-        } catch (Exception e) {
+        } catch (AccessDeniedException e) {
+            //expected
         }
     }
 
@@ -244,11 +259,12 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         Node node = session.getNode("/Cars/Hybrid");
         assertThat(node, is(notNullValue()));
         try {
-            node.addMixin("mix:accessControllable");
+            node.addMixin("mode:accessControllable");
             Node acl = node.addNode("mode:acl", "mode:Acl");
             acl.addNode("test", "mode:Permission");
             fail("Only Access Control API allows modification");
-        } catch (RepositoryException e) {
+        } catch (ConstraintViolationException e) {
+            //expected
         }
     }
 
@@ -283,6 +299,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             root.getNode("truks");
             fail("Access list should deny access");
         } catch (javax.jcr.security.AccessControlException e) {
+            //expected
         }
     }
 
@@ -442,12 +459,11 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
 
     private boolean contains( String name,
                               Privilege[] privileges ) {
-        for (int i = 0; i < privileges.length; i++) {
-            if (name.equals(privileges[i].getName())) {
+        for (Privilege privilege : privileges) {
+            if (name.equals(privilege.getName())) {
                 return true;
             }
         }
         return false;
     }
-
 }
