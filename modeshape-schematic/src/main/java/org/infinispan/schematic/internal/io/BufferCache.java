@@ -75,7 +75,7 @@ public class BufferCache {
     }
 
     public void checkin( CharBuffer charBuffer ) {
-        if (byteBuffer.capacity() < MAXIMUM_SIZE) {
+        if (charBuffer.capacity() < MAXIMUM_SIZE) {
             this.charBuffer = charBuffer;
         }
     }
