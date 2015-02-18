@@ -14,9 +14,10 @@ by ModeShape's service.
 
 ModeShape &version; is licensed under the Apache Software License, 2.0.
 
-This release addresses 36 issues and 6 enhancements, including several related to the new indexing & query functionality 
-and some significant ones around the Repository Explorer application. Our Teiid VDB sequencer now supports dynamic VDB parsing
-and Text Extraction uses Apache Tika 1.6. 
+This release addresses 36 bugs and 9 enhancements, including several related to our Teiid and DDL sequencers. Our Wildfly kit
+now integrates directly with Wildfly's security services meaning that if a security domain is configured to use caching, ModeShape
+will take full advantage of this whenever session authentication operations are performed. Also, the local index provider now exposes several
+MapDB configuration options allowing for advanced performance tuning when this provider is used.
 
 ## Features
 
