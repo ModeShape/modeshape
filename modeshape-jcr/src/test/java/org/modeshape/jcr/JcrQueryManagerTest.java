@@ -2034,6 +2034,21 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
+    public void shouldReturnEmptyResultsWhenUsingOrderByAnOffsetExceedsResultSetSize() throws RepositoryException {
+        // no order by
+        String sql = "SELECT [jcr:path] FROM [car:Car] LIMIT 10 OFFSET 15";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        assertThat("result should contain zero rows", result.getRows().getSize(), is(0L));
+
+        // with order by
+        sql = "SELECT [jcr:path] FROM [car:Car] ORDER BY [jcr:path] LIMIT 10 OFFSET 15";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        assertThat("result should contain zero rows", result.getRows().getSize(), is(0L));
+    }
+
+    @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybrid() throws RepositoryException {
         String sql = "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp], car.[jcr:path] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%' ORDER BY [car:model]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
