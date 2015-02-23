@@ -34,6 +34,8 @@ import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryIndexManager.ScanOperation;
 import org.modeshape.jcr.RepositoryIndexManager.ScanningRequest;
 import org.modeshape.jcr.RepositoryIndexManager.ScanningTasks;
+import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.api.query.QueryCancelledException;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.cache.CachedNode;
@@ -56,6 +58,8 @@ import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.spi.index.IndexWriter;
+import org.modeshape.jcr.spi.index.provider.IndexProvider;
+import org.modeshape.jcr.spi.index.provider.ManagedIndex;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
@@ -96,6 +100,8 @@ class RepositoryQueryManager implements ChangeSetListener {
         if (started.get()) {
             boolean scanRequired = this.toBeScanned.add(this.indexManager.notify(changeSet));
             if (scanRequired) {
+                // refresh the index writer
+                this.indexManager.refreshIndexWriter();
                 // It's initialized, so we have to call it ...
                 reindexIfNeeded();
             }
@@ -422,63 +428,15 @@ class RepositoryQueryManager implements ChangeSetListener {
             return;
         }
 
-        // Get the path for the first node (we already have it, but we need to populate the cache) ...
-        final PathCache paths = new PathCache(cache);
-        Path nodePath = paths.getPath(node);
+        try {
+            // change the status of the indexes to reindexing
+            updateIndexesStatus(workspaceName, IndexManager.IndexStatus.ENABLED, IndexManager.IndexStatus.REINDEXING);
+            
+            // Get the path for the first node (we already have it, but we need to populate the cache) ...
+            final PathCache paths = new PathCache(cache);
+            Path nodePath = paths.getPath(node);
 
-        // Index the first node ...
-        if (indexLogger.isTraceEnabled()) {
-            String path = runningState.context().getValueFactories().getStringFactory().create(nodePath);
-            indexLogger.debug("Reindexing node '{0}' in workspace '{1}' of repository '{2}': {3}", path, workspaceName,
-                              runningState.name(), node);
-        }
-        indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
-                    node.getPropertiesByName(cache));
-
-        if (depth == 1) return;
-
-        // Create a queue for processing the subgraph
-        final Queue<NodeKey> queue = new LinkedList<NodeKey>();
-
-        if (reindexSystemContent) {
-            // We need to look for the system node, and index it differently ...
-            ChildReferences childRefs = node.getChildReferences(cache);
-            ChildReference systemRef = childRefs.getChild(JcrLexicon.SYSTEM);
-            NodeKey systemKey = systemRef != null ? systemRef.getKey() : null;
-            for (ChildReference childRef : node.getChildReferences(cache)) {
-                NodeKey childKey = childRef.getKey();
-                if (childKey.equals(systemKey)) {
-                    // This is the "/jcr:system" node ...
-                    node = cache.getNode(childKey);
-                    reindexSystemContent(node, depth - 1, indexes);
-                } else {
-                    queue.add(childKey);
-                }
-            }
-        } else {
-            // Add all children to the queue ...
-            for (ChildReference childRef : node.getChildReferences(cache)) {
-                NodeKey childKey = childRef.getKey();
-                // we should not reindex anything which is in the system area
-                if (!childKey.getWorkspaceKey().equals(runningState.systemWorkspaceKey())) {
-                    queue.add(childKey);
-                }
-            }
-        }
-
-        // Now, process the queue until empty ...
-        while (true) {
-            NodeKey key = queue.poll();
-            if (key == null) break;
-
-            // Look up the node and find the path ...
-            node = cache.getNode(key);
-            if (node == null || !node.isQueryable(cache)) {
-                continue;
-            }
-            nodePath = paths.getPath(node);
-
-            // Index the node ...
+            // Index the first node ...
             if (indexLogger.isTraceEnabled()) {
                 String path = runningState.context().getValueFactories().getStringFactory().create(nodePath);
                 indexLogger.debug("Reindexing node '{0}' in workspace '{1}' of repository '{2}': {3}", path, workspaceName,
@@ -487,13 +445,80 @@ class RepositoryQueryManager implements ChangeSetListener {
             indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
                         node.getPropertiesByName(cache));
 
-            // Check the depth ...
-            if (nodePath.size() <= depth) {
-                // Add the children to the queue ...
+            if (depth == 1) return;
+
+            // Create a queue for processing the subgraph
+            final Queue<NodeKey> queue = new LinkedList<NodeKey>();
+
+            if (reindexSystemContent) {
+                // We need to look for the system node, and index it differently ...
+                ChildReferences childRefs = node.getChildReferences(cache);
+                ChildReference systemRef = childRefs.getChild(JcrLexicon.SYSTEM);
+                NodeKey systemKey = systemRef != null ? systemRef.getKey() : null;
                 for (ChildReference childRef : node.getChildReferences(cache)) {
-                    queue.add(childRef.getKey());
+                    NodeKey childKey = childRef.getKey();
+                    if (childKey.equals(systemKey)) {
+                        // This is the "/jcr:system" node ...
+                        node = cache.getNode(childKey);
+                        reindexSystemContent(node, depth - 1, indexes);
+                    } else {
+                        queue.add(childKey);
+                    }
+                }
+            } else {
+                // Add all children to the queue ...
+                for (ChildReference childRef : node.getChildReferences(cache)) {
+                    NodeKey childKey = childRef.getKey();
+                    // we should not reindex anything which is in the system area
+                    if (!childKey.getWorkspaceKey().equals(runningState.systemWorkspaceKey())) {
+                        queue.add(childKey);
+                    }
                 }
             }
+
+            // Now, process the queue until empty ...
+            while (true) {
+                NodeKey key = queue.poll();
+                if (key == null) break;
+    
+                // Look up the node and find the path ...
+                node = cache.getNode(key);
+                if (node == null || !node.isQueryable(cache)) {
+                    continue;
+                }
+                nodePath = paths.getPath(node);
+    
+                // Index the node ...
+                if (indexLogger.isTraceEnabled()) {
+                    String path = runningState.context().getValueFactories().getStringFactory().create(nodePath);
+                    indexLogger.debug("Reindexing node '{0}' in workspace '{1}' of repository '{2}': {3}", path, workspaceName,
+                                      runningState.name(), node);
+                }
+                indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
+                            node.getPropertiesByName(cache));
+    
+                // Check the depth ...
+                if (nodePath.size() <= depth) {
+                    // Add the children to the queue ...
+                    for (ChildReference childRef : node.getChildReferences(cache)) {
+                        queue.add(childRef.getKey());
+                    }
+                }
+            }
+        } finally {
+            // set the index status back to enabled
+            updateIndexesStatus(workspaceName, IndexManager.IndexStatus.REINDEXING, IndexManager.IndexStatus.ENABLED);
+        }
+    }
+    
+    protected void updateIndexesStatus( String workspaceName, final IndexManager.IndexStatus currentStatus, final IndexManager.IndexStatus newStatus ) {
+        for (IndexProvider indexProvider : indexManager.getProviders()) {
+            indexProvider.onEachIndexInWorkspace(workspaceName, new IndexProvider.ManagedIndexOperation() {
+                @Override
+                public void apply( String workspaceName, ManagedIndex index, IndexDefinition defn ) {
+                    index.updateStatus(currentStatus, newStatus);
+                }
+            });
         }
     }
 

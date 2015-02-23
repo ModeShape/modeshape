@@ -18,7 +18,9 @@ package org.modeshape.jcr.index.local;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.query.qom.Constraint;
+import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.spi.index.provider.IndexChangeAdapter;
 import org.modeshape.jcr.spi.index.provider.ManagedIndex;
@@ -31,6 +33,7 @@ public class ManagedLocalIndex implements ManagedIndex {
     private final LocalIndex<?> index;
     private final IndexChangeAdapter adapter;
     private final AtomicBoolean enabled = new AtomicBoolean(true);
+    private final AtomicReference<IndexManager.IndexStatus> status = new AtomicReference<>(IndexManager.IndexStatus.ENABLED); 
 
     ManagedLocalIndex( LocalIndex<?> index,
                        IndexChangeAdapter adapter ) {
@@ -38,10 +41,6 @@ public class ManagedLocalIndex implements ManagedIndex {
         assert index != null;
         this.index = index;
         this.adapter = adapter;
-    }
-
-    public boolean isNew() {
-        return index.isNew();
     }
 
     @Override
@@ -68,6 +67,11 @@ public class ManagedLocalIndex implements ManagedIndex {
     @Override
     public void enable( boolean enable ) {
         this.enabled.set(enable);
+        if (enable) {
+            updateStatus(IndexManager.IndexStatus.DISABLED, IndexManager.IndexStatus.ENABLED);
+        } else {
+            updateStatus(IndexManager.IndexStatus.ENABLED, IndexManager.IndexStatus.DISABLED);
+        }
     }
 
     @Override
@@ -77,7 +81,11 @@ public class ManagedLocalIndex implements ManagedIndex {
 
     @Override
     public void shutdown( boolean destroyed ) {
-        index.shutdown(destroyed);
+        try {
+            index.shutdown(destroyed);
+        } finally {
+            enable(false);
+        }
     }
 
     @Override
@@ -85,4 +93,17 @@ public class ManagedLocalIndex implements ManagedIndex {
         index.removeAll();
     }
 
+    @Override
+    public IndexManager.IndexStatus getStatus() {
+        return status.get();
+    }
+
+    @Override
+    public void updateStatus(IndexManager.IndexStatus currentStatus, IndexManager.IndexStatus newStatus) {
+        this.status.compareAndSet(currentStatus, newStatus);
+    }
+    
+    protected boolean isNew() {
+        return index.isNew();
+    }
 }

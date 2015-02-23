@@ -380,6 +380,25 @@ public abstract class IndexProvider {
         Map<String, ProvidedIndex> byWorkspaceNames = providedIndexesByWorkspaceNameByIndexName.get(indexName);
         return byWorkspaceNames == null ? null : byWorkspaceNames.get(workspaceName);
     }
+    
+    /**
+     * Get the managed index with the given name and applicable for the given workspace.
+     *
+     * @param indexName the name of the index in this provider; never null
+     * @param workspaceName the name of the workspace; never null
+     * @return the managed index, or null if there is no such index
+     */
+    public final ManagedIndex getManagedIndex( String indexName,
+                                               String workspaceName ) {
+        logger().trace("Looking for managed index '{0}' in '{1}' provider in workspace '{2}'", indexName, getName(),
+                       workspaceName);
+        Map<String, ProvidedIndex> byWorkspaceNames = providedIndexesByWorkspaceNameByIndexName.get(indexName);
+        if (byWorkspaceNames == null) {
+            return null;
+        }
+        ProvidedIndex providedIndex = byWorkspaceNames.get(workspaceName);
+        return providedIndex == null ? null : providedIndex.managed();
+    }
 
     /**
      * Get this provider's {@link ProvidedIndex} instances for the given workspace.
@@ -445,8 +464,8 @@ public abstract class IndexProvider {
      * @param workspaceName the name of the workspace; may not be null
      * @param op the operation; may not be null
      */
-    protected final void onEachIndexInWorkspace( String workspaceName,
-                                                 ManagedIndexOperation op ) {
+    public final void onEachIndexInWorkspace( String workspaceName,
+                                              ManagedIndexOperation op ) {
         assert workspaceName != null;
         Collection<ProvidedIndex> indexes = providedIndexesFor(workspaceName);
         if (indexes != null) {
@@ -463,7 +482,7 @@ public abstract class IndexProvider {
      *
      * @author Randall Hauch (rhauch@redhat.com)
      */
-    protected static interface ManagedIndexOperation {
+    public static interface ManagedIndexOperation {
         /**
          * Apply the operation to a managed index
          *
