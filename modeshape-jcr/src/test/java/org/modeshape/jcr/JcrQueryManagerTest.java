@@ -2034,7 +2034,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    public void shouldReturnEmptyResultsWhenUsingOrderByAnOffsetExceedsResultSetSize() throws RepositoryException {
+    @FixFor( "MODE-2435" )
+    public void shouldCorrectlyExecuteOrderByWithOffsetAndLimit() throws RepositoryException {
         // no order by
         String sql = "SELECT [jcr:path] FROM [car:Car] LIMIT 10 OFFSET 15";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
@@ -2046,6 +2047,23 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         result = query.execute();
         assertThat("result should contain zero rows", result.getRows().getSize(), is(0L));
+
+        sql = "SELECT [jcr:path] FROM [car:Car] ORDER BY [jcr:path] LIMIT 1 OFFSET 0";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().hasNodesAtPaths("/Cars/Hybrid/Nissan Altima").validate(query, result);
+
+        sql = "SELECT [jcr:path] FROM [car:Car] ORDER BY [jcr:path] LIMIT 1 OFFSET 1";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().hasNodesAtPaths("/Cars/Hybrid/Toyota Highlander").validate(query, result);
+
+        sql = "SELECT [jcr:path] FROM [car:Car] ORDER BY [jcr:path] LIMIT 3 OFFSET 0";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().hasNodesAtPaths("/Cars/Hybrid/Nissan Altima", 
+                                        "/Cars/Hybrid/Toyota Highlander",
+                                        "/Cars/Hybrid/Toyota Prius").validate(query, result);
     }
 
     @Test

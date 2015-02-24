@@ -66,6 +66,7 @@ public class SortingSequence extends BufferingSequence {
         if (bufferedRows == null) {
             bufferedRows = initialize();
         }
+        remainingRowCount.addAndGet(-rowsLeftInBatch.get());
         if (remainingRowCount.get() == 0L) return null;
         return batchFrom(bufferedRows, batchSize);
     }
