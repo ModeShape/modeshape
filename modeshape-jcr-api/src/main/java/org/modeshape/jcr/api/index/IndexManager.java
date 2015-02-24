@@ -16,6 +16,7 @@
 
 package org.modeshape.jcr.api.index;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.RepositoryException;
@@ -69,7 +70,7 @@ public interface IndexManager {
      * Register a new definition for an index.
      *
      * @param indexDefinition the definition; may not be null
-     * @param allowUpdate true if the definition can update or ovewrite an existing definition with the same name, or false if
+     * @param allowUpdate true if the definition can update or overwrite an existing definition with the same name, or false if
      *        calling this method should result in an exception when the repository already contains a definition with the same
      *        name already exists
      * @throws InvalidIndexDefinitionException if the new definition is invalid
@@ -84,7 +85,7 @@ public interface IndexManager {
      * Register new definitions for several indexes.
      *
      * @param indexDefinitions the definitions; may not be null
-     * @param allowUpdate true if each of the definition can update or ovewrite an existing definition with the same name, or
+     * @param allowUpdate true if each of the definition can update or overwrite an existing definition with the same name, or
      *        false if calling this method should result in an exception when the repository already contains any definition with
      *        names that match the supplied definitions
      * @throws InvalidIndexDefinitionException if the new definition is invalid
@@ -117,5 +118,49 @@ public interface IndexManager {
      * @return the new template; may not be null
      */
     IndexColumnDefinitionTemplate createIndexColumnDefinitionTemplate();
+    
+    /**
+     * Returns the status of the index with the given name for the given provider and workspace.
+     *
+     * @param providerName a {@link String} the name of an index provider; may not be null
+     * @param indexName a {@link String} the name of an index which should exist for the provider; may not be null
+     * @param workspaceName  a {@link String} the name of a workspace for which the index was created; may not be null
+     * @return a {@link org.modeshape.jcr.api.index.IndexManager.IndexStatus} instance, never {@code null} but possibly
+     * {@link org.modeshape.jcr.api.index.IndexManager.IndexStatus#NON_EXISTENT} if a provider with this name does not exist
+     * or an index with this name does not exist for the provider or the index doesn't exist for the given workspace.
+     */
+    IndexStatus getIndexStatus( String providerName, String indexName, String workspaceName );
 
+    /**
+     * Returns a list with the names of all the indexes that have a certain status, for a provider and workspace.
+     *
+     * @param providerName a {@link String} the name of an index provider; may not be null
+     * @param workspaceName  a {@link String} the name of a workspace for which the index was created; may not be null
+     * @param status a {@link org.modeshape.jcr.api.index.IndexManager.IndexStatus} instance; may not be null
+     * @return a List with the names of all the indexes belonging to the provider which have the given status and apply to the workspace; 
+     * never {@code null}
+     */
+    List<String> getIndexNames(String providerName, String workspaceName, IndexStatus status);
+    
+    /**
+     * Enum with a list of possible statuses for managed indexes.
+     */
+    enum IndexStatus {
+        /**
+         * Active index being considered/used by the query engine when executing queries
+         */
+        ENABLED,
+        /**
+         * Active index which is re-indexing its data but is not being used by the query engine 
+         */
+        REINDEXING,
+        /**
+         * Inactive index which has been disabled or shut down.
+         */
+        DISABLED,
+        /**
+         * Index which does not exist 
+         */
+        NON_EXISTENT 
+    }
 }

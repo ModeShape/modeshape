@@ -17,6 +17,7 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -24,13 +25,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Row;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.query.engine.IndexPlanners;
 
@@ -1082,5 +1086,51 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
                 .useIndex("typesIndex")
                 .hasNodesAtPaths("/regularFolder")
                 .validate(query, query.execute());
+    }
+
+    @FixFor( "MODE-2432 ")
+    @Test
+    public void shouldExposeManagedIndexStatuses() throws Exception {
+        String indexName = "explicitIndex";
+        registerValueIndex(indexName, "nt:unstructured", "Foo index", "*", "foo", PropertyType.STRING);
+        waitForIndexes();
+
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus("unknown", indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, "invalid_name", "default"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "invalid_ws"));
+
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default")); 
+        int nodeCount = 100;
+        for (int i = 0; i < nodeCount; i++) {
+            Node node = session.getRootNode().addNode("node_" + i);
+            node.setProperty("foo", UUID.randomUUID().toString());
+        }
+        session.save();
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        Future<Boolean> reindexingResult = session.getWorkspace().reindexAsync();
+        Thread.sleep(10);
+        if (!reindexingResult.isDone()) {
+            assertEquals(IndexManager.IndexStatus.REINDEXING, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        }
+        assertEquals(true, reindexingResult.get());
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        
+        indexManager().unregisterIndexes(indexName);
+        // removing the actual index is async (event based)
+        Thread.sleep(100);
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+    }
+    
+    @Test
+    @FixFor( "MODE-2432")
+    public void shouldReturnIndexesWithACertainStatus() throws Exception {
+        registerValueIndex("index1", "nt:unstructured", "Foo index", "*", "foo", PropertyType.STRING);
+        registerValueIndex("index2", "nt:unstructured", "Bar index", "*", "bar", PropertyType.STRING);
+        waitForIndexes();
+        assertEquals(Arrays.asList("index1", "index2"), indexManager().getIndexNames(PROVIDER_NAME, "default",
+                                                                                     IndexManager.IndexStatus.ENABLED));
+        assertTrue(indexManager().getIndexNames(PROVIDER_NAME, "default", IndexManager.IndexStatus.REINDEXING).isEmpty());
+        assertTrue(indexManager().getIndexNames("missing", "default", IndexManager.IndexStatus.ENABLED).isEmpty());
+        assertTrue(indexManager().getIndexNames(PROVIDER_NAME, "missing", IndexManager.IndexStatus.ENABLED).isEmpty());
     }
 }

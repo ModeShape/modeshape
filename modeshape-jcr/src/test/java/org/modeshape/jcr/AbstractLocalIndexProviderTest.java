@@ -21,7 +21,7 @@ import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 
 public abstract class AbstractLocalIndexProviderTest extends AbstractIndexProviderTest {
 
-    private static final String PROVIDER_NAME = "local";
+    protected static final String PROVIDER_NAME = "local";
 
     @Override
     protected void registerValueIndex( String indexName,

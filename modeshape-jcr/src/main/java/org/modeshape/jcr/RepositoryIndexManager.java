@@ -71,6 +71,7 @@ import org.modeshape.jcr.spi.index.IndexWriter;
 import org.modeshape.jcr.spi.index.WorkspaceChanges;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 import org.modeshape.jcr.spi.index.provider.IndexProviderExistsException;
+import org.modeshape.jcr.spi.index.provider.ManagedIndex;
 import org.modeshape.jcr.spi.index.provider.NoSuchProviderException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -336,6 +337,64 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
 
         // Refresh the index writer ...
         refreshIndexWriter();
+    }
+
+    @Override
+    public IndexStatus getIndexStatus( String providerName, String indexName, String workspaceName ) {
+        CheckArg.isNotNull(providerName, "providerName");
+        CheckArg.isNotNull(indexName, "indexName");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        
+        IndexProvider provider = getProvider(providerName);
+        if (provider == null) {
+            return IndexStatus.NON_EXISTENT;
+        }
+        ManagedIndex managedIndex = provider.getManagedIndex(indexName, workspaceName);
+        return managedIndex != null ? managedIndex.getStatus() : IndexStatus.NON_EXISTENT;
+    }
+
+    @Override
+    public List<ManagedIndex> getIndexes(String providerName, String workspaceName, final IndexStatus status) {
+        CheckArg.isNotNull(providerName, "providerName");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+
+        final List<ManagedIndex> result = new ArrayList<>();
+        IndexProvider provider = getProvider(providerName);
+        
+        if (provider == null) {
+            return result;
+        }
+        provider.onEachIndexInWorkspace(workspaceName, new IndexProvider.ManagedIndexOperation() {
+            @Override
+            public void apply( String workspaceName, ManagedIndex index, IndexDefinition defn ) {
+                if (index.getStatus().equals(status)) {
+                    result.add(index);
+                }
+            }
+        });
+        return result;
+    }
+
+    @Override
+    public List<String> getIndexNames( String providerName, String workspaceName, final IndexStatus status ) {
+        CheckArg.isNotNull(providerName, "providerName");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+
+        final List<String> result = new ArrayList<>();
+        IndexProvider provider = getProvider(providerName);
+
+        if (provider == null) {
+            return result;
+        }
+        provider.onEachIndexInWorkspace(workspaceName, new IndexProvider.ManagedIndexOperation() {
+            @Override
+            public void apply( String workspaceName, ManagedIndex index, IndexDefinition defn ) {
+                if (index.getStatus().equals(status)) {
+                    result.add(defn.getName());
+                }
+            }
+        });
+        return result;
     }
 
     @Override

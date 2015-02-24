@@ -16,6 +16,7 @@
 
 package org.modeshape.jcr.spi.index.provider;
 
+import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
@@ -65,4 +66,19 @@ public interface ManagedIndex extends Filter, Costable {
      * @return true if enabled, or false otherwise
      */
     boolean isEnabled();
+
+    /**
+     * Return the current status of the managed index 
+     * 
+     * @return a {@link org.modeshape.jcr.api.index.IndexManager.IndexStatus} instance, never null
+     */
+    IndexManager.IndexStatus getStatus();
+
+    /**
+     * Update the status of this index to a new value if the current status is {@code currentStatus}
+     * 
+     * @param currentStatus a {@link org.modeshape.jcr.api.index.IndexManager.IndexStatus} instance, may not be null 
+     * @param newStatus a {@link org.modeshape.jcr.api.index.IndexManager.IndexStatus} instance, may not be null
+     */
+    void updateStatus(IndexManager.IndexStatus currentStatus, IndexManager.IndexStatus newStatus);
 }

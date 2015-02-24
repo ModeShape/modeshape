@@ -17,9 +17,11 @@
 package org.modeshape.jcr.spi.index;
 
 import java.security.NoSuchProviderException;
+import java.util.List;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 import org.modeshape.jcr.spi.index.provider.IndexProviderExistsException;
+import org.modeshape.jcr.spi.index.provider.ManagedIndex;
 
 /**
  * An interface for programmatically adding or removing index providers and index definitions.
@@ -53,4 +55,14 @@ public interface IndexManager extends org.modeshape.jcr.api.index.IndexManager {
      * @throws RepositoryException if there is a problem unregistering the provider
      */
     void unregister( String providerName ) throws NoSuchProviderException, RepositoryException;
+
+    /**
+     * Returns a list of {@code ManagedIndex} instances for a given provider and workspace, which have a certain status.
+     * 
+     * @param providerName a {@link String} the name of an index provider, may not be {@code null}
+     * @param workspaceName a {@link String} the name of a workspace, may not be {@code null}
+     * @param status a {@link org.modeshape.jcr.api.index.IndexManager.IndexStatus} instance, may not be {@code null}
+     * @return a List of {@link org.modeshape.jcr.spi.index.provider.ManagedIndex} instances, never {@code null}
+     */
+    List<ManagedIndex> getIndexes(String providerName, String workspaceName, IndexStatus status);
 }
