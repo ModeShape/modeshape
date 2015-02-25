@@ -47,6 +47,7 @@ public abstract class BufferingSequence extends DelegatingSequence {
     protected final int width;
     protected final String workspaceName;
     protected final AtomicLong remainingRowCount = new AtomicLong();
+    protected final AtomicLong rowsLeftInBatch = new AtomicLong();
 
     @SuppressWarnings( "unchecked" )
     protected BufferingSequence( String workspaceName,
@@ -160,6 +161,7 @@ public abstract class BufferingSequence extends DelegatingSequence {
         if (rows == null || !rows.hasNext()) return null;
         if (maxBatchSize == 0 || remainingRowCount.get() <= 0) return NodeSequence.emptyBatch(workspaceName, this.width);
         final long rowsInBatch = Math.min(maxBatchSize, remainingRowCount.get());
+        rowsLeftInBatch.set(rowsInBatch);
         return new Batch() {
             private BufferedRow current;
 
@@ -180,18 +182,19 @@ public abstract class BufferingSequence extends DelegatingSequence {
 
             @Override
             public boolean isEmpty() {
-                return false;
+                return rowsInBatch <= 0;
             }
 
             @Override
             public boolean hasNext() {
-                return remainingRowCount.get() > 0 && rows.hasNext();
+                return rowsLeftInBatch.get() > 0 && rows.hasNext();
             }
 
             @Override
             public void nextRow() {
                 current = rows.next();
                 remainingRowCount.decrementAndGet();
+                rowsLeftInBatch.decrementAndGet();
             }
 
             @Override
