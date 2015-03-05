@@ -1138,10 +1138,21 @@ public class OracleDdlParser extends StandardDdlParser
 
                 } else if (tokens.canConsume("MODIFY")) {
 
-                    // Only support column definition changes (enclosed even if single column, unenclosed is column substitution)
-                    if (!tokens.matches(L_PAREN)) continue;
+                    if (tokens.matches(L_PAREN)) {
+                        // Columns enclosed in "()"
+                        parseColumns(tokens, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
+                    } else {
+                        // Only support column definition changes if not followed by a reserved word, i.e.:
+                        // - COLUMN - column substitution
+                        // - LOB - lob properties modification
+                        // - NESTED [TABLE] - nested table
+                        // - DEFAULT - table default attributes
+                        // - [SUB]PARTITION - [sub]partition attributes
+                        if (tokens.matchesAnyOf("COLUMN", "LOB", "NESTED", "DEFAULT", "PARTITION", "SUBPARTITION")) continue;
 
-                    parseColumns(tokens, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
+                        // Assume single MODIFY
+                        parseColumnDefinition(tokens, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
+                    }
 
                 }
             }
@@ -1905,6 +1916,25 @@ public class OracleDdlParser extends StandardDdlParser
     }
 
     /**
+     * Utility method to additionally check if MODIFY definition without datatype
+     * 
+     * @param tokens
+     * @param columnMixinType
+     * @return
+     * @throws ParsingException
+     */
+    protected boolean isColumnDefinitionStart( DdlTokenStream tokens,
+                                               String columnMixinType ) throws ParsingException {
+        boolean result = isColumnDefinitionStart(tokens);
+        if (!result && TYPE_ALTER_COLUMN_DEFINITION.equals(columnMixinType)) {
+            for (String start : INLINE_COLUMN_PROPERTY_START) {
+                if (tokens.matches(TokenStream.ANY_VALUE, start)) return true;
+            }
+        }
+        return result;
+    }
+
+    /**
      * Utility method designed to parse columns within an ALTER TABLE ADD/MODIFY statement.
      * 
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
@@ -1922,6 +1952,8 @@ public class OracleDdlParser extends StandardDdlParser
         // Basically they've added column properties (i.e. SORT option, ENCRYPT encryption_spec)
         // Need to 1) Override parseColumnDefinition shouldParseOracleProceduresAndFunctionsto handle these.
 
+        boolean isInParen = tokens.matches(L_PAREN);
+
         String tableElementString = getTableElementsString(tokens, false);
 
         DdlTokenStream localTokens = new DdlTokenStream(tableElementString, DdlTokenStream.ddlTokenizer(false), false);
@@ -1931,7 +1963,7 @@ public class OracleDdlParser extends StandardDdlParser
         StringBuilder unusedTokensSB = new StringBuilder();
 
         do {
-            if (isColumnDefinitionStart(localTokens)) {
+            if (isColumnDefinitionStart(localTokens, columnMixinType)) {
                 parseColumnDefinition(localTokens, tableNode, columnMixinType);
             } else {
                 // THIS IS AN ERROR (WARNING if it is an ALTER TABLE MODIFY part). NOTHING FOUND.
@@ -1942,9 +1974,17 @@ public class OracleDdlParser extends StandardDdlParser
             }
         } while (localTokens.canConsume(COMMA));
 
-        if (unusedTokensSB.length() > 0 && TYPE_COLUMN_DEFINITION.equals(columnMixinType)) {
+        // columns inside parentheses should not leave unused tokens
+        if (isInParen) {
+            while (localTokens.hasNext()) {
+                unusedTokensSB.append(SPACE).append(localTokens.consume());
+            }
+        }
+
+        if (unusedTokensSB.length() > 0) {
             String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
-            DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
+            int severity = TYPE_COLUMN_DEFINITION.equals(columnMixinType) ? Problems.WARNING : Problems.ERROR;
+            DdlParserProblem problem = new DdlParserProblem(severity, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
         }
@@ -1990,10 +2030,12 @@ public class OracleDdlParser extends StandardDdlParser
             getDatatypeParser().setPropertiesOnNode(columnNode, datatype);
         }
 
-        // Now clauses and constraints can be defined in any order, so we need to keep parsing until we get to a comma
+        // Now clauses and constraints can be defined in any order, so we need to keep parsing until we get to a comma or
+        // if statement is an alter where multiple single column add/modify clauses can be in a single command, break parsing
+        // also on ADD/MODIFY
         StringBuilder unusedTokensSB = new StringBuilder();
 
-        while (tokens.hasNext() && !tokens.matches(COMMA)) {
+        while (tokens.hasNext() && !tokens.matches(COMMA) && !(isAlterTable && tokens.matchesAnyOf("ADD", "MODIFY"))) {
             boolean parsedDefaultClause = parseDefaultClause(tokens, columnNode);
             if (!parsedDefaultClause) {
                 boolean parsedCollate = parseCollateClause(tokens, columnNode);
@@ -2007,7 +2049,7 @@ public class OracleDdlParser extends StandardDdlParser
             tokens.canConsume(DdlTokenizer.COMMENT);
         }
 
-        if (unusedTokensSB.length() > 0) {
+        if ((unusedTokensSB.length() == 1 && unusedTokensSB.charAt(0) == ';') || (unusedTokensSB.length() > 1)) {
             String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, Position.EMPTY_CONTENT_POSITION, msg);
             problem.setUnusedSource(unusedTokensSB.toString());
