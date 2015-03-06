@@ -335,6 +335,7 @@ public class OracleDdlParser extends StandardDdlParser
     protected String consumeIdentifier( DdlTokenStream tokens ) throws ParsingException {
         Position startPosition = tokens.nextPosition();
         String id = super.consumeIdentifier(tokens);
+        if (!tokens.hasNext()) return id;
         Position nextPosition = tokens.nextPosition();
 
         while (((nextPosition.getIndexInContent() - startPosition.getIndexInContent() - id.length()) == 0)) {
@@ -1084,7 +1085,6 @@ public class OracleDdlParser extends StandardDdlParser
                     columnNode.setProperty(DROP_BEHAVIOR, DropBehavior.RESTRICT);
                 }
             } else if (tokens.canConsume("CONSTRAINT")) {
-                // Single DROP COLUMN
                 String constraintName = parseName(tokens);
 
                 AstNode constraintNode = nodeFactory().node(constraintName, alterTableNode, TYPE_DROP_TABLE_CONSTRAINT_DEFINITION);

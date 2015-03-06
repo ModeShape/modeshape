@@ -201,6 +201,16 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     }
 
     @Test
+    public void shouldParseAlterTableDropConstraint() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees DROP CONSTRAINT fk_something";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 1);
+    }
+
+    @Test
     public void shouldParseAlterIndexRename() {
         printTest("shouldParseAlterIndexRename()");
         String content = "ALTER INDEX upper_ix RENAME TO upper_name_ix;";
