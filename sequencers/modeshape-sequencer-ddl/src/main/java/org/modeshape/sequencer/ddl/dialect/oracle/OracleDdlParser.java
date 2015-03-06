@@ -1981,17 +1981,16 @@ public class OracleDdlParser extends StandardDdlParser
             }
         }
 
-        if (unusedTokensSB.length() > 0) {
+        if (unusedTokensSB.length() > 0 && TYPE_ADD_COLUMN_DEFINITION.equals(columnMixinType)) {
             String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
-            int severity = TYPE_COLUMN_DEFINITION.equals(columnMixinType) ? Problems.WARNING : Problems.ERROR;
-            DdlParserProblem problem = new DdlParserProblem(severity, getCurrentMarkedPosition(), msg);
+            DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
         }
     }
 
     /**
-     * Overloaded version of method with default mixin type set to {@link StandardDdlLexicon#TYPE_COLUMN_DEFINITION}
+     * Overloaded version of method with default mixin type set to {@link StandardDdlLexicon#TYPE_ADD_COLUMN_DEFINITION}
      * 
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
      * @param tableNode
@@ -2001,7 +2000,7 @@ public class OracleDdlParser extends StandardDdlParser
     protected void parseColumns( DdlTokenStream tokens,
                                  AstNode tableNode,
                                  boolean isAlterTable ) throws ParsingException {
-        parseColumns(tokens, tableNode, (isAlterTable ? TYPE_ALTER_COLUMN_DEFINITION : TYPE_COLUMN_DEFINITION));
+        parseColumns(tokens, tableNode, (isAlterTable ? TYPE_ALTER_COLUMN_DEFINITION : TYPE_ADD_COLUMN_DEFINITION));
     }
 
     /**
