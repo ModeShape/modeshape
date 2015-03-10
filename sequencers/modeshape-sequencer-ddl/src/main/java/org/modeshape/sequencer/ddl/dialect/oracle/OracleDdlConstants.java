@@ -33,6 +33,9 @@ public interface OracleDdlConstants extends DdlConstants {
         "MERGE", "RENAME", "FLASHBACK", "NOAUDIT", "DISASSOCIATE", "NESTED", "REVOKE", "COMMENT", INDEX, "VARCHAR2", "NVARCHAR2",
         "NUMBER", "BINARY_FLOAT", "BINARY_DOUBLE", "LONG", "RAW", "BLOB", "CLOB", "NCLOB", "BFILE", "INTERVAL", "UNUSABLE"};
 
+    public static final String[] INLINE_COLUMN_PROPERTY_START = {"CONSTRAINT", "NOT", "NULL", "UNIQUE", "PRIMARY", "CHECK", 
+        "DEFAULT", "REFERENCES"};
+    
     interface OracleStatementStartPhrases {
         static final String[] STMT_ALTER_CLUSTER = {ALTER, "CLUSTER"};
         static final String[] STMT_ALTER_DATABASE = {ALTER, "DATABASE"};

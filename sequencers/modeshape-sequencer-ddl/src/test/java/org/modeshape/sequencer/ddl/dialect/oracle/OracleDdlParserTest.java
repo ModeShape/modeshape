@@ -179,6 +179,38 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     }
 
     @Test
+    @FixFor( "MODE-2439" )
+    public void shouldParseAlterTableWithAddAndModifyNB() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees ADD add_field NUMBER MODIFY mod_field VARCHAR2(10) ADD (add_field2 NUMBER) MODIFY (mod_field2 VARCHAR2(10));";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 4);
+    }
+
+    @Test
+    @FixFor( "MODE-2439" )
+    public void shouldParseAlterTableModifyNoDatatype() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees MODIFY mod_field DEFAULT NULL MODIFY (mod_field2 DEFAULT NULL);";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 2);
+    }
+
+    @Test
+    public void shouldParseAlterTableDropConstraint() {
+        printTest("shouldParseAlterTableMultipleOps()");
+        String content = "ALTER TABLE employees DROP CONSTRAINT fk_something";
+        assertScoreAndParse(content, null, 1);
+        AstNode childNode = rootNode.getChildren().get(0);
+        assertTrue(hasMixinType(childNode, TYPE_ALTER_TABLE_STATEMENT));
+        assertTrue(childNode.getChildCount() == 1);
+    }
+
+    @Test
     public void shouldParseAlterIndexRename() {
         printTest("shouldParseAlterIndexRename()");
         String content = "ALTER INDEX upper_ix RENAME TO upper_name_ix;";
