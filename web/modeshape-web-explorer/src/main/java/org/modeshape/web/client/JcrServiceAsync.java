@@ -25,6 +25,7 @@ import org.modeshape.web.shared.JcrPermission;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
 import org.modeshape.web.shared.RepositoryName;
 import org.modeshape.web.shared.ResultSet;
+import org.modeshape.web.shared.Stats;
 
 /**
  * The async counterpart of
@@ -92,5 +93,12 @@ public interface JcrServiceAsync {
             boolean skipBinary, boolean noRecurse, AsyncCallback<?> cb) ;
     public void importXML(String repository, String workspace, String path, String location, 
             int option, AsyncCallback<?> cb) ;
+    
+    public void getValueStats(String repository, String param, String tu, AsyncCallback<Collection<Stats>> cb);
+    public void getDurationStats(String repository, String param, String tu, AsyncCallback<Collection<Stats>> cb);
+    
+    public void getValueMetrics(AsyncCallback<String[]> cb);
+    public void getDurationMetrics(AsyncCallback<String[]> cb);
+    public void getTimeUnits(AsyncCallback<String[]> cb);
     
 }

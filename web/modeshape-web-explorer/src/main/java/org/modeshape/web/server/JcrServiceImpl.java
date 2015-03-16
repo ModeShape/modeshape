@@ -74,6 +74,17 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.RepositoryStatistics;
+import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.History;
+import org.modeshape.jcr.api.monitor.Statistics;
+import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.monitor.Window;
+import org.modeshape.web.server.impl.MsDurationMetric;
+import org.modeshape.web.server.impl.MsValueMetric;
+import org.modeshape.web.server.impl.TimeUnit;
+import org.modeshape.web.shared.Stats;
 
 /**
  * The server side implementation of the RPC service.
@@ -980,6 +991,74 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         }
     }
 
+    @Override
+    public Collection<Stats> getValueStats(String repository, String param, String tu) throws RemoteException {
+        ArrayList<Stats> stats = new ArrayList();
+        
+        try {
+            Window w = TimeUnit.find(tu).window();
+            ValueMetric m = MsValueMetric.find(param).metric();
+
+            JcrRepository repo = (JcrRepository) connector().find(repository).repository();
+        
+        RepositoryStatistics repositoryStatistics = repo.getRepositoryStatistics();
+        History history = repositoryStatistics.getHistory(m, w);
+        
+        Statistics[] s = history.getStats();
+        for (int i = 0; i < s.length; i++) {
+            double min = s[i] != null ? s[i].getMinimum() : 0;
+            double max = s[i] != null ? s[i].getMaximum() : 0;
+            double avg = s[i] != null ? s[i].getMean() : 0;
+            stats.add(new Stats(min, max, avg));
+        }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return stats;
+    }
+
+    @Override
+    public Collection<Stats> getDurationStats(String repository, String param, String tu) throws RemoteException {
+        ArrayList<Stats> stats = new ArrayList();
+        
+        try {
+            Window w = TimeUnit.find(tu).window();
+            DurationMetric m = MsDurationMetric.find(param).metric();
+
+            JcrRepository repo = (JcrRepository) connector().find(repository).repository();
+        
+        RepositoryStatistics repositoryStatistics = repo.getRepositoryStatistics();
+        History history = repositoryStatistics.getHistory(m, w);
+        
+        Statistics[] s = history.getStats();
+        for (int i = 0; i < s.length; i++) {
+            double min = s[i] != null ? s[i].getMinimum() : 0;
+            double max = s[i] != null ? s[i].getMaximum() : 0;
+            double avg = s[i] != null ? s[i].getMean() : 0;
+            stats.add(new Stats(min, max, avg));
+        }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return stats;
+    }
+
+    @Override
+    public String[] getValueMetrics() throws RemoteException {
+        return MsValueMetric.getNames();
+    }
+
+    @Override
+    public String[] getDurationMetrics() throws RemoteException {
+        return MsDurationMetric.getNames();
+    }
+
+    @Override
+    public String[] getTimeUnits() throws RemoteException {
+        return TimeUnit.names();
+    }
+    
+    
     private class SimplePrincipal implements Principal {
 
         private String name;

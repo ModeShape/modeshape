@@ -26,6 +26,7 @@ import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 import java.util.Date;
 import org.modeshape.web.shared.RepositoryName;
+import org.modeshape.web.shared.Stats;
 
 /**
  * The client side stub for the RPC service.
@@ -277,4 +278,50 @@ public interface JcrService extends RemoteService {
      */
     public void refreshSession(String repository, String workspace, 
         boolean keepChanges) throws RemoteException;
+    
+    /**
+     * Obtains repository metrics.
+     * 
+     * @param repository
+     * @param param value metric name
+     * @param tu time window name
+     * @return
+     * @throws RemoteException 
+     */
+    public Collection<Stats> getValueStats(String repository, String param, String tu) throws RemoteException;
+
+    /**
+     * Obtains repository metrics.
+     * 
+     * @param repository
+     * @param param duration metric name
+     * @param tu time window name
+     * @return
+     * @throws RemoteException 
+     */
+    public Collection<Stats> getDurationStats(String repository, String param, String tu) throws RemoteException;
+    
+    /**
+     * Gets names of available value metrics.
+     * 
+     * @return
+     * @throws RemoteException 
+     */
+    public String[] getValueMetrics() throws RemoteException;
+    /**
+     * Gets names of available duration metrics.
+     * 
+     * @return
+     * @throws RemoteException 
+     */
+    public String[] getDurationMetrics() throws RemoteException;
+    
+    
+    /**
+     * Gets possible time frames.
+     * 
+     * @return
+     * @throws RemoteException 
+     */
+    public String[] getTimeUnits() throws RemoteException;
 }
