@@ -132,21 +132,6 @@
 
     </dependencies>
 
-    <build>
-        <plugins>
-            <!-- 
-             Makes no sense to deploy this during a release
-            -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-    
     <profiles>
         <profile>
             <id>assembly</id>
