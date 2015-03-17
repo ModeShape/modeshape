@@ -15,10 +15,6 @@
  */
 package org.modeshape.jcr.bus;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -54,11 +50,6 @@ public final class ClusteredChangeBus extends MessageConsumer<ChangeSet> impleme
     private final ClusteringService clusteringService;
 
     /**
-     * A map which contains latches used for the thread which places a message on the bus to wait until it gets that message back from JGroups
-     */
-    private final Map<String, CountDownLatch> loopbackLatches = new HashMap<>();
-
-    /**
      * Creates a new clustered repository bus
      * 
      * @param delegate the local bus to which changes will be delegated
@@ -77,22 +68,8 @@ public final class ClusteredChangeBus extends MessageConsumer<ChangeSet> impleme
     @Override
     public void consume( ChangeSet changes ) {
         if (hasObservers()) {
-            try {
-                delegate.notify(changes);
-                logReceivedOperation(changes);
-            } finally {
-                // if we're waiting for a loopback message to arrive back, always make sure we notify the waiting thread
-                if (!loopbackLatches.isEmpty()) {
-                    String uuid = changes.getUUID();
-                    CountDownLatch latch = loopbackLatches.remove(uuid);
-                    if (latch != null) {
-                        latch.countDown();   
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace("Loopback changeset {0} received back on {1}", uuid, clusteringService.toString());
-                        }
-                    }
-                }
-            }
+            delegate.notify(changes);
+            logReceivedOperation(changes);
         }
     }
 
@@ -118,7 +95,6 @@ public final class ClusteredChangeBus extends MessageConsumer<ChangeSet> impleme
     @Override
     public synchronized void shutdown() {
         delegate.shutdown();
-        loopbackLatches.clear();
     }
 
     @Override
@@ -138,26 +114,6 @@ public final class ClusteredChangeBus extends MessageConsumer<ChangeSet> impleme
         // note that JGroups will dispatch our own changeset *in a separate thread* (see below)
         logSendOperation(changeSet);
         clusteringService.sendMessage(changeSet);
-        
-        // Since JGroups will always dispatch incoming message off a separate thread, we need to wait here until JGroups
-        // has dispatched our own message back. This is because we have the semantics of in-thread listeners which must
-        // work correctly. See MODE-2409 for details.
-        CountDownLatch waitForLoopback = new CountDownLatch(1);
-        String uuid = changeSet.getUUID();
-        loopbackLatches.put(uuid, waitForLoopback);
-        try {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Waiting for loopback changeset {0} to be received back on {1}", uuid, clusteringService.toString());
-            }
-            if (!waitForLoopback.await(15, TimeUnit.SECONDS)) {
-                loopbackLatches.remove(uuid);
-                LOGGER.error(BusI18n.loopbackMessageNotReceived, uuid, clusteringService.toString());
-            }
-        } catch (InterruptedException e) {
-            loopbackLatches.remove(uuid);
-            Thread.interrupted();
-            LOGGER.error(e, BusI18n.loopbackMessageNotReceived, uuid, clusteringService.toString());
-        }
     }
 
     protected final void logSendOperation( ChangeSet changeSet ) {
