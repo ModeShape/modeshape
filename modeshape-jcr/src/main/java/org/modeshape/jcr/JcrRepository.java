@@ -92,6 +92,7 @@ import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.RepositoryManager;
+import org.modeshape.jcr.api.RestoreOptions;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
@@ -528,21 +529,20 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return runningState().repositoryCache().lockingUsed();
     }
 
-    protected final void completeRestore() throws ExecutionException, Exception {
+    protected final void completeRestore(RestoreOptions options) throws ExecutionException, Exception {
         if (getState() == State.RESTORING) {
+            logger.debug("Performing custom system initialization on '{0}' after content has been restored", getName());
+            runningState().completeRestore();
             logger.debug("Shutting down '{0}' after content has been restored", getName());
-            Future<Boolean> future = shutdown();
-            try {
-                future.get();
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-            }
+            doShutdown();
             logger.debug("Starting '{0}' after content has been restored", getName());
             start();
             logger.debug("Started '{0}' after content has been restored; beginning indexing of content", getName());
-            // Reindex all content ...
-            queryManager().cleanAndReindex(false);
-            logger.debug("Completed reindexing all content in '{0}' after restore.", getName());
+            if (options.reindexContentOnFinish()) {
+                // Reindex all content ...
+                queryManager().cleanAndReindex(false);
+                logger.debug("Completed reindexing all content in '{0}' after restore.", getName());
+            }
         }
     }
 
@@ -1631,6 +1631,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return authenticators;
         }
 
+        protected void completeRestore() {
+            SessionCache systemSession = createSystemSession(context, false);
+            // make sure we clear the ws cache to avoid any stale leftover data from the restoring repository
+            systemSession.getWorkspace().clear();
+            RestoreContentInitializer restoreContentInitializer = new RestoreContentInitializer();
+            restoreContentInitializer.initialize(systemSession, systemSession.mutable(systemSession.getRootKey()));
+            systemSession.save();            
+        }
+        
         final SessionCache createSystemSession( ExecutionContext context,
                                                 boolean readOnly ) {
             return cache.createSession(context, systemWorkspaceName(), readOnly);

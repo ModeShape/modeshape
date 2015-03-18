@@ -16,7 +16,10 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,6 +27,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import javax.jcr.Binary;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
@@ -41,16 +47,25 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.api.BackupOptions;
 import org.modeshape.jcr.api.Problems;
+import org.modeshape.jcr.api.RestoreOptions;
 
 /**
  * Test performance writing graph subtrees of various sizes with varying number of properties
  */
 public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
 
+    private static final String[] BINARY_RESOURCES = new String[] { "data/large-file1.png", 
+                                                                    "data/move-initial-data.xml", 
+                                                                    "data/simple.json", 
+                                                                    "data/singleNode.json" };
+
+    private File backupArea;
     private File backupDirectory;
     private File backupDirectory2;
-
+    
     @Override
     protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
                                                                      Environment environment ) throws Exception {
@@ -60,7 +75,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
     @Before
     @Override
     public void beforeEach() throws Exception {
-        File backupArea = new File("target/backupArea");
+        backupArea = new File("target/backupArea");
         backupDirectory = new File(backupArea, "repoBackups");
         backupDirectory2 = new File(backupArea, "repoBackupsAfter");
         FileUtil.delete(backupArea);
@@ -80,6 +95,88 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         FileOutputStream stream = new FileOutputStream("src/test/resources/io/generated-3-system-view.xml");
         session().exportSystemView(path, stream, false, false);
         stream.close();
+    }
+    
+    @Test
+    @FixFor( "MODE-2440" )
+    public void shouldBackupRepositoryWhichIncludesBinaryValues() throws Exception {
+        loadBinaryContent();
+        
+        // Make the backup, and check that there are no problems ...
+        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
+        assertNoProblems(problems);
+
+        // shutdown the repo and remove all repo data (stored on disk)
+        repository().doShutdown();
+        assertTrue(FileUtil.delete("target/backupArea/backRepo/binaries"));
+        assertTrue(FileUtil.delete("target/backupArea/backRepo/store"));
+
+        // start a fresh empty repo and then restore
+        startRepositoryWithConfiguration(resourceStream("config/backup-repo-config.json"));
+        problems = session().getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
+        assertNoProblems(problems);
+        
+        assertFilesInWorkspcae("default");
+        assertFilesInWorkspcae("ws2");
+        assertFilesInWorkspcae("ws3");
+    }
+
+    /**
+     * Test that a repository containing the same binary data (files) as the ones from this test backed up using ModeShape 3.8.1
+     * is restored correctly.
+     */
+    @Test
+    @FixFor( "MODE-2440" )
+    public void shouldRestoreLegacy381Repository() throws Exception {
+        // extract the old repo backup 
+        File legacyBackupDir = extractZip("legacy_backup/repoBackups381.zip", this.backupArea);
+        assertTrue("Zip content not extracted correctly", legacyBackupDir.exists() && legacyBackupDir.canRead() && legacyBackupDir.isDirectory());
+
+        Problems problems = session().getWorkspace().getRepositoryManager().restoreRepository(legacyBackupDir);
+        assertNoProblems(problems);
+
+        assertFilesInWorkspcae("default");
+        assertFilesInWorkspcae("ws2");
+        assertFilesInWorkspcae("ws3");
+    }
+
+    @Test
+    @FixFor( "MODE-2440" )
+    public void shouldRestoreBinaryReferencesWhenExcludedFromBackup() throws Exception {
+        loadBinaryContent();
+
+        assertFilesInWorkspcae("default");
+        assertFilesInWorkspcae("ws2");
+        assertFilesInWorkspcae("ws3");
+
+        // Make the backup, and check that there are no problems ...
+        BackupOptions backupOptions = new BackupOptions() {
+            @Override
+            public boolean includeBinaries() {
+                return false;
+            }
+        };
+        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory, backupOptions);
+        assertNoProblems(problems);
+
+        // shutdown the repo and remove just the repo main store (not the binary store)
+        repository().doShutdown();
+        assertTrue(FileUtil.delete("target/backupArea/backRepo/store"));
+
+        // start a fresh empty repo and then restore just the data without binaries
+        startRepositoryWithConfiguration(resourceStream("config/backup-repo-config.json"));
+        RestoreOptions restoreOptions = new RestoreOptions() {
+            @Override
+            public boolean includeBinaries() {
+                return false;
+            }
+        };
+        problems = session().getWorkspace().getRepositoryManager().restoreRepository(backupDirectory, restoreOptions);
+        assertNoProblems(problems);
+
+        assertFilesInWorkspcae("default");
+        assertFilesInWorkspcae("ws2");
+        assertFilesInWorkspcae("ws3");
     }
 
     @Test
@@ -237,6 +334,33 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         assertContentInWorkspace(repository(), "ws3");
     }
 
+    private File extractZip( String zipFile, File destination ) throws IOException {
+        File backupDir = null;
+        final int bufferSize = 2048;
+        File currentFile = destination;
+        try (ZipInputStream zipInputStream = new ZipInputStream(resourceStream(zipFile))) {
+            ZipEntry entry = zipInputStream.getNextEntry();
+            while (entry != null) {
+                currentFile = new File(destination, entry.getName());
+                if (backupDir == null) {
+                    backupDir = currentFile;
+                }
+                if (entry.isDirectory()) {
+                    currentFile.mkdirs();
+                } else {
+                    FileOutputStream fos = new FileOutputStream(currentFile);
+                    byte[] buffer = new byte[bufferSize];
+                    int numRead = 0;
+                    while ((numRead = zipInputStream.read(buffer)) > -1) {
+                        fos.write(buffer, 0, numRead);
+                    }
+                }
+                entry = zipInputStream.getNextEntry();
+            }
+        }
+        return backupDir;
+    }
+    
     private void startTransaction() throws NotSupportedException, SystemException {
         TransactionManager txnMgr = session.repository.transactionManager();
         txnMgr.begin();
@@ -341,6 +465,50 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         importIntoWorkspace("default", "io/cars-system-view.xml");
         importIntoWorkspace("ws2", "io/cars-system-view.xml");
         importIntoWorkspace("ws3", "io/cars-system-view.xml");
+    }
+    
+    protected void loadBinaryContent() throws Exception {
+        addFilesToWorkspace("default");
+        addFilesToWorkspace("ws2");
+        addFilesToWorkspace("ws3");
+    }
+    
+    protected void addFilesToWorkspace(String workspaceName) throws Exception {
+        Session session = null;
+        try {
+            session = repository().login(workspaceName);
+        } catch (NoSuchWorkspaceException e) {
+            // Create the workspace ...
+            session().getWorkspace().createWorkspace(workspaceName);
+            // Create a new session ...
+            session = repository().login(workspaceName);
+        }
+        try {
+            for (int i = 0; i < BINARY_RESOURCES.length; i++) {
+                tools.uploadFile(session, "file_" + i, resourceStream(BINARY_RESOURCES[i]));    
+            }
+            session.save();
+        } finally {
+            session.logout();
+        }
+    }
+    
+    protected void assertFilesInWorkspcae(String workspaceName) throws Exception {
+        Session session = repository().login(workspaceName);
+        try {
+            for (int i = 0; i < BINARY_RESOURCES.length; i++) {
+                String fileName = "/file_" + i;
+                Node file = session.getNode(fileName).getNode("jcr:content");
+                Binary binary = file.getProperty("jcr:data").getBinary();
+                assertNotNull(binary);
+    
+                byte[] expectedContent = IoUtil.readBytes(resourceStream(BINARY_RESOURCES[i]));
+                byte[] actualContent = IoUtil.readBytes(binary.getStream());
+                assertArrayEquals("Binary content to valid for " + fileName, expectedContent, actualContent);
+            }
+        } finally {
+            session.logout();
+        }
     }
 
     protected void importIntoWorkspace( String workspaceName,

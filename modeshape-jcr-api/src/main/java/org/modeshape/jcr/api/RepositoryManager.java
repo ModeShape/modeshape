@@ -77,6 +77,29 @@ public interface RepositoryManager {
      * @throws RepositoryException if the backup cannot be run
      */
     Problems backupRepository( File backupDirectory ) throws RepositoryException;
+    
+    /**
+     * Begin a backup operation of the entire repository, writing the files associated with the backup to the specified directory
+     * on the local file system.
+     * <p>
+     * The repository must be active when this operation is invoked, and it can continue to be used during backup (e.g., this can
+     * be a "live" backup operation), but this is not recommended if the backup will be used as part of a migration to a different
+     * version of ModeShape or to different installation.
+     * </p>
+     * <p>
+     * Multiple backup operations can operate at the same time, so it is the responsibility of the caller to not overload the
+     * repository with backup operations.
+     * </p>
+     * 
+     * @param backupDirectory the directory on the local file system into which all backup files will be written; this directory
+     *        need not exist, but the process must have write privilege for this directory
+     * @param backupOptions a {@link org.modeshape.jcr.api.BackupOptions} instance which can be used for more fine-grained control
+     * of the elements that are backed up.
+     * @return the problems that occurred during the backup operation
+     * @throws AccessDeniedException if the current session does not have sufficient privileges to perform the backup
+     * @throws RepositoryException if the backup cannot be run
+     */
+    Problems backupRepository( File backupDirectory, BackupOptions backupOptions ) throws RepositoryException;
 
     /**
      * Begin a restore operation of the entire repository, reading the backup files in the specified directory on the local file
@@ -98,5 +121,28 @@ public interface RepositoryManager {
      * @throws RepositoryException if the restoration cannot be run
      */
     Problems restoreRepository( File backupDirectory ) throws RepositoryException;
+    
+    /**
+     * Begin a restore operation of the entire repository, reading the backup files in the specified directory on the local file
+     * system. Upon completion of the restore operation, the repository will be restarted automatically.
+     * <p>
+     * The repository must be active when this operation is invoked. However, the repository <em>may not</em> be used by any other
+     * activities during the restore operation; doing so will likely result in a corrupt repository.
+     * </p>
+     * <p>
+     * It is the responsibility of the caller to ensure that this method is only invoked once; calling multiple times wil lead to
+     * a corrupt repository.
+     * </p>
+     * 
+     * @param backupDirectory the directory on the local file system in which all backup files exist and were written by a
+     *        previous {@link #backupRepository(File) backup operation}; this directory must exist, and the process must have read
+     *        privilege for all contents in this directory
+     * @param options a {@link org.modeshape.jcr.api.RestoreOptions} instance which can be used to control the elements and the
+     * behavior of the restore process.
+     * @return the problems that occurred during the restore operation
+     * @throws AccessDeniedException if the current session does not have sufficient privileges to perform the restore
+     * @throws RepositoryException if the restoration cannot be run
+     */
+    Problems restoreRepository( File backupDirectory, RestoreOptions options ) throws RepositoryException;
 
 }

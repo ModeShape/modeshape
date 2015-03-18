@@ -39,11 +39,12 @@ public class BackupRestoreBean extends RepositoryProvider {
     @PostConstruct
     @TransactionAttribute( TransactionAttributeType.NOT_SUPPORTED )
     public void run() throws Exception {
-        final String path = System.getProperty("jboss.server.base.dir");
+        final String path = System.getProperty("jboss.server.data.dir");
         if (path == null || path.trim().length() == 0) {
             throw new IllegalStateException("Cannot locate the jboss server dir");
         }
-        final File backupDirectory = new File(path);
+        final File backupDirectory = new File(path, "modeshape/sampleBackup");
+        backupDirectory.mkdirs();
 
         Repository repository = (Repository)getRepositoryFromJndi("java:/jcr/sample");
         org.modeshape.jcr.api.Session session = repository.login();
