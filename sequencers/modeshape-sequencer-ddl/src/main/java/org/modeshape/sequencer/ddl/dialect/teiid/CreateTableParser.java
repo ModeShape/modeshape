@@ -401,8 +401,9 @@ final class CreateTableParser extends StatementParser {
         }
 
         // must find CONSTRAINT, PRIMARY KEY, FOREIGN KEY, UNIQUE, ACCESSPATTERN, INDEX
-        if (tokens.matches(CONSTRAINT) || tokens.matches(PRIMARY, KEY) || tokens.matches(FOREIGN, KEY) || tokens.matches(UNIQUE)
-            || tokens.matches(TeiidNonReservedWord.ACCESSPATTERN.toDdl()) || tokens.matches(TeiidNonReservedWord.INDEX.toDdl())) {
+        if (tokens.matches(CONSTRAINT) || tokens.matches(PRIMARY, KEY, L_PAREN) || tokens.matches(FOREIGN, KEY, L_PAREN)
+            || tokens.matches(UNIQUE, L_PAREN) || tokens.matches(TeiidNonReservedWord.ACCESSPATTERN.toDdl(), L_PAREN)
+            || tokens.matches(TeiidNonReservedWord.INDEX.toDdl(), L_PAREN)) {
             String constraintType = null;
 
             // may have identifier

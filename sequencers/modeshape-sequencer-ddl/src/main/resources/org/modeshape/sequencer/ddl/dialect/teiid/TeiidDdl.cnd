@@ -54,7 +54,7 @@
 [teiidddl:tableElement] > ddl:columnDefinition, mix:referenceable mixin
 - teiidddl:autoIncrement (boolean) = 'false'
 - teiidddl:arrayDimensions (long)
-- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL', 'UNKNOWN'
 + * (ddl:statementOption) = ddl:statementOption 
 
 [teiidddl:abstractCreateTable] > ddl:createTableStatement, teiidddl:schemaElement, mix:referenceable abstract mixin
@@ -71,7 +71,7 @@
 [teiidddl:procedureParameter] > mix:referenceable mixin
 - teiidddl:parameterType (string) = 'IN' mandatory autocreated < 'IN', 'OUT', 'INOUT', 'VARIADIC'
 - teiidddl:result (boolean) = 'false' autocreated
-- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL', 'UNKNOWN'
 - ddl:datatypeName (STRING)
 - ddl:datatypeLength (LONG)
 - ddl:datatypePrecision (LONG)
@@ -86,7 +86,7 @@
 - ddl:datatypeLength (long)
 - ddl:datatypePrecision (long)
 - ddl:datatypeScale (long)
-- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL', 'UNKNOWN'
 + * (ddl:statementOption) = ddl:statementOption
 
 [teiidddl:resultSet] abstract mixin

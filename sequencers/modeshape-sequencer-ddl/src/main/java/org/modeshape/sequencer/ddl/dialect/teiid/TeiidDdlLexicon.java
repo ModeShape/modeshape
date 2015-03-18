@@ -184,6 +184,11 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String RESULT_SET = "resultSet";
 
         /**
+         * The abstract mixin name for a result set.
+         */
+        String RESULT_SET_NODE_TYPE = Namespace.PREFIX + ":resultSet";
+
+        /**
          * The name of the procedure statement property.
          */
         String STATEMENT = Namespace.PREFIX + ":statement";
