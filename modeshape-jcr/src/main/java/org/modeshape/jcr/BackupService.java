@@ -51,6 +51,8 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.InfinispanUtil.Sequence;
 import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.api.BackupOptions;
+import org.modeshape.jcr.api.RestoreOptions;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
@@ -72,13 +74,6 @@ public class BackupService {
     protected static final String SUMMARY_FILE_NAME = "summary_of_changes.json";
     protected static final String BINARY_EXTENSION = ".bin";
     protected static final int NUM_CHARS_IN_FILENAME_SUFFIX = 6;
-
-    /**
-     * By default, 100K nodes will be exported to a single backup file. So, if each node requied about 200 bytes (compressed), the
-     * resulting files will be about 19 MB in size.
-     */
-    public static final long DEFAULT_NUMBER_OF_DOCUMENTS_IN_BACKUP_FILES = 100000L;
-    public static final boolean DEFAULT_COMPRESS = true;
 
     protected static class FieldName {
         public static final String UNUSED_BINARY_KEYS = "unusedBinaryKeys";
@@ -104,32 +99,18 @@ public class BackupService {
     }
 
     /**
-     * Start asynchronously backing up the repository.
+     * Start backing up the repository.
      * 
      * @param backupDirectory the directory on the file system into which the backup should be placed; this directory should
      *        typically not exist
+     * @param options a {@link org.modeshape.jcr.api.BackupOptions} instance controlling the behavior of the backup; may not be
+     * {@code null}
      * @return the problems that occurred during the backup process
      * @throws RepositoryException if the backup operation cannot be run
      */
-    public org.modeshape.jcr.api.Problems backupRepository( File backupDirectory ) throws RepositoryException {
-        return backupRepository(backupDirectory, DEFAULT_NUMBER_OF_DOCUMENTS_IN_BACKUP_FILES, DEFAULT_COMPRESS);
-    }
-
-    /**
-     * Start asynchronously backing up the repository.
-     * 
-     * @param backupDirectory the directory on the file system into which the backup should be placed; this directory should
-     *        typically not exist
-     * @param documentsPerFile the maximum number of documents to place within a single backup file; must be positive
-     * @param compress true if the backup files should be compressed, or false otherwise
-     * @return the problems that occurred during the backup process
-     * @throws RepositoryException if the backup operation cannot be run
-     */
-    public org.modeshape.jcr.api.Problems backupRepository( File backupDirectory,
-                                                            long documentsPerFile,
-                                                            boolean compress ) throws RepositoryException {
+    public org.modeshape.jcr.api.Problems backupRepository( File backupDirectory, BackupOptions options ) throws RepositoryException {
         // Create the activity ...
-        final BackupActivity backupActivity = createBackupActivity(backupDirectory, documentsPerFile, compress);
+        final BackupActivity backupActivity = createBackupActivity(backupDirectory, options);
 
         //suspend any existing transactions
         try {
@@ -152,18 +133,20 @@ public class BackupService {
      * 
      * @param repository the JCR repository to be backed up; may not be null
      * @param backupDirectory the directory on the file system that contains the backup; this directory obviously must exist
+     * @param options a {@link org.modeshape.jcr.api.RestoreOptions} instance which controls the restore behavior; may not be null
      * @return the problems that occurred during the restore process
      * @throws RepositoryException if the restoration operation cannot be run
      */
     public org.modeshape.jcr.api.Problems restoreRepository( final JcrRepository repository,
-                                                             final File backupDirectory ) throws RepositoryException {
+                                                             final File backupDirectory,
+                                                             final RestoreOptions options) throws RepositoryException {
         final String backupLocString = backupDirectory.getAbsolutePath();
         LOGGER.debug("Beginning restore of '{0}' repository from {1}", repository.getName(), backupLocString);
         // Put the repository into the 'restoring' state ...
         repository.prepareToRestore();
 
         // Create the activity ...
-        final RestoreActivity restoreActivity = createRestoreActivity(backupDirectory);
+        final RestoreActivity restoreActivity = createRestoreActivity(backupDirectory, options);
 
         org.modeshape.jcr.api.Problems problems = null;
         try {
@@ -175,7 +158,7 @@ public class BackupService {
             if (!problems.hasProblems()) {
                 // restart the repository ...
                 try {
-                    repository.completeRestore();
+                    repository.completeRestore(options);
                 } catch (Throwable t) {
                     restoreActivity.problems.addError(JcrI18n.repositoryCannotBeRestartedAfterRestore, repository.getName(),
                                                       t.getMessage());
@@ -196,25 +179,24 @@ public class BackupService {
      * 
      * @param backupDirectory the directory on the file system into which the backup should be placed; this directory should
      *        typically not exist
-     * @param documentsPerFile the maximum number of documents to place within a single backup file; must be positive
-     * @param compress true if the backup files should be compressed, or false otherwise
+     * @param options the {@link org.modeshape.jcr.api.BackupOptions} which customize the behavior of the backup.
      * @return the backup activity; never null
      */
     public BackupActivity createBackupActivity( File backupDirectory,
-                                                long documentsPerFile,
-                                                boolean compress ) {
-        return new BackupActivity(backupDirectory, documentStore, binaryStore, repositoryCache, documentsPerFile, compress);
+                                                BackupOptions options ) {
+        return new BackupActivity(backupDirectory, documentStore, binaryStore, repositoryCache, options);
     }
 
     /**
      * Create a new {@link RestoreActivity activity} instance that can restore the content of the repository to the state as it
      * exists in the specified backup directory.
      * 
+     * @param options a {@link org.modeshape.jcr.api.RestoreOptions} instance; may no be null.
      * @param backupDirectory the directory on the file system that contains the backup; this directory obviously must exist
      * @return the restore activity; never null
      */
-    public RestoreActivity createRestoreActivity( File backupDirectory ) {
-        return new RestoreActivity(backupDirectory, documentStore, binaryStore, repositoryCache);
+    public RestoreActivity createRestoreActivity( File backupDirectory, RestoreOptions options ) {
+        return new RestoreActivity(backupDirectory, documentStore, binaryStore, repositoryCache, options);
     }
 
     /**
@@ -270,21 +252,17 @@ public class BackupService {
         private final BackupObserver observer;
         protected final ExecutorService changedDocumentWorker;
         protected final BlockingQueue<NodeKey> changedDocumentQueue;
-        private final long documentsPerFile;
-        private final boolean compress;
-        private BackupDocumentWriter contentWriter;
-        private BackupDocumentWriter changesWriter;
+        protected final BackupOptions options;
 
         protected BackupActivity( File backupDirectory,
                                   org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
                                   BinaryStore binaryStore,
                                   RepositoryCache repositoryCache,
-                                  long documentsPerFile,
-                                  boolean compress ) {
+                                  BackupOptions options) {
             super(backupDirectory, documentStore, binaryStore, repositoryCache);
-            CheckArg.isPositive(documentsPerFile, "documentsPerFile");
-            this.documentsPerFile = documentsPerFile;
-            this.compress = compress;
+            CheckArg.isNotNull(options, "options");
+            CheckArg.isPositive(options.documentsPerFile(), "documentsPerFile");
+            this.options = options;
             this.changedDocumentQueue = new LinkedBlockingQueue<NodeKey>();
             ThreadFactory threadFactory = new NamedThreadFactory("modeshape-backup");
             this.changedDocumentWorker = Executors.newSingleThreadExecutor(threadFactory);
@@ -310,14 +288,16 @@ public class BackupService {
                 }
                 // Always make sure the changes and binary areas exist ...
                 changeDirectory.mkdirs();
-                binaryDirectory.mkdirs();
+                if (options.includeBinaries()) {
+                    binaryDirectory.mkdirs();
+                }
             } catch (RuntimeException e) {
                 problems.addError(e, JcrI18n.problemInitializingBackupArea, backupLocation(), e.getMessage());
             }
             return true;
         }
 
-        protected void writeToContentArea( SchematicEntry document ) {
+        protected void writeToContentArea( SchematicEntry document, BackupDocumentWriter contentWriter ) {
             contentWriter.write(document.asDocument());
         }
 
@@ -344,7 +324,7 @@ public class BackupService {
             }
         }
 
-        protected void writeToChangedArea( SchematicEntry document ) {
+        protected void writeToChangedArea( SchematicEntry document, BackupDocumentWriter changesWriter ) {
             LOGGER.debug("Writing document to change area of backup for {0} repository at {1}", repositoryName(),
                          backupLocation());
             changesWriter.write(document.asDocument());
@@ -379,9 +359,13 @@ public class BackupService {
 
             LOGGER.debug("Starting backup of '{0}' repository into {1}", repositoryName(), backupLocation());
 
-            this.contentWriter = new BackupDocumentWriter(backupDirectory, DOCUMENTS_FILENAME_PREFIX, documentsPerFile, compress,
+            final BackupDocumentWriter contentWriter = new BackupDocumentWriter(backupDirectory, DOCUMENTS_FILENAME_PREFIX, 
+                                                                                options.documentsPerFile(), 
+                                                          options.compress(),
                                                           problems);
-            this.changesWriter = new BackupDocumentWriter(changeDirectory, DOCUMENTS_FILENAME_PREFIX, documentsPerFile, compress,
+            final BackupDocumentWriter changesWriter = new BackupDocumentWriter(changeDirectory, DOCUMENTS_FILENAME_PREFIX, 
+                                                                                options.documentsPerFile(), 
+                                                          options.compress(),
                                                           problems);
             long numBinaryValues = 0L;
 
@@ -401,7 +385,7 @@ public class BackupService {
                                 if (key != null) {
                                     // Write out the document to the changed area ...
                                     SchematicEntry entry = documentStore.get(key.toString());
-                                    writeToChangedArea(entry);
+                                    writeToChangedArea(entry, changesWriter);
                                 }
                             }
                         } catch (InterruptedException e) {
@@ -415,7 +399,7 @@ public class BackupService {
                             if (key != null) {
                                 // Write out the document to the changed area ...
                                 SchematicEntry entry = documentStore.get(key.toString());
-                                writeToChangedArea(entry);
+                                writeToChangedArea(entry, changesWriter);
                             }
                         }
                         changesLatch.countDown();
@@ -438,7 +422,7 @@ public class BackupService {
                         if (key == null) break;
                         SchematicEntry entry = documentStore.get(key);
                         if (entry != null) {
-                            writeToContentArea(entry);
+                            writeToContentArea(entry, contentWriter);
                             ++counter;
                         }
                     }
@@ -448,7 +432,7 @@ public class BackupService {
                     // Write out the repository metadata document (which may have not changed) ...
                     NodeKey metadataKey = repositoryCache.getRepositoryMetadataDocumentKey();
                     SchematicEntry entry = documentStore.get(metadataKey.toString());
-                    writeToContentArea(entry);
+                    writeToContentArea(entry, contentWriter);
                 } catch (Exception e) {
                     I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
                     this.problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
@@ -464,41 +448,47 @@ public class BackupService {
                     }
                 }
 
-                // PHASE 3:
-                // Perform the backup of the binary store ...
-                try {
+                if (options.includeBinaries()) {
+                    // PHASE 3:
+                    // Perform the backup of the binary store ...
+                    try {
+                        int counter = 0;
+                        for (BinaryKey binaryKey : binaryStore.getAllBinaryKeys()) {
+                            try {
+                                writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
+                                ++counter;
+                            } catch (BinaryStoreException e) {
+                                problems.addError(JcrI18n.problemsWritingBinaryToBackup, binaryKey, backupLocation(),
+                                                  e.getMessage());
+                            }
+                        }
+                        LOGGER.debug("Wrote {0} binary values to {1}", counter, binaryDirectory.getAbsolutePath());
+                        numBinaryValues += counter;
+                    } catch (BinaryStoreException e) {
+                        I18n msg = JcrI18n.problemsGettingBinaryKeysFromBinaryStore;
+                        problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
+                    }
+
+
+                    // PHASE 4:
+                    // Write all of the binary files that were added during the changes made while we worked ...
                     int counter = 0;
-                    for (BinaryKey binaryKey : binaryStore.getAllBinaryKeys()) {
+                    for (BinaryKey binaryKey : observer.getUsedBinaryKeys()) {
                         try {
                             writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
                             ++counter;
                         } catch (BinaryStoreException e) {
-                            problems.addError(JcrI18n.problemsWritingBinaryToBackup, binaryKey, backupLocation(), e.getMessage());
+                            problems.addError(JcrI18n.problemsWritingBinaryToBackup, binaryKey, backupLocation(),
+                                              e.getMessage());
                         }
                     }
-                    LOGGER.debug("Wrote {0} binary values to {1}", counter, binaryDirectory.getAbsolutePath());
-                } catch (BinaryStoreException e) {
-                    I18n msg = JcrI18n.problemsGettingBinaryKeysFromBinaryStore;
-                    problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
+                    LOGGER.debug("Wrote {0} recent binary values to {1}", counter, binaryDirectory.getAbsolutePath());
+                    numBinaryValues += counter;
+
+                    // PHASE 5:
+                    // And now write all binary keys for the binaries that were recorded as unused by the observer ...
+                    writeToChangedArea(observer.getUnusedBinaryKeys());
                 }
-
-                // PHASE 4:
-                // Write all of the binary files that were added during the changes made while we worked ...
-                int counter = 0;
-                for (BinaryKey binaryKey : observer.getUsedBinaryKeys()) {
-                    try {
-                        writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
-                        ++counter;
-                    } catch (BinaryStoreException e) {
-                        problems.addError(JcrI18n.problemsWritingBinaryToBackup, binaryKey, backupLocation(), e.getMessage());
-                    }
-                }
-                LOGGER.debug("Wrote {0} recent binary values to {1}", counter, binaryDirectory.getAbsolutePath());
-
-                // PHASE 5:
-                // And now write all binary keys for the binaries that were recorded as unused by the observer ...
-                writeToChangedArea(observer.getUnusedBinaryKeys());
-
                 // Wait for the changes to be written
                 changesLatch.await(30, TimeUnit.SECONDS);
 
@@ -515,16 +505,8 @@ public class BackupService {
             } finally {
                 // PHASE 5:
                 // Close all open writers ...
-                try {
-                    contentWriter.close();
-                } finally {
-                    contentWriter = null;
-                    try {
-                        changesWriter.close();
-                    } finally {
-                        changesWriter = null;
-                    }
-                }
+                contentWriter.close();
+                changesWriter.close();
             }
 
             return problems;
@@ -536,18 +518,25 @@ public class BackupService {
      */
     @NotThreadSafe
     public static final class RestoreActivity extends Activity {
+        private final RestoreOptions options;
 
         protected RestoreActivity( File backupDirectory,
                                    org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
                                    BinaryStore binaryStore,
-                                   RepositoryCache repositoryCache ) {
+                                   RepositoryCache repositoryCache,
+                                   RestoreOptions options) {
             super(backupDirectory, documentStore, binaryStore, repositoryCache);
+            CheckArg.isNotNull(options, "restoreOptions");
+            this.options = options;
         }
 
         @Override
         public Problems execute() {
-            removeExistingBinaryFiles();
-            restoreBinaryFiles();
+            boolean includeBinaries = binaryDirectory.exists() && binaryDirectory.canRead() && options.includeBinaries(); 
+            if (includeBinaries) {
+                removeExistingBinaryFiles();
+                restoreBinaryFiles();
+            }
 
             removeExistingDocuments();
             restoreDocuments(backupDirectory); // first pass of documents

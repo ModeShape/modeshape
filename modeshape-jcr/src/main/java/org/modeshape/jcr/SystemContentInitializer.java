@@ -28,6 +28,9 @@ import org.modeshape.jcr.value.PropertyFactory;
  */
 class SystemContentInitializer implements ContentInitializer {
 
+    protected static final String INDEXES_NODE_ID = "mode:indexes";
+    protected static final String SYSTEM_NODE_ID = "jcr:system";
+
     private PropertyFactory propFactory;
 
     public SystemContentInitializer() {
@@ -41,7 +44,7 @@ class SystemContentInitializer implements ContentInitializer {
         MutableCachedNode namespaces = null;
 
         // Create the "/jcr:system" node ...
-        system = createNode(session, parent, "jcr:system", JcrLexicon.SYSTEM, ModeShapeLexicon.SYSTEM);
+        system = createNode(session, parent, SYSTEM_NODE_ID, JcrLexicon.SYSTEM, ModeShapeLexicon.SYSTEM);
 
         // Create the "/jcr:system/jcr:nodeTypes" node ...
         createNode(session, system, "jcr:nodeTypes", JcrLexicon.NODE_TYPES, ModeShapeLexicon.NODE_TYPES);
@@ -79,7 +82,7 @@ class SystemContentInitializer implements ContentInitializer {
         locks.setQueryable(false);
 
         // Create the "/jcr:system/mode:indexes" node which we don't want to index
-        MutableCachedNode indexes = createNode(session, system, "mode:indexes", ModeShapeLexicon.INDEXES, ModeShapeLexicon.INDEXES);
+        MutableCachedNode indexes = createNode(session, system, INDEXES_NODE_ID, ModeShapeLexicon.INDEXES, ModeShapeLexicon.INDEXES);
         indexes.setQueryable(false);
     }
 

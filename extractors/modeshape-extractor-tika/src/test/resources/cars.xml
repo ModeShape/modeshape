@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Cars>
+    <Hybrid>hybrid car</Hybrid>
+    <Sports>sports car</Sports>
+    <Luxury>luxury car</Luxury>
+    <Utility>utility car</Utility>
+</Cars>

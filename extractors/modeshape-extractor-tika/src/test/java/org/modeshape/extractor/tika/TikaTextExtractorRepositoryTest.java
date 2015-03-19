@@ -64,6 +64,13 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
     }
 
     @Test
+    public void shouldExtractAndIndexContentFromXMLFile() throws Exception {
+        startRepositoryWithConfiguration(getResource("repo-config.json"));
+        uploadFile("cars.xml");
+        assertExtractedTextHasBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'sports')");
+    }
+
+    @Test
     @FixFor( "MODE-1561" )
     public void shouldExtractPartiallyPastWriteLimit() throws Exception {
         startRepositoryWithConfiguration(getResource("repo-config-text-extraction-limit.json"));
