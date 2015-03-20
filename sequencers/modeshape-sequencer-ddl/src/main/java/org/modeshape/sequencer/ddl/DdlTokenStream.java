@@ -394,7 +394,7 @@ public class DdlTokenStream extends TokenStream {
                         boolean foundClosingQuote = false;
                         while (input.hasNext()) {
                             c = input.next();
-                            if (c == '\\' && input.isNext('"')) {
+                            if ((c == '\\' || c == '"') && input.isNext('"')) {
                                 c = input.next(); // consume the ' character since it is escaped
                             } else if (c == '"') {
                                 foundClosingQuote = true;
@@ -417,7 +417,7 @@ public class DdlTokenStream extends TokenStream {
                         foundClosingQuote = false;
                         while (input.hasNext()) {
                             c = input.next();
-                            if (c == '\\' && input.isNext(quoteChar)) {
+                            if ((c == '\\' || c == quoteChar) && input.isNext(quoteChar)) {
                                 c = input.next(); // consume the ' character since it is escaped
                             } else if (c == quoteChar) {
                                 foundClosingQuote = true;

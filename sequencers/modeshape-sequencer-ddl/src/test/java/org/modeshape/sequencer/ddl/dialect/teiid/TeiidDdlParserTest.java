@@ -21,8 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.DdlParserTestHelper;
+import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
@@ -365,6 +367,47 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
             }
 
             assertThat(refColumnNode, is(columnNode));
+        }
+    }
+
+    @Test
+    @FixFor("MODE-2444")
+    public void shouldParseHanaDdl() {
+        // the HANA DDL uncovered 2 problems:
+        // (1) a column called INDEX was being parsed as a constraint instead of a column definition, and
+        // (2) the tokenizer was not parsing embedded quotes correctly (2 adjacent quotes are considered one embedded quote)
+        printTest("shouldSapHana()");
+
+        String content = getFileContent(DDL_FILE_PATH + "sap-hana.ddl");
+        assertScoreAndParse(content, "teiid_test_statements_2", 2);
+        
+        { // test for parsing column named INDEX
+            final List<AstNode> tables = getRootNode().childrenWithName("_SYS_STATISTICS.GLOBAL_COLUMN_TABLES_SIZE");
+            assertThat(tables.size(), is(1));
+
+            final AstNode table = tables.get(0);
+            final String columnName = "INDEX";
+            assertThat(table.childrenWithName(columnName).size(), is(1));
+
+            final AstNode column = table.childrenWithName(columnName).get(0);
+            assertThat(column.hasMixin(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT), is(true));
+        }
+
+        { // test embedded quotes
+            final List<AstNode> tables = getRootNode().childrenWithName("PUBLIC.AUDIT_POLICIES");
+            assertThat(tables.size(), is(1));
+
+            final AstNode table = tables.get(0);
+            final String columnName = "EVENT_STATUS";
+            assertThat(table.childrenWithName(columnName).size(), is(1));
+
+            final AstNode column = table.childrenWithName(columnName).get(0);
+            final String optionName = "ANNOTATION";
+            assertThat(column.childrenWithName(optionName).size(), is(1));
+
+            final AstNode option = column.childrenWithName(optionName).get(0);
+            assertThat(option.getProperty(StandardDdlLexicon.VALUE).toString(),
+                       is("Status of events to be audited: ''SUCCESSFUL EVENTS''/''UNSUCCESSFUL EVENTS''/''ALL EVENTS''"));
         }
     }
 

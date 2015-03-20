@@ -214,4 +214,27 @@ public class DdlTokenStreamTest extends DdlParserTestHelper {
         assertThat(tokens.nextPosition().getColumn(), is(7));
 
     }
+
+    @Test
+    public void shouldParseQuotedStringWithEmbeddedSingleQuotes() {
+        printTest("shouldParseSingleQuotedStringWithEmbeddedSingleQuotes()");
+
+        final String content = "'Status: ''SUCCESSFUL EVENTS''/''UNSUCCESSFUL EVENTS''/''ALL EVENTS'''";
+        final DdlTokenStream tokens = getTokens(content);
+        tokens.start();
+        
+        assertThat(tokens.consume(), is(content));
+    }
+
+    @Test
+    public void shouldParseQuotedStringWithEmbeddedDoubleQuotes() {
+        printTest("shouldParseSingleQuotedStringWithEmbeddedSingleQuotes()");
+
+        // '"Sledge""Hammer"'
+        final String content = "'\"Sledge\"\"Hammer\"'";
+        final DdlTokenStream tokens = getTokens(content);
+        tokens.start();
+        
+        assertThat(tokens.consume(), is(content));
+    }
 }
