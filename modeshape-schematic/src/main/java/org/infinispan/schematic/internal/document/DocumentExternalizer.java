@@ -18,8 +18,8 @@ package org.infinispan.schematic.internal.document;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Set;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.document.Bson;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.internal.SchematicExternalizer;
@@ -57,6 +57,6 @@ public class DocumentExternalizer extends SchematicExternalizer<Document> {
     @SuppressWarnings( "unchecked" )
     @Override
     public Set<Class<? extends Document>> getTypeClasses() {
-        return Util.<Class<? extends Document>>asSet(BasicDocument.class);
+        return Collections.<Class<? extends Document>>singleton(BasicDocument.class);
     }
 }

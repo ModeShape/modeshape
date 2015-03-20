@@ -20,7 +20,11 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.junit.Before;
@@ -180,59 +184,48 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         assertThat("Should not have found a prior entry", prior, is(nullValue()));
         SchematicEntry entry = db.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
-
         // Start two threads that each attempt to edit the document ...
+        ExecutorService executors = Executors.newCachedThreadPool();
         final CountDownLatch latch = new CountDownLatch(1);
-
-        Thread t1 = fork(new Runnable() {
+        Future f1 = executors.submit(new Callable<Void>() {
             @SuppressWarnings( "synthetic-access" )
             @Override
-            public void run() {
-                try {
-                    latch.await(); // synchronize ...
-                    tm().begin();
-                    print("Began txn1");
-                    db.lock(key);
-                    EditableDocument editor = db.editContent(key, true);
-                    editor.setNumber("k2", 3); // update an existing field
-                    print(editor);
-                    print("Committing txn1");
-                    tm().commit();
-                } catch (Exception e) {
-                    log.error("Unexpected error performing transaction", e);
-                }
+            public Void call() throws Exception {
+                latch.await(); // synchronize ...
+                tm().begin();
+                print("Began txn1");
+                db.lock(key);
+                EditableDocument editor = db.editContent(key, true);
+                editor.setNumber("k2", 3); // update an existing field
+                print(editor);
+                print("Committing txn1");
+                tm().commit();
+                return null;
             }
-        }, false);
-        Thread t2 = fork(new Runnable() {
+        });
+        Future f2 = executors.submit(new Callable<Void>() {
             @SuppressWarnings( "synthetic-access" )
             @Override
-            public void run() {
-                try {
-                    latch.await(); // synchronize ...
-                    tm().begin();
-                    print("Began txn2");
-                    db.lock(key);
-                    EditableDocument editor = db.editContent(key, true);
-                    editor.setNumber("k3", 3); // add a new field
-                    print(editor);
-                    print("Committing txn2");
-                    tm().commit();
-                } catch (Exception e) {
-                    log.error("Unexpected error performing transaction", e);
-                }
+            public Void call() throws Exception {
+                latch.await(); // synchronize ...
+                tm().begin();
+                print("Began txn2");
+                db.lock(key);
+                EditableDocument editor = db.editContent(key, true);
+                editor.setNumber("k3", 3); // add a new field
+                print(editor);
+                print("Committing txn2");
+                tm().commit();
+                return null;
             }
-        }, false);
-
+        });
         // print = true;
-
         // Start the threads ...
         latch.countDown();
-
         // Wait for the threads to die ...
-        t1.join();
-        t2.join();
+        f1.get();
+        f2.get();
         // System.out.println("Completed all threads");
-
         // Now re-read ...
         tm().begin();
         Document read = db.get(key).getContent();
@@ -244,7 +237,7 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     }
 
     protected void print( Object obj ) {
-        if (print) log.info(obj);
+        if (print) { System.out.println(obj); }
     }
 
 }

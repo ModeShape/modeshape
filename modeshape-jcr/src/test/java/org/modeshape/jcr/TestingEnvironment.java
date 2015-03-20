@@ -19,8 +19,8 @@ import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.test.TestingUtil;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
+import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.schematic.TestUtil;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
@@ -48,7 +48,7 @@ public class TestingEnvironment extends LocalEnvironment {
 
     @Override
     protected void shutdown( CacheContainer container ) {
-        TestingUtil.killCacheManagers(container);
+        TestUtil.killCacheContainers(container);
     }
 
     @Override
@@ -65,6 +65,8 @@ public class TestingEnvironment extends LocalEnvironment {
     @Override
     protected CacheContainer createContainer( GlobalConfigurationBuilder globalConfigurationBuilder,
                                               ConfigurationBuilder configurationBuilder ) {
-        return TestCacheManagerFactory.createCacheManager(globalConfigurationBuilder, configurationBuilder);
+        configurationBuilder.jmxStatistics().disable();
+        globalConfigurationBuilder.globalJmxStatistics().disable().allowDuplicateDomains(true);
+        return new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build(), true);
     }
 }

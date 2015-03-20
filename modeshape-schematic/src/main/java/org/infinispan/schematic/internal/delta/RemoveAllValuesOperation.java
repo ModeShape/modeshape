@@ -20,11 +20,11 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.document.Array.Entry;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.HashCode;
@@ -146,7 +146,7 @@ public class RemoveAllValuesOperation extends ArrayOperation {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends RemoveAllValuesOperation>> getTypeClasses() {
-            return Util.<Class<? extends RemoveAllValuesOperation>>asSet(RemoveAllValuesOperation.class);
+            return Collections.<Class<? extends RemoveAllValuesOperation>>singleton(RemoveAllValuesOperation.class);
         }
     }
 }

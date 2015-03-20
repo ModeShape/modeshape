@@ -24,8 +24,9 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.transaction.TransactionManager;
-
+import org.infinispan.Cache;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.schematic.TestUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -62,7 +63,8 @@ public class InMemoryTest implements CustomLoaderTest {
         STARTUP.start();
         INFINISPAN_STARTUP.start();
         environment = new TestingEnvironment(this);
-        txnMgr = org.infinispan.test.TestingUtil.getTransactionManager(environment.getCacheContainer().getCache(REPO_NAME));
+        Cache<Object, Object> cache = environment.getCacheContainer().getCache(REPO_NAME);
+        txnMgr = cache.getAdvancedCache().getTransactionManager();
         INFINISPAN_STARTUP.stop();
         MODESHAPE_STARTUP.start();
         config = new RepositoryConfiguration(REPO_NAME, environment);
@@ -84,7 +86,7 @@ public class InMemoryTest implements CustomLoaderTest {
             repository = null;
             config = null;
             try {
-                org.infinispan.test.TestingUtil.killTransaction(txnMgr);
+                TestUtil.killTransaction(txnMgr);
             } finally {
                 try {
                     environment.shutdown();

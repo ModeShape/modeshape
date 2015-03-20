@@ -19,9 +19,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 
@@ -94,7 +94,7 @@ public final class Symbol implements Serializable {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends Symbol>> getTypeClasses() {
-            return Util.<Class<? extends Symbol>>asSet(Symbol.class);
+            return Collections.<Class<? extends Symbol>>singleton(Symbol.class);
         }
     }
 }

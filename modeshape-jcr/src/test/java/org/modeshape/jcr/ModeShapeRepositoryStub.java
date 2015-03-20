@@ -25,6 +25,7 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Session;
 import org.apache.jackrabbit.test.RepositoryStub;
 import org.infinispan.manager.CacheContainer;
+import org.infinispan.schematic.TestUtil;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.security.SimplePrincipal;
 
@@ -78,7 +79,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
                 engine = null;
                 if (container != null) {
                     try {
-                        org.infinispan.test.TestingUtil.killCacheManagers(container);
+                        TestUtil.killCacheContainers(container);
                     } finally {
                         container = null;
                     }

@@ -76,7 +76,6 @@ public class InfinispanUtilTest {
     @AfterClass
     public static void afterClass() {
         InfinispanTestUtil.afterClassShutdown(cacheManager);
-        org.infinispan.test.TestingUtil.recursiveFileRemove(new File(System.getProperty("java.io.tmpdir"), "InfinispanTestUtil"));
     }
 
     private void checkSequence( InfinispanUtil.Sequence<String> sequence,

@@ -18,9 +18,9 @@ package org.infinispan.schematic.internal.delta;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.HashCode;
@@ -124,7 +124,7 @@ public class RemoveOperation extends Operation {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends RemoveOperation>> getTypeClasses() {
-            return Util.<Class<? extends RemoveOperation>>asSet(RemoveOperation.class);
+            return Collections.<Class<? extends RemoveOperation>>singleton(RemoveOperation.class);
         }
     }
 }

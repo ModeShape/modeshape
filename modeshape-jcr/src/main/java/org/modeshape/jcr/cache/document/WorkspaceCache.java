@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import org.infinispan.commons.api.BasicCache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
@@ -237,8 +236,8 @@ public class WorkspaceCache implements DocumentCache {
                 CachedNode newNode = new LazyCachedNode(key, doc);
                 try {
                     Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
-                    if (cacheTtlSeconds != null && nodesByKey instanceof BasicCache) {
-                        node = ((BasicCache<NodeKey, CachedNode>)nodesByKey).putIfAbsent(key, newNode,
+                    if (cacheTtlSeconds != null && nodesByKey instanceof org.infinispan.commons.api.BasicCache) {
+                        node = ((org.infinispan.commons.api.BasicCache<NodeKey, CachedNode>)nodesByKey).putIfAbsent(key, newNode,
                                                                                          cacheTtlSeconds.longValue(),
                                                                                          TimeUnit.SECONDS);
                     } else {

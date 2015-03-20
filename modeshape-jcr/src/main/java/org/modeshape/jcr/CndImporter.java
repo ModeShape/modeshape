@@ -34,8 +34,6 @@ import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.version.OnParentVersionAction;
-import org.infinispan.commons.util.FileLookup;
-import org.infinispan.commons.util.FileLookupFactory;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.text.ParsingException;
@@ -43,6 +41,7 @@ import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.common.text.TokenStream.Tokenizer;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.ResourceLookup;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -171,11 +170,7 @@ public class CndImporter {
 
     public void importBuiltIns( Problems problems ) throws IOException {
         for (String resource : BUILT_INS) {
-            FileLookup factory = FileLookupFactory.newInstance();
-            InputStream stream = factory.lookupFile(resource, Thread.currentThread().getContextClassLoader());
-            if (stream == null) {
-                stream = factory.lookupFile(resource, getClass().getClassLoader());
-            }
+            InputStream stream = ResourceLookup.read(resource, getClass(), true);
             importFrom(stream, problems, resource);
         }
     }

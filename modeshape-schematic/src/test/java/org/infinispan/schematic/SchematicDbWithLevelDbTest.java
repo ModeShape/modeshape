@@ -18,11 +18,11 @@ package org.infinispan.schematic;
 import java.io.File;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfiguration;
 import org.infinispan.persistence.leveldb.configuration.LevelDBStoreConfigurationBuilder;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
@@ -48,7 +48,7 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
                             .implementationType(LevelDBStoreConfiguration.ImplementationType.JAVA)
                             .location("target/leveldb/store").expiredLocation("target/leveldb/expired").purgeOnStartup(true);
 
-        cm = TestCacheManagerFactory.createClusteredCacheManager(globalConfigurationBuilder, configurationBuilder);
+        cm = new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build(), true);
         tm = cm.getCache().getAdvancedCache().getTransactionManager();
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");

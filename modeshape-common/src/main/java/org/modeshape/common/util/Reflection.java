@@ -21,6 +21,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -198,6 +199,133 @@ public class Reflection {
         }
 
         return fullName;
+    }
+
+    /**
+     * Sets the value of a field of an object instance via reflection
+     *
+     * @param instance  to inspect
+     * @param fieldName name of field to set
+     * @param value the value to set
+     */
+    public static void setValue(Object instance, String fieldName, Object value) {
+        try {
+            Field f = findFieldRecursively(instance.getClass(), fieldName);
+            if (f == null)
+                throw new NoSuchMethodException("Cannot find field " + fieldName + " on " + instance.getClass() + " or superclasses");
+            f.setAccessible(true);
+            f.set(instance, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Retrieves the field with the given name from a class
+     *
+     * @param fieldName the field to retrieve
+     * @param objectClass the class from which to retrieve the field
+     * @return either a {@link Field} instance or {@code null} if no such field exists.
+     */
+    public static Field getField(String fieldName, Class<?> objectClass) {
+        try {
+            return objectClass.getDeclaredField(fieldName);
+        } catch (NoSuchFieldException e) {
+            if (!objectClass.equals(Object.class)) {
+                return getField(fieldName, objectClass.getSuperclass());
+            } else {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Searches for a method with a given name in a class.
+     *
+     * @param type a {@link Class} instance; never null
+     * @param methodName the name of the method to search for; never null
+     * @return a {@link Method} instance if the method is found
+     */
+    public static Method findMethod(Class<?> type, String methodName) {
+        try {
+            return type.getDeclaredMethod(methodName);
+        } catch (NoSuchMethodException e) {
+            if (type.equals(Object.class) || type.isInterface()) {
+                throw new RuntimeException(e);
+            }
+            return findMethod(type.getSuperclass(), methodName);
+        }
+    }
+
+    private static Field findFieldRecursively(Class<?> c, String fieldName) {
+        Field f = null;
+        try {
+            f = c.getDeclaredField(fieldName);
+        } catch (NoSuchFieldException e) {
+            if (!c.equals(Object.class)) f = findFieldRecursively(c.getSuperclass(), fieldName);
+        }
+        return f;
+    }
+
+    /**
+     * Instantiates a class based on the class name provided.  Instantiation is attempted via an appropriate, static
+     * factory method named <tt>getInstance()</tt> first, and failing the existence of an appropriate factory, falls
+     * back to an empty constructor.
+     * <p />
+     *
+     * @param classname class to instantiate
+     * @return an instance of classname
+     */
+    @SuppressWarnings( "unchecked" )
+    public static <T> T getInstance(String classname, ClassLoader cl) {
+        if (classname == null) throw new IllegalArgumentException("Cannot load null class!");
+        Class<T> clazz = null;
+        try {
+            clazz = (Class<T>)Class.forName(classname, true, cl);
+            // first look for a getInstance() constructor
+            T instance = null;
+            try {
+                Method factoryMethod = getFactoryMethod(clazz);
+                if (factoryMethod != null) instance = (T) factoryMethod.invoke(null);
+            }
+            catch (Exception e) {
+                // no factory method or factory method failed.  Try a constructor.
+                instance = null;
+            }
+            if (instance == null) {
+                instance = clazz.newInstance();
+            }
+            return instance;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Method getFactoryMethod(Class<?> c) {
+        for (Method m : c.getMethods()) {
+            if (m.getName().equals("getInstance") && m.getParameterTypes().length == 0 && Modifier.isStatic(m.getModifiers()))
+                return m;
+        }
+        return null;
+    }
+
+    /**
+     * Invokes a method using reflection, in an accessible manner (by using {@link Method#setAccessible(boolean)}
+     *
+     * @param instance   instance on which to execute the method
+     * @param method     method to execute
+     * @param parameters parameters
+     */
+    public static Object invokeAccessibly(Object instance, Method method, Object[] parameters) {
+        try {
+            method.setAccessible(true);
+            return method.invoke(instance, parameters);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to invoke method " + method + " on object of type " + (instance == null ?
+                                                                                                      "null" :
+                                                                                                      instance.getClass().getSimpleName()) +
+                                       (parameters != null ? " with parameters " + Arrays.asList(parameters) : ""), e);
+        }
     }
 
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class[] {};

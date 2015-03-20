@@ -18,9 +18,9 @@ package org.infinispan.schematic.internal.delta;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
@@ -144,7 +144,7 @@ public class AddValueOperation extends ArrayOperation {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends AddValueOperation>> getTypeClasses() {
-            return Util.<Class<? extends AddValueOperation>>asSet(AddValueOperation.class);
+            return Collections.<Class<? extends AddValueOperation>>singleton(AddValueOperation.class);
         }
     }
 }

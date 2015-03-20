@@ -26,13 +26,14 @@ import java.io.InputStream;
 import java.util.List;
 import javax.transaction.TransactionManager;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
+import org.infinispan.schematic.TestUtil;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
-import org.infinispan.test.TestingUtil;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
@@ -53,20 +54,22 @@ public abstract class AbstractSchematicDbTest {
     @Before
     public void beforeEach() {
         logger = Logger.getLogger(getClass());
+        GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
+        globalConfigurationBuilder.globalJmxStatistics().disable().allowDuplicateDomains(true);
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.invocationBatching().enable().transaction()
                             .transactionManagerLookup(new DummyTransactionManagerLookup()).lockingMode(LockingMode.PESSIMISTIC);
 
-        cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
+        cm = new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build(), true);
         // Now create the SchematicDb ...
         schematicDb = Schematic.get(cm, "documents");
-        tm = TestingUtil.getTransactionManager(schematicDb.getCache());
+        tm = schematicDb.getCache().getAdvancedCache().getTransactionManager();
     }
 
     @After
     public void afterEach() {
         try {
-            TestingUtil.killCacheManagers(cm);
+            TestUtil.killCacheContainers(cm);
         } finally {
             schematicDb = null;
             tm = null;

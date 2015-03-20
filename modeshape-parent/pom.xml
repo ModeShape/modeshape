@@ -1265,6 +1265,13 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-schematic</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jcr</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
@@ -1334,13 +1341,6 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-commons</artifactId>
                 <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
             </dependency>
 
             <!--

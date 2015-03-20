@@ -17,9 +17,9 @@ package org.infinispan.schematic.document;
 
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 
@@ -91,7 +91,7 @@ public class Null {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends Null>> getTypeClasses() {
-            return Util.<Class<? extends Null>>asSet(Null.class);
+            return Collections.<Class<? extends Null>>singleton(Null.class);
         }
     }
 }

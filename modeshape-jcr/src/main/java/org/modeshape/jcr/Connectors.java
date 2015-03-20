@@ -34,7 +34,6 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
-import org.infinispan.commons.util.ReflectionUtil;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
@@ -45,6 +44,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.common.util.Reflection;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
@@ -448,13 +448,13 @@ public final class Connectors {
             Connector connector = component.createInstance(getClass().getClassLoader());
 
             // Set the repository name field ...
-            ReflectionUtil.setValue(connector, "repositoryName", repository.name());
+            Reflection.setValue(connector, "repositoryName", repository.name());
 
             // Set the logger instance
-            ReflectionUtil.setValue(connector, "logger", Logger.getLogger(connector.getClass()));
+            Reflection.setValue(connector, "logger", Logger.getLogger(connector.getClass()));
 
             // Set the logger instance
-            ReflectionUtil.setValue(connector, "simpleLogger", ExtensionLogger.getLogger(connector.getClass()));
+            Reflection.setValue(connector, "simpleLogger", ExtensionLogger.getLogger(connector.getClass()));
 
             // We'll initialize it later in #intialize() ...
             return connector;
@@ -473,22 +473,22 @@ public final class Connectors {
         throws IOException, RepositoryException {
 
         // Set the execution context instance ...
-        ReflectionUtil.setValue(connector, "context", repository.context());
+        Reflection.setValue(connector, "context", repository.context());
 
         // Set the execution context instance ...
-        ReflectionUtil.setValue(connector, "translator", getDocumentTranslator());
+        Reflection.setValue(connector, "translator", getDocumentTranslator());
 
         // Set the MIME type detector ...
-        ReflectionUtil.setValue(connector, "mimeTypeDetector", repository.mimeTypeDetector());
+        Reflection.setValue(connector, "mimeTypeDetector", repository.mimeTypeDetector());
 
         // Set the transaction manager
-        ReflectionUtil.setValue(connector, "transactionManager", repository.txnManager());
+        Reflection.setValue(connector, "transactionManager", repository.txnManager());
 
         // Set the ConnectorChangedSet factory
-        ReflectionUtil.setValue(connector, "connectorChangedSetFactory", createConnectorChangedSetFactory(connector));
+        Reflection.setValue(connector, "connectorChangedSetFactory", createConnectorChangedSetFactory(connector));
 
         // Set the Environment
-        ReflectionUtil.setValue(connector, "environment", repository.environment());
+        Reflection.setValue(connector, "environment", repository.environment());
 
         // Set the ExtraPropertiesStore instance, which is unique to this connector ...
         LocalDocumentStore store = repository.documentStore().localStore();
@@ -496,13 +496,13 @@ public final class Connectors {
         String sourceKey = NodeKey.keyForSourceName(name);
         DocumentTranslator translator = getDocumentTranslator();
         ExtraPropertiesStore defaultExtraPropertiesStore = new LocalDocumentStoreExtraProperties(store, sourceKey, translator);
-        ReflectionUtil.setValue(connector, "extraPropertiesStore", defaultExtraPropertiesStore);
+        Reflection.setValue(connector, "extraPropertiesStore", defaultExtraPropertiesStore);
 
         connector.initialize(registry, nodeTypeManager);
 
         // If successful, call the 'postInitialize' method reflectively (due to inability to call directly) ...
-        Method postInitialize = ReflectionUtil.findMethod(Connector.class, "postInitialize");
-        ReflectionUtil.invokeAccessibly(connector, postInitialize, new Object[] {});
+        Method postInitialize = Reflection.findMethod(Connector.class, "postInitialize");
+        Reflection.invokeAccessibly(connector, postInitialize, new Object[] {});
     }
 
     protected RunningState repository() {

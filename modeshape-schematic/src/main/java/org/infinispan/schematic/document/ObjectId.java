@@ -18,10 +18,9 @@ package org.infinispan.schematic.document;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Base64;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.BsonUtils;
 import org.infinispan.schematic.internal.marshall.Ids;
@@ -73,11 +72,7 @@ public final class ObjectId {
         BsonUtils.writeObjectId(this, b);
         return b;
     }
-
-    public String getBytesInBase64() {
-        return Base64.encodeBytes(getBytes());
-    }
-
+    
     public String getBytesInBase16() {
         byte b[] = getBytes();
         StringBuilder buf = new StringBuilder(24);
@@ -142,7 +137,7 @@ public final class ObjectId {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends ObjectId>> getTypeClasses() {
-            return Util.<Class<? extends ObjectId>>asSet(ObjectId.class);
+            return Collections.<Class<? extends ObjectId>>singleton(ObjectId.class);
         }
     }
 }

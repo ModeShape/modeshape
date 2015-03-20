@@ -40,10 +40,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.security.auth.login.LoginException;
-import org.infinispan.commons.util.FileLookup;
-import org.infinispan.commons.util.FileLookupFactory;
-import org.infinispan.commons.util.ReflectionUtil;
-import org.infinispan.commons.util.Util;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.SchemaLibrary;
 import org.infinispan.schematic.SchemaLibrary.Problem;
@@ -65,6 +61,8 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ObjectUtil;
+import org.modeshape.common.util.Reflection;
+import org.modeshape.common.util.ResourceLookup;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.connector.filesystem.FileSystemConnector;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
@@ -743,8 +741,7 @@ public class RepositoryConfiguration {
         EXTRACTOR_ALIASES = Collections.unmodifiableMap(aliases);
 
         SCHEMA_LIBRARY = Schematic.createSchemaLibrary("ModeShape Repository Configuration Schemas");
-        FileLookup factory = FileLookupFactory.newInstance();
-        InputStream configStream = factory.lookupFile(JSON_SCHEMA_RESOURCE_PATH, RepositoryConfiguration.class.getClassLoader());
+        InputStream configStream = ResourceLookup.read(JSON_SCHEMA_RESOURCE_PATH, RepositoryConfiguration.class, false);
         if (configStream == null) {
             LOGGER.error(JcrI18n.unableToFindRepositoryConfigurationSchema, JSON_SCHEMA_RESOURCE_PATH);
         }
@@ -849,11 +846,8 @@ public class RepositoryConfiguration {
     public static RepositoryConfiguration read( String resourcePathOrJsonContentString )
         throws ParsingException, FileNotFoundException {
         CheckArg.isNotNull(resourcePathOrJsonContentString, "resourcePathOrJsonContentString");
-        FileLookup factory = FileLookupFactory.newInstance();
-        InputStream stream = factory.lookupFile(resourcePathOrJsonContentString, Thread.currentThread().getContextClassLoader());
-        if (stream == null) {
-            stream = factory.lookupFile(resourcePathOrJsonContentString, RepositoryConfiguration.class.getClassLoader());
-        }
+        InputStream stream = ResourceLookup.read(resourcePathOrJsonContentString, RepositoryConfiguration.class, true);
+
         if (stream != null) {
             Document doc = Json.read(stream);
             return new RepositoryConfiguration(doc, withoutExtension(resourcePathOrJsonContentString));
@@ -1285,7 +1279,7 @@ public class RepositoryConfiguration {
                     }
 
                     // this is very ! tricky because it does not throw an exception - ever
-                    ReflectionUtil.setValue(instance, fieldName, convertedFieldValue);
+                    Reflection.setValue(instance, fieldName, convertedFieldValue);
                 } catch (Throwable e) {
                     LOGGER.error(e, JcrI18n.unableToSetFieldOnInstance, fieldName, fieldValue, classname);
                 }
@@ -2766,14 +2760,14 @@ public class RepositoryConfiguration {
         @SuppressWarnings( {"unchecked", "cast"} )
         private <Type> Type createGenericComponent( ClassLoader classLoader ) {
             // Create the instance ...
-            Type instance = (Type)Util.getInstance(getClassname(), classLoader);
-            if (ReflectionUtil.getField("name", instance.getClass()) != null) {
+            Type instance = Reflection.getInstance(getClassname(), classLoader);
+            if (Reflection.getField("name", instance.getClass()) != null) {
                 // Always try to set the name (if there is such a field). The name may be set based upon
                 // the value in the document, but a name field in documents is not required ...
-                ReflectionUtil.setValue(instance, "name", getName());
+                Reflection.setValue(instance, "name", getName());
             }
             setTypeFields(instance, getDocument());
-            return (Type)instance;
+            return instance;
         }
 
         @SuppressWarnings( "unchecked" )
@@ -2831,7 +2825,7 @@ public class RepositoryConfiguration {
                     }
 
                     // this is very ! tricky because it does not throw an exception - ever
-                    ReflectionUtil.setValue(instance, fieldName, convertedFieldValue);
+                    Reflection.setValue(instance, fieldName, convertedFieldValue);
                 } catch (Throwable e) {
                     LOGGER.error(e, JcrI18n.unableToSetFieldOnInstance, fieldName, fieldValue, getClassname());
                 }

@@ -18,13 +18,13 @@ package org.infinispan.schematic.internal;
 import java.io.InputStream;
 import org.infinispan.AdvancedCache;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.SchemaValidationTest;
 import org.infinispan.schematic.SchematicEntry;
+import org.infinispan.schematic.TestUtil;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.internal.document.BasicDocument;
-import org.infinispan.test.TestingUtil;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
@@ -43,14 +43,14 @@ public class CacheSchematicDbTest {
         configurationBuilder.invocationBatching().enable().transaction()
                             .transactionManagerLookup(new DummyTransactionManagerLookup());
 
-        cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
+        cm = new DefaultCacheManager(configurationBuilder.build());
         cache = (AdvancedCache)cm.getCache("documents");
         db = new CacheSchematicDb(cache);
     }
 
     @After
     public void afterTest() {
-        TestingUtil.killCacheManagers(cm);
+        TestUtil.killCacheContainers(cm);
         cache = null;
         db = null;
         // tm = null;

@@ -37,7 +37,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.RepositoryException;
-import org.infinispan.util.concurrent.ConcurrentHashSet;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.StringUtil;
@@ -1802,7 +1801,7 @@ public class SessionNode implements MutableCachedNode {
 
     @ThreadSafe
     protected static class ChangedAdditionalParents {
-        private final Set<NodeKey> removals = new ConcurrentHashSet<NodeKey>();
+        private final Set<NodeKey> removals = new CopyOnWriteArraySet<NodeKey>();
         private final Set<NodeKey> additions = new CopyOnWriteArraySet<NodeKey>();
 
         public boolean isEmpty() {
@@ -1956,7 +1955,7 @@ public class SessionNode implements MutableCachedNode {
             // Get or create atomically ...
             Set<NodeKey> removals = this.removals.get();
             if (removals == null) {
-                removals = new ConcurrentHashSet<NodeKey>();
+                removals = new CopyOnWriteArraySet<NodeKey>();
                 if (!this.removals.compareAndSet(null, removals)) {
                     removals = this.removals.get();
                 }

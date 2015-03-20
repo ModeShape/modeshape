@@ -17,10 +17,8 @@ package org.infinispan.schematic;
 
 import javax.transaction.TransactionManager;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.test.AbstractInfinispanTest;
-import org.infinispan.test.TestingUtil;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
@@ -28,7 +26,7 @@ import org.infinispan.util.concurrent.IsolationLevel;
 import org.junit.After;
 import org.junit.Before;
 
-public abstract class AbstractSchematicDbTest extends AbstractInfinispanTest {
+public abstract class AbstractSchematicDbTest {
 
     protected SchematicDb db;
     protected EmbeddedCacheManager cm;
@@ -45,21 +43,21 @@ public abstract class AbstractSchematicDbTest extends AbstractInfinispanTest {
                             .lockingMode(LockingMode.PESSIMISTIC)
                             .locking()
                             .isolationLevel(IsolationLevel.READ_COMMITTED);
-        cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
+        cm = new DefaultCacheManager(configurationBuilder.build());
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");
-        tm = TestingUtil.getTransactionManager(db.getCache());
+        tm = db.getCache().getAdvancedCache().getTransactionManager();
     }
 
     @After
     public void afterTest() {
         try {
-            TestingUtil.killCacheManagers(cm);
+            TestUtil.killCacheContainers(cm);
         } finally {
             cm = null;
             db = null;
             try {
-                TestingUtil.killTransaction(tm);
+                TestUtil.killTransaction(tm);
             } finally {
                 tm = null;
             }

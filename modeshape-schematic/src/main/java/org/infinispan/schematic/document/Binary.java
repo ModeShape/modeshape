@@ -19,10 +19,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Base64;
-import org.infinispan.commons.util.Util;
+import org.infinispan.schematic.Base64;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 
@@ -116,7 +116,7 @@ public final class Binary {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends Binary>> getTypeClasses() {
-            return Util.<Class<? extends Binary>>asSet(Binary.class);
+            return Collections.<Class<? extends Binary>>singleton(Binary.class);
         }
     }
 }

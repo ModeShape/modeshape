@@ -33,10 +33,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.infinispan.AdvancedCache;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -57,7 +57,7 @@ public class SchematicDbConcurrentTest extends AbstractSchematicDbTest {
         try {
             TestUtil.delete(new File("target/concurrent_load"));
 
-            cm = TestCacheManagerFactory.fromStream(getClass().getClassLoader().getResourceAsStream(
+            cm = new DefaultCacheManager(getClass().getClassLoader().getResourceAsStream(
                     "infinispan/concurrent-load-infinispan-cache.xml"));
             tm = cm.getCache().getAdvancedCache().getTransactionManager();
             // Now create the SchematicDb ...
