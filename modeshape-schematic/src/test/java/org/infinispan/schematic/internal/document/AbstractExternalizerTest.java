@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.infinispan.commons.marshall.AdvancedExternalizer;
 import org.infinispan.commons.marshall.jboss.JBossExternalizerAdapter;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.delta.AddValueIfAbsentOperation;
@@ -85,12 +84,6 @@ public class AbstractExternalizerTest {
         }
     }
 
-    protected static void addExternalizer( AdvancedExternalizer<?> externalizer ) {
-        Externalizer adapter = new JBossExternalizerAdapter(externalizer);
-        for (Class<?> clazz : externalizer.getTypeClasses()) {
-            externalizersByClass.put(clazz, adapter);
-        }
-    }
 
     protected byte[] marshall( Object object ) throws IOException {
         final Marshaller marshaller = marshallerFactory.createMarshaller(configuration);

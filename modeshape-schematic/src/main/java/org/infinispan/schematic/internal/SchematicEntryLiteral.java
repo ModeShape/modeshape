@@ -18,11 +18,11 @@ package org.infinispan.schematic.internal;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Set;
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Document.Field;
@@ -198,7 +198,7 @@ public class SchematicEntryLiteral implements SchematicEntry {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends SchematicEntryLiteral>> getTypeClasses() {
-            return Util.<Class<? extends SchematicEntryLiteral>>asSet(SchematicEntryLiteral.class);
+            return Collections.<Class<? extends SchematicEntryLiteral>>singleton(SchematicEntryLiteral.class);
         }
     }
 }

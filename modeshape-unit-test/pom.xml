@@ -51,11 +51,13 @@
             <scope>compile</scope>
             <type>test-jar</type>
         </dependency>
+        
         <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-            <scope>compile</scope>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-schematic</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>compile</scope>
         </dependency>
         
         <dependency>

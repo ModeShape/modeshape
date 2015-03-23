@@ -41,7 +41,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.infinispan.commons.util.Base64;
+import org.infinispan.schematic.Base64;
 import org.infinispan.schematic.document.Bson.BinaryType;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.DocumentSequence;

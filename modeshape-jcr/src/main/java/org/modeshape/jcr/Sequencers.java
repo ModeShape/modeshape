@@ -37,11 +37,11 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
-import org.infinispan.commons.util.ReflectionUtil;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.common.util.Reflection;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.sequencer.Sequencer;
@@ -126,10 +126,10 @@ public class Sequencers implements ChangeSetListener {
                 try {
                     Sequencer sequencer = component.createInstance(getClass().getClassLoader());
                     // Set the repository name field ...
-                    ReflectionUtil.setValue(sequencer, "repositoryName", repoName);
+                    Reflection.setValue(sequencer, "repositoryName", repoName);
 
                     // Set the logger instance
-                    ReflectionUtil.setValue(sequencer, "logger", ExtensionLogger.getLogger(sequencer.getClass()));
+                    Reflection.setValue(sequencer, "logger", ExtensionLogger.getLogger(sequencer.getClass()));
                     // We'll initialize it later in #intialize() ...
 
                     sequencersByName.put(sequencer.getName(), sequencer);
@@ -215,8 +215,8 @@ public class Sequencers implements ChangeSetListener {
                     sequencer.initialize(registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
 
                     // If successful, call the 'postInitialize' method reflectively (due to inability to call directly) ...
-                    Method postInitialize = ReflectionUtil.findMethod(Sequencer.class, "postInitialize");
-                    ReflectionUtil.invokeAccessibly(sequencer, postInitialize, new Object[] {});
+                    Method postInitialize = Reflection.findMethod(Sequencer.class, "postInitialize");
+                    Reflection.invokeAccessibly(sequencer, postInitialize, new Object[] {});
                     if (DEBUG) {
                         LOGGER.debug("Successfully initialized sequencer '{0}' in repository '{1}'", sequencer.getName(),
                                      repository.name());

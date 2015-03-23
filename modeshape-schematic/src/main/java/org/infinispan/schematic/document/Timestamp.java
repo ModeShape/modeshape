@@ -18,10 +18,10 @@ package org.infinispan.schematic.document;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 
@@ -111,7 +111,7 @@ public final class Timestamp {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends Timestamp>> getTypeClasses() {
-            return Util.<Class<? extends Timestamp>>asSet(Timestamp.class);
+            return Collections.<Class<? extends Timestamp>>singleton(Timestamp.class);
         }
     }
 }

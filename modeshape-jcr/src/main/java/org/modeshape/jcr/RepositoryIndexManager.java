@@ -32,7 +32,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.RepositoryException;
-import org.infinispan.commons.util.ReflectionUtil;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -43,6 +42,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Reflection;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexColumnDefinitionTemplate;
@@ -242,13 +242,13 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
     protected void doInitialize( IndexProvider provider ) throws RepositoryException {
 
         // Set the execution context instance ...
-        ReflectionUtil.setValue(provider, "context", repository.context());
+        Reflection.setValue(provider, "context", repository.context());
 
         provider.initialize();
 
         // If successful, call the 'postInitialize' method reflectively (due to inability to call directly) ...
-        Method postInitialize = ReflectionUtil.findMethod(IndexProvider.class, "postInitialize");
-        ReflectionUtil.invokeAccessibly(provider, postInitialize, new Object[] {});
+        Method postInitialize = Reflection.findMethod(IndexProvider.class, "postInitialize");
+        Reflection.invokeAccessibly(provider, postInitialize, new Object[] {});
 
         if (logger.isDebugEnabled()) {
             logger.debug("Successfully initialized index provider '{0}' in repository '{1}'", provider.getName(),
@@ -299,10 +299,10 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         }
 
         // Set the repository name field ...
-        ReflectionUtil.setValue(provider, "repositoryName", repository.name());
+        Reflection.setValue(provider, "repositoryName", repository.name());
 
         // Set the logger instance
-        ReflectionUtil.setValue(provider, "logger", ExtensionLogger.getLogger(provider.getClass()));
+        Reflection.setValue(provider, "logger", ExtensionLogger.getLogger(provider.getClass()));
 
         if (initialized.get()) {
             // This manager is already initialized, so we have to initialize the new provider ...

@@ -20,12 +20,12 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.SchematicExternalizer;
@@ -481,7 +481,7 @@ public class Paths {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends Path>> getTypeClasses() {
-            return Util.asSet(EmptyPath.class, SinglePath.class, MultiSegmentPath.class);
+            return new HashSet<>(Arrays.asList(EmptyPath.class, SinglePath.class, MultiSegmentPath.class));
         }
     }
 }

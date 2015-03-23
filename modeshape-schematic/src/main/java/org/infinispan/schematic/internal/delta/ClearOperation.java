@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.HashCode;
@@ -116,7 +115,7 @@ public class ClearOperation extends ArrayOperation {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends ClearOperation>> getTypeClasses() {
-            return Util.<Class<? extends ClearOperation>>asSet(ClearOperation.class);
+            return Collections.<Class<? extends ClearOperation>>singleton(ClearOperation.class);
         }
     }
 }

@@ -29,7 +29,6 @@ import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.commons.marshall.AbstractExternalizer;
 import org.infinispan.commons.marshall.AdvancedExternalizer;
-import org.infinispan.commons.util.Util;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.document.Array;
@@ -287,7 +286,7 @@ public class Schematic extends DocumentFactory {
             @SuppressWarnings( "unchecked" )
             @Override
             public Set<Class<? extends DocumentChanges>> getTypeClasses() {
-                return Util.<Class<? extends DocumentChanges>>asSet(DocumentChanges.class);
+                return Collections.<Class<? extends DocumentChanges>>singleton(DocumentChanges.class);
             }
         }
     }

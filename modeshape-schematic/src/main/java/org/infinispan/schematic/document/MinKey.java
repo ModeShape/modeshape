@@ -17,9 +17,9 @@ package org.infinispan.schematic.document;
 
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 
@@ -75,7 +75,7 @@ public class MinKey {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends MinKey>> getTypeClasses() {
-            return Util.<Class<? extends MinKey>>asSet(MinKey.class);
+            return Collections.<Class<? extends MinKey>>singleton(MinKey.class);
         }
     }
 }

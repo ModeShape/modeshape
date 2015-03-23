@@ -19,10 +19,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.Util;
 import org.infinispan.schematic.document.Array.Entry;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.HashCode;
@@ -124,7 +124,7 @@ public class RetainAllValuesOperation extends ArrayOperation {
         @SuppressWarnings( "unchecked" )
         @Override
         public Set<Class<? extends RetainAllValuesOperation>> getTypeClasses() {
-            return Util.<Class<? extends RetainAllValuesOperation>>asSet(RetainAllValuesOperation.class);
+            return Collections.<Class<? extends RetainAllValuesOperation>>singleton(RetainAllValuesOperation.class);
         }
     }
 }

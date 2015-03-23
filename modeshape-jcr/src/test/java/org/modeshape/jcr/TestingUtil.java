@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
+import org.infinispan.schematic.TestUtil;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
@@ -71,7 +72,7 @@ public class TestingUtil {
         Collection<CacheContainer> containers = killRepository(repository);
         // Now kill all the cache managers ...
         for (CacheContainer container : containers) {
-            org.infinispan.test.TestingUtil.killCacheManagers(container);
+            TestUtil.killCacheContainers(container);
         }
     }
 
@@ -80,7 +81,7 @@ public class TestingUtil {
         try {
             if (repository.getState() != State.RUNNING) return Collections.emptySet();
             // Rollback any open transactions ...
-            org.infinispan.test.TestingUtil.killTransaction(repository.runningState().txnManager());
+            TestUtil.killTransaction(repository.runningState().txnManager());
 
             // Then get the caches (which we'll kill after we shutdown the repository) ...
             Collection<Cache<?, ?>> caches = repository.caches();
@@ -93,7 +94,7 @@ public class TestingUtil {
             for (Cache<?, ?> cache : caches) {
                 if (cache != null) {
                     cacheContainers.add(cache.getCacheManager());
-                    org.infinispan.test.TestingUtil.killCaches(cache);
+                    TestUtil.killCache(cache);
                 }
             }
 
@@ -121,7 +122,7 @@ public class TestingUtil {
 
             // Now kill all the cache managers ...
             for (CacheContainer container : cacheContainers) {
-                org.infinispan.test.TestingUtil.killCacheManagers(container);
+                TestUtil.killCacheContainers(container);
             }
 
         } catch (Throwable t) {
