@@ -942,6 +942,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                         case '.':
                         case '{':
                         case '}':
+                        case '+':                            
                         case '\\':
                             sb.append("\\");
                             sb.append(c);
