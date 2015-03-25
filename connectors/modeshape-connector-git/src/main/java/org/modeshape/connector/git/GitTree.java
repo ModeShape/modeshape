@@ -101,11 +101,13 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                     writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
                     writer.addProperty(GitLexicon.HISTORY, GitHistory.referenceToHistory(objId, branchOrTagOrObjectId, values));
                     writer.addProperty(GitLexicon.DETAIL, GitCommitDetails.referenceToCommit(objId, values));
+
+                    // Add the top-level children of the directory ...
+                    addInformationForPath(repository, writer, commit, "", spec, values);
+                } else {
+                    connector.getLogger().warn(GitI18n.cannotReadCommit, objId);
+
                 }
-
-                // Add the top-level children of the directory ...
-                addInformationForPath(repository, git, writer, commit, "", spec, values);
-
             } finally {
                 walker.dispose();
             }
@@ -116,14 +118,15 @@ public class GitTree extends GitFunction implements PageableGitFunction {
             String path = spec.parametersAsPath(1);
             ObjectId objId = resolveBranchOrTagOrCommitId(repository, branchOrTagOrObjectId);
             RevWalk walker = new RevWalk(repository);
-            walker.setRetainBody(false); // we don't need top-level commit information
+            walker.setRetainBody(true);
             try {
                 // Get the commit information ...
                 RevCommit commit = walker.parseCommit(objId);
 
-                // Add the top-level children of the directory ...
-                addInformationForPath(repository, git, writer, commit, path, spec, values);
-
+                if (commit != null) {
+                    // Add the top-level children of the directory ...
+                    addInformationForPath(repository, writer, commit, path, spec, values);
+                }
             } finally {
                 walker.dispose();
             }
@@ -132,7 +135,6 @@ public class GitTree extends GitFunction implements PageableGitFunction {
     }
 
     protected void addInformationForPath( Repository repository,
-                                          Git git,
                                           DocumentWriter writer,
                                           RevCommit commit,
                                           String path,
@@ -180,26 +182,20 @@ public class GitTree extends GitFunction implements PageableGitFunction {
 
                 // Find the commit in which this folder was last modified ...
                 // This may not be terribly efficient, but it seems to work faster on subsequent runs ...
-                RevCommit folderCommit = git.log().addPath(path).call().iterator().next();
                 writer.setPrimaryType(GitLexicon.FOLDER);
 
-                // could happen if not enough permissions, for example
-                if (folderCommit != null) {
-                    // Add folder-related properties ...
-                    String committer = commiterName(folderCommit);
-                    String author = authorName(folderCommit);
-                    DateTime committed = values.dateFrom(folderCommit.getCommitTime());
-                    writer.addProperty(JcrLexicon.CREATED, committed);
-                    writer.addProperty(JcrLexicon.CREATED_BY, committer);
-                    writer.addProperty(GitLexicon.OBJECT_ID, folderCommit.getId().name());
-                    writer.addProperty(GitLexicon.AUTHOR, author);
-                    writer.addProperty(GitLexicon.COMMITTER, committer);
-                    writer.addProperty(GitLexicon.COMMITTED, committed);
-                    writer.addProperty(GitLexicon.TITLE, folderCommit.getShortMessage());
-                } else {
-                    connector.getLogger().warn(GitI18n.cannotReadCommit, path);
-                }
-
+                // Add folder-related properties ...
+                String committer = commiterName(commit);
+                String author = authorName(commit);
+                DateTime committed = values.dateFrom(commit.getCommitTime());
+                writer.addProperty(JcrLexicon.CREATED, committed);
+                writer.addProperty(JcrLexicon.CREATED_BY, committer);
+                writer.addProperty(GitLexicon.OBJECT_ID, commit.getId().name());
+                writer.addProperty(GitLexicon.AUTHOR, author);
+                writer.addProperty(GitLexicon.COMMITTER, committer);
+                writer.addProperty(GitLexicon.COMMITTED, committed);
+                writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
+              
                 // And now walk the contents of the directory ...
                 while (tw.next()) {
                     String childName = tw.getNameString();
@@ -208,30 +204,22 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                 }
             } else {
                 // The path specifies a file (or a content node) ...
-
-                // Find the commit in which this folder was last modified ...
-                // This may not be terribly efficient, but it seems to work faster on subsequent runs ...
-                RevCommit fileCommit = git.log().addPath(path).call().iterator().next();
-
+                
                 if (isContentNode) {
                     writer.setPrimaryType(GitLexicon.RESOURCE);
-                    if (fileCommit == null) {
-                        // could happen if not enough permissions, for example
-                        connector.getLogger().warn(GitI18n.cannotReadCommit, path);
-                        return;
-                    }
+
                     // Add file-related properties ...
-                    String committer = commiterName(fileCommit);
-                    String author = authorName(fileCommit);
-                    DateTime committed = values.dateFrom(fileCommit.getCommitTime());
+                    String committer = commiterName(commit);
+                    String author = authorName(commit);
+                    DateTime committed = values.dateFrom(commit.getCommitTime());
 
                     writer.addProperty(JcrLexicon.LAST_MODIFIED, committed);
                     writer.addProperty(JcrLexicon.LAST_MODIFIED_BY, committer);
-                    writer.addProperty(GitLexicon.OBJECT_ID, fileCommit.getId().name());
+                    writer.addProperty(GitLexicon.OBJECT_ID, commit.getId().name());
                     writer.addProperty(GitLexicon.AUTHOR, author);
                     writer.addProperty(GitLexicon.COMMITTER, committer);
                     writer.addProperty(GitLexicon.COMMITTED, committed);
-                    writer.addProperty(GitLexicon.TITLE, fileCommit.getShortMessage());
+                    writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
                     // Create the BinaryValue ...
                     ObjectId fileObjectId = tw.getObjectId(0);
                     ObjectLoader fileLoader = repository.open(fileObjectId);
@@ -262,23 +250,19 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                     }
                 } else {
                     writer.setPrimaryType(GitLexicon.FILE);
-                    if (fileCommit == null) {
-                        // could happen if not enough permissions, for example
-                        connector.getLogger().warn(GitI18n.cannotReadCommit, path);
-                        return;
-                    }
+                  
                     // Add file-related properties ...
-                    String committer = commiterName(fileCommit);
-                    String author = authorName(fileCommit);
-                    DateTime committed = values.dateFrom(fileCommit.getCommitTime());
+                    String committer = commiterName(commit);
+                    String author = authorName(commit);
+                    DateTime committed = values.dateFrom(commit.getCommitTime());
 
                     writer.addProperty(JcrLexicon.CREATED, committed);
                     writer.addProperty(JcrLexicon.CREATED_BY, committer);
-                    writer.addProperty(GitLexicon.OBJECT_ID, fileCommit.getId().name());
+                    writer.addProperty(GitLexicon.OBJECT_ID, commit.getId().name());
                     writer.addProperty(GitLexicon.AUTHOR, author);
                     writer.addProperty(GitLexicon.COMMITTER, committer);
                     writer.addProperty(GitLexicon.COMMITTED, committed);
-                    writer.addProperty(GitLexicon.TITLE, fileCommit.getShortMessage());
+                    writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
 
                     // Add the "jcr:content" child node ...
                     String childId = spec.childId(JCR_CONTENT);
