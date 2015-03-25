@@ -311,7 +311,7 @@
 
         <!-- Smart GWT version -->
         <smartgwt.version>2.4</smartgwt.version>
-        
+        <gwt-incubator.version>0.4.0-rc2</gwt-incubator.version>
         <!-- Commons file upload version -->
         <commons-file-upload-version>1.3.1</commons-file-upload-version>
 
@@ -1507,6 +1507,11 @@
                 <artifactId>smartgwt-skins</artifactId>
                 <version>${smartgwt.version}</version>
                 <type>jar</type>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.gwtmosaic</groupId>
+                <artifactId>gwt-incubator</artifactId>
+                <version>${gwt-incubator.version}</version>
             </dependency>
 
             <!-- File upload -->
