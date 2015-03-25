@@ -458,10 +458,10 @@ public class JcrNodeTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-2069")
+    @FixFor( { "MODE-2069", "MODE-2438" } )
     public void shouldEscapeSpecialCharactersWhenSearchingNodesViaRegex() throws Exception {
         JcrRootNode rootNode = session.getRootNode();
-        Node specialNode = rootNode.addNode("special\t\r\n()\\?!^${}.\"");
+        Node specialNode = rootNode.addNode("special\t\r\n()\\?!^${}.\"+");
         session.save();
 
         try {
@@ -481,6 +481,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             assertEquals(1, rootNode.getNodes("*{}*").getSize());
             assertEquals(1, rootNode.getNodes("*.*").getSize());
             assertEquals(1, rootNode.getNodes("*\"*").getSize());
+            assertEquals(1, rootNode.getNodes("*+*").getSize());
 
             assertEquals(0, rootNode.getNodes("*[*").getSize());
             assertEquals(0, rootNode.getNodes("*]*").getSize());
