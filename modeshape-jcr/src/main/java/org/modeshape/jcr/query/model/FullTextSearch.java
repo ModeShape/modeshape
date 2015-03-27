@@ -369,7 +369,7 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
             assert value.trim().length() > 0;
             this.value = value;
             this.quoted = this.value.indexOf(' ') != -1;
-            this.pattern = Pattern.compile(regexFromValue(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+            this.pattern = Pattern.compile(regexFromValue(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL | Pattern.UNICODE_CASE);
         }
 
         private String regexFromValue() {

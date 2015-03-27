@@ -3119,6 +3119,40 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2448" )
+    public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeUmlauts() throws Exception {
+        String propertyText = "Änderung: der schnelle braune Fuchs springt über den Hund";
+        Node ftsNode = session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText).getParent();
+        try {
+            session.save();
+
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'"
+                                         + propertyText + "')");
+
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText
+                                         + "')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText
+                                         + "')");
+
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
+                                         + propertyText.toUpperCase() + "')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
+                                         + propertyText.toUpperCase() + "')");
+
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'Änderung')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'änderung')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'ÄNDERUNG')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'über den Hund')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'Über den Hund')");
+            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'ÜbEr dEn Hund')");
+        } finally {
+            // Try to remove the node (which messes up the expected results from subsequent tests) ...
+            ftsNode.remove();
+            session.save();
+        }
+    }
+
     private void executeQueryWithSingleResult( String sql ) throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, JcrRepository.QueryLanguage.JCR_SQL2);
         QueryResult result = query.execute();
