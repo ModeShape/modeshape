@@ -22,7 +22,6 @@ import javax.jcr.Repository;
 import javax.jcr.Value;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.web.jcr.RepositoryManager;
-import org.modeshape.web.jcr.rest.RestHelper;
 import org.modeshape.web.jcr.rest.model.RestRepositories;
 
 /**
@@ -30,7 +29,8 @@ import org.modeshape.web.jcr.rest.model.RestRepositories;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestServerHandler extends AbstractHandler {
+public class 
+        RestServerHandler extends AbstractHandler {
 
     /**
      * Returns the list of JCR repositories available on this server
@@ -49,8 +49,7 @@ public class RestServerHandler extends AbstractHandler {
     private void addRepository( HttpServletRequest request,
                                 RestRepositories repositories,
                                 String repositoryName ) {
-        RestRepositories.Repository repository = repositories.addRepository(repositoryName, RestHelper.urlFrom(request,
-                                                                                                               repositoryName));
+        RestRepositories.Repository repository = repositories.addRepository(repositoryName, request);
         try {
             Repository jcrRepository = RepositoryManager.getRepository(repositoryName);
             repository.setActiveSessionsCount(((org.modeshape.jcr.api.Repository)jcrRepository).getActiveSessionsCount());

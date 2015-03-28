@@ -23,6 +23,8 @@ import java.util.TreeMap;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import javax.servlet.http.HttpServletRequest;
+import org.modeshape.web.jcr.rest.RestHelper;
 
 /**
  * A REST representation of a collection of {@link Repository repositories}
@@ -44,12 +46,12 @@ public final class RestRepositories implements JSONAble {
      * Adds a repository to the list.
      *
      * @param name a {@code non-null} string, the name of the repository.
-     * @param url a {@code non-null} string, the absolute url to the repository
+     * @param request a {@link HttpServletRequest} instance
      * @return a {@link Repository} instance.
      */
     public Repository addRepository( String name,
-                                     String url ) {
-        Repository repository = new Repository(name, url);
+                                     HttpServletRequest request ) {
+        Repository repository = new Repository(name, request);
         repositories.add(repository);
         return repository;
     }
@@ -67,14 +69,18 @@ public final class RestRepositories implements JSONAble {
 
     public final class Repository implements JSONAble {
         private final String name;
-        private final String url;
+        private final String workspacesUrl;
         private final Map<String, List<String>> metadata;
+        private final String backupUrl;
+        private final String restoreUrl;
         private int activeSessionsCount;
 
-        protected Repository( String name,
-                            String url ) {
+        protected Repository( String name, 
+                              HttpServletRequest request) {
             this.name = name;
-            this.url = url;
+            this.workspacesUrl = RestHelper.urlFrom(request, name);
+            this.backupUrl = RestHelper.urlFrom(request, name, RestHelper.BACKUP_METHOD_NAME);
+            this.restoreUrl = RestHelper.urlFrom(request, name, RestHelper.RESTORE_METHOD_NAME);
             this.metadata = new TreeMap<String, List<String>>();
         }
 
@@ -104,7 +110,9 @@ public final class RestRepositories implements JSONAble {
         public JSONObject toJSON() throws JSONException {
             JSONObject object = new JSONObject();
             object.put("name", name);
-            object.put("workspaces", url);
+            object.put("workspaces", workspacesUrl);
+            object.put("backup", backupUrl);
+            object.put("restore", restoreUrl);
             object.put("activeSessionsCount", activeSessionsCount);
             JSONObject metadata = new JSONObject();
             for (String metadataKey : this.metadata.keySet()) {
