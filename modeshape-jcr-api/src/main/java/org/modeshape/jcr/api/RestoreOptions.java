@@ -45,4 +45,13 @@ public abstract class RestoreOptions {
     public boolean includeBinaries() {
         return true;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder("[restore_options: ");
+        builder.append("include_binaries=").append(includeBinaries());
+        builder.append(", reindex_content_on_finish=").append(reindexContentOnFinish());
+        builder.append("]");
+        return builder.toString();
+    }
 }

@@ -56,7 +56,9 @@ public final class RestHelper {
     public static final String QUERY_PLAN_METHOD_NAME = "queryPlan";
     public static final String NODE_TYPES_METHOD_NAME = "nodetypes";
     public static final String UPLOAD_METHOD_NAME = "upload";
-
+    public static final String BACKUP_METHOD_NAME = "backup";
+    public static final String RESTORE_METHOD_NAME = "restore";
+    
     private static final List<String> ALL_METHODS = Arrays.asList(BINARY_METHOD_NAME,
                                                                   ITEMS_METHOD_NAME,
                                                                   NODES_METHOD_NAME,

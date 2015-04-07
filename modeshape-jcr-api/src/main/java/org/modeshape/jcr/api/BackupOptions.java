@@ -26,7 +26,7 @@ public abstract class BackupOptions {
      * By default, 100K nodes will be exported to a single backup file. 
      * So, if each node requires about 200 bytes (compressed), the resulting files will be about 19 MB in size.
      */
-    public long DEFAULT_DOCUMENTS_PER_FILE = 100000L;
+    public static final long DEFAULT_DOCUMENTS_PER_FILE = 100000L;
     
     /**
      * Default backup options which will be used when a backup is performed without an explicit set of options.
@@ -59,5 +59,15 @@ public abstract class BackupOptions {
      */
     public boolean compress() {
         return true;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder("[backup_options: ");
+        builder.append("include_binaries=").append(includeBinaries());
+        builder.append(", documents_per_file=").append(documentsPerFile());
+        builder.append(", compress=").append(compress());
+        builder.append("]");
+        return builder.toString();
     }
 }

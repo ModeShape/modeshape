@@ -25,6 +25,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +39,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.web.jcr.rest.form.FileUploadForm;
 import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
@@ -101,6 +104,15 @@ public class ModeShapeRestServiceTest extends AbstractRestTest {
     protected String uploadUrl( String... additionalPathSegments ) {
         return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.UPLOAD_METHOD_NAME, additionalPathSegments);
     }
+
+    protected String backupUrl() {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/" + RestHelper.BACKUP_METHOD_NAME);
+    }
+
+    protected String restoreUrl() {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/" + RestHelper.RESTORE_METHOD_NAME);
+    }
+
 
     @Test
     public void shouldNotServeContentToUnauthorizedUser() throws Exception {
@@ -780,6 +792,72 @@ public class ModeShapeRestServiceTest extends AbstractRestTest {
         String query = "SELECT parent.[jcr:path], child.* FROM [nt:unstructured] as parent INNER JOIN [nt:unstructured] as child "
                        + "ON ISCHILDNODE(parent, child) WHERE parent.[jcr:path] LIKE '/" + TEST_NODE + "/%'";
         jcrSQL2Query(query, queryUrl()).isOk();
+    }
+
+
+    @Test
+    @FixFor( "MODE-2452")
+    public void shouldPerformRepositoryBackup() throws Exception {
+        // create a node with a binary property
+        doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
+        doPostMultiPart("v2/post/binary.pdf",
+                        "file",
+                        binaryUrl(TEST_NODE, "testProperty"),
+                        MediaType.APPLICATION_OCTET_STREAM).isCreated();
+
+        // now backup with default options
+        JSONObject response = doPost((String)null, backupUrl()).isCreated().json();
+        assertNotNull(response.getString("name"));
+        String backupURL = response.getString("url");
+        assertNotNull(backupURL);
+
+        File backupFolderDefault  = new File(new URI(backupURL));
+        assertTrue(backupFolderDefault.exists() && backupFolderDefault.isDirectory());
+        String[] backupContentDefault = backupFolderDefault.list();
+        assertTrue(backupContentDefault.length > 0);
+
+        // now backup with custom options
+        response = doPost((String)null, backupUrl() + "?includeBinaries=false&compress=false&documentsPerFile=12").isCreated().json();
+        assertNotNull(response.getString("name"));
+        backupURL = response.getString("url");
+        assertNotNull(backupURL);
+        File backupFolderCustom  = new File(new URI(backupURL));
+        assertTrue(backupFolderCustom.exists() && backupFolderCustom.isDirectory());
+        String[] backupContentCustom = backupFolderCustom.list();
+        assertTrue(backupFolderCustom.list().length > 0);
+        assertTrue(backupContentDefault.length != backupContentCustom.length);
+
+        FileUtil.delete(backupFolderDefault);
+        FileUtil.delete(backupFolderCustom);
+    }
+
+    @Test
+    @FixFor( "MODE-2452")
+    public void shouldPerformRepositoryRestore() throws Exception {
+        // create a node with a binary property
+        doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
+        doPostMultiPart("v2/post/binary.pdf",
+                        "file",
+                        binaryUrl(TEST_NODE, "testProperty"),
+                        MediaType.APPLICATION_OCTET_STREAM).isCreated();
+
+        // now backup with default options
+        JSONObject response = doPost((String)null, backupUrl()).isCreated().json();
+        String backupName = response.getString("name");
+        String backupURL = response.getString("url");
+        // create a new node
+        doPost((String)null, itemsUrl(TEST_NODE, "child")).isCreated();
+
+        // restore with an invalid name
+        doPost((String)null, restoreUrl() + "?name=invalid").isBadRequest();
+
+        // now restore with default options
+        doPost((String)null, restoreUrl() + "?name=" + backupName).isOk();
+
+        // now restore with custom options
+        doPost((String)null, restoreUrl() + "?name=" + backupName + "&includeBinaries=false&reindexContent=false").isOk();
+
+        FileUtil.delete(new File(new URI(backupURL)));
     }
 
     private void assertUpload( String url,

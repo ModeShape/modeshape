@@ -35,6 +35,14 @@
         <param-name>org.modeshape.jcr.URL</param-name>
         <param-value>file:/repository-config.json</param-value>
     </context-param>
+ 
+    <!-- 
+        The default location where repository backups should be stored.
+    -->
+    <context-param>
+        <param-name>backupLocation</param-name>
+        <param-value>target</param-value>
+    </context-param>
 
     <!--
          This parameter defines the JAX-RS application class, which is really just a metadata class

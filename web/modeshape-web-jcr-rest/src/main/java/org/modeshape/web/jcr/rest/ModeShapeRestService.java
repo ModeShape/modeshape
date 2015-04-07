@@ -16,12 +16,14 @@
 
 package org.modeshape.web.jcr.rest;
 
+import java.io.File;
 import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -41,6 +43,8 @@ import org.codehaus.jettison.json.JSONException;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.BackupOptions;
+import org.modeshape.jcr.api.RestoreOptions;
 import org.modeshape.web.jcr.rest.form.FileUploadForm;
 import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
 import org.modeshape.web.jcr.rest.handler.RestItemHandler;
@@ -167,6 +171,104 @@ public final class ModeShapeRestService {
     public RestWorkspaces getWorkspaces( @Context HttpServletRequest request,
                                          @PathParam( "repositoryName" ) String rawRepositoryName ) throws RepositoryException {
         return repositoryHandler.getWorkspaces(request, rawRepositoryName);
+    }
+
+    /**
+     * Performs a repository backup on the server, allowing a list of custom parameters which can control the backup process.
+     * The root location of the backup file on the server is the first accessible folder in the following order:
+     *
+     * <ul>
+     * <li>the value of the servlet context 'backupLocation' parameter</li>
+     * <li>the value of the system property 'jboss.domain.data.dir'</li>
+     * <li>the value of the system property 'jboss.server.data.dir'</li>
+     * <li>the value of the system property 'user.home'</li>
+     * </ul>
+     * 
+     * If none of those locations is available and writable, the request will fail.
+     *
+     * @param servletContext the {@link ServletContext} instance
+     * @param request a non-null {@link HttpServletRequest} request
+     * @param repositoryName the name of the repository; may not be null
+     * @param includeBinaries whether or not binary values should be part of the backup or not; defaults to {@code true}
+     * @param documentsPerFile the number of nodes each backup file will contains; defaults to {@code 100k}
+     * @param compress whether or not each documents file should be compressed or not; default to {@code true}
+     * @return a {@link Response} instance which if successful will contain the name of the backup file and the location on the 
+     * server where the backup was performed.
+     * @throws RepositoryException if there is any unexpected error while performing the backup
+     * 
+     * @see org.modeshape.jcr.api.RepositoryManager#backupRepository(File, BackupOptions)
+     */
+    @POST
+    @Path( "{repositoryName}/" + RestHelper.BACKUP_METHOD_NAME )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN} )
+    public Response backup( @Context ServletContext servletContext,
+                            @Context HttpServletRequest request,
+                            @PathParam( "repositoryName" ) String repositoryName,
+                            @QueryParam( "includeBinaries" ) @DefaultValue( "true" ) final boolean includeBinaries,
+                            @QueryParam( "documentsPerFile" ) @DefaultValue( "100000" ) final long documentsPerFile,
+                            @QueryParam( "compress" ) @DefaultValue( "true" ) final boolean compress ) throws RepositoryException {
+        return repositoryHandler.backupRepository(servletContext, request, repositoryName, new BackupOptions() {
+            @Override
+            public boolean includeBinaries() {
+                return includeBinaries;
+            }
+
+            @Override
+            public long documentsPerFile() {
+                return documentsPerFile;
+            }
+
+            @Override
+            public boolean compress() {
+                return compress;
+            }
+        });
+    }  
+    
+    /**
+     * Performs a repository restore on the server based on the name of a backup provided as argument. 
+     * The root location where the backup will be searched is in order:
+     *
+     * <ul>
+     * <li>the value of the servlet context 'backupLocation' parameter</li>
+     * <li>the value of the system property 'jboss.domain.data.dir'</li>
+     * <li>the value of the system property 'jboss.server.data.dir'</li>
+     * <li>the value of the system property 'user.home'</li>
+     * </ul>
+     * 
+     * If a backup with the given name cannot be found at any of those location, the request will fail.
+     *
+     * @param servletContext the {@link ServletContext} instance
+     * @param request a non-null {@link HttpServletRequest} request
+     * @param repositoryName the name of the repository; may not be null
+     * @param backupName a {@link String} representing the name of the backup folder as returned by the backup request
+     * @param includeBinaries whether or not binary values should be part of the backup or not; defaults to {@code true}
+     * @param reindexContent whether or not a full repository reindexing should be performed, once restore has completed; defaults to {@code true}
+     * @return a {@link Response} instance, never {@code null}
+     * @throws RepositoryException if there is any unexpected error while performing the restore
+     * 
+     * @see org.modeshape.jcr.api.RepositoryManager#restoreRepository(File, RestoreOptions)
+     */
+    @POST
+    @Path( "{repositoryName}/" + RestHelper.RESTORE_METHOD_NAME )
+    @Produces( {MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN} )
+    public Response restore(@Context ServletContext servletContext,
+                            @Context HttpServletRequest request,
+                            @PathParam( "repositoryName" ) String repositoryName,
+                            @QueryParam("name") final String backupName,
+                            @QueryParam( "includeBinaries" ) @DefaultValue( "true" ) final boolean includeBinaries,
+                            @QueryParam( "reindexContent" ) @DefaultValue( "true" ) final boolean reindexContent ) throws RepositoryException {
+        return repositoryHandler.restoreRepository(servletContext, request, repositoryName, backupName, new RestoreOptions() {
+            @Override
+            public boolean reindexContentOnFinish() {
+                return reindexContent;
+            }
+
+            @Override
+            public boolean includeBinaries() {
+                return includeBinaries;
+            }
+        });
     }
 
     /**
