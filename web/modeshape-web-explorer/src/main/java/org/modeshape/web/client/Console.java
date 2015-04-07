@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.client;
 
+import org.modeshape.web.client.admin.AdminView;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
@@ -56,7 +57,16 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
     
     private static Img loadingImg = new Img("loading.gif");    
     public static HLayout disabledHLayout = new HLayout();
-        
+    
+    /**
+     * Provides data access.
+     * 
+     * @return 
+     */
+    public JcrServiceAsync jcrService() {
+        return this.jcrService;
+    }
+    
     /**
      * This is the entry point method.
      */
@@ -177,11 +187,11 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
         });
     }
     
-    protected Contents contents() {
+    public Contents contents() {
         return contents;
     }
     
-    protected void showLoadingIcon() {
+    public void showLoadingIcon() {
         disabledHLayout.setSize("100%", "100%");
         disabledHLayout.setStyleName("disabledBackgroundStyle");
         disabledHLayout.show();
@@ -193,7 +203,7 @@ public class Console implements EntryPoint, ValueChangeHandler<String> {
         loadingImg.bringToFront();
     }
 
-    protected void hideLoadingIcon() {
+    public void hideLoadingIcon() {
         loadingImg.hide();
         disabledHLayout.hide();
     }

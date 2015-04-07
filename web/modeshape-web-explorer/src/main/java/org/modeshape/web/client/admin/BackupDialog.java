@@ -13,45 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.web.client;
+package org.modeshape.web.client.admin;
 
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
+import org.modeshape.web.client.ModalDialog;
 
 /**
- * Dialog asking backup location.
- *
+ * Dialog asking backup directory.
+ * 
  * @author kulikov
  */
-public class RestoreDialog extends ModalDialog {
-
-    private TextItem name = new TextItem("Backup name");
-    private AdminView admin;
-
-    public RestoreDialog(AdminView admin) {
-        super("Restore repository", 400, 200);
-        this.admin = admin;
-
-        StaticTextItem description = new StaticTextItem();
+public class BackupDialog extends ModalDialog {
+    
+    private final TextItem name = new TextItem("Backup name");
+    private final BackupControl control;
+    
+    public BackupDialog(BackupControl control) {
+        super("Backup", 400, 200);
+        this.control = control;
+        
+        StaticTextItem description = new StaticTextItem("");
         description.setValue("Specify backup name");
-
+        
         setControls(description, name);
     }
-
+    
     @Override
     public void onConfirm(ClickEvent event) {
-        admin.restore(name.getValueAsString());
+        control.backup(name.getValueAsString());
     }
-
-    public void uploadComplete(String fileName) {
-        SC.say("Upload complete");
-    }
-
-    private native void initComplete(RestoreDialog dialog) /*-{
-     $wnd.uploadComplete = function (fileName) {
-     dialog.@org.modeshape.web.client.RestoreDialog::uploadComplete(Ljava/lang/String;)(fileName);
-     };
-     }-*/;
+ 
+    
 }

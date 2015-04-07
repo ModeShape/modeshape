@@ -33,6 +33,9 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 import org.modeshape.common.annotation.Immutable;
 
 /**
@@ -200,6 +203,122 @@ public class FileUtil {
         return size.get();
     }
 
+    /**
+     * Unzip archive to the specified destination.
+     * 
+     * @param zipFile zip archive
+     * @param dest directory where archive will be uncompressed
+     * @throws IOException 
+     */
+    public static void unzip(InputStream zipFile, String dest) throws IOException {
+        byte[] buffer = new byte[1024];
+
+        //create output directory is not exists
+        File folder = new File(dest);
+
+        if (folder.exists()) {
+            FileUtil.delete(folder);
+        }
+
+        folder.mkdir();
+
+        //get the zip file content
+        ZipInputStream zis = new ZipInputStream(zipFile);
+        //get the zipped file list entry
+        ZipEntry ze = zis.getNextEntry();
+
+        while (ze != null) {
+
+            String fileName = ze.getName();
+            File newFile = new File(fileName);
+
+            //create all non exists folders
+            //else we will hit FileNotFoundException for compressed folder
+            new File(newFile.getParent()).mkdirs();
+
+            FileOutputStream fos = new FileOutputStream(newFile);
+
+            int len;
+            while ((len = zis.read(buffer)) > 0) {
+                fos.write(buffer, 0, len);
+            }
+
+            fos.close();
+            ze = zis.getNextEntry();
+        }
+
+        zis.closeEntry();
+        zis.close();
+    }
+    
+    /**
+     * Compresses directory into zip archive.
+     * 
+     * @param dirName the path to the directory
+     * @param nameZipFile archive name.
+     * @throws IOException 
+     */
+    public static void zipDir(String dirName, String nameZipFile) throws IOException {
+        ZipOutputStream zip = null;
+        FileOutputStream fW = null;
+        fW = new FileOutputStream(nameZipFile);
+        zip = new ZipOutputStream(fW);
+        addFolderToZip("", dirName, zip);
+        zip.close();
+        fW.close();
+    }
+
+    /**
+     * Adds folder to the archive.
+     * 
+     * @param path path to the folder
+     * @param srcFolder folder name
+     * @param zip zip archive
+     * @throws IOException 
+     */
+    public static void addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws IOException {
+        File folder = new File(srcFolder);
+        if (folder.list().length == 0) {
+            addFileToZip(path, srcFolder, zip, true);
+        } else {
+            for (String fileName : folder.list()) {
+                if (path.equals("")) {
+                    addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip, false);
+                } else {
+                    addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip, false);
+                }
+            }
+        }
+    }
+
+    /**
+     * Appends file to the archive.
+     * 
+     * @param path path to the file
+     * @param srcFile file name
+     * @param zip archive
+     * @param flag
+     * @throws IOException 
+     */
+    public static void addFileToZip(String path, String srcFile, ZipOutputStream zip, boolean flag) throws IOException {
+        File folder = new File(srcFile);
+        if (flag) {
+            zip.putNextEntry(new ZipEntry(path + "/" + folder.getName() + "/"));
+        } else {
+            if (folder.isDirectory()) {
+                addFolderToZip(path, srcFile, zip);
+            } else {
+                byte[] buf = new byte[1024];
+                int len;
+                FileInputStream in = new FileInputStream(srcFile);
+                zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
+                while ((len = in.read(buf)) > 0) {
+                    zip.write(buf, 0, len);
+                }
+            }
+        }
+    }
+    
     private FileUtil() {
     }
 

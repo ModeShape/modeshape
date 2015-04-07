@@ -117,6 +117,10 @@ public class LRepositoryImpl implements LRepository {
             File backupDir = new File(name);
             RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session()).getWorkspace().getRepositoryManager();
             mgr.restoreRepository(backupDir);
+            
+            //after restore process session will be closed so we need to clean up
+            //sessions to avoid access of invalid session.
+            sessions.clear();
         } catch (Exception e) {
             throw new RemoteException(e.getMessage());
         }
