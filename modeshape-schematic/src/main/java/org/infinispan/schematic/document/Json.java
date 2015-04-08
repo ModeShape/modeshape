@@ -24,12 +24,13 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import org.infinispan.schematic.internal.document.CompactJsonWriter;
 import org.infinispan.schematic.internal.document.JsonReader;
 import org.infinispan.schematic.internal.document.JsonWriter;
 import org.infinispan.schematic.internal.document.PrettyJsonWriter;
-import org.infinispan.util.logging.LogFactory;
 
 /**
  * A utility class for working with JSON documents. This class is able to read and write JSON documents that are in a special
@@ -131,8 +132,8 @@ public class Json {
         try {
             charset = Charset.forName("UTF-8");
         } catch (Throwable t) {
-            LogFactory.getLog(CompactJsonWriter.class)
-                      .error("Unable to obtain 'UTF-8' character set for JSON writing; using default charset.");
+            Logger.getLogger(CompactJsonWriter.class.getName()).log(Level.SEVERE,
+                                                                    "Unable to obtain 'UTF-8' character set for JSON writing; using default charset.");
         }
         UTF8 = charset;
     }
