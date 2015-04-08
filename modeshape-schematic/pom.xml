@@ -24,16 +24,7 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-commons</artifactId>
         </dependency>
-        
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-cachestore-leveldb</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging</artifactId>
-        </dependency>
+      
 
         <!-- We use a number of libraries to test the JSON and BSON readers and writers -->
         <dependency>
@@ -53,6 +44,10 @@
         Testing (note the scope)
         -->
         <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-cachestore-leveldb</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
@@ -70,7 +65,7 @@
         </dependency>
 
         <!--
-        Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)
+         Logging
         -->
         <dependency>
             <groupId>org.slf4j</groupId>
