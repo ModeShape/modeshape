@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.web.client;
+package org.modeshape.web.client.admin;
 
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
+import org.modeshape.web.client.ModalDialog;
 
 /**
  * Dialog asking backup directory.
  * 
  * @author kulikov
  */
-public class BackupDialog extends ModalDialog {
+public class RestoreDialog extends ModalDialog {
     
-    private TextItem name = new TextItem("Backup name");
-    private AdminView admin;
+    private final TextItem name = new TextItem("Backup name");
+    private final RestoreControl control;
     
-    public BackupDialog(AdminView admin) {
-        super("Backup", 400, 200);
-        this.admin = admin;
+    public RestoreDialog(RestoreControl control) {
+        super("Restore", 400, 200);
+        this.control = control;
         
         StaticTextItem description = new StaticTextItem("");
         description.setValue("Specify backup name");
@@ -41,7 +42,8 @@ public class BackupDialog extends ModalDialog {
     
     @Override
     public void onConfirm(ClickEvent event) {
-        admin.backup(name.getValueAsString());
+        control.restore(name.getValueAsString());
     }
+ 
     
 }

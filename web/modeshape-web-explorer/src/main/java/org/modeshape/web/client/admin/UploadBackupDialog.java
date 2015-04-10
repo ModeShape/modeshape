@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.web.client;
+package org.modeshape.web.client.admin;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.user.client.ui.NamedFrame;
 import com.smartgwt.client.types.Encoding;
 import com.smartgwt.client.types.FormMethod;
-import com.smartgwt.client.widgets.form.fields.FileItem;
+import com.smartgwt.client.widgets.form.fields.HiddenItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
+import com.smartgwt.client.widgets.form.fields.UploadItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
+import org.modeshape.web.client.ModalDialog;
 
 /**
  * Dialog asking backup directory.
@@ -29,34 +30,34 @@ import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
  * @author kulikov
  */
 public class UploadBackupDialog extends ModalDialog {
-    final String TARGET = "uploadTarget";
-    private FileItem name = new FileItem();
-
-    public UploadBackupDialog(Contents contents) {
-        super("Backup", 400, 200);
-
+    
+    private final HiddenItem repositoryField = new HiddenItem("repository");
+    private final UploadItem fileItem = new UploadItem("Upload content");
+    private final UploadRestoreControl control;
+    
+    public UploadBackupDialog(UploadRestoreControl control) {
+        super("Upload", 400, 200);
+        this.control = control;
+        
         StaticTextItem description = new StaticTextItem("");
         description.setValue("Specify backup name");
 
-        setControls(description, name);
-        setAction(GWT.getModuleBaseForStaticFiles() + "restore/do");
+        setControls(description,repositoryField, fileItem);
+        setAction(GWT.getModuleBaseForStaticFiles() + "backup-upload/content");
 
-        NamedFrame frame = new NamedFrame(TARGET);
-        frame.setWidth("1px");
-        frame.setHeight("1px");
-        frame.setVisible(false);
-        
         form().setEncoding(Encoding.MULTIPART);
         form().setMethod(FormMethod.POST);
-        form().setTarget(TARGET);
-        
-        window().addMember(frame);
+        form().setAction(GWT.getModuleBaseForStaticFiles() + "backup-upload/content");
     }
 
     @Override
     public void onConfirm(ClickEvent event) {
+        control.showLoadIcon();
         this.submitForm();
     }
 
-    
+    public void showModal(String repository) {
+        repositoryField.setValue(repository);
+        showModal();
+    }
 }
