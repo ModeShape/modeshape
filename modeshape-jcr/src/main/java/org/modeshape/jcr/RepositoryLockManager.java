@@ -93,17 +93,27 @@ class RepositoryLockManager implements ChangeSetListener {
     protected void refreshFromSystem() {
         try {
             // Re-read and re-register all of the namespaces ...
-            SessionCache systemCache = repository.createSystemSession(repository.context(), true);
+            SessionCache systemCache = repository.createSystemSession(repository.context(), false);
             SystemContent system = new SystemContent(systemCache);
             CachedNode locks = system.locksNode();
+            MutableCachedNode mutableLocks = null;
             for (ChildReference ref : locks.getChildReferences(systemCache)) {
                 CachedNode node = systemCache.getNode(ref);
                 if (node == null) {
-                    logger.warn(JcrI18n.lockNotFound, ref.getKey());
+                    if (mutableLocks == null) {
+                        mutableLocks = system.mutableLocksNode();
+                    }
+                    NodeKey lockKey = ref.getKey();
+                    logger.warn(JcrI18n.lockNotFound, lockKey);
+                    mutableLocks.removeChild(systemCache, lockKey);
                     continue;
                 }
+                
                 ModeShapeLock lock = new ModeShapeLock(node, systemCache);
                 locksByNodeKey.put(lock.getLockedNodeKey(), lock);
+            }
+            if (mutableLocks != null) {
+                system.save();
             }
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingLocks, repository.name());
